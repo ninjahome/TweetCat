@@ -1,2 +1,2 @@
-# TweetyCat
+# TweetCat
 twitter Category 
