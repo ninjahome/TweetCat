@@ -1,14 +1,19 @@
 {
   "name": "TweetyCat",
   "version": "1.0.0",
-  "description": "",
-  "main": "dist/index.js",
+  "description": "catch your favorite tweets",
   "scripts": {
-    "build": "tsc"
+    "build:d": "webpack --mode development --stats-error-details",
+    "build:r": "webpack --mode production --stats-error-details"
   },
-  "dependencies": {},
+  "dependencies": {
+    "webextension-polyfill": "^0.12.0"
+  },
   "devDependencies": {
-    "typescript": "^5.5.3"
+    "@types/webextension-polyfill": "^0.12.3",
+    "cross-env": "^7.0.3",
+    "typescript": "^5.5.3",
+    "webpack": "^5.93.0"
   },
   "private": true
 }
