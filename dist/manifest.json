@@ -3,7 +3,7 @@
   "name": "TweetCat",
   "version": "1.0.1",
   "default_locale": "en",
-  "description": "Organize your Twitter (X) feed with ease! TweetCat lets you categorize authors and filter tweets by your custom labels. Focus only on content from the voices you care about. ",
+  "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {
     "default_popup": "html/dashboard.html",
     "default_icon": {
@@ -21,8 +21,7 @@
     "storage",
     "activeTab",
     "tabs",
-    "alarms",
-    "contextMenus"
+    "alarms"
   ],
   "host_permissions": [
     "https://tweetcat.simplenets.org/*"

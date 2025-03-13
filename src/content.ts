@@ -1,38 +1,19 @@
+import browser, {Runtime} from "webextension-polyfill";
+import {observerTweetList} from "./content_oberver";
+import {prepareFilterHtmlElm} from "./content_filter";
+import {loadCategoriesFromDB} from "./content_category";
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('------>>>TweetCat content script success ✨')
-    monitorMainArea();
+    loadCategoriesFromDB();
+    observerTweetList();
+    await prepareFilterHtmlElm();
 })
 
+browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
+    return contentMsgDispatch(request, _sender, sendResponse)
+});
 
-function currentCategory(): string {
-    return ""
+function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void):true {
+    return true;
 }
-
-function monitorMainArea() {
-
-    const target = document.querySelector('main[role="main"]');
-    if (!target) {
-        //TODO::Need a timer to check again
-        setTimeout(() => {
-            monitorMainArea();
-        }, 5000);
-        return
-    }
-
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.addedNodes.length > 0) {
-                filterTweets(mutation.addedNodes);
-            }
-        });
-    });
-
-    observer.observe(target, {childList: true, subtree: true});
-}
-
-function filterTweets(nodes: NodeList) {
-    const cat = currentCategory();
-    console.log("------>>> current nodes:", nodes)
-}
-
-
