@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 import {getCategoryKeys, setCurrentCategory} from "./content_category";
 import {sendMsgToService} from "./utils";
-import {MsgType} from "./consts";
+import {MsgType, TweetUser} from "./consts";
 
 export async function prepareFilterHtmlElm() {
     addCustomStyles('css/content.css');
@@ -69,6 +69,27 @@ async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateEleme
 function translateInjectedElm() {
 }
 
+function filterTweetsByCategory(category: string) {
+    const tweetsContainer = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]') as HTMLElement;
+    if (!tweetsContainer) {
+        console.warn("------>>> failed to find tweet container when starting to filter")
+        return;
+    }
+
+    tweetsContainer.querySelectorAll('div[data-testid="cellInnerDiv"]').forEach(node => {
+        const tweetNode = node as HTMLElement;
+        const userNameDiv = tweetNode.querySelector('div[data-testid="User-Name"]') as HTMLElement;
+
+        if (!userNameDiv) {
+            console.warn("------>>> failed to find user name in tweet cell div")
+            return;
+        }
+        const user = parseNameFromTweetCell(userNameDiv);
+        console.log('------>>> tweet user:', user.nameVal());
+
+    })
+}
+
 function changeFilterType(category: string, elmItem: HTMLElement) {
     setCurrentCategory(category);
 
@@ -76,6 +97,8 @@ function changeFilterType(category: string, elmItem: HTMLElement) {
         elm.classList.remove("active");
     })
     elmItem.classList.add("active");
+
+    filterTweetsByCategory(category)
 }
 
 async function addMoreCategory() {
@@ -95,4 +118,16 @@ export function checkFilterBtn() {
         return;
     }
     appendFilterBtnToHomePage().then();
+}
+
+export function parseNameFromTweetCell(userNameDiv: HTMLElement): TweetUser {
+    const link = userNameDiv.querySelector('a[role="link"]') as HTMLAnchorElement;
+    const userHref = link?.getAttribute('href') || '';
+    const username = userHref.startsWith('/') ? userHref.substring(1) : userHref;
+
+    // 获取显示的用户名称文本（如 "Ian Miles Cheong"）
+    const nameSpan = link?.querySelector('span span');
+    const displayName = nameSpan?.textContent || '';
+
+    return new TweetUser(username, displayName);
 }
