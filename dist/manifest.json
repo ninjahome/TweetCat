@@ -22,7 +22,8 @@
     "storage",
     "activeTab",
     "tabs",
-    "alarms"
+    "alarms",
+    "contextMenus"
   ],
   "host_permissions": [
     "https://tweetcat.simplenets.org/*"

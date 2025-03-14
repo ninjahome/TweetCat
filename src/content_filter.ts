@@ -79,7 +79,7 @@ function changeFilterType(category: string, elmItem: HTMLElement) {
 }
 
 async function addMoreCategory() {
-    await sendMsgToService("#onboarding/category_manager", MsgType.OpenPlugin);
+    await sendMsgToService("#onboarding/category-manager", MsgType.OpenPlugin);
 }
 
 export function checkFilterBtn() {
@@ -89,8 +89,8 @@ export function checkFilterBtn() {
         return;
     }
 
-    const filterDiv = navElement.querySelector(".category-filter-container");
-    if (filterDiv){
+    const filterDiv = navElement.parentElement!.querySelector(".category-filter-container");
+    if (filterDiv) {
         console.log("------>>> no need to append filter container again");
         return;
     }

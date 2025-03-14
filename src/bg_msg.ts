@@ -5,14 +5,18 @@ export function bgMsgDispatch(request: any, _sender: Runtime.MessageSender, send
 
     switch (request.action) {
         case MsgType.OpenPlugin:
-            openPlugin(request.data, sendResponse).then();
+            openPlugin(request.data).then();
+            sendResponse({success: true});
+            break;
+        default:
+            sendResponse({success: true});
             break;
     }
+
     return true;
 }
 
-async function openPlugin(data: any, sendResponse: (response: any) => void) {
+async function openPlugin(data: any) {
     await browser.action.openPopup();
     await browser.runtime.sendMessage({action: MsgType.InitPopup, data: data})
-    sendResponse({success: true});
 }

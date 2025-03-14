@@ -36,11 +36,8 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
 });
 
 async function handleNavigation(details: WebNavigation.OnCompletedDetailsType | WebNavigation.OnHistoryStateUpdatedDetailsType) {
-    await browser.tabs.sendMessage(details.tabId, { action: MsgType.NaviUrlChanged });
     if (details.url === __targetUrlToFilter) {
-        console.log("======>>> current tab is ok")
-    } else {
-        console.log("======>>> current tab not active")
+        await browser.tabs.sendMessage(details.tabId, { action: MsgType.NaviUrlChanged });
     }
 }
 

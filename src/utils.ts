@@ -15,3 +15,19 @@ export async function sendMsgToService(data: any, actTyp: string): Promise<any> 
         return {success: -1, data: error.message}
     }
 }
+
+export function showView(hash: string, callback?: (hash: string) => void): void {
+    const views = document.querySelectorAll<HTMLElement>('.page_view');
+    views.forEach(view => view.style.display = 'none');
+
+    const id = hash.replace('#onboarding/', 'view-');
+    const targetView = document.getElementById(id);
+    if (targetView) {
+        targetView.style.display = 'block';
+    }else{
+        console.log("------>>> failed to find view for router hash:", hash);
+    }
+    if (callback) {
+        callback(hash);
+    }
+}
