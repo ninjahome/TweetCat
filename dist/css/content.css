@@ -1,7 +1,11 @@
 .category-filter-container {
     width: 100%;
-    height: 68px;
+    height: 68px;             /* 容器高度（可根据内容调整） */
     background-color: aqua;
+    display: flex;            /* 启用 Flex 布局 */
+    align-items: center;      /* 垂直居中（可选） */
+    gap: 10px;                /* 子元素间距（可选） */
+    padding: 0 16px;          /* 左右内边距（可选） */
 }
 
 .category-filter-item {

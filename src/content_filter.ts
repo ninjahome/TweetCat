@@ -34,6 +34,7 @@ async function appendFilterBtnToHomePage() {
 
     categories.forEach((category) => {
         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
+        cloneItem.id = "category-filter-item-" + category;
         const btn = cloneItem.querySelector(".category-filter-btn") as HTMLElement
         btn.innerText = category;
         btn.addEventListener('click', () => {
@@ -79,4 +80,19 @@ function changeFilterType(category: string, elmItem: HTMLElement) {
 
 async function addMoreCategory() {
     await sendMsgToService("#onboarding/category_manager", MsgType.OpenPlugin);
+}
+
+export function checkFilterBtn() {
+    const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
+    if (!navElement) {
+        console.log("------>>> should have the navigation div")
+        return;
+    }
+
+    const filterDiv = navElement.querySelector(".category-filter-container");
+    if (filterDiv){
+        console.log("------>>> no need to append filter container again");
+        return;
+    }
+    appendFilterBtnToHomePage().then();
 }

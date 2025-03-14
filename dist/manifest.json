@@ -18,6 +18,7 @@
     "128": "images/logo_128.png"
   },
   "permissions": [
+    "webNavigation",
     "storage",
     "activeTab",
     "tabs",

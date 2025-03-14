@@ -8,4 +8,5 @@ export enum MsgType {
     InitPopup = "InitPopup",
     NewCategoryItem = 'NewCategoryItem',
     NewCategoryType = 'NewCategoryType',
+    NaviUrlChanged = 'NaviUrlChanged'
 }

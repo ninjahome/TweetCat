@@ -1,7 +1,8 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {observerTweetList} from "./content_oberver";
-import {prepareFilterHtmlElm} from "./content_filter";
+import {checkFilterBtn, prepareFilterHtmlElm} from "./content_filter";
 import {loadCategoriesFromDB} from "./content_category";
+import {MsgType} from "./consts";
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('------>>>TweetCat content script success ✨')
@@ -15,5 +16,15 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
 });
 
 function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void):true {
+
+    switch (request.action) {
+        case MsgType.NaviUrlChanged:
+            checkFilterBtn();
+            sendResponse({success: true});
+            break;
+        default:
+            sendResponse({success: true});
+    }
+
     return true;
 }
