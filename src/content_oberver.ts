@@ -1,4 +1,5 @@
 import {activeCategory} from "./content_category";
+import {parseNameFromTweetCell} from "./content_filter";
 
 const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -8,21 +9,28 @@ const observer = new MutationObserver((mutations) => {
     });
 });
 
-export function observerTweetList(){
+export function observerTweetList() {
     observer.observe(document.body, {childList: true, subtree: true});
 }
 
 function filterTweets(nodes: NodeList) {
     const cat = activeCategory();
-    if (!cat){
+    if (!cat) {
         return;
     }
     nodes.forEach((cellInnerDiv) => {
         if (!isTweetDiv(cellInnerDiv)) {
-            // console.log("------>>> not tweet div",cellInnerDiv)
+            // console.log("------>>> not tweet div", cellInnerDiv)
             return;
         }
-        console.log("------>>> tweet div：", window.location.href, cellInnerDiv)
+        const user = parseNameFromTweetCell(cellInnerDiv);
+        if (!user) {
+            console.log("------>>> failed parse user name :", cellInnerDiv);
+            return;
+        }
+
+        console.log("------>>> tweet from ：", user.nameVal());
+
     });
 }
 

@@ -19,8 +19,14 @@ async function appendFilterBtnToHomePage() {
         return;
     }
 
+    let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container");
+    if (filterContainerDiv) {
+        console.log("------>>> no need to append filter container again");
+        return;
+    }
+
     const template = await parseContentHtml('html/content.html');
-    const filterContainerDiv = template.content.getElementById("category-filter-container");
+    filterContainerDiv = template.content.getElementById("category-filter-container");
     const filterBtn = template.content.getElementById("category-filter-item");
     const moreBtn = template.content.getElementById("category-filter-more")
     if (!filterContainerDiv || !filterBtn || !moreBtn) {
@@ -45,6 +51,7 @@ async function appendFilterBtnToHomePage() {
 
     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
     filterContainerDiv.appendChild(moreBtn);
+    console.log("------>>> add filter container success")
 }
 
 function addCustomStyles(cssFilePath: string): void {
@@ -77,16 +84,12 @@ function filterTweetsByCategory(category: string) {
     }
 
     tweetsContainer.querySelectorAll('div[data-testid="cellInnerDiv"]').forEach(node => {
-        const tweetNode = node as HTMLElement;
-        const userNameDiv = tweetNode.querySelector('div[data-testid="User-Name"]') as HTMLElement;
-
-        if (!userNameDiv) {
-            console.warn("------>>> failed to find user name in tweet cell div")
-            return;
+        const user = parseNameFromTweetCell(node as HTMLElement);
+        if (!user) {
+            console.log("------>>> failed parse user name:", node);
+            return
         }
-        const user = parseNameFromTweetCell(userNameDiv);
         console.log('------>>> tweet user:', user.nameVal());
-
     })
 }
 
@@ -105,29 +108,25 @@ async function addMoreCategory() {
     await sendMsgToService("#onboarding/category-manager", MsgType.OpenPlugin);
 }
 
-export function checkFilterBtn() {
-    const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
-    if (!navElement) {
-        console.log("------>>> should have the navigation div")
-        return;
-    }
-
-    const filterDiv = navElement.parentElement!.querySelector(".category-filter-container");
-    if (filterDiv) {
-        console.log("------>>> no need to append filter container again");
-        return;
-    }
-    appendFilterBtnToHomePage().then();
+export async function checkFilterBtn() {
+    await appendFilterBtnToHomePage();
 }
 
-export function parseNameFromTweetCell(userNameDiv: HTMLElement): TweetUser {
-    const link = userNameDiv.querySelector('a[role="link"]') as HTMLAnchorElement;
-    const userHref = link?.getAttribute('href') || '';
+export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetUser | null {
+    const userNameDiv = tweetNode.querySelector('div[data-testid="User-Name"] a[role="link"]') as HTMLElement;
+
+    if (!userNameDiv) {
+        return null;
+    }
+
+    const userHref = userNameDiv?.getAttribute('href') || '';
     const username = userHref.startsWith('/') ? userHref.substring(1) : userHref;
 
-    // 获取显示的用户名称文本（如 "Ian Miles Cheong"）
-    const nameSpan = link?.querySelector('span span');
+    const nameSpan = userNameDiv.querySelector(".css-1jxf684.r-bcqeeo.r-1ttztb7.r-qvutc0.r-poiln3") as HTMLElement
     const displayName = nameSpan?.textContent || '';
+    if (!username || !displayName) {
+        return null;
+    }
 
     return new TweetUser(username, displayName);
 }
