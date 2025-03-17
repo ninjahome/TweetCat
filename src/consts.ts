@@ -1,6 +1,7 @@
 export const __targetUrlToFilter = 'https://x.com/home';
 
 export const defaultCategoryName = "Priority Follow"
+// export const tweetFilteredTag = "__tweetCat__tweet_filtered_tag__"
 
 export enum MsgType {
     OpenPlugin = 'OpenPlugin',

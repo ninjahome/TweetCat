@@ -19,7 +19,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     switch (request.action) {
         case MsgType.NaviUrlChanged:
-            checkFilterBtn();
+            checkFilterBtn().then();
             sendResponse({success: true});
             break;
         default:

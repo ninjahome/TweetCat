@@ -14,8 +14,8 @@ export function observerTweetList() {
 }
 
 function filterTweets(nodes: NodeList) {
-    const cat = activeCategory();
-    if (!cat) {
+    const kolNameInCategory = activeCategory();
+    if (!kolNameInCategory) {
         return;
     }
     nodes.forEach((cellInnerDiv) => {
@@ -29,8 +29,12 @@ function filterTweets(nodes: NodeList) {
             return;
         }
 
-        console.log("------>>> tweet from ：", user.nameVal());
-
+        if(kolNameInCategory.has(user.userName)){
+            console.log('------>>> tweet hint:', user.nameVal());
+        }else{
+            console.log('------>>> tweet missed:', user.nameVal());
+            cellInnerDiv.style.display= "none";
+        }
     });
 }
 
