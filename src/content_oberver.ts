@@ -15,25 +15,27 @@ export function observerTweetList() {
 
 function filterTweets(nodes: NodeList) {
     const kolNameInCategory = activeCategory();
-    if (!kolNameInCategory) {
-        return;
-    }
+
     nodes.forEach((cellInnerDiv) => {
         if (!isTweetDiv(cellInnerDiv)) {
-            // console.log("------>>> not tweet div", cellInnerDiv)
             return;
         }
+
         const user = parseNameFromTweetCell(cellInnerDiv);
         if (!user) {
             console.log("------>>> failed parse user name :", cellInnerDiv);
             return;
         }
 
-        if(kolNameInCategory.has(user.userName)){
-            console.log('------>>> tweet hint:', user.nameVal());
+        if (!kolNameInCategory) {
+            console.log("------->>> tweet div found", user.nameVal());
         }else{
-            console.log('------>>> tweet missed:', user.nameVal());
-            cellInnerDiv.style.display= "none";
+            if (kolNameInCategory.has(user.userName)) {
+                console.log('------>>> tweet hint:', user.nameVal());
+            } else {
+                console.log('------>>> tweet missed:', user.nameVal());
+                cellInnerDiv.style.display = "none";
+            }
         }
     });
 }
