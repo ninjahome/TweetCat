@@ -19,10 +19,14 @@ async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateEleme
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('------>>>TweetCat content script success ✨');
+
     contentTemplate = await parseContentHtml('html/content.html');
     observerTweetList();
-    await parseUserInfo();
-    await prepareFilterHtmlElm();
+
+    await parseUserInfo(async (userName) => {
+        loadCategoriesFromDB(userName);
+        await prepareFilterHtmlElm();
+    });
 })
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
@@ -45,7 +49,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
 let userInfoTryTime = 0;
 
-async function parseUserInfo() {
+async function parseUserInfo(callback: (userName: string) => Promise<void>) {
 
     const userButton = document.querySelector('button[data-testid="SideNav_AccountSwitcher_Button"]') as HTMLElement;
     if (!userButton) {
@@ -59,11 +63,10 @@ async function parseUserInfo() {
         }
 
         setTimeout(() => {
-            parseUserInfo();
+            parseUserInfo(callback);
         }, 3000);
         return;
     }
 
-    // loadCategoriesFromDB();
-
+    await callback('');
 }

@@ -1,15 +1,18 @@
 export const __targetUrlToFilter = 'https://x.com/home';
 
 export const defaultCategoryName = "Priority Follow"
-// export const tweetFilteredTag = "__tweetCat__tweet_filtered_tag__"
-export const maxElmFindTryTimes = 10;
+export const maxElmFindTryTimes = 5;
+export const DEFAULT_QUERY_ID = "RN-6zQ2Z3HC99_kSY5eTYg";
+export const _db_key_query_id_ = "__db_key_query_id__"
+
 
 export enum MsgType {
     OpenPlugin = 'OpenPlugin',
     InitPopup = "InitPopup",
     NewCategoryItem = 'NewCategoryItem',
     NewCategoryType = 'NewCategoryType',
-    NaviUrlChanged = 'NaviUrlChanged'
+    NaviUrlChanged = 'NaviUrlChanged',
+    QueryKolTweets = 'QueryKolTweets'
 }
 
 export class TweetUser {
@@ -28,3 +31,4 @@ export class TweetUser {
         return this.displayName + "@" + this.userName;
     }
 }
+
