@@ -2,9 +2,9 @@ import browser, {Runtime} from "webextension-polyfill";
 import {observerTweetList} from "./content_oberver";
 import {checkFilterBtn, prepareFilterHtmlElm} from "./content_filter";
 import {loadCategoriesFromDB} from "./content_category";
-import {MsgType} from "./consts";
+import {maxElmFindTryTimes, MsgType} from "./consts";
 
-export let contentTemplate:HTMLTemplateElement;
+export let contentTemplate: HTMLTemplateElement;
 
 async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateElement> {
     const response = await fetch(browser.runtime.getURL(htmlFilePath));
@@ -20,8 +20,8 @@ async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateEleme
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('------>>>TweetCat content script success ✨');
     contentTemplate = await parseContentHtml('html/content.html');
-    loadCategoriesFromDB();
     observerTweetList();
+    await parseUserInfo();
     await prepareFilterHtmlElm();
 })
 
@@ -29,7 +29,7 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
     return contentMsgDispatch(request, _sender, sendResponse)
 });
 
-function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void):true {
+function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true {
 
     switch (request.action) {
         case MsgType.NaviUrlChanged:
@@ -41,4 +41,29 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
     }
 
     return true;
+}
+
+let userInfoTryTime = 0;
+
+async function parseUserInfo() {
+
+    const userButton = document.querySelector('button[data-testid="SideNav_AccountSwitcher_Button"]') as HTMLElement;
+    if (!userButton) {
+        console.log("------>>> need load user button later");
+
+        userInfoTryTime += 1;
+        if (userInfoTryTime > maxElmFindTryTimes) {
+            console.warn("------>>> failed find user button");
+            userInfoTryTime = 0;
+            return;
+        }
+
+        setTimeout(() => {
+            parseUserInfo();
+        }, 3000);
+        return;
+    }
+
+    // loadCategoriesFromDB();
+
 }

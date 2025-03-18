@@ -7,7 +7,7 @@ export function getCategoryKeys(): string[] {
 const __categoryMap = new Map<string, Map<string, boolean>>();
 let __currentCategory: string | null = null;
 
-export function loadCategoriesFromDB() {
+export function loadCategoriesFromDB(userName:string) {
     const defaultCategory = new Map();
     defaultCategory.set("elonmusk", true);
     __categoryMap.set(defaultCategoryName, defaultCategory);

@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 import {activeCategory, getCategoryKeys, setCurrentCategory} from "./content_category";
 import {sendMsgToService} from "./utils";
-import {MsgType, TweetUser} from "./consts";
+import {maxElmFindTryTimes, MsgType, TweetUser} from "./consts";
 import {contentTemplate} from "./content";
 
 export async function prepareFilterHtmlElm() {
@@ -99,6 +99,8 @@ async function addMoreCategory() {
 
 
 let isCheckingFilterBtn = false;
+let naviTryTime = 0;
+
 export async function checkFilterBtn() {
     if (isCheckingFilterBtn) {
         console.log('------>>> checkFilterBtn is already running.');
@@ -110,6 +112,12 @@ export async function checkFilterBtn() {
         const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
         if (!navElement) {
             console.log("------>>> home navigation div not found");
+            naviTryTime += 1;
+            if (naviTryTime > maxElmFindTryTimes) {
+                console.warn("------>>> failed to find home navigation!");
+                naviTryTime = 0;
+                return;
+            }
             setTimeout(async () => {
                 await checkFilterBtn();
             }, 3000);
