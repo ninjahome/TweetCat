@@ -24,3 +24,7 @@ export function activeCategory(): Map<string, boolean> | null {
 export function setCurrentCategory(category: string | null) {
     __currentCategory = category;
 }
+
+export function currentCategory():string|null{
+    return  __currentCategory;
+}

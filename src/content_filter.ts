@@ -2,34 +2,20 @@ import browser from "webextension-polyfill";
 import {activeCategory, getCategoryKeys, setCurrentCategory} from "./content_category";
 import {sendMsgToService} from "./utils";
 import {MsgType, TweetUser} from "./consts";
+import {contentTemplate} from "./content";
 
 export async function prepareFilterHtmlElm() {
     addCustomStyles('css/content.css');
-    await appendFilterBtnToHomePage();
+    await checkFilterBtn();
     translateInjectedElm();
 }
 
-async function appendFilterBtnToHomePage() {
-    const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
-    if (!navElement) {
-        console.log("------>>> home navigation div not found");
-        setTimeout(() => {
-            appendFilterBtnToHomePage();
-        }, 3000);
-        return;
-    }
+async function appendFilterBtnToHomePage(navElement: HTMLElement) {
 
-    let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container");
-    if (filterContainerDiv) {
-        console.log("------>>> no need to append filter container again");
-        return;
-    }
-
-    const template = await parseContentHtml('html/content.html');
-    filterContainerDiv = template.content.getElementById("category-filter-container");
-    const filterBtn = template.content.getElementById("category-filter-item");
-    const moreBtn = template.content.getElementById("category-filter-more");
-    const clearBtn = template.content.getElementById("category-filter-clear");
+    const filterContainerDiv = contentTemplate.content.getElementById("category-filter-container");
+    const filterBtn = contentTemplate.content.getElementById("category-filter-item");
+    const moreBtn = contentTemplate.content.getElementById("category-filter-more");
+    const clearBtn = contentTemplate.content.getElementById("category-filter-clear");
 
     if (!filterContainerDiv || !filterBtn || !moreBtn || !clearBtn) {
         console.error(`------>>> failed to filter buttons container is ${filterContainerDiv} category button is ${filterBtn} clear button is ${clearBtn}`);
@@ -67,34 +53,20 @@ function addCustomStyles(cssFilePath: string): void {
     document.head.appendChild(link);
 }
 
-async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateElement> {
-    const response = await fetch(browser.runtime.getURL(htmlFilePath));
-    if (!response.ok) {
-        throw new Error(`Failed to fetch ${htmlFilePath}: ${response.statusText}`);
-    }
-    const htmlContent = await response.text();
-    const template = document.createElement('template');
-    template.innerHTML = htmlContent;
-    return template;
-}
-
 function translateInjectedElm() {
 }
 
 function filterTweetsByCategory() {
-
     const kolNameInCategory = activeCategory()
     if (!kolNameInCategory) {
         console.log("------>>> no active category selected");
         return;
     }
-
     const tweetsContainer = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]') as HTMLElement;
     if (!tweetsContainer) {
         console.warn("------>>> failed to find tweet container when starting to filter")
         return;
     }
-
     tweetsContainer.querySelectorAll('div[data-testid="cellInnerDiv"]').forEach(node => {
         const tweetNode = node as HTMLElement;
         const user = parseNameFromTweetCell(tweetNode);
@@ -108,7 +80,6 @@ function filterTweetsByCategory() {
         } else {
             console.log('------>>> tweet missed:', user.nameVal());
             tweetNode.style.display = "none";
-            // tweetNode.dataset.tag = tweetFilteredTag;
         }
     })
 }
@@ -126,8 +97,36 @@ async function addMoreCategory() {
     await sendMsgToService("#onboarding/category-manager", MsgType.OpenPlugin);
 }
 
+
+let isCheckingFilterBtn = false;
 export async function checkFilterBtn() {
-    await appendFilterBtnToHomePage();
+    if (isCheckingFilterBtn) {
+        console.log('------>>> checkFilterBtn is already running.');
+        return;
+    }
+
+    isCheckingFilterBtn = true;
+    try {
+        const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
+        if (!navElement) {
+            console.log("------>>> home navigation div not found");
+            setTimeout(async () => {
+                await checkFilterBtn();
+            }, 3000);
+            return;
+        }
+
+        let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container");
+        if (filterContainerDiv) {
+            console.log("------>>> no need to append filter container again");
+            return;
+        }
+
+        await appendFilterBtnToHomePage(navElement);
+
+    } finally {
+        isCheckingFilterBtn = false;  // 确保执行完成后恢复标记
+    }
 }
 
 export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetUser | null {
@@ -152,9 +151,5 @@ export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetUser | null
 function resetCategories() {
     setCurrentCategory("");
     document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
-
-    // const selector = `[data-tag="${tweetFilteredTag}"]`;
-    // const elements = document.querySelectorAll<HTMLElement>(selector);
-    // elements.forEach(node=>node.style.display='flex');
     window.location.reload();
 }
