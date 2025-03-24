@@ -82,7 +82,7 @@ function changeFilterType(category: Category, elmItem: HTMLElement) {
 }
 
 async function addMoreCategory() {
-    await sendMsgToService("#onboarding/category-manager", MsgType.OpenPlugin);
+    await sendMsgToService("#onboarding/main-home", MsgType.OpenPlugin);
 }
 
 
@@ -112,7 +112,7 @@ export async function prepareFilterBtn() {
             return;
         }
 
-        let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container");
+        let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container") as HTMLElement;
         if (filterContainerDiv) {
             console.log("------>>> no need to append filter container again");
             return;

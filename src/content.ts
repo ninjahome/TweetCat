@@ -53,12 +53,11 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
 let userInfoTryTime = 0;
 
-async function parseUserInfo(callback: (userName: string) => Promise<void>) {
+async function parseUserInfo(callback: (userProfile: string) => Promise<void>) {
 
-    const userButton = document.querySelector('button[data-testid="SideNav_AccountSwitcher_Button"]');
-    const userNameStr = userButton?.querySelector(".css-175oi2r.r-1wbh5a2.r-dnmrzs.r-1ny4l3l")?.textContent?.trim();
-    if (!userNameStr) {
-        console.log("------>>> need load user button later");
+    const profileBtn = document.querySelector('a[data-testid="AppTabBar_Profile_Link"][aria-label="Profile"]') as HTMLLinkElement;
+    if (!profileBtn) {
+        console.log("------>>> need load user profile later");
 
         userInfoTryTime += 1;
         if (userInfoTryTime > maxElmFindTryTimes) {
@@ -72,6 +71,5 @@ async function parseUserInfo(callback: (userName: string) => Promise<void>) {
         }, 3000);
         return;
     }
-
-    await callback(userNameStr);
+    await callback(profileBtn .href);
 }
