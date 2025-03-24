@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
-import browser, {Runtime, WebNavigation, WebRequest, windows} from "webextension-polyfill";
+import browser, {Runtime, WebNavigation} from "webextension-polyfill";
 import {createAlarm} from "./bg_timer";
 import {bgMsgDispatch} from "./bg_msg";
 import {__targetUrlToFilter, _db_key_query_id_, DEFAULT_QUERY_ID, MsgType} from "./consts";
-import {sessionGet, sessionSet} from "./session_storage";
+import {sessionSet} from "./session_storage";
 
 self.addEventListener('activate', (event) => {
     console.log('------>>> Service Worker activating......');
