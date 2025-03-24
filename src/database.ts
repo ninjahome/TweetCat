@@ -15,8 +15,7 @@ const initialKols = [
     {kolName: 'TweetCatOrg', categoryTyp: 1},
     {kolName: 'elonmusk', categoryTyp: 1},
     {kolName: 'BillGates', categoryTyp: 1},
-    {kolName: 'realDonaldTrump', categoryTyp: 1},
-    {kolName: 'Google', categoryTyp: 1}
+    {kolName: 'realDonaldTrump', categoryTyp: 1}
 ];
 
 export function initDatabase(): Promise<IDBDatabase> {
@@ -57,10 +56,10 @@ function initCategory(request: IDBOpenDBRequest) {
         initialCategories.forEach(category => {
             categoryStore.add(category);
         });
-        console.log("------>>>[Database]Inserted initial categories.");
+        console.log("------>>>[Database]Inserted initial categories.", initialCategories);
     }
 
-    console.log("------>>>[Database]Created category successfully.", objectStore);
+    console.log("------>>>[Database]Created category successfully.", __tableCategory);
 }
 
 function initKolsInCategory(request: IDBOpenDBRequest) {
@@ -77,10 +76,9 @@ function initKolsInCategory(request: IDBOpenDBRequest) {
         initialKols.forEach(kol => {
             categoryStore.add(kol);
         });
-        console.log("------>>>[Database]Inserted initial categories.");
+        console.log("------>>>[Database]Inserted initial categories.", initialKols);
     }
-
-    console.log("------>>>[Database]Create kols in category successfully.", objectStore);
+    console.log("------>>>[Database]Create kols in category successfully.", __tableKolsInCategory);
 }
 
 function initSystemSetting(request: IDBOpenDBRequest) {

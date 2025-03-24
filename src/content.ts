@@ -4,6 +4,7 @@ import {prepareFilterBtn} from "./content_filter";
 import {initKolAndCatCache} from "./category";
 import {maxElmFindTryTimes, MsgType} from "./consts";
 import {addCustomStyles} from "./utils";
+import {checkAndInitDatabase} from "./database";
 
 export let contentTemplate: HTMLTemplateElement;
 
@@ -19,14 +20,15 @@ async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateEleme
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    await checkAndInitDatabase();
+
     addCustomStyles('css/content.css');
     contentTemplate = await parseContentHtml('html/content.html');
     initObserver();
 
     await initKolAndCatCache();
     await prepareFilterBtn();
-    await parseUserInfo(async (userName) => {
-        console.log("------->>>> parse current user name:",userName)});
+    await parseUserInfo(async (userName) => { console.log("------->>>>tweet user name:",userName)});
 
     console.log('------>>>TweetCat content script success ✨');
 });
@@ -71,6 +73,5 @@ async function parseUserInfo(callback: (userName: string) => Promise<void>) {
         return;
     }
 
-    console.log("------>>> current user name :", userNameStr);
     await callback(userNameStr);
 }
