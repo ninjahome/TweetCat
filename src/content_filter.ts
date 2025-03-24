@@ -57,34 +57,31 @@ function translateInjectedElm() {
 }
 
 async function filterTweetsByCategory() {
-    await fetchTweetFromBack(['elonmusk']);
-    return;
-    //
-    // const kolNameInCategory = activeCategory()
-    // if (!kolNameInCategory) {
-    //     console.log("------>>> no active category selected");
-    //     return;
-    // }
-    // const tweetsContainer = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]') as HTMLElement;
-    // if (!tweetsContainer) {
-    //     console.warn("------>>> failed to find tweet container when starting to filter")
-    //     return;
-    // }
-    // tweetsContainer.querySelectorAll('div[data-testid="cellInnerDiv"]').forEach(node => {
-    //     const tweetNode = node as HTMLElement;
-    //     const user = parseNameFromTweetCell(tweetNode);
-    //     if (!user) {
-    //         console.log("------>>> failed parse user name:", node);
-    //         return
-    //     }
-    //
-    //     if (kolNameInCategory.has(user.userName)) {
-    //         console.log('------>>> tweet hint:', user.nameVal());
-    //     } else {
-    //         console.log('------>>> tweet missed:', user.nameVal());
-    //         tweetNode.style.display = "none";
-    //     }
-    // })
+    const kolNameInCategory = activeCategory()
+    if (!kolNameInCategory) {
+        console.log("------>>> no active category selected");
+        return;
+    }
+    const tweetsContainer = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]') as HTMLElement;
+    if (!tweetsContainer) {
+        console.warn("------>>> failed to find tweet container when starting to filter")
+        return;
+    }
+    tweetsContainer.querySelectorAll('div[data-testid="cellInnerDiv"]').forEach(node => {
+        const tweetNode = node as HTMLElement;
+        const user = parseNameFromTweetCell(tweetNode);
+        if (!user) {
+            console.log("------>>> failed parse user name:", node);
+            return
+        }
+
+        if (kolNameInCategory.has(user.userName)) {
+            console.log('------>>> tweet hint:', user.nameVal());
+        } else {
+            console.log('------>>> tweet missed:', user.nameVal());
+            tweetNode.style.display = "none";
+        }
+    })
 }
 
 function changeFilterType(category: string, elmItem: HTMLElement) {
@@ -164,13 +161,4 @@ function resetCategories() {
     setCurrentCategory("");
     document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
     window.location.reload();
-}
-
-async function fetchTweetFromBack(users: string[]) {
-    const response = await sendMsgToService(users, MsgType.QueryKolTweets);
-    if (!response.success) {
-        console.log("------>>> failed to load tweets :", response.data);
-        return;
-    }
-    console.log("------->>> load tweets success:", response.data);
 }

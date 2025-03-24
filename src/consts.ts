@@ -12,7 +12,6 @@ export enum MsgType {
     NewCategoryItem = 'NewCategoryItem',
     NewCategoryType = 'NewCategoryType',
     NaviUrlChanged = 'NaviUrlChanged',
-    QueryKolTweets = 'QueryKolTweets'
 }
 
 export class TweetUser {
