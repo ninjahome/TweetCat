@@ -2,8 +2,7 @@
 import browser, {Runtime, WebNavigation} from "webextension-polyfill";
 import {createAlarm} from "./bg_timer";
 import {bgMsgDispatch} from "./bg_msg";
-import {__targetUrlToFilter, _db_key_query_id_, DEFAULT_QUERY_ID, MsgType} from "./consts";
-import {sessionSet} from "./session_storage";
+import {__targetUrlToFilter, MsgType} from "./consts";
 
 self.addEventListener('activate', (event) => {
     console.log('------>>> Service Worker activating......');
@@ -20,8 +19,6 @@ self.addEventListener('install', (event) => {
 
 browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType) => {
     console.log("------>>> onInstalled......");
-    sessionSet(_db_key_query_id_, DEFAULT_QUERY_ID).then();
-
     if (details.reason === "install") {
         browser.tabs.create({
             url: browser.runtime.getURL("html/welcome.html#onboarding/welcome")

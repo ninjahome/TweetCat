@@ -1,7 +1,7 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {observerTweetList} from "./content_oberver";
 import {prepareFilterBtn} from "./content_filter";
-import {loadCategoriesFromDB} from "./content_category";
+import {loadCategoriesFromDB} from "./category";
 import {maxElmFindTryTimes, MsgType} from "./consts";
 import {addCustomStyles} from "./utils";
 

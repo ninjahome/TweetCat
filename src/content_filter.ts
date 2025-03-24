@@ -1,4 +1,4 @@
-import {activeCategory, getCategoryKeys, setCurrentCategory} from "./content_category";
+import {activeCategory, getCategoryKeys, setCurrentCategory} from "./category";
 import {sendMsgToService} from "./utils";
 import {maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {contentTemplate} from "./content";

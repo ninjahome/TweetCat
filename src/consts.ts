@@ -2,9 +2,6 @@ export const __targetUrlToFilter = 'https://x.com/home';
 
 export const defaultCategoryName = "Priority Follow"
 export const maxElmFindTryTimes = 5;
-export const DEFAULT_QUERY_ID = "RN-6zQ2Z3HC99_kSY5eTYg";
-export const _db_key_query_id_ = "__db_key_query_id__"
-
 
 export enum MsgType {
     OpenPlugin = 'OpenPlugin',

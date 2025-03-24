@@ -1,4 +1,4 @@
-import {activeCategory} from "./content_category";
+import {activeCategory} from "./category";
 import {parseNameFromTweetCell} from "./content_filter";
 import {contentTemplate} from "./content";
 
