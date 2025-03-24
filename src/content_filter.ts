@@ -1,10 +1,10 @@
 import {curCategories, kolsInActiveCategory, setCurrentCategory} from "./category";
 import {sendMsgToService} from "./utils";
 import {Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
-import {contentTemplate} from "./content";
+import {parseContentHtml, parseNameFromTweetCell} from "./content";
 
 async function appendFilterBtnToHomePage(navElement: HTMLElement) {
-
+    const contentTemplate = await parseContentHtml('html/content.html');
     const filterContainerDiv = contentTemplate.content.getElementById("category-filter-container");
     const filterBtn = contentTemplate.content.getElementById("category-filter-item");
     const moreBtn = contentTemplate.content.getElementById("category-filter-more");
@@ -124,27 +124,9 @@ export async function prepareFilterBtn() {
     }
 }
 
-export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null {
-    const userNameDiv = tweetNode.querySelector('div[data-testid="User-Name"] a[role="link"]') as HTMLElement;
-
-    if (!userNameDiv) {
-        return null;
-    }
-
-    const userHref = userNameDiv?.getAttribute('href') || '';
-    const username = userHref.startsWith('/') ? userHref.substring(1) : userHref;
-
-    const nameSpan = userNameDiv.querySelector(".css-1jxf684.r-bcqeeo.r-1ttztb7.r-qvutc0.r-poiln3") as HTMLElement
-    const displayName = nameSpan?.textContent || '';
-    if (!username || !displayName) {
-        return null;
-    }
-
-    return new TweetKol(username, displayName);
-}
-
 function resetCategories() {
     setCurrentCategory(0);
     document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
     window.location.reload();
 }
+

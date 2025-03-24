@@ -1,6 +1,5 @@
 import {kolsInActiveCategory} from "./category";
-import {parseNameFromTweetCell} from "./content_filter";
-import {contentTemplate} from "./content";
+import {parseContentHtml, parseNameFromTweetCell} from "./content";
 
 const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -12,9 +11,11 @@ const observer = new MutationObserver((mutations) => {
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
 
-export function initObserver() {
+export async function initObserver() {
 
     observer.observe(document.body, {childList: true, subtree: true});
+
+    const contentTemplate = await parseContentHtml('html/content.html');
 
     __menuBtnDiv = contentTemplate.content.getElementById("filter-menu-on-main") as HTMLElement;
     const popupMenu = contentTemplate.content.getElementById("category-popup-menu") as HTMLElement;
@@ -23,7 +24,7 @@ export function initObserver() {
         return;
     }
 
-    __categoryPopupMenu  = popupMenu.cloneNode(true) as HTMLElement;
+    __categoryPopupMenu = popupMenu.cloneNode(true) as HTMLElement;
     document.body.appendChild(__categoryPopupMenu);
 }
 
@@ -42,7 +43,7 @@ function filterTweets(nodes: NodeList) {
 
         const user = parseNameFromTweetCell(divNode);
         if (!user) {
-            console.log("------>>> this tweet cell is not for content:", divNode);
+            // console.log("------>>> this tweet cell is not for content:", divNode);
             return;
         }
 
@@ -67,7 +68,6 @@ function isKolProfileDiv(node: Node): node is HTMLDivElement {
         node.dataset.testid === 'HoverCard'
     );
 }
-
 
 async function appendFilterMenuOnKolPopupProfile(kolProfile: HTMLElement) {
 

@@ -2,28 +2,14 @@ import browser, {Runtime} from "webextension-polyfill";
 import {initObserver} from "./content_oberver";
 import {prepareFilterBtn} from "./content_filter";
 import {initKolAndCatCache} from "./category";
-import {maxElmFindTryTimes, MsgType} from "./consts";
+import {maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {addCustomStyles} from "./utils";
 import {checkAndInitDatabase} from "./database";
-
-export let contentTemplate: HTMLTemplateElement;
-
-async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateElement> {
-    const response = await fetch(browser.runtime.getURL(htmlFilePath));
-    if (!response.ok) {
-        throw new Error(`Failed to fetch ${htmlFilePath}: ${response.statusText}`);
-    }
-    const htmlContent = await response.text();
-    const template = document.createElement('template');
-    template.innerHTML = htmlContent;
-    return template;
-}
 
 document.addEventListener('DOMContentLoaded', async () => {
     await checkAndInitDatabase();
 
     addCustomStyles('css/content.css');
-    contentTemplate = await parseContentHtml('html/content.html');
     initObserver();
 
     await initKolAndCatCache();
@@ -72,4 +58,34 @@ async function parseUserInfo(callback: (userProfile: string) => Promise<void>) {
         return;
     }
     await callback(profileBtn .href);
+}
+
+export async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateElement> {
+    const response = await fetch(browser.runtime.getURL(htmlFilePath));
+    if (!response.ok) {
+        throw new Error(`Failed to fetch ${htmlFilePath}: ${response.statusText}`);
+    }
+    const htmlContent = await response.text();
+    const template = document.createElement('template');
+    template.innerHTML = htmlContent;
+    return template;
+}
+
+export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null {
+    const userNameDiv = tweetNode.querySelector('div[data-testid="User-Name"] a[role="link"]') as HTMLElement;
+
+    if (!userNameDiv) {
+        return null;
+    }
+
+    const userHref = userNameDiv?.getAttribute('href') || '';
+    const username = userHref.startsWith('/') ? userHref.substring(1) : userHref;
+
+    const nameSpan = userNameDiv.querySelector(".css-1jxf684.r-bcqeeo.r-1ttztb7.r-qvutc0.r-poiln3") as HTMLElement
+    const displayName = nameSpan?.textContent || '';
+    if (!username || !displayName) {
+        return null;
+    }
+
+    return new TweetKol(username, displayName);
 }
