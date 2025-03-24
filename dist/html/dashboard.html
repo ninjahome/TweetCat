@@ -8,12 +8,42 @@
 </head>
 <body>
     <div id="view-main-home" class="view-main-home page_view">
+
         <div class="logo-container">
             <img src="../images/logo.png" alt="logo">
+        </div>
+
+        <hr aria-label="list separator">
+
+        <div class="category-show-area" id="category-show-area">
+
+            <button id="btn-add-category">+ Add Category</button>
+
+            <div class="category-item" data-category-id="1" id="category-item-template">
+                <span class="category-name">News</span>
+                <button class="category-edit-btn">Edit</button>
+            </div>
+
+            <div id="categories-list" class="categories-list">
+            </div>
+
         </div>
     </div>
     <div id="view-category-manager" class="view-category-manager page_view">
         category-manager
+    </div>
+
+    <!-- 增加分类的模态对话框 -->
+    <div id="modal-add-category" class="modal">
+        <div class="modal-content">
+            <h3>Add New Category</h3>
+            <label for="new-category-name"></label>
+            <input type="text" id="new-category-name" placeholder="Enter category name">
+            <div class="modal-buttons">
+                <button id="btn-cancel">Cancel</button>
+                <button id="btn-confirm">Confirm</button>
+            </div>
+        </div>
     </div>
 </body>
 </html>

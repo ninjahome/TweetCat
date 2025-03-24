@@ -1,7 +1,6 @@
-import browser from "webextension-polyfill";
 import {activeCategory, getCategoryKeys, setCurrentCategory} from "./content_category";
 import {sendMsgToService} from "./utils";
-import {maxElmFindTryTimes, MsgType, TweetUser} from "./consts";
+import {maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {contentTemplate} from "./content";
 
 async function appendFilterBtnToHomePage(navElement: HTMLElement) {
@@ -127,7 +126,7 @@ export async function prepareFilterBtn() {
     }
 }
 
-export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetUser | null {
+export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null {
     const userNameDiv = tweetNode.querySelector('div[data-testid="User-Name"] a[role="link"]') as HTMLElement;
 
     if (!userNameDiv) {
@@ -143,7 +142,7 @@ export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetUser | null
         return null;
     }
 
-    return new TweetUser(username, displayName);
+    return new TweetKol(username, displayName);
 }
 
 function resetCategories() {

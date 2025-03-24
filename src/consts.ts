@@ -14,7 +14,7 @@ export enum MsgType {
     NaviUrlChanged = 'NaviUrlChanged',
 }
 
-export class TweetUser {
+export class TweetKol {
     userName: string;
     displayName: string;
 

@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     observerTweetList();
 
     await parseUserInfo(async (userName) => {
-        loadCategoriesFromDB(userName);
+        await loadCategoriesFromDB(userName);
         await prepareFilterBtn();
     });
 })

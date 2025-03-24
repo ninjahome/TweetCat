@@ -17,7 +17,7 @@ async function initDashBoard(): Promise<void> {
         showView('#onboarding/main-home', dashRouter);
     }
 
-
+    await setupMainHomeElm();
 }
 
 function dashRouter(path: string): void {
@@ -45,4 +45,8 @@ export function dashboardMsgDispatch(request: any, _sender: Runtime.MessageSende
             break;
     }
     return true;
+}
+
+async function setupMainHomeElm(){
+
 }

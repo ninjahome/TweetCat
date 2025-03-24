@@ -7,7 +7,7 @@ export function getCategoryKeys(): string[] {
 const __categoryMap = new Map<string, Map<string, boolean>>();
 let __currentCategory: string | null = null;
 
-export function loadCategoriesFromDB(userName:string) {
+export async function loadCategoriesFromDB(userName:string) {
     const defaultCategory = new Map();
     defaultCategory.set("elonmusk", true);
     __categoryMap.set(defaultCategoryName, defaultCategory);
@@ -27,4 +27,19 @@ export function setCurrentCategory(category: string | null) {
 
 export function currentCategory():string|null{
     return  __currentCategory;
+}
+
+async function loadLastUserName():Promise<string | null>{
+    return "BMailService@TweetCatOrg";
+}
+
+export async function loadLastCategoriesFromDB():Promise<string[]|null> {
+    const userName = await loadLastUserName();
+    if (!userName) {
+        return null;
+    }
+
+    await  loadCategoriesFromDB(userName);
+
+    return getCategoryKeys();
 }
