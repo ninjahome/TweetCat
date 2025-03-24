@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     await checkAndInitDatabase();
 
     addCustomStyles('css/content.css');
-    initObserver();
 
+    await initObserver();
     await initKolAndCatCache();
     await prepareFilterBtn();
     await parseUserInfo(async (userName) => { console.log("------->>>>tweet user name:",userName)});
