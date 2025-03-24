@@ -1,8 +1,23 @@
+import {defaultCategoryName, defaultUserName} from "./consts";
+
 let __databaseObj: IDBDatabase | null = null;
 const __databaseName = 'tweet-cat-database';
 export const __currentDatabaseVersion = 1;
-export const __tableCategory = '__table_category__v1';
-export const __tableSystemSetting = '__table_system_setting__v1';
+export const __tableCategory = '__table_category__';
+export const __tableKolsInCategory = '__table_kol_in_category__';
+export const __tableSystemSetting = '__table_system_setting__';
+
+const initialCategories = [
+    {category: defaultCategoryName, forUser: defaultUserName},
+];
+
+const initialKols = [
+    {kolName: 'TweetCatOrg', categoryTyp: 1},
+    {kolName: 'elonmusk', categoryTyp: 1},
+    {kolName: 'BillGates', categoryTyp: 1},
+    {kolName: 'realDonaldTrump', categoryTyp: 1},
+    {kolName: 'Google', categoryTyp: 1}
+];
 
 export function initDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
@@ -20,18 +35,60 @@ export function initDatabase(): Promise<IDBDatabase> {
         };
 
         request.onupgradeneeded = function (event: IDBVersionChangeEvent) {
-            const db = (event.target as IDBOpenDBRequest).result;
-            if (!db.objectStoreNames.contains(__tableCategory)) {
-                const objectStore = db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
-                console.log("------>>>[Database]Created wallet table successfully.", objectStore);
-            }
-
-            if (!db.objectStoreNames.contains(__tableSystemSetting)) {
-                const objectStore = db.createObjectStore(__tableSystemSetting, {keyPath: 'id', autoIncrement: true});
-                console.log("------>>>[Database]Created wallet setting table successfully.", objectStore);
-            }
+            const request = (event.target as IDBOpenDBRequest);
+            initCategory(request);
+            initKolsInCategory(request);
+            initSystemSetting(request);
         };
     });
+}
+
+function initCategory(request: IDBOpenDBRequest) {
+    const db = request.result;
+    const transaction = request.transaction;
+
+    if (db.objectStoreNames.contains(__tableCategory)) {
+        return;
+    }
+
+    const objectStore = db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
+    if (transaction) {
+        const categoryStore = transaction.objectStore(__tableCategory);
+        initialCategories.forEach(category => {
+            categoryStore.add(category);
+        });
+        console.log("------>>>[Database]Inserted initial categories.");
+    }
+
+    console.log("------>>>[Database]Created category successfully.", objectStore);
+}
+
+function initKolsInCategory(request: IDBOpenDBRequest) {
+    const db = request.result;
+    const transaction = request.transaction;
+
+    if (db.objectStoreNames.contains(__tableKolsInCategory)) {
+        return;
+    }
+
+    const objectStore = db.createObjectStore(__tableKolsInCategory, {keyPath: 'id', autoIncrement: true});
+    if (transaction) {
+        const categoryStore = transaction.objectStore(__tableKolsInCategory);
+        initialKols.forEach(kol => {
+            categoryStore.add(kol);
+        });
+        console.log("------>>>[Database]Inserted initial categories.");
+    }
+
+    console.log("------>>>[Database]Create kols in category successfully.", objectStore);
+}
+
+function initSystemSetting(request: IDBOpenDBRequest) {
+    const db = request.result;
+    if (!db.objectStoreNames.contains(__tableSystemSetting)) {
+        const objectStore = db.createObjectStore(__tableSystemSetting, {keyPath: 'id', autoIncrement: true});
+        console.log("------>>>[Database]Create system setting table successfully.", objectStore);
+    }
 }
 
 export function closeDatabase() {

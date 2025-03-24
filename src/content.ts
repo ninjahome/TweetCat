@@ -1,7 +1,7 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {observerTweetList} from "./content_oberver";
+import {initObserver} from "./content_oberver";
 import {prepareFilterBtn} from "./content_filter";
-import {loadCategoriesFromDB} from "./category";
+import {initKolAndCatCache} from "./category";
 import {maxElmFindTryTimes, MsgType} from "./consts";
 import {addCustomStyles} from "./utils";
 
@@ -20,15 +20,16 @@ async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateEleme
 
 document.addEventListener('DOMContentLoaded', async () => {
     addCustomStyles('css/content.css');
-    console.log('------>>>TweetCat content script success ✨');
     contentTemplate = await parseContentHtml('html/content.html');
-    observerTweetList();
+    initObserver();
 
+    await initKolAndCatCache();
+    await prepareFilterBtn();
     await parseUserInfo(async (userName) => {
-        await loadCategoriesFromDB(userName);
-        await prepareFilterBtn();
-    });
-})
+        console.log("------->>>> parse current user name:",userName)});
+
+    console.log('------>>>TweetCat content script success ✨');
+});
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
     return contentMsgDispatch(request, _sender, sendResponse)

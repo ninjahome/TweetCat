@@ -1,6 +1,6 @@
-import {activeCategory, getCategoryKeys, setCurrentCategory} from "./category";
+import {curCategories, kolsInActiveCategory, setCurrentCategory} from "./category";
 import {sendMsgToService} from "./utils";
-import {maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
+import {Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {contentTemplate} from "./content";
 
 async function appendFilterBtnToHomePage(navElement: HTMLElement) {
@@ -14,7 +14,7 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement) {
         console.error(`------>>> failed to filter buttons container is ${filterContainerDiv} category button is ${filterBtn} clear button is ${clearBtn}`);
         return;
     }
-    const categories = getCategoryKeys();
+    const categories = curCategories();
     if (!categories || categories.length == 0) {
         console.log("------>>> no categories loaded now");
         return;
@@ -32,7 +32,7 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement) {
         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
         cloneItem.id = "category-filter-item-" + category;
         const btn = cloneItem.querySelector(".category-filter-btn") as HTMLElement
-        btn.innerText = category;
+        btn.innerText = category.name;
         btn.addEventListener('click', () => {
             changeFilterType(category, cloneItem);
         });
@@ -45,7 +45,7 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement) {
 }
 
 async function filterTweetsByCategory() {
-    const kolNameInCategory = activeCategory()
+    const kolNameInCategory = kolsInActiveCategory()
     if (!kolNameInCategory) {
         console.log("------>>> no active category selected");
         return;
@@ -72,8 +72,8 @@ async function filterTweetsByCategory() {
     })
 }
 
-function changeFilterType(category: string, elmItem: HTMLElement) {
-    setCurrentCategory(category);
+function changeFilterType(category: Category, elmItem: HTMLElement) {
+    setCurrentCategory(category.id);
 
     document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
     elmItem.classList.add("active");
@@ -119,8 +119,6 @@ export async function prepareFilterBtn() {
         }
 
         await appendFilterBtnToHomePage(navElement);
-
-
     } finally {
         isCheckingFilterBtn = false;  // 确保执行完成后恢复标记
     }
@@ -146,7 +144,7 @@ export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null 
 }
 
 function resetCategories() {
-    setCurrentCategory("");
+    setCurrentCategory(0);
     document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
     window.location.reload();
 }

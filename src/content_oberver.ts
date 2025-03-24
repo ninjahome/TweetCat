@@ -1,4 +1,4 @@
-import {activeCategory} from "./category";
+import {kolsInActiveCategory} from "./category";
 import {parseNameFromTweetCell} from "./content_filter";
 import {contentTemplate} from "./content";
 
@@ -12,7 +12,7 @@ const observer = new MutationObserver((mutations) => {
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
 
-export function observerTweetList() {
+export function initObserver() {
 
     observer.observe(document.body, {childList: true, subtree: true});
 
@@ -28,7 +28,7 @@ export function observerTweetList() {
 }
 
 function filterTweets(nodes: NodeList) {
-    const kolNameInCategory = activeCategory();
+    const kolNameInCategory = kolsInActiveCategory();
 
     nodes.forEach((divNode) => {
 

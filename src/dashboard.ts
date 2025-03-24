@@ -1,6 +1,6 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {MsgType} from "./consts";
-import {initDatabase} from "./database";
+import {checkAndInitDatabase} from "./database";
 import {showView} from "./utils";
 
 console.log('------>>>Happy developing ✨')
@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
 let routeTarget = "";
 
 async function initDashBoard(): Promise<void> {
-    await initDatabase();
+    await checkAndInitDatabase();
 
     if (routeTarget) {
         showView(routeTarget, dashRouter);

@@ -2,6 +2,7 @@ export const __targetUrlToFilter = 'https://x.com/home';
 
 export const defaultCategoryName = "Priority Follow"
 export const maxElmFindTryTimes = 5;
+export const defaultUserName = 'default_v1';//TODO::for version 2,syncing data by user's tweet name
 
 export enum MsgType {
     OpenPlugin = 'OpenPlugin',
@@ -28,3 +29,12 @@ export class TweetKol {
     }
 }
 
+export class Category {
+    id: number;
+    name: string;
+
+    constructor(i: number, n: string) {
+        this.id = i;
+        this.name = n;
+    }
+}
