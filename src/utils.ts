@@ -31,3 +31,11 @@ export function showView(hash: string, callback?: (hash: string) => void): void 
         callback(hash);
     }
 }
+
+export function addCustomStyles(cssFilePath: string): void {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.href = browser.runtime.getURL(cssFilePath);
+    document.head.appendChild(link);
+}

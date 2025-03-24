@@ -30,29 +30,27 @@ export function observerTweetList() {
 function filterTweets(nodes: NodeList) {
     const kolNameInCategory = activeCategory();
 
-    nodes.forEach((cellInnerDiv) => {
+    nodes.forEach((divNode) => {
 
-        if (!isTweetDiv(cellInnerDiv)) {
+        if (!isTweetDiv(divNode)) {
+            if (!isKolProfileDiv(divNode)){
+                return;
+            }
+            appendFilterMenuOnKolPopupProfile(divNode).then();
             return;
         }
 
-        const user = parseNameFromTweetCell(cellInnerDiv);
+        const user = parseNameFromTweetCell(divNode);
         if (!user) {
-            console.log("------>>> this tweet cell is not for content:", cellInnerDiv);
+            console.log("------>>> this tweet cell is not for content:", divNode);
             return;
         }
 
         if (kolNameInCategory && !kolNameInCategory.has(user.userName)) {
-            cellInnerDiv.style.display = "none";
+            divNode.style.display = "none";
             console.log('------>>> filter out:', user.nameVal());
             return;
         }
-
-        appendFilterMenuOnTweetCell(cellInnerDiv).then();
-
-        // if (kolNameInCategory?.has(user.userName)) {
-        //     console.log('------>>> tweet hint:', user.nameVal());
-        // }
     });
 }
 
@@ -63,11 +61,19 @@ function isTweetDiv(node: Node): node is HTMLDivElement {
     );
 }
 
-async function appendFilterMenuOnTweetCell(tweetCell: HTMLElement) {
+function isKolProfileDiv(node: Node): node is HTMLDivElement {
+    return (
+        node instanceof HTMLDivElement &&
+        node.dataset.testid === 'HoverCard'
+    );
+}
 
-    const menuAreaDiv = tweetCell.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep") as HTMLElement
+
+async function appendFilterMenuOnKolPopupProfile(kolProfile: HTMLElement) {
+
+    const menuAreaDiv = kolProfile.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep") as HTMLElement
     if (!menuAreaDiv) {
-        console.log("------>>> no menu area in this tweet cell:", tweetCell);
+        console.log("------>>> no menu area in this tweet cell:", kolProfile);
         return;
     }
 

@@ -16,6 +16,8 @@ async function initDashBoard(): Promise<void> {
     } else {
         showView('#onboarding/main-home', dashRouter);
     }
+
+
 }
 
 function dashRouter(path: string): void {

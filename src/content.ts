@@ -1,8 +1,9 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {observerTweetList} from "./content_oberver";
-import {checkFilterBtn, prepareFilterHtmlElm} from "./content_filter";
+import {prepareFilterBtn} from "./content_filter";
 import {loadCategoriesFromDB} from "./content_category";
 import {maxElmFindTryTimes, MsgType} from "./consts";
+import {addCustomStyles} from "./utils";
 
 export let contentTemplate: HTMLTemplateElement;
 
@@ -18,14 +19,14 @@ async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateEleme
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    addCustomStyles('css/content.css');
     console.log('------>>>TweetCat content script success ✨');
-
     contentTemplate = await parseContentHtml('html/content.html');
     observerTweetList();
 
     await parseUserInfo(async (userName) => {
         loadCategoriesFromDB(userName);
-        await prepareFilterHtmlElm();
+        await prepareFilterBtn();
     });
 })
 
@@ -37,7 +38,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     switch (request.action) {
         case MsgType.NaviUrlChanged:
-            checkFilterBtn().then();
+            prepareFilterBtn().then();
             sendResponse({success: true});
             break;
         default:
@@ -51,8 +52,9 @@ let userInfoTryTime = 0;
 
 async function parseUserInfo(callback: (userName: string) => Promise<void>) {
 
-    const userButton = document.querySelector('button[data-testid="SideNav_AccountSwitcher_Button"]') as HTMLElement;
-    if (!userButton) {
+    const userButton = document.querySelector('button[data-testid="SideNav_AccountSwitcher_Button"]');
+    const userNameStr = userButton?.querySelector(".css-175oi2r.r-1wbh5a2.r-dnmrzs.r-1ny4l3l")?.textContent?.trim();
+    if (!userNameStr) {
         console.log("------>>> need load user button later");
 
         userInfoTryTime += 1;
@@ -68,5 +70,6 @@ async function parseUserInfo(callback: (userName: string) => Promise<void>) {
         return;
     }
 
-    await callback('');
+    console.log("------>>> current user name :", userNameStr);
+    await callback(userNameStr);
 }

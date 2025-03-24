@@ -4,12 +4,6 @@ import {sendMsgToService} from "./utils";
 import {maxElmFindTryTimes, MsgType, TweetUser} from "./consts";
 import {contentTemplate} from "./content";
 
-export async function prepareFilterHtmlElm() {
-    addCustomStyles('css/content.css');
-    await checkFilterBtn();
-    translateInjectedElm();
-}
-
 async function appendFilterBtnToHomePage(navElement: HTMLElement) {
 
     const filterContainerDiv = contentTemplate.content.getElementById("category-filter-container");
@@ -21,13 +15,19 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement) {
         console.error(`------>>> failed to filter buttons container is ${filterContainerDiv} category button is ${filterBtn} clear button is ${clearBtn}`);
         return;
     }
+    const categories = getCategoryKeys();
+    if (!categories || categories.length == 0) {
+        console.log("------>>> no categories loaded now");
+        return;
+    }
+
+    console.log("------->>> categories:", categories);
 
     navElement.parentElement!.appendChild(filterContainerDiv);
 
     clearBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
     filterContainerDiv.appendChild(clearBtn);
 
-    const categories = getCategoryKeys();
 
     categories.forEach((category) => {
         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
@@ -43,17 +43,6 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement) {
     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
     filterContainerDiv.appendChild(moreBtn);
     console.log("------>>> add filter container success")
-}
-
-function addCustomStyles(cssFilePath: string): void {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.type = 'text/css';
-    link.href = browser.runtime.getURL(cssFilePath);
-    document.head.appendChild(link);
-}
-
-function translateInjectedElm() {
 }
 
 async function filterTweetsByCategory() {
@@ -101,7 +90,7 @@ async function addMoreCategory() {
 let isCheckingFilterBtn = false;
 let naviTryTime = 0;
 
-export async function checkFilterBtn() {
+export async function prepareFilterBtn() {
     if (isCheckingFilterBtn) {
         console.log('------>>> checkFilterBtn is already running.');
         return;
@@ -119,7 +108,7 @@ export async function checkFilterBtn() {
                 return;
             }
             setTimeout(async () => {
-                await checkFilterBtn();
+                await prepareFilterBtn();
             }, 3000);
             return;
         }
