@@ -30,11 +30,13 @@ export class TweetKol {
 }
 
 export class Category {
-    id: number;
-    name: string;
+    id?: number;
+    catName: string;
+    forUser: string;
 
-    constructor(i: number, n: string) {
+    constructor(n: string, u: string, i?: number) {
+        this.catName = n;
+        this.forUser = u;
         this.id = i;
-        this.name = n;
     }
 }

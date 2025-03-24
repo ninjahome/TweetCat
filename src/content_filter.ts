@@ -1,6 +1,6 @@
 import {curCategories, kolsInActiveCategory, setCurrentCategory} from "./category";
 import {sendMsgToService} from "./utils";
-import {Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
+import {Category, maxElmFindTryTimes, MsgType} from "./consts";
 import {parseContentHtml, parseNameFromTweetCell} from "./content";
 
 async function appendFilterBtnToHomePage(navElement: HTMLElement) {
@@ -32,7 +32,7 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement) {
         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
         cloneItem.id = "category-filter-item-" + category;
         const btn = cloneItem.querySelector(".category-filter-btn") as HTMLElement
-        btn.innerText = category.name;
+        btn.innerText = category.catName;
         btn.addEventListener('click', () => {
             changeFilterType(category, cloneItem);
         });
@@ -73,7 +73,7 @@ async function filterTweetsByCategory() {
 }
 
 function changeFilterType(category: Category, elmItem: HTMLElement) {
-    setCurrentCategory(category.id);
+    setCurrentCategory(category.id!);
 
     document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
     elmItem.classList.add("active");

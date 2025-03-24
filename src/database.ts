@@ -8,7 +8,7 @@ export const __tableKolsInCategory = '__table_kol_in_category__';
 export const __tableSystemSetting = '__table_system_setting__';
 
 const initialCategories = [
-    {category: defaultCategoryName, forUser: defaultUserName},
+    {catName: defaultCategoryName, forUser: defaultUserName},
 ];
 
 const initialKols = [
