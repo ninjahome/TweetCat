@@ -1,5 +1,8 @@
-import {kolsInActiveCategory} from "./category";
 import {parseContentHtml, parseNameFromTweetCell} from "./content";
+import {_curKolFilter} from "./content_filter";
+
+let __menuBtnDiv: HTMLElement;
+let __categoryPopupMenu: HTMLElement;
 
 const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -8,8 +11,6 @@ const observer = new MutationObserver((mutations) => {
         }
     });
 });
-let __menuBtnDiv: HTMLElement;
-let __categoryPopupMenu: HTMLElement;
 
 export async function initObserver() {
 
@@ -29,25 +30,22 @@ export async function initObserver() {
 }
 
 function filterTweets(nodes: NodeList) {
-    const kolNameInCategory = kolsInActiveCategory();
-
     nodes.forEach((divNode) => {
 
-        if (!isTweetDiv(divNode)) {
-            if (!isKolProfileDiv(divNode)){
-                return;
-            }
+        if (isKolProfileDiv(divNode)) {
             appendFilterMenuOnKolPopupProfile(divNode).then();
             return;
         }
 
+        if (_curKolFilter.size === 0 || !isTweetDiv(divNode)) {
+            return;
+        }
         const user = parseNameFromTweetCell(divNode);
         if (!user) {
-            // console.log("------>>> this tweet cell is not for content:", divNode);
             return;
         }
 
-        if (kolNameInCategory && !kolNameInCategory.has(user.userName)) {
+        if (!_curKolFilter.has(user.userName)) {
             divNode.style.display = "none";
             console.log('------>>> filter out:', user.nameVal());
             return;
@@ -96,8 +94,8 @@ function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement) {
     const handleClickOutside = (evt: MouseEvent) => {
         const target = evt.target as HTMLElement;
         if (__categoryPopupMenu.contains(target as Node)) {
-            const menuItem = target.closest('li.menu-item') as  HTMLElement;
-            console.log("------>>> category id=>",menuItem.dataset.categoryid);
+            const menuItem = target.closest('li.menu-item') as HTMLElement;
+            console.log("------>>> category id=>", menuItem.dataset.categoryid);
         }
         __categoryPopupMenu.style.display = 'none';
         document.removeEventListener('click', handleClickOutside);

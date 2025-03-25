@@ -8,11 +8,8 @@ export async function sendMsgToService(data: any, actTyp: string): Promise<any> 
         });
     } catch (e) {
         const error = e as Error;
-        console.log("------>>>send message error", error, data, actTyp);
-        if (error.message.includes("Extension context invalidated")) {
-            window.location.reload();
-        }
-        return {success: -1, data: error.message}
+        console.warn("------>>>send message error", error, data, actTyp);
+        return {success: false, data: error.message}
     }
 }
 

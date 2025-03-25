@@ -6,7 +6,6 @@ import {addCustomStyles} from "./utils";
 
 document.addEventListener('DOMContentLoaded', async () => {
     addCustomStyles('css/content.css');
-
     await initObserver();
     await prepareFilterBtn();
     await parseUserInfo(async (userName) => { console.log("------->>>>tweet user name:",userName)});

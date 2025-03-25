@@ -18,7 +18,7 @@ const initialKols = [
     {kolName: 'realDonaldTrump', categoryTyp: 1}
 ];
 
-export function initDatabase(): Promise<IDBDatabase> {
+function initDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(__databaseName, __currentDatabaseVersion);
 

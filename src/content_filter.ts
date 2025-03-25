@@ -1,7 +1,11 @@
-import {curCategories, kolsInActiveCategory, setCurrentCategory} from "./category";
 import {sendMsgToService} from "./utils";
-import {Category, maxElmFindTryTimes, MsgType} from "./consts";
+import {Category, defaultUserName, maxElmFindTryTimes, MsgType} from "./consts";
 import {parseContentHtml, parseNameFromTweetCell} from "./content";
+
+export let _curKolFilter = new Map<string, boolean>();
+let _curFilterID = -1;
+let isCheckingFilterBtn = false;
+let naviTryTime = 0;
 
 async function appendFilterBtnToHomePage(navElement: HTMLElement) {
     const contentTemplate = await parseContentHtml('html/content.html');
@@ -14,27 +18,25 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement) {
         console.error(`------>>> failed to filter buttons container is ${filterContainerDiv} category button is ${filterBtn} clear button is ${clearBtn}`);
         return;
     }
-    const categories = curCategories();
-    if (!categories || categories.length == 0) {
+
+    const categories = await queryCategoriesFromBG();
+    if (categories.length == 0) {
         console.log("------>>> no categories loaded now");
         return;
     }
-
-    console.log("------->>> categories:", categories);
 
     navElement.parentElement!.appendChild(filterContainerDiv);
 
     clearBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
     filterContainerDiv.appendChild(clearBtn);
 
-
     categories.forEach((category) => {
         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
         cloneItem.id = "category-filter-item-" + category;
         const btn = cloneItem.querySelector(".category-filter-btn") as HTMLElement
         btn.innerText = category.catName;
-        btn.addEventListener('click', () => {
-            changeFilterType(category, cloneItem);
+        btn.addEventListener('click', async () => {
+            await changeFilterType(category, cloneItem);
         });
         filterContainerDiv.appendChild(cloneItem);
     });
@@ -45,16 +47,17 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement) {
 }
 
 async function filterTweetsByCategory() {
-    const kolNameInCategory = kolsInActiveCategory()
-    if (!kolNameInCategory) {
+    if (_curKolFilter.size === 0) {
         console.log("------>>> no active category selected");
         return;
     }
+
     const tweetsContainer = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]') as HTMLElement;
     if (!tweetsContainer) {
         console.warn("------>>> failed to find tweet container when starting to filter")
         return;
     }
+
     tweetsContainer.querySelectorAll('div[data-testid="cellInnerDiv"]').forEach(node => {
         const tweetNode = node as HTMLElement;
         const user = parseNameFromTweetCell(tweetNode);
@@ -63,7 +66,7 @@ async function filterTweetsByCategory() {
             return
         }
 
-        if (kolNameInCategory.has(user.userName)) {
+        if (_curKolFilter.has(user.userName)) {
             console.log('------>>> tweet hint:', user.nameVal());
         } else {
             console.log('------>>> tweet missed:', user.nameVal());
@@ -72,22 +75,25 @@ async function filterTweetsByCategory() {
     })
 }
 
-function changeFilterType(category: Category, elmItem: HTMLElement) {
-    setCurrentCategory(category.id!);
+async function changeFilterType(category: Category, elmItem: HTMLElement) {
+
+    const filter = await queryFilterFromBG(category.id!);
+    if (filter.size === 0) {
+        alert("no kols to apply this category");//TODO::
+        return;
+    }
+
+    _curKolFilter = filter;
+    _curFilterID = category.id!;
 
     document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
     elmItem.classList.add("active");
-
-    filterTweetsByCategory().then();
+    await filterTweetsByCategory();
 }
 
 async function addMoreCategory() {
     await sendMsgToService("#onboarding/main-home", MsgType.OpenPlugin);
 }
-
-
-let isCheckingFilterBtn = false;
-let naviTryTime = 0;
 
 export async function prepareFilterBtn() {
     if (isCheckingFilterBtn) {
@@ -125,8 +131,23 @@ export async function prepareFilterBtn() {
 }
 
 function resetCategories() {
-    setCurrentCategory(0);
+    _curFilterID = -1;
     document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
     window.location.reload();
 }
 
+async function queryFilterFromBG(catID: number): Promise<Map<string, boolean>> {
+    const rsp = await sendMsgToService(catID, MsgType.QueryKolByCatID)
+    if (!rsp.success) {
+        return new Map<string, boolean>();
+    }
+    return new Map(rsp.data);
+}
+
+async function queryCategoriesFromBG(): Promise<Category[]> {
+    const rsp = await sendMsgToService(defaultUserName, MsgType.QueryCatsByUser)
+    if (!rsp.success) {
+        return [];
+    }
+    return rsp.data as Category[];
+}

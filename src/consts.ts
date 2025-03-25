@@ -7,9 +7,9 @@ export const defaultUserName = 'default_v1';//TODO::for version 2,syncing data b
 export enum MsgType {
     OpenPlugin = 'OpenPlugin',
     InitPopup = "InitPopup",
-    NewCategoryItem = 'NewCategoryItem',
-    NewCategoryType = 'NewCategoryType',
     NaviUrlChanged = 'NaviUrlChanged',
+    QueryKolByCatID = 'QueryKolByCatID',
+    QueryCatsByUser = 'QueryCatsByUser',
 }
 
 export class TweetKol {
@@ -38,5 +38,13 @@ export class Category {
         this.catName = n;
         this.forUser = u;
         this.id = i;
+    }
+}
+
+export class KolFilterKey {
+    kolName: string;
+
+    constructor(kn: string) {
+        this.kolName = kn;
     }
 }

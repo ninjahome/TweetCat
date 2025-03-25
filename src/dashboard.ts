@@ -2,7 +2,7 @@ import browser, {Runtime} from "webextension-polyfill";
 import {Category, defaultUserName, MsgType} from "./consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "./database";
 import {showView} from "./utils";
-import {curCategories, initKolAndCatCache, newCategoryCached} from "./category";
+import {loadCategories} from "./category";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -17,7 +17,6 @@ async function initDashBoard(): Promise<void> {
         showView('#onboarding/main-home', dashRouter);
     }
 
-    await initKolAndCatCache();
     await setupMainHomeElm();
 }
 
@@ -51,7 +50,7 @@ export function dashboardMsgDispatch(request: any, _sender: Runtime.MessageSende
 async function setupMainHomeElm() {
     initNewCatBtn();
     initNewCatModalDialog();
-    setupCurCategoryList();
+    await setupCurCategoryList();
 }
 
 function initNewCatBtn() {
@@ -88,23 +87,17 @@ async function addNewCategory() {
         //TODO::show alert
         return;
     }
-    item.id = newID as number;
-    await _reloadCategories(item);
-    modalDialog.style.display = 'none'
 
+    item.id = newID as number;
+    await setupCurCategoryList();
+    modalDialog.style.display = 'none'
     //hide loading
 }
 
-async function _reloadCategories(item:Category) {
-    newCategoryCached(item);
-    setupCurCategoryList();
-    //send message to background;
-}
-
-function setupCurCategoryList() {
+async function setupCurCategoryList() {
     const listDiv = document.getElementById("categories-list") as HTMLElement;
     const catItem = document.getElementById("category-item-template") as HTMLElement;
-    const categories = curCategories();
+    const categories = await loadCategories(defaultUserName);
 
     listDiv.innerHTML = '';
 
