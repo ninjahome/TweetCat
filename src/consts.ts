@@ -10,6 +10,7 @@ export enum MsgType {
     NaviUrlChanged = 'NaviUrlChanged',
     QueryKolByCatID = 'QueryKolByCatID',
     QueryCatsByUser = 'QueryCatsByUser',
+    NewCategoryAdd = 'NewCategoryAdd',
 }
 
 export class TweetKol {

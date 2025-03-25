@@ -2,39 +2,51 @@ import browser, {Runtime} from "webextension-polyfill";
 import {MsgType} from "./consts";
 import {kolsForCategory, loadCategories} from "./category";
 
-export function bgMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true {
+export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void) {
 
     switch (request.action) {
         case MsgType.OpenPlugin:
-            openPlugin(request.data).then();
+            await openPlugin(request.data);
             sendResponse({success: true});
             break;
 
         case MsgType.QueryKolByCatID:
-            kolsForCategory(request.data).then(data => {
-                sendResponse({success: true, data: Array.from(data.entries())});
-            }).catch(err => {
-                sendResponse({success: false, data: err.message});
-            });
+            const data = await kolsForCategory(request.data);
+            sendResponse({success: true, data: Array.from(data.entries())});
             break;
 
         case MsgType.QueryCatsByUser:
-            loadCategories(request.data).then(data=>{
-                sendResponse({success: true, data: data});
-            }).catch(err=>{
-                sendResponse({success: false, data: err.message});
-            });
+            sendResponse({success: true, data: await loadCategories(request.data)});
+            break;
+
+        case MsgType.NewCategoryAdd:
+            broadcastToContent(MsgType.NewCategoryAdd, await loadCategories(request.data));
+            sendResponse({success: true});
             break;
 
         default:
             sendResponse({success: true});
             break;
     }
-
-    return true;
 }
 
 async function openPlugin(data: any) {
     await browser.action.openPopup();
     await browser.runtime.sendMessage({action: MsgType.InitPopup, data: data})
+}
+
+function broadcastToContent(action: string, data: any) {
+    browser.tabs.query({}).then((tabs) => {
+        for (const tab of tabs) {
+            if (tab.id !== undefined) {  // 确保 tab.id 存在
+                browser.tabs.sendMessage(tab.id, {
+                    action: action,
+                    data: data
+                }).catch(err => {
+                    // 捕获某些tab没有注入content script时的错误
+                    console.log(`------>>>Tab ${tab.id} 无法接收消息:`, err);
+                });
+            }
+        }
+    });
 }

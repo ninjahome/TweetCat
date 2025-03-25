@@ -10,7 +10,6 @@ self.addEventListener('activate', (event) => {
     const extendableEvent = event as ExtendableEvent;
     extendableEvent.waitUntil((self as unknown as ServiceWorkerGlobalScope).clients.claim());
     extendableEvent.waitUntil(createAlarm());
-    extendableEvent.waitUntil(checkAndInitDatabase());
 });
 
 self.addEventListener('install', (event) => {
@@ -27,15 +26,21 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
         }).then(() => {
         });
     }
+    checkAndInitDatabase().catch(() => {
+    });
 });
 
 browser.runtime.onStartup.addListener(() => {
     console.log('------>>> onStartup......');
-    checkAndInitDatabase().then();
+    checkAndInitDatabase().catch(() => {
+    });
 });
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
-    return bgMsgDispatch(request, _sender, sendResponse)
+    checkAndInitDatabase().then(async () => {
+        await bgMsgDispatch(request, _sender, sendResponse);
+    })
+    return true;
 });
 
 async function handleNavigation(details: WebNavigation.OnCompletedDetailsType | WebNavigation.OnHistoryStateUpdatedDetailsType) {

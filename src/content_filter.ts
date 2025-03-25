@@ -7,7 +7,7 @@ let _curFilterID = -1;
 let isCheckingFilterBtn = false;
 let naviTryTime = 0;
 
-async function appendFilterBtnToHomePage(navElement: HTMLElement) {
+async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Category[]) {
     const contentTemplate = await parseContentHtml('html/content.html');
     const filterContainerDiv = contentTemplate.content.getElementById("category-filter-container");
     const filterBtn = contentTemplate.content.getElementById("category-filter-item");
@@ -16,12 +16,6 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement) {
 
     if (!filterContainerDiv || !filterBtn || !moreBtn || !clearBtn) {
         console.error(`------>>> failed to filter buttons container is ${filterContainerDiv} category button is ${filterBtn} clear button is ${clearBtn}`);
-        return;
-    }
-
-    const categories = await queryCategoriesFromBG();
-    if (categories.length == 0) {
-        console.log("------>>> no categories loaded now");
         return;
     }
 
@@ -124,13 +118,24 @@ export async function prepareFilterBtn() {
             return;
         }
 
-        await appendFilterBtnToHomePage(navElement);
+        const categories = await queryCategoriesFromBG();
+        if (categories.length == 0) {
+            console.log("------>>> no categories loaded now");
+            return;
+        }
+
+        await appendFilterBtnToHomePage(navElement, categories);
     } finally {
         isCheckingFilterBtn = false;  // 确保执行完成后恢复标记
     }
 }
 
 function resetCategories() {
+
+    if (_curFilterID <= 0) {
+        return;
+    }
+
     _curFilterID = -1;
     document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
     window.location.reload();
@@ -139,6 +144,7 @@ function resetCategories() {
 async function queryFilterFromBG(catID: number): Promise<Map<string, boolean>> {
     const rsp = await sendMsgToService(catID, MsgType.QueryKolByCatID)
     if (!rsp.success) {
+        console.log("------>>> load filter error:", rsp.data);
         return new Map<string, boolean>();
     }
     return new Map(rsp.data);
@@ -147,7 +153,17 @@ async function queryFilterFromBG(catID: number): Promise<Map<string, boolean>> {
 async function queryCategoriesFromBG(): Promise<Category[]> {
     const rsp = await sendMsgToService(defaultUserName, MsgType.QueryCatsByUser)
     if (!rsp.success) {
+        console.log("------>>> load categories error:", rsp.data);
         return [];
     }
     return rsp.data as Category[];
+}
+
+export async function reloadCategoryContainer(categories: Category[]) {
+    const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
+    let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container") as HTMLElement;
+    if (filterContainerDiv) {
+        filterContainerDiv.remove();
+    }
+    await appendFilterBtnToHomePage(navElement, categories);
 }

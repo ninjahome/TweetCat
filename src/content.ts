@@ -1,14 +1,16 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {initObserver} from "./content_oberver";
-import {prepareFilterBtn} from "./content_filter";
-import {maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
+import {prepareFilterBtn, reloadCategoryContainer} from "./content_filter";
+import {Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {addCustomStyles} from "./utils";
 
 document.addEventListener('DOMContentLoaded', async () => {
     addCustomStyles('css/content.css');
     await initObserver();
     await prepareFilterBtn();
-    await parseUserInfo(async (userName) => { console.log("------->>>>tweet user name:",userName)});
+    await parseUserInfo(async (userName) => {
+        console.log("------->>>>tweet user name:", userName)
+    });
 
     console.log('------>>>TweetCat content script success ✨');
 });
@@ -24,6 +26,12 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             prepareFilterBtn().then();
             sendResponse({success: true});
             break;
+
+        case MsgType.NewCategoryAdd:
+            reloadCategoryContainer(request.data as Category[]).then();
+            sendResponse({success: true});
+            break;
+
         default:
             sendResponse({success: true});
     }
@@ -51,7 +59,7 @@ async function parseUserInfo(callback: (userProfile: string) => Promise<void>) {
         }, 3000);
         return;
     }
-    await callback(profileBtn .href);
+    await callback(profileBtn.href);
 }
 
 export async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateElement> {

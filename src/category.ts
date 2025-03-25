@@ -1,7 +1,7 @@
 import {Category} from "./consts";
 import {__tableCategory, __tableKolsInCategory, databaseQueryByFilter} from "./database";
 
-export async function loadCategories(forUser:string):Promise<Category[]> {
+export async function loadCategories(forUser: string): Promise<Category[]> {
     const categories = await databaseQueryByFilter(__tableCategory, (item) => {
         return item.forUser === forUser;
     })
@@ -13,11 +13,11 @@ export async function loadCategories(forUser:string):Promise<Category[]> {
     }
 
     return [...tmpCatArr].sort((a, b) =>
-        a.catName.localeCompare(b.catName)
+        a.id! - b.id!//.localeCompare(b.catName)
     );
 }
 
-export async function kolsForCategory(catID:number): Promise<Map<string, boolean> >{
+export async function kolsForCategory(catID: number): Promise<Map<string, boolean>> {
     const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => {
         return item.categoryTyp === catID;
     });
@@ -27,5 +27,5 @@ export async function kolsForCategory(catID:number): Promise<Map<string, boolean
         kolInOneCategory.set(k.kolName, true);
     }
 
-    return  kolInOneCategory;
+    return kolInOneCategory;
 }

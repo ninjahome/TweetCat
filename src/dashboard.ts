@@ -83,11 +83,11 @@ async function addNewCategory() {
     const item = new Category(newCatStr, defaultUserName);
     delete item.id;
     const newID = await databaseAddItem(__tableCategory, item);
-    if(!newID){
+    if (!newID) {
         //TODO::show alert
         return;
     }
-
+    await browser.runtime.sendMessage({action: MsgType.NewCategoryAdd, data: item.forUser});
     item.id = newID as number;
     await setupCurCategoryList();
     modalDialog.style.display = 'none'
