@@ -31,13 +31,7 @@ export async function initObserver() {
 
 function filterTweets(nodes: NodeList) {
     nodes.forEach((divNode) => {
-
-        if (isKolProfileDiv(divNode)) {
-            appendFilterMenuOnKolPopupProfile(divNode).then();
-            return;
-        }
-
-        if (_curKolFilter.size === 0 || !isTweetDiv(divNode)) {
+        if ( !isTweetDiv(divNode)) {
             return;
         }
         const user = parseNameFromTweetCell(divNode);
@@ -45,11 +39,16 @@ function filterTweets(nodes: NodeList) {
             return;
         }
 
-        if (!_curKolFilter.has(user.userName)) {
-            divNode.style.display = "none";
-            console.log('------>>> filter out:', user.nameVal());
+        if(_curKolFilter.size === 0){
             return;
         }
+
+        if (_curKolFilter.has(user.userName)) {
+            console.log('------>>> hint:', user.nameVal());
+            return;
+        }
+
+        divNode.style.display = "none";
     });
 }
 
@@ -57,13 +56,6 @@ function isTweetDiv(node: Node): node is HTMLDivElement {
     return (
         node instanceof HTMLDivElement &&
         node.dataset.testid === 'cellInnerDiv'
-    );
-}
-
-function isKolProfileDiv(node: Node): node is HTMLDivElement {
-    return (
-        node instanceof HTMLDivElement &&
-        node.dataset.testid === 'HoverCard'
     );
 }
 
