@@ -4,13 +4,14 @@ import {createAlarm} from "./bg_timer";
 import {bgMsgDispatch} from "./bg_msg";
 import {__targetUrlToFilter, MsgType} from "./consts";
 import {checkAndInitDatabase} from "./database";
+import {initKolAndCatCache} from "./category";
 
 self.addEventListener('activate', (event) => {
     console.log('------>>> Service Worker activating......');
     const extendableEvent = event as ExtendableEvent;
     extendableEvent.waitUntil((self as unknown as ServiceWorkerGlobalScope).clients.claim());
     extendableEvent.waitUntil(createAlarm());
-    checkAndInitDatabase().then();
+    initCaches().then();
 });
 
 self.addEventListener('install', (event) => {
@@ -31,7 +32,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
 
 browser.runtime.onStartup.addListener(() => {
     console.log('------>>> onStartup......');
-    checkAndInitDatabase().then();
+    initCaches().then();
 });
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
@@ -46,3 +47,8 @@ async function handleNavigation(details: WebNavigation.OnCompletedDetailsType | 
 
 browser.webNavigation.onCompleted.addListener(handleNavigation, {url: [{urlMatches: 'https://x.com/*'}]});
 browser.webNavigation.onHistoryStateUpdated.addListener(handleNavigation, {url: [{urlMatches: 'https://x.com/*'}]});
+
+async function initCaches() {
+    await checkAndInitDatabase();
+    await initKolAndCatCache();
+}

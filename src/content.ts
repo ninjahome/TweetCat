@@ -1,18 +1,13 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {initObserver} from "./content_oberver";
 import {prepareFilterBtn} from "./content_filter";
-import {initKolAndCatCache} from "./category";
 import {maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {addCustomStyles} from "./utils";
-import {checkAndInitDatabase} from "./database";
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await checkAndInitDatabase();
-
     addCustomStyles('css/content.css');
 
     await initObserver();
-    await initKolAndCatCache();
     await prepareFilterBtn();
     await parseUserInfo(async (userName) => { console.log("------->>>>tweet user name:",userName)});
 
