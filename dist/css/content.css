@@ -44,9 +44,36 @@
 }
 
 .category-popup-menu .menu-item.active {
-    background-color: blue;
+    background-color: rgba(132, 171, 133, 0.1);
 }
 
 .category-popup-menu .menu-item:hover {
     background-color: #f5f8fa;
+}
+
+.cls-1 {
+    fill: #f6cd01;
+}
+
+.cls-2 {
+    fill: #866afb;
+}
+
+.cls-3 {
+    fill: #fe466c;
+}
+
+.cls-4 {
+    fill: #06cbad;
+}
+
+.cls-5 {
+    fill: #4592ef;
+}
+
+.dot {
+    display: inline-block;
+    width: 8px;           /* 控制圆点大小 */
+    height: 8px;
+    border-radius: 50%;    /* 关键：变成圆形 */
 }

@@ -1,6 +1,7 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {MsgType} from "./consts";
-import {kolsForCategory, loadCategories} from "./category";
+import {MsgType, TweetKol} from "./consts";
+import {kolsForCategory, loadCategories, removeKolsCategory, updateKolsCategory} from "./category";
+import {databaseUpdate} from "./database";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void) {
 
@@ -24,6 +25,14 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             sendResponse({success: true});
             break;
 
+        case MsgType.UpdateKolCat:
+            await updateKolsCategory(request.data as TweetKol);
+            sendResponse({success: true});
+            break;
+        case MsgType.RemoveKol:
+            await removeKolsCategory(request.data);
+            sendResponse({success: true});
+            break;
         default:
             sendResponse({success: true});
             break;

@@ -1,5 +1,12 @@
-import {Category} from "./consts";
-import {__tableCategory, __tableKolsInCategory, databaseQueryByFilter} from "./database";
+import {Category, defaultUserName, MsgType, TweetKol} from "./consts";
+import {
+    __tableCategory,
+    __tableKolsInCategory,
+    databaseDelete,
+    databaseQueryByFilter,
+    databaseUpdate
+} from "./database";
+import {sendMsgToService} from "./utils";
 
 export async function loadCategories(forUser: string): Promise<Category[]> {
     const categories = await databaseQueryByFilter(__tableCategory, (item) => {
@@ -28,4 +35,21 @@ export async function kolsForCategory(catID: number): Promise<Map<string, boolea
     }
 
     return kolInOneCategory;
+}
+
+export async function queryCategoriesFromBG(): Promise<Category[]> {
+    const rsp = await sendMsgToService(defaultUserName, MsgType.QueryCatsByUser)
+    if (!rsp.success) {
+        console.log("------>>> load categories error:", rsp.data);
+        return [];
+    }
+    return rsp.data as Category[];
+}
+
+export async function updateKolsCategory(kol: TweetKol) {
+    await databaseUpdate(__tableKolsInCategory, kol.userName, kol)
+}
+
+export async function removeKolsCategory(kolName: string) {
+    await databaseDelete(__tableKolsInCategory, kolName);
 }

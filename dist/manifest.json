@@ -50,7 +50,7 @@
       "resources": [
         "css/*.css",
         "html/*.html",
-        "images/*"
+        "images/tweetcat.svg"
       ],
       "matches": [
         "https://twitter.com/*",

@@ -49,8 +49,7 @@ function initCategory(request: IDBOpenDBRequest) {
     if (db.objectStoreNames.contains(__tableCategory)) {
         return;
     }
-
-    const objectStore = db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
+    db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
     if (transaction) {
         const categoryStore = transaction.objectStore(__tableCategory);
         initialCategories.forEach(category => {
@@ -69,8 +68,7 @@ function initKolsInCategory(request: IDBOpenDBRequest) {
     if (db.objectStoreNames.contains(__tableKolsInCategory)) {
         return;
     }
-
-    const objectStore = db.createObjectStore(__tableKolsInCategory, {keyPath: 'id', autoIncrement: true});
+    db.createObjectStore(__tableKolsInCategory, {keyPath: 'kolName'});
     if (transaction) {
         const categoryStore = transaction.objectStore(__tableKolsInCategory);
         initialKols.forEach(kol => {

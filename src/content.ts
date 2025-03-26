@@ -1,13 +1,15 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {initObserver} from "./content_oberver";
-import {prepareFilterBtn, reloadCategoryContainer} from "./content_filter";
+import {appendFilterContainerAtTop, appendFilterOnKolProfileHome, reloadCategoryContainer} from "./content_filter";
 import {Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
-import {addCustomStyles} from "./utils";
+import {addCustomStyles, isTwitterUserProfile} from "./utils";
+
+export let curPageIsHome = true;
 
 document.addEventListener('DOMContentLoaded', async () => {
     addCustomStyles('css/content.css');
     await initObserver();
-    await prepareFilterBtn();
+    await appendFilterContainerAtTop();
     await parseUserInfo(async (userName) => {
         console.log("------->>>>tweet user name:", userName)
     });
@@ -23,7 +25,11 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     switch (request.action) {
         case MsgType.NaviUrlChanged:
-            prepareFilterBtn().then();
+            curPageIsHome = request.isHome;
+            appendFilterContainerAtTop().then();
+            if(isTwitterUserProfile()){
+                appendFilterOnKolProfileHome();
+            }
             sendResponse({success: true});
             break;
 

@@ -36,3 +36,17 @@ export function addCustomStyles(cssFilePath: string): void {
     link.href = browser.runtime.getURL(cssFilePath);
     document.head.appendChild(link);
 }
+
+export function isTwitterUserProfile(): boolean {
+    const path = window.location.pathname;
+    const match = path.match(/^\/([a-zA-Z0-9_]+)$/);
+    const excludedPaths = ['home', 'explore', 'notifications', 'messages', 'settings', 'login', 'signup'];
+
+    // 先检查 URL 是否有效且不在排除列表中
+    if (!match || excludedPaths.includes(match[1])) {
+        return false;
+    }
+
+    // 再检查页面元素
+    return !!document.querySelector('[data-testid="UserProfileHeader_Items"]');
+}

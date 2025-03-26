@@ -1,6 +1,7 @@
 import {sendMsgToService} from "./utils";
 import {Category, defaultUserName, maxElmFindTryTimes, MsgType} from "./consts";
-import {parseContentHtml, parseNameFromTweetCell} from "./content";
+import {curPageIsHome, parseContentHtml, parseNameFromTweetCell} from "./content";
+import {queryCategoriesFromBG} from "./category";
 
 export let _curKolFilter = new Map<string, boolean>();
 let _curFilterID = -1;
@@ -89,9 +90,9 @@ async function addMoreCategory() {
     await sendMsgToService("#onboarding/main-home", MsgType.OpenPlugin);
 }
 
-export async function prepareFilterBtn() {
-    if (isCheckingFilterBtn) {
-        console.log('------>>> checkFilterBtn is already running.');
+export async function appendFilterContainerAtTop() {
+    if (isCheckingFilterBtn || !curPageIsHome) {
+        console.log('------>>> checkFilterBtn is already running or no need ');
         return;
     }
 
@@ -107,7 +108,7 @@ export async function prepareFilterBtn() {
                 return;
             }
             setTimeout(async () => {
-                await prepareFilterBtn();
+                await appendFilterContainerAtTop();
             }, 3000);
             return;
         }
@@ -150,15 +151,6 @@ async function queryFilterFromBG(catID: number): Promise<Map<string, boolean>> {
     return new Map(rsp.data);
 }
 
-async function queryCategoriesFromBG(): Promise<Category[]> {
-    const rsp = await sendMsgToService(defaultUserName, MsgType.QueryCatsByUser)
-    if (!rsp.success) {
-        console.log("------>>> load categories error:", rsp.data);
-        return [];
-    }
-    return rsp.data as Category[];
-}
-
 export async function reloadCategoryContainer(categories: Category[]) {
     const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
     let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container") as HTMLElement;
@@ -166,4 +158,14 @@ export async function reloadCategoryContainer(categories: Category[]) {
         filterContainerDiv.remove();
     }
     await appendFilterBtnToHomePage(navElement, categories);
+}
+
+export function appendFilterOnKolProfileHome(){
+    const profileToolBarDiv = document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
+    if(!profileToolBarDiv){
+        console.log("------>>> failed to find profile tool bar!");
+        return;
+    }
+
+    console.log("------>>> tool bar:", profileToolBarDiv);
 }

@@ -4,6 +4,8 @@ export const defaultCategoryName = "Priority Follow"
 export const maxElmFindTryTimes = 5;
 export const defaultUserName = 'default_v1';//TODO::for version 2,syncing data by user's tweet name
 
+export const itemColorGroup = ['#f6cd01', '#866afb', '#fe466c', '#06cbad', '#4592ef']
+
 export enum MsgType {
     OpenPlugin = 'OpenPlugin',
     InitPopup = "InitPopup",
@@ -11,22 +13,27 @@ export enum MsgType {
     QueryKolByCatID = 'QueryKolByCatID',
     QueryCatsByUser = 'QueryCatsByUser',
     NewCategoryAdd = 'NewCategoryAdd',
+    UpdateKolCat = 'UpdateKolCat',
+    RemoveKol = 'RemoveKol'
 }
 
 export class TweetKol {
     userName: string;
     displayName: string;
+    catID?: number;
 
-    constructor(uName: string, dName: string) {
+    constructor(uName: string, dName: string, cID?: number) {
         this.userName = uName;
         this.displayName = dName;
+        this.catID = cID;
     }
 
     nameVal(): string | null {
         if (!this.userName || !this.displayName) {
             return null;
         }
-        return this.displayName + "@" + this.userName;
+
+        return this.displayName + "@" + this.userName + "->" + (this.catID ?? "-1");
     }
 }
 

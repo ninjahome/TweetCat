@@ -44,9 +44,10 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
 });
 
 async function handleNavigation(details: WebNavigation.OnCompletedDetailsType | WebNavigation.OnHistoryStateUpdatedDetailsType) {
-    if (details.url === __targetUrlToFilter) {
-        await browser.tabs.sendMessage(details.tabId, {action: MsgType.NaviUrlChanged});
-    }
+    await browser.tabs.sendMessage(details.tabId, {
+        action: MsgType.NaviUrlChanged,
+        isHome: details.url === __targetUrlToFilter
+    });
 }
 
 browser.webNavigation.onCompleted.addListener(handleNavigation, {url: [{urlMatches: 'https://x.com/*'}]});
