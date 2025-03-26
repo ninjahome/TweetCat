@@ -12,10 +12,10 @@ const initialCategories = [
 ];
 
 const initialKols = [
-    {kolName: 'TweetCatOrg', categoryTyp: 1},
-    {kolName: 'elonmusk', categoryTyp: 1},
-    {kolName: 'BillGates', categoryTyp: 1},
-    {kolName: 'realDonaldTrump', categoryTyp: 1}
+    {kolName: 'TweetCatOrg', catID: 1,displayName:'TweetCat'},
+    {kolName: 'elonmusk', catID: 1,displayName:'Elon Musk'},
+    {kolName: 'BillGates', catID: 1,displayName:'Bill Gates'},
+    {kolName: 'realDonaldTrump', catID: 1,displayName:'Donald J. Trump'}
 ];
 
 function initDatabase(): Promise<IDBDatabase> {

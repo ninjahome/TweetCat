@@ -30,6 +30,8 @@ export async function initObserver() {
 
     __categoryPopupMenu = popupMenu.cloneNode(true) as HTMLElement;
     document.body.appendChild(__categoryPopupMenu);
+    const removeBtn = __categoryPopupMenu.querySelector(".menu-item-remove") as HTMLElement;
+    removeBtn.addEventListener('click', removeKolFromCategory);
 }
 
 function filterTweets(nodes: NodeList) {
@@ -50,7 +52,7 @@ function filterTweets(nodes: NodeList) {
         }
 
         if (_curKolFilter.has(user.userName)) {
-            console.log('------>>> hint:', user.nameVal());
+            console.log('------>>> hint:', user.displayString());
             return;
         }
 
@@ -65,7 +67,7 @@ function isTweetDiv(node: Node): node is HTMLDivElement {
     );
 }
 
-function appendFilterBtn(tweetCellDiv: HTMLElement, kol: TweetKol) {
+function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
 
     const menuAreaDiv = tweetCellDiv.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep") as HTMLElement
     if (!menuAreaDiv) {
@@ -81,6 +83,12 @@ function appendFilterBtn(tweetCellDiv: HTMLElement, kol: TweetKol) {
             alert("no valid categories");//TODO::
             return;
         }
+
+        let kol = await queryKolDetailByName(rawKol.userName);
+        if (!kol) {
+            kol = rawKol;
+        }
+
         showPopupMenu(e, clone, categories, kol);
     };
 }
@@ -93,6 +101,7 @@ function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories
     __categoryPopupMenu.style.top = `${rect.bottom + window.scrollY}px`;
     __categoryPopupMenu.style.left = `${rect.left + window.scrollX}px`;
     __categoryPopupMenu.style.display = 'block';
+    __categoryPopupMenu.dataset.kol = JSON.stringify(kol);
 
     const container = __categoryPopupMenu.querySelector(".category-item-container") as HTMLElement;
     const itemLi = __categoryPopupMenu.querySelector(".menu-item") as HTMLElement
@@ -102,15 +111,35 @@ function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories
         container.append(clone);
     });
 
+    const removeBtn = __categoryPopupMenu.querySelector(".menu-item-remove") as HTMLElement;
+    removeBtn.style.display = !!kol.catID ? 'block' : 'none';
+
     document.addEventListener('click', handleClickOutside);
+}
+
+function removeKolFromCategory() {
+
+    const kolStr = __categoryPopupMenu.dataset.kol;
+    if (!kolStr) {
+        alert("failed to remove KOLs category");//TODO::
+        return;
+    }
+
+    const kol = TweetKol.FromString(kolStr)
+    sendMsgToService(kol.userName, MsgType.RemoveKol).then();
 }
 
 function handleClickOutside(evt: MouseEvent) {
     const target = evt.target as HTMLElement;
+
     if (__categoryPopupMenu.contains(target as Node)) {
         const menuItem = target.closest('li.menu-item') as HTMLElement;
-        console.log("------>>> category id=>", menuItem.dataset.categoryid);
+        const kolStr = __categoryPopupMenu.dataset.kol as string;
+        const kol = TweetKol.FromString(kolStr);
+        kol.catID = Number(menuItem.dataset.categoryid);
+        sendMsgToService(kol, MsgType.UpdateKolCat).then();
     }
+
     __categoryPopupMenu.style.display = 'none';
     document.removeEventListener('click', handleClickOutside);
 }
@@ -122,6 +151,7 @@ function _cloneMenuItem(templateItem: HTMLElement, cat: Category, kol: TweetKol)
         clone.classList.add(".active");
     }
 
+    clone.dataset.categoryid = '' + cat.id;
     (clone.querySelector(".dot") as HTMLElement).style.backgroundColor = itemColorGroup[cat.id! % 5];
 
     clone.querySelector(".menu-item-category-name")!.textContent = cat.catName;
@@ -142,4 +172,14 @@ function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: TweetKol
 
     kol.catID = cat.id;
     sendMsgToService(kol, MsgType.UpdateKolCat).then();
+}
+
+async function queryKolDetailByName(kolName: string): Promise<TweetKol | null> {
+    const rsp = await sendMsgToService(kolName, MsgType.QueryKolCat);
+
+    if (!rsp) {
+        return null;
+    }
+
+    return rsp.data as TweetKol;
 }

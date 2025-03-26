@@ -1,5 +1,5 @@
 import {sendMsgToService} from "./utils";
-import {Category, defaultUserName, maxElmFindTryTimes, MsgType} from "./consts";
+import {Category, maxElmFindTryTimes, MsgType} from "./consts";
 import {curPageIsHome, parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG} from "./category";
 
@@ -62,9 +62,9 @@ async function filterTweetsByCategory() {
         }
 
         if (_curKolFilter.has(user.userName)) {
-            console.log('------>>> tweet hint:', user.nameVal());
+            console.log('------>>> tweet hint:', user.displayString());
         } else {
-            console.log('------>>> tweet missed:', user.nameVal());
+            console.log('------>>> tweet missed:', user.displayString());
             tweetNode.style.display = "none";
         }
     })

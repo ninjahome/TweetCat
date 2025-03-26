@@ -13,6 +13,7 @@ export enum MsgType {
     QueryKolByCatID = 'QueryKolByCatID',
     QueryCatsByUser = 'QueryCatsByUser',
     NewCategoryAdd = 'NewCategoryAdd',
+    QueryKolCat = 'QueryKolCat',
     UpdateKolCat = 'UpdateKolCat',
     RemoveKol = 'RemoveKol'
 }
@@ -28,12 +29,16 @@ export class TweetKol {
         this.catID = cID;
     }
 
-    nameVal(): string | null {
+    displayString(): string | null {
         if (!this.userName || !this.displayName) {
             return null;
         }
 
-        return this.displayName + "@" + this.userName + "->" + (this.catID ?? "-1");
+        return this.displayName + "@" + this.userName + "@" + (this.catID ?? "-1");
+    }
+
+    static FromString(str:string):TweetKol{
+        return JSON.parse(str) as TweetKol;
     }
 }
 
