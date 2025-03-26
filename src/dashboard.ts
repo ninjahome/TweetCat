@@ -91,6 +91,7 @@ async function addNewCategory() {
     item.id = newID as number;
     await setupCurCategoryList();
     modalDialog.style.display = 'none'
+    newCatInput.value = '';
     //hide loading
 }
 

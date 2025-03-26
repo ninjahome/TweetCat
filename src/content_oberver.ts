@@ -127,6 +127,7 @@ function removeKolFromCategory() {
 
     const kol = TweetKol.FromString(kolStr)
     sendMsgToService(kol.kolName, MsgType.RemoveKol).then();
+    __categoryPopupMenu.style.display = 'none';
 }
 
 function handleClickOutside(evt: MouseEvent) {
@@ -156,7 +157,7 @@ function _cloneMenuItem(templateItem: HTMLElement, cat: Category, kol: TweetKol)
     (clone.querySelector(".dot") as HTMLElement).style.backgroundColor = itemColorGroup[cat.id! % 5];
 
     clone.querySelector(".menu-item-category-name")!.textContent = cat.catName;
-    clone.addEventListener('click', (evt) => {
+    clone.addEventListener('click', () => {
         changeCategoryOfKol(clone, cat, kol);
         __categoryPopupMenu.style.display = 'none';
     });

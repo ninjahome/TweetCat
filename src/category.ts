@@ -26,7 +26,7 @@ export async function loadCategories(forUser: string): Promise<Category[]> {
 
 export async function kolsForCategory(catID: number): Promise<Map<string, boolean>> {
     const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => {
-        return item.categoryTyp === catID;
+        return item.catID === catID;
     });
 
     const kolInOneCategory = new Map<string, boolean>();
