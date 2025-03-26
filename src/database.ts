@@ -12,10 +12,10 @@ const initialCategories = [
 ];
 
 const initialKols = [
-    {kolName: 'TweetCatOrg', catID: 1,displayName:'TweetCat'},
-    {kolName: 'elonmusk', catID: 1,displayName:'Elon Musk'},
-    {kolName: 'BillGates', catID: 1,displayName:'Bill Gates'},
-    {kolName: 'realDonaldTrump', catID: 1,displayName:'Donald J. Trump'}
+    {kolName: 'TweetCatOrg', catID: 1, displayName: 'TweetCat'},
+    {kolName: 'elonmusk', catID: 1, displayName: 'Elon Musk'},
+    {kolName: 'BillGates', catID: 1, displayName: 'Bill Gates'},
+    {kolName: 'realDonaldTrump', catID: 1, displayName: 'Donald J. Trump'}
 ];
 
 function initDatabase(): Promise<IDBDatabase> {
@@ -150,7 +150,7 @@ export function databaseGetByIndex(storeName: string, idx: string, idxVal: any):
     });
 }
 
-export function databaseGetByID(storeName: string, id: any): Promise<any> {
+export function databaseGet(storeName: string, keyPath: any): Promise<any> {
     return new Promise((resolve, reject) => {
         if (!__databaseObj) {
             reject('Database is not initialized');
@@ -159,7 +159,7 @@ export function databaseGetByID(storeName: string, id: any): Promise<any> {
         const transaction = __databaseObj.transaction([storeName], 'readonly');
         const objectStore = transaction.objectStore(storeName);
 
-        const request = objectStore.get(id);
+        const request = objectStore.get(keyPath);
 
         request.onsuccess = event => {
             const result = (event.target as IDBRequest).result;
@@ -176,7 +176,7 @@ export function databaseGetByID(storeName: string, id: any): Promise<any> {
     });
 }
 
-export function databaseUpdate(storeName: string, id: any, newData: any): Promise<string> {
+export function databaseUpdate(storeName: string, keyName: string, keyVal:any, newData: any): Promise<string> {
     return new Promise((resolve, reject) => {
         if (!__databaseObj) {
             reject('Database is not initialized');
@@ -185,7 +185,7 @@ export function databaseUpdate(storeName: string, id: any, newData: any): Promis
         const transaction = __databaseObj.transaction([storeName], 'readwrite');
         const objectStore = transaction.objectStore(storeName);
 
-        const request = objectStore.put({...newData, id});
+        const request = objectStore.put({...newData, [keyName]:keyVal});
 
         request.onsuccess = () => {
             resolve(`Data updated in ${storeName} successfully`);
@@ -197,7 +197,7 @@ export function databaseUpdate(storeName: string, id: any, newData: any): Promis
     });
 }
 
-export function databaseDelete(storeName: string, id: any): Promise<string> {
+export function databaseDelete(storeName: string, keyPath: any): Promise<string> {
     return new Promise((resolve, reject) => {
         if (!__databaseObj) {
             reject('Database is not initialized');
@@ -205,7 +205,7 @@ export function databaseDelete(storeName: string, id: any): Promise<string> {
         }
         const transaction = __databaseObj.transaction([storeName], 'readwrite');
         const objectStore = transaction.objectStore(storeName);
-        const request = objectStore.delete(id);
+        const request = objectStore.delete(keyPath);
 
         request.onsuccess = () => {
             resolve(`Data deleted from ${storeName} successfully`);

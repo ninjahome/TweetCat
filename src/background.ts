@@ -26,8 +26,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
         }).then(() => {
         });
     }
-    checkAndInitDatabase().catch(() => {
-    });
+    checkAndInitDatabase().then();
 });
 
 browser.runtime.onStartup.addListener(() => {

@@ -51,7 +51,7 @@ function filterTweets(nodes: NodeList) {
             return;
         }
 
-        if (_curKolFilter.has(user.userName)) {
+        if (_curKolFilter.has(user.kolName)) {
             console.log('------>>> hint:', user.displayString());
             return;
         }
@@ -84,7 +84,7 @@ function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
             return;
         }
 
-        let kol = await queryKolDetailByName(rawKol.userName);
+        let kol = await queryKolDetailByName(rawKol.kolName);
         if (!kol) {
             kol = rawKol;
         }
@@ -126,18 +126,19 @@ function removeKolFromCategory() {
     }
 
     const kol = TweetKol.FromString(kolStr)
-    sendMsgToService(kol.userName, MsgType.RemoveKol).then();
+    sendMsgToService(kol.kolName, MsgType.RemoveKol).then();
 }
 
 function handleClickOutside(evt: MouseEvent) {
     const target = evt.target as HTMLElement;
 
     if (__categoryPopupMenu.contains(target as Node)) {
-        const menuItem = target.closest('li.menu-item') as HTMLElement;
-        const kolStr = __categoryPopupMenu.dataset.kol as string;
-        const kol = TweetKol.FromString(kolStr);
-        kol.catID = Number(menuItem.dataset.categoryid);
-        sendMsgToService(kol, MsgType.UpdateKolCat).then();
+        // const menuItem = target.closest('li.menu-item') as HTMLElement;
+        // const kolStr = __categoryPopupMenu.dataset.kol as string;
+        // const kol = TweetKol.FromString(kolStr);
+        // kol.catID = Number(menuItem.dataset.categoryid);
+        // sendMsgToService(kol, MsgType.UpdateKolCat).then();
+        return;
     }
 
     __categoryPopupMenu.style.display = 'none';
@@ -148,15 +149,16 @@ function _cloneMenuItem(templateItem: HTMLElement, cat: Category, kol: TweetKol)
     const clone = templateItem.cloneNode(true) as HTMLElement;
     clone.style.display = 'block';
     if (cat.id === kol.catID) {
-        clone.classList.add(".active");
+        clone.classList.add("active");
     }
 
     clone.dataset.categoryid = '' + cat.id;
     (clone.querySelector(".dot") as HTMLElement).style.backgroundColor = itemColorGroup[cat.id! % 5];
 
     clone.querySelector(".menu-item-category-name")!.textContent = cat.catName;
-    clone.addEventListener('click', () => {
-        changeCategoryOfKol(clone, cat, kol)
+    clone.addEventListener('click', (evt) => {
+        changeCategoryOfKol(clone, cat, kol);
+        __categoryPopupMenu.style.display = 'none';
     });
 
     return clone;
@@ -168,7 +170,7 @@ function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: TweetKol
     }
 
     __categoryPopupMenu.querySelectorAll(".menu-item").forEach(itemDiv => itemDiv.classList.remove(".active"));
-    menuItem.classList.add(".active");
+    menuItem.classList.add("active");
 
     kol.catID = cat.id;
     sendMsgToService(kol, MsgType.UpdateKolCat).then();

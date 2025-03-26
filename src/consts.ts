@@ -19,22 +19,22 @@ export enum MsgType {
 }
 
 export class TweetKol {
-    userName: string;
+    kolName: string;
     displayName: string;
     catID?: number;
 
     constructor(uName: string, dName: string, cID?: number) {
-        this.userName = uName;
+        this.kolName = uName;
         this.displayName = dName;
         this.catID = cID;
     }
 
     displayString(): string | null {
-        if (!this.userName || !this.displayName) {
+        if (!this.kolName || !this.displayName) {
             return null;
         }
 
-        return this.displayName + "@" + this.userName + "@" + (this.catID ?? "-1");
+        return this.displayName + "@" + this.kolName + "@" + (this.catID ?? "-1");
     }
 
     static FromString(str:string):TweetKol{

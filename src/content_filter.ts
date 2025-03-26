@@ -61,7 +61,7 @@ async function filterTweetsByCategory() {
             return
         }
 
-        if (_curKolFilter.has(user.userName)) {
+        if (_curKolFilter.has(user.kolName)) {
             console.log('------>>> tweet hint:', user.displayString());
         } else {
             console.log('------>>> tweet missed:', user.displayString());

@@ -2,7 +2,7 @@ import {Category, defaultUserName, MsgType, TweetKol} from "./consts";
 import {
     __tableCategory,
     __tableKolsInCategory,
-    databaseDelete, databaseGetByID,
+    databaseDelete, databaseGet,
     databaseQueryByFilter,
     databaseUpdate
 } from "./database";
@@ -48,7 +48,7 @@ export async function queryCategoriesFromBG(): Promise<Category[]> {
 
 export async function updateKolsCategory(kol: TweetKol) {
     try {
-        await databaseUpdate(__tableKolsInCategory, kol.userName, kol)
+        await databaseUpdate(__tableKolsInCategory, 'kolName', kol.kolName, kol)
     } catch (e) {
         console.log("------>>> update kol failed:", kol);
     }
@@ -64,7 +64,7 @@ export async function removeKolsCategory(kolName: string) {
 
 export async function queryKolCategory(kolName: string): Promise<TweetKol | null> {
     try {
-        const kol = await databaseGetByID(__tableKolsInCategory, kolName);
+        const kol = await databaseGet(__tableKolsInCategory, kolName);
         return kol as TweetKol;
     } catch (e) {
         console.log("------>>> query kol failed:", kolName);
