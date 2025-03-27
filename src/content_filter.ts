@@ -1,12 +1,14 @@
 import {sendMsgToService} from "./utils";
-import {Category, maxElmFindTryTimes, MsgType} from "./consts";
+import {Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {curPageIsHome, parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG} from "./category";
+import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 
 export let _curKolFilter = new Map<string, boolean>();
 let _curFilterID = -1;
-let isCheckingFilterBtn = false;
+let isCheckingContainer = false;
 let naviTryTime = 0;
+let profileTryTime = 0;
 
 async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Category[]) {
     const contentTemplate = await parseContentHtml('html/content.html');
@@ -15,8 +17,9 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Ca
     const moreBtn = contentTemplate.content.getElementById("category-filter-more");
     const clearBtn = contentTemplate.content.getElementById("category-filter-clear");
 
-    if (!filterContainerDiv || !filterBtn || !moreBtn || !clearBtn) {
-        console.error(`------>>> failed to filter buttons container is ${filterContainerDiv} category button is ${filterBtn} clear button is ${clearBtn}`);
+    if (!filterContainerDiv || !filterBtn || !moreBtn || !clearBtn ) {
+        console.error(`------>>> failed to filter buttons container is ${filterContainerDiv}
+         category button is ${filterBtn} clear button is ${clearBtn}`);
         return;
     }
 
@@ -90,13 +93,13 @@ async function addMoreCategory() {
     await sendMsgToService("#onboarding/main-home", MsgType.OpenPlugin);
 }
 
-export async function appendFilterContainerAtTop() {
-    if (isCheckingFilterBtn || !curPageIsHome) {
+export async function appendCategoryContainerAtTop() {
+    if (isCheckingContainer || !curPageIsHome) {
         console.log('------>>> checkFilterBtn is already running or no need ');
         return;
     }
 
-    isCheckingFilterBtn = true;
+    isCheckingContainer = true;
     try {
         const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
         if (!navElement) {
@@ -108,7 +111,7 @@ export async function appendFilterContainerAtTop() {
                 return;
             }
             setTimeout(async () => {
-                await appendFilterContainerAtTop();
+                await appendCategoryContainerAtTop();
             }, 3000);
             return;
         }
@@ -127,7 +130,7 @@ export async function appendFilterContainerAtTop() {
 
         await appendFilterBtnToHomePage(navElement, categories);
     } finally {
-        isCheckingFilterBtn = false;  // 确保执行完成后恢复标记
+        isCheckingContainer = false;  // 确保执行完成后恢复标记
     }
 }
 
@@ -160,12 +163,50 @@ export async function reloadCategoryContainer(categories: Category[]) {
     await appendFilterBtnToHomePage(navElement, categories);
 }
 
-export function appendFilterOnKolProfileHome(){
+export async function appendFilterOnKolProfileHome(kolName: string) {
     const profileToolBarDiv = document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
-    if(!profileToolBarDiv){
-        console.log("------>>> failed to find profile tool bar!");
+    if (!profileToolBarDiv) {
+        console.log("------>>> need try later to find profile tool bar!");
+        profileTryTime += 1;
+        if (profileTryTime > maxElmFindTryTimes) {
+            console.warn("------>>> failed to find profile tool bar!");
+            profileTryTime = 0;
+            return;
+        }
+        setTimeout(async () => {
+            await appendFilterOnKolProfileHome(kolName);
+        }, 3000);
+
         return;
     }
 
     console.log("------>>> tool bar:", profileToolBarDiv);
+    const contentTemplate = await parseContentHtml('html/content.html');
+    const menuBtn = contentTemplate.content.getElementById("filter-btn-on-profile") as HTMLElement;
+
+    const clone = menuBtn.cloneNode(true) as HTMLElement;
+    profileToolBarDiv.insertBefore(clone, profileToolBarDiv.firstChild);
+    clone.onclick = async (e) => {
+        const categories = await queryCategoriesFromBG();
+        if (categories.length === 0) {
+            alert("no valid categories");//TODO::
+            return;
+        }
+        let kol = await queryKolDetailByName(kolName);
+        if (!kol) {
+            const userNameDiv = document.querySelector(
+                'div.css-175oi2r.r-18u37iz.r-1w6e6rj.r-6gpygo.r-14gqq1x[data-testid="UserName"]'
+            );
+            const displayNameDiv = userNameDiv?.querySelector(".css-1jxf684.r-bcqeeo.r-1ttztb7.r-qvutc0.r-poiln3")
+            const displayName = displayNameDiv?.textContent?.trim()
+            if (!displayName) {
+                alert("failed to parse kol name");
+                return;
+            }
+            kol = new TweetKol(kolName, displayName);
+
+        }
+
+        showPopupMenu(e, clone, categories, kol);
+    }
 }

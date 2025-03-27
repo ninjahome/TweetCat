@@ -93,7 +93,7 @@ function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
     };
 }
 
-function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories: Category[], kol: TweetKol) {
+export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories: Category[], kol: TweetKol) {
     event.stopPropagation();
     event.preventDefault();
 
@@ -177,7 +177,7 @@ function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: TweetKol
     sendMsgToService(kol, MsgType.UpdateKolCat).then();
 }
 
-async function queryKolDetailByName(kolName: string): Promise<TweetKol | null> {
+export async function queryKolDetailByName(kolName: string): Promise<TweetKol | null> {
     const rsp = await sendMsgToService(kolName, MsgType.QueryKolCat);
 
     if (!rsp) {
