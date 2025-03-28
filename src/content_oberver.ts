@@ -36,7 +36,7 @@ export async function initObserver() {
 
 function filterTweets(nodes: NodeList) {
     nodes.forEach((divNode) => {
-        if (!curPageIsHome || !isTweetDiv(divNode)) {
+        if ( !isTweetDiv(divNode)) {
             return;
         }
 
@@ -52,7 +52,7 @@ function filterTweets(nodes: NodeList) {
         }
 
         if (_curKolFilter.has(user.kolName)) {
-            console.log('------>>> hint:', user.displayString());
+            // console.log('------>>> hint:', user.displayString());
             return;
         }
 
@@ -76,6 +76,7 @@ function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
     }
 
     const clone = __menuBtnDiv.cloneNode(true) as HTMLElement;
+    clone.setAttribute('id',"");
     menuAreaDiv.insertBefore(clone, menuAreaDiv.firstChild);
     clone.onclick = async (e) => {
         const categories = await queryCategoriesFromBG();

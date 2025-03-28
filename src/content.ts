@@ -29,7 +29,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             appendCategoryContainerAtTop().then();
             const kolName = isTwitterUserProfile()
             if(!!kolName){
-                appendFilterOnKolProfileHome(kolName);
+                appendFilterOnKolProfileHome(kolName).then();
             }
             sendResponse({success: true});
             break;

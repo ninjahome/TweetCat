@@ -9,19 +9,25 @@ import {
 import {sendMsgToService} from "./utils";
 
 export async function loadCategories(forUser: string): Promise<Category[]> {
-    const categories = await databaseQueryByFilter(__tableCategory, (item) => {
-        return item.forUser === forUser;
-    })
-    let tmpCatArr: Category[] = []
-    for (let i = 0; i < categories.length; i++) {
-        const item = categories[i];
-        const cat = new Category(item.catName, item.forUser, item.id);
-        tmpCatArr.push(cat);
+    try {
+        const categories = await databaseQueryByFilter(__tableCategory, (item) => {
+            return item.forUser === forUser;
+        })
+        let tmpCatArr: Category[] = []
+        for (let i = 0; i < categories.length; i++) {
+            const item = categories[i];
+            const cat = new Category(item.catName, item.forUser, item.id);
+            tmpCatArr.push(cat);
+        }
+
+        return [...tmpCatArr].sort((a, b) =>
+            a.id! - b.id!//.localeCompare(b.catName)
+        );
+    } catch (e) {
+        console.log("------>>> load categories failed:", e)
+        return []
     }
 
-    return [...tmpCatArr].sort((a, b) =>
-        a.id! - b.id!//.localeCompare(b.catName)
-    );
 }
 
 export async function kolsForCategory(catID: number): Promise<Map<string, boolean>> {
@@ -35,15 +41,6 @@ export async function kolsForCategory(catID: number): Promise<Map<string, boolea
     }
 
     return kolInOneCategory;
-}
-
-export async function queryCategoriesFromBG(): Promise<Category[]> {
-    const rsp = await sendMsgToService(defaultUserName, MsgType.QueryCatsByUser)
-    if (!rsp.success) {
-        console.log("------>>> load categories error:", rsp.data);
-        return [];
-    }
-    return rsp.data as Category[];
 }
 
 export async function updateKolsCategory(kol: TweetKol) {
@@ -70,4 +67,20 @@ export async function queryKolCategory(kolName: string): Promise<TweetKol | null
         console.log("------>>> query kol failed:", kolName);
         return null;
     }
+}
+
+
+/**************************************************
+ *
+ *              service work api
+ *
+ * *************************************************/
+export async function queryCategoriesFromBG(): Promise<Category[]> {
+    const rsp = await sendMsgToService(defaultUserName, MsgType.QueryCatsByUser)
+    if (!rsp.success) {
+        console.log("------>>> load categories error:", rsp.data);
+        return [];
+    }
+    console.log("------->>>>>>>>>temp log", rsp);
+    return rsp.data as Category[];
 }

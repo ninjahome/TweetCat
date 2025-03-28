@@ -181,10 +181,15 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
     }
 
     console.log("------>>> tool bar:", profileToolBarDiv);
+    if (!!profileToolBarDiv.querySelector(".filter-btn-on-profile")){
+        console.log("------>>> filter button already appended")
+        return;
+    }
     const contentTemplate = await parseContentHtml('html/content.html');
     const menuBtn = contentTemplate.content.getElementById("filter-btn-on-profile") as HTMLElement;
 
     const clone = menuBtn.cloneNode(true) as HTMLElement;
+    clone.setAttribute('id',"");
     profileToolBarDiv.insertBefore(clone, profileToolBarDiv.firstChild);
     clone.onclick = async (e) => {
         const categories = await queryCategoriesFromBG();
