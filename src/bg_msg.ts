@@ -19,8 +19,8 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             sendResponse({success: true, data: await loadCategories(request.data)});
             break;
 
-        case MsgType.NewCategoryAdd:
-            broadcastToContent(MsgType.NewCategoryAdd, await loadCategories(request.data));
+        case MsgType.CategoryChanged:
+            broadcastToContent(MsgType.CategoryChanged, await loadCategories(request.data));
             sendResponse({success: true});
             break;
 
@@ -49,7 +49,7 @@ async function openPlugin(data: any) {
     await browser.runtime.sendMessage({action: MsgType.InitPopup, data: data})
 }
 
-function broadcastToContent(action: string, data: any) {
+export function broadcastToContent(action: string, data: any) {
     browser.tabs.query({}).then((tabs) => {
         for (const tab of tabs) {
             if (tab.id !== undefined) {  // 确保 tab.id 存在

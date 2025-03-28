@@ -28,28 +28,27 @@
 </div>
 
 <div id="view-category-manager" class="view-category-manager page_view">
+    <div><button class="button-back">Back</button></div>
     <div class="category-id"></div>
 
     <div class="category-name">
         <span>Category:</span>
-        <input type="text" class="category-name-val">
-        <img src="../images/edit.png">
+        <label>
+            <input type="text" class="category-name-val" disabled>
+        </label>
+        <img src="../images/edit.png" alt="edit image">
         <button class="name-edit">edit</button>
     </div>
 
     <div class="category-kol-size">
         <span>Kol Size:</span> <span class="kol-size-val"></span>
-        <button class="kol-show-list">details</button>
+        <button class="kol-manage-btn">Manage</button>
     </div>
 
-    <div class="kol-item" style="display: none" id="category-manager-kol-item">
-        <span class="kol-name"></span>
-        <button class="kol-remove">Remove</button>
-        <button class="move-to">MoveTo</button>
+    <div class="category-kol-operation">
+        <button class="category-remove-btn">Remove</button>
     </div>
 
-    <div class="category-kol-list">
-    </div>
 </div>
 
 
@@ -65,5 +64,32 @@
         </div>
     </div>
 </div>
+
+<div id="confirm-popup">
+    <div class="popup-content">
+        <p id="confirm-message">提示信息...</p>
+        <div class="button-row">
+            <button id="btn-cancel">取消</button>
+            <button id="btn-ok">确定</button>
+        </div>
+    </div>
+</div>
+
+<div id="custom-alert">
+    <div id="alert-content">
+        <h2 id="alert-title">Alert</h2>
+        <p id="alert-message">This is a custom alert message!</p>
+        <button id="alert-ok">OK</button>
+    </div>
+</div>
+
+<div id="loading-overlay">
+    <div id="loading-content">
+        <div class="spinner"></div>
+        <div>正在处理，请稍候...</div>
+    </div>
+</div>
+
+
 </body>
 </html>

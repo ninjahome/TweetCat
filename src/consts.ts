@@ -12,7 +12,7 @@ export enum MsgType {
     NaviUrlChanged = 'NaviUrlChanged',
     QueryKolByCatID = 'QueryKolByCatID',
     QueryCatsByUser = 'QueryCatsByUser',
-    NewCategoryAdd = 'NewCategoryAdd',
+    CategoryChanged = 'CategoryChanged',
     QueryKolCat = 'QueryKolCat',
     UpdateKolCat = 'UpdateKolCat',
     RemoveKol = 'RemoveKol'

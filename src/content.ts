@@ -34,7 +34,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             sendResponse({success: true});
             break;
 
-        case MsgType.NewCategoryAdd:
+        case MsgType.CategoryChanged:
             reloadCategoryContainer(request.data as Category[]).then();
             sendResponse({success: true});
             break;

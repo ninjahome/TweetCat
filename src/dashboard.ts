@@ -2,7 +2,9 @@ import browser, {Runtime} from "webextension-polyfill";
 import {Category, defaultUserName, MsgType} from "./consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "./database";
 import {showView} from "./utils";
-import {loadCategories} from "./category";
+import {kolsForCategory, loadCategories, removeCategory, updateCategoryDetail} from "./category";
+import {hideLoading, showAlert, showConfirmPopup, showLoading} from "./dash_common";
+import {broadcastToContent} from "./bg_msg";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -17,12 +19,14 @@ async function initDashBoard(): Promise<void> {
         showView('#onboarding/main-home', dashRouter);
     }
 
-    await setupMainHomeElm();
+    initNewCatBtn();
+    initNewCatModalDialog();
 }
 
 function dashRouter(path: string): void {
     // console.log("------>>> show view for path:", path);
     if (path === '#onboarding/main-home') {
+        setupCurCategoryList().then();
     } else if (path === '#onboarding/category-manager') {
     }
 }
@@ -45,12 +49,6 @@ export function dashboardMsgDispatch(request: any, _sender: Runtime.MessageSende
             break;
     }
     return true;
-}
-
-async function setupMainHomeElm() {
-    initNewCatBtn();
-    initNewCatModalDialog();
-    await setupCurCategoryList();
 }
 
 function initNewCatBtn() {
@@ -87,7 +85,7 @@ async function addNewCategory() {
         //TODO::show alert
         return;
     }
-    await browser.runtime.sendMessage({action: MsgType.NewCategoryAdd, data: item.forUser});
+    await browser.runtime.sendMessage({action: MsgType.CategoryChanged, data: item.forUser});
     item.id = newID as number;
     await setupCurCategoryList();
     modalDialog.style.display = 'none'
@@ -131,13 +129,61 @@ function editCategory(cat: Category) {
     catNameDiv.value = cat.catName;
 
     const nameEditBtn = mgmDvi.querySelector(".name-edit") as HTMLElement;
-    nameEditBtn.addEventListener('click', () => {
-        editCateName(cat)
+    nameEditBtn.addEventListener('click', async () => {
+        await editCateName(cat, nameEditBtn, mgmDvi)
+    });
+
+    mgmDvi.querySelector(".kol-manage-btn")?.addEventListener('click', () => {
+        browser.tabs.create({
+            url: browser.runtime.getURL("html/kolManage.html?catID=" + cat.id),
+        }).then();
     })
+
+    mgmDvi.querySelector(".category-remove-btn")?.addEventListener('click', () => {
+        removeCatById(cat.id!);
+    })
+
+    mgmDvi.querySelector(".button-back")?.addEventListener('click',()=>{
+        showView('#onboarding/main-home', dashRouter);
+    })
+
+    kolsForCategory(cat.id!).then((result=>{
+        const kolSize = mgmDvi.querySelector(".kol-size-val") as HTMLElement;
+        kolSize.textContent = ""+result.size;
+    }));
 
     showView('#onboarding/category-manager', dashRouter);
 }
 
-function editCateName(cat: Category) {
+async function editCateName(cat: Category, btn: HTMLElement, parent: HTMLElement) {
+    const inputArea = parent.querySelector(".category-name-val") as HTMLInputElement;
+    if (inputArea.disabled) {
+        inputArea.disabled = false;
+        btn.innerText = 'save';
+    } else {
+        const newCatName = inputArea.value;
+        if (!newCatName) {
+            showAlert("Tips", "invalid category name");
+            return;
+        }
+        inputArea.disabled = true;
+        btn.innerText = 'edit';
+        cat.catName = inputArea.value;
 
+        showLoading();
+        await updateCategoryDetail(cat);
+        broadcastToContent(MsgType.CategoryChanged, await loadCategories(defaultUserName));
+        hideLoading();
+    }
 }
+
+function removeCatById(catId: number) {
+    showConfirmPopup("Delete this Category?",async () => {
+        showLoading();
+        await removeCategory(catId);
+        broadcastToContent(MsgType.CategoryChanged, await loadCategories(defaultUserName));
+        hideLoading();
+        showView('#onboarding/main-home', dashRouter);
+    });
+}
+

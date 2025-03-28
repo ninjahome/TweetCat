@@ -12,7 +12,6 @@ module.exports = (env, argv) => {
             },
         }),
         new webpack.ProvidePlugin({
-            Buffer: ['buffer', 'Buffer'],
             process: 'process/browser',
         }),
         new webpack.DefinePlugin({
@@ -28,6 +27,7 @@ module.exports = (env, argv) => {
             welcome: path.resolve(__dirname, './src/welcome.ts'),
             dashboard: path.resolve(__dirname, './src/dashboard.ts'),
             content: path.resolve(__dirname, './src/content.ts'),
+            kol_mg: path.resolve(__dirname, './src/kol_mg.ts'),
         },
         output: {
             filename: 'js/[name].js',
@@ -63,10 +63,6 @@ module.exports = (env, argv) => {
         resolve: {
             extensions: ['.tsx', '.ts', '.js'],
             fallback: {
-                buffer: false,
-                crypto: false,
-                stream: false,
-                vm: false,
                 process: false,
             },
         },

@@ -2,7 +2,7 @@ import {Category, defaultUserName, MsgType, TweetKol} from "./consts";
 import {
     __tableCategory,
     __tableKolsInCategory,
-    databaseDelete, databaseGet,
+    databaseDelete, databaseDeleteByFilter, databaseGet,
     databaseQueryByFilter,
     databaseUpdate
 } from "./database";
@@ -27,7 +27,6 @@ export async function loadCategories(forUser: string): Promise<Category[]> {
         console.log("------>>> load categories failed:", e)
         return []
     }
-
 }
 
 export async function kolsForCategory(catID: number): Promise<Map<string, boolean>> {
@@ -69,6 +68,24 @@ export async function queryKolCategory(kolName: string): Promise<TweetKol | null
     }
 }
 
+export async function updateCategoryDetail(cat:Category){
+    try {
+        await databaseUpdate(__tableCategory, 'id', cat.id, cat)
+    } catch (e) {
+        console.log("------>>> update category failed:", cat);
+    }
+}
+
+export async function removeCategory(catID:number){
+    try {
+        await databaseDelete(__tableCategory, catID);
+        await databaseDeleteByFilter(__tableKolsInCategory,(item) => {
+            return item.catID === catID;
+        });
+    } catch (e) {
+        console.log("------>>> remove category failed:", catID);
+    }
+}
 
 /**************************************************
  *
