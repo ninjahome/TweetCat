@@ -55,11 +55,3 @@ export class Category {
         this.id = i;
     }
 }
-
-export class KolFilterKey {
-    kolName: string;
-
-    constructor(kn: string) {
-        this.kolName = kn;
-    }
-}

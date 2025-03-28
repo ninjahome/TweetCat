@@ -4,7 +4,7 @@ import {curPageIsHome, parseContentHtml, parseNameFromTweetCell} from "./content
 import {queryCategoriesFromBG} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 
-export let _curKolFilter = new Map<string, boolean>();
+export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
 let isCheckingContainer = false;
 let naviTryTime = 0;
@@ -145,11 +145,11 @@ function resetCategories() {
     window.location.reload();
 }
 
-async function queryFilterFromBG(catID: number): Promise<Map<string, boolean>> {
+async function queryFilterFromBG(catID: number): Promise<Map<string, TweetKol>> {
     const rsp = await sendMsgToService(catID, MsgType.QueryKolByCatID)
     if (!rsp.success) {
         console.log("------>>> load filter error:", rsp.data);
-        return new Map<string, boolean>();
+        return new Map<string, TweetKol>();
     }
     return new Map(rsp.data);
 }

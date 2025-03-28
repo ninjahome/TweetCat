@@ -135,7 +135,7 @@ function editCategory(cat: Category) {
 
     mgmDvi.querySelector(".kol-manage-btn")?.addEventListener('click', () => {
         browser.tabs.create({
-            url: browser.runtime.getURL("html/kolManage.html?catID=" + cat.id),
+            url: browser.runtime.getURL("html/kolManage.html?catID=" + cat.id + "&&catName=" + cat.catName),
         }).then();
     })
 
@@ -143,13 +143,13 @@ function editCategory(cat: Category) {
         removeCatById(cat.id!);
     })
 
-    mgmDvi.querySelector(".button-back")?.addEventListener('click',()=>{
+    mgmDvi.querySelector(".button-back")?.addEventListener('click', () => {
         showView('#onboarding/main-home', dashRouter);
     })
 
-    kolsForCategory(cat.id!).then((result=>{
+    kolsForCategory(cat.id!).then((result => {
         const kolSize = mgmDvi.querySelector(".kol-size-val") as HTMLElement;
-        kolSize.textContent = ""+result.size;
+        kolSize.textContent = "" + result.size;
     }));
 
     showView('#onboarding/category-manager', dashRouter);
@@ -178,7 +178,7 @@ async function editCateName(cat: Category, btn: HTMLElement, parent: HTMLElement
 }
 
 function removeCatById(catId: number) {
-    showConfirmPopup("Delete this Category?",async () => {
+    showConfirmPopup("Delete this Category?", async () => {
         showLoading();
         await removeCategory(catId);
         broadcastToContent(MsgType.CategoryChanged, await loadCategories(defaultUserName));

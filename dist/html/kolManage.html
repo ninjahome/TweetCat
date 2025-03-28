@@ -9,12 +9,26 @@
 <body>
 
 <div class="kol-mgn-header">
-    <div><span class="category-name"></span>:<span class="category-kol-size">0</span></div>
+    <div><span id="category-name" class="category-name"></span>:<span class="category-kol-size">0</span></div>
 </div>
 <hr>
-<div class="kol-item" id="kol-item-template">
+
+<option id="category-item" class="category-item" style="display: none"></option>
+<select id="category-list" class="category-list" style="display: none">
+</select>
+
+<div class="kol-item" id="kol-item-template" style="display: none">
+    <div class="kol-info-area">
+        <img src="" alt="kol avatar image" class="kolAvatar">
+        <span class="kolName"></span>
+        <span class="kolDisName"></span>
+    </div>
+    <div class="kol-op-area">
+        <button class="kol-op-remove">Remove</button>
+    </div>
 </div>
-<div class="kol-mgn-list">
+
+<div id="kol-mgn-list" class="kol-mgn-list">
 </div>
 
 </body>

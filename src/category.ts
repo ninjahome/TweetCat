@@ -29,14 +29,14 @@ export async function loadCategories(forUser: string): Promise<Category[]> {
     }
 }
 
-export async function kolsForCategory(catID: number): Promise<Map<string, boolean>> {
+export async function kolsForCategory(catID: number): Promise<Map<string, TweetKol>> {
     const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => {
         return item.catID === catID;
     });
 
-    const kolInOneCategory = new Map<string, boolean>();
+    const kolInOneCategory = new Map<string, TweetKol>();
     for (const k of kols) {
-        kolInOneCategory.set(k.kolName, true);
+        kolInOneCategory.set(k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID));
     }
 
     return kolInOneCategory;
@@ -68,7 +68,7 @@ export async function queryKolCategory(kolName: string): Promise<TweetKol | null
     }
 }
 
-export async function updateCategoryDetail(cat:Category){
+export async function updateCategoryDetail(cat: Category) {
     try {
         await databaseUpdate(__tableCategory, 'id', cat.id, cat)
     } catch (e) {
@@ -76,16 +76,17 @@ export async function updateCategoryDetail(cat:Category){
     }
 }
 
-export async function removeCategory(catID:number){
+export async function removeCategory(catID: number) {
     try {
         await databaseDelete(__tableCategory, catID);
-        await databaseDeleteByFilter(__tableKolsInCategory,(item) => {
+        await databaseDeleteByFilter(__tableKolsInCategory, (item) => {
             return item.catID === catID;
         });
     } catch (e) {
         console.log("------>>> remove category failed:", catID);
     }
 }
+
 
 /**************************************************
  *
