@@ -76,3 +76,7 @@ body {
     cursor: pointer;
     border-radius: 4px;
 }
+
+.category-edit-details .category-id{
+    display: none;
+}

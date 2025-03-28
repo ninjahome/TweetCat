@@ -1,4 +1,4 @@
-import {curPageIsHome, parseContentHtml, parseNameFromTweetCell} from "./content";
+import {parseNameFromTweetCell, parseContentHtml} from "./content";
 import {_curKolFilter} from "./content_filter";
 import {queryCategoriesFromBG} from "./category";
 import {Category, itemColorGroup, MsgType, TweetKol} from "./consts";
@@ -36,7 +36,7 @@ export async function initObserver() {
 
 function filterTweets(nodes: NodeList) {
     nodes.forEach((divNode) => {
-        if ( !isTweetDiv(divNode)) {
+        if (!isTweetDiv(divNode)) {
             return;
         }
 
@@ -76,7 +76,7 @@ function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
     }
 
     const clone = __menuBtnDiv.cloneNode(true) as HTMLElement;
-    clone.setAttribute('id',"");
+    clone.setAttribute('id', "");
     menuAreaDiv.insertBefore(clone, menuAreaDiv.firstChild);
     clone.onclick = async (e) => {
         const categories = await queryCategoriesFromBG();
@@ -88,6 +88,11 @@ function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
         let kol = await queryKolDetailByName(rawKol.kolName);
         if (!kol) {
             kol = rawKol;
+        }
+
+        if (!kol.avatarUrl) {
+            kol.avatarUrl = getKolAvatarLink(tweetCellDiv) ?? "";
+            console.log("------>>>tweet cell avatar url link:", kol.avatarUrl );
         }
 
         showPopupMenu(e, clone, categories, kol);
@@ -186,4 +191,19 @@ export async function queryKolDetailByName(kolName: string): Promise<TweetKol | 
     }
 
     return rsp.data as TweetKol;
+}
+
+
+// 假设你已经拿到了 tweetNode，即 <div data-testid="cellInnerDiv"> 这个 DOM 元素
+function getKolAvatarLink(tweetNode: HTMLElement): string | null {
+    // 1. 找到头像容器
+    const avatarContainer = tweetNode.querySelector('div[data-testid="Tweet-User-Avatar"]');
+    if (!avatarContainer) return null;
+
+    // 2. 在头像容器里找 img 元素（Twitter 常用 pbs.twimg.com 作为头像域名）
+    const avatarImg = avatarContainer.querySelector<HTMLImageElement>('img[src^="https://pbs.twimg.com/"]');
+    if (!avatarImg) return null;
+
+    // 3. 读取头像链接
+    return avatarImg.getAttribute('src');
 }

@@ -26,13 +26,39 @@
     </div>
 
 </div>
+
 <div id="view-category-manager" class="view-category-manager page_view">
-    category-manager
+    <div class="category-id"></div>
+
+    <div class="category-name">
+        <span>Category:</span>
+        <input type="text" class="category-name-val">
+        <img src="../images/edit.png">
+        <button class="name-edit">edit</button>
+    </div>
+
+    <div class="category-kol-size">
+        <span>Kol Size:</span> <span class="kol-size-val"></span>
+        <button class="kol-show-list">details</button>
+    </div>
+
+    <div class="kol-item" style="display: none" id="category-manager-kol-item">
+        <span class="kol-name"></span>
+        <button class="kol-remove">Remove</button>
+        <button class="move-to">MoveTo</button>
+    </div>
+
+    <div class="category-kol-list">
+    </div>
 </div>
+
+
 <div id="modal-add-category" class="modal-new-category">
     <div class="modal-content-new-category">
         <h3>Add New Category</h3>
-        <input type="text" class="new-category-name" placeholder="Enter category name">
+        <label>
+            <input type="text" class="new-category-name" placeholder="Enter category name">
+        </label>
         <div class="modal-buttons-new-category">
             <button id="btn-cancel-new-category">Cancel</button>
             <button id="btn-confirm-new-category">Confirm</button>

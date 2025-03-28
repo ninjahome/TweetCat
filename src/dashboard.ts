@@ -122,5 +122,22 @@ function _cloneCatItem(clone: HTMLElement, category: Category) {
 }
 
 function editCategory(cat: Category) {
+    const mgmDvi = document.getElementById("view-category-manager") as HTMLDivElement;
+
+    const catIdDiv = mgmDvi.querySelector(".category-id") as HTMLDivElement
+    catIdDiv.innerText = "" + cat.id;
+
+    const catNameDiv = mgmDvi.querySelector(".category-name-val") as HTMLInputElement
+    catNameDiv.value = cat.catName;
+
+    const nameEditBtn = mgmDvi.querySelector(".name-edit") as HTMLElement;
+    nameEditBtn.addEventListener('click', () => {
+        editCateName(cat)
+    })
+
+    showView('#onboarding/category-manager', dashRouter);
+}
+
+function editCateName(cat: Category) {
 
 }

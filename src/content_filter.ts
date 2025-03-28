@@ -180,7 +180,6 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
         return;
     }
 
-    console.log("------>>> tool bar:", profileToolBarDiv);
     if (!!profileToolBarDiv.querySelector(".filter-btn-on-profile")){
         console.log("------>>> filter button already appended")
         return;
@@ -209,7 +208,14 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
                 return;
             }
             kol = new TweetKol(kolName, displayName);
+        }
 
+        if (!kol.avatarUrl){
+            const avatarUrl = document.querySelector('img[alt="Opens profile photo"]')?.getAttribute('src');
+            if (!!avatarUrl){
+                console.log("------>>> avatar url found:", avatarUrl);
+                kol.avatarUrl = avatarUrl;
+            }
         }
 
         showPopupMenu(e, clone, categories, kol);
