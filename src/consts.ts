@@ -3,7 +3,7 @@ export const __targetUrlToFilter = 'https://x.com/home';
 export const defaultCategoryName = "Priority Follow"
 export const maxElmFindTryTimes = 5;
 export const defaultUserName = 'default_v1';//TODO::for version 2,syncing data by user's tweet name
-
+export const defaultAllCategoryID = -1;
 export const itemColorGroup = ['#f6cd01', '#866afb', '#fe466c', '#06cbad', '#4592ef']
 
 export enum MsgType {

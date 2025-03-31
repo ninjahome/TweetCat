@@ -1,5 +1,5 @@
 import {sendMsgToService} from "./utils";
-import {Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
+import {Category, defaultAllCategoryID, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {curPageIsHome, parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
@@ -15,18 +15,19 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Ca
     const filterContainerDiv = contentTemplate.content.getElementById("category-filter-container");
     const filterBtn = contentTemplate.content.getElementById("category-filter-item");
     const moreBtn = contentTemplate.content.getElementById("category-filter-more");
-    const clearBtn = contentTemplate.content.getElementById("category-filter-clear");
+    const allCatBtn = contentTemplate.content.getElementById("category-filter-clear");
 
-    if (!filterContainerDiv || !filterBtn || !moreBtn || !clearBtn) {
+    if (!filterContainerDiv || !filterBtn || !moreBtn || !allCatBtn) {
         console.error(`------>>> failed to filter buttons container is ${filterContainerDiv}
-         category button is ${filterBtn} clear button is ${clearBtn}`);
+         category button is ${filterBtn} clear button is ${allCatBtn}`);
         return;
     }
 
     navElement.parentElement!.appendChild(filterContainerDiv);
 
-    clearBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
-    filterContainerDiv.appendChild(clearBtn);
+    allCatBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
+    allCatBtn.dataset.categoryID = '' + defaultAllCategoryID;
+    filterContainerDiv.appendChild(allCatBtn);
 
     categories.forEach((category) => {
         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
@@ -152,7 +153,7 @@ function resetCategories() {
         return;
     }
 
-    _curFilterID = -1;
+    _curFilterID = defaultAllCategoryID;
     document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
     window.location.reload();
 }
