@@ -1,4 +1,4 @@
-import {sendMsgToService} from "./utils";
+import {observeForElement, sendMsgToService} from "./utils";
 import {Category, defaultAllCategoryID, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {curPageIsHome, parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG} from "./category";
@@ -8,7 +8,6 @@ export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
 let isCheckingContainer = false;
 let naviTryTime = 0;
-let profileTryTime = 0;
 
 async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Category[]) {
     const contentTemplate = await parseContentHtml('html/content.html');
@@ -147,15 +146,16 @@ export async function appendCategoryContainerAtTop() {
     }
 }
 
-function resetCategories() {
+export function resetCategories() {
 
     if (_curFilterID <= 0) {
         return;
     }
 
     _curFilterID = defaultAllCategoryID;
-    document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
-    window.location.reload();
+    _curKolFilter = new Map<string, TweetKol>();
+    setSelectedCategory();
+    (document.querySelector('a[aria-label="Home"]') as HTMLElement)?.click();
 }
 
 async function queryFilterFromBG(catID: number): Promise<Map<string, TweetKol>> {
@@ -177,32 +177,26 @@ export async function reloadCategoryContainer(categories: Category[]) {
 }
 
 export async function appendFilterOnKolProfileHome(kolName: string) {
-    const profileToolBarDiv = document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
-    if (!profileToolBarDiv) {
-        console.log("------>>> need try later to find profile tool bar!");
-        profileTryTime += 1;
-        if (profileTryTime > maxElmFindTryTimes) {
-            console.warn("------>>> failed to find profile tool bar!");
-            profileTryTime = 0;
-            return;
+    observeForElement(document.body, 800, () => {
+        return document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
+    }, async () => {
+        const profileToolBarDiv = document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
+        const oldFilterBtn = profileToolBarDiv.querySelector(".filter-btn-on-profile");
+        if (oldFilterBtn) {
+            console.log("------>>>[kol profile home] filter button already appended")
+            oldFilterBtn.remove();
         }
-        setTimeout(async () => {
-            await appendFilterOnKolProfileHome(kolName);
-        }, 3000);
+        await _appendFilterBtn(profileToolBarDiv, kolName)
+    }, false);
+}
 
-        return;
-    }
-
-    if (!!profileToolBarDiv.querySelector(".filter-btn-on-profile")) {
-        console.log("------>>> filter button already appended")
-        return;
-    }
+async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
     const contentTemplate = await parseContentHtml('html/content.html');
     const menuBtn = contentTemplate.content.getElementById("filter-btn-on-profile") as HTMLElement;
 
     const clone = menuBtn.cloneNode(true) as HTMLElement;
     clone.setAttribute('id', "");
-    profileToolBarDiv.insertBefore(clone, profileToolBarDiv.firstChild);
+    toolBar.insertBefore(clone, toolBar.firstChild);
     clone.onclick = async (e) => {
         const categories = await queryCategoriesFromBG();
         if (categories.length === 0) {

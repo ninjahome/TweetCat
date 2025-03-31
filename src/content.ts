@@ -3,8 +3,7 @@ import {hidePopupMenu, initObserver} from "./content_oberver";
 import {
     appendCategoryContainerAtTop,
     appendFilterOnKolProfileHome,
-    reloadCategoryContainer,
-    setSelectedCategory
+    reloadCategoryContainer
 } from "./content_filter";
 import {Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {addCustomStyles, isTwitterUserProfile} from "./utils";
@@ -36,7 +35,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             if (!!kolName) {
                 appendFilterOnKolProfileHome(kolName).then();
             }
-            checkFilterStatus();
+            checkFilterStatusAfterUrlChanged();
             sendResponse({success: true});
             break;
 
@@ -105,6 +104,6 @@ export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null 
     return new TweetKol(username, displayName);
 }
 
-function checkFilterStatus() {
+function checkFilterStatusAfterUrlChanged() {
     hidePopupMenu();
 }

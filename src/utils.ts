@@ -50,3 +50,38 @@ export function isTwitterUserProfile(): string | null {
     // 再检查页面元素
     // return !!document.querySelector('[data-testid="UserProfileHeader_Items"]');
 }
+
+function observeAction(target: HTMLElement, idleThreshold: number,
+                       foundFunc: () => HTMLElement | null, callback: () => Promise<void>,
+                       options: MutationObserverInit, continueMonitor?: boolean) {
+    const cb: MutationCallback = (_, observer) => {
+        const element = foundFunc();
+        if (!element) {
+            return;
+        }
+        if (!continueMonitor) {
+            observer.disconnect();
+        }
+        let idleTimer = setTimeout(() => {
+            callback().then();
+            clearTimeout(idleTimer);
+            // console.log('---------->>> observer action finished:=> continue=>', continueMonitor);
+        }, idleThreshold);
+    };
+
+    const observer = new MutationObserver(cb);
+    observer.observe(target, options);
+}
+
+export function observeForElement(target: HTMLElement, idleThreshold: number,
+                                  foundFunc: () => HTMLElement | null, callback: () => Promise<void>,
+                                  continueMonitor?: boolean) {
+
+    observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: true}, continueMonitor);
+}
+
+export function observeForElementDirect(target: HTMLElement, idleThreshold: number,
+                                        foundFunc: () => HTMLElement | null, callback: () => Promise<void>,
+                                        continueMonitor?: boolean) {
+    observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: false}, continueMonitor);
+}
