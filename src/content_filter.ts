@@ -17,7 +17,7 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Ca
     const moreBtn = contentTemplate.content.getElementById("category-filter-more");
     const clearBtn = contentTemplate.content.getElementById("category-filter-clear");
 
-    if (!filterContainerDiv || !filterBtn || !moreBtn || !clearBtn ) {
+    if (!filterContainerDiv || !filterBtn || !moreBtn || !clearBtn) {
         console.error(`------>>> failed to filter buttons container is ${filterContainerDiv}
          category button is ${filterBtn} clear button is ${clearBtn}`);
         return;
@@ -30,11 +30,12 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Ca
 
     categories.forEach((category) => {
         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
-        cloneItem.id = "category-filter-item-" + category;
+        cloneItem.id = "category-filter-item-" + category.id;
+        cloneItem.dataset.categoryID = '' + category.id
         const btn = cloneItem.querySelector(".category-filter-btn") as HTMLElement
         btn.innerText = category.catName;
         btn.addEventListener('click', async () => {
-            await changeFilterType(category, cloneItem);
+            await changeFilterType(category);
         });
         filterContainerDiv.appendChild(cloneItem);
     });
@@ -42,6 +43,7 @@ async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Ca
     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
     filterContainerDiv.appendChild(moreBtn);
     console.log("------>>> add filter container success")
+    setSelectedCategory();
 }
 
 async function filterTweetsByCategory() {
@@ -73,7 +75,7 @@ async function filterTweetsByCategory() {
     })
 }
 
-async function changeFilterType(category: Category, elmItem: HTMLElement) {
+async function changeFilterType(category: Category) {
 
     const filter = await queryFilterFromBG(category.id!);
     if (filter.size === 0) {
@@ -84,9 +86,19 @@ async function changeFilterType(category: Category, elmItem: HTMLElement) {
     _curKolFilter = filter;
     _curFilterID = category.id!;
 
-    document.querySelectorAll(".category-filter-item").forEach(elm => elm.classList.remove("active"));
-    elmItem.classList.add("active");
+    setSelectedCategory();
     await filterTweetsByCategory();
+}
+
+export function setSelectedCategory() {
+    document.querySelectorAll(".category-filter-item").forEach(elm => {
+            elm.classList.remove("active");
+            const emlCatID = Number((elm as HTMLElement).dataset.categoryID);
+            if (emlCatID === _curFilterID) {
+                elm.classList.add("active");
+            }
+        }
+    );
 }
 
 async function addMoreCategory() {
@@ -180,7 +192,7 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
         return;
     }
 
-    if (!!profileToolBarDiv.querySelector(".filter-btn-on-profile")){
+    if (!!profileToolBarDiv.querySelector(".filter-btn-on-profile")) {
         console.log("------>>> filter button already appended")
         return;
     }
@@ -188,7 +200,7 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
     const menuBtn = contentTemplate.content.getElementById("filter-btn-on-profile") as HTMLElement;
 
     const clone = menuBtn.cloneNode(true) as HTMLElement;
-    clone.setAttribute('id',"");
+    clone.setAttribute('id', "");
     profileToolBarDiv.insertBefore(clone, profileToolBarDiv.firstChild);
     clone.onclick = async (e) => {
         const categories = await queryCategoriesFromBG();
@@ -210,9 +222,9 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
             kol = new TweetKol(kolName, displayName);
         }
 
-        if (!kol.avatarUrl){
+        if (!kol.avatarUrl) {
             const avatarUrl = document.querySelector('img[alt="Opens profile photo"]')?.getAttribute('src');
-            if (!!avatarUrl){
+            if (!!avatarUrl) {
                 console.log("------>>> avatar url found:", avatarUrl);
                 kol.avatarUrl = avatarUrl;
             }
