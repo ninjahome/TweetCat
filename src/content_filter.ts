@@ -115,16 +115,11 @@ export async function appendCategoryContainerAtTop() {
     try {
         const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
         if (!navElement) {
-            console.log("------>>> home navigation div not found");
-            naviTryTime += 1;
-            if (naviTryTime > maxElmFindTryTimes) {
-                console.warn("------>>> failed to find home navigation!");
-                naviTryTime = 0;
-                return;
-            }
-            setTimeout(async () => {
+            observeForElement(document.body, 300, () => {
+                return document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
+            }, async () => {
                 await appendCategoryContainerAtTop();
-            }, 3000);
+            }, false);
             return;
         }
 
@@ -209,11 +204,7 @@ async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
                 'div.css-175oi2r.r-18u37iz.r-1w6e6rj.r-6gpygo.r-14gqq1x[data-testid="UserName"]'
             );
             const displayNameDiv = userNameDiv?.querySelector(".css-1jxf684.r-bcqeeo.r-1ttztb7.r-qvutc0.r-poiln3")
-            const displayName = displayNameDiv?.textContent?.trim()
-            if (!displayName) {
-                alert("failed to parse kol name");
-                return;
-            }
+            let displayName = displayNameDiv?.textContent?.trim() ?? "TweetCat";
             kol = new TweetKol(kolName, displayName);
         }
 

@@ -3,6 +3,7 @@ import {_curKolFilter, resetCategories} from "./content_filter";
 import {queryCategoriesFromBG} from "./category";
 import {Category, itemColorGroup, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
 import {sendMsgToService} from "./utils";
+import {showAlert} from "./dash_common";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -62,7 +63,7 @@ function filterTweets(nodes: NodeList) {
         divNode.style.display = "none";
         missCounter++;
         if (missCounter > maxMissedTweetOnce) {
-            console.warn("------>>> too less tweet for this category");
+            showAlert("tips", "Too few tweets for this category.");
             resetCategories();
             missCounter = 0;
         }
