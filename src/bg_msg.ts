@@ -16,11 +16,14 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             break;
 
         case MsgType.QueryCatsByUser:
-            sendResponse({success: true, data: await loadCategories(request.data)});
+            const catData = await  loadCategories(request.data);
+            // console.log("----->>> category data:", catData);
+            sendResponse({success: true, data: catData});
             break;
 
         case MsgType.CategoryChanged:
-            broadcastToContent(MsgType.CategoryChanged, await loadCategories(request.data));
+            const changedCat = await  loadCategories(request.data);
+            broadcastToContent(MsgType.CategoryChanged, changedCat);
             sendResponse({success: true});
             break;
 
@@ -35,7 +38,8 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             break;
 
         case MsgType.QueryKolCat:
-            sendResponse({success: true, data: await queryKolCategory(request.data)});
+            const kolCat = await queryKolCategory(request.data)
+            sendResponse({success: true, data: kolCat});
             break;
 
         default:

@@ -97,7 +97,7 @@ function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
 
         let kol = await queryKolDetailByName(rawKol.kolName);
         if (!kol) {
-            kol = rawKol;
+            kol = new TweetKol(rawKol.kolName, rawKol.displayName);
         }
 
         if (!kol.avatarUrl) {
