@@ -131,6 +131,23 @@ body {
     margin-left: 8px;
 }
 
+input.new-category-name {
+    padding: 12px 16px;
+    box-sizing: border-box;
+    max-width: 100%;
+    width: 100%;
+    border-radius: 9999px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 15px;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+input.category-input:focus{
+    outline: none !important;
+    border: 2px solid #428ad2 !important;
+    box-shadow: 0 0 4px rgba(66, 138, 210, 0.3) !important;
+    font-weight: 1000 !important;
+}
+
 /* 全屏遮罩 */
 #custom-alert {
     position: fixed;
