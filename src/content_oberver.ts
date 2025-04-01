@@ -39,7 +39,7 @@ let missCounter = 0;
 
 function filterTweets(nodes: NodeList) {
     nodes.forEach((divNode) => {
-        if (!isTweetDiv(divNode)) {
+        if (!isTweetDiv(divNode) || !curPageIsHome) {
             return;
         }
 
@@ -50,7 +50,7 @@ function filterTweets(nodes: NodeList) {
 
         appendFilterBtn(divNode, user);
 
-        if (_curKolFilter.size === 0 || !curPageIsHome) {
+        if (_curKolFilter.size === 0) {
             return;
         }
 
@@ -63,7 +63,7 @@ function filterTweets(nodes: NodeList) {
         divNode.style.display = "none";
         missCounter++;
         if (missCounter > maxMissedTweetOnce) {
-            showAlert("tips", "Too few tweets for this category.");
+            alert("Too few tweets for this category.");
             resetCategories();
             missCounter = 0;
         }
