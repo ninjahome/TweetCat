@@ -16,19 +16,34 @@
     <hr aria-label="list separator">
 
     <div class="category-show-area" id="category-show-area">
-        <button id="btn-add-category">+ Add Category</button>
+        <button id="btn-add-category">+ Add Category </button>
         <div class="category-item" style="display: none" id="category-item-template">
             <span class="category-name">News</span>
             <button class="category-edit-btn">Edit</button>
         </div>
         <div id="categories-list" class="categories-list">
+            <div class="category-item" style="display: flex;" id="category-item-1" data-category-i-d="1">
+                <span class="category-name">Priority Follow</span>
+                <button class="category-edit-btn">Edit</button>
+            </div>
         </div>
     </div>
 
 </div>
 
 <div id="view-category-manager" class="view-category-manager page_view">
-    <div><button class="button-back">Back</button></div>
+    <div >
+        <button class="button-back">
+            <div>
+                <svg id="图层_1" data-name="图层 1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24">
+                    <defs>
+                        <style>.cls-1{fill:#191e24;}</style>
+                    </defs>
+                    <polygon class="cls-1" points="15.97 6.75 3.85 6.75 8.41 2.19 7 0.78 0.03 7.75 7.5 15.22 8.91 13.81 3.85 8.75 15.97 8.75 15.97 6.75"/>
+                </svg>
+            </div>
+        </button>
+    </div>
     <div class="category-id"></div>
 
     <div class="category-name">

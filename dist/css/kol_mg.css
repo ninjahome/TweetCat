@@ -1,6 +1,56 @@
-.kol-op-area{
-    background-color: aqua;
+
+body {
+    font: 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-weight: 700;
+    max-width: 33%;
+    margin: auto;
+    border-left: 1px solid rgba(15, 20, 25, 0.1);
+    border-right: 1px solid rgba(15, 20, 25, 0.1);
+    min-height: 100vh;
 }
-.kol-info-area{
-    background-color: burlywood;
+
+.kol-mgn-header{
+    font-size: 18px;
+    font-weight: 1000;
+    padding: 18px 16px;
+    border-bottom: 1px solid rgba(15, 20, 25, 0.1);
+}
+.kol-item {
+    justify-content: space-between;
+    align-items:center;
+    margin: 12px 16px;
+}
+
+.kolAvatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    border: 1px solid rgba(15, 20, 25, 0.1);
+    margin-right: 4px;
+}
+
+.category-list,
+.kol-op-remove {
+    height: 30px;
+    border-radius: 9999px;
+    border: 1px solid rgba(15, 20, 25, 0.1);
+    background-color: rgba(0, 0, 0, 0);
+    padding: 0 16px;
+    font-weight: 1000;
+    cursor: pointer;
+}
+.kol-op-remove {
+    opacity: 0.5;
+}
+
+.kol-op-remove:hover {
+    color: rgba(224, 60, 57,1);
+    background-color: rgba(224, 60, 57,0.1);
+    border: 1px solid rgba(224, 60, 57,0.2);
+    opacity: 1;
+}
+#filter-btn-on-profile:hover {
+    color: rgba(74, 153, 233,1);
+    background-color: rgba(74, 153, 233,0.5);
+    border: 1px solid rgba(74, 153, 233,0.7);
 }
