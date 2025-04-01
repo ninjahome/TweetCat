@@ -3,7 +3,6 @@ import {_curKolFilter, resetCategories} from "./content_filter";
 import {queryCategoriesFromBG} from "./category";
 import {Category, itemColorGroup, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
 import {sendMsgToService} from "./utils";
-import {showAlert} from "./dash_common";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -97,7 +96,7 @@ function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
 
         let kol = await queryKolDetailByName(rawKol.kolName);
         if (!kol) {
-            kol = rawKol;
+            kol = new TweetKol(rawKol.kolName, rawKol.displayName);
         }
 
         if (!kol.avatarUrl) {

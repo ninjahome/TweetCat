@@ -99,6 +99,5 @@ export async function queryCategoriesFromBG(): Promise<Category[]> {
         console.log("------>>> load categories error:", rsp.data);
         return [];
     }
-    console.log("------->>>>>>>>>temp log", rsp);
     return rsp.data as Category[];
 }
