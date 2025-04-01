@@ -42,11 +42,15 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
 });
 
 async function handleNavigation(details: WebNavigation.OnCompletedDetailsType | WebNavigation.OnHistoryStateUpdatedDetailsType) {
-    await browser.tabs.sendMessage(details.tabId, {
-        action: MsgType.NaviUrlChanged,
-        isHome: details.url === __targetUrlToFilter
-    });
+    try {
+        await browser.tabs.sendMessage(details.tabId, {
+            action: MsgType.NaviUrlChanged,
+            isHome: details.url === __targetUrlToFilter
+        });
+    } catch (e) {
+        console.log("------>>> navigation message error:", e);
+    }
 }
 
-browser.webNavigation.onCompleted.addListener(handleNavigation, {url: [{urlMatches: 'https://x.com/*'}]});
+// browser.webNavigation.onCompleted.addListener(handleNavigation, {url: [{urlMatches: 'https://x.com/*'}]});
 browser.webNavigation.onHistoryStateUpdated.addListener(handleNavigation, {url: [{urlMatches: 'https://x.com/*'}]});
