@@ -9,6 +9,10 @@ body {
     flex-direction: column;
 }
 
+h3 {
+    margin: 0;
+}
+
 .page_view {
     display: none;
 }
@@ -140,7 +144,9 @@ input.new-category-name {
     border: 1px solid rgba(0, 0, 0, 0.1);
     font-size: 15px;
     transition: border 0.2s, box-shadow 0.2s;
+    margin-top: 16px;
 }
+
 input.category-input:focus{
     outline: none !important;
     border: 2px solid #428ad2 !important;
