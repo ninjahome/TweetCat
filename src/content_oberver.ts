@@ -1,8 +1,9 @@
-import {parseNameFromTweetCell, parseContentHtml} from "./content";
-import {_curKolFilter} from "./content_filter";
+import {parseNameFromTweetCell, parseContentHtml, curPageIsHome} from "./content";
+import {_curKolFilter, resetCategories} from "./content_filter";
 import {queryCategoriesFromBG} from "./category";
-import {Category, itemColorGroup, MsgType, TweetKol} from "./consts";
+import {Category, itemColorGroup, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
 import {sendMsgToService} from "./utils";
+import {showAlert} from "./dash_common";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -34,9 +35,11 @@ export async function initObserver() {
     removeBtn.addEventListener('click', removeKolFromCategory);
 }
 
+let missCounter = 0;
+
 function filterTweets(nodes: NodeList) {
     nodes.forEach((divNode) => {
-        if (!isTweetDiv(divNode)) {
+        if (!isTweetDiv(divNode) || !curPageIsHome) {
             return;
         }
 
@@ -52,11 +55,18 @@ function filterTweets(nodes: NodeList) {
         }
 
         if (_curKolFilter.has(user.kolName)) {
-            // console.log('------>>> hint:', user.displayString());
+            console.log('------>>> hint:', user.displayString());
+            missCounter = 0;
             return;
         }
-
+        console.log('------>>> miss:', user.displayString());
         divNode.style.display = "none";
+        missCounter++;
+        if (missCounter > maxMissedTweetOnce) {
+            alert("Too few tweets for this category.");
+            resetCategories();
+            missCounter = 0;
+        }
     });
 }
 
