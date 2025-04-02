@@ -7,7 +7,6 @@ import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
 let isCheckingContainer = false;
-let naviTryTime = 0;
 
 async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Category[]) {
     const contentTemplate = await parseContentHtml('html/content.html');
@@ -171,17 +170,21 @@ export async function reloadCategoryContainer(categories: Category[]) {
     await appendFilterBtnToHomePage(navElement, categories);
 }
 
+let observing = false;
 export async function appendFilterOnKolProfileHome(kolName: string) {
+    if (observing){
+        return;
+    }
+
+    observing = true;
     observeForElement(document.body, 800, () => {
         return document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
     }, async () => {
         const profileToolBarDiv = document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
-        const oldFilterBtn = profileToolBarDiv.querySelector(".filter-btn-on-profile");
-        if (!!oldFilterBtn) {
-            console.log("------>>>[kol profile home] filter button already appended")
-            oldFilterBtn.remove();
-        }
+        const oldFilterBtn = profileToolBarDiv.querySelectorAll(".filter-btn-on-profile");
+        oldFilterBtn.forEach(item=>item.remove());
         await _appendFilterBtn(profileToolBarDiv, kolName)
+        observing = false;
     }, false);
 }
 
