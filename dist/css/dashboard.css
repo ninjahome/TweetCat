@@ -112,9 +112,7 @@ h3 {
     font-weight: 1000;
     margin-left: 8px;
 }
-.category-name-val{
 
-}
 .view-category-manager .category-id {
     display: none;
 }
@@ -294,7 +292,6 @@ input.category-input:focus{
     color: rgba(66, 138, 210, 1);
 }
 .category-name {
-    padding: 0 16px;
     display: flex;
     flex-direction: column;
 }
