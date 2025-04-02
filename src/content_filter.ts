@@ -1,5 +1,5 @@
 import {observeForElement, sendMsgToService} from "./utils";
-import {Category, defaultAllCategoryID, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
+import {Category, defaultAllCategoryID, MsgType, TweetKol} from "./consts";
 import {curPageIsHome, parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
