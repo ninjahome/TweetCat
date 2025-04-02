@@ -109,7 +109,7 @@ async function setupCurCategoryList() {
 
 function _cloneCatItem(clone: HTMLElement, category: Category) {
     clone.setAttribute('id', "category-item-" + category.id);
-    clone.style.display = 'block';
+    clone.style.display = 'flex';
     clone.dataset.categoryID = "" + category.id;
     clone.querySelector(".category-name")!.textContent = category.catName;
 
@@ -117,6 +117,11 @@ function _cloneCatItem(clone: HTMLElement, category: Category) {
     editBtn.addEventListener('click', () => {
         editCategory(category);
     });
+
+    kolsForCategory(category.id!).then((result => {
+        const kolSize = clone.querySelector(".kol-size-val") as HTMLElement;
+        kolSize.textContent = "" + result.size;
+    }));
 }
 
 function editCategory(cat: Category) {
@@ -130,7 +135,7 @@ function editCategory(cat: Category) {
 
     const nameEditBtn = mgmDvi.querySelector(".name-edit") as HTMLElement;
     nameEditBtn.addEventListener('click', async () => {
-        await editCateName(cat, nameEditBtn, mgmDvi)
+        await editCateName(cat, mgmDvi)
     });
 
     mgmDvi.querySelector(".kol-manage-btn")?.addEventListener('click', () => {
@@ -147,34 +152,21 @@ function editCategory(cat: Category) {
         showView('#onboarding/main-home', dashRouter);
     })
 
-    kolsForCategory(cat.id!).then((result => {
-        const kolSize = mgmDvi.querySelector(".kol-size-val") as HTMLElement;
-        kolSize.textContent = "" + result.size;
-    }));
-
     showView('#onboarding/category-manager', dashRouter);
 }
 
-async function editCateName(cat: Category, btn: HTMLElement, parent: HTMLElement) {
+async function editCateName(cat: Category, parent: HTMLElement) {
     const inputArea = parent.querySelector(".category-name-val") as HTMLInputElement;
-    if (inputArea.disabled) {
-        inputArea.disabled = false;
-        btn.innerText = 'save';
-    } else {
-        const newCatName = inputArea.value;
-        if (!newCatName) {
-            showAlert("Tips", "invalid category name");
-            return;
-        }
-        inputArea.disabled = true;
-        btn.innerText = 'edit';
-        cat.catName = inputArea.value;
-
-        showLoading();
-        await updateCategoryDetail(cat);
-        broadcastToContent(MsgType.CategoryChanged, await loadCategories(defaultUserName));
-        hideLoading();
+    const newCatName = inputArea.value;
+    if (!newCatName) {
+        showAlert("Tips", "invalid category name");
+        return;
     }
+    cat.catName = inputArea.value;
+    showLoading();
+    await updateCategoryDetail(cat);
+    broadcastToContent(MsgType.CategoryChanged, await loadCategories(defaultUserName));
+    hideLoading();
 }
 
 function removeCatById(catId: number) {

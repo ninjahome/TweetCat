@@ -177,7 +177,7 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
     }, async () => {
         const profileToolBarDiv = document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
         const oldFilterBtn = profileToolBarDiv.querySelector(".filter-btn-on-profile");
-        if (oldFilterBtn) {
+        if (!!oldFilterBtn) {
             console.log("------>>>[kol profile home] filter button already appended")
             oldFilterBtn.remove();
         }

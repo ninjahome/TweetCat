@@ -5,46 +5,54 @@ import {kolsForCategory, loadCategories, queryKolCategory, removeKolsCategory, u
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void) {
 
     switch (request.action) {
-        case MsgType.OpenPlugin:
+
+        case MsgType.OpenPlugin:{
             await openPlugin(request.data);
             sendResponse({success: true});
-            break;
+            return;
+        }
 
-        case MsgType.QueryKolByCatID:
+        case MsgType.QueryKolByCatID:{
             const data = await kolsForCategory(request.data);
             sendResponse({success: true, data: Array.from(data.entries())});
-            break;
+            return;
+        }
 
         case MsgType.QueryCatsByUser:
+        {
             const catData = await  loadCategories(request.data);
-            // console.log("----->>> category data:", catData);
+            console.log("------------------------->>>tmp ", catData)
             sendResponse({success: true, data: catData});
-            break;
+            return;
+        }
 
-        case MsgType.CategoryChanged:
+        case MsgType.CategoryChanged:{
             const changedCat = await  loadCategories(request.data);
             broadcastToContent(MsgType.CategoryChanged, changedCat);
             sendResponse({success: true});
-            break;
+            return;
+        }
 
-        case MsgType.UpdateKolCat:
+        case MsgType.UpdateKolCat:{
             await updateKolsCategory(request.data as TweetKol);
             sendResponse({success: true});
-            break;
+            return;
+        }
 
         case MsgType.RemoveKol:
             await removeKolsCategory(request.data);
             sendResponse({success: true});
-            break;
+            return;
 
-        case MsgType.QueryKolCat:
+        case MsgType.QueryKolCat:{
             const kolCat = await queryKolCategory(request.data)
             sendResponse({success: true, data: kolCat});
-            break;
+            return;
+        }
 
         default:
-            sendResponse({success: true});
-            break;
+            sendResponse({success: false, data:"unsupportable message type"});
+            return;
     }
 }
 

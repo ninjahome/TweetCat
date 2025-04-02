@@ -15,22 +15,18 @@
 
     <div class="category-show-area" id="category-show-area">
         <button id="btn-add-category">+ Add Category </button>
+
         <div class="category-item" style="display: none" id="category-item-template">
-            <span class="category-name">News</span>
+            <div style="display: flex; justify-content: flex-start; align-items: center">
+                <span class="category-name">Priority Follow</span>
+                <div class="category-kol-size">
+                    <span class="kol-size-val" style="color: #06CBAD"></span>
+                </div>
+            </div>
             <button class="category-edit-btn">Edit</button>
         </div>
+
         <div id="categories-list" class="categories-list">
-            <div class="category-item" style="display: flex;" id="category-item-1" data-category-i-d="1">
-                <div style="display: flex; justify-content: flex-start; align-items: center">
-                    <span class="category-name">Priority Follow</span>
-                    <div class="category-kol-size">
-                        <span>Kol Size:</span>
-                        <span class="kol-size-val" style="color: #06CBAD"></span>
-                        <button class="kol-manage-btn">Manage</button>
-                    </div>
-                </div>
-                <button class="category-edit-btn">Edit</button>
-            </div>
         </div>
     </div>
 
@@ -59,7 +55,7 @@
 
     <div class="category-name">
         <label>
-            <input type="text" class="category-name-val" disabled>
+            <input type="text" class="category-name-val" >
         </label>
         <!--
        <img src="../images/edit.png" alt="edit image">
