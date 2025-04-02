@@ -38,6 +38,7 @@ h3 {
     width: 100%;
     border-radius: 9999px;
     background-color: #4a99e9;
+    font-size: 15px;
     font-weight: 1000;
     color: white;
     border: 0;
@@ -74,11 +75,13 @@ h3 {
     width: 80%;
     max-width: 400px;
     border-radius: 8px;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-buttons-new-category {
     margin-top: 15px;
-    text-align: right;
+    text-align: center;
 }
 
 .category-item {
@@ -91,14 +94,23 @@ h3 {
 .category-item:hover {
     background-color: rgba(15, 20, 25, 0.1);
 }
-
+.categories-list {
+    margin-top: 12px;
+}
 .category-edit-btn {
-    background-color: #008CBA;
-    color: white;
+    background-color: transparent;
+    color: rgb(15, 20, 25);
     border: none;
-    padding: 5px 10px;
+    font-weight: 1000;
+    opacity: 0.5;
     cursor: pointer;
-    border-radius: 4px;
+}
+.category-edit-btn:hover {
+    color: #428ad2;
+}
+.kol-size-val {
+    font-weight: 1000;
+    margin-left: 8px;
 }
 .category-name-val{
 
@@ -123,12 +135,15 @@ h3 {
     border-radius: 8px;
     width: 300px;
     margin: 100px auto;
-    padding: 16px;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #confirm-popup .button-row {
     text-align: right;
-    margin-top: 12px;
+    margin-top: 16px;
 }
 
 #confirm-popup button {
@@ -244,4 +259,94 @@ input.category-input:focus{
     100% {
         transform: rotate(360deg);
     }
+}
+
+.category-remove-btn,
+.button-back {
+    background-color: transparent;
+    border: none;
+}
+.button-back {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px;
+    border-radius: 9999px;
+    width: 34px;
+    height: 34px;
+}
+.button-back div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.button-back div :hover {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 9999px;
+    padding: 12px;
+}
+.category-remove-btn {
+    color: rgba(0, 0, 0, 0.5);
+    font-weight: 1000;
+    font-size: 15px;
+}
+.category-remove-btn:hover {
+    color: rgba(66, 138, 210, 1);
+}
+.category-name {
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.category-name-val {
+    padding: 12px 16px;
+    box-sizing: border-box;
+    text-align: center;        /* 水平居中 */
+    vertical-align: middle;    /* 垂直居中（非 input 有效） */
+    max-width: 100%;
+    width: 100%;
+    border-radius: 9999px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 15px;
+    transition: border 0.2s, box-shadow 0.2s;
+    margin-top: 16px;
+}
+.name-edit,
+#btn-ok,
+#btn-confirm-new-category {
+    padding: 12px 16px;
+    background-color: #4a99e9;
+    font-size: 15px;
+    font-weight: 1000;
+    color: white;
+    border-radius: 9999px;
+    border: none;
+}
+#btn-confirm-new-category{
+    margin-left: 8px;
+}
+.name-edit {
+    margin: 16px auto;
+}
+.name-edit:hover,
+#btn-ok:hover,
+#btn-confirm-new-category:hover {
+    background-color: #428ad2;
+}
+#btn-cancel-new-category,
+#btn-cancel {
+    background-color: transparent;
+    border-radius: 999px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 12px 16px;
+    color:rgba(0, 0, 0, 0.5) ;
+}
+#btn-cancel-new-category:hover,
+#btn-cancel:hover {
+    background-color: rgba(0, 0, 0, 0.2);
+
+}
+.popup-content p {
+    margin: 0;
 }

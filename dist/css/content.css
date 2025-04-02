@@ -65,7 +65,7 @@
 }
 
 .category-popup-menu .menu-item.active {
-    background-color: #f5f8fa;
+    background-color: rgba(254, 70, 108, 0.2);
 }
 
 .category-popup-menu .menu-item:hover {
