@@ -102,14 +102,12 @@ h3 {
     width: 34px;
     height: 34px;
     background-color: transparent;
-    color: rgb(15, 20, 25);
     border: none;
     cursor: pointer;
     border-radius: 9999px;
     display: flex;
     justify-content: center;
     align-items: center;
-    opacity: 0.5;
 }
 .category-edit-btn:hover{
     background-color: rgba(0,0,0,0.2);
