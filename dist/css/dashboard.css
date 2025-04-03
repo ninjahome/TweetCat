@@ -109,6 +109,9 @@ h3 {
     justify-content: center;
     align-items: center;
 }
+.kol-size-val {
+    text-decoration: underline;
+}
 .category-edit-btn:hover{
     background-color: rgba(0,0,0,0.2);
 }
