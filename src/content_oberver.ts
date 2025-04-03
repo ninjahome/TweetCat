@@ -1,7 +1,7 @@
 import {parseNameFromTweetCell, parseContentHtml, curPageIsHome} from "./content";
 import {_curKolFilter, resetCategories} from "./content_filter";
 import {queryCategoriesFromBG} from "./category";
-import {Category, choseColorByID, itemColorGroup, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
+import {Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
 import {sendMsgToService} from "./utils";
 
 let __menuBtnDiv: HTMLElement;
