@@ -7,8 +7,9 @@ import {
 } from "./content_filter";
 import {__targetUrlToFilter, Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {addCustomStyles, isTwitterUserProfile} from "./utils";
+import {fetchTweets} from "./tweet_api";
 
-export function isHomePage():boolean{
+export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
 }
 
@@ -18,6 +19,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     await appendCategoryContainerAtTop();
     await parseUserInfo(async (userName) => {
         console.log("------->>>>tweet user name:", userName)
+        try {
+            await fetchTweets('791197', 5);
+        } catch (e) {
+            console.log("--------------tmp test", e)
+        }
     });
 
     console.log('------>>>TweetCat content script success ✨');

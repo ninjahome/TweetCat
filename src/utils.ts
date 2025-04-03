@@ -1,4 +1,6 @@
 import browser from "webextension-polyfill";
+import {localGet} from "./local_storage";
+import {__DBK_Bearer_Token, DEFAULT_BEARER} from "./consts";
 
 export async function sendMsgToService(data: any, actTyp: string): Promise<any> {
     try {
@@ -84,4 +86,11 @@ export function observeForElementDirect(target: HTMLElement, idleThreshold: numb
                                         foundFunc: () => HTMLElement | null, callback: () => Promise<void>,
                                         continueMonitor?: boolean) {
     observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: false}, continueMonitor);
+}
+
+
+export async function getBearerToken(): Promise<string> {
+    const cached = await localGet(__DBK_Bearer_Token);
+    if (cached) return cached;
+    return DEFAULT_BEARER;
 }
