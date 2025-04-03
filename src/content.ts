@@ -5,10 +5,12 @@ import {
     appendFilterOnKolProfileHome,
     reloadCategoryContainer
 } from "./content_filter";
-import {Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
+import {__targetUrlToFilter, Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {addCustomStyles, isTwitterUserProfile} from "./utils";
 
-export let curPageIsHome = true;
+export function isHomePage():boolean{
+    return window.location.href === __targetUrlToFilter;
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     addCustomStyles('css/content.css');
@@ -29,7 +31,6 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     switch (request.action) {
         case MsgType.NaviUrlChanged:
-            curPageIsHome = request.isHome;
             appendCategoryContainerAtTop().then();
             const kolName = isTwitterUserProfile()
             if (!!kolName) {

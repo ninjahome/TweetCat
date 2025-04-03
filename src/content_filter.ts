@@ -1,6 +1,6 @@
 import {observeForElement, sendMsgToService} from "./utils";
 import {Category, defaultAllCategoryID, MsgType, TweetKol} from "./consts";
-import {curPageIsHome, parseContentHtml, parseNameFromTweetCell} from "./content";
+import {isHomePage, parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 
@@ -105,7 +105,7 @@ async function addMoreCategory() {
 }
 
 export async function appendCategoryContainerAtTop() {
-    if (isCheckingContainer || !curPageIsHome) {
+    if (isCheckingContainer || !isHomePage()) {
         console.log('------>>> checkFilterBtn is already running or no need ');
         return;
     }

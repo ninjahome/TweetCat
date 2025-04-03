@@ -1,4 +1,4 @@
-import {parseNameFromTweetCell, parseContentHtml, curPageIsHome} from "./content";
+import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
 import {_curKolFilter, resetCategories} from "./content_filter";
 import {queryCategoriesFromBG} from "./category";
 import {Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
@@ -38,7 +38,9 @@ let missCounter = 0;
 
 function filterTweets(nodes: NodeList) {
     nodes.forEach((divNode) => {
-        if (!isTweetDiv(divNode) || !curPageIsHome) {
+        if (!isTweetDiv(divNode) || !isHomePage()
+        ) {
+            // console.log("------>>> is home page:", window.location.href);
             return;
         }
 
@@ -165,7 +167,7 @@ export function hidePopupMenu() {
     document.removeEventListener('click', handleClickOutside);
 }
 
-function _setItemActive(item:HTMLElement, id:number){
+function _setItemActive(item: HTMLElement, id: number) {
     item.style.backgroundColor = choseColorByID(id, 0.2);
 }
 
