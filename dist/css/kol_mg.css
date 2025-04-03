@@ -15,6 +15,7 @@ body {
     padding: 18px 16px;
     border-bottom: 1px solid rgba(15, 20, 25, 0.1);
 }
+
 .kol-item {
     justify-content: space-between;
     align-items:center;
@@ -23,8 +24,12 @@ body {
 .kolName{
     cursor: pointer;
 }
+
 .kolName:hover {
     text-decoration: underline;
+}
+.kol-item:hover {
+    background-color: rgba(0, 0, 0, 0.1);
 }
 
 .kolAvatar {
