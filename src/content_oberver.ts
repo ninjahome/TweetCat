@@ -1,7 +1,7 @@
 import {parseNameFromTweetCell, parseContentHtml, curPageIsHome} from "./content";
 import {_curKolFilter, resetCategories} from "./content_filter";
 import {queryCategoriesFromBG} from "./category";
-import {Category, itemColorGroup, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
+import {Category, choseColorByID, itemColorGroup, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
 import {sendMsgToService} from "./utils";
 
 let __menuBtnDiv: HTMLElement;
@@ -165,15 +165,19 @@ export function hidePopupMenu() {
     document.removeEventListener('click', handleClickOutside);
 }
 
+function _setItemActive(item:HTMLElement, id:number){
+    item.style.backgroundColor = choseColorByID(id, 0.2);
+}
+
 function _cloneMenuItem(templateItem: HTMLElement, cat: Category, kol: TweetKol): HTMLElement {
     const clone = templateItem.cloneNode(true) as HTMLElement;
     clone.style.display = 'block';
     if (cat.id === kol.catID) {
-        clone.classList.add("active");
+        _setItemActive(clone, cat.id!);
     }
 
     clone.dataset.categoryid = '' + cat.id;
-    (clone.querySelector(".dot") as HTMLElement).style.backgroundColor = itemColorGroup[cat.id! % 5];
+    (clone.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(cat.id!);
 
     clone.querySelector(".menu-item-category-name")!.textContent = cat.catName;
     clone.addEventListener('click', () => {
@@ -190,7 +194,7 @@ function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: TweetKol
     }
 
     __categoryPopupMenu.querySelectorAll(".menu-item").forEach(itemDiv => itemDiv.classList.remove(".active"));
-    menuItem.classList.add("active");
+    _setItemActive(menuItem, cat.id!);
 
     kol.catID = cat.id;
     sendMsgToService(kol, MsgType.UpdateKolCat).then();

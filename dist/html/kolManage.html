@@ -13,15 +13,17 @@
         <span id="category-name" class="category-name"></span>:<span class="category-kol-size">0</span>
     </div>
 </div>
+
 <option id="category-item" class="category-item" style="display: none"></option>
-<select id="category-list" class="category-list" style="display: none">
-</select>
+<select id="category-list" class="category-list" style="display: none"></select>
 
 <div class="kol-item" id="kol-item-template" style="display: none">
-    <div class="kol-info-area">
+    <div class="kol-info-area"  style="display: flex;flex-direction: row">
         <img src="" alt="kol avatar image" class="kolAvatar">
-        <span class="kolName"></span>
-        <span class="kolDisName"></span>
+        <div style="display: flex; flex-direction: column; justify-content:center">
+            <span class="kolName"></span>
+            <span class="kolDisName" style="opacity: 0.5; margin-top: 4px"></span>
+        </div>
     </div>
     <div class="kol-op-area">
         <button class="kol-op-remove">Remove</button>
@@ -39,10 +41,10 @@
         </div>
         <div class="kol-op-area" style="display: flex; justify-content: flex-end">
             <button class="kol-op-remove" style="margin-right: 4px">Remove</button>
-<!--            <select id="category-list" class="category-list" style="display: block;">-->
-<!--                <option id="1" class="category-item" style="display: block;" value="1">Priority Follow</option>-->
-<!--                <option id="2" class="category-item" style="display: block;" value="2">haha</option>-->
-<!--            </select>-->
+            <select id="category-list" class="category-list" style="display: block;">
+                <option id="1" class="category-item" style="display: block;" value="1">Priority Follow</option>
+                <option id="2" class="category-item" style="display: block;" value="2">haha</option>
+            </select>
         </div>
     </div>
 </div>

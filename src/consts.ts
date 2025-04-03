@@ -7,6 +7,17 @@ export const defaultAllCategoryID = -1;
 export const maxMissedTweetOnce = 200;
 export const itemColorGroup = ['#f6cd01', '#866afb', '#fe466c', '#06cbad', '#4592ef']
 
+function addOpacityToHex(hex: string, opacity: number): string {
+    const clampedOpacity = Math.min(1, Math.max(0, opacity));
+    const alpha = Math.round(clampedOpacity * 255).toString(16).padStart(2, '0');
+    return `${hex}${alpha}`;
+}
+
+export function choseColorByID(id: number, opacity: number = 1): string {
+    const baseColor = itemColorGroup[id % itemColorGroup.length];
+    return addOpacityToHex(baseColor, opacity);
+}
+
 export enum MsgType {
     OpenPlugin = 'OpenPlugin',
     InitPopup = "InitPopup",

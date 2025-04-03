@@ -17,6 +17,7 @@ async function initKolManager() {
         return;
     }
     const catName = queryUrl.searchParams.get("catName")
+    document.title = catName ?? "Category Management";
     document.getElementById("category-name")!.textContent = catName;
 
     await checkAndInitDatabase();
@@ -55,7 +56,7 @@ function populateKolList() {
 
         const item = kolItem.cloneNode(true) as HTMLElement;
         item.setAttribute('id', kol.kolName);
-        item.style.display = 'block';
+        item.style.display = 'flex';
 
         const infoArea = item.querySelector(".kol-info-area") as HTMLElement;
         const img = infoArea.querySelector(".kolAvatar") as HTMLImageElement

@@ -1,5 +1,5 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {Category, defaultUserName, MsgType} from "./consts";
+import {Category, choseColorByID, defaultUserName, MsgType} from "./consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "./database";
 import {showView} from "./utils";
 import {kolsForCategory, loadCategories, removeCategory, updateCategoryDetail} from "./category";
@@ -121,6 +121,12 @@ function _cloneCatItem(clone: HTMLElement, category: Category) {
     kolsForCategory(category.id!).then((result => {
         const kolSize = clone.querySelector(".kol-size-val") as HTMLElement;
         kolSize.textContent = "" + result.size;
+        kolSize.onclick = () => {
+            browser.tabs.create({
+                url: browser.runtime.getURL("html/kolManage.html?catID=" + category.id + "&&catName=" + category.catName),
+            }).then();
+        }
+        kolSize.style.color = choseColorByID(category.id!)
     }));
 }
 
@@ -137,12 +143,6 @@ function editCategory(cat: Category) {
     nameEditBtn.addEventListener('click', async () => {
         await editCateName(cat, mgmDvi)
     });
-
-    mgmDvi.querySelector(".kol-manage-btn")?.addEventListener('click', () => {
-        browser.tabs.create({
-            url: browser.runtime.getURL("html/kolManage.html?catID=" + cat.id + "&&catName=" + cat.catName),
-        }).then();
-    })
 
     mgmDvi.querySelector(".category-remove-btn")?.addEventListener('click', () => {
         removeCatById(cat.id!);
