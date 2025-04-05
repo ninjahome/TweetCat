@@ -20,7 +20,7 @@ export function choseColorByID(id: number, opacity: number = 1): string {
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__"
 export const DEFAULT_BEARER = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
-
+export const __DBK_query_id_map = "__DBK_query_id_map__"
 
 export enum MsgType {
     OpenPlugin = 'OpenPlugin',
