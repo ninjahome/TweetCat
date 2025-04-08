@@ -41,17 +41,36 @@ export function addCustomStyles(cssFilePath: string): void {
 
 export function isTwitterUserProfile(): string | null {
     const path = window.location.pathname;
-    const match = path.match(/^\/([a-zA-Z0-9_]+)$/);
-    const excludedPaths = ['home', 'explore', 'notifications', 'messages', 'settings', 'login', 'signup'];
+    const excludedPaths = [
+        'home', 'explore', 'notifications', 'messages',
+        'settings', 'login', 'signup'
+    ];
 
-    // 先检查 URL 是否有效且不在排除列表中
-    if (!match || excludedPaths.includes(match[1])) {
+    // 允许匹配这些后缀路径
+    const allowedSuffixes = ['', 'affiliates', 'with_replies', 'highlights', 'media'];
+
+    const pathParts = path.split('/').filter(Boolean); // 去掉空串
+
+    // 只处理 /username 或 /username/xxx（最多两段）
+    if (pathParts.length === 0 || pathParts.length > 2) {
         return null;
     }
-    return match[1];
-    // 再检查页面元素
-    // return !!document.querySelector('[data-testid="UserProfileHeader_Items"]');
+
+    const [username, subpath] = pathParts;
+
+    // 排除保留路径
+    if (excludedPaths.includes(username)) {
+        return null;
+    }
+
+    // 如果是带子路径的，只允许特定后缀
+    if (subpath && !allowedSuffixes.includes(subpath)) {
+        return null;
+    }
+
+    return username;
 }
+
 
 function observeAction(target: HTMLElement, idleThreshold: number,
                        foundFunc: () => HTMLElement | null, callback: () => Promise<void>,
