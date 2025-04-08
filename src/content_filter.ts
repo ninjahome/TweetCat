@@ -142,14 +142,6 @@ export async function appendCategoryContainerAtTop() {
 }
 
 export async function resetCategories() {
-
-    try {
-        console.log("------>>> user id:", await getUserIdByUsername('elonmusk'));
-        await fetchTweets('791197', 5);
-    } catch (e) {
-        console.log("--------------tmp test", e)
-    }
-
     if (_curFilterID <= 0) {
         return;
     }
