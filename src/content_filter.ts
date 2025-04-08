@@ -3,6 +3,7 @@ import {Category, defaultAllCategoryID, MsgType, TweetKol} from "./consts";
 import {isHomePage, parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
+import {fetchTweets, getUserIdByUsername} from "./tweet_api";
 
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
@@ -140,7 +141,14 @@ export async function appendCategoryContainerAtTop() {
     }
 }
 
-export function resetCategories() {
+export async function resetCategories() {
+
+    try {
+        console.log("------>>> user id:", await getUserIdByUsername('elonmusk'));
+        await fetchTweets('791197', 5);
+    } catch (e) {
+        console.log("--------------tmp test", e)
+    }
 
     if (_curFilterID <= 0) {
         return;
@@ -171,8 +179,9 @@ export async function reloadCategoryContainer(categories: Category[]) {
 }
 
 let observing = false;
+
 export async function appendFilterOnKolProfileHome(kolName: string) {
-    if (observing){
+    if (observing) {
         return;
     }
 
@@ -182,7 +191,7 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
     }, async () => {
         const profileToolBarDiv = document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
         const oldFilterBtn = profileToolBarDiv.querySelectorAll(".filter-btn-on-profile");
-        oldFilterBtn.forEach(item=>item.remove());
+        oldFilterBtn.forEach(item => item.remove());
         await _appendFilterBtn(profileToolBarDiv, kolName)
         observing = false;
     }, false);

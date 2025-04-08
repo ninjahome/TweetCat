@@ -21,7 +21,6 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.QueryCatsByUser:
         {
             const catData = await  loadCategories(request.data);
-            console.log("------------------------->>>tmp ", catData)
             sendResponse({success: true, data: catData});
             return;
         }
