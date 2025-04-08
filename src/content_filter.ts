@@ -3,7 +3,6 @@ import {Category, defaultAllCategoryID, MsgType, TweetKol} from "./consts";
 import {isHomePage, parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
-import {fetchTweets, getUserIdByUsername} from "./tweet_api";
 
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
