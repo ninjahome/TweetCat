@@ -211,3 +211,12 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
     const userId = result?.data?.user?.result?.rest_id;
     return userId ?? null;
 }
+
+export async function testTweetApi(){
+    try {
+        console.log("------>>> user id:", await getUserIdByUsername('elonmusk'));
+        await fetchTweets('44196397', 5);
+    } catch (e) {
+        console.log("--------------tmp test", e)
+    }
+}
