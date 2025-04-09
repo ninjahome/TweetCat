@@ -103,6 +103,11 @@ async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: Twee
         return;
     }
 
+    if (!!menuAreaDiv.querySelector(".filter-menu-on-main")){
+        console.log("------>>> duplicate menu addition", menuAreaDiv);
+        return;
+    }
+
     const clone = __menuBtnDiv.cloneNode(true) as HTMLElement;
     clone.setAttribute('id', "");
 
