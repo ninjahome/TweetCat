@@ -1,6 +1,5 @@
 /// <reference lib="webworker" />
 import browser, {Runtime, WebNavigation} from "webextension-polyfill";
-import {createAlarm} from "./bg_timer";
 import {bgMsgDispatch} from "./bg_msg";
 import {__DBK_Bearer_Token, __DBK_query_id_map, __targetUrlToFilter, MsgType} from "./consts";
 import {checkAndInitDatabase} from "./database";
@@ -11,13 +10,13 @@ self.addEventListener('activate', (event) => {
     console.log('------>>> Service Worker activating......');
     const extendableEvent = event as ExtendableEvent;
     extendableEvent.waitUntil((self as unknown as ServiceWorkerGlobalScope).clients.claim());
-    extendableEvent.waitUntil(createAlarm());
+    // extendableEvent.waitUntil(createAlarm());
 });
 
 self.addEventListener('install', (event) => {
     console.log('------>>> Service Worker installing......');
     const evt = event as ExtendableEvent;
-    evt.waitUntil(createAlarm());
+    // evt.waitUntil(createAlarm());
 });
 
 browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType) => {
@@ -32,8 +31,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
 
 browser.runtime.onStartup.addListener(() => {
     console.log('------>>> onStartup......');
-    checkAndInitDatabase().catch(() => {
-    });
+    checkAndInitDatabase().then();
 });
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
