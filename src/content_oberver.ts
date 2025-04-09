@@ -1,6 +1,6 @@
 import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
 import {_curKolFilter, resetCategories} from "./content_filter";
-import {queryCategoriesFromBG, queryCategoryById} from "./category";
+import {queryCategoriesFromBG} from "./category";
 import {Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
 import {sendMsgToService} from "./utils";
 
