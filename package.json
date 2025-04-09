@@ -1,6 +1,6 @@
 {
   "name": "TweetyCat",
-  "version": "1.0.2",
+  "version": "1.0.5",
   "description": "catch your favorite tweets",
   "scripts": {
     "build:d": "webpack --mode development --stats-error-details",

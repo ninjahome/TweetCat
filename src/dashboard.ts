@@ -1,5 +1,5 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {Category, choseColorByID, defaultUserName, MsgType} from "./consts";
+import {Category, choseColorByID, defaultUserName, MaxCategorySize, MsgType} from "./consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "./database";
 import {showView} from "./utils";
 import {kolsForCategory, loadCategories, removeCategory, updateCategoryDetail} from "./category";
@@ -53,10 +53,15 @@ export function dashboardMsgDispatch(request: any, _sender: Runtime.MessageSende
 
 function initNewCatBtn() {
     const newCategoryBtn = document.getElementById("btn-add-category") as HTMLElement;
-    newCategoryBtn.addEventListener('click', () => {
+    newCategoryBtn.onclick = async () => {
+        const categories = await loadCategories(defaultUserName);
+        if (categories.length >= MaxCategorySize) {
+            showAlert("Tips", "You can create up to 4 categories for now. We'll support more soon!");
+            return;
+        }
         const modalDialog = document.getElementById("modal-add-category") as HTMLElement
         modalDialog.style.display = 'block';
-    })
+    }
 }
 
 function initNewCatModalDialog() {
