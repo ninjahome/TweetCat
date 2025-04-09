@@ -111,10 +111,6 @@ async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: Twee
     const clone = __menuBtnDiv.cloneNode(true) as HTMLElement;
     clone.setAttribute('id', "");
 
-    let kol = await queryKolDetailByName(rawKol.kolName);
-    if (!kol) {
-        kol = new TweetKol(rawKol.kolName, rawKol.displayName);
-    }
 
     menuAreaDiv.insertBefore(clone, menuAreaDiv.firstChild);
     clone.onclick = async (e) => {
@@ -122,6 +118,11 @@ async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: Twee
         if (categories.length === 0) {
             alert("no valid categories");//TODO::
             return;
+        }
+
+        let kol = await queryKolDetailByName(rawKol.kolName);
+        if (!kol) {
+            kol = new TweetKol(rawKol.kolName, rawKol.displayName);
         }
 
         if (!kol.avatarUrl) {
