@@ -15,7 +15,7 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('install', (event) => {
     console.log('------>>> Service Worker installing......');
-    const evt = event as ExtendableEvent;
+    // const evt = event as ExtendableEvent;
     // evt.waitUntil(createAlarm());
 });
 
