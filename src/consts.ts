@@ -31,6 +31,7 @@ export enum MsgType {
     CategoryChanged = 'CategoryChanged',
     QueryKolCat = 'QueryKolCat',
     UpdateKolCat = 'UpdateKolCat',
+    QueryCatByID = 'QueryCatByID',
     RemoveKol = 'RemoveKol'
 }
 

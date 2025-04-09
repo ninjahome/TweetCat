@@ -47,7 +47,7 @@ export function isTwitterUserProfile(): string | null {
     ];
 
     // 允许匹配这些后缀路径
-    const allowedSuffixes = ['', 'affiliates', 'with_replies', 'highlights', 'media'];
+    const allowedSuffixes = ['', 'affiliates', 'with_replies', 'highlights', 'media', 'superfollows'];
 
     const pathParts = path.split('/').filter(Boolean); // 去掉空串
 
@@ -56,7 +56,7 @@ export function isTwitterUserProfile(): string | null {
         return null;
     }
 
-    const [username, subpath] = pathParts;
+    const [username, subPath] = pathParts;
 
     // 排除保留路径
     if (excludedPaths.includes(username)) {
@@ -64,7 +64,7 @@ export function isTwitterUserProfile(): string | null {
     }
 
     // 如果是带子路径的，只允许特定后缀
-    if (subpath && !allowedSuffixes.includes(subpath)) {
+    if (subPath && !allowedSuffixes.includes(subPath)) {
         return null;
     }
 

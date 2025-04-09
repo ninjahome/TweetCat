@@ -140,7 +140,7 @@ export async function appendCategoryContainerAtTop() {
     }
 }
 
-export async function resetCategories() {
+export function resetCategories() {
     if (_curFilterID <= 0) {
         return;
     }
@@ -148,7 +148,9 @@ export async function resetCategories() {
     _curFilterID = defaultAllCategoryID;
     _curKolFilter = new Map<string, TweetKol>();
     setSelectedCategory();
-    (document.querySelector('a[aria-label="Home"]') as HTMLElement)?.click();
+    // const homeBtn =  document.querySelector('a[data-testid="AppTabBar_Home_Link"]') as HTMLElement
+    // homeBtn.click();
+    window.location.reload();
 }
 
 async function queryFilterFromBG(catID: number): Promise<Map<string, TweetKol>> {

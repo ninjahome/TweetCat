@@ -1,6 +1,13 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {MsgType, TweetKol} from "./consts";
-import {kolsForCategory, loadCategories, queryKolCategory, removeKolsCategory, updateKolsCategory} from "./category";
+import {
+    CategoryForId,
+    kolsForCategory,
+    loadCategories,
+    queryKolByName,
+    removeKolsCategory,
+    updateKolsCategory
+} from "./category";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void) {
 
@@ -25,6 +32,13 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return;
         }
 
+        case MsgType.QueryCatByID:
+        {
+            const catData = await  CategoryForId(request.data);
+            sendResponse({success: true, data: catData});
+            return;
+        }
+
         case MsgType.CategoryChanged:{
             const changedCat = await  loadCategories(request.data);
             broadcastToContent(MsgType.CategoryChanged, changedCat);
@@ -44,7 +58,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return;
 
         case MsgType.QueryKolCat:{
-            const kolCat = await queryKolCategory(request.data)
+            const kolCat = await queryKolByName(request.data)
             sendResponse({success: true, data: kolCat});
             return;
         }

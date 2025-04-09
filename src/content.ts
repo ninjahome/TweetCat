@@ -7,7 +7,6 @@ import {
 } from "./content_filter";
 import {__targetUrlToFilter, Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {addCustomStyles, isTwitterUserProfile} from "./utils";
-import {fetchTweets, getUserIdByUsername} from "./tweet_api";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
@@ -43,6 +42,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             break;
 
         case MsgType.CategoryChanged:
+            console.log("------>>> category changed.....")
             reloadCategoryContainer(request.data as Category[]).then();
             sendResponse({success: true});
             break;
@@ -99,8 +99,9 @@ export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null 
     const username = userHref.startsWith('/') ? userHref.substring(1) : userHref;
 
     const nameSpan = userNameDiv.querySelector(".css-1jxf684.r-bcqeeo.r-1ttztb7.r-qvutc0.r-poiln3") as HTMLElement
-    const displayName = nameSpan?.textContent || '';
+    const displayName = nameSpan?.textContent || 'imageName';
     if (!username || !displayName) {
+        console.log("==============================>>>", username, displayName);
         return null;
     }
 

@@ -29,6 +29,15 @@ export async function loadCategories(forUser: string): Promise<Category[]> {
     }
 }
 
+export async function CategoryForId(catID: number): Promise<Category | null> {
+    try {
+        return await databaseGet(__tableCategory, catID) as Category;
+    } catch (e) {
+        console.log("------>>> load categories failed:", e)
+        return null;
+    }
+}
+
 export async function kolsForCategory(catID: number): Promise<Map<string, TweetKol>> {
     const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => {
         return item.catID === catID;
@@ -58,7 +67,7 @@ export async function removeKolsCategory(kolName: string) {
     }
 }
 
-export async function queryKolCategory(kolName: string): Promise<TweetKol | null> {
+export async function queryKolByName(kolName: string): Promise<TweetKol | null> {
     try {
         const kol = await databaseGet(__tableKolsInCategory, kolName);
         return kol as TweetKol;
@@ -101,4 +110,14 @@ export async function queryCategoriesFromBG(): Promise<Category[]> {
     }
     // console.log("------------------------->>>tmp ", rsp)
     return rsp.data as Category[];
+}
+
+export async function queryCategoryById(catID: number): Promise<Category | null> {
+    const rsp = await sendMsgToService(catID, MsgType.QueryCatByID)
+    if (!rsp.success) {
+        console.log("------>>> load categories error:", rsp.data);
+        return null;
+    }
+    // console.log("------------------------->>>tmp ", rsp)
+    return rsp.data as Category;
 }
