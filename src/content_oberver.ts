@@ -1,6 +1,6 @@
 import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
 import {_curKolFilter, resetCategories} from "./content_filter";
-import {queryCategoriesFromBG} from "./category";
+import {queryCategoriesFromBG, queryCategoryById} from "./category";
 import {Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
 import {sendMsgToService} from "./utils";
 
@@ -49,7 +49,7 @@ function filterTweets(nodes: NodeList) {
             return;
         }
 
-        appendFilterBtn(divNode, user);
+        appendCategoryMenuOnTweet(divNode, user).then();
 
         if (_curKolFilter.size === 0) {
             return;
@@ -78,7 +78,26 @@ function isTweetDiv(node: Node): node is HTMLDivElement {
     );
 }
 
-function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
+async function setCatMenu(kol: TweetKol, menuBtn: HTMLElement) {
+    const catBtn = menuBtn.querySelector('.noCategory') as HTMLElement;
+    const catName = menuBtn.querySelector(".hasCategory") as HTMLElement;
+
+    if (!kol.catID) {
+        catBtn.style.display = 'block';
+        catName.style.display = 'none';
+    } else {
+        catName.style.backgroundColor = choseColorByID(kol.catID!, 0.2);
+        catBtn.style.display = 'none';
+        catName.style.display = 'block';
+        const cat = await queryCategoryById(kol.catID!);
+        if (!!cat) {
+            (catName.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(cat.id!);
+            catName.querySelector(".menu-item-category-name")!.textContent = cat.catName;
+        }
+    }
+}
+
+async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
 
     const menuAreaDiv = tweetCellDiv.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep") as HTMLElement
     if (!menuAreaDiv) {
@@ -88,17 +107,18 @@ function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
 
     const clone = __menuBtnDiv.cloneNode(true) as HTMLElement;
     clone.setAttribute('id', "");
+
+    let kol = await queryKolDetailByName(rawKol.kolName);
+    if (!kol) {
+        kol = new TweetKol(rawKol.kolName, rawKol.displayName);
+    }
+
     menuAreaDiv.insertBefore(clone, menuAreaDiv.firstChild);
     clone.onclick = async (e) => {
         const categories = await queryCategoriesFromBG();
         if (categories.length === 0) {
             alert("no valid categories");//TODO::
             return;
-        }
-
-        let kol = await queryKolDetailByName(rawKol.kolName);
-        if (!kol) {
-            kol = new TweetKol(rawKol.kolName, rawKol.displayName);
         }
 
         if (!kol.avatarUrl) {

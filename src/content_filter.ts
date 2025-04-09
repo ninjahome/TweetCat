@@ -140,7 +140,7 @@ export async function appendCategoryContainerAtTop() {
     }
 }
 
-export async function resetCategories() {
+export function resetCategories() {
     if (_curFilterID <= 0) {
         return;
     }
