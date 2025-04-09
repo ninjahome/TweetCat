@@ -114,9 +114,9 @@ function _cloneCatItem(clone: HTMLElement, category: Category) {
     clone.querySelector(".category-name")!.textContent = category.catName;
 
     const editBtn = clone.querySelector(".category-edit-btn") as HTMLElement;
-    editBtn.addEventListener('click', () => {
+    editBtn.onclick = () => {
         editCategory(category);
-    });
+    }
 
     kolsForCategory(category.id!).then((result => {
         const kolSize = clone.querySelector(".kol-size-val") as HTMLElement;
@@ -140,17 +140,19 @@ function editCategory(cat: Category) {
     catNameDiv.value = cat.catName;
 
     const nameEditBtn = mgmDvi.querySelector(".name-edit") as HTMLElement;
-    nameEditBtn.addEventListener('click', async () => {
+    nameEditBtn.onclick = async () => {
         await editCateName(cat, mgmDvi)
-    });
+    }
 
-    mgmDvi.querySelector(".category-remove-btn")?.addEventListener('click', () => {
+    const rmBtn = mgmDvi.querySelector(".category-remove-btn") as HTMLElement;
+    rmBtn.onclick = () => {
         removeCatById(cat.id!);
-    })
+    }
 
-    mgmDvi.querySelector(".button-back")?.addEventListener('click', () => {
+    const backBtn = mgmDvi.querySelector(".button-back") as HTMLElement;
+    backBtn.onclick = () => {
         showView('#onboarding/main-home', dashRouter);
-    })
+    }
 
     showView('#onboarding/category-manager', dashRouter);
 }

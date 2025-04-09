@@ -77,26 +77,24 @@ function isTweetDiv(node: Node): node is HTMLDivElement {
         node.dataset.testid === 'cellInnerDiv'
     );
 }
-
-async function setCatMenu(kol: TweetKol, menuBtn: HTMLElement) {
-    const catBtn = menuBtn.querySelector('.noCategory') as HTMLElement;
-    const catName = menuBtn.querySelector(".hasCategory") as HTMLElement;
-
-    if (!kol.catID) {
-        catBtn.style.display = 'block';
-        catName.style.display = 'none';
-    } else {
-        catName.style.backgroundColor = choseColorByID(kol.catID!, 0.2);
-        catBtn.style.display = 'none';
-        catName.style.display = 'block';
-        const cat = await queryCategoryById(kol.catID!);
-        if (!!cat) {
-            (catName.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(cat.id!);
-            catName.querySelector(".menu-item-category-name")!.textContent = cat.catName;
-        }
-    }
-}
-
+// async function setCatMenu(kol: TweetKol, menuBtn: HTMLElement) {
+//     const catBtn = menuBtn.querySelector('.noCategory') as HTMLElement;
+//     const catName = menuBtn.querySelector(".hasCategory") as HTMLElement;
+//
+//     if (!kol.catID) {
+//         catBtn.style.display = 'block';
+//         catName.style.display = 'none';
+//     } else {
+//         catName.style.backgroundColor = choseColorByID(kol.catID!, 0.2);
+//         catBtn.style.display = 'none';
+//         catName.style.display = 'block';
+//         const cat = await queryCategoryById(kol.catID!);
+//         if (!!cat) {
+//             (catName.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(cat.id!);
+//             catName.querySelector(".menu-item-category-name")!.textContent = cat.catName;
+//         }
+//     }
+// }
 async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
 
     const menuAreaDiv = tweetCellDiv.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep") as HTMLElement

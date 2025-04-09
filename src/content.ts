@@ -42,6 +42,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             break;
 
         case MsgType.CategoryChanged:
+            console.log("------>>> category changed.....")
             reloadCategoryContainer(request.data as Category[]).then();
             sendResponse({success: true});
             break;
