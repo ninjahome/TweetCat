@@ -99,8 +99,9 @@ export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null 
     const username = userHref.startsWith('/') ? userHref.substring(1) : userHref;
 
     const nameSpan = userNameDiv.querySelector(".css-1jxf684.r-bcqeeo.r-1ttztb7.r-qvutc0.r-poiln3") as HTMLElement
-    const displayName = nameSpan?.textContent || '';
+    const displayName = nameSpan?.textContent || 'imageName';
     if (!username || !displayName) {
+        console.log("==============================>>>", username, displayName);
         return null;
     }
 
