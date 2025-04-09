@@ -103,9 +103,8 @@ function appendFilterBtn(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
 
         if (!kol.avatarUrl) {
             kol.avatarUrl = getKolAvatarLink(tweetCellDiv) ?? "";
-            console.log("------>>>tweet cell avatar url link:", kol.avatarUrl);
+            // console.log("------>>>tweet cell avatar url link:", kol.avatarUrl);
         }
-
         showPopupMenu(e, clone, categories, kol);
     };
 }
