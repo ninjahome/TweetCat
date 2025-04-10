@@ -1,4 +1,4 @@
-import browser, {Runtime} from "webextension-polyfill";
+import browser from "webextension-polyfill";
 import {__DBK_AD_Block_Key, Category, choseColorByID, defaultUserName, MaxCategorySize, MsgType} from "./consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "./database";
 import {showView} from "./utils";

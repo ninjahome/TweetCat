@@ -13,7 +13,7 @@ self.addEventListener('activate', (event) => {
     // extendableEvent.waitUntil(createAlarm());
 });
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
     console.log('------>>> Service Worker installing......');
     // const evt = event as ExtendableEvent;
     // evt.waitUntil(createAlarm());

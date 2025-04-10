@@ -15,7 +15,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
     switch (request.action) {
 
         case MsgType.OpenPlugin:{
-            await openPlugin(request.data);
+            await openPlugin();
             return {success: true};
         }
 
@@ -56,7 +56,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
     }
 }
 
-async function openPlugin(data: any) {
+async function openPlugin() {
     await browser.action.openPopup();
 }
 
