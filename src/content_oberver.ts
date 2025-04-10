@@ -4,6 +4,7 @@ import {queryCategoriesFromBG, queryCategoryById} from "./category";
 import {__DBK_AD_Block_Key, Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
 import {isAdTweetNode, sendMsgToService} from "./utils";
 import {localGet} from "./local_storage";
+import * as async_hooks from "node:async_hooks";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -159,11 +160,11 @@ async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: Twee
             kol.avatarUrl = getKolAvatarLink(tweetCellDiv) ?? "";
             // console.log("------>>>tweet cell avatar url link:", kol.avatarUrl);
         }
-        showPopupMenu(e, clone, categories, kol);
+        showPopupMenu(e, clone, categories, kol, setCatMenu);
     };
 }
 
-export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories: Category[], kol: TweetKol) {
+export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories: Category[], kol: TweetKol, callback?: (kolName: string, clone: HTMLElement) => Promise<void>) {
     event.stopPropagation();
     event.preventDefault();
 
@@ -177,9 +178,11 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
     container.innerHTML = '';
     categories.forEach(cat => {
         const clone = _cloneMenuItem(itemLi, cat, kol);
-        clone.onclick = () => {
-            changeCategoryOfKol(clone, cat, kol);
-            setCatMenu(kol.kolName, buttonElement).then();
+        clone.onclick = async () => {
+            await changeCategoryOfKol(clone, cat, kol);
+            if (callback) {
+                await callback(kol.kolName, buttonElement);
+            }
             __categoryPopupMenu.style.display = 'none';
         };
         container.append(clone);
@@ -187,10 +190,12 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
 
     const removeBtn = __categoryPopupMenu.querySelector(".menu-item-remove") as HTMLElement;
     removeBtn.style.display = !!kol.catID ? 'block' : 'none';
-    removeBtn.onclick =()=>{
-        sendMsgToService(kol.kolName, MsgType.RemoveKol).then(()=>{
+    removeBtn.onclick = () => {
+        sendMsgToService(kol.kolName, MsgType.RemoveKol).then(async () => {
             __categoryPopupMenu.style.display = 'none';
-            setCatMenu(kol.kolName, buttonElement).then();
+            if (callback) {
+                await callback(kol.kolName, buttonElement);
+            }
         });
     }
 
@@ -232,7 +237,7 @@ function _cloneMenuItem(templateItem: HTMLElement, cat: Category, kol: TweetKol)
     return clone;
 }
 
-function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: TweetKol) {
+async function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: TweetKol) {
     if (kol.catID === cat.id) {
         return;
     }
@@ -241,7 +246,7 @@ function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: TweetKol
     _setItemActive(menuItem, cat.id!);
 
     kol.catID = cat.id;
-    sendMsgToService(kol, MsgType.UpdateKolCat).then();
+    await sendMsgToService(kol, MsgType.UpdateKolCat);
 }
 
 export async function queryKolDetailByName(kolName: string): Promise<TweetKol | null> {
