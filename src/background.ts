@@ -13,7 +13,7 @@ self.addEventListener('activate', (event) => {
     // extendableEvent.waitUntil(createAlarm());
 });
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
     console.log('------>>> Service Worker installing......');
     // const evt = event as ExtendableEvent;
     // evt.waitUntil(createAlarm());
@@ -23,7 +23,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
     console.log("------>>> onInstalled......");
     if (details.reason === "install") {
         browser.tabs.create({
-            url: browser.runtime.getURL("html/welcome.html#onboarding/welcome")
+            url: browser.runtime.getURL("html/welcome.html")
         }).then();
     }
     checkAndInitDatabase().then();
@@ -35,9 +35,11 @@ browser.runtime.onStartup.addListener(() => {
 });
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
-    checkAndInitDatabase().then(async () => {
-        await bgMsgDispatch(request, _sender, sendResponse);
-    })
+    (async () => {
+        await checkAndInitDatabase();
+        const result = await bgMsgDispatch(request, _sender);
+        sendResponse(result);
+    })();
     return true;
 });
 

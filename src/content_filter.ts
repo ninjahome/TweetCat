@@ -1,7 +1,7 @@
 import {observeForElement, sendMsgToService} from "./utils";
-import {Category, defaultAllCategoryID, MsgType, TweetKol} from "./consts";
+import {Category, choseColorByID, defaultAllCategoryID, MsgType, TweetKol} from "./consts";
 import {isHomePage, parseContentHtml, parseNameFromTweetCell} from "./content";
-import {queryCategoriesFromBG} from "./category";
+import {queryCategoriesFromBG, queryCategoryById} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 
 export let _curKolFilter = new Map<string, TweetKol>();
@@ -196,6 +196,7 @@ async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
 
     const clone = menuBtn.cloneNode(true) as HTMLElement;
     clone.setAttribute('id', "");
+    await setCategoryStatusOnProfileHome(kolName, clone)
     toolBar.insertBefore(clone, toolBar.firstChild);
     clone.onclick = async (e) => {
         const categories = await queryCategoriesFromBG();
@@ -221,6 +222,24 @@ async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
             }
         }
 
-        showPopupMenu(e, clone, categories, kol);
+        showPopupMenu(e, clone, categories, kol, setCategoryStatusOnProfileHome);
+    }
+}
+
+async function setCategoryStatusOnProfileHome(kolName: string, clone: HTMLElement) {
+    let kol = await queryKolDetailByName(kolName);
+    const buttonDiv = clone.querySelector('.noCategory') as HTMLElement;
+    const nameDiv = clone.querySelector(".hasCategory") as HTMLElement;
+    if (!kol) {
+        buttonDiv.style.display = 'flex';
+        nameDiv.style.display = 'none';
+    } else {
+        buttonDiv.style.display = 'none';
+        nameDiv.style.display = 'block';
+        const cat = await queryCategoryById(kol.catID!);
+        if (!!cat) {
+            (nameDiv.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(kol.catID!);
+            nameDiv.querySelector(".category-name")!.textContent = cat.catName;
+        }
     }
 }

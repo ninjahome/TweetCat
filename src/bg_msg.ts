@@ -9,69 +9,53 @@ import {
     updateKolsCategory
 } from "./category";
 
-export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void) {
+export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
+    console.log("-----------bgMsgDispatch-------------->>>_sender is: ", _sender)
 
     switch (request.action) {
 
-        case MsgType.OpenPlugin:{
-            await openPlugin(request.data);
-            sendResponse({success: true});
-            return;
+        case MsgType.OpenPlugin: {
+            await openPlugin();
+            return {success: true};
         }
 
-        case MsgType.QueryKolByCatID:{
+        case MsgType.QueryKolByCatID: {
             const data = await kolsForCategory(request.data);
-            sendResponse({success: true, data: Array.from(data.entries())});
-            return;
+            return {success: true, data: Array.from(data.entries())};
         }
 
-        case MsgType.QueryCatsByUser:
-        {
-            const catData = await  loadCategories(request.data);
-            sendResponse({success: true, data: catData});
-            return;
+        case MsgType.QueryCatsByUser: {
+            const catData = await loadCategories(request.data);
+            // console.log("------------------------->>>catData is: ", catData)
+            return {success: true, data: catData};
         }
 
-        case MsgType.QueryCatByID:
-        {
-            const catData = await  CategoryForId(request.data);
-            sendResponse({success: true, data: catData});
-            return;
+        case MsgType.QueryCatByID: {
+            const catData = await CategoryForId(request.data);
+            return {success: true, data: catData};
         }
 
-        case MsgType.CategoryChanged:{
-            const changedCat = await  loadCategories(request.data);
-            broadcastToContent(MsgType.CategoryChanged, changedCat);
-            sendResponse({success: true});
-            return;
-        }
 
-        case MsgType.UpdateKolCat:{
+        case MsgType.UpdateKolCat: {
             await updateKolsCategory(request.data as TweetKol);
-            sendResponse({success: true});
-            return;
+            return {success: true};
         }
 
         case MsgType.RemoveKol:
             await removeKolsCategory(request.data);
-            sendResponse({success: true});
-            return;
+            return {success: true};
 
-        case MsgType.QueryKolCat:{
+        case MsgType.QueryKolCat: {
             const kolCat = await queryKolByName(request.data)
-            sendResponse({success: true, data: kolCat});
-            return;
+            return {success: true, data: kolCat};
         }
-
         default:
-            sendResponse({success: false, data:"unsupportable message type"});
-            return;
+            return {success: false, data: "unsupportable message type"};
     }
 }
 
-async function openPlugin(data: any) {
+async function openPlugin() {
     await browser.action.openPopup();
-    await browser.runtime.sendMessage({action: MsgType.InitPopup, data: data})
 }
 
 export function broadcastToContent(action: string, data: any) {

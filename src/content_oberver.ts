@@ -1,11 +1,27 @@
 import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
 import {_curKolFilter, resetCategories} from "./content_filter";
-import {queryCategoriesFromBG} from "./category";
-import {Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
-import {sendMsgToService} from "./utils";
+import {queryCategoriesFromBG, queryCategoryById} from "./category";
+import {__DBK_AD_Block_Key, Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
+import {isAdTweetNode, sendMsgToService} from "./utils";
+import {localGet} from "./local_storage";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
+let __blockAdStatus: boolean = false;
+
+export function changeAdsBlockStatus(status: boolean) {
+    console.log("------>>> change block ads settings:", status);
+    // window.location.reload();
+
+    __blockAdStatus = status;
+    if (status) {
+        (document.querySelectorAll('div[data-testid="cellInnerDiv" ]') as NodeListOf<HTMLElement>).forEach(elm => {
+            if (isAdTweetNode(elm)) {
+                elm.style.display = 'none';
+            }
+        })
+    }
+}
 
 const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -16,6 +32,7 @@ const observer = new MutationObserver((mutations) => {
 });
 
 export async function initObserver() {
+    __blockAdStatus = await localGet(__DBK_AD_Block_Key) as boolean ?? false;
 
     observer.observe(document.body, {childList: true, subtree: true});
 
@@ -30,22 +47,30 @@ export async function initObserver() {
 
     __categoryPopupMenu = popupMenu.cloneNode(true) as HTMLElement;
     document.body.appendChild(__categoryPopupMenu);
-    const removeBtn = __categoryPopupMenu.querySelector(".menu-item-remove") as HTMLElement;
-    removeBtn.addEventListener('click', removeKolFromCategory);
 }
 
 let missCounter = 0;
 
 function filterTweets(nodes: NodeList) {
     nodes.forEach((divNode) => {
-        if (!isTweetDiv(divNode) || !isHomePage()
-        ) {
+
+        if (!isTweetDiv(divNode)) {
             // console.log("------>>> is home page:", window.location.href);
             return;
         }
+        if (__blockAdStatus && isAdTweetNode(divNode)) {
+            // console.log("------->>> need to block Ads");
+            console.log("------>>> found ads and block it", divNode.dataset.testid);
+            divNode.style.display = "none";
+            return;
+        }
 
+        if (!isHomePage()) {
+            return;
+        }
         const user = parseNameFromTweetCell(divNode);
         if (!user) {
+            // console.log("------------>>>>tweet user name not found:", divNode)
             return;
         }
 
@@ -60,6 +85,7 @@ function filterTweets(nodes: NodeList) {
             missCounter = 0;
             return;
         }
+
         console.log('------>>> miss:', user.displayString());
         divNode.style.display = "none";
         missCounter++;
@@ -77,24 +103,28 @@ function isTweetDiv(node: Node): node is HTMLDivElement {
         node.dataset.testid === 'cellInnerDiv'
     );
 }
-// async function setCatMenu(kol: TweetKol, menuBtn: HTMLElement) {
-//     const catBtn = menuBtn.querySelector('.noCategory') as HTMLElement;
-//     const catName = menuBtn.querySelector(".hasCategory") as HTMLElement;
-//
-//     if (!kol.catID) {
-//         catBtn.style.display = 'block';
-//         catName.style.display = 'none';
-//     } else {
-//         catName.style.backgroundColor = choseColorByID(kol.catID!, 0.2);
-//         catBtn.style.display = 'none';
-//         catName.style.display = 'block';
-//         const cat = await queryCategoryById(kol.catID!);
-//         if (!!cat) {
-//             (catName.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(cat.id!);
-//             catName.querySelector(".menu-item-category-name")!.textContent = cat.catName;
-//         }
-//     }
-// }
+
+async function setCatMenu(kolName: string, clone: HTMLElement) {
+    const catBtn = clone.querySelector('.noCategory') as HTMLElement;
+    const catName = clone.querySelector(".hasCategory") as HTMLElement;
+
+    let kol = await queryKolDetailByName(kolName);
+    if (!kol) {
+        catBtn.style.display = 'block';
+        catName.style.display = 'none';
+    } else {
+        catBtn.style.display = 'none';
+        catName.style.display = 'block';
+        const cat = await queryCategoryById(kol.catID!);
+        if (!cat) {
+            console.log("------>>>category data is null for kol", kol);
+            return;
+        }
+        (clone.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(kol.catID!);
+        catName.querySelector(".menu-item-category-name")!.textContent = cat.catName;
+    }
+}
+
 async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
 
     const menuAreaDiv = tweetCellDiv.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep") as HTMLElement
@@ -103,16 +133,16 @@ async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: Twee
         return;
     }
 
-    if (!!menuAreaDiv.querySelector(".filter-menu-on-main")){
+    if (!!menuAreaDiv.querySelector(".filter-menu-on-main")) {
         console.log("------>>> duplicate menu addition", menuAreaDiv);
         return;
     }
 
     const clone = __menuBtnDiv.cloneNode(true) as HTMLElement;
     clone.setAttribute('id', "");
-
-
+    setCatMenu(rawKol.kolName, clone).then();
     menuAreaDiv.insertBefore(clone, menuAreaDiv.firstChild);
+
     clone.onclick = async (e) => {
         const categories = await queryCategoriesFromBG();
         if (categories.length === 0) {
@@ -129,11 +159,11 @@ async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: Twee
             kol.avatarUrl = getKolAvatarLink(tweetCellDiv) ?? "";
             // console.log("------>>>tweet cell avatar url link:", kol.avatarUrl);
         }
-        showPopupMenu(e, clone, categories, kol);
+        showPopupMenu(e, clone, categories, kol, setCatMenu);
     };
 }
 
-export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories: Category[], kol: TweetKol) {
+export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories: Category[], kol: TweetKol, callback?: (kolName: string, clone: HTMLElement) => Promise<void>) {
     event.stopPropagation();
     event.preventDefault();
 
@@ -141,44 +171,41 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
     __categoryPopupMenu.style.top = `${rect.bottom + window.scrollY}px`;
     __categoryPopupMenu.style.left = `${rect.left + window.scrollX}px`;
     __categoryPopupMenu.style.display = 'block';
-    __categoryPopupMenu.dataset.kol = JSON.stringify(kol);
 
     const container = __categoryPopupMenu.querySelector(".category-item-container") as HTMLElement;
     const itemLi = __categoryPopupMenu.querySelector(".menu-item") as HTMLElement
     container.innerHTML = '';
     categories.forEach(cat => {
         const clone = _cloneMenuItem(itemLi, cat, kol);
+        clone.onclick = async () => {
+            await changeCategoryOfKol(clone, cat, kol);
+            if (callback) {
+                await callback(kol.kolName, buttonElement);
+            }
+            __categoryPopupMenu.style.display = 'none';
+        };
         container.append(clone);
     });
 
     const removeBtn = __categoryPopupMenu.querySelector(".menu-item-remove") as HTMLElement;
     removeBtn.style.display = !!kol.catID ? 'block' : 'none';
+    removeBtn.onclick = () => {
+        sendMsgToService(kol.kolName, MsgType.RemoveKol).then(async () => {
+            __categoryPopupMenu.style.display = 'none';
+            if (callback) {
+                await callback(kol.kolName, buttonElement);
+            }
+        });
+    }
 
     document.addEventListener('click', handleClickOutside);
 }
 
-function removeKolFromCategory() {
-
-    const kolStr = __categoryPopupMenu.dataset.kol;
-    if (!kolStr) {
-        alert("failed to remove KOLs category");//TODO::
-        return;
-    }
-
-    const kol = TweetKol.FromString(kolStr)
-    sendMsgToService(kol.kolName, MsgType.RemoveKol).then();
-    __categoryPopupMenu.style.display = 'none';
-}
 
 function handleClickOutside(evt: MouseEvent) {
     const target = evt.target as HTMLElement;
 
     if (__categoryPopupMenu.contains(target as Node)) {
-        // const menuItem = target.closest('li.menu-item') as HTMLElement;
-        // const kolStr = __categoryPopupMenu.dataset.kol as string;
-        // const kol = TweetKol.FromString(kolStr);
-        // kol.catID = Number(menuItem.dataset.categoryid);
-        // sendMsgToService(kol, MsgType.UpdateKolCat).then();
         return;
     }
 
@@ -205,15 +232,11 @@ function _cloneMenuItem(templateItem: HTMLElement, cat: Category, kol: TweetKol)
     (clone.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(cat.id!);
 
     clone.querySelector(".menu-item-category-name")!.textContent = cat.catName;
-    clone.addEventListener('click', () => {
-        changeCategoryOfKol(clone, cat, kol);
-        __categoryPopupMenu.style.display = 'none';
-    });
 
     return clone;
 }
 
-function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: TweetKol) {
+async function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: TweetKol) {
     if (kol.catID === cat.id) {
         return;
     }
@@ -222,7 +245,7 @@ function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: TweetKol
     _setItemActive(menuItem, cat.id!);
 
     kol.catID = cat.id;
-    sendMsgToService(kol, MsgType.UpdateKolCat).then();
+    await sendMsgToService(kol, MsgType.UpdateKolCat);
 }
 
 export async function queryKolDetailByName(kolName: string): Promise<TweetKol | null> {

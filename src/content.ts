@@ -1,5 +1,5 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {hidePopupMenu, initObserver} from "./content_oberver";
+import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./content_oberver";
 import {
     appendCategoryContainerAtTop,
     appendFilterOnKolProfileHome,
@@ -30,7 +30,7 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
 function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true {
 
     switch (request.action) {
-        case MsgType.NaviUrlChanged:
+        case MsgType.NaviUrlChanged: {
             appendCategoryContainerAtTop().then();
             const kolName = isTwitterUserProfile()
             if (!!kolName) {
@@ -40,12 +40,18 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             checkFilterStatusAfterUrlChanged();
             sendResponse({success: true});
             break;
-
-        case MsgType.CategoryChanged:
+        }
+        case MsgType.CategoryChanged: {
             console.log("------>>> category changed.....")
             reloadCategoryContainer(request.data as Category[]).then();
             sendResponse({success: true});
             break;
+        }
+        case MsgType.AdsBlockChanged: {
+            changeAdsBlockStatus(request.data as boolean);
+            sendResponse({success: true});
+            break;
+        }
 
         default:
             sendResponse({success: true});
