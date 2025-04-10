@@ -1,10 +1,11 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {Category, choseColorByID, defaultUserName, MaxCategorySize, MsgType} from "./consts";
+import {__DBK_AD_Block_Key, Category, choseColorByID, defaultUserName, MaxCategorySize, MsgType} from "./consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "./database";
 import {showView} from "./utils";
 import {kolsForCategory, loadCategories, removeCategory, updateCategoryDetail} from "./category";
 import {hideLoading, showAlert, showConfirmPopup, showLoading} from "./dash_common";
 import {broadcastToContent} from "./bg_msg";
+import {localGet, localSet} from "./local_storage";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -21,34 +22,16 @@ async function initDashBoard(): Promise<void> {
 
     initNewCatBtn();
     initNewCatModalDialog();
+    initSettings();
 }
 
 function dashRouter(path: string): void {
     // console.log("------>>> show view for path:", path);
     if (path === '#onboarding/main-home') {
-        setupCurCategoryList().then();
+        setHomeStatus().then();
+
     } else if (path === '#onboarding/category-manager') {
     }
-}
-
-browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
-    return dashboardMsgDispatch(request, _sender, sendResponse)
-});
-
-export function dashboardMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true {
-    switch (request.action) {
-
-        case MsgType.InitPopup:
-            console.log("------>>> init pop up for path:", request.data);
-            routeTarget = request.data;
-            sendResponse({success: true});
-            break;
-
-        default:
-            sendResponse({success: true});
-            break;
-    }
-    return true;
 }
 
 function initNewCatBtn() {
@@ -79,26 +62,31 @@ async function addNewCategory() {
     const newCatInput = modalDialog.querySelector(".new-category-name") as HTMLInputElement;
     const newCatStr = newCatInput.value;
     if (!newCatStr) {
+        showAlert("Tips", "Invalid category name");
         return;
     }
 
-    //TODO::Show loading......
+    showLoading()
     const item = new Category(newCatStr, defaultUserName);
     delete item.id;
     const newID = await databaseAddItem(__tableCategory, item);
     if (!newID) {
-        //TODO::show alert
+        showAlert("Tips", "Failed to add new category:" + newCatStr);
+        hideLoading();
         return;
     }
-    await browser.runtime.sendMessage({action: MsgType.CategoryChanged, data: item.forUser});
+
     item.id = newID as number;
-    await setupCurCategoryList();
+    await setHomeStatus();
     modalDialog.style.display = 'none'
     newCatInput.value = '';
-    //hide loading
+
+    const changedCat = await loadCategories(item.forUser);
+    broadcastToContent(MsgType.CategoryChanged, changedCat);
+    hideLoading();
 }
 
-async function setupCurCategoryList() {
+async function setHomeStatus() {
     const listDiv = document.getElementById("categories-list") as HTMLElement;
     const catItem = document.getElementById("category-item-template") as HTMLElement;
     const categories = await loadCategories(defaultUserName);
@@ -110,6 +98,10 @@ async function setupCurCategoryList() {
         _cloneCatItem(clone, category);
         listDiv.append(clone);
     });
+
+    const isEnabled: boolean = await localGet(__DBK_AD_Block_Key) as boolean ?? false
+    const blockAdsToggle = document.getElementById('ad-block-toggle') as HTMLInputElement;
+    blockAdsToggle.checked = isEnabled;
 }
 
 function _cloneCatItem(clone: HTMLElement, category: Category) {
@@ -186,3 +178,13 @@ function removeCatById(catId: number) {
     });
 }
 
+function initSettings() {
+    const blockAdsToggle = document.getElementById('ad-block-toggle') as HTMLInputElement;
+
+    blockAdsToggle.onchange = async () => {
+        const isEnabled = blockAdsToggle.checked;
+        await localSet(__DBK_AD_Block_Key, isEnabled);
+        console.log("------>>>Ad blocking is now", isEnabled ? "enabled" : "disabled");
+        broadcastToContent(MsgType.AdsBlockChanged, isEnabled);
+    };
+}

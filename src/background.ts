@@ -35,9 +35,11 @@ browser.runtime.onStartup.addListener(() => {
 });
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
-    checkAndInitDatabase().then(async () => {
-        await bgMsgDispatch(request, _sender, sendResponse);
-    })
+    (async () => {
+        await checkAndInitDatabase();
+        const result = await bgMsgDispatch(request, _sender);
+        sendResponse(result);
+    })();
     return true;
 });
 

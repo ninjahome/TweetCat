@@ -24,7 +24,7 @@ export async function loadCategories(forUser: string): Promise<Category[]> {
             a.id! - b.id!//.localeCompare(b.catName)
         );
     } catch (e) {
-        console.log("------>>> load categories failed:", e)
+        console.warn("------>>> load categories failed:", e)
         return []
     }
 }

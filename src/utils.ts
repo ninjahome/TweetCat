@@ -113,3 +113,15 @@ export async function getBearerToken(): Promise<string> {
     if (cached) return cached;
     return DEFAULT_BEARER;
 }
+
+export function isAdTweetNode(node: HTMLElement): boolean {
+    // 特征 1：有 top-impression-pixel 等广告 tracking dom
+    const hasImpressionTracking = node.querySelector('[data-testid="top-impression-pixel"]') !== null;
+
+    // 特征 2（可选）：检测 span 的文本是否为 "Ad"、"推广" 等，作为额外冗余判断
+    const adKeywords = ['Ad', '推广', '広告', 'Anuncio', 'Publicité', 'Anzeige', '광고'];
+    const hasAdKeyword = Array.from(node.querySelectorAll("span"))
+        .some(span => adKeywords.includes(span.textContent?.trim() ?? ""));
+
+    return hasImpressionTracking || hasAdKeyword;
+}

@@ -1,11 +1,27 @@
 import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
 import {_curKolFilter, resetCategories} from "./content_filter";
 import {queryCategoriesFromBG} from "./category";
-import {Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
-import {sendMsgToService} from "./utils";
+import {__DBK_AD_Block_Key, Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
+import {isAdTweetNode, sendMsgToService} from "./utils";
+import {localGet} from "./local_storage";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
+let __blockAdStatus: boolean = false;
+
+export function changeAdsBlockStatus(status: boolean) {
+    console.log("------>>> change block ads settings:", status);
+    // window.location.reload();
+
+    __blockAdStatus = status;
+    if (status) {
+        (document.querySelectorAll('div[data-testid="cellInnerDiv" ]') as NodeListOf<HTMLElement>).forEach(elm => {
+            if (isAdTweetNode(elm)) {
+                elm.style.display = 'none';
+            }
+        })
+    }
+}
 
 const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -16,6 +32,7 @@ const observer = new MutationObserver((mutations) => {
 });
 
 export async function initObserver() {
+    __blockAdStatus = await localGet(__DBK_AD_Block_Key) as boolean ?? false;
 
     observer.observe(document.body, {childList: true, subtree: true});
 
@@ -38,14 +55,24 @@ let missCounter = 0;
 
 function filterTweets(nodes: NodeList) {
     nodes.forEach((divNode) => {
-        if (!isTweetDiv(divNode) || !isHomePage()
-        ) {
+
+        if (!isTweetDiv(divNode)) {
             // console.log("------>>> is home page:", window.location.href);
             return;
         }
+        if (__blockAdStatus && isAdTweetNode(divNode)) {
+            // console.log("------->>> need to block Ads");
+            console.log("------>>> found ads and block it", divNode.dataset.testid);
+            divNode.style.display = "none";
+            return;
+        }
 
+        if (!isHomePage()) {
+            return;
+        }
         const user = parseNameFromTweetCell(divNode);
         if (!user) {
+            console.log("------------>>>>tweet user name not found:", divNode)
             return;
         }
 
@@ -60,6 +87,7 @@ function filterTweets(nodes: NodeList) {
             missCounter = 0;
             return;
         }
+
         console.log('------>>> miss:', user.displayString());
         divNode.style.display = "none";
         missCounter++;
@@ -77,6 +105,7 @@ function isTweetDiv(node: Node): node is HTMLDivElement {
         node.dataset.testid === 'cellInnerDiv'
     );
 }
+
 // async function setCatMenu(kol: TweetKol, menuBtn: HTMLElement) {
 //     const catBtn = menuBtn.querySelector('.noCategory') as HTMLElement;
 //     const catName = menuBtn.querySelector(".hasCategory") as HTMLElement;
@@ -103,7 +132,7 @@ async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: Twee
         return;
     }
 
-    if (!!menuAreaDiv.querySelector(".filter-menu-on-main")){
+    if (!!menuAreaDiv.querySelector(".filter-menu-on-main")) {
         console.log("------>>> duplicate menu addition", menuAreaDiv);
         return;
     }
