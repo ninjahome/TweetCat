@@ -72,7 +72,7 @@ function filterTweets(nodes: NodeList) {
         }
         const user = parseNameFromTweetCell(divNode);
         if (!user) {
-            console.log("------------>>>>tweet user name not found:", divNode)
+            // console.log("------------>>>>tweet user name not found:", divNode)
             return;
         }
 
