@@ -14,31 +14,29 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
     switch (request.action) {
 
-        case MsgType.OpenPlugin:{
+        case MsgType.OpenPlugin: {
             await openPlugin();
             return {success: true};
         }
 
-        case MsgType.QueryKolByCatID:{
+        case MsgType.QueryKolByCatID: {
             const data = await kolsForCategory(request.data);
             return {success: true, data: Array.from(data.entries())};
         }
 
-        case MsgType.QueryCatsByUser:
-        {
-            const catData = await  loadCategories(request.data);
+        case MsgType.QueryCatsByUser: {
+            const catData = await loadCategories(request.data);
             // console.log("------------------------->>>catData is: ", catData)
             return {success: true, data: catData};
         }
 
-        case MsgType.QueryCatByID:
-        {
-            const catData = await  CategoryForId(request.data);
+        case MsgType.QueryCatByID: {
+            const catData = await CategoryForId(request.data);
             return {success: true, data: catData};
         }
 
 
-        case MsgType.UpdateKolCat:{
+        case MsgType.UpdateKolCat: {
             await updateKolsCategory(request.data as TweetKol);
             return {success: true};
         }
@@ -47,12 +45,12 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             await removeKolsCategory(request.data);
             return {success: true};
 
-        case MsgType.QueryKolCat:{
+        case MsgType.QueryKolCat: {
             const kolCat = await queryKolByName(request.data)
             return {success: true, data: kolCat};
         }
         default:
-            return {success: false, data:"unsupportable message type"};
+            return {success: false, data: "unsupportable message type"};
     }
 }
 
