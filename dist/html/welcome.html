@@ -3,8 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <title>TweetCat Welcome</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font: 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+            background-color: #f5f8fa;
+            color: #333;
+            box-sizing: border-box;
+        }
+
+        main{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 5%;
+        }
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card img {
+            width: 100%;
+            display: block;
+        }
+
+        .footer {
+            margin-top: auto;
+            padding-bottom: 24px;
+            font-size: 0.9em;
+            color: #999;
+        }
+    </style>
 </head>
 <body>
+<main>
+    <h1>Welcome to TweetCat</h1>
+    <div class="subtitle">Categorize and manage Twitter content your way</div>
+
+    <div class="grid">
+        <div class="card">
+            <img src="../images/add-category.jpg" alt="Add Category">
+        </div>
+        <div class="card">
+            <img src="../images/add-kol.jpg" alt="Add KOL to Category">
+        </div>
+        <div class="card">
+            <img src="../images/use-category.jpg" alt="Use Category">
+        </div>
+        <div class="card">
+            <img src="../images/manage-category.jpg" alt="Manage Category">
+        </div>
+        <div class="card">
+            <img src="../images/ManageKOL.jpg" alt="Manage KOL">
+        </div>
+    </div>
+
+</main>
+
+
+<div class="footer">&copy; 2025 TweetCat Team. All rights reserved.</div>
 
 </body>
 </html>
