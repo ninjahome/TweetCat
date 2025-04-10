@@ -23,7 +23,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
     console.log("------>>> onInstalled......");
     if (details.reason === "install") {
         browser.tabs.create({
-            url: browser.runtime.getURL("html/welcome.html#onboarding/welcome")
+            url: browser.runtime.getURL("html/welcome.html")
         }).then();
     }
     checkAndInitDatabase().then();

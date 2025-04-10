@@ -116,6 +116,7 @@
         }
 
     </style>
+    <script src="../js/welcome.js"></script>
 </head>
 <body>
 <main>
@@ -124,74 +125,29 @@
 
     <div class="grid">
         <div class="card">
-            <img src="../images/add-category.jpg" alt="Add Category" onclick="openModal(0)">
+            <img src="../images/add-category.jpg" alt="Add Category" >
         </div>
         <div class="card">
-            <img src="../images/add-kol.jpg" alt="Add KOL to Category" onclick="openModal(1)">
+            <img src="../images/add-kol.jpg" alt="Add KOL to Category">
         </div>
         <div class="card">
-            <img src="../images/use-category.jpg" alt="Use Category" onclick="openModal(2)">
+            <img src="../images/use-category.jpg" alt="Use Category">
         </div>
         <div class="card">
-            <img src="../images/manage-category.jpg" alt="Manage Category" onclick="openModal(3)">
+            <img src="../images/manage-category.jpg" alt="Manage Category">
         </div>
         <div class="card">
-            <img src="../images/ManageKOL.jpg" alt="Manage KOL" onclick="openModal(4)">
+            <img src="../images/ManageKOL.jpg" alt="Manage KOL">
         </div>
     </div>
     <div id="modal" class="modal" onclick="closeModal()">
-        <span class="arrow left" onclick="prevImage(event)">&#10094;</span>
+        <span class="arrow left">&#10094;</span>
         <img id="modal-img" class="modal-content" alt="preview">
-        <span class="arrow right" onclick="nextImage(event)">&#10095;</span>
+        <span class="arrow right">&#10095;</span>
     </div>
 
 </main>
 <div class="footer">&copy; 2025 TweetCat Team. All rights reserved.</div>
-<script>
-    const imageList = [
-        "../images/add-category.jpg",
-        "../images/add-kol.jpg",
-        "../images/use-category.jpg",
-        "../images/manage-category.jpg",
-        "../images/ManageKOL.jpg"
-    ];
-
-    let currentIndex = 0;
-
-    function openModal(index) {
-        currentIndex = index;
-        const modal = document.getElementById("modal");
-        const modalImg = document.getElementById("modal-img");
-        modalImg.src = imageList[currentIndex];
-        modal.style.display = "flex";
-    }
-
-    function closeModal() {
-        document.getElementById("modal").style.display = "none";
-    }
-
-    function prevImage(event) {
-        event.stopPropagation();
-        currentIndex = (currentIndex - 1 + imageList.length) % imageList.length;
-        document.getElementById("modal-img").src = imageList[currentIndex];
-    }
-
-    function nextImage(event) {
-        event.stopPropagation();
-        currentIndex = (currentIndex + 1) % imageList.length;
-        document.getElementById("modal-img").src = imageList[currentIndex];
-    }
-
-    // Optional: Add keyboard support
-    document.addEventListener("keydown", function (e) {
-        const modal = document.getElementById("modal");
-        if (modal.style.display === "flex") {
-            if (e.key === "ArrowLeft") prevImage(e);
-            if (e.key === "ArrowRight") nextImage(e);
-            if (e.key === "Escape") closeModal();
-        }
-    });
-</script>
 
 </body>
 </html>

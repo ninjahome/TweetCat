@@ -84,6 +84,7 @@ async function addNewCategory() {
     const changedCat = await loadCategories(item.forUser);
     broadcastToContent(MsgType.CategoryChanged, changedCat);
     hideLoading();
+    showAlert("Tips", "Save Success");
 }
 
 async function setHomeStatus() {
