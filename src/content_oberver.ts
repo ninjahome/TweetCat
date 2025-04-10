@@ -47,8 +47,6 @@ export async function initObserver() {
 
     __categoryPopupMenu = popupMenu.cloneNode(true) as HTMLElement;
     document.body.appendChild(__categoryPopupMenu);
-    const removeBtn = __categoryPopupMenu.querySelector(".menu-item-remove") as HTMLElement;
-    removeBtn.addEventListener('click', removeKolFromCategory);
 }
 
 let missCounter = 0;
@@ -173,7 +171,6 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
     __categoryPopupMenu.style.top = `${rect.bottom + window.scrollY}px`;
     __categoryPopupMenu.style.left = `${rect.left + window.scrollX}px`;
     __categoryPopupMenu.style.display = 'block';
-    __categoryPopupMenu.dataset.kol = JSON.stringify(kol);
 
     const container = __categoryPopupMenu.querySelector(".category-item-container") as HTMLElement;
     const itemLi = __categoryPopupMenu.querySelector(".menu-item") as HTMLElement
@@ -190,32 +187,21 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
 
     const removeBtn = __categoryPopupMenu.querySelector(".menu-item-remove") as HTMLElement;
     removeBtn.style.display = !!kol.catID ? 'block' : 'none';
+    removeBtn.onclick =()=>{
+        sendMsgToService(kol.kolName, MsgType.RemoveKol).then(()=>{
+            __categoryPopupMenu.style.display = 'none';
+            setCatMenu(kol.kolName, buttonElement).then();
+        });
+    }
 
     document.addEventListener('click', handleClickOutside);
 }
 
-function removeKolFromCategory() {
-
-    const kolStr = __categoryPopupMenu.dataset.kol;
-    if (!kolStr) {
-        alert("failed to remove KOLs category");//TODO::
-        return;
-    }
-
-    const kol = TweetKol.FromString(kolStr)
-    sendMsgToService(kol.kolName, MsgType.RemoveKol).then();
-    __categoryPopupMenu.style.display = 'none';
-}
 
 function handleClickOutside(evt: MouseEvent) {
     const target = evt.target as HTMLElement;
 
     if (__categoryPopupMenu.contains(target as Node)) {
-        // const menuItem = target.closest('li.menu-item') as HTMLElement;
-        // const kolStr = __categoryPopupMenu.dataset.kol as string;
-        // const kol = TweetKol.FromString(kolStr);
-        // kol.catID = Number(menuItem.dataset.categoryid);
-        // sendMsgToService(kol, MsgType.UpdateKolCat).then();
         return;
     }
 

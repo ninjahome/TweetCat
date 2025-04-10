@@ -167,6 +167,7 @@ async function editCateName(cat: Category, parent: HTMLElement) {
     await updateCategoryDetail(cat);
     broadcastToContent(MsgType.CategoryChanged, await loadCategories(defaultUserName));
     hideLoading();
+    showAlert("Tips", "Update Success");
 }
 
 function removeCatById(catId: number) {
