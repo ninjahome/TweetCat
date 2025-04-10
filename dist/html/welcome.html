@@ -66,6 +66,55 @@
             font-size: 0.9em;
             color: #999;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            cursor: default;
+        }
+
+        .arrow {
+            color: white;
+            font-size: 2em;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            user-select: none;
+            padding: 10px;
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 999px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+        }
+
+        .arrow.left {
+            left: 30px;
+        }
+
+        .arrow.right {
+            right: 30px;
+        }
+
     </style>
 </head>
 <body>
@@ -75,26 +124,74 @@
 
     <div class="grid">
         <div class="card">
-            <img src="../images/add-category.jpg" alt="Add Category">
+            <img src="../images/add-category.jpg" alt="Add Category" onclick="openModal(0)">
         </div>
         <div class="card">
-            <img src="../images/add-kol.jpg" alt="Add KOL to Category">
+            <img src="../images/add-kol.jpg" alt="Add KOL to Category" onclick="openModal(1)">
         </div>
         <div class="card">
-            <img src="../images/use-category.jpg" alt="Use Category">
+            <img src="../images/use-category.jpg" alt="Use Category" onclick="openModal(2)">
         </div>
         <div class="card">
-            <img src="../images/manage-category.jpg" alt="Manage Category">
+            <img src="../images/manage-category.jpg" alt="Manage Category" onclick="openModal(3)">
         </div>
         <div class="card">
-            <img src="../images/ManageKOL.jpg" alt="Manage KOL">
+            <img src="../images/ManageKOL.jpg" alt="Manage KOL" onclick="openModal(4)">
         </div>
+    </div>
+    <div id="modal" class="modal" onclick="closeModal()">
+        <span class="arrow left" onclick="prevImage(event)">&#10094;</span>
+        <img id="modal-img" class="modal-content" alt="preview">
+        <span class="arrow right" onclick="nextImage(event)">&#10095;</span>
     </div>
 
 </main>
-
-
 <div class="footer">&copy; 2025 TweetCat Team. All rights reserved.</div>
+<script>
+    const imageList = [
+        "../images/add-category.jpg",
+        "../images/add-kol.jpg",
+        "../images/use-category.jpg",
+        "../images/manage-category.jpg",
+        "../images/ManageKOL.jpg"
+    ];
+
+    let currentIndex = 0;
+
+    function openModal(index) {
+        currentIndex = index;
+        const modal = document.getElementById("modal");
+        const modalImg = document.getElementById("modal-img");
+        modalImg.src = imageList[currentIndex];
+        modal.style.display = "flex";
+    }
+
+    function closeModal() {
+        document.getElementById("modal").style.display = "none";
+    }
+
+    function prevImage(event) {
+        event.stopPropagation();
+        currentIndex = (currentIndex - 1 + imageList.length) % imageList.length;
+        document.getElementById("modal-img").src = imageList[currentIndex];
+    }
+
+    function nextImage(event) {
+        event.stopPropagation();
+        currentIndex = (currentIndex + 1) % imageList.length;
+        document.getElementById("modal-img").src = imageList[currentIndex];
+    }
+
+    // Optional: Add keyboard support
+    document.addEventListener("keydown", function (e) {
+        const modal = document.getElementById("modal");
+        if (modal.style.display === "flex") {
+            if (e.key === "ArrowLeft") prevImage(e);
+            if (e.key === "ArrowRight") nextImage(e);
+            if (e.key === "Escape") closeModal();
+        }
+    });
+</script>
 
 </body>
 </html>
