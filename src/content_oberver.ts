@@ -4,7 +4,6 @@ import {queryCategoriesFromBG, queryCategoryById} from "./category";
 import {__DBK_AD_Block_Key, Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
 import {isAdTweetNode, sendMsgToService} from "./utils";
 import {localGet} from "./local_storage";
-import * as async_hooks from "node:async_hooks";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
