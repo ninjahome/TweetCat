@@ -103,10 +103,14 @@
 }
 
 .tweetch-logo:hover,
-.hasCategory:hover{
+.hasCategoryfile:hover{
     background-color: rgba(15, 20, 25, 0.1);
     border-radius: 9999px;
     padding: 0 8px;
+}
+.hasCategorylabel:hover{
+    background-color: rgba(15, 20, 25, 0.1);
+    border-radius: 9999px;
 }
 .hover-chat:hover{
     background-color: rgba(74, 153, 233, 0.1);
@@ -114,9 +118,12 @@
 }
 
 .tweet-category-label {
-   padding: 7px 16px;
+   padding: 7px 8px;
     border-radius: 999px;
     background-color: rgba(69, 146, 239, 0.1);
+}
+.tweet-category-label:hover{
+    background-color: transparent;
 }
 .category-name {
     font-weight: 1000;
