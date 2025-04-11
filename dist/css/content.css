@@ -112,6 +112,10 @@
     background-color: rgba(15, 20, 25, 0.1);
     border-radius: 9999px;
 }
+.hasCategorylabel .tweet-category-label {
+    font-weight: 800;
+    padding: 7px 16px;
+}
 .hover-chat:hover{
     background-color: rgba(74, 153, 233, 0.1);
     border-radius: 9999px;
