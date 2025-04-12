@@ -74,4 +74,7 @@ function initDashBoard(): void {
             openModal(i);
         }
     }
+
+    const modal = document.getElementById("modal") as HTMLElement;
+    modal.onclick = closeModal;
 }
