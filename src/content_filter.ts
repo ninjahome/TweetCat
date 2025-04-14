@@ -3,6 +3,7 @@ import {Category, choseColorByID, defaultAllCategoryID, MsgType, TweetKol} from 
 import {isHomePage, parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG, queryCategoryById} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
+import {testApi} from "./ai_api";
 
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
@@ -141,6 +142,7 @@ export async function appendCategoryContainerAtTop() {
 }
 
 export function resetCategories() {
+    testApi();
     if (_curFilterID <= 0) {
         return;
     }
