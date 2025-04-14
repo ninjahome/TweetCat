@@ -3,48 +3,47 @@ import {Category, choseColorByID, defaultAllCategoryID, MsgType, TweetKol} from 
 import {isHomePage, parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG, queryCategoryById} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
-import {testApi} from "./ai_api";
 
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
 let isCheckingContainer = false;
-
-async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Category[]) {
-    const contentTemplate = await parseContentHtml('html/content.html');
-    const filterContainerDiv = contentTemplate.content.getElementById("category-filter-container");
-    const filterBtn = contentTemplate.content.getElementById("category-filter-item");
-    const moreBtn = contentTemplate.content.getElementById("category-filter-more");
-    const allCatBtn = contentTemplate.content.getElementById("category-filter-clear");
-
-    if (!filterContainerDiv || !filterBtn || !moreBtn || !allCatBtn) {
-        console.error(`------>>> failed to filter buttons container is ${filterContainerDiv}
-         category button is ${filterBtn} clear button is ${allCatBtn}`);
-        return;
-    }
-
-    navElement.parentElement!.appendChild(filterContainerDiv);
-
-    allCatBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
-    allCatBtn.dataset.categoryID = '' + defaultAllCategoryID;
-    filterContainerDiv.appendChild(allCatBtn);
-
-    categories.forEach((category) => {
-        const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
-        cloneItem.id = "category-filter-item-" + category.id;
-        cloneItem.dataset.categoryID = '' + category.id
-        const btn = cloneItem.querySelector(".category-filter-btn") as HTMLElement
-        btn.innerText = category.catName;
-        btn.addEventListener('click', async () => {
-            await changeFilterType(category);
-        });
-        filterContainerDiv.appendChild(cloneItem);
-    });
-
-    moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
-    filterContainerDiv.appendChild(moreBtn);
-    console.log("------>>> add filter container success")
-    setSelectedCategory();
-}
+//
+// async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Category[]) {
+//     const contentTemplate = await parseContentHtml('html/content.html');
+//     const filterContainerDiv = contentTemplate.content.getElementById("category-filter-container");
+//     const filterBtn = contentTemplate.content.getElementById("category-filter-item");
+//     const moreBtn = contentTemplate.content.getElementById("category-filter-more");
+//     const allCatBtn = contentTemplate.content.getElementById("category-filter-clear");
+//
+//     if (!filterContainerDiv || !filterBtn || !moreBtn || !allCatBtn) {
+//         console.error(`------>>> failed to filter buttons container is ${filterContainerDiv}
+//          category button is ${filterBtn} clear button is ${allCatBtn}`);
+//         return;
+//     }
+//
+//     navElement.parentElement!.appendChild(filterContainerDiv);
+//
+//     allCatBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
+//     allCatBtn.dataset.categoryID = '' + defaultAllCategoryID;
+//     filterContainerDiv.appendChild(allCatBtn);
+//
+//     categories.forEach((category) => {
+//         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
+//         cloneItem.id = "category-filter-item-" + category.id;
+//         cloneItem.dataset.categoryID = '' + category.id
+//         const btn = cloneItem.querySelector(".category-filter-btn") as HTMLElement
+//         btn.innerText = category.catName;
+//         btn.addEventListener('click', async () => {
+//             await changeFilterType(category);
+//         });
+//         filterContainerDiv.appendChild(cloneItem);
+//     });
+//
+//     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
+//     filterContainerDiv.appendChild(moreBtn);
+//     console.log("------>>> add filter container success")
+//     setSelectedCategory();
+// }
 
 async function filterTweetsByCategory() {
     if (_curKolFilter.size === 0) {
@@ -105,44 +104,43 @@ async function addMoreCategory() {
     await sendMsgToService("#onboarding/main-home", MsgType.OpenPlugin);
 }
 
-export async function appendCategoryContainerAtTop() {
-    if (isCheckingContainer || !isHomePage()) {
-        console.log('------>>> checkFilterBtn is already running or no need ');
-        return;
-    }
-
-    isCheckingContainer = true;
-    try {
-        const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
-        if (!navElement) {
-            observeForElement(document.body, 300, () => {
-                return document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
-            }, async () => {
-                await appendCategoryContainerAtTop();
-            }, false);
-            return;
-        }
-
-        let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container") as HTMLElement;
-        if (filterContainerDiv) {
-            console.log("------>>> no need to append filter container again");
-            return;
-        }
-
-        const categories = await queryCategoriesFromBG();
-        if (categories.length == 0) {
-            console.log("------>>> no categories loaded now");
-            return;
-        }
-
-        await appendFilterBtnToHomePage(navElement, categories);
-    } finally {
-        isCheckingContainer = false;  // 确保执行完成后恢复标记
-    }
-}
+// export async function appendCategoryContainerAtTop() {
+//     if (isCheckingContainer || !isHomePage()) {
+//         console.log('------>>> checkFilterBtn is already running or no need ');
+//         return;
+//     }
+//
+//     isCheckingContainer = true;
+//     try {
+//         const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
+//         if (!navElement) {
+//             observeForElement(document.body, 300, () => {
+//                 return document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
+//             }, async () => {
+//                 await appendCategoryContainerAtTop();
+//             }, false);
+//             return;
+//         }
+//
+//         let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container") as HTMLElement;
+//         if (filterContainerDiv) {
+//             console.log("------>>> no need to append filter container again");
+//             return;
+//         }
+//
+//         const categories = await queryCategoriesFromBG();
+//         if (categories.length == 0) {
+//             console.log("------>>> no categories loaded now");
+//             return;
+//         }
+//
+//         await appendFilterBtnToHomePage(navElement, categories);
+//     } finally {
+//         isCheckingContainer = false;  // 确保执行完成后恢复标记
+//     }
+// }
 
 export function resetCategories() {
-    testApi();
     if (_curFilterID <= 0) {
         return;
     }
@@ -164,14 +162,14 @@ async function queryFilterFromBG(catID: number): Promise<Map<string, TweetKol>> 
     return new Map(rsp.data);
 }
 
-export async function reloadCategoryContainer(categories: Category[]) {
-    const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
-    let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container") as HTMLElement;
-    if (filterContainerDiv) {
-        filterContainerDiv.remove();
-    }
-    await appendFilterBtnToHomePage(navElement, categories);
-}
+// export async function reloadCategoryContainer(categories: Category[]) {
+//     const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
+//     let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container") as HTMLElement;
+//     if (filterContainerDiv) {
+//         filterContainerDiv.remove();
+//     }
+//     await appendFilterBtnToHomePage(navElement, categories);
+// }
 
 let observing = false;
 

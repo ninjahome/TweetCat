@@ -1,12 +1,11 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./content_oberver";
 import {
-    appendCategoryContainerAtTop,
     appendFilterOnKolProfileHome,
-    reloadCategoryContainer
 } from "./content_filter";
 import {__targetUrlToFilter, Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {addCustomStyles, isTwitterUserProfile} from "./utils";
+import {appendCatPresent} from "./tweetcat_timeline";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
@@ -15,7 +14,6 @@ export function isHomePage(): boolean {
 document.addEventListener('DOMContentLoaded', async () => {
     addCustomStyles('css/content.css');
     await initObserver();
-    await appendCategoryContainerAtTop();
     await parseUserInfo(async (userName) => {
         console.log("------->>>>tweet user name:", userName);
     });
@@ -31,7 +29,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     switch (request.action) {
         case MsgType.NaviUrlChanged: {
-            appendCategoryContainerAtTop().then();
+            appendCatPresent().then();
             const kolName = isTwitterUserProfile()
             if (!!kolName) {
                 // console.log("=============temp call log==========>>>>>>", kolName);
@@ -43,7 +41,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
         }
         case MsgType.CategoryChanged: {
             console.log("------>>> category changed.....")
-            reloadCategoryContainer(request.data as Category[]).then();
+            // reloadCategoryContainer(request.data as Category[]).then();
             sendResponse({success: true});
             break;
         }
