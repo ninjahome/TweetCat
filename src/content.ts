@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("------->>>>tweet user name:", userName);
     });
 
+    await appendCatPresent();
     console.log('------>>>TweetCat content script success ✨');
 });
 
@@ -29,7 +30,6 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     switch (request.action) {
         case MsgType.NaviUrlChanged: {
-            appendCatPresent().then();
             const kolName = isTwitterUserProfile()
             if (!!kolName) {
                 // console.log("=============temp call log==========>>>>>>", kolName);
