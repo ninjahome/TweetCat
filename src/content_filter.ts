@@ -52,7 +52,7 @@ async function filterTweetsByCategory() {
         return;
     }
 
-    const tweetsContainer = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]') as HTMLElement;
+    const tweetsContainer = document.querySelector('section[aria-labelledby^="accessible-list-"] .css-175oi2r') as HTMLElement;
     if (!tweetsContainer) {
         console.warn("------>>> failed to find tweet container when starting to filter")
         return;
@@ -113,10 +113,11 @@ export async function appendCategoryContainerAtTop() {
 
     isCheckingContainer = true;
     try {
-        const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
+        const navElement = document.querySelector('nav[role="navigation"][aria-live="polite"]') as HTMLElement;
+
         if (!navElement) {
             observeForElement(document.body, 300, () => {
-                return document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
+                return document.querySelector('nav[role="navigation"][aria-live="polite"]') as HTMLElement;
             }, async () => {
                 await appendCategoryContainerAtTop();
             }, false);
@@ -165,7 +166,7 @@ async function queryFilterFromBG(catID: number): Promise<Map<string, TweetKol>> 
 }
 
 export async function reloadCategoryContainer(categories: Category[]) {
-    const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
+    const navElement = document.querySelector('nav[role="navigation"][aria-live="polite"]') as HTMLElement;
     let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container") as HTMLElement;
     if (filterContainerDiv) {
         filterContainerDiv.remove();

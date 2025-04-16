@@ -64,7 +64,7 @@ let userInfoTryTime = 0;
 
 async function parseUserInfo(callback: (userProfile: string) => Promise<void>) {
 
-    const profileBtn = document.querySelector('a[data-testid="AppTabBar_Profile_Link"][aria-label="Profile"]') as HTMLLinkElement;
+    const profileBtn = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]') as HTMLLinkElement;
     if (!profileBtn) {
         console.log("------>>> need load user profile later");
 
