@@ -51,7 +51,7 @@ async function filterTweetsByCategory() {
         return;
     }
 
-    const tweetsContainer = document.querySelector('div[aria-label="Timeline: Your Home Timeline"]') as HTMLElement;
+    const tweetsContainer = document.querySelector('section[aria-labelledby^="accessible-list-"] .css-175oi2r') as HTMLElement;
     if (!tweetsContainer) {
         console.warn("------>>> failed to find tweet container when starting to filter")
         return;
