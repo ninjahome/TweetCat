@@ -73,7 +73,7 @@ export function isTwitterUserProfile(): string | null {
 
 
 function observeAction(target: HTMLElement, idleThreshold: number,
-                       foundFunc: () => HTMLElement | null, callback: () => Promise<void>,
+                       foundFunc: () => HTMLElement | null, callback: (elmFound:HTMLElement) => Promise<void>,
                        options: MutationObserverInit, continueMonitor?: boolean) {
     const cb: MutationCallback = (_, observer) => {
         const element = foundFunc();
@@ -84,7 +84,7 @@ function observeAction(target: HTMLElement, idleThreshold: number,
             observer.disconnect();
         }
         let idleTimer = setTimeout(() => {
-            callback().then();
+            callback(element).then();
             clearTimeout(idleTimer);
             // console.log('---------->>> observer action finished:=> continue=>', continueMonitor);
         }, idleThreshold);
@@ -95,14 +95,14 @@ function observeAction(target: HTMLElement, idleThreshold: number,
 }
 
 export function observeForElement(target: HTMLElement, idleThreshold: number,
-                                  foundFunc: () => HTMLElement | null, callback: () => Promise<void>,
+                                  foundFunc: () => HTMLElement | null, callback: (elmFound:HTMLElement) => Promise<void>,
                                   continueMonitor?: boolean) {
 
     observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: true}, continueMonitor);
 }
 
 export function observeForElementDirect(target: HTMLElement, idleThreshold: number,
-                                        foundFunc: () => HTMLElement | null, callback: () => Promise<void>,
+                                        foundFunc: () => HTMLElement | null, callback: (elmFound:HTMLElement) => Promise<void>,
                                         continueMonitor?: boolean) {
     observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: false}, continueMonitor);
 }

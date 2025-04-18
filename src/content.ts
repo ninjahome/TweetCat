@@ -5,7 +5,7 @@ import {
 } from "./content_filter";
 import {__targetUrlToFilter, Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
 import {addCustomStyles, isTwitterUserProfile} from "./utils";
-import {appendCatPresent} from "./tweetcat_timeline";
+import {appendCatPresent} from "./content_timeline";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
