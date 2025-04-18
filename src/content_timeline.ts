@@ -23,13 +23,7 @@ export async function appendCatPresent() {
             linkElm.addEventListener('click', () => {
                 console.log("-------->>> switch back to norma twitter");
                 removeSelClass(clone);
-                (tweetContentArea?.firstChild as HTMLElement).style.display = 'flex';
-                if (!!lastTimeLine) {
-                    const currentTweetCatSection = document.querySelector('div[data-testid="primaryColumn"] section') as HTMLElement;
-                    currentTweetCatSection.parentNode?.replaceChild(lastTimeLine, currentTweetCatSection);
-                    lastTimeLine.style.display = 'flex';
-                    lastTimeLine = null;
-                }
+                restoreReactSection();
             })
         });
 
@@ -74,20 +68,48 @@ function setupTweetCatTabStyle(menuList: HTMLElement, selectedItem: HTMLElement)
     subLineItem.setAttribute('style', 'background-color: rgb(29, 155, 240)');
 }
 
-let lastTimeLine: HTMLElement | null = null;
+let customSection: HTMLElement | null = null;
+let reactOriginalSection: HTMLElement | null = null;
 
 async function pullTweetCatContent() {
     const contentTemplate = await parseContentHtml('html/content.html');
     const tweetSectionClone = contentTemplate.content.getElementById("tweetCatSection")!.cloneNode(true) as HTMLElement;
+
     tweetSectionClone.setAttribute('aria-labelledby', 'tweetcat-list');
     tweetSectionClone.setAttribute('role', 'region');
+
     const tweetContentSection = document.querySelector('div[data-testid="primaryColumn"] section') as HTMLElement;
     if (!tweetContentSection) {
         console.warn("------>>> failed to find tweet content area");
         return;
     }
 
-    console.log("------>>> tweet area:", tweetContentSection);
-    lastTimeLine = tweetContentSection;
-    tweetContentSection.parentNode?.replaceChild(tweetSectionClone, tweetContentSection);
+    // 首次保存原React渲染的section，不再删除或替换
+    if (!reactOriginalSection) {
+        reactOriginalSection = tweetContentSection;
+    }
+
+    // 检查是否已添加自定义section
+    if (!customSection) {
+        customSection = tweetSectionClone;
+        reactOriginalSection.parentNode?.appendChild(customSection);
+    }
+
+    setSectionVisibility(customSection, true);
+    setSectionVisibility(reactOriginalSection, false);
+}
+
+function restoreReactSection() {
+    if (reactOriginalSection && customSection) {
+        setSectionVisibility(reactOriginalSection, true);
+        setSectionVisibility(customSection, false);
+    }
+}
+
+function setSectionVisibility(section: HTMLElement, visible: boolean) {
+    section.style.visibility = visible ? 'visible' : 'hidden';
+    section.style.position = visible ? 'relative' : 'absolute';
+    section.style.pointerEvents = visible ? '' : 'none';
+    section.style.height = visible ? '' : '1px';
+    section.style.overflow = visible ? '' : 'hidden';
 }
