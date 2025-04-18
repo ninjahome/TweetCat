@@ -1,9 +1,6 @@
 import {getBearerToken} from "./utils";
 import {localGet} from "./local_storage";
-import {__DBK_query_id_map} from "./consts";
-
-const UserTweets = "UserTweets"
-const UserByScreenName = "UserByScreenName"
+import {__DBK_query_id_map, UserByScreenName, UserTweets} from "./consts";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(key: string): Promise<string | null> {
@@ -129,7 +126,7 @@ interface Instruction {
 }
 
 
-export async function fetchTweets(userId: string, maxCount: number) {
+export async function fetchTweets(userId: string, maxCount: number = 20) {
 
     const url = await buildTweetQueryURL({userId: userId, count: maxCount});
     const headers = await generateHeaders();
@@ -145,12 +142,14 @@ export async function fetchTweets(userId: string, maxCount: number) {
     }
 
     const result = await response.json();
-    const validTweets = result.data.user.result.timeline.timeline.instructions
+    let validTweets = result.data.user.result.timeline.timeline.instructions
         .flatMap((instruction: Instruction) => instruction.entries)
         .filter((entry: TweetEntry) => entry?.content?.entryType === 'TimelineTimelineItem')
-        .slice(0, maxCount);
 
-    console.log(validTweets);
+    if (maxCount > 0) {
+        return validTweets.slice(0, maxCount);
+    }
+
     return validTweets;
 }
 
@@ -212,10 +211,16 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
     return userId ?? null;
 }
 
-export async function testTweetApi(){
+export async function testTweetApi(userName: string) {
     try {
-        console.log("------>>> user id:", await getUserIdByUsername('elonmusk'));
-        await fetchTweets('44196397', 5);
+        const userID = await getUserIdByUsername(userName);//'elonmusk'
+        if (!userID) {
+            console.log("------->>> failed found user id for user name:", userName)
+            return;
+        }
+        console.log("------>>> user id:", userID);
+        const validTweets = await fetchTweets(userID, 5);
+        console.log("======>>>", validTweets);
     } catch (e) {
         console.log("--------------tmp test", e)
     }

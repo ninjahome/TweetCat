@@ -1,7 +1,14 @@
 /// <reference lib="webworker" />
 import browser, {Runtime, WebNavigation} from "webextension-polyfill";
 import {bgMsgDispatch} from "./bg_msg";
-import {__DBK_Bearer_Token, __DBK_query_id_map, __targetUrlToFilter, MsgType} from "./consts";
+import {
+    __DBK_Bearer_Token,
+    __DBK_query_id_map,
+    __targetUrlToFilter,
+    defaultQueryKeyMap,
+    MsgType,
+    watchedOps
+} from "./consts";
 import {checkAndInitDatabase} from "./database";
 import {localGet, localSet} from "./local_storage";
 import {getBearerToken} from "./utils";
@@ -27,7 +34,13 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
         }).then();
     }
     checkAndInitDatabase().then();
+    initDefaultQueryKey();
 });
+
+function initDefaultQueryKey() {
+    localSet(__DBK_query_id_map, defaultQueryKeyMap).then()
+    console.log("----->>> init default query key map success!")
+}
 
 browser.runtime.onStartup.addListener(() => {
     console.log('------>>> onStartup......');
@@ -75,14 +88,6 @@ browser.webRequest.onBeforeSendHeaders.addListener(
     ["requestHeaders"]
 );
 
-const watchedOps = [
-    "UserByScreenName",        // 根据 username 获取 userId
-    "UserTweets",              // 获取指定用户的推文
-    "HomeLatestTimeline",      // 首页的最新推文流
-    "TweetDetail",             // 单条推文详情（用于评论）
-    "UsersByRestIds",          // 根据一批 userId 查询用户信息
-    "SearchTimeline",          // 搜索结果（你可能以后用）
-];
 
 browser.webRequest.onBeforeRequest.addListener(
     (details) => {
@@ -93,10 +98,10 @@ browser.webRequest.onBeforeRequest.addListener(
         const queryId = match[1];
         const operationName = match[2];
 
-        if (!watchedOps.includes(operationName)){
+        if (!watchedOps.includes(operationName)) {
             return;
         }
-            // console.log(`------>>>[GraphQL QueryId Update] ${operationName} → ${queryId}`);
+        // console.log(`------>>>[GraphQL QueryId Update] ${operationName} → ${queryId}`);
         localGet(__DBK_query_id_map).then(data => {
             const existingMap: Record<string, string> = data as Record<string, string> || {}
             if (!existingMap[operationName] || existingMap[operationName] !== queryId) {

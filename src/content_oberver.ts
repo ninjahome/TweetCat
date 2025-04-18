@@ -1,9 +1,11 @@
 import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
 import {_curKolFilter, resetCategories} from "./content_filter";
 import {queryCategoriesFromBG, queryCategoryById} from "./category";
-import {__DBK_AD_Block_Key, Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
+import {__DBK_AD_Block_Key, choseColorByID, maxMissedTweetOnce, MsgType} from "./consts";
 import {isAdTweetNode, sendMsgToService} from "./utils";
 import {localGet} from "./local_storage";
+import {TweetKol} from "./object_TweetKol";
+import {Category} from "./object_Category";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;

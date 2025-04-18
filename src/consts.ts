@@ -19,9 +19,6 @@ export function choseColorByID(id: number, opacity: number = 1): string {
     return addOpacityToHex(baseColor, opacity);
 }
 
-export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
-export const DEFAULT_BEARER = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
-export const __DBK_query_id_map = "__DBK_query_id_map__";
 export const __DBK_AD_Block_Key = "__DBK_AD_Block_Key";
 
 export enum MsgType {
@@ -37,40 +34,29 @@ export enum MsgType {
     AdsBlockChanged = 'AdsBlockChanged'
 }
 
-export class TweetKol {
-    kolName: string;
-    displayName: string;
-    catID?: number;
-    avatarUrl?: string;
+export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
+export const DEFAULT_BEARER = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
+export const __DBK_query_id_map = "__DBK_query_id_map__";
+export const UserTweets = "UserTweets"// 获取指定用户的推文
+export const UserByScreenName = "UserByScreenName" // 根据 username 获取 userId
+export const HomeLatestTimeline = "HomeLatestTimeline"// 首页的最新推文流
+export const TweetDetail = "TweetDetail"         // 单条推文详情（用于评论）
+export const UsersByRestIds = "UsersByRestIds"     // 根据一批 userId 查询用户信息
+export const SearchTimeline = "SearchTimeline" // 搜索结果（你可能以后用）
+export const watchedOps = [
+    UserByScreenName,
+    UserTweets,
+    HomeLatestTimeline,
+    TweetDetail,
+    UsersByRestIds,
+    SearchTimeline,
+];
 
-    constructor(uName: string, dName: string, au?: string, cID?: number) {
-        this.kolName = uName;
-        this.displayName = dName;
-        this.catID = cID;
-        this.avatarUrl = au;
-    }
-
-    displayString(): string | null {
-        if (!this.kolName || !this.displayName) {
-            return null;
-        }
-
-        return this.displayName + "@" + this.kolName + "@" + (this.catID ?? "-1");
-    }
-
-    static FromString(str: string): TweetKol {
-        return JSON.parse(str) as TweetKol;
-    }
-}
-
-export class Category {
-    id?: number;
-    catName: string;
-    forUser: string;
-
-    constructor(n: string, u: string, i?: number) {
-        this.catName = n;
-        this.forUser = u;
-        this.id = i;
-    }
+export const defaultQueryKeyMap: Record<string, string> = {
+    UserByScreenName: "32pL5BWe9WKeSK1MoPvFQQ",
+    UserTweets: "M3Hpkrb8pjWkEuGdLeXMOA",
+    HomeLatestTimeline: "nMyTQqsJiUGBKLGNSQamAA",
+    TweetDetail: "b9Yw90FMr_zUb8DvA8r2ug",
+    UsersByRestIds: "PyRggX3LQweP9nSF6PHliA",
+    SearchTimeline: "fL2MBiqXPk5pSrOS5ACLdA",
 }

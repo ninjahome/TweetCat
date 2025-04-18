@@ -1,4 +1,4 @@
-import {Category, defaultUserName, MsgType, TweetKol} from "./consts";
+import { defaultUserName, MsgType} from "./consts";
 import {
     __tableCategory,
     __tableKolsInCategory,
@@ -7,6 +7,8 @@ import {
     databaseUpdate
 } from "./database";
 import {sendMsgToService} from "./utils";
+import {Category} from "./object_Category";
+import {TweetKol} from "./object_TweetKol";
 
 export async function loadCategories(forUser: string): Promise<Category[]> {
     try {

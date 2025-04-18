@@ -1,8 +1,10 @@
 import {observeForElement, sendMsgToService} from "./utils";
-import {Category, choseColorByID, defaultAllCategoryID, MsgType, TweetKol} from "./consts";
-import {isHomePage, parseContentHtml, parseNameFromTweetCell} from "./content";
+import {choseColorByID, defaultAllCategoryID, MsgType} from "./consts";
+import {parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryCategoriesFromBG, queryCategoryById} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
+import {TweetKol} from "./object_TweetKol";
+import {Category} from "./object_Category";
 
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;

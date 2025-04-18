@@ -3,9 +3,10 @@ import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./content_oberv
 import {
     appendFilterOnKolProfileHome,
 } from "./content_filter";
-import {__targetUrlToFilter, Category, maxElmFindTryTimes, MsgType, TweetKol} from "./consts";
+import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "./consts";
 import {addCustomStyles, isTwitterUserProfile} from "./utils";
-import {appendCatPresent} from "./content_timeline";
+import {monitorHomeNaviDiv} from "./content_timeline";
+import {TweetKol} from "./object_TweetKol";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
@@ -18,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("------->>>>tweet user name:", userName);
     });
 
-    await appendCatPresent();
+    monitorHomeNaviDiv();
     console.log('------>>>TweetCat content script success ✨');
 });
 
@@ -37,6 +38,9 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             }
             checkFilterStatusAfterUrlChanged();
             sendResponse({success: true});
+            if(isHomePage()){
+                monitorHomeNaviDiv();
+            }
             break;
         }
         case MsgType.CategoryChanged: {

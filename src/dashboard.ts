@@ -1,11 +1,12 @@
 import browser from "webextension-polyfill";
-import {__DBK_AD_Block_Key, Category, choseColorByID, defaultUserName, MaxCategorySize, MsgType} from "./consts";
+import {__DBK_AD_Block_Key, choseColorByID, defaultUserName, MaxCategorySize, MsgType} from "./consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "./database";
 import {showView} from "./utils";
 import {kolsForCategory, loadCategories, removeCategory, updateCategoryDetail} from "./category";
 import {hideLoading, showAlert, showConfirmPopup, showLoading} from "./dash_common";
 import {broadcastToContent} from "./bg_msg";
 import {localGet, localSet} from "./local_storage";
+import {Category} from "./object_Category";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);

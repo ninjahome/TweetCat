@@ -1,49 +1,70 @@
 import {observeForElement} from "./utils";
 import {parseContentHtml} from "./content";
+import {testTweetApi} from "./content_tweet_api";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
+let tweetCatMenuHasObserved = false;
 
-export async function appendCatPresent() {
+async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
+
+    if (!menuList || menuList.children.length < 2) {
+        console.warn("------>>> failed to find top menu [for you] [following]")
+        return null;
+    }
+
+    if (!!menuList.querySelector(".tweetCat-present-top")) {
+        console.log("------>>> tweetCat menu already append");
+        return;
+    }
+
+    const contentTemplate = await parseContentHtml('html/content.html');
+    const clone = contentTemplate.content.getElementById("tweetCat-present-top")!.cloneNode(true) as HTMLElement;
+
+    menuList.querySelectorAll("a").forEach(linkElm => {
+        linkElm.addEventListener('click', () => {
+            console.log("-------->>> switch back to norma twitter");
+            removeSelClass(clone);
+            restoreReactSection();
+        })
+    });
+
+    if (menuList.children.length === 2) {
+        menuList.append(clone)
+    } else {
+        menuList.insertBefore(clone, menuList.children[2])
+    }
+
+    clone.onclick = (e) => {
+        e.preventDefault();
+        setupTweetCatTabStyle(menuList as HTMLElement, clone);
+        pullTweetCatContent();
+    }
+
+    tweetCatMenuHasObserved = false;
+}
+
+async function monitorHomeNavMenu(navDiv: HTMLElement) {
+    const menuList = navDiv.querySelector('div[role="tablist"]') as HTMLElement;
+    await appendTweetCatMenuOnHomeNavi(menuList);
+
+    observeForElement(navDiv, 500, () => {
+        return navDiv.querySelector('div[role="tablist"]') as HTMLElement;
+    }, async (menuList) => {
+        await appendTweetCatMenuOnHomeNavi(menuList)
+    }, false);
+}
+
+export function monitorHomeNaviDiv() {
+    if (tweetCatMenuHasObserved || !!document.getElementById("tweetCat-present-top")) {
+        console.log("------>>> tweetCat tab menu has already been added");
+        return;
+    }
+
+    tweetCatMenuHasObserved = true;
     observeForElement(document.body, 30, () => {
         return document.querySelector('div[data-testid="primaryColumn"] .css-175oi2r.r-aqfbo4.r-gtdqiz.r-1gn8etr.r-1g40b8q') as HTMLElement;
     }, async (navDiv) => {
-        observeForElement(navDiv, 500, () => {
-            const menuList = navDiv.querySelector('div[role="tablist"]');
-            if (!menuList || menuList.children.length < 2) {
-                console.warn("------>>> failed to find top menu [for you] [following]")
-                return null;
-            }
-            return menuList as HTMLElement;
-        }, async (menuList) => {
-
-            const contentTemplate = await parseContentHtml('html/content.html');
-            const clone = contentTemplate.content.getElementById("tweetCat-present-top")!.cloneNode(true) as HTMLElement;
-
-            menuList.querySelectorAll("a").forEach(linkElm => {
-                linkElm.addEventListener('click', () => {
-                    console.log("-------->>> switch back to norma twitter");
-                    removeSelClass(clone);
-                    restoreReactSection();
-                })
-            });
-
-            if (menuList.children.length === 2) {
-                menuList.append(clone)
-            } else {
-                menuList.insertBefore(clone, menuList.children[2])
-            }
-            clone.onclick = (e) => {
-                e.preventDefault();
-                setupTweetCatTabStyle(menuList as HTMLElement, clone);
-                pullTweetCatContent();
-            }
-            // console.log("-------2--------->\n menu", menuList);
-            // console.log("--------2-------->\n parentNode", menuList.children);
-        }, false);
-
-
-        //
-
+        await monitorHomeNavMenu(navDiv);
     }, false);
 }
 
@@ -77,10 +98,7 @@ function setupTweetCatTabStyle(menuList: HTMLElement, selectedItem: HTMLElement)
 let customSection: HTMLElement | null = null;
 let reactOriginalSection: HTMLElement | null = null;
 
-async function pullTweetCatContent() {
-    const contentTemplate = await parseContentHtml('html/content.html');
-    const tweetSectionClone = contentTemplate.content.getElementById("tweetCatSection")!.cloneNode(true) as HTMLElement;
-
+async function setupTweetCatSection(tweetSectionClone: HTMLElement) {
     tweetSectionClone.setAttribute('aria-labelledby', 'tweetcat-list');
     tweetSectionClone.setAttribute('role', 'region');
 
@@ -176,4 +194,14 @@ function unfreezeOriginalSection(section: HTMLElement) {
 function preventEvent(e: Event) {
     e.preventDefault();
     e.stopImmediatePropagation();
+}
+
+
+async function pullTweetCatContent() {
+    const contentTemplate = await parseContentHtml('html/content.html');
+    const tweetSectionClone = contentTemplate.content.getElementById("tweetCatSection")!.cloneNode(true) as HTMLElement;
+
+    await setupTweetCatSection(tweetSectionClone);
+
+    await testTweetApi('elonmusk');
 }

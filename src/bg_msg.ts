@@ -1,5 +1,5 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {MsgType, TweetKol} from "./consts";
+import {MsgType} from "./consts";
 import {
     CategoryForId,
     kolsForCategory,
@@ -8,6 +8,7 @@ import {
     removeKolsCategory,
     updateKolsCategory
 } from "./category";
+import {TweetKol} from "./object_TweetKol";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
     console.log("-----------bgMsgDispatch-------------->>>_sender is: ", _sender)

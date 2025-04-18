@@ -1,6 +1,8 @@
 import {kolsForCategory, loadCategories, removeKolsCategory, updateKolsCategory} from "./category";
-import {Category, defaultUserName, TweetKol} from "./consts";
+import {defaultUserName} from "./consts";
 import {checkAndInitDatabase} from "./database";
+import {Category} from "./object_Category";
+import {TweetKol} from "./object_TweetKol";
 
 const queryUrl = new URL(window.location.href);
 document.addEventListener("DOMContentLoaded", initKolManager as EventListener);
