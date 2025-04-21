@@ -16,16 +16,24 @@ async function getUrlWithQueryID(key: string): Promise<string | null> {
 interface TweetRequestParams {
     userId: string;
     count: number;
+    cursor?: string; // 可选 cursor
 }
 
-async function buildTweetQueryURL({userId, count}: TweetRequestParams): Promise<string> {
-    const variables = encodeURIComponent(JSON.stringify({
+async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): Promise<string> {
+    const variablesObj: any = {
         userId,
         count,
         includePromotedContent: true,
         withQuickPromoteEligibilityTweetFields: true,
         withVoice: true
-    }));
+    };
+
+    // 添加 cursor 参数（如果存在）
+    if (cursor) {
+        variablesObj.cursor = cursor;
+    }
+
+    const variables = encodeURIComponent(JSON.stringify(variablesObj));
 
     const features = encodeURIComponent(JSON.stringify({
         "rweb_video_screen_enabled": false,
@@ -126,9 +134,8 @@ interface Instruction {
 }
 
 
-export async function fetchTweets(userId: string, maxCount: number = 20) {
-
-    const url = await buildTweetQueryURL({userId: userId, count: maxCount});
+export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string) {
+    const url = await buildTweetQueryURL({userId: userId, count: maxCount, cursor: cursor});
     const headers = await generateHeaders();
     const response = await fetch(url, {
         method: 'GET',
@@ -146,6 +153,7 @@ export async function fetchTweets(userId: string, maxCount: number = 20) {
         .flatMap((instruction: Instruction) => instruction.entries)
         .filter((entry: TweetEntry) => entry?.content?.entryType === 'TimelineTimelineItem')
 
+    console.log("--------------->>>>> valid tweets:", validTweets)
     if (maxCount > 0) {
         return validTweets.slice(0, maxCount);
     }
@@ -219,7 +227,7 @@ export async function testTweetApi(userName: string) {
             return;
         }
         console.log("------>>> user id:", userID);
-        const validTweets = await fetchTweets(userID, 5);
+        const validTweets = await fetchTweets('1263365191929978880', 25, "DAAHCgABGpDB7uK__-wLAAIAAAATMTkxMTczMjQ1ODIyMTA4ODc5MQgAAwAAAAIAAA");
         console.log("======>>>", validTweets);
     } catch (e) {
         console.log("--------------tmp test", e)

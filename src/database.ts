@@ -6,6 +6,7 @@ export const __currentDatabaseVersion = 1;
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
 export const __tableSystemSetting = '__table_system_setting__';
+export const __tableCachedTweets = '__table_cached_tweets__'
 
 const initialCategories = [
     {catName: defaultCategoryName, forUser: defaultUserName},
