@@ -216,9 +216,9 @@ async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
         }
 
         if (!kol.avatarUrl) {
-            const avatarUrl = document.querySelector('img[alt="Opens profile photo"]')?.getAttribute('src');
+            const avatarUrl = document.querySelector('div[data-testid="primaryColumn"] div[data-testid^="UserAvatar-Container-"] img')?.getAttribute('src');
             if (!!avatarUrl) {
-                console.log("------>>> avatar url found:", avatarUrl);
+                console.log("------>>> avatar url found:[", avatarUrl, "]for kol:", kol.kolName);
                 kol.avatarUrl = avatarUrl;
             }
         }

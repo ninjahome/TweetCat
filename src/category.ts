@@ -1,4 +1,4 @@
-import { defaultUserName, MsgType} from "./consts";
+import {defaultUserName, MsgType} from "./consts";
 import {
     __tableCategory,
     __tableKolsInCategory,
@@ -47,7 +47,7 @@ export async function kolsForCategory(catID: number): Promise<Map<string, TweetK
 
     const kolInOneCategory = new Map<string, TweetKol>();
     for (const k of kols) {
-        kolInOneCategory.set(k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID));
+        kolInOneCategory.set(k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID, k.kolUserId));
     }
 
     return kolInOneCategory;
