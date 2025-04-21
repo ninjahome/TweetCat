@@ -77,9 +77,10 @@ browser.webRequest.onBeforeSendHeaders.addListener(
         const origToken = await getBearerToken();
         if (authHeader && authHeader.value?.startsWith('Bearer ')) {
             const token = authHeader.value;
+            // console.log("------>>>Update Bearer Token:", token);
             if (origToken !== token) {
                 await localSet(__DBK_Bearer_Token, token);
-                console.log("------------------>>>temp ===>>🪪 Detected Bearer Token:", token);
+                console.log("------>>>Update Bearer Token:", token);
             }
         }
         return {requestHeaders: headers};

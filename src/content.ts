@@ -63,7 +63,6 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 }
 
 let userInfoTryTime = 0;
-
 async function parseUserInfo(callback: (userProfile: string) => Promise<void>) {
 
     const profileBtn = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]') as HTMLLinkElement;

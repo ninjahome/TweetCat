@@ -5,6 +5,7 @@ import {queryCategoriesFromBG, queryCategoryById} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 import {TweetKol} from "./object_TweetKol";
 import {Category} from "./object_Category";
+import {getUserIdByUsername} from "./content_tweet_api";
 
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
@@ -215,16 +216,32 @@ async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
             kol = new TweetKol(kolName, displayName);
         }
 
-        if (!kol.avatarUrl) {
-            const avatarUrl = document.querySelector('div[data-testid="primaryColumn"] div[data-testid^="UserAvatar-Container-"] img')?.getAttribute('src');
-            if (!!avatarUrl) {
-                console.log("------>>> avatar url found:[", avatarUrl, "]for kol:", kol.kolName);
-                kol.avatarUrl = avatarUrl;
-            }
-        }
+        _kolCompletion(kol).then()
 
         showPopupMenu(e, clone, categories, kol, setCategoryStatusOnProfileHome);
     }
+}
+
+async function _kolCompletion(kol: TweetKol) {
+    let needUpDateKolData = false;
+    if (!kol.avatarUrl) {
+        kol.avatarUrl = document.querySelector('div[data-testid="primaryColumn"] div[data-testid^="UserAvatar-Container-"] img')?.getAttribute('src') ?? "";
+        console.log("------>>> avatar url found:[", kol.avatarUrl, "]for kol:", kol.kolName);
+        needUpDateKolData = !!kol.avatarUrl
+    }
+
+    if (!kol.kolUserId) {
+        kol.kolUserId = await getUserIdByUsername(kol.kolName) ?? "";
+        needUpDateKolData = !!kol.kolUserId
+        console.log("------>>> need to load kol user id by tweet api:", kol.kolName, "found user id:", kol.kolUserId);
+    }
+
+    if (!needUpDateKolData) {
+        return;
+    }
+
+    await sendMsgToService(kol, MsgType.UpdateKolCat);
+    console.log("------>>> update kol data success", kol)
 }
 
 async function setCategoryStatusOnProfileHome(kolName: string, clone: HTMLElement) {

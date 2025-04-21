@@ -6,6 +6,7 @@ import {isAdTweetNode, sendMsgToService} from "./utils";
 import {localGet} from "./local_storage";
 import {TweetKol} from "./object_TweetKol";
 import {Category} from "./object_Category";
+import {getUserIdByUsername} from "./content_tweet_api";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -156,13 +157,30 @@ async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: Twee
         if (!kol) {
             kol = new TweetKol(rawKol.kolName, rawKol.displayName);
         }
+        _kolCompletion(kol, tweetCellDiv).then();
 
-        if (!kol.avatarUrl) {
-            kol.avatarUrl = getKolAvatarLink(tweetCellDiv) ?? "";
-            // console.log("------>>>tweet cell avatar url link:", kol.avatarUrl);
-        }
         showPopupMenu(e, clone, categories, kol, setCatMenu);
     };
+}
+
+async function _kolCompletion(kol: TweetKol, tweetCellDiv: HTMLElement) {
+    let needUpDateKolData = false;
+    if (!kol.avatarUrl) {
+        needUpDateKolData = true
+        kol.avatarUrl = getKolAvatarLink(tweetCellDiv) ?? "";
+        // console.log("------>>>tweet cell avatar url link:", kol.avatarUrl);
+    }
+
+    if (!kol.kolUserId) {
+        needUpDateKolData = true
+        kol.kolUserId = await getUserIdByUsername(kol.kolName) ?? "";
+    }
+
+    if (!needUpDateKolData) {
+        return;
+    }
+    await sendMsgToService(kol, MsgType.UpdateKolCat);
+    console.log("------>>> update kol data success", kol)
 }
 
 export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories: Category[], kol: TweetKol, callback?: (kolName: string, clone: HTMLElement) => Promise<void>) {

@@ -206,7 +206,7 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
     }
 
     const result = await response.json();
-    console.log(result);
+    // console.log(result);
     const userId = result?.data?.user?.result?.rest_id;
     return userId ?? null;
 }
