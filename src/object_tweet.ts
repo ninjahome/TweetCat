@@ -70,33 +70,22 @@ export class TweetObj {
     }
 }
 
-export function renderTweetHTML(tweet: TweetObj, container: HTMLDivElement): void {
-    const avatar = container.querySelector('.tweet-avatar') as HTMLImageElement;
-    const user = container.querySelector('.tweet-user') as HTMLDivElement;
-    const text = container.querySelector('.tweet-text') as HTMLDivElement;
-    const mediaWrapper = container.querySelector('.tweet-media') as HTMLDivElement;
+export function renderTweetHTML(index: number, tweet: TweetObj, cellDiv: HTMLDivElement, estimatedHeight: number = 350): void {
+    cellDiv.style.transform = `translateY(${index * estimatedHeight}px)`;
 
-    avatar.src = tweet.avatarUrl;
-    avatar.alt = `${tweet.displayName} avatar`;
-    avatar.style.width = '40px';
-    avatar.style.height = '40px';
-    avatar.style.borderRadius = '50%';
+    const container = cellDiv.querySelector('[data-testid="tweet"]');
+    if (!container) return;
 
-    user.textContent = `${tweet.displayName} (@${tweet.userScreenName})`;
-    user.style.fontWeight = 'bold';
+    const avatarContainer = container.querySelector('[data-testid="Tweet-User-Avatar"]') as HTMLElement;
+    if (!avatarContainer) return;
 
-    text.textContent = tweet.fullText;
-    text.style.marginTop = '8px';
+    const avatarBox = avatarContainer.querySelector('[data-testid^="UserAvatar-Container-"]') as HTMLElement;
+    if (avatarBox) {
+        avatarBox.setAttribute('data-testid', `UserAvatar-Container-${tweet.userScreenName}`);
+    }
 
-    mediaWrapper.innerHTML = '';
-    if (tweet.mediaUrls.length) {
-        tweet.mediaUrls.forEach(url => {
-            const img = document.createElement('img');
-            img.src = url;
-            img.style.maxWidth = '100%';
-            img.style.borderRadius = '8px';
-            img.style.marginTop = '8px';
-            mediaWrapper.appendChild(img);
-        });
+    const avatarLink = avatarContainer.querySelector('a[href^="/"]') as HTMLAnchorElement;
+    if (avatarLink) {
+        avatarLink.href = `/${tweet.userScreenName}`;
     }
 }

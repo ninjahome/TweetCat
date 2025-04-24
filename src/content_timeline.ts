@@ -208,8 +208,8 @@ async function pullTweetCatContent() {
     const validTweets = await fetchTweets('1263365191929978880', 25, "DAAHCgABGpDB7uK__-wLAAIAAAATMTkxMTczMjQ1ODIyMTA4ODc5MQgAAwAAAAIAAA");
     const obj = validTweets.tweets[0]
     const cell = cellInnerDiv.cloneNode(true) as HTMLDivElement;
-
-    renderTweetHTML(obj, cell);
+    console.log("-----------tmp tweet obj =>", obj);
+    renderTweetHTML(0, obj, cell);
 
     const dynamicArea = tweetSectionClone.querySelector(".dynamic-height-area") as HTMLDivElement
     dynamicArea.append(cell);
