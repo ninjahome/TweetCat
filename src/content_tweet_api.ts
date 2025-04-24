@@ -1,6 +1,7 @@
 import {getBearerToken} from "./utils";
 import {localGet} from "./local_storage";
 import {__DBK_query_id_map, UserByScreenName, UserTweets} from "./consts";
+import {TweetObj} from "./object_tweet";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(key: string): Promise<string | null> {
@@ -120,46 +121,32 @@ async function generateHeaders(): Promise<Record<string, string>> {
 }
 
 
-interface TweetEntry {
-    content: {
-        entryType: string;
-        itemContent?: {
-            tweet_results: any;  // 这里你可进一步精确
-        };
-    };
-}
-
-interface Instruction {
-    entries: TweetEntry[];
-}
-
-
-export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string) {
-    const url = await buildTweetQueryURL({userId: userId, count: maxCount, cursor: cursor});
-    const headers = await generateHeaders();
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: headers,
-        credentials: 'include',
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error ${response.status}: ${errorText}`);
-    }
-
-    const result = await response.json();
-    let validTweets = result.data.user.result.timeline.timeline.instructions
-        .flatMap((instruction: Instruction) => instruction.entries)
-        .filter((entry: TweetEntry) => entry?.content?.entryType === 'TimelineTimelineItem')
-
-    console.log("--------------->>>>> valid tweets:", validTweets)
-    if (maxCount > 0) {
-        return validTweets.slice(0, maxCount);
-    }
-
-    return validTweets;
-}
+// export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string) {
+//     const url = await buildTweetQueryURL({userId: userId, count: maxCount, cursor: cursor});
+//     const headers = await generateHeaders();
+//     const response = await fetch(url, {
+//         method: 'GET',
+//         headers: headers,
+//         credentials: 'include',
+//     });
+//
+//     if (!response.ok) {
+//         const errorText = await response.text();
+//         throw new Error(`HTTP error ${response.status}: ${errorText}`);
+//     }
+//
+//     const result = await response.json();
+//     let validTweets = result.data.user.result.timeline.timeline.instructions
+//         .flatMap((instruction: Instruction) => instruction.entries)
+//         .filter((entry: TweetEntry) => entry?.content?.entryType === 'TimelineTimelineItem')
+//
+//     console.log("--------------->>>>> valid tweets:", result)
+//     if (maxCount > 0) {
+//         return validTweets.slice(0, maxCount);
+//     }
+//
+//     return validTweets;
+// }
 
 export async function getUserIdByUsername(username: string): Promise<string | null> {
     const baseUrl = await getUrlWithQueryID(UserByScreenName); // 保持不变
@@ -229,8 +216,61 @@ export async function testTweetApi(userName: string) {
         console.log("------>>> user id:", userID);
         const validTweets = await fetchTweets('1263365191929978880', 25, "DAAHCgABGpDB7uK__-wLAAIAAAATMTkxMTczMjQ1ODIyMTA4ODc5MQgAAwAAAAIAAA");
         console.log("======>>>", validTweets);
+
     } catch (e) {
         console.log("--------------tmp test", e)
     }
 }
 
+
+function extractTweetsFromEntries(entries: any[]): TweetObj[] {
+    return entries
+        .filter(entry => entry?.content?.entryType === 'TimelineTimelineItem')
+        .map(entry => new TweetObj(entry));
+}
+
+function extractBottomCursor(entries: any[]): string | null {
+    const cursorEntry = entries.find(e =>
+        e?.content?.entryType === 'TimelineTimelineCursor' &&
+        e?.content?.cursorType === 'Bottom'
+    );
+    return cursorEntry?.content?.value ?? null;
+}
+
+function extractEntriesFromGraphQLResult(result: any): any[] {
+    const instructions = result.data.user.result.timeline.timeline.instructions;
+    const entries = instructions.flatMap((instruction: any) => instruction.entries);
+    return entries;
+}
+
+export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string): Promise<{
+    tweets: TweetObj[],
+    nextCursor: string | null,
+    isEnd: boolean
+}> {
+    const url = await buildTweetQueryURL({ userId, count: maxCount, cursor });
+    const headers = await generateHeaders();
+    const response = await fetch(url, {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP error ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+    const entries = extractEntriesFromGraphQLResult(result);
+    const tweets = extractTweetsFromEntries(entries);
+    const nextCursor = extractBottomCursor(entries);
+
+    const isEnd = tweets.length === 0 || nextCursor === null;
+
+    return {
+        tweets,
+        nextCursor,
+        isEnd,
+    };
+}

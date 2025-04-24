@@ -1,6 +1,7 @@
 import {observeForElement} from "./utils";
 import {parseContentHtml} from "./content";
-import {testTweetApi} from "./content_tweet_api";
+import {fetchTweets, testTweetApi} from "./content_tweet_api";
+import {renderTweetHTML} from "./object_tweet";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
 let tweetCatMenuHasObserved = false;
@@ -200,8 +201,20 @@ function preventEvent(e: Event) {
 async function pullTweetCatContent() {
     const contentTemplate = await parseContentHtml('html/content.html');
     const tweetSectionClone = contentTemplate.content.getElementById("tweetCatSection")!.cloneNode(true) as HTMLElement;
+    const cellInnerDiv = contentTemplate.content.getElementById("tweetCellTemplate") as HTMLElement;
 
     await setupTweetCatSection(tweetSectionClone);
 
-    await testTweetApi('elonmusk');
+    const validTweets = await fetchTweets('1263365191929978880', 25, "DAAHCgABGpDB7uK__-wLAAIAAAATMTkxMTczMjQ1ODIyMTA4ODc5MQgAAwAAAAIAAA");
+    const obj = validTweets.tweets[0]
+    const cell = cellInnerDiv.cloneNode(true) as HTMLDivElement;
+
+    renderTweetHTML(obj, cell);
+
+    const dynamicArea = tweetSectionClone.querySelector(".dynamic-height-area") as HTMLDivElement
+    dynamicArea.append(cell);
+}
+
+async function loadCachedTweets() {
+
 }
