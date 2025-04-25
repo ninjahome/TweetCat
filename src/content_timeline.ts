@@ -204,14 +204,21 @@ async function pullTweetCatContent() {
 
     await setupTweetCatSection(tweetSectionClone);
 
-
-    const validTweets = await fetchTweets('1263365191929978880', 25, "DAAHCgABGpDB7uK__-wLAAIAAAATMTkxMTczMjQ1ODIyMTA4ODc5MQgAAwAAAAIAAA");
-    const obj = validTweets.tweets[0]
-    console.log("-----------tmp tweet obj =>", obj);
-    const cell = renderTweetHTML(0, obj, contentTemplate);
-
     const dynamicArea = tweetSectionClone.querySelector(".dynamic-height-area") as HTMLDivElement
-    dynamicArea.append(cell);
+    dynamicArea.innerHTML = '';
+    const validTweets = await fetchTweets('1551261351347109888', 20);
+    for (let i = 0; i < validTweets.tweets.length; i++) {
+        const obj = validTweets.tweets[i];
+        const cell = renderTweetHTML(i, obj, contentTemplate);
+        dynamicArea.append(cell);
+    }
+
+    // const obj = validTweets.tweets[0]
+    // console.log("-----------tmp tweet obj =>", obj);
+    // const cell = renderTweetHTML(0, obj, contentTemplate);
+    //
+    //
+    // dynamicArea.append(cell);
 }
 
 async function loadCachedTweets() {

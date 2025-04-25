@@ -10,82 +10,55 @@ export class TweetMedia {
     }
 }
 
-export class TweetObj {
-    id: string;
-    text: string;
-    fullText: string;
-    createdAt: string;
+export class TweetAuthor {
+    userId: string;
+    displayName: string;
+    screenName: string;
     avatarUrl: string;
     profileAvatarUrl: string;
-    displayName: string;
-    userScreenName: string;
     verified: boolean;
-    userId: string;
-    isVerified: boolean;
     verifiedType: string | null;
-    userDescription: string;
-    userLocation: string;
-    userFollowers: number;
-    tweetLikes: number;
-    tweetReplies: number;
-    tweetRetweets: number;
-    tweetBookmarks: number;
-    tweetViews: number;
-    cardTitle?: string;
-    cardDescription?: string;
-    cardImage?: string;
-    cardUrl?: string;
-    mediaEntities: TweetMedia[];
-    lang?: string;
+    description: string;
+    location: string;
+    followersCount: number;
 
-    constructor(entry: any) {
-        console.log("-----temp-------->>> raw tweet data:\n", entry);
-
-        const tweet = entry.content.itemContent.tweet_results.result;
-        const legacy = tweet.legacy;
-        const user = tweet.core.user_results.result;
-        const userLegacy = user.legacy;
-        const card = tweet.card?.legacy?.binding_values || [];
-
-        this.id = legacy.id_str;
-        this.fullText = legacy.full_text;
-        this.text = tweet.full_text || '';
-        this.lang = tweet.lang || 'und';
-        this.createdAt = legacy.created_at;
-        this.userScreenName = userLegacy.screen_name;
-        this.displayName = userLegacy.name;
-        this.verified = userLegacy.verified || user.is_blue_verified;
-        this.avatarUrl = user?.legacy?.profile_image_url_https || '';
-        this.profileAvatarUrl = user?.profile_image_url_https || '';
+    constructor(user: any) {
+        const legacy = user.legacy;
         this.userId = user.rest_id;
-        this.isVerified = user.verified; // true / false
-        this.verifiedType = user?.legacy?.verified_type || '';
+        this.displayName = legacy.name;
+        this.screenName = legacy.screen_name;
+        this.avatarUrl = legacy.profile_image_url_https || '';
+        this.profileAvatarUrl = user.profile_image_url_https || '';
+        this.verified = legacy.verified || user.is_blue_verified;
+        this.verifiedType = legacy.verified_type || null;
+        this.description = legacy.description;
+        this.location = legacy.location;
+        this.followersCount = legacy.followers_count;
+    }
+}
 
-        this.userDescription = userLegacy.description;
-        this.userLocation = userLegacy.location;
-        this.userFollowers = userLegacy.followers_count;
-        this.tweetLikes = legacy.favorite_count;
-        this.tweetReplies = legacy.reply_count;
-        this.tweetRetweets = legacy.retweet_count;
-        this.tweetBookmarks = legacy.bookmark_count;
-        this.tweetViews = parseInt(tweet.views?.count || '0');
+export class TweetCard {
+    title?: string;
+    description?: string;
+    image?: string;
+    url?: string;
 
-        this.cardTitle = TweetObj.extractCardValue(card, 'title');
-        this.cardDescription = TweetObj.extractCardValue(card, 'description');
-        this.cardImage = TweetObj.extractCardImage(card, [
+    constructor(card: any[]) {
+        this.title = TweetCard.extractValue(card, 'title');
+        this.description = TweetCard.extractValue(card, 'description');
+        this.image = TweetCard.extractImage(card, [
             'summary_photo_image_large',
             'summary_photo_image',
             'photo_image_full_size_large'
         ]);
-        this.cardUrl = TweetObj.extractCardValue(card, 'card_url');
-        this.mediaEntities = (legacy.extended_entities?.media || []).map((m: any) => new TweetMedia(m));
+        this.url = TweetCard.extractValue(card, 'card_url');
     }
 
-    private static extractCardValue(card: any[], key: string): string | undefined {
+    private static extractValue(card: any[], key: string): string | undefined {
         return card.find((v: any) => v.key === key)?.value?.string_value;
     }
 
-    private static extractCardImage(card: any[], keys: string[]): string | undefined {
+    private static extractImage(card: any[], keys: string[]): string | undefined {
         for (const key of keys) {
             const imageUrl = card.find((v: any) => v.key === key)?.value?.image_value?.url;
             if (imageUrl) return imageUrl;
@@ -94,9 +67,78 @@ export class TweetObj {
     }
 }
 
+export class TweetStats {
+    tweetLikes: number;
+    tweetReplies: number;
+    tweetRetweets: number;
+    tweetBookmarks: number;
+    tweetViews: number;
+
+    constructor(legacy: any, views: any) {
+        this.tweetLikes = legacy.favorite_count;
+        this.tweetReplies = legacy.reply_count;
+        this.tweetRetweets = legacy.retweet_count;
+        this.tweetBookmarks = legacy.bookmark_count;
+        this.tweetViews = parseInt(views?.count || '0');
+    }
+}
+
+export class TweetContent {
+    id: string;
+    fullText: string;
+    text: string;
+    createdAt: string;
+    lang?: string;
+
+    constructor(legacy: any, tweet: any) {
+        this.id = legacy.id_str;
+        this.fullText = legacy.full_text;
+        this.text = tweet.full_text || '';
+        this.createdAt = legacy.created_at;
+        this.lang = tweet.lang || 'und';
+    }
+}
+
+export class TweetObj {
+    sourceType:string;
+    entryId:string;
+    sortIndex:string;
+
+    content: TweetContent;
+    author: TweetAuthor;
+    stats: TweetStats;
+    card?: TweetCard;
+    mediaEntities: TweetMedia[];
+
+    constructor(entry: any) {
+        console.log("-----temp-------->>> raw tweet data:\n", entry);
+
+        this.entryId = entry.entryId;
+        this.sortIndex = entry.sortIndex;
+        this.sourceType = entry.content.clientEventInfo.component ?? "unk";
+
+
+        const content = entry.content.itemContent;
+
+        //
+        // const tweet = entry.content.itemContent.tweet_results.result;
+        // const legacy = tweet.legacy;
+        // const user = tweet.core.user_results.result;
+        // const cardData = tweet.card?.legacy?.binding_values || [];
+        //
+        // this.content = new TweetContent(legacy, tweet);
+        // this.author = new TweetAuthor(user);
+        // this.stats = new TweetStats(legacy, tweet.views);
+        // this.card = new TweetCard(cardData);
+        // this.mediaEntities = (legacy.extended_entities?.media || []).map((m: any) => new TweetMedia(m));
+    }
+}
+
+
 export function renderTweetHTML(index: number, tweet: TweetObj, contentTemplate: HTMLTemplateElement, estimatedHeight: number = 350): HTMLElement {
     const tweetCellDiv = contentTemplate.content.getElementById("tweetCellTemplate")!.cloneNode(true) as HTMLDivElement;
     tweetCellDiv.style.transform = `translateY(${index * estimatedHeight}px)`;
+    tweetCellDiv.setAttribute('id',"");
 
     const articleContainer = tweetCellDiv.querySelector('article[data-testid="tweet"]');
     if (!articleContainer) return tweetCellDiv;
@@ -118,22 +160,22 @@ function updateTweetAvatar(container: Element, tweet: TweetObj, contentTemplate:
 
     const avatarBox = avatarContainer.querySelector('[data-testid^="UserAvatar-Container-"]') as HTMLElement;
     if (avatarBox) {
-        avatarBox.setAttribute('data-testid', `UserAvatar-Container-${tweet.userScreenName}`);
+        avatarBox.setAttribute('data-testid', `UserAvatar-Container-${tweet.author.screenName}`);
     }
 
     const avatarLink = avatarContainer.querySelector('a[href^="/"]') as HTMLAnchorElement;
     if (avatarLink) {
-        avatarLink.href = `/${tweet.userScreenName}`;
+        avatarLink.href = `/${tweet.author.screenName}`;
 
         const bgDiv = avatarLink.querySelector('div[style*="background-image"]') as HTMLElement;
         if (bgDiv) {
-            bgDiv.style.backgroundImage = `url(${tweet.avatarUrl})`;
+            bgDiv.style.backgroundImage = `url(${tweet.author.avatarUrl})`;
         }
 
         const img = avatarLink.querySelector('img') as HTMLImageElement;
         if (img) {
-            img.src = tweet.avatarUrl;
-            img.alt = `${tweet.displayName} avatar`;
+            img.src = tweet.author.avatarUrl;
+            img.alt = `${tweet.author.displayName} avatar`;
         }
     }
 
@@ -156,27 +198,27 @@ function updateProfileLink(userNameContainer: Element, tweet: TweetObj): void {
     const profileLink = userNameContainer.querySelector('a[href^="/"]') as HTMLAnchorElement;
     if (!profileLink) return;
 
-    profileLink.href = `/${tweet.userScreenName}`;
+    profileLink.href = `/${tweet.author.screenName}`;
 
     const displayNameSpan = profileLink.querySelector('span') as HTMLSpanElement;
     if (displayNameSpan) {
-        displayNameSpan.textContent = tweet.displayName;
+        displayNameSpan.textContent = tweet.author.displayName;
     }
 
     const bgDiv = profileLink.querySelector<HTMLElement>('div[style*="background-image"]');
     if (bgDiv) {
-        bgDiv.style.backgroundImage = `url("${tweet.profileAvatarUrl}")`;
+        bgDiv.style.backgroundImage = `url("${tweet.author.profileAvatarUrl}")`;
     }
 
     const img = profileLink.querySelector<HTMLImageElement>('img');
     if (img) {
-        img.src = tweet.profileAvatarUrl;
-        img.alt = `${tweet.displayName} avatar`;
+        img.src = tweet.author.profileAvatarUrl;
+        img.alt = `${tweet.author.displayName} avatar`;
     }
 
     const verifiedIcon = profileLink.querySelector('[data-testid="icon-verified"]')?.parentElement?.parentElement;
     if (verifiedIcon) {
-        const svgContent = getVerifiedSVG(tweet.verifiedType ?? "");
+        const svgContent = getVerifiedSVG(tweet.author.verifiedType ?? "");
         if (svgContent) {
             verifiedIcon.innerHTML = svgContent;
             verifiedIcon.style.display = '';
@@ -193,22 +235,22 @@ function updateUserMetaInfo(userNameContainer: HTMLElement, tweet: TweetObj) {
     // 1️⃣ @elonmusk 的链接和文字
     const atLink = userMetaBlock.querySelector('a[role="link"][tabindex="-1"]') as HTMLAnchorElement | null;
     if (atLink) {
-        atLink.href = `/${tweet.userScreenName}`;
+        atLink.href = `/${tweet.author.screenName}`;
         const atSpan = atLink.querySelector('span');
         if (atSpan) {
-            atSpan.textContent = `@${tweet.userScreenName}`;
+            atSpan.textContent = `@${tweet.author.screenName}`;
         }
     }
 
     // 2️⃣ 推文时间链接和时间文本
     const timeLink = userMetaBlock.querySelector('a[href*="/status/"]') as HTMLAnchorElement | null;
     if (timeLink) {
-        timeLink.href = `/${tweet.userScreenName}/status/${tweet.id}`;
+        timeLink.href = `/${tweet.author.screenName}/status/${tweet.content.id}`;
         const timeTag = timeLink.querySelector('time');
         if (timeTag) {
-            const isoDate = new Date(tweet.createdAt).toISOString();
+            const isoDate = new Date(tweet.content.createdAt).toISOString();
             timeTag.setAttribute('datetime', isoDate);
-            timeTag.textContent = formatTweetDate(tweet.createdAt); // 比如 "4月22日"
+            timeTag.textContent = formatTweetDate(tweet.content.createdAt); // 比如 "4月22日"
         }
     }
 }
@@ -238,13 +280,13 @@ function updateTweetText(tweetBody: Element, tweet: TweetObj, contentTemplate: H
     const textBlock = textArea.querySelector('[data-testid="tweetText"]') as HTMLElement;
     if (!textBlock) return;
 
-    if (tweet.lang) {
-        textBlock.setAttribute('lang', tweet.lang);
+    if (tweet.content.lang) {
+        textBlock.setAttribute('lang', tweet.content.lang);
     }
 
     const span = textBlock.querySelector('span');
     if (span) {
-        span.textContent = tweet.text;
+        span.textContent = tweet.content.fullText;
     }
 
     tweetBody.append(textArea);
@@ -277,17 +319,17 @@ function updateTweetOperationBar(tweetBody: Element, tweet: TweetObj, contentTem
     const bottomBtnDiv = contentTemplate.content.getElementById('bottom-button-area')!.cloneNode(true) as HTMLElement;
 
     const replyButton = bottomBtnDiv.querySelector('button[data-testid="reply"]') as HTMLElement;
-    buttonWithData(replyButton, tweet.tweetReplies);
+    buttonWithData(replyButton, tweet.stats.tweetReplies);
 
     const retweetButton = bottomBtnDiv.querySelector('button[data-testid="retweet"]') as HTMLElement;
-    buttonWithData(retweetButton, tweet.tweetRetweets);
+    buttonWithData(retweetButton, tweet.stats.tweetRetweets);
 
     const likeButton = bottomBtnDiv.querySelector('button[data-testid="like"]') as HTMLElement;
-    buttonWithData(likeButton, tweet.tweetLikes);
+    buttonWithData(likeButton, tweet.stats.tweetLikes);
 
     const viewLink = bottomBtnDiv.querySelector('a[href*="/analytics"]') as HTMLAnchorElement;
-    viewLink.href = `/${tweet.userScreenName}/status/${tweet.id}/analytics`;
-    buttonWithData(viewLink, tweet.tweetViews);
+    viewLink.href = `/${tweet.author.screenName}/status/${tweet.content.id}/analytics`;
+    buttonWithData(viewLink, tweet.stats.tweetViews);
 
     const bookMark = bottomBtnDiv.querySelector('button[data-testid="bookmark"]') as HTMLElement;
     bookMark.onclick=()=>{
