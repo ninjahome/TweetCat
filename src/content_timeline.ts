@@ -201,20 +201,22 @@ function preventEvent(e: Event) {
 async function pullTweetCatContent() {
     const contentTemplate = await parseContentHtml('html/content.html');
     const tweetSectionClone = contentTemplate.content.getElementById("tweetCatSection")!.cloneNode(true) as HTMLElement;
-    const cellInnerDiv = contentTemplate.content.getElementById("tweetCellTemplate") as HTMLElement;
 
     await setupTweetCatSection(tweetSectionClone);
 
+
     const validTweets = await fetchTweets('1263365191929978880', 25, "DAAHCgABGpDB7uK__-wLAAIAAAATMTkxMTczMjQ1ODIyMTA4ODc5MQgAAwAAAAIAAA");
     const obj = validTweets.tweets[0]
-    const cell = cellInnerDiv.cloneNode(true) as HTMLDivElement;
     console.log("-----------tmp tweet obj =>", obj);
-    renderTweetHTML(0, obj, cell);
+    const cell = renderTweetHTML(0, obj, contentTemplate);
 
     const dynamicArea = tweetSectionClone.querySelector(".dynamic-height-area") as HTMLDivElement
     dynamicArea.append(cell);
 }
 
 async function loadCachedTweets() {
+}
+
+async function pullTweetsFromSrv() {
 
 }

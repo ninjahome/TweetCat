@@ -1,2 +1,3 @@
 # TweetCat
-twitter Category 
+twitter Category
+nvm use 22.9.0 

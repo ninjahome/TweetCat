@@ -248,7 +248,7 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
     nextCursor: string | null,
     isEnd: boolean
 }> {
-    const url = await buildTweetQueryURL({ userId, count: maxCount, cursor });
+    const url = await buildTweetQueryURL({userId, count: maxCount, cursor});
     const headers = await generateHeaders();
     const response = await fetch(url, {
         method: 'GET',
@@ -265,9 +265,8 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
     const entries = extractEntriesFromGraphQLResult(result);
     const tweets = extractTweetsFromEntries(entries);
     const nextCursor = extractBottomCursor(entries);
-
     const isEnd = tweets.length === 0 || nextCursor === null;
-
+    console.log("--------------tmp=========>>>tmp:\n",isEnd,nextCursor, tweets);
     return {
         tweets,
         nextCursor,
