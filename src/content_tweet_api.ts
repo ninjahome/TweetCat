@@ -1,7 +1,7 @@
 import {getBearerToken} from "./utils";
 import {localGet} from "./local_storage";
 import {__DBK_query_id_map, UserByScreenName, UserTweets} from "./consts";
-import {TweetObj} from "./object_tweet";
+import {EntryObj} from "./object_tweet";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(key: string): Promise<string | null> {
@@ -195,7 +195,7 @@ export async function testTweetApi(userName: string) {
 }
 
 export type ParsedTimeline = {
-    tweets: TweetObj[];
+    tweets: EntryObj[];
     nextCursor: string | null;
 };
 
@@ -228,7 +228,7 @@ function parseTweetsFromGraphQLResult(result: any): ParsedTimeline {
 
     const tweets = allEntries
         .filter(e => e?.content?.entryType === 'TimelineTimelineItem')
-        .map(e => new TweetObj(e));
+        .map(e => new EntryObj(e));
 
     const cursorEntry = allEntries.find(e =>
         e?.content?.entryType === 'TimelineTimelineCursor' &&
@@ -241,7 +241,7 @@ function parseTweetsFromGraphQLResult(result: any): ParsedTimeline {
 
 
 export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string): Promise<{
-    tweets: TweetObj[],
+    tweets: EntryObj[],
     nextCursor: string | null,
     isEnd: boolean
 }> {
