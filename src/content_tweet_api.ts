@@ -1,7 +1,7 @@
 import {getBearerToken} from "./utils";
 import {localGet} from "./local_storage";
 import {__DBK_query_id_map, UserByScreenName, UserTweets} from "./consts";
-import {EntryObj} from "./object_tweet";
+import {EntryObj, parseTimelineFromGraphQL} from "./object_tweet";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(key: string): Promise<string | null> {
@@ -194,52 +194,6 @@ export async function testTweetApi(userName: string) {
     }
 }
 
-export type ParsedTimeline = {
-    tweets: EntryObj[];
-    nextCursor: string | null;
-};
-
-function parseTweetsFromGraphQLResult(result: any): ParsedTimeline {
-    const instructions = result.data.user.result.timeline.timeline.instructions;
-    const allEntries: any[] = [];
-
-    for (const instruction of instructions) {
-        switch (instruction.type) {
-            case 'TimelineAddEntries':
-            case 'TimelineShowCover':
-                allEntries.push(...instruction.entries);
-                break;
-
-            case 'TimelinePinEntry':
-            case 'TimelineReplaceEntry':
-                allEntries.push(instruction.entry);
-                break;
-
-            case 'TimelineTerminateTimeline':
-            case 'TimelineClearCache':
-            case 'TimelineShowAlert':
-                // 控制类指令，无需处理
-                break;
-
-            default:
-                console.warn("------>>>Unhandled instruction type:", instruction.type);
-        }
-    }
-
-    const tweets = allEntries
-        .filter(e => e?.content?.entryType === 'TimelineTimelineItem')
-        .map(e => new EntryObj(e));
-
-    const cursorEntry = allEntries.find(e =>
-        e?.content?.entryType === 'TimelineTimelineCursor' &&
-        e?.content?.cursorType === 'Bottom'
-    );
-    const nextCursor = cursorEntry?.content?.value ?? null;
-
-    return {tweets, nextCursor};
-}
-
-
 export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string): Promise<{
     tweets: EntryObj[],
     nextCursor: string | null,
@@ -259,7 +213,7 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
     }
 
     const result = await response.json();
-    const {tweets, nextCursor} = parseTweetsFromGraphQLResult(result);
+    const {tweets, nextCursor} = parseTimelineFromGraphQL(result);
     const isEnd = tweets.length === 0 || nextCursor === null;
     console.log("--------------tmp=========>>>tmp:\n", result);
     return {
