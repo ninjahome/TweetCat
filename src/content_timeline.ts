@@ -1,7 +1,7 @@
 import {observeForElement} from "./utils";
 import {parseContentHtml} from "./content";
 import {fetchTweets, testTweetApi} from "./content_tweet_api";
-import {renderTweetHTML} from "./object_tweet";
+import {renderTweetHTML, renderTweetsBatch} from "./tweet_render";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
 let tweetCatMenuHasObserved = false;
@@ -40,8 +40,6 @@ async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
         setupTweetCatTabStyle(menuList as HTMLElement, clone);
         pullTweetCatContent();
     }
-
-    tweetCatMenuHasObserved = false;
 }
 
 async function monitorHomeNavMenu(navDiv: HTMLElement) {
@@ -65,6 +63,7 @@ export function monitorHomeNaviDiv() {
     observeForElement(document.body, 30, () => {
         return document.querySelector('div[data-testid="primaryColumn"] .css-175oi2r.r-aqfbo4.r-gtdqiz.r-1gn8etr.r-1g40b8q') as HTMLElement;
     }, async (navDiv) => {
+        tweetCatMenuHasObserved = false;
         await monitorHomeNavMenu(navDiv);
     }, false);
 }
@@ -207,11 +206,8 @@ async function pullTweetCatContent() {
     const dynamicArea = tweetSectionClone.querySelector(".dynamic-height-area") as HTMLDivElement
     dynamicArea.innerHTML = '';
     const validTweets = await fetchTweets('1551261351347109888', 20);
-    for (let i = 0; i < validTweets.tweets.length; i++) {
-        const obj = validTweets.tweets[i];
-        const cell = renderTweetHTML(i, obj, contentTemplate);
-        dynamicArea.append(cell);
-    }
+    const fragment = renderTweetsBatch(validTweets.tweets, contentTemplate);
+    dynamicArea.append(fragment);
 
     // const obj = validTweets.tweets[0]
     // console.log("-----------tmp tweet obj =>", obj);

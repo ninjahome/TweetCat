@@ -283,7 +283,7 @@ export class TweetObj {
     source: string;
     quick_promote_eligibility: any;
     tweetContent: TweetContent;
-    card: TweetCard;
+    card: TweetCard|null;
 
     constructor(tweetResult: any) {
         this.rest_id = tweetResult.rest_id;
@@ -295,7 +295,7 @@ export class TweetObj {
         this.source = tweetResult.source;
         this.quick_promote_eligibility = tweetResult.quick_promote_eligibility;
         this.tweetContent = new TweetContent(tweetResult.legacy);
-        this.card = new TweetCard(tweetResult.card);
+        this.card = tweetResult.card ? new TweetCard(tweetResult.card) : null;
     }
 }
 
