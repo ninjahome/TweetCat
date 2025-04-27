@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("------->>>>tweet user name:", userName);
     });
 
-    monitorHomeNaviDiv();
+    // monitorHomeNaviDiv();
     console.log('------>>>TweetCat content script success ✨');
 });
 

@@ -4,7 +4,6 @@ import {fetchTweets, testTweetApi} from "./content_tweet_api";
 import {renderTweetHTML, renderTweetsBatch} from "./tweet_render";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
-let tweetCatMenuHasObserved = false;
 
 async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
 
@@ -13,9 +12,10 @@ async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
         return null;
     }
 
-    if (!!menuList.querySelector(".tweetCat-present-top")) {
-        console.log("------>>> tweetCat menu already append");
-        return;
+    const oldValue = menuList.querySelector(".tweetCat-present-top");
+    if (!!oldValue) {
+        console.log("------>>> tweetCat menu already append", menuList);
+        return ;
     }
 
     const contentTemplate = await parseContentHtml('html/content.html');
@@ -42,29 +42,21 @@ async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
     }
 }
 
-async function monitorHomeNavMenu(navDiv: HTMLElement) {
-    const menuList = navDiv.querySelector('div[role="tablist"]') as HTMLElement;
-    await appendTweetCatMenuOnHomeNavi(menuList);
-
-    observeForElement(navDiv, 500, () => {
-        return navDiv.querySelector('div[role="tablist"]') as HTMLElement;
+ function monitorHomeNavMenu(navDiv: HTMLElement) {
+    observeForElement(navDiv, 10, () => {
+        return navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
     }, async (menuList) => {
+        // console.log("------>>>----------->>>>menuList", menuList);
         await appendTweetCatMenuOnHomeNavi(menuList)
-    }, false);
+    }, true);
 }
 
 export function monitorHomeNaviDiv() {
-    if (tweetCatMenuHasObserved || !!document.getElementById("tweetCat-present-top")) {
-        console.log("------>>> tweetCat tab menu has already been added");
-        return;
-    }
-
-    tweetCatMenuHasObserved = true;
     observeForElement(document.body, 30, () => {
-        return document.querySelector('div[data-testid="primaryColumn"] .css-175oi2r.r-aqfbo4.r-gtdqiz.r-1gn8etr.r-1g40b8q') as HTMLElement;
+        return document.querySelector('div[data-testid="primaryColumn"]')?.firstChild?.firstChild as HTMLElement;
     }, async (navDiv) => {
-        tweetCatMenuHasObserved = false;
-        await monitorHomeNavMenu(navDiv);
+        // console.log("-------------->>> nav :", navDiv)
+        monitorHomeNavMenu(navDiv);
     }, false);
 }
 
