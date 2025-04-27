@@ -4,7 +4,7 @@ import {fetchTweets, testTweetApi} from "./content_tweet_api";
 import {renderTweetHTML, renderTweetsBatch} from "./tweet_render";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
-
+let isAddingTweetCatMenuItem = false;
 async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
 
     if (!menuList || menuList.children.length < 2) {
@@ -40,9 +40,15 @@ async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
         setupTweetCatTabStyle(menuList as HTMLElement, clone);
         pullTweetCatContent();
     }
+    isAddingTweetCatMenuItem = false;
 }
 
  function monitorHomeNavMenu(navDiv: HTMLElement) {
+    if(isAddingTweetCatMenuItem){
+        console.log("------>>> tweetCat tab menu item is been adding");
+        return
+    }
+     isAddingTweetCatMenuItem = true;
     observeForElement(navDiv, 10, () => {
         return navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
     }, async (menuList) => {
