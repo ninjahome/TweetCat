@@ -73,7 +73,7 @@ export function isTwitterUserProfile(): string | null {
 
 
 function observeAction(target: HTMLElement, idleThreshold: number,
-                       foundFunc: () => HTMLElement | null, callback: (elmFound:HTMLElement) => Promise<void>,
+                       foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
                        options: MutationObserverInit, continueMonitor?: boolean) {
     const cb: MutationCallback = (_, observer) => {
         const element = foundFunc();
@@ -95,14 +95,14 @@ function observeAction(target: HTMLElement, idleThreshold: number,
 }
 
 export function observeForElement(target: HTMLElement, idleThreshold: number,
-                                  foundFunc: () => HTMLElement | null, callback: (elmFound:HTMLElement) => Promise<void>,
+                                  foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
                                   continueMonitor?: boolean) {
 
     observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: true}, continueMonitor);
 }
 
 export function observeForElementDirect(target: HTMLElement, idleThreshold: number,
-                                        foundFunc: () => HTMLElement | null, callback: (elmFound:HTMLElement) => Promise<void>,
+                                        foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
                                         continueMonitor?: boolean) {
     observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: false}, continueMonitor);
 }
@@ -124,4 +124,45 @@ export function isAdTweetNode(node: HTMLElement): boolean {
         .some(span => adKeywords.includes(span.textContent?.trim() ?? ""));
 
     return hasImpressionTracking || hasAdKeyword;
+}
+
+
+/************************************************************************************
+ *************************************************************************************
+ *       属性                | 说明                                                   *
+ *   mutation.type          | 是什么类型的变化（childList、attributes、characterData）  *
+ *   mutation.target        | 变化的元素                                              *
+ *   mutation.addedNodes    | 新加了哪些节点（childList类型专用）                        *
+ *   mutation.removedNodes  | 删掉了哪些节点（childList类型专用）                        *
+ *   mutation.attributeName | 改了哪个属性（attributes类型专用，比如class, style）       *
+ *   mutation.oldValue      | 改变前的值是什么                                         *
+ *************************************************************************************
+ *  for (const mutation of mutationsList) {
+ *  if (mutation.type === 'childList' || mutation.type === 'attributes') {}
+ *  }                                            *
+ *************************************************************************************/
+
+export function observeSimple(targetNode: HTMLElement,
+                              judgeFunc: (mutationsList: MutationRecord[]) => HTMLElement|null,
+                              callback: (elm: HTMLElement) => Promise<boolean>,
+                              attributes: boolean = false): MutationObserver {
+    const observer = new MutationObserver(async (mutationsList) => {
+        const elm = judgeFunc(mutationsList);
+        if (!elm) {
+            return;
+        }
+
+        const closeObs = await callback(elm);
+        if (closeObs) {
+            observer.disconnect();
+        }
+    });
+
+    observer.observe(targetNode, {
+        childList: true,
+        subtree: true,
+        attributes: attributes,
+    });
+
+    return observer;
 }

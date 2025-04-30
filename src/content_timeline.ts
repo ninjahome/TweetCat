@@ -1,10 +1,11 @@
-import {observeForElement} from "./utils";
+import {observeForElement, observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
 import {fetchTweets, testTweetApi} from "./content_tweet_api";
 import {renderTweetHTML, renderTweetsBatch} from "./tweet_render";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
 let isAddingTweetCatMenuItem = false;
+
 async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
 
     if (!menuList || menuList.children.length < 2) {
@@ -15,7 +16,7 @@ async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
     const oldValue = menuList.querySelector(".tweetCat-present-top");
     if (!!oldValue) {
         console.log("------>>> tweetCat menu already append", menuList);
-        return ;
+        return;
     }
 
     const contentTemplate = await parseContentHtml('html/content.html');
@@ -43,27 +44,44 @@ async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
     isAddingTweetCatMenuItem = false;
 }
 
- function monitorHomeNavMenu(navDiv: HTMLElement) {
-    if(isAddingTweetCatMenuItem){
-        console.log("------>>> tweetCat tab menu item is been adding");
-        return
-    }
-     isAddingTweetCatMenuItem = true;
-    observeForElement(navDiv, 10, () => {
+async function monitorHomeNavMenu(navDiv: HTMLElement) {
+    const menuList = navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
+    await appendTweetCatMenuOnHomeNavi(menuList)
+    observeSimple(navDiv, (records) => {
         return navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
     }, async (menuList) => {
-        // console.log("------>>>----------->>>>menuList", menuList);
         await appendTweetCatMenuOnHomeNavi(menuList)
-    }, true);
+        return true;
+    })
+
+    // if (isAddingTweetCatMenuItem) {
+    //     console.log("------>>> tweetCat tab menu item is being adding");
+    //     return
+    // }
+    // isAddingTweetCatMenuItem = true;
+    // observeForElement(navDiv, 10, () => {
+    //     return navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
+    // }, async (menuList) => {
+    //     // console.log("------>>>----------->>>>menuList", menuList);
+    //     await appendTweetCatMenuOnHomeNavi(menuList)
+    // }, true);
 }
 
 export function monitorHomeNaviDiv() {
-    observeForElement(document.body, 30, () => {
+
+    observeSimple(document.body, (records) => {
         return document.querySelector('div[data-testid="primaryColumn"]')?.firstChild?.firstChild as HTMLElement;
     }, async (navDiv) => {
-        // console.log("-------------->>> nav :", navDiv)
-        monitorHomeNavMenu(navDiv);
-    }, false);
+         monitorHomeNavMenu(navDiv).then();
+        return true;
+    })
+    //
+    // observeForElement(document.body, 30, () => {
+    //     return document.querySelector('div[data-testid="primaryColumn"]')?.firstChild?.firstChild as HTMLElement;
+    // }, async (navDiv) => {
+    //     // console.log("-------------->>> nav :", navDiv)
+    //     monitorHomeNavMenu(navDiv);
+    // }, false);
 }
 
 function removeSelClass(item: HTMLElement) {

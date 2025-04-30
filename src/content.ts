@@ -18,8 +18,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await parseUserInfo(async (userName) => {
         console.log("------->>>>tweet user name:", userName);
     });
-
-    // monitorHomeNaviDiv();
     console.log('------>>>TweetCat content script success ✨');
 });
 
