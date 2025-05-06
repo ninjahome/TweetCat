@@ -284,6 +284,7 @@ export class TweetObj {
     quick_promote_eligibility: any;
     tweetContent: TweetContent;
     card: TweetCard|null;
+    retweetedStatus?: TweetObj;
 
     constructor(tweetResult: any) {
         this.rest_id = tweetResult.rest_id;
@@ -296,6 +297,15 @@ export class TweetObj {
         this.quick_promote_eligibility = tweetResult.quick_promote_eligibility;
         this.tweetContent = new TweetContent(tweetResult.legacy);
         this.card = tweetResult.card ? new TweetCard(tweetResult.card) : null;
+        if (tweetResult?.legacy?.retweeted_status_result?.result) {
+            this.retweetedStatus = new TweetObj(
+                tweetResult.legacy.retweeted_status_result.result
+            );
+        }
+    }
+
+    get renderTarget(): TweetObj {
+        return this.retweetedStatus ?? this;
     }
 }
 

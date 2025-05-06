@@ -31,7 +31,6 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
         case MsgType.NaviUrlChanged: {
             const kolName = isTwitterUserProfile()
             if (!!kolName) {
-                // console.log("=============temp call log==========>>>>>>", kolName);
                 appendFilterOnKolProfileHome(kolName).then();
             }
             checkFilterStatusAfterUrlChanged();

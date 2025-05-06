@@ -1,10 +1,9 @@
-import {observeForElement, observeSimple} from "./utils";
+import { observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
-import {fetchTweets, testTweetApi} from "./content_tweet_api";
-import {renderTweetHTML, renderTweetsBatch} from "./tweet_render";
+import {fetchTweets} from "./content_tweet_api";
+import { renderTweetsBatch} from "./tweet_render";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
-let isAddingTweetCatMenuItem = false;
 
 async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
 
@@ -41,47 +40,30 @@ async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
         setupTweetCatTabStyle(menuList as HTMLElement, clone);
         pullTweetCatContent();
     }
-    isAddingTweetCatMenuItem = false;
 }
 
 async function monitorHomeNavMenu(navDiv: HTMLElement) {
+
     const menuList = navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
+    console.log("------->>> directly append tweet cat menu");
     await appendTweetCatMenuOnHomeNavi(menuList)
-    observeSimple(navDiv, (records) => {
+    observeSimple(navDiv, () => {
         return navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
     }, async (menuList) => {
+        console.log("------->>> prepare append tweet cat menu");
         await appendTweetCatMenuOnHomeNavi(menuList)
         return true;
     })
-
-    // if (isAddingTweetCatMenuItem) {
-    //     console.log("------>>> tweetCat tab menu item is being adding");
-    //     return
-    // }
-    // isAddingTweetCatMenuItem = true;
-    // observeForElement(navDiv, 10, () => {
-    //     return navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
-    // }, async (menuList) => {
-    //     // console.log("------>>>----------->>>>menuList", menuList);
-    //     await appendTweetCatMenuOnHomeNavi(menuList)
-    // }, true);
 }
 
 export function monitorHomeNaviDiv() {
-
-    observeSimple(document.body, (records) => {
+    observeSimple(document.body, () => {
         return document.querySelector('div[data-testid="primaryColumn"]')?.firstChild?.firstChild as HTMLElement;
     }, async (navDiv) => {
-         monitorHomeNavMenu(navDiv).then();
+        console.log("------->>> monitor home navigation div");
+        monitorHomeNavMenu(navDiv).then();
         return true;
     })
-    //
-    // observeForElement(document.body, 30, () => {
-    //     return document.querySelector('div[data-testid="primaryColumn"]')?.firstChild?.firstChild as HTMLElement;
-    // }, async (navDiv) => {
-    //     // console.log("-------------->>> nav :", navDiv)
-    //     monitorHomeNavMenu(navDiv);
-    // }, false);
 }
 
 function removeSelClass(item: HTMLElement) {
