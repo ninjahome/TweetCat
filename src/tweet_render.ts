@@ -405,7 +405,7 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
     }
 
     /* 5️⃣ IntersectionObserver 控制播放（可选，节流） */
-    addAutoplayObserver(video);
+    // addAutoplayObserver(video);
 
     return wrapper;
 }
@@ -435,47 +435,179 @@ export function msToClock(ms: number): string {
         : `${minutes}:${pad(seconds)}`;               // 4:09
 }
 
+//
+// export function addAutoplayObserver(video: HTMLVideoElement): () => void {
+//     video.muted = true;
+//     video.playsInline = true;
+//
+//     // 互斥控制
+//     if (!window.__currentPlaying) {
+//         (window as any).__currentPlaying = null as HTMLVideoElement | null;
+//     }
+//
+//     const getCurrent = () => (window as any).__currentPlaying as HTMLVideoElement | null;
+//     const setCurrent = (v: HTMLVideoElement | null) => (window as any).__currentPlaying = v;
+//
+//     const tryPlay = async () => {
+//         const cur = getCurrent();
+//         if (cur && cur !== video) cur.pause();
+//         setCurrent(video);
+//         try { await video.play(); } catch {/* ignore */ }
+//     };
+//
+//     const onPause = () => {
+//         if (getCurrent() === video && video.paused) setCurrent(null);
+//     };
+//     video.addEventListener('pause', onPause);
+//
+//     const io = new IntersectionObserver(entries => {
+//         entries.forEach(e => {
+//             if (e.isIntersecting) tryPlay();
+//             else video.pause();
+//         });
+//     }, { threshold: 0 });
+//     io.observe(video);
+//
+//     /** 返回给调用者的清理函数 */
+//     const clean = () => {
+//         io.disconnect();
+//         video.removeEventListener('pause', onPause);
+//         if (getCurrent() === video) setCurrent(null);
+//     };
+//
+//     return clean;
+// }
 
-export function addAutoplayObserver(video: HTMLVideoElement): () => void {
-    video.muted = true;
-    video.playsInline = true;
 
-    // 互斥控制
-    if (!window.__currentPlaying) {
-        (window as any).__currentPlaying = null as HTMLVideoElement | null;
-    }
+export function addAutoplayObserver(root: HTMLElement): () => void {
+    /** 记录目前在可见区内的所有 <video> */
+    const visible = new Set<HTMLVideoElement>();
 
-    const getCurrent = () => (window as any).__currentPlaying as HTMLVideoElement | null;
-    const setCurrent = (v: HTMLVideoElement | null) => (window as any).__currentPlaying = v;
+    /** 记录当前真正播放的那个 */
+    let current: HTMLVideoElement | null = null;
 
-    const tryPlay = async () => {
-        const cur = getCurrent();
-        if (cur && cur !== video) cur.pause();
-        setCurrent(video);
-        try { await video.play(); } catch {/* ignore */ }
+    /** 辅助：计算某元素到视口中心点的距离平方（不做 sqrt 更快） */
+    const dist2ToViewportCenter = (el: HTMLElement): number => {
+        const rect = el.getBoundingClientRect();
+        // 元素中心
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        // 视口中心
+        const vx = window.innerWidth / 2;
+        const vy = window.innerHeight / 2;
+        const dx = cx - vx;
+        const dy = cy - vy;
+        return dx * dx + dy * dy;
     };
 
-    const onPause = () => {
-        if (getCurrent() === video && video.paused) setCurrent(null);
-    };
-    video.addEventListener('pause', onPause);
-
-    const io = new IntersectionObserver(entries => {
-        entries.forEach(e => {
-            if (e.isIntersecting) tryPlay();
-            else video.pause();
+    let best: HTMLVideoElement | null = null;
+    /** 切换播放对象 */
+    const updatePlayback = () => {
+        if (visible.size === 0) {
+            if (current) {
+                current.pause();
+                current = null;
+            }
+            return;
+        }
+        // 找离中心最近的视频
+        let bestScore = Number.POSITIVE_INFINITY;
+        visible.forEach((v) => {
+            const score = dist2ToViewportCenter(v);
+            if (score < bestScore) {
+                bestScore = score;
+                best = v;
+            }
         });
-    }, { threshold: 0 });
-    io.observe(video);
-
-    /** 返回给调用者的清理函数 */
-    const clean = () => {
-        io.disconnect();
-        video.removeEventListener('pause', onPause);
-        if (getCurrent() === video) setCurrent(null);
+        if (best && best !== current) {
+            // 切换
+            if (current) current.pause();
+            best.muted = true;              // 静音自动播放（避免被浏览器拦截）
+            const playPromise = best.play();
+            if (playPromise) {
+                playPromise.catch(() => {
+                    /* 浏览器策略阻止时忽略 */
+                });
+            }
+            current = best;
+        }
+        // 把其余暂停
+        visible.forEach((v) => {
+            if (v !== current) v.pause();
+        });
     };
 
-    return clean;
+    /** 滚动 & 尺寸变化时重新评估 */
+    const scheduleUpdate = (() => {
+        let ticking = false;
+        return () => {
+            if (!ticking) {
+                ticking = true;
+                requestAnimationFrame(() => {
+                    ticking = false;
+                    updatePlayback();
+                });
+            }
+        };
+    })();
+
+    /** 监听可见性 */
+    const io = new IntersectionObserver(
+        (entries) => {
+            entries.forEach((e) => {
+                const vid = e.target as HTMLVideoElement;
+                if (e.isIntersecting) {
+                    visible.add(vid);
+                } else {
+                    visible.delete(vid);
+                    vid.pause();
+                    if (current === vid) current = null;
+                }
+            });
+            scheduleUpdate();
+        },
+        {
+            root: null,
+            threshold: 0.25, // 元素至少 25% 进入视口才算“可见”
+        }
+    );
+
+    /** 对 root 内已有和后续新增的视频都 attach */
+    const attachToVideo = (v: HTMLVideoElement) => {
+        // 确保不会重复 observe
+        io.observe(v);
+    };
+    root.querySelectorAll('video').forEach((v) => attachToVideo(v as HTMLVideoElement));
+
+    /** MutationObserver — 处理后续渲染出来的新 <video> */
+    const mo = new MutationObserver((mutations) => {
+        mutations.forEach((m) => {
+            m.addedNodes.forEach((n) => {
+                if (n instanceof HTMLVideoElement) {
+                    attachToVideo(n);
+                } else if (n instanceof HTMLElement) {
+                    n.querySelectorAll('video').forEach((v) => attachToVideo(v as HTMLVideoElement));
+                }
+            });
+            // 移除的节点自动由 IntersectionObserver unobserve → pause
+        });
+    });
+    mo.observe(root, { childList: true, subtree: true });
+
+    // 滚动和 resize
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+
+    /** 调用者可在销毁时执行，以清理监听 */
+    return function clean() {
+        io.disconnect();
+        mo.disconnect();
+        window.removeEventListener('scroll', scheduleUpdate);
+        window.removeEventListener('resize', scheduleUpdate);
+        visible.forEach((v) => v.pause());
+        visible.clear();
+        current = null;
+    };
 }
 
 function photoRender(host: HTMLElement, m: TweetMediaEntity, tpl: HTMLTemplateElement): void {

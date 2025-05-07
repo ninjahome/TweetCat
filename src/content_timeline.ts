@@ -1,7 +1,7 @@
 import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
 import {fetchTweets} from "./content_tweet_api";
-import {renderTweetsBatch} from "./tweet_render";
+import {addAutoplayObserver, renderTweetsBatch} from "./tweet_render";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
 
@@ -199,6 +199,7 @@ function preventEvent(e: Event) {
 
 
 async function pullTweetCatContent() {
+    // window.disposeTweetAutoplayObserver?.();
     const contentTemplate = await parseContentHtml('html/content.html');
     const tweetSectionClone = contentTemplate.content.getElementById("tweetCatSection")!.cloneNode(true) as HTMLElement;
 
@@ -209,6 +210,9 @@ async function pullTweetCatContent() {
     const validTweets = await fetchTweets('1551261351347109888', 20);
     const fragment = renderTweetsBatch(validTweets.tweets, contentTemplate);
     dynamicArea.append(fragment);
+
+
+    window.disposeTweetAutoplayObserver = addAutoplayObserver(dynamicArea);
 
     // const obj = validTweets.tweets[0]
     // console.log("-----------tmp tweet obj =>", obj);
