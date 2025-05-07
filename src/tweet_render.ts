@@ -11,7 +11,7 @@ export function renderTweetsBatch(entries: EntryObj[], contentTemplate: HTMLTemp
     return fragment;
 }
 
-export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 850): HTMLElement {
+export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 450): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweetCellTemplate")!.cloneNode(true) as HTMLDivElement;
     tweetCellDiv.style.transform = `translateY(${index * estimatedHeight}px)`;
     tweetCellDiv.setAttribute('id', "");
@@ -381,7 +381,7 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
     while (video.firstChild) video.removeChild(video.firstChild);
 
     /* --------- 2️⃣ 填充我们自己的资源 ---------- */
-    video.poster = m.media_url_https;
+    video.poster = m.media_url_https || '';
 
     const mp4 = pickBestMp4(m);        // 选 bitrate 最大的 mp4
     if (mp4) {
@@ -391,20 +391,21 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
         video.appendChild(src);
     }
 
-    /* 可选：animated_gif 自动循环静音播放 */
-    if (m.type === 'animated_gif') {
-        video.loop = true;
-        video.muted = true;
-        video.autoplay = true;
-    }
+    /* 3️⃣ 统一自动播放体验 */
+    video.muted       = true;
+    video.autoplay    = true;
+    video.playsInline = true;
 
-    /* 时长角标 */
+    /* 4️⃣ duration badge */
     const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
     if (badge && m.video_info?.duration_millis != null) {
         badge.textContent = msToClock(m.video_info.duration_millis);
     } else if (badge) {
-        badge.remove();           // GIF 没时长就干掉角标
+        badge.remove();
     }
+
+    /* 5️⃣ IntersectionObserver 控制播放（可选，节流） */
+    addAutoplayObserver(video);
 
     return wrapper;
 }
@@ -432,6 +433,40 @@ export function msToClock(ms: number): string {
     return hours > 0
         ? `${hours}:${pad(minutes)}:${pad(seconds)}`   // 1:05:07
         : `${minutes}:${pad(seconds)}`;               // 4:09
+}
+
+/**
+ * 让一个 <video> 元素在进入视口时自动播放，离开时暂停
+ */
+function addAutoplayObserver(video: HTMLVideoElement) {
+    // IntersectionObserver 配置：
+    // root = null   → 视口
+    // threshold = 0 → 只要有任意像素进入视口就算可见
+    const io = new IntersectionObserver(
+        (entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // 静音才能自动播放，不然部分浏览器会阻止
+                    // 我们在 videoRender 里已设置 video.muted = true
+                    video.play().catch(() => {/* 忽略异常 */});
+                } else {
+                    video.pause();
+                }
+            });
+        },
+        { threshold: 0 }
+    );
+
+    // 监听当前 video
+    io.observe(video);
+
+    // 当 video 被移出 DOM 时，自动取消监听，避免内存泄漏
+    const cleanUp = () => {
+        io.disconnect();
+        video.removeEventListener('remove', cleanUp as any);
+    };
+    // 大多数浏览器没有 remove 事件，这里演示思路：
+    // 若你使用 MutationObserver/框架销毁钩子，请在销毁时调用 cleanUp().
 }
 
 
