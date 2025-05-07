@@ -1,7 +1,7 @@
-import { observeSimple} from "./utils";
+import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
 import {fetchTweets} from "./content_tweet_api";
-import { renderTweetsBatch} from "./tweet_render";
+import {renderTweetsBatch} from "./tweet_render";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
 
@@ -120,7 +120,7 @@ async function setupTweetCatSection(tweetSectionClone: HTMLElement) {
         customSection.style.position = 'relative';
         customSection.style.display = 'block';
     }
-
+    customSection.scrollTop = 0;
     // 显示自定义section
     setSectionVisibility(customSection, true);
 
@@ -147,6 +147,9 @@ function setSectionVisibility(section: HTMLElement, visible: boolean) {
         section.style.position = 'relative';
         section.style.pointerEvents = '';
         section.style.height = '';
+        section.style.width = '';   // ← 新增
+        section.style.top = '';   // ← 新增
+        section.style.left = '';   // ← 新增
         section.style.overflow = '';
     } else {
         section.style.visibility = 'hidden';
