@@ -435,40 +435,48 @@ export function msToClock(ms: number): string {
         : `${minutes}:${pad(seconds)}`;               // 4:09
 }
 
-/**
- * 让一个 <video> 元素在进入视口时自动播放，离开时暂停
- */
-function addAutoplayObserver(video: HTMLVideoElement) {
-    // IntersectionObserver 配置：
-    // root = null   → 视口
-    // threshold = 0 → 只要有任意像素进入视口就算可见
-    const io = new IntersectionObserver(
-        (entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    // 静音才能自动播放，不然部分浏览器会阻止
-                    // 我们在 videoRender 里已设置 video.muted = true
-                    video.play().catch(() => {/* 忽略异常 */});
-                } else {
-                    video.pause();
-                }
-            });
-        },
-        { threshold: 0 }
-    );
 
-    // 监听当前 video
+export function addAutoplayObserver(video: HTMLVideoElement): () => void {
+    video.muted = true;
+    video.playsInline = true;
+
+    // 互斥控制
+    if (!window.__currentPlaying) {
+        (window as any).__currentPlaying = null as HTMLVideoElement | null;
+    }
+
+    const getCurrent = () => (window as any).__currentPlaying as HTMLVideoElement | null;
+    const setCurrent = (v: HTMLVideoElement | null) => (window as any).__currentPlaying = v;
+
+    const tryPlay = async () => {
+        const cur = getCurrent();
+        if (cur && cur !== video) cur.pause();
+        setCurrent(video);
+        try { await video.play(); } catch {/* ignore */ }
+    };
+
+    const onPause = () => {
+        if (getCurrent() === video && video.paused) setCurrent(null);
+    };
+    video.addEventListener('pause', onPause);
+
+    const io = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting) tryPlay();
+            else video.pause();
+        });
+    }, { threshold: 0 });
     io.observe(video);
 
-    // 当 video 被移出 DOM 时，自动取消监听，避免内存泄漏
-    const cleanUp = () => {
+    /** 返回给调用者的清理函数 */
+    const clean = () => {
         io.disconnect();
-        video.removeEventListener('remove', cleanUp as any);
+        video.removeEventListener('pause', onPause);
+        if (getCurrent() === video) setCurrent(null);
     };
-    // 大多数浏览器没有 remove 事件，这里演示思路：
-    // 若你使用 MutationObserver/框架销毁钩子，请在销毁时调用 cleanUp().
-}
 
+    return clean;
+}
 
 function photoRender(host: HTMLElement, m: TweetMediaEntity, tpl: HTMLTemplateElement): void {
     // 1. clone photo template
