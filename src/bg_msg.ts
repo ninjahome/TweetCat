@@ -11,7 +11,7 @@ import {
 import {TweetKol} from "./object_TweetKol";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
-    console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)
+    // console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)
 
     switch (request.action) {
 

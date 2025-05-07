@@ -159,16 +159,16 @@ export function formatTweetTime(
     }
 
     if (diffSeconds < 60) {
-        return finalLocale === 'zh' ? `${diffSeconds}秒前` : `${diffSeconds}s ago`;
+        return finalLocale === 'zh' ? `${diffSeconds}秒` : `${diffSeconds}s`;
     }
     if (diffMinutes < 60) {
-        return finalLocale === 'zh' ? `${diffMinutes}分钟前` : `${diffMinutes}m ago`;
+        return finalLocale === 'zh' ? `${diffMinutes}分钟` : `${diffMinutes}m`;
     }
     if (diffHours < 24) {
-        return finalLocale === 'zh' ? `${diffHours}小时前` : `${diffHours}h ago`;
+        return finalLocale === 'zh' ? `${diffHours}小时` : `${diffHours}h`;
     }
     if (diffDays < 7) {
-        return finalLocale === 'zh' ? `${diffDays}天前` : `${diffDays}d ago`;
+        return finalLocale === 'zh' ? `${diffDays}天` : `${diffDays}d`;
     }
     // ≥ 7 天: 显示具体年月日（Twitter 也会在跨年时带年份；此处简化按当年处理）
     if (finalLocale === 'zh') {
@@ -297,12 +297,12 @@ export function insertRepostedBanner(
     author: TweetAuthor,
     tpl: HTMLTemplateElement,
 ): void {
-    // ① 找占位 <div class="tweetCatRepostArea …">
-    const host = article.querySelector('.tweetCatRepostArea') as HTMLElement | null;
+    // ① 找占位 <div class="tweetCatTopTipsArea …">
+    const host = article.querySelector('.tweetCatTopTipsArea') as HTMLElement | null;
     if (!host) return;
 
     // ② 克隆模板内部结构
-    const raw = tpl.content.getElementById('tweetCatRepostArea') as HTMLElement | null;
+    const raw = tpl.content.getElementById('tweetCatTopTipsArea') as HTMLElement | null;
     if (!raw) return;
     const banner = raw.cloneNode(true) as HTMLElement;
     banner.removeAttribute('id');
