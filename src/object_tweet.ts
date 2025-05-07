@@ -103,14 +103,29 @@ export class TweetCard {
     }
 }
 
+
+export interface VideoVariant {
+    bitrate?: number;              // 有的变体（m3u8）没有 bitrate
+    content_type: string;          // "video/mp4" | "application/x-mpegURL"
+    url: string;
+}
+
+export interface VideoInfo {
+    aspect_ratio: [number, number]; // e.g. [16,9]  /  [1,1]
+    duration_millis?: number;       // animated_gif 没有
+    variants: VideoVariant[];
+}
 export class TweetMediaEntity {
     display_url: string;
     expanded_url: string;
     id_str: string;
     media_key: string;
     media_url_https: string;
-    type: string;
+    type: 'photo' | 'video' | 'animated_gif';
     url: string;
+
+    /** ▶️ 仅 video / animated_gif 有值 */
+    video_info?: VideoInfo;
 
     constructor(data: any) {
         this.display_url = data.display_url;
@@ -120,6 +135,10 @@ export class TweetMediaEntity {
         this.media_url_https = data.media_url_https;
         this.type = data.type;
         this.url = data.url;
+
+        if (data.video_info) {
+            this.video_info = data.video_info as VideoInfo;
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-import {EntryObj, TweetAuthor, TweetContent} from "./object_tweet";
+import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./object_tweet";
 
 export function renderTweetsBatch(entries: EntryObj[], contentTemplate: HTMLTemplateElement): DocumentFragment {
     const fragment = document.createDocumentFragment();
@@ -11,7 +11,7 @@ export function renderTweetsBatch(entries: EntryObj[], contentTemplate: HTMLTemp
     return fragment;
 }
 
-export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 350): HTMLElement {
+export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 850): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweetCellTemplate")!.cloneNode(true) as HTMLDivElement;
     tweetCellDiv.style.transform = `translateY(${index * estimatedHeight}px)`;
     tweetCellDiv.setAttribute('id', "");
@@ -32,6 +32,8 @@ export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTe
 
     // 4. 正文文本 = target.tweetContent.full_text  (注意 entity 等都用 target)
     updateTweetContentArea(article, target.tweetContent, tpl);
+
+    updateTweetMediaArea(article, target.tweetContent, tpl);
 
     return tweetCellDiv;
 }
@@ -316,4 +318,125 @@ export function insertRepostedBanner(
     // ⑤ 清掉旧内容并塞入 banner
     host.innerHTML = '';
     host.appendChild(banner);
+}
+
+
+/**
+ * 渲染媒体（图片 / 视频 / GIF）
+ *
+ * @param container       tweet <article> 节点
+ * @param tweetContent    TweetContent（含 entities / extended_entities）
+ * @param contentTemplate content.html 的模板
+ */
+export function updateTweetMediaArea(
+    container: Element,
+    tweetContent: TweetContent,
+    tpl: HTMLTemplateElement,
+): void {
+    /** 获取放置媒体的占位容器 */
+    const mediaArea = container.querySelector('.media-show-area') as HTMLElement | null;
+    if (!mediaArea) return;
+
+    // 清空旧内容
+    mediaArea.innerHTML = '';
+    /** Tweet.media 列表（优先 extended_entities.media，没有就回退到 entities.media） */
+    const mediaList: TweetMediaEntity[] =
+        tweetContent.extended_entities?.media?.length
+            ? tweetContent.extended_entities.media
+            : tweetContent.entities?.media || [];
+
+    if (!mediaList.length) return; // 无媒体
+
+    mediaArea.className = `media-show-area count-${mediaList.length}`;
+
+    // -------- 图片 / 视频 / GIF 分类处理 ----------
+    for (const media of mediaList) {
+        switch (media.type) {
+            case 'photo': {
+                photoRender(mediaArea, media, tpl);
+                break;
+            }
+            case 'video':
+            case 'animated_gif': {
+                mediaArea.append(videoRender(media, tpl));
+                break;
+            }
+            default:
+                console.warn('Unknown media type:', media.type, media);
+        }
+    }
+}
+
+
+function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
+    const wrapper = tpl.content
+        .getElementById('tweet-media-wrapper-video-template')!
+        .cloneNode(true) as HTMLElement;
+
+    wrapper.removeAttribute('id');
+
+    const video = wrapper.querySelector('video') as HTMLVideoElement;
+
+    /* --------- 1️⃣ 先把模板里自带的所有 <source> 清掉 ---------- */
+    while (video.firstChild) video.removeChild(video.firstChild);
+
+    /* --------- 2️⃣ 填充我们自己的资源 ---------- */
+    video.poster = m.media_url_https;
+
+    const mp4 = pickBestMp4(m);        // 选 bitrate 最大的 mp4
+    if (mp4) {
+        const src = document.createElement('source');
+        src.src = mp4.url;
+        src.type = mp4.content_type;      // "video/mp4"
+        video.appendChild(src);
+    }
+
+    /* 可选：animated_gif 自动循环静音播放 */
+    if (m.type === 'animated_gif') {
+        video.loop = true;
+        video.muted = true;
+        video.autoplay = true;
+    }
+
+    /* 时长角标 */
+    const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
+    if (badge && m.video_info?.duration_millis != null) {
+        badge.textContent = msToClock(m.video_info.duration_millis);
+    } else if (badge) {
+        badge.remove();           // GIF 没时长就干掉角标
+    }
+
+    return wrapper;
+}
+
+function pickBestMp4(m: TweetMediaEntity) {
+    return m.video_info?.variants
+        ?.filter(v => v.content_type === 'video/mp4')
+        .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0))[0];
+}
+
+/**
+ * 将毫秒数格式化为 Twitter 视频角标样式
+ *  - < 1 h  :  m:ss
+ *  - ≥ 1 h  :  h:mm:ss
+ */
+export function msToClock(ms: number): string {
+    const totalSeconds = Math.floor(ms / 1000);
+
+    const hours   = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    const pad = (n: number) => n.toString().padStart(2, '0');
+
+    return hours > 0
+        ? `${hours}:${pad(minutes)}:${pad(seconds)}`   // 1:05:07
+        : `${minutes}:${pad(seconds)}`;               // 4:09
+}
+
+
+function photoRender(host: HTMLElement, m: TweetMediaEntity, tpl: HTMLTemplateElement): void {
+    // 1. clone photo template
+    // 2. img.src = m.media_url_https
+    // 3. host.appendChild(node)
 }
