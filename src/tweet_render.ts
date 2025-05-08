@@ -572,6 +572,15 @@ function scaleToFitBox(origW: number, origH: number, maxW: number, maxH: number)
 
 
 function renderSinglePhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
+
+    const wrapper = tpl.content
+        .getElementById('tweet-media-wrapper-photo-template')!
+        .cloneNode(true) as HTMLElement;
+
+    wrapper.removeAttribute('id');
+
+    const container = wrapper.querySelector('.tweetPhotoContainer') as HTMLElement;
+
     const itemTpl = tpl.content.getElementById('tweet-media-wrapper-photo')!;
     const item = itemTpl.cloneNode(true) as HTMLElement;
 
@@ -603,21 +612,60 @@ function renderSinglePhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): H
         link.href = media.expanded_url;
     }
 
-    return item;
-}
-
-export function photoRender(medias: TweetMediaEntity[], tpl: HTMLTemplateElement): HTMLElement {
-    const wrapper = tpl.content
-        .getElementById('tweet-media-wrapper-photo-template')!
-        .cloneNode(true) as HTMLElement;
-
-    wrapper.removeAttribute('id');
-
-    if (medias.length !== 1) return wrapper; // 当前只处理单图
-
-    const container = wrapper.querySelector('.tweetPhotoContainer') as HTMLElement;
-    const item = renderSinglePhoto(medias[0], tpl);
     container.appendChild(item);
 
     return wrapper;
+}
+
+
+
+
+
+
+function renderMultiPhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
+    const itemTpl = tpl.content.getElementById('tweet-media-wrapper-photo-multi')!;
+    const item = itemTpl.cloneNode(true) as HTMLElement;
+
+    const bg = item.querySelector('.tweetPhotoBackImg') as HTMLElement;
+    const img = item.querySelector('.tweetPhotoImg') as HTMLImageElement;
+    if (bg) bg.style.backgroundImage = `url('${media.media_url_https}')`;
+    if (img) img.src = media.media_url_https;
+
+    const link = item.querySelector('a') as HTMLAnchorElement;
+    if (link && media.expanded_url) {
+        link.href = media.expanded_url;
+    }
+
+    return item;
+}
+
+
+
+function renderMultiPhotoGroup(medias: TweetMediaEntity[], tpl: HTMLTemplateElement): HTMLElement {
+    const count = medias.length;
+    const wrapper = tpl.content.getElementById('tweet-media-wrapper-photo-base')!
+        .cloneNode(true) as HTMLElement;
+    wrapper.removeAttribute('id');
+
+    const rootClass = `tweetPhotoGroupRootTemplate${count}`;
+    const groupTpl = tpl.content.getElementById(rootClass)!;
+    const group = groupTpl.cloneNode(true) as HTMLElement;
+
+    const containers = group.querySelectorAll('.tweetPhotoContainer');
+    for (let i = 0; i < medias.length; i++) {
+        const item = renderMultiPhoto(medias[i], tpl);
+        containers[i]?.appendChild(item);
+    }
+
+    const root = wrapper.querySelector('.tweetPhotoGroupRoot');
+    if (root) root.appendChild(group);
+
+    return wrapper;
+}
+
+export function photoRender(medias: TweetMediaEntity[], tpl: HTMLTemplateElement): HTMLElement {
+    if (medias.length === 1) {
+        return renderSinglePhoto(medias[0], tpl);
+    }
+    return renderMultiPhotoGroup(medias, tpl);
 }

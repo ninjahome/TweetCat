@@ -207,7 +207,7 @@ async function pullTweetCatContent() {
 
     const dynamicArea = tweetSectionClone.querySelector(".dynamic-height-area") as HTMLDivElement
     dynamicArea.innerHTML = '';
-    const validTweets = await fetchTweets('1551261351347109888', 20);
+    const validTweets = await fetchTweets('1899045104146644992', 20);//  //1551261351347109888
     const fragment = renderTweetsBatch(validTweets.tweets, contentTemplate);
     dynamicArea.append(fragment);
 
