@@ -126,6 +126,10 @@ export class TweetMediaEntity {
 
     /** ▶️ 仅 video / animated_gif 有值 */
     video_info?: VideoInfo;
+    original_info?: {
+        width: number;
+        height: number;
+    };
 
     constructor(data: any) {
         this.display_url = data.display_url;
@@ -138,6 +142,13 @@ export class TweetMediaEntity {
 
         if (data.video_info) {
             this.video_info = data.video_info as VideoInfo;
+        }
+
+        if (data.original_info?.width && data.original_info?.height) {
+            this.original_info = {
+                width: data.original_info.width,
+                height: data.original_info.height
+            };
         }
     }
 }

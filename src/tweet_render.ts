@@ -11,7 +11,7 @@ export function renderTweetsBatch(entries: EntryObj[], contentTemplate: HTMLTemp
     return fragment;
 }
 
-export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 450): HTMLElement {
+export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 650): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweetCellTemplate")!.cloneNode(true) as HTMLDivElement;
     tweetCellDiv.style.transform = `translateY(${index * estimatedHeight}px)`;
     tweetCellDiv.setAttribute('id', "");
@@ -349,21 +349,16 @@ export function updateTweetMediaArea(
 
     mediaArea.className = `media-show-area count-${mediaList.length}`;
 
-    // -------- 图片 / 视频 / GIF 分类处理 ----------
-    for (const media of mediaList) {
-        switch (media.type) {
-            case 'photo': {
-                photoRender(mediaArea, media, tpl);
-                break;
-            }
-            case 'video':
-            case 'animated_gif': {
-                mediaArea.append(videoRender(media, tpl));
-                break;
-            }
-            default:
-                console.warn('Unknown media type:', media.type, media);
-        }
+
+    const photos = mediaList.filter(m => m.type === 'photo');
+    const videos = mediaList.filter(m => m.type === 'video' || m.type === 'animated_gif');
+
+    if (photos.length > 0) {
+        mediaArea.append(photoRender(photos, tpl));
+    }
+
+    for (const media of videos) {
+        mediaArea.append(videoRender(media, tpl));
     }
 }
 
@@ -392,8 +387,8 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
     }
 
     /* 3️⃣ 统一自动播放体验 */
-    video.muted       = true;
-    video.autoplay    = true;
+    video.muted = true;
+    video.autoplay = true;
     video.playsInline = true;
 
     /* 4️⃣ duration badge */
@@ -424,7 +419,7 @@ function pickBestMp4(m: TweetMediaEntity) {
 export function msToClock(ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
 
-    const hours   = Math.floor(totalSeconds / 3600);
+    const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
 
@@ -434,50 +429,6 @@ export function msToClock(ms: number): string {
         ? `${hours}:${pad(minutes)}:${pad(seconds)}`   // 1:05:07
         : `${minutes}:${pad(seconds)}`;               // 4:09
 }
-
-//
-// export function addAutoplayObserver(video: HTMLVideoElement): () => void {
-//     video.muted = true;
-//     video.playsInline = true;
-//
-//     // 互斥控制
-//     if (!window.__currentPlaying) {
-//         (window as any).__currentPlaying = null as HTMLVideoElement | null;
-//     }
-//
-//     const getCurrent = () => (window as any).__currentPlaying as HTMLVideoElement | null;
-//     const setCurrent = (v: HTMLVideoElement | null) => (window as any).__currentPlaying = v;
-//
-//     const tryPlay = async () => {
-//         const cur = getCurrent();
-//         if (cur && cur !== video) cur.pause();
-//         setCurrent(video);
-//         try { await video.play(); } catch {/* ignore */ }
-//     };
-//
-//     const onPause = () => {
-//         if (getCurrent() === video && video.paused) setCurrent(null);
-//     };
-//     video.addEventListener('pause', onPause);
-//
-//     const io = new IntersectionObserver(entries => {
-//         entries.forEach(e => {
-//             if (e.isIntersecting) tryPlay();
-//             else video.pause();
-//         });
-//     }, { threshold: 0 });
-//     io.observe(video);
-//
-//     /** 返回给调用者的清理函数 */
-//     const clean = () => {
-//         io.disconnect();
-//         video.removeEventListener('pause', onPause);
-//         if (getCurrent() === video) setCurrent(null);
-//     };
-//
-//     return clean;
-// }
-
 
 export function addAutoplayObserver(root: HTMLElement): () => void {
     /** 记录目前在可见区内的所有 <video> */
@@ -592,10 +543,10 @@ export function addAutoplayObserver(root: HTMLElement): () => void {
             // 移除的节点自动由 IntersectionObserver unobserve → pause
         });
     });
-    mo.observe(root, { childList: true, subtree: true });
+    mo.observe(root, {childList: true, subtree: true});
 
     // 滚动和 resize
-    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('scroll', scheduleUpdate, {passive: true});
     window.addEventListener('resize', scheduleUpdate);
 
     /** 调用者可在销毁时执行，以清理监听 */
@@ -610,8 +561,63 @@ export function addAutoplayObserver(root: HTMLElement): () => void {
     };
 }
 
-function photoRender(host: HTMLElement, m: TweetMediaEntity, tpl: HTMLTemplateElement): void {
-    // 1. clone photo template
-    // 2. img.src = m.media_url_https
-    // 3. host.appendChild(node)
+
+function scaleToFitBox(origW: number, origH: number, maxW: number, maxH: number) {
+    const ratio = Math.min(maxW / origW, maxH / origH);
+    return {
+        width: origW * ratio,
+        height: origH * ratio
+    };
+}
+
+
+function renderSinglePhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
+    const itemTpl = tpl.content.getElementById('tweet-media-wrapper-photo')!;
+    const item = itemTpl.cloneNode(true) as HTMLElement;
+
+    // 设置图片尺寸（根据推文中的原始宽高）
+    if (media.original_info) {
+        // 推特客户端实际使用的是 maxHeight = 510px
+        const box = scaleToFitBox(media.original_info.width, media.original_info.height, 9999, 510);
+        const outer = item.querySelector('.tweetPhotoSize') as HTMLElement;
+        const ratioDiv = item.querySelector('.tweetPhotoRatio') as HTMLElement;
+        if (outer) {
+            outer.style.width = `${box.width}px`;
+            outer.style.height = `${box.height}px`;
+        }
+        if (ratioDiv) {
+            const ratioPercent = (media.original_info.height / media.original_info.width) * 100;
+            ratioDiv.style.paddingBottom = `${ratioPercent.toFixed(2)}%`;
+        }
+    }
+
+    // 设置图片 URL
+    const bg = item.querySelector('.tweetPhotoBackImg') as HTMLElement;
+    const img = item.querySelector('.tweetPhotoImg') as HTMLImageElement;
+    if (bg) bg.style.backgroundImage = `url('${media.media_url_https}')`;
+    if (img) img.src = media.media_url_https;
+
+    // 设置链接地址
+    const link = item.querySelector('a') as HTMLAnchorElement;
+    if (link && media.expanded_url) {
+        link.href = media.expanded_url;
+    }
+
+    return item;
+}
+
+export function photoRender(medias: TweetMediaEntity[], tpl: HTMLTemplateElement): HTMLElement {
+    const wrapper = tpl.content
+        .getElementById('tweet-media-wrapper-photo-template')!
+        .cloneNode(true) as HTMLElement;
+
+    wrapper.removeAttribute('id');
+
+    if (medias.length !== 1) return wrapper; // 当前只处理单图
+
+    const container = wrapper.querySelector('.tweetPhotoContainer') as HTMLElement;
+    const item = renderSinglePhoto(medias[0], tpl);
+    container.appendChild(item);
+
+    return wrapper;
 }
