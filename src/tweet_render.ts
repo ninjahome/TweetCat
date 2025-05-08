@@ -320,14 +320,6 @@ export function insertRepostedBanner(
     host.appendChild(banner);
 }
 
-
-/**
- * 渲染媒体（图片 / 视频 / GIF）
- *
- * @param container       tweet <article> 节点
- * @param tweetContent    TweetContent（含 entities / extended_entities）
- * @param contentTemplate content.html 的模板
- */
 export function updateTweetMediaArea(
     container: Element,
     tweetContent: TweetContent,
@@ -411,11 +403,7 @@ function pickBestMp4(m: TweetMediaEntity) {
         .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0))[0];
 }
 
-/**
- * 将毫秒数格式化为 Twitter 视频角标样式
- *  - < 1 h  :  m:ss
- *  - ≥ 1 h  :  h:mm:ss
- */
+
 export function msToClock(ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
 
@@ -600,32 +588,14 @@ function renderSinglePhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): H
         }
     }
 
-    // 设置图片 URL
-    const bg = item.querySelector('.tweetPhotoBackImg') as HTMLElement;
-    const img = item.querySelector('.tweetPhotoImg') as HTMLImageElement;
-    if (bg) bg.style.backgroundImage = `url('${media.media_url_https}')`;
-    if (img) img.src = media.media_url_https;
-
-    // 设置链接地址
-    const link = item.querySelector('a') as HTMLAnchorElement;
-    if (link && media.expanded_url) {
-        link.href = media.expanded_url;
-    }
+    replacePhotoItem(item, media);
 
     container.appendChild(item);
 
     return wrapper;
 }
 
-
-
-
-
-
-function renderMultiPhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
-    const itemTpl = tpl.content.getElementById('tweet-media-wrapper-photo-multi')!;
-    const item = itemTpl.cloneNode(true) as HTMLElement;
-
+function replacePhotoItem(item:HTMLElement,media: TweetMediaEntity){
     const bg = item.querySelector('.tweetPhotoBackImg') as HTMLElement;
     const img = item.querySelector('.tweetPhotoImg') as HTMLImageElement;
     if (bg) bg.style.backgroundImage = `url('${media.media_url_https}')`;
@@ -635,11 +605,14 @@ function renderMultiPhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): HT
     if (link && media.expanded_url) {
         link.href = media.expanded_url;
     }
-
-    return item;
 }
 
-
+function renderMultiPhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
+    const itemTpl = tpl.content.getElementById('tweet-media-wrapper-photo-multi')!;
+    const item = itemTpl.cloneNode(true) as HTMLElement;
+    replacePhotoItem(item, media);
+    return item;
+}
 
 function renderMultiPhotoGroup(medias: TweetMediaEntity[], tpl: HTMLTemplateElement): HTMLElement {
     const count = medias.length;
