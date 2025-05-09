@@ -207,13 +207,13 @@ async function pullTweetCatContent() {
 
     const dynamicArea = tweetSectionClone.querySelector(".dynamic-height-area") as HTMLDivElement
     dynamicArea.innerHTML = '';
-    const validTweets = await fetchTweets('1899045104146644992', 20);
-    const fragment = renderTweetsBatch(validTweets.tweets, contentTemplate);
-    dynamicArea.append(fragment);
+    // const validTweets = await fetchTweets('1899045104146644992', 20);
+    // const fragment = renderTweetsBatch(validTweets.tweets, contentTemplate);
+    // dynamicArea.append(fragment);
 
-    // const validTweets2 = await fetchTweets('1551261351347109888', 20);
-    // const fragment2 = renderTweetsBatch(validTweets2.tweets, contentTemplate);
-    // dynamicArea.append(fragment2);
+    const validTweets2 = await fetchTweets('1551261351347109888', 20);
+    const fragment2 = renderTweetsBatch(validTweets2.tweets, contentTemplate);
+    dynamicArea.append(fragment2);
 
     window.disposeTweetAutoplayObserver = addAutoplayObserver(dynamicArea);
 
