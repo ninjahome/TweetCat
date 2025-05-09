@@ -295,8 +295,7 @@ export function updateTweetMediaArea(
 
     if (!mediaList.length) return; // 无媒体
 
-    mediaArea.className = `media-show-area count-${mediaList.length}`;
-
+    mediaArea.classList.add(`count-${mediaList.length}`)
 
     const photos = mediaList.filter(m => m.type === 'photo');
     const videos = mediaList.filter(m => m.type === 'video' || m.type === 'animated_gif');
