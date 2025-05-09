@@ -309,7 +309,7 @@ export class TweetObj {
     author: TweetAuthor;
     edit_control: any;
     is_translatable: boolean;
-    views: any;
+    views_count: number;
     source: string;
     quick_promote_eligibility: any;
     tweetContent: TweetContent;
@@ -322,7 +322,7 @@ export class TweetObj {
         this.author = new TweetAuthor(tweetResult.core.user_results.result);
         this.edit_control = tweetResult.edit_control;
         this.is_translatable = tweetResult.is_translatable;
-        this.views = tweetResult.views;
+        this.views_count = tweetResult.views?.count ? parseInt(tweetResult.views.count) : 0;
         this.source = tweetResult.source;
         this.quick_promote_eligibility = tweetResult.quick_promote_eligibility;
         this.tweetContent = new TweetContent(tweetResult.legacy);

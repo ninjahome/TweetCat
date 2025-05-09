@@ -166,3 +166,61 @@ export function observeSimple(targetNode: HTMLElement,
 
     return observer;
 }
+
+export function formatCount(n: number): string {
+    if (n >= 1_000_000) {
+        return (n / 1_000_000).toFixed(n % 1_000_000 >= 100_000 ? 1 : 0) + 'M';
+    } else if (n >= 1_000) {
+        return (n / 1_000).toFixed(n % 1_000 >= 100 ? 1 : 0) + 'K';
+    } else {
+        return n.toString();
+    }
+}
+
+
+
+/**
+ * Friendly time‑ago / date stamp — mirrors Twitter UI behaviour.
+ *   • < 60 s   →  "xs ago" / "x秒前"
+ *   • < 60 min →  "xm ago" / "x分钟前"
+ *   • < 24 h   →  "xh ago" / "x小时前"
+ *   • < 7 d    →  "xd ago" / "x天前"
+ *   • ≥ 7 d    →  "May 5" / "5月5日"
+ */
+export function formatTweetTime(
+    dateString: string,
+    locale: 'auto' | 'zh' | 'en' = 'auto',
+): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    // 自动侦测语言
+    let finalLocale = locale;
+    if (locale === 'auto') {
+        const lang = (navigator.language || 'en').toLowerCase();
+        finalLocale = lang.startsWith('zh') ? 'zh' : 'en';
+    }
+
+    if (diffSeconds < 60) {
+        return finalLocale === 'zh' ? `${diffSeconds}秒` : `${diffSeconds}s`;
+    }
+    if (diffMinutes < 60) {
+        return finalLocale === 'zh' ? `${diffMinutes}分钟` : `${diffMinutes}m`;
+    }
+    if (diffHours < 24) {
+        return finalLocale === 'zh' ? `${diffHours}小时` : `${diffHours}h`;
+    }
+    if (diffDays < 7) {
+        return finalLocale === 'zh' ? `${diffDays}天` : `${diffDays}d`;
+    }
+    // ≥ 7 天: 显示具体年月日（Twitter 也会在跨年时带年份；此处简化按当年处理）
+    if (finalLocale === 'zh') {
+        return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+    return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+}

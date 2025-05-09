@@ -1,4 +1,5 @@
 import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./object_tweet";
+import {formatCount, formatTweetTime} from "./utils";
 
 export function renderTweetsBatch(entries: EntryObj[], contentTemplate: HTMLTemplateElement): DocumentFragment {
     const fragment = document.createDocumentFragment();
@@ -34,6 +35,8 @@ export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTe
     updateTweetContentArea(article, target.tweetContent, tpl);
 
     updateTweetMediaArea(article, target.tweetContent, tpl);
+
+    updateTweetBottomButtons(article, target.tweetContent, target.author.legacy.screenName, target.views_count, tpl);
 
     return tweetCellDiv;
 }
@@ -130,53 +133,6 @@ export function updateTweetTopButtonArea(container: Element, author: TweetAuthor
         topArea.innerHTML = '';
         topArea.appendChild(topButtonClone);
     }
-}
-
-
-/**
- * Friendly time‑ago / date stamp — mirrors Twitter UI behaviour.
- *   • < 60 s   →  "xs ago" / "x秒前"
- *   • < 60 min →  "xm ago" / "x分钟前"
- *   • < 24 h   →  "xh ago" / "x小时前"
- *   • < 7 d    →  "xd ago" / "x天前"
- *   • ≥ 7 d    →  "May 5" / "5月5日"
- */
-export function formatTweetTime(
-    dateString: string,
-    locale: 'auto' | 'zh' | 'en' = 'auto',
-): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffSeconds = Math.floor(diffMs / 1000);
-    const diffMinutes = Math.floor(diffSeconds / 60);
-    const diffHours = Math.floor(diffMinutes / 60);
-    const diffDays = Math.floor(diffHours / 24);
-
-    // 自动侦测语言
-    let finalLocale = locale;
-    if (locale === 'auto') {
-        const lang = (navigator.language || 'en').toLowerCase();
-        finalLocale = lang.startsWith('zh') ? 'zh' : 'en';
-    }
-
-    if (diffSeconds < 60) {
-        return finalLocale === 'zh' ? `${diffSeconds}秒` : `${diffSeconds}s`;
-    }
-    if (diffMinutes < 60) {
-        return finalLocale === 'zh' ? `${diffMinutes}分钟` : `${diffMinutes}m`;
-    }
-    if (diffHours < 24) {
-        return finalLocale === 'zh' ? `${diffHours}小时` : `${diffHours}h`;
-    }
-    if (diffDays < 7) {
-        return finalLocale === 'zh' ? `${diffDays}天` : `${diffDays}d`;
-    }
-    // ≥ 7 天: 显示具体年月日（Twitter 也会在跨年时带年份；此处简化按当年处理）
-    if (finalLocale === 'zh') {
-        return `${date.getMonth() + 1}月${date.getDate()}日`;
-    }
-    return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
 }
 
 export function updateTweetContentArea(
@@ -595,7 +551,7 @@ function renderSinglePhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): H
     return wrapper;
 }
 
-function replacePhotoItem(item:HTMLElement,media: TweetMediaEntity){
+function replacePhotoItem(item: HTMLElement, media: TweetMediaEntity) {
     const bg = item.querySelector('.tweetPhotoBackImg') as HTMLElement;
     const img = item.querySelector('.tweetPhotoImg') as HTMLImageElement;
     if (bg) bg.style.backgroundImage = `url('${media.media_url_https}')`;
@@ -641,4 +597,38 @@ export function photoRender(medias: TweetMediaEntity[], tpl: HTMLTemplateElement
         return renderSinglePhoto(medias[0], tpl);
     }
     return renderMultiPhotoGroup(medias, tpl);
+}
+
+export function updateTweetBottomButtons(
+    container: Element,
+    tweetContent: TweetContent,
+    screenName: string,
+    viewsCount: number | undefined,
+    tpl: HTMLTemplateElement
+): void {
+    const target = container.querySelector('.bottom-button-area') as HTMLElement | null;
+    if (!target) return;
+
+    const raw = tpl.content.getElementById('bottom-button-area-template') as HTMLElement | null;
+    if (!raw) return;
+    const buttons = raw.cloneNode(true) as HTMLElement;
+    buttons.removeAttribute('id');
+
+    const reply = buttons.querySelector('.replyNo');
+    const retweet = buttons.querySelector('.retweetNo');
+    const like = buttons.querySelector('.likeNo');
+    const views = buttons.querySelector('.linkNo');
+    const viewsLink = buttons.querySelector('.tweetBottomViews') as HTMLAnchorElement | null;
+
+    reply && (reply.textContent = formatCount(tweetContent.reply_count).toLocaleString() ?? '');
+    retweet && (retweet.textContent = formatCount(tweetContent.retweet_count).toLocaleString() ?? '');
+    like && (like.textContent = formatCount(tweetContent.favorite_count).toLocaleString() ?? '');
+    views && (views.textContent = formatCount(viewsCount??0).toLocaleString() ?? '');
+
+    if (viewsLink) {
+        viewsLink.href = `/${screenName}/status/${tweetContent.id_str}/analytics`;
+    }
+
+    target.innerHTML = '';
+    target.appendChild(buttons);
 }
