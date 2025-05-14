@@ -5,8 +5,8 @@ import {
 } from "./content_filter";
 import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "./consts";
 import {addCustomStyles, isTwitterUserProfile} from "./utils";
-import {monitorHomeNaviDiv} from "./content_timeline";
 import {TweetKol} from "./object_TweetKol";
+import {appendTweetCatMenuItem} from "./content_timeline";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await parseUserInfo(async (userName) => {
         console.log("------->>>>tweet user name:", userName);
     });
+    await appendTweetCatMenuItem();
     console.log('------>>>TweetCat content script success ✨');
 });
 
@@ -35,9 +36,9 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             }
             checkFilterStatusAfterUrlChanged();
             sendResponse({success: true});
-            if(isHomePage()){
-                monitorHomeNaviDiv();
-            }
+            // if(isHomePage()){
+            //     monitorHomeNaviDiv();
+            // }
             break;
         }
         case MsgType.CategoryChanged: {

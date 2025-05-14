@@ -5,6 +5,28 @@ import {addAutoplayObserver, renderTweetsBatch} from "./tweet_render";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
 
+export async function appendTweetCatMenuItem() {
+
+    observeSimple(document.body, () => {
+        return document.querySelector('header nav[role="navigation"]') as HTMLElement;
+    }, (menuList) => {
+        if (!!menuList.querySelector(".tweetCatMenuItem")) {
+            return true;
+        }
+
+        parseContentHtml('html/content.html').then(contentTemplate => {
+            const clone = contentTemplate.content.getElementById("tweetCatMenuItem")!.cloneNode(true) as HTMLElement;
+            menuList.insertBefore(clone, menuList.children[1]);
+            clone.onclick = (ev) => {
+                ev.preventDefault();
+            }
+        });
+
+        return true;
+    })
+}
+
+
 async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
 
     if (!menuList || menuList.children.length < 2) {
@@ -42,29 +64,29 @@ async function appendTweetCatMenuOnHomeNavi(menuList: HTMLElement) {
     }
 }
 
-async function monitorHomeNavMenu(navDiv: HTMLElement) {
-
-    const menuList = navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
-    console.log("------->>> directly append tweet cat menu");
-    await appendTweetCatMenuOnHomeNavi(menuList)
-    observeSimple(navDiv, () => {
-        return navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
-    }, async (menuList) => {
-        console.log("------->>> prepare append tweet cat menu");
-        await appendTweetCatMenuOnHomeNavi(menuList)
-        return true;
-    })
-}
-
-export function monitorHomeNaviDiv() {
-    observeSimple(document.body, () => {
-        return document.querySelector('div[data-testid="primaryColumn"]')?.firstChild?.firstChild as HTMLElement;
-    }, async (navDiv) => {
-        console.log("------->>> monitor home navigation div");
-        monitorHomeNavMenu(navDiv).then();
-        return true;
-    })
-}
+// async function monitorHomeNavMenu(navDiv: HTMLElement) {
+//
+//     const menuList = navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
+//     console.log("------->>> directly append tweet cat menu");
+//     await appendTweetCatMenuOnHomeNavi(menuList)
+//     observeSimple(navDiv, () => {
+//         return navDiv.querySelector('nav[role="navigation"] div[role="tablist"]') as HTMLElement;
+//     }, async (menuList) => {
+//         console.log("------->>> prepare append tweet cat menu");
+//         await appendTweetCatMenuOnHomeNavi(menuList)
+//         return true;
+//     })
+// }
+//
+// export function monitorHomeNaviDiv() {
+//     observeSimple(document.body, () => {
+//         return document.querySelector('div[data-testid="primaryColumn"]')?.firstChild?.firstChild as HTMLElement;
+//     }, async (navDiv) => {
+//         console.log("------->>> monitor home navigation div");
+//         monitorHomeNavMenu(navDiv).then();
+//         return true;
+//     })
+// }
 
 function removeSelClass(item: HTMLElement) {
     const subLineItem = item.querySelector(".css-175oi2r.r-xoduu5") as HTMLElement
