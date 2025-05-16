@@ -140,20 +140,32 @@
 }
 
 
+.tweet-main {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 1;
+    flex-grow: 1;
+}
+
+.tweet-main-content {
+    width: 1050px;
+    display: flex;
+    justify-content:space-between;
+}
+
 .tweet-cardfloat {
     max-width: 600px;
-    border-left-width: 1px;
-    border-right-width: 1px;
-    background-color: rgb(255, 255, 255);
     scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
 }
 
 .tweet-cardfloat:hover {
-    background-color: rgba(247, 247, 247);
+    background-color: rgba(247,247, 247);
 }
 
 .tweetTimeline {
     max-width: 600px;
+    width: 100%;
     border-left-width: 1px;
     border-right-width: 1px;
     border-color: rgb(239, 243, 244);
@@ -197,7 +209,7 @@
 .retweet-icon {
     display: flex;
     justify-content: flex-end;
-    flex-basis: 40px;
+    flex-basis:40px;
     margin-right: 8px;
 }
 
@@ -219,8 +231,7 @@
 .retweet-text {
     font-weight: 700;
 }
-
-.retweet-text:hover {
+.retweet-text:hover{
     text-decoration: underline;
 }
 
@@ -249,7 +260,7 @@
     border-radius: 50%;
 }
 
-.tweet-header-meta {
+.tweet-header-meta{
     display: flex;
     align-items: center;
 }
@@ -279,12 +290,11 @@
     white-space: inherit;
     word-wrap: break-word;
 }
-
 .verified-svg {
     color: rgb(29, 155, 240);
     fill: currentcolor;
     height: 1.25em;
-    margin: 0 2px;
+    margin:0  2px;
 }
 
 .tweet-image {
@@ -358,8 +368,7 @@
     width: 50%;
     height: 100%;
 }
-
-.left-photo div {
+.left-photo div{
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -376,7 +385,7 @@
 
 .tweet-image.three-images .right-photo > div {
     flex: 1;
-    height: 50%; /* 可选补强 */
+    height: 50%;       /* 可选补强 */
     box-sizing: border-box;
 }
 
@@ -437,14 +446,12 @@
     height: 1px;
     width: 100%;
 }
-
 .tweet-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding-top: 12px;
 }
-
 .action-button {
     display: flex;
     align-items: center;
@@ -455,18 +462,28 @@
     font-size: 14px;
     cursor: pointer;
 }
-
 .action-button .reply-icon,
 .action-button .retweet-icon,
 .action-button .view-icon,
 .action-button .bookmark-icon,
 .action-button .like-icon,
-.action-button .share-icon {
+.action-button .share-icon{
     width: 18px;
     height: 18px;
     fill: currentColor;
 }
+.tweet-rightBox{
+    width: 350px;
+}
+.trending-tweet {
+    padding: 12px 16px;
+    gap: 12px;
+    display: flex;
+    align-items: flex-start;
+}
 
-.tweetTimeline{
-    display: none;
+.tweet-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f1419;
 }
