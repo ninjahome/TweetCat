@@ -13,74 +13,53 @@ export function renderTweetsBatch(entries: EntryObj[], contentTemplate: HTMLTemp
 }
 
 export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 650): HTMLElement {
-    const tweetCellDiv = tpl.content.getElementById("tweetCellTemplate")!.cloneNode(true) as HTMLDivElement;
+    const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;
     tweetCellDiv.style.transform = `translateY(${index * estimatedHeight}px)`;
     tweetCellDiv.setAttribute('id', "");
 
-    const article = tweetCellDiv.querySelector('article[data-testid="tweet"]');
+    const article = tweetCellDiv.querySelector('article');
     if (!article) return tweetCellDiv;
 
-    const outer = tweetEntry.tweet;              // A 转推 B ——> outer = A
-    const target = outer.renderTarget;      // 若转推则是 B，否则还是 A
+    const outer = tweetEntry.tweet;
+    const target = outer.renderTarget;
 
-    updateTweetAvatar(article, outer.author, tpl);
-    updateTweetTopButtonArea(article, outer.author, outer.tweetContent.created_at, outer.rest_id, tpl);
+    updateTweetAvatar(article.querySelector(".kol-avatar-area") as HTMLElement, outer.author);
 
-    // 3. 若是转推 ➜ 在顶部插入 “@outer.author.displayName reposted”
-    if (outer.retweetedStatus) {
-        insertRepostedBanner(article, outer.author, tpl);   // 你自己的函数
-    }
-
-    // 4. 正文文本 = target.tweetContent.full_text  (注意 entity 等都用 target)
-    updateTweetContentArea(article, target.tweetContent, tpl);
-
-    updateTweetMediaArea(article, target.tweetContent, tpl);
-
-    updateTweetBottomButtons(article, target.tweetContent, target.author.legacy.screenName, target.views_count, tpl);
+    // updateTweetTopButtonArea(article, outer.author, outer.tweetContent.created_at, outer.rest_id, tpl);
+    //
+    // // 3. 若是转推 ➜ 在顶部插入 “@outer.author.displayName reposted”
+    // if (outer.retweetedStatus) {
+    //     insertRepostedBanner(article, outer.author, tpl);   // 你自己的函数
+    // }
+    //
+    // // 4. 正文文本 = target.tweetContent.full_text  (注意 entity 等都用 target)
+    // updateTweetContentArea(article, target.tweetContent, tpl);
+    //
+    // updateTweetMediaArea(article, target.tweetContent, tpl);
+    //
+    // updateTweetBottomButtons(article, target.tweetContent, target.author.legacy.screenName, target.views_count, tpl);
 
     return tweetCellDiv;
 }
 
-// 工具函数：获取高清头像链接
+
 function getHighResAvatarUrl(url: string): string {
     return url.replace('_normal', '_400x400');
 }
 
 // 渲染头像模块
-export function updateTweetAvatar(container: Element, author: TweetAuthor, contentTemplate: HTMLTemplateElement): void {
-    const avatarTemplate = contentTemplate.content.getElementById('Tweet-User-Avatar') as HTMLElement;
-    if (!avatarTemplate) return;
-
-    const avatarClone = avatarTemplate.cloneNode(true) as HTMLElement;
-    avatarClone.removeAttribute('id');
-
+export function updateTweetAvatar(avatarArea: Element, author: TweetAuthor): void {
     const highResUrl = getHighResAvatarUrl(author.legacy.profile_image_url_https);
 
-    const img = avatarClone.querySelector('img') as HTMLImageElement;
+    const img = avatarArea.querySelector('img.avatar') as HTMLImageElement;
     if (img) {
         img.src = highResUrl;
         img.alt = author.legacy.displayName;
     }
 
-    const bgDiv = avatarClone.querySelector('div[style*="background-image"]') as HTMLDivElement;
-    if (bgDiv) {
-        bgDiv.style.backgroundImage = `url(${highResUrl})`;
-    }
-
-    const link = avatarClone.querySelector('a') as HTMLAnchorElement;
+    const link = avatarArea.querySelector('a') as HTMLAnchorElement;
     if (link) {
         link.href = `/${author.legacy.screenName}`;
-    }
-
-    const wrapper = avatarClone.querySelector('[data-testid^="UserAvatar-Container"]');
-    if (wrapper) {
-        wrapper.setAttribute('data-testid', `UserAvatar-Container-${author.legacy.screenName}`);
-    }
-
-    const avatarContainer = container.querySelector(".Tweet-User-Avatar");
-    if (avatarContainer) {
-        avatarContainer.innerHTML = '';
-        avatarContainer.appendChild(avatarClone);
     }
 }
 

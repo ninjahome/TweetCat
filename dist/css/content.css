@@ -192,6 +192,7 @@
 }
 
 .tweet-topmargin {
+    display: none;
     padding: 12px 0 0;
 }
 
@@ -233,7 +234,7 @@
     text-decoration: underline;
 }
 
-.tweet-header {
+.tweet-main {
     display: flex;
     flex-direction: row;
     align-items: stretch;
@@ -252,7 +253,7 @@
     z-index: 0;
 }
 
-.tweet-header img.avatar {
+.tweet-main img.avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;

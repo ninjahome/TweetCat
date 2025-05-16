@@ -32,6 +32,7 @@ export  function appendTweetCatMenuItem() {
                 ev.preventDefault();
                 tweetCatArea.style.display = 'block'
                 originalTweetArea.style.display = 'none';
+                fillTweetAreaByTweets(tweetCatArea, contentTemplate).then();
             }
 
             menuList.insertBefore(tweetCatMenuItem, menuList.children[1]);
@@ -41,6 +42,26 @@ export  function appendTweetCatMenuItem() {
         return true;
     })
 }
+
+async function fillTweetAreaByTweets(tweetCatArea:HTMLElement,contentTemplate:HTMLTemplateElement){
+    const validTweets = await fetchTweets('1551261351347109888', 20);
+    const fragment = renderTweetsBatch(validTweets.tweets, contentTemplate);
+    tweetCatArea.append(fragment);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 async function pullTweetCatContent() {
