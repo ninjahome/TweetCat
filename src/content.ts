@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await parseUserInfo(async (userName) => {
         console.log("------->>>>tweet user name:", userName);
     });
-    await appendTweetCatMenuItem();
+    appendTweetCatMenuItem();
     console.log('------>>>TweetCat content script success ✨');
 });
 
@@ -36,9 +36,6 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             }
             checkFilterStatusAfterUrlChanged();
             sendResponse({success: true});
-            // if(isHomePage()){
-            //     monitorHomeNaviDiv();
-            // }
             break;
         }
         case MsgType.CategoryChanged: {
@@ -61,6 +58,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 }
 
 let userInfoTryTime = 0;
+
 async function parseUserInfo(callback: (userProfile: string) => Promise<void>) {
 
     const profileBtn = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]') as HTMLLinkElement;

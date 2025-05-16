@@ -146,19 +146,14 @@ export function observeSimple(targetNode: HTMLElement,
                               judgeFunc: (mutationsList: MutationRecord[]) => HTMLElement | null,
                               callback: (elm: HTMLElement) => boolean,
                               attributes: boolean = false): MutationObserver {
-    let stopped = false;
     const observer = new MutationObserver(async (mutationsList) => {
-        if (stopped) return;
         const elm = judgeFunc(mutationsList);
         if (!elm) {
             return;
         }
 
-        if ( callback(elm)) {
-            stopped = true;
-            console.log("------------------------====================>>>>>>>>>>>>>>>>>closeObs:")
+        if (callback(elm)) {
             observer.disconnect();
-            observer.takeRecords();
         }
     });
 

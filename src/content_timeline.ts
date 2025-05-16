@@ -5,7 +5,7 @@ import {addAutoplayObserver, renderTweetsBatch} from "./tweet_render";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
 
-export async function appendTweetCatMenuItem() {
+export  function appendTweetCatMenuItem() {
 
     observeSimple(document.body, () => {
         return document.querySelector('header nav[role="navigation"]') as HTMLElement;
@@ -15,15 +15,66 @@ export async function appendTweetCatMenuItem() {
         }
 
         parseContentHtml('html/content.html').then(contentTemplate => {
-            const clone = contentTemplate.content.getElementById("tweetCatMenuItem")!.cloneNode(true) as HTMLElement;
-            menuList.insertBefore(clone, menuList.children[1]);
-            clone.onclick = (ev) => {
+            const tweetCatMenuItem = contentTemplate.content.getElementById("tweetCatMenuItem")!.cloneNode(true) as HTMLElement;
+            const tweetCatArea = contentTemplate.content.getElementById("tweetCatArea")!.cloneNode(true) as HTMLElement;
+
+            const mainArea = document.querySelector('main[role="main"]') as HTMLElement;
+            const originalTweetArea = mainArea.firstChild as HTMLElement;
+
+            menuList.querySelectorAll("a").forEach(elm => {
+                elm.addEventListener('click', () => {
+                    tweetCatArea.style.display = 'none';
+                    originalTweetArea.style.display = 'block';
+                });
+            });
+
+            tweetCatMenuItem.onclick = (ev) => {
                 ev.preventDefault();
+                tweetCatArea.style.display = 'block'
+                originalTweetArea.style.display = 'none';
             }
+
+            menuList.insertBefore(tweetCatMenuItem, menuList.children[1]);
+            mainArea.insertBefore(tweetCatArea, originalTweetArea);
         });
 
         return true;
     })
+}
+
+
+async function pullTweetCatContent() {
+    // window.disposeTweetAutoplayObserver?.();
+    const contentTemplate = await parseContentHtml('html/content.html');
+    const tweetSectionClone = contentTemplate.content.getElementById("tweetCatSection")!.cloneNode(true) as HTMLElement;
+
+    await setupTweetCatSection(tweetSectionClone);
+
+    const dynamicArea = tweetSectionClone.querySelector(".dynamic-height-area") as HTMLDivElement
+    dynamicArea.innerHTML = '';
+    // const validTweets = await fetchTweets('1899045104146644992', 20);
+    // const fragment = renderTweetsBatch(validTweets.tweets, contentTemplate);
+    // dynamicArea.append(fragment);
+
+    const validTweets2 = await fetchTweets('1551261351347109888', 20);
+    const fragment2 = renderTweetsBatch(validTweets2.tweets, contentTemplate);
+    dynamicArea.append(fragment2);
+
+    window.disposeTweetAutoplayObserver = addAutoplayObserver(dynamicArea);
+
+    // const obj = validTweets.tweets[0]
+    // console.log("-----------tmp tweet obj =>", obj);
+    // const cell = renderTweetHTML(0, obj, contentTemplate);
+    //
+    //
+    // dynamicArea.append(cell);
+}
+
+async function loadCachedTweets() {
+}
+
+async function pullTweetsFromSrv() {
+
 }
 
 
@@ -219,37 +270,3 @@ function preventEvent(e: Event) {
     e.stopImmediatePropagation();
 }
 
-
-async function pullTweetCatContent() {
-    // window.disposeTweetAutoplayObserver?.();
-    const contentTemplate = await parseContentHtml('html/content.html');
-    const tweetSectionClone = contentTemplate.content.getElementById("tweetCatSection")!.cloneNode(true) as HTMLElement;
-
-    await setupTweetCatSection(tweetSectionClone);
-
-    const dynamicArea = tweetSectionClone.querySelector(".dynamic-height-area") as HTMLDivElement
-    dynamicArea.innerHTML = '';
-    // const validTweets = await fetchTweets('1899045104146644992', 20);
-    // const fragment = renderTweetsBatch(validTweets.tweets, contentTemplate);
-    // dynamicArea.append(fragment);
-
-    const validTweets2 = await fetchTweets('1551261351347109888', 20);
-    const fragment2 = renderTweetsBatch(validTweets2.tweets, contentTemplate);
-    dynamicArea.append(fragment2);
-
-    window.disposeTweetAutoplayObserver = addAutoplayObserver(dynamicArea);
-
-    // const obj = validTweets.tweets[0]
-    // console.log("-----------tmp tweet obj =>", obj);
-    // const cell = renderTweetHTML(0, obj, contentTemplate);
-    //
-    //
-    // dynamicArea.append(cell);
-}
-
-async function loadCachedTweets() {
-}
-
-async function pullTweetsFromSrv() {
-
-}
