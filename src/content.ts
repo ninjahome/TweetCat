@@ -6,13 +6,15 @@ import {
 import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "./consts";
 import {addCustomStyles, isTwitterUserProfile} from "./utils";
 import {TweetKol} from "./object_TweetKol";
-import {appendTweetCatMenuItem} from "./content_timeline";
+import {appendTweetCatMenuItem, switchToTweetCatTimeLine} from "./content_timeline";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', onDocumentLoaded);
+
+async function onDocumentLoaded() {
     addCustomStyles('css/content.css');
     await initObserver();
     await parseUserInfo(async (userName) => {
@@ -20,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     appendTweetCatMenuItem();
     console.log('------>>>TweetCat content script success ✨');
-});
+}
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
     return contentMsgDispatch(request, _sender, sendResponse)

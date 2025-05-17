@@ -491,3 +491,8 @@
     font-weight: 800;
     color: #0f1419;
 }
+
+.tweet-show-area{
+    flex: 1;
+    min-width: 0;
+}

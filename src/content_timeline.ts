@@ -4,9 +4,11 @@ import {fetchTweets} from "./content_tweet_api";
 import {addAutoplayObserver, renderTweetsBatch} from "./tweet_render";
 
 const itemSelClasses = ['r-1kihuf0', 'r-sdzlij', 'r-1p0dtai', 'r-hdaws3', 'r-s8bhmr', 'r-u8s1d', 'r-13qz1uu']
+const selfDefineUrl = 'tweetCatTimeLine';
 
-export  function appendTweetCatMenuItem() {
-
+export function appendTweetCatMenuItem() {
+    const header = document.querySelector('header[role="banner"]') as HTMLElement;
+    console.log("---------------------->>>header area:",header);
     observeSimple(document.body, () => {
         return document.querySelector('header nav[role="navigation"]') as HTMLElement;
     }, (menuList) => {
@@ -32,6 +34,7 @@ export  function appendTweetCatMenuItem() {
                 ev.preventDefault();
                 tweetCatArea.style.display = 'block'
                 originalTweetArea.style.display = 'none';
+                history.replaceState({id: 123}, '', '/#/' + selfDefineUrl);
                 fillTweetAreaByTweets(tweetCatArea, contentTemplate).then();
             }
 
@@ -43,25 +46,16 @@ export  function appendTweetCatMenuItem() {
     })
 }
 
-async function fillTweetAreaByTweets(tweetCatArea:HTMLElement,contentTemplate:HTMLTemplateElement){
+export function switchToTweetCatTimeLine() {
+    const tweetCatMenuItem = document.getElementById("tweetCatMenuItem") as HTMLAnchorElement;
+    tweetCatMenuItem.click();
+}
+
+async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate: HTMLTemplateElement) {
     const validTweets = await fetchTweets('1551261351347109888', 20);
     const fragment = renderTweetsBatch(validTweets.tweets, contentTemplate);
     tweetCatArea.append(fragment);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 async function pullTweetCatContent() {

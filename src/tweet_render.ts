@@ -12,7 +12,7 @@ export function renderTweetsBatch(entries: EntryObj[], contentTemplate: HTMLTemp
     return fragment;
 }
 
-export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 650): HTMLElement {
+export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 450): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;
     tweetCellDiv.style.transform = `translateY(${index * estimatedHeight}px)`;
     tweetCellDiv.setAttribute('id', "");
@@ -23,9 +23,14 @@ export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTe
     const outer = tweetEntry.tweet;
     const target = outer.renderTarget;
 
-    updateTweetAvatar(article.querySelector(".kol-avatar-area") as HTMLElement, outer.author);
+    updateTweetAvatar(article.querySelector(".kol-avatar-area") as HTMLElement,
+        target.author);
 
-    // updateTweetTopButtonArea(article, outer.author, outer.tweetContent.created_at, outer.rest_id, tpl);
+    updateTweetTopButtonArea(article.querySelector(".tweet-header-meta") as HTMLElement,
+        target.author,
+        target.tweetContent.created_at,
+        target.rest_id);
+
     //
     // // 3. 若是转推 ➜ 在顶部插入 “@outer.author.displayName reposted”
     // if (outer.retweetedStatus) {
@@ -65,35 +70,30 @@ export function updateTweetAvatar(avatarArea: Element, author: TweetAuthor): voi
 
 
 // 渲染顶部昵称、用户名、发布时间区域
-export function updateTweetTopButtonArea(container: Element, author: TweetAuthor, createdAt: string, tweetId: string, contentTemplate: HTMLTemplateElement): void {
-    const topButtonTemplate = contentTemplate.content.getElementById('top-button-area-template') as HTMLElement;
-    if (!topButtonTemplate) return;
-
-    const topButtonClone = topButtonTemplate.cloneNode(true) as HTMLElement;
-    topButtonClone.removeAttribute('id');
+export function updateTweetTopButtonArea(headerMeta: Element, author: TweetAuthor, createdAt: string, tweetId: string): void {
 
     // 更新昵称（大号）区域
-    const userNameLink = topButtonClone.querySelector('[data-testid="User-Name"] a') as HTMLAnchorElement;
-    if (userNameLink) {
-        userNameLink.href = `/${author.legacy.screenName}`;
-        const nameSpan = userNameLink.querySelector('span span');
+    const screenNameLink = headerMeta.querySelector('.display-name-link') as HTMLAnchorElement;
+    if (screenNameLink) {
+        screenNameLink.href = `/${author.legacy.screenName}`;
+        const nameSpan = screenNameLink.querySelector('.tweet-author');
         if (nameSpan) nameSpan.textContent = author.legacy.displayName;
     }
 
     // 更新小号 (@xxx)
-    const screenNameLink = topButtonClone.querySelector('a[tabindex="-1"]') as HTMLAnchorElement;
-    if (screenNameLink) {
-        screenNameLink.href = `/${author.legacy.screenName}`;
-        const screenNameSpan = screenNameLink.querySelector('span');
+    const userNameLink = headerMeta.querySelector('.user-name-link') as HTMLAnchorElement;
+    if (userNameLink) {
+        userNameLink.href = `/${author.legacy.screenName}`;
+        const screenNameSpan = userNameLink.querySelector('.tweet-username');
         if (screenNameSpan) screenNameSpan.textContent = `@${author.legacy.screenName}`;
     }
 
     // 更新时间
-    const timeLink = topButtonClone.querySelector('a[href*="/status/"]') as HTMLAnchorElement;
+    const timeLink = headerMeta.querySelector('.tweet-time-link') as HTMLAnchorElement;
     if (timeLink) {
         timeLink.href = `/${author.legacy.screenName}/status/${tweetId}`;
         const date = new Date(createdAt);
-        const timeElement = timeLink.querySelector('time');
+        const timeElement = timeLink.querySelector('.tweet-time');
         if (timeElement) {
             timeElement.setAttribute('datetime', date.toISOString());
             timeElement.textContent = formatTweetTime(createdAt);
@@ -101,16 +101,9 @@ export function updateTweetTopButtonArea(container: Element, author: TweetAuthor
     }
 
     // 动态处理认证图标是否显示
-    const verifiedIcon = topButtonClone.querySelector('svg[data-testid="icon-verified"]');
+    const verifiedIcon = headerMeta.querySelector('.verified-box') as HTMLElement;
     if (verifiedIcon && !author.is_blue_verified) {
-        verifiedIcon.remove();
-    }
-
-    // 安全赋值内容
-    const topArea = container.querySelector(".Tweet-Body .top-button-area");
-    if (topArea) {
-        topArea.innerHTML = '';
-        topArea.appendChild(topButtonClone);
+        verifiedIcon.style.display = 'none';
     }
 }
 
