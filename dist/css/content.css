@@ -193,9 +193,13 @@
 }
 
 .tweet-topmargin {
-    display: none;
     padding: 12px 0 0;
 }
+
+.tweet-topmargin-container {
+    display: none;
+}
+
 
 .retweet-container {
     display: flex;
