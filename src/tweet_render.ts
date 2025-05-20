@@ -12,7 +12,7 @@ export function renderTweetsBatch(entries: EntryObj[], contentTemplate: HTMLTemp
     return fragment;
 }
 
-export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 450): HTMLElement {
+export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 350): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;
     tweetCellDiv.style.transform = `translateY(${index * estimatedHeight}px)`;
     tweetCellDiv.setAttribute('id', "");
@@ -31,26 +31,21 @@ export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTe
         target.tweetContent.created_at,
         target.rest_id);
 
-    //
-    // // 3. 若是转推 ➜ 在顶部插入 “@outer.author.displayName reposted”
-    // if (outer.retweetedStatus) {
-    //     insertRepostedBanner(article, outer.author, tpl);   // 你自己的函数
-    // }
-    //
+    // 3. 若是转推 ➜ 在顶部插入 “@outer.author.displayName reposted”
+    if (outer.retweetedStatus) {
+        insertRepostedBanner(article.querySelector(".tweet-topmargin") as HTMLElement, outer.author);   // 你自己的函数
+    }
+
     // 4. 正文文本 = target.tweetContent.full_text  (注意 entity 等都用 target)
     updateTweetContentArea(article.querySelector(".tweet-body") as HTMLElement, target.tweetContent);
-    //
-    // updateTweetMediaArea(article, target.tweetContent, tpl);
+
+    updateTweetMediaArea(article.querySelector(".tweet-media-area") as HTMLElement,
+        target.tweetContent, tpl);
 
     updateTweetBottomButtons(article.querySelector(".tweet-actions") as HTMLElement,
         target.tweetContent, target.author.legacy.screenName, target.views_count);
 
     return tweetCellDiv;
-}
-
-
-function getHighResAvatarUrl(url: string): string {
-    return url.replace('_normal', '_400x400');
 }
 
 // 渲染头像模块
@@ -215,42 +210,21 @@ function escapeRegExp(s: string): string {
 
 
 export function insertRepostedBanner(
-    article: Element,
+    banner: HTMLElement,
     author: TweetAuthor,
-    tpl: HTMLTemplateElement,
 ): void {
-    // ① 找占位 <div class="tweetCatTopTipsArea …">
-    const host = article.querySelector('.tweetCatTopTipsArea') as HTMLElement | null;
-    if (!host) return;
-
-    // ② 克隆模板内部结构
-    const raw = tpl.content.getElementById('tweetCatTopTipsArea') as HTMLElement | null;
-    if (!raw) return;
-    const banner = raw.cloneNode(true) as HTMLElement;
-    banner.removeAttribute('id');
-
-    // ③ 注入动态数据
-    const a = banner.querySelector('a.retweetUserName') as HTMLAnchorElement | null;
+    banner.style.display = 'block';
+    const a = banner.querySelector('a.retweet-link') as HTMLAnchorElement | null;
     if (a) a.href = `/${author.legacy.screenName}`;
-    const disp = banner.querySelector('.retweetDisplayName');
+    const disp = banner.querySelector('.retweeter-name');
     if (disp) disp.textContent = author.legacy.displayName;
-
-    // ⑤ 清掉旧内容并塞入 banner
-    host.innerHTML = '';
-    host.appendChild(banner);
 }
 
 export function updateTweetMediaArea(
-    container: Element,
+    container: HTMLElement,
     tweetContent: TweetContent,
     tpl: HTMLTemplateElement,
 ): void {
-    /** 获取放置媒体的占位容器 */
-    const mediaArea = container.querySelector('.media-show-area') as HTMLElement | null;
-    if (!mediaArea) return;
-
-    // 清空旧内容
-    mediaArea.innerHTML = '';
     /** Tweet.media 列表（优先 extended_entities.media，没有就回退到 entities.media） */
     const mediaList: TweetMediaEntity[] =
         tweetContent.extended_entities?.media?.length
@@ -259,32 +233,46 @@ export function updateTweetMediaArea(
 
     if (!mediaList.length) return; // 无媒体
 
-    mediaArea.classList.add(`count-${mediaList.length}`)
+    container.classList.add(`count-${mediaList.length}`)
 
     const photos = mediaList.filter(m => m.type === 'photo');
     const videos = mediaList.filter(m => m.type === 'video' || m.type === 'animated_gif');
 
-    if (photos.length > 0) {
-        mediaArea.append(photoRender(photos, tpl));
+    if (photos.length === 0) {
+        container.append(videoRender(videos[0], tpl));
+        return;
     }
 
-    for (const media of videos) {
-        mediaArea.append(videoRender(media, tpl));
+    if (photos.length === 3) {
+        renderThreePhoto(container, photos, tpl)
+    } else {
+        renderMultiPhotoGroup(container, photos, tpl)
+    }
+
+    switch (photos.length) {
+        case 1:
+            container.classList.add('single-image');
+            break;
+        case 2:
+            container.classList.add('two-images');
+            break;
+        case 3:
+            container.classList.add('three-images');
+            break;
+        case 4:
+            container.classList.add('four-images');
+            break;
     }
 }
 
-
 function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
     const wrapper = tpl.content
-        .getElementById('tweet-media-wrapper-video-template')!
+        .getElementById('media-video-template')!
         .cloneNode(true) as HTMLElement;
 
     wrapper.removeAttribute('id');
 
     const video = wrapper.querySelector('video') as HTMLVideoElement;
-
-    /* --------- 1️⃣ 先把模板里自带的所有 <source> 清掉 ---------- */
-    while (video.firstChild) video.removeChild(video.firstChild);
 
     /* --------- 2️⃣ 填充我们自己的资源 ---------- */
     video.poster = m.media_url_https || '';
@@ -310,9 +298,6 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
         badge.remove();
     }
 
-    /* 5️⃣ IntersectionObserver 控制播放（可选，节流） */
-    // addAutoplayObserver(video);
-
     return wrapper;
 }
 
@@ -321,7 +306,6 @@ function pickBestMp4(m: TweetMediaEntity) {
         ?.filter(v => v.content_type === 'video/mp4')
         .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0))[0];
 }
-
 
 export function msToClock(ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
@@ -337,181 +321,37 @@ export function msToClock(ms: number): string {
         : `${minutes}:${pad(seconds)}`;               // 4:09
 }
 
-export function addAutoplayObserver(root: HTMLElement): () => void {
-    /** 记录目前在可见区内的所有 <video> */
-    const visible = new Set<HTMLVideoElement>();
-
-    /** 记录当前真正播放的那个 */
-    let current: HTMLVideoElement | null = null;
-
-    /** 辅助：计算某元素到视口中心点的距离平方（不做 sqrt 更快） */
-    const dist2ToViewportCenter = (el: HTMLElement): number => {
-        const rect = el.getBoundingClientRect();
-        // 元素中心
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        // 视口中心
-        const vx = window.innerWidth / 2;
-        const vy = window.innerHeight / 2;
-        const dx = cx - vx;
-        const dy = cy - vy;
-        return dx * dx + dy * dy;
-    };
-
-    let best: HTMLVideoElement | null = null;
-    /** 切换播放对象 */
-    const updatePlayback = () => {
-        if (visible.size === 0) {
-            if (current) {
-                current.pause();
-                current = null;
-            }
-            return;
-        }
-        // 找离中心最近的视频
-        let bestScore = Number.POSITIVE_INFINITY;
-        visible.forEach((v) => {
-            const score = dist2ToViewportCenter(v);
-            if (score < bestScore) {
-                bestScore = score;
-                best = v;
-            }
-        });
-        if (best && best !== current) {
-            // 切换
-            if (current) current.pause();
-            best.muted = true;              // 静音自动播放（避免被浏览器拦截）
-            const playPromise = best.play();
-            if (playPromise) {
-                playPromise.catch(() => {
-                    /* 浏览器策略阻止时忽略 */
-                });
-            }
-            current = best;
-        }
-        // 把其余暂停
-        visible.forEach((v) => {
-            if (v !== current) v.pause();
-        });
-    };
-
-    /** 滚动 & 尺寸变化时重新评估 */
-    const scheduleUpdate = (() => {
-        let ticking = false;
-        return () => {
-            if (!ticking) {
-                ticking = true;
-                requestAnimationFrame(() => {
-                    ticking = false;
-                    updatePlayback();
-                });
-            }
-        };
-    })();
-
-    /** 监听可见性 */
-    const io = new IntersectionObserver(
-        (entries) => {
-            entries.forEach((e) => {
-                const vid = e.target as HTMLVideoElement;
-                if (e.isIntersecting) {
-                    visible.add(vid);
-                } else {
-                    visible.delete(vid);
-                    vid.pause();
-                    if (current === vid) current = null;
-                }
-            });
-            scheduleUpdate();
-        },
-        {
-            root: null,
-            threshold: 0.25, // 元素至少 25% 进入视口才算“可见”
-        }
-    );
-
-    /** 对 root 内已有和后续新增的视频都 attach */
-    const attachToVideo = (v: HTMLVideoElement) => {
-        // 确保不会重复 observe
-        io.observe(v);
-    };
-    root.querySelectorAll('video').forEach((v) => attachToVideo(v as HTMLVideoElement));
-
-    /** MutationObserver — 处理后续渲染出来的新 <video> */
-    const mo = new MutationObserver((mutations) => {
-        mutations.forEach((m) => {
-            m.addedNodes.forEach((n) => {
-                if (n instanceof HTMLVideoElement) {
-                    attachToVideo(n);
-                } else if (n instanceof HTMLElement) {
-                    n.querySelectorAll('video').forEach((v) => attachToVideo(v as HTMLVideoElement));
-                }
-            });
-            // 移除的节点自动由 IntersectionObserver unobserve → pause
-        });
-    });
-    mo.observe(root, {childList: true, subtree: true});
-
-    // 滚动和 resize
-    window.addEventListener('scroll', scheduleUpdate, {passive: true});
-    window.addEventListener('resize', scheduleUpdate);
-
-    /** 调用者可在销毁时执行，以清理监听 */
-    return function clean() {
-        io.disconnect();
-        mo.disconnect();
-        window.removeEventListener('scroll', scheduleUpdate);
-        window.removeEventListener('resize', scheduleUpdate);
-        visible.forEach((v) => v.pause());
-        visible.clear();
-        current = null;
-    };
-}
-
-
-function scaleToFitBox(origW: number, origH: number, maxW: number, maxH: number) {
-    const ratio = Math.min(maxW / origW, maxH / origH);
-    return {
-        width: origW * ratio,
-        height: origH * ratio
-    };
-}
-
-
-function renderSinglePhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
+function renderThreePhoto(container: HTMLElement,
+                          media: TweetMediaEntity[],
+                          tpl: HTMLTemplateElement) {
 
     const wrapper = tpl.content
-        .getElementById('tweet-media-wrapper-photo-template')!
+        .getElementById('media-multi-image-3')!
         .cloneNode(true) as HTMLElement;
-
     wrapper.removeAttribute('id');
 
-    const container = wrapper.querySelector('.tweetPhotoContainer') as HTMLElement;
+    const imgItemTpl = tpl.content.getElementById('media-image-template')?.cloneNode(true) as HTMLElement;
+    imgItemTpl.removeAttribute('id');
 
-    const itemTpl = tpl.content.getElementById('tweet-media-wrapper-photo')!;
-    const item = itemTpl.cloneNode(true) as HTMLElement;
+    let item = imgItemTpl.cloneNode(true) as HTMLElement;
+    replacePhotoItem(item, media[0]);
+    wrapper.querySelector(".left-photo")?.appendChild(item);
 
-    // 设置图片尺寸（根据推文中的原始宽高）
-    if (media.original_info) {
-        // 推特客户端实际使用的是 maxHeight = 510px
-        const box = scaleToFitBox(media.original_info.width, media.original_info.height, 9999, 510);
-        const outer = item.querySelector('.tweetPhotoSize') as HTMLElement;
-        const ratioDiv = item.querySelector('.tweetPhotoRatio') as HTMLElement;
-        if (outer) {
-            outer.style.width = `${box.width}px`;
-            outer.style.height = `${box.height}px`;
-        }
-        if (ratioDiv) {
-            const ratioPercent = (media.original_info.height / media.original_info.width) * 100;
-            ratioDiv.style.paddingBottom = `${ratioPercent.toFixed(2)}%`;
-        }
-    }
+    item = imgItemTpl.cloneNode(true) as HTMLElement;
+    replacePhotoItem(item, media[1]);
+    let backDiv = item.querySelector(".tweetPhotoBackImg") as HTMLElement;
+    backDiv.style.height = '100%';
 
-    replacePhotoItem(item, media);
+    wrapper.querySelector(".right-photo")?.appendChild(item);
 
-    container.appendChild(item);
+    item = imgItemTpl.cloneNode(true) as HTMLElement;
+    replacePhotoItem(item, media[2]);
+    backDiv = item.querySelector(".tweetPhotoBackImg") as HTMLElement;
+    backDiv.style.height = '100%';
 
-    return wrapper;
+    wrapper.querySelector(".right-photo")?.appendChild(item);
+
+    container.innerHTML = wrapper.innerHTML;
 }
 
 function replacePhotoItem(item: HTMLElement, media: TweetMediaEntity) {
@@ -526,43 +366,19 @@ function replacePhotoItem(item: HTMLElement, media: TweetMediaEntity) {
     }
 }
 
-function renderMultiPhoto(media: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
-    const itemTpl = tpl.content.getElementById('tweet-media-wrapper-photo-multi')!;
-    const item = itemTpl.cloneNode(true) as HTMLElement;
-    replacePhotoItem(item, media);
-    return item;
-}
+function renderMultiPhotoGroup(container: HTMLElement,
+                               medias: TweetMediaEntity[],
+                               tpl: HTMLTemplateElement) {
 
-function renderMultiPhotoGroup(medias: TweetMediaEntity[], tpl: HTMLTemplateElement): HTMLElement {
-    const count = medias.length;
-    const wrapper = tpl.content.getElementById('tweet-media-wrapper-photo-base')!
-        .cloneNode(true) as HTMLElement;
-    wrapper.removeAttribute('id');
-
-    const rootClass = `tweetPhotoGroupRootTemplate${count}`;
-    const groupTpl = tpl.content.getElementById(rootClass)!;
-    const group = groupTpl.cloneNode(true) as HTMLElement;
-
-    const containers = group.querySelectorAll('.tweetPhotoContainer');
     for (let i = 0; i < medias.length; i++) {
-        const item = renderMultiPhoto(medias[i], tpl);
-        containers[i]?.appendChild(item);
+        const item = tpl.content.getElementById('media-image-template')?.cloneNode(true) as HTMLElement;
+        item.removeAttribute('id');
+        replacePhotoItem(item, medias[i]);
+        container.appendChild(item);
     }
-
-    const root = wrapper.querySelector('.tweetPhotoGroupRoot');
-    if (root) root.appendChild(group);
-
-    return wrapper;
 }
 
-export function photoRender(medias: TweetMediaEntity[], tpl: HTMLTemplateElement): HTMLElement {
-    if (medias.length === 1) {
-        return renderSinglePhoto(medias[0], tpl);
-    }
-    return renderMultiPhotoGroup(medias, tpl);
-}
-
-export function updateTweetBottomButtons(
+function updateTweetBottomButtons(
     container: HTMLElement,
     tweetContent: TweetContent,
     screenName: string,
