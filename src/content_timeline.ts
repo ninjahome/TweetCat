@@ -1,12 +1,13 @@
 import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
 import {fetchTweets} from "./content_tweet_api";
-import {renderTweetsBatch} from "./tweet_render";
+import {renderTweetHTML} from "./tweet_render";
 
 const selfDefineUrl = 'tweetCatTimeLine';
+
 export function appendTweetCatMenuItem() {
     const header = document.querySelector('header[role="banner"]') as HTMLElement;
-    console.log("---------------------->>>header area:",header);
+    console.log("---------------------->>>header area:", header);
     observeSimple(document.body, () => {
         return document.querySelector('header nav[role="navigation"]') as HTMLElement;
     }, (menuList) => {
@@ -50,9 +51,21 @@ export function switchToTweetCatTimeLine() {
 }
 
 async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate: HTMLTemplateElement) {
-    const validTweets = await fetchTweets('1551261351347109888', 20);//1899045104146644992 //1551261351347109888
-    const fragment = renderTweetsBatch(validTweets.tweets, contentTemplate);
-    tweetCatArea.append(fragment);
+    const validTweets = await fetchTweets('1551261351347109888', 20); // 1899045104146644992 // 1551261351347109888
+
+    let cumulativeOffset = 0;
+
+    for (const entry of validTweets.tweets) {
+        const tweetNode = renderTweetHTML(entry, contentTemplate);
+        tweetCatArea.appendChild(tweetNode); // 先插入 DOM
+
+        // 强制触发一次重排以确保高度是准确的
+        const height = tweetNode.offsetHeight;
+
+        // 设置 translateY
+        tweetNode.style.transform = `translateY(${cumulativeOffset}px)`;
+        cumulativeOffset += height;
+    }
 }
 
 function addAutoplayObserver(root: HTMLElement): () => void {

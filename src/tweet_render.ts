@@ -1,20 +1,8 @@
 import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./object_tweet";
 import {formatCount, formatTweetTime} from "./utils";
 
-export function renderTweetsBatch(entries: EntryObj[], contentTemplate: HTMLTemplateElement): DocumentFragment {
-    const fragment = document.createDocumentFragment();
-
-    entries.forEach((entry, index) => {
-        const tweetNode = renderTweetHTML(index, entry, contentTemplate);
-        fragment.appendChild(tweetNode);
-    });
-
-    return fragment;
-}
-
-export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTemplateElement, estimatedHeight: number = 350): HTMLElement {
+export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;
-    tweetCellDiv.style.transform = `translateY(${index * estimatedHeight}px)`;
     tweetCellDiv.setAttribute('id', "");
 
     const article = tweetCellDiv.querySelector('article');
@@ -31,9 +19,9 @@ export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTe
         target.tweetContent.created_at,
         target.rest_id);
 
-    // 3. 若是转推 ➜ 在顶部插入 “@outer.author.displayName reposted”
+    // 3. 若是转推 ➔ 在顶部插入 “@outer.author.displayName reposted”
     if (outer.retweetedStatus) {
-        insertRepostedBanner(article.querySelector(".tweet-topmargin") as HTMLElement, outer.author);   // 你自己的函数
+        insertRepostedBanner(article.querySelector(".tweet-topmargin") as HTMLElement, outer.author); // 你自己的函数
     }
 
     // 4. 正文文本 = target.tweetContent.full_text  (注意 entity 等都用 target)
@@ -47,6 +35,7 @@ export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTe
 
     return tweetCellDiv;
 }
+
 
 // 渲染头像模块
 export function updateTweetAvatar(avatarArea: Element, author: TweetAuthor): void {
@@ -213,7 +202,8 @@ export function insertRepostedBanner(
     banner: HTMLElement,
     author: TweetAuthor,
 ): void {
-    banner.style.display = 'block';
+    const container = banner.querySelector(".tweet-topmargin-container") as HTMLElement;
+    container.style.display = 'block';
     const a = banner.querySelector('a.retweet-link') as HTMLAnchorElement | null;
     if (a) a.href = `/${author.legacy.screenName}`;
     const disp = banner.querySelector('.retweeter-name');
