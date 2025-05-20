@@ -156,6 +156,7 @@
 .tweet-cardfloat {
     max-width: 600px;
     scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
+    position: absolute;
 }
 
 .tweet-cardfloat:hover {
