@@ -37,12 +37,13 @@ export function renderTweetHTML(index: number, tweetEntry: EntryObj, tpl: HTMLTe
     //     insertRepostedBanner(article, outer.author, tpl);   // 你自己的函数
     // }
     //
-    // // 4. 正文文本 = target.tweetContent.full_text  (注意 entity 等都用 target)
-    // updateTweetContentArea(article, target.tweetContent, tpl);
+    // 4. 正文文本 = target.tweetContent.full_text  (注意 entity 等都用 target)
+    updateTweetContentArea(article.querySelector(".tweet-body") as HTMLElement, target.tweetContent);
     //
     // updateTweetMediaArea(article, target.tweetContent, tpl);
-    //
-    // updateTweetBottomButtons(article, target.tweetContent, target.author.legacy.screenName, target.views_count, tpl);
+
+    updateTweetBottomButtons(article.querySelector(".tweet-actions") as HTMLElement,
+        target.tweetContent, target.author.legacy.screenName, target.views_count);
 
     return tweetCellDiv;
 }
@@ -54,7 +55,8 @@ function getHighResAvatarUrl(url: string): string {
 
 // 渲染头像模块
 export function updateTweetAvatar(avatarArea: Element, author: TweetAuthor): void {
-    const highResUrl = getHighResAvatarUrl(author.legacy.profile_image_url_https);
+    // const highResUrl = getHighResAvatarUrl(author.legacy.profile_image_url_https);
+    const highResUrl = author.legacy.profile_image_url_https;
 
     const img = avatarArea.querySelector('img.avatar') as HTMLImageElement;
     if (img) {
@@ -108,18 +110,15 @@ export function updateTweetTopButtonArea(headerMeta: Element, author: TweetAutho
 }
 
 export function updateTweetContentArea(
-    container: Element,
+    container: HTMLElement,
     tweet: TweetContent,
-    template: HTMLTemplateElement,
 ): string | undefined {
-    /* ---------- 0. 基础 DOM ---------- */
-    const textTpl = template.content.getElementById('tweet-text-area-template') as HTMLElement | null;
-    if (!textTpl) return;
 
-    const textClone = textTpl.cloneNode(true) as HTMLElement;
-    textClone.removeAttribute('id');
-    const span = textClone.querySelector('span');
-    if (!span) return;
+    const tweetContent = container.querySelector(".tweet-content") as HTMLElement;
+    if (!tweetContent) {
+        console.log("------>>> tweet content not found:", container);
+        return;
+    }
 
     /* ---------- 1. 判断是否为 Retweet ---------- */
     let repostAuthorHandle: string | undefined;
@@ -190,21 +189,14 @@ export function updateTweetContentArea(
     }
     if (last < visible.length) out.push(plain(visible.slice(last)));
 
-    span.innerHTML = out.join('');
-
-    /* ---------- 7. 注入 ---------- */
-    const target = container.querySelector('.tweet-text-area');
-    if (target) {
-        target.innerHTML = '';
-        target.appendChild(textClone);
-    }
+    tweetContent.innerHTML = out.join('');
 
     return repostAuthorHandle;
+}
 
-    /* ---------- helpers ---------- */
-    function plain(txt: string): string {
-        return escapeHTML(txt).replace(/\n/g, '<br>');
-    }
+/* ---------- helpers ---------- */
+function plain(txt: string): string {
+    return escapeHTML(txt).replace(/\n/g, '<br>');
 }
 
 /* ---------- tiny utils ---------- */
@@ -571,35 +563,23 @@ export function photoRender(medias: TweetMediaEntity[], tpl: HTMLTemplateElement
 }
 
 export function updateTweetBottomButtons(
-    container: Element,
+    container: HTMLElement,
     tweetContent: TweetContent,
     screenName: string,
     viewsCount: number | undefined,
-    tpl: HTMLTemplateElement
 ): void {
-    const target = container.querySelector('.bottom-button-area') as HTMLElement | null;
-    if (!target) return;
-
-    const raw = tpl.content.getElementById('bottom-button-area-template') as HTMLElement | null;
-    if (!raw) return;
-    const buttons = raw.cloneNode(true) as HTMLElement;
-    buttons.removeAttribute('id');
-
-    const reply = buttons.querySelector('.replyNo');
-    const retweet = buttons.querySelector('.retweetNo');
-    const like = buttons.querySelector('.likeNo');
-    const views = buttons.querySelector('.linkNo');
-    const viewsLink = buttons.querySelector('.tweetBottomViews') as HTMLAnchorElement | null;
+    const reply = container.querySelector('.replyNo .count');
+    const retweet = container.querySelector('.retweetNo .count');
+    const like = container.querySelector('.likeNo .count');
+    const views = container.querySelector('.viewNo .count');
+    const viewsLink = container.querySelector('.viewLink') as HTMLAnchorElement | null;
 
     reply && (reply.textContent = formatCount(tweetContent.reply_count).toLocaleString() ?? '');
-    retweet && (retweet.textContent = formatCount(tweetContent.retweet_count).toLocaleString() ?? '');
+    retweet && (retweet.textContent = formatCount(tweetContent.retweet_count + tweetContent.quote_count).toLocaleString() ?? '');
     like && (like.textContent = formatCount(tweetContent.favorite_count).toLocaleString() ?? '');
-    views && (views.textContent = formatCount(viewsCount??0).toLocaleString() ?? '');
+    views && (views.textContent = formatCount(viewsCount ?? 0).toLocaleString() ?? '');
 
     if (viewsLink) {
         viewsLink.href = `/${screenName}/status/${tweetContent.id_str}/analytics`;
     }
-
-    target.innerHTML = '';
-    target.appendChild(buttons);
 }
