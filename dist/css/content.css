@@ -1,3 +1,9 @@
+img, video {
+    border-radius: 16px;
+}
+.tweetPhotoBackImg{
+    border-radius: 16px;
+}
 .category-filter-container {
     padding: 16px;
     border-bottom: 1px solid rgb(240, 243, 244);
@@ -154,7 +160,7 @@
 }
 
 .tweet-cardfloat {
-    max-width: 600px;
+    width: 100%;
     scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
     position: absolute;
 }
@@ -310,13 +316,18 @@
     display: flex;
     flex-wrap: wrap;
     gap: 2px;
-    border-radius: 16px;
     overflow: hidden;
     width: 100%;
     box-sizing: border-box;
     margin-top: 12px;
+    position: relative;
 }
-
+span.duration-badge {
+    position: absolute;
+    bottom: 12px;
+    left: 16px;
+    color: white;
+}
 .tweet-image img {
     width: 100%;
     height: 100%; /* 修正高度填充 */
