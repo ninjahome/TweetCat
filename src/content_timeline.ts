@@ -31,12 +31,12 @@ export function appendTweetCatMenuItem() {
 
             tweetCatMenuItem.onclick = (ev) => {
                 ev.preventDefault();
-                tweetCatArea.style.display = 'block'
                 originalTweetArea.style.display = 'none';
                 history.replaceState({id: 123}, '', '/#/' + selfDefineUrl);
                 const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;
                 tweetCatTimeLine.innerHTML = '';
                 fillTweetAreaByTweets(tweetCatTimeLine, contentTemplate).then();
+                tweetCatArea.style.display = 'block';
             }
 
             menuList.insertBefore(tweetCatMenuItem, menuList.children[1]);
