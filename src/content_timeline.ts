@@ -34,7 +34,9 @@ export function appendTweetCatMenuItem() {
                 tweetCatArea.style.display = 'block'
                 originalTweetArea.style.display = 'none';
                 history.replaceState({id: 123}, '', '/#/' + selfDefineUrl);
-                fillTweetAreaByTweets(tweetCatArea.querySelector(".tweetTimeline") as HTMLElement, contentTemplate).then();
+                const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;
+                tweetCatTimeLine.innerHTML = '';
+                fillTweetAreaByTweets(tweetCatTimeLine, contentTemplate).then();
             }
 
             menuList.insertBefore(tweetCatMenuItem, menuList.children[1]);
@@ -53,13 +55,16 @@ export function switchToTweetCatTimeLine() {
 async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate: HTMLTemplateElement) {
     const validTweets = await fetchTweets('1551261351347109888', 20); // 1899045104146644992 // 1551261351347109888
 
+    const fragment = document.createDocumentFragment();
     const tweetNodes: HTMLElement[] = [];
+
     for (const entry of validTweets.tweets) {
         const tweetNode = renderTweetHTML(entry, contentTemplate);
-        tweetCatArea.appendChild(tweetNode); // 先插入 DOM
+        fragment.appendChild(tweetNode);
         tweetNodes.push(tweetNode);
     }
 
+    tweetCatArea.appendChild(fragment); // 一次性插入所有节点
     // 等所有推文都加入 DOM 后，再统一计算并设置 translateY
     let cumulativeOffset = 0;
     for (const tweetNode of tweetNodes) {
