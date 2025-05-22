@@ -258,7 +258,100 @@ export function updateTweetMediaArea(
 }
 
 
-const videoControllers = new WeakMap<HTMLVideoElement, { observer: IntersectionObserver, hls?: Hls }>();
+
+const videoControllers = new WeakMap<HTMLVideoElement, { observer: IntersectionObserver }>();
+let currentPlaying: HTMLVideoElement | null = null;
+
+class HlsManager {
+    private hls: Hls;
+    private currentVideo: HTMLVideoElement | null = null;
+
+    constructor() {
+        this.hls = new Hls({ startLevel: -1 });
+    }
+
+    async play(video: HTMLVideoElement, src: string) {
+        if (this.currentVideo === video) return;
+        this.hls.detachMedia();
+        this.hls.loadSource(src);
+        this.hls.attachMedia(video);
+        this.currentVideo = video;
+    }
+
+    pause(video: HTMLVideoElement) {
+        if (this.currentVideo === video) {
+            video.pause();
+            this.hls.detachMedia();
+            this.currentVideo = null;
+        }
+    }
+
+    destroy() {
+        this.hls.destroy();
+    }
+}
+
+const globalHlsManager = new HlsManager();
+
+function setupTwitterStyleVideo(video: HTMLVideoElement, hlsSource?: string, mp4?: { url: string; content_type: string }, durationMillis?: number, badge?: HTMLElement | null) {
+    video.preload = 'metadata';
+    video.muted = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.controls = true;
+
+    if (hlsSource && Hls.isSupported()) {
+        globalHlsManager.play(video, hlsSource);
+    } else if (hlsSource && video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = hlsSource;
+        video.load();
+    } else if (mp4) {
+        const src = document.createElement("source");
+        src.src = mp4.url;
+        src.type = mp4.content_type;
+        video.appendChild(src);
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const targetVideo = entry.target as HTMLVideoElement;
+            if (entry.isIntersecting) {
+                if (hlsSource && Hls.isSupported()) {
+                    globalHlsManager.play(targetVideo, hlsSource);
+                }
+                targetVideo.play().catch(() => {});
+                currentPlaying = targetVideo;
+            } else {
+                if (targetVideo !== currentPlaying) {
+                    targetVideo.pause();
+                } else if (hlsSource && Hls.isSupported()) {
+                    globalHlsManager.pause(targetVideo);
+                }
+            }
+        });
+    }, { threshold: 0.6 });
+
+    observer.observe(video);
+    videoControllers.set(video, { observer });
+
+    if (badge && durationMillis != null) {
+        const totalSeconds = Math.floor(durationMillis / 1000);
+        let lastShown = -1;
+        badge.textContent = msToClock(durationMillis);
+
+        video.addEventListener('timeupdate', () => {
+            const remaining = Math.max(0, totalSeconds - Math.floor(video.currentTime));
+            if (remaining === lastShown) return;
+            lastShown = remaining;
+
+            const min = Math.floor(remaining / 60);
+            const sec = remaining % 60;
+            badge.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+        });
+    } else if (badge) {
+        badge.remove();
+    }
+}
 
 function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
     const wrapper = tpl.content
@@ -268,62 +361,15 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
     wrapper.removeAttribute('id');
 
     const video = wrapper.querySelector('video') as HTMLVideoElement;
-
     video.poster = m.media_url_https || '';
-    video.preload = 'metadata';
-    video.muted = true;
-    video.autoplay = true;
-    video.playsInline = true;
-    video.controls = true;
 
     const hlsSource = m.video_info?.variants.find(v => v.content_type === "application/x-mpegURL")?.url;
     const mp4 = pickBestMp4(m);
+    const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
 
     requestIdleCallback(() => {
-        let hls: Hls | undefined;
-        if (hlsSource && Hls.isSupported()) {
-            hls = new Hls();
-            hls.loadSource(hlsSource);
-            hls.attachMedia(video);
-        } else if (hlsSource && video.canPlayType("application/vnd.apple.mpegurl")) {
-            video.src = hlsSource;
-        } else if (mp4) {
-            const src = document.createElement("source");
-            src.src = mp4.url;
-            src.type = mp4.content_type;
-            video.appendChild(src);
-        }
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                const targetVideo = entry.target as HTMLVideoElement;
-                if (entry.isIntersecting) {
-                    targetVideo.play().catch(() => {});
-                } else {
-                    targetVideo.pause();
-                }
-            });
-        }, { threshold: 0.6 });
-
-        observer.observe(video);
-
-        videoControllers.set(video, { observer, hls });
+        setupTwitterStyleVideo(video, hlsSource, mp4, m.video_info?.duration_millis, badge);
     });
-
-    const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
-    if (badge && m.video_info?.duration_millis != null) {
-        const totalSeconds = Math.floor(m.video_info.duration_millis / 1000);
-        badge.textContent = msToClock(m.video_info.duration_millis);
-
-        video.addEventListener('timeupdate', () => {
-            const remaining = Math.max(0, totalSeconds - Math.floor(video.currentTime));
-            const min = Math.floor(remaining / 60);
-            const sec = remaining % 60;
-            badge.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
-        });
-    } else if (badge) {
-        badge.remove();
-    }
 
     return wrapper;
 }
@@ -332,7 +378,6 @@ export function cleanupVideo(video: HTMLVideoElement) {
     const controller = videoControllers.get(video);
     if (!controller) return;
     controller.observer.disconnect();
-    controller.hls?.destroy?.();
     videoControllers.delete(video);
 }
 
@@ -352,8 +397,8 @@ function msToClock(ms: number): string {
     const pad = (n: number) => n.toString().padStart(2, '0');
 
     return hours > 0
-        ? `${hours}:${pad(minutes)}:${pad(seconds)}`   // 1:05:07
-        : `${minutes}:${pad(seconds)}`;               // 4:09
+        ? `${hours}:${pad(minutes)}:${pad(seconds)}`
+        : `${minutes}:${pad(seconds)}`;
 }
 
 function renderThreePhoto(container: HTMLElement,

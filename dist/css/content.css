@@ -538,10 +538,3 @@ span.duration-badge {
     flex: 1;
     min-width: 0;
 }
-
-video {
-    max-width: 100%;
-    display: block;
-    aspect-ratio: 16 / 9;
-    background: #000;
-}
