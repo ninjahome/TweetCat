@@ -294,12 +294,18 @@ export class TweetAuthor {
     is_blue_verified: boolean;
     legacy: AuthorLegacy;
     professional: any;
+    avatarImgUrl :string;
 
     constructor(data: any) {
         this.authorID = data.rest_id;
         this.is_blue_verified = data.is_blue_verified;
         this.legacy = new AuthorLegacy(data.legacy);
         this.professional = data.professional;
+        if (!this.legacy.profile_image_url_https){
+            this.avatarImgUrl = data.avatar?.image_url;
+        }else{
+            this.avatarImgUrl = this.legacy.profile_image_url_https;
+        }
     }
 }
 

@@ -34,7 +34,7 @@ export function appendTweetCatMenuItem() {
                 tweetCatArea.style.display = 'block'
                 originalTweetArea.style.display = 'none';
                 history.replaceState({id: 123}, '', '/#/' + selfDefineUrl);
-                fillTweetAreaByTweets(tweetCatArea, contentTemplate).then();
+                fillTweetAreaByTweets(tweetCatArea.querySelector(".tweetTimeline") as HTMLElement, contentTemplate).then();
             }
 
             menuList.insertBefore(tweetCatMenuItem, menuList.children[1]);
@@ -53,19 +53,47 @@ export function switchToTweetCatTimeLine() {
 async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate: HTMLTemplateElement) {
     const validTweets = await fetchTweets('1551261351347109888', 20); // 1899045104146644992 // 1551261351347109888
 
-    let cumulativeOffset = 0;
-
+    const tweetNodes: HTMLElement[] = [];
     for (const entry of validTweets.tweets) {
         const tweetNode = renderTweetHTML(entry, contentTemplate);
         tweetCatArea.appendChild(tweetNode); // 先插入 DOM
-
-        // 强制触发一次重排以确保高度是准确的
-        const height = tweetNode.offsetHeight;
-
-        // 设置 translateY
-        tweetNode.style.transform = `translateY(${cumulativeOffset}px)`;
-        cumulativeOffset += height;
+        tweetNodes.push(tweetNode);
     }
+
+    // 等所有推文都加入 DOM 后，再统一计算并设置 translateY
+    let cumulativeOffset = 0;
+    for (const tweetNode of tweetNodes) {
+        await waitForStableHeight(tweetNode);
+        tweetNode.style.transform = `translateY(${cumulativeOffset}px)`;
+        cumulativeOffset += tweetNode.offsetHeight;
+    }
+
+    tweetCatArea.style.height = cumulativeOffset + 'px'; // 设置容器高度
+}
+
+function waitForStableHeight(el: HTMLElement): Promise<void> {
+    return new Promise((resolve) => {
+        let lastHeight = el.offsetHeight;
+        let stableCount = 0;
+
+        const check = () => {
+            const currentHeight = el.offsetHeight;
+            if (currentHeight === lastHeight) {
+                stableCount++;
+            } else {
+                stableCount = 0;
+                lastHeight = currentHeight;
+            }
+
+            if (stableCount >= 2) {
+                resolve();
+            } else {
+                requestAnimationFrame(check);
+            }
+        };
+
+        requestAnimationFrame(check);
+    });
 }
 
 function addAutoplayObserver(root: HTMLElement): () => void {

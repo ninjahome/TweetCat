@@ -40,7 +40,7 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
 // 渲染头像模块
 export function updateTweetAvatar(avatarArea: Element, author: TweetAuthor): void {
     // const highResUrl = getHighResAvatarUrl(author.legacy.profile_image_url_https);
-    const highResUrl = author.legacy.profile_image_url_https;
+    const highResUrl = author.avatarImgUrl;
 
     const img = avatarArea.querySelector('img.avatar') as HTMLImageElement;
     if (img) {

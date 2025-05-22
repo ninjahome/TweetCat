@@ -163,6 +163,11 @@
     background-color: rgba(247,247, 247);
 }
 
+.tweet-node {
+    position: absolute;
+    width: 100%;
+}
+
 .tweetTimeline {
     max-width: 600px;
     width: 100%;
