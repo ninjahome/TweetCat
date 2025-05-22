@@ -256,7 +256,7 @@ img, video {
 }
 
 .tweet-main {
-    display: flex;
+    display: none;
     flex-direction: row;
     align-items: stretch;
     background-color: rgba(0, 0, 0, 0.00);
