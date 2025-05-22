@@ -1,6 +1,8 @@
 import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./object_tweet";
 import {formatCount, formatTweetTime} from "./utils";
 
+import Hls from 'hls.js';
+
 export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;
     tweetCellDiv.setAttribute('id', "");
@@ -256,6 +258,8 @@ export function updateTweetMediaArea(
 }
 
 
+const videoControllers = new WeakMap<HTMLVideoElement, { observer: IntersectionObserver, hls?: Hls }>();
+
 function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
     const wrapper = tpl.content
         .getElementById('media-video-template')!
@@ -265,48 +269,72 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
 
     const video = wrapper.querySelector('video') as HTMLVideoElement;
 
-    /* --------- 2️⃣ 填充我们自己的资源 ---------- */
     video.poster = m.media_url_https || '';
-    video.preload = 'none'; // 延迟加载资源
-
-    const mp4 = pickBestMp4(m);        // 选 bitrate 最大的 mp4
-    if (mp4) {
-        const src = document.createElement('source');
-        src.src = mp4.url;
-        src.type = mp4.content_type;      // "video/mp4"
-        video.appendChild(src);
-    }
-
-    /* 3️⃣ 设置基础播放属性 */
+    video.preload = 'none';
     video.muted = true;
     video.autoplay = false;
     video.playsInline = true;
+    video.controls = true;
 
-    /* 4️⃣ duration badge */
+    const hlsSource = m.video_info?.variants.find(v => v.content_type === "application/x-mpegURL")?.url;
+    const mp4 = pickBestMp4(m);
+
+    requestIdleCallback(() => {
+        let hls: Hls | undefined;
+        if (hlsSource && Hls.isSupported()) {
+            hls = new Hls();
+            hls.loadSource(hlsSource);
+            hls.attachMedia(video);
+        } else if (hlsSource && video.canPlayType("application/vnd.apple.mpegurl")) {
+            video.src = hlsSource;
+        } else if (mp4) {
+            const src = document.createElement("source");
+            src.src = mp4.url;
+            src.type = mp4.content_type;
+            video.appendChild(src);
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const targetVideo = entry.target as HTMLVideoElement;
+                if (entry.isIntersecting) {
+                    targetVideo.play().catch(() => {});
+                } else {
+                    targetVideo.pause();
+                }
+            });
+        }, { threshold: 0.5 });
+
+        observer.observe(video);
+
+        videoControllers.set(video, { observer, hls });
+    });
+
     const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
     if (badge && m.video_info?.duration_millis != null) {
+        const totalSeconds = Math.floor(m.video_info.duration_millis / 1000);
         badge.textContent = msToClock(m.video_info.duration_millis);
+
+        video.addEventListener('timeupdate', () => {
+            const remaining = Math.max(0, totalSeconds - Math.floor(video.currentTime));
+            const min = Math.floor(remaining / 60);
+            const sec = remaining % 60;
+            badge.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+        });
     } else if (badge) {
         badge.remove();
     }
 
-    /* 5️⃣ 使用 IntersectionObserver 控制播放 */
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const targetVideo = entry.target as HTMLVideoElement;
-            if (entry.isIntersecting) {
-                targetVideo.play().catch(() => {});
-            } else {
-                targetVideo.pause();
-            }
-        });
-    }, { threshold: 0.5 });
-
-    observer.observe(video);
-
     return wrapper;
 }
 
+export function cleanupVideo(video: HTMLVideoElement) {
+    const controller = videoControllers.get(video);
+    if (!controller) return;
+    controller.observer.disconnect();
+    controller.hls?.destroy?.();
+    videoControllers.delete(video);
+}
 
 function pickBestMp4(m: TweetMediaEntity) {
     return m.video_info?.variants
@@ -314,7 +342,7 @@ function pickBestMp4(m: TweetMediaEntity) {
         .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0))[0];
 }
 
-export function msToClock(ms: number): string {
+function msToClock(ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
 
     const hours = Math.floor(totalSeconds / 3600);

@@ -7,6 +7,7 @@
     "build:r": "webpack --mode production --stats-error-details"
   },
   "dependencies": {
+    "hls.js": "^1.6.2",
     "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {
