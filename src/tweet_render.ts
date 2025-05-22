@@ -270,9 +270,9 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
     const video = wrapper.querySelector('video') as HTMLVideoElement;
 
     video.poster = m.media_url_https || '';
-    video.preload = 'none';
+    video.preload = 'metadata';
     video.muted = true;
-    video.autoplay = false;
+    video.autoplay = true;
     video.playsInline = true;
     video.controls = true;
 
