@@ -255,6 +255,7 @@ export function updateTweetMediaArea(
     }
 }
 
+
 function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
     const wrapper = tpl.content
         .getElementById('media-video-template')!
@@ -266,6 +267,7 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
 
     /* --------- 2️⃣ 填充我们自己的资源 ---------- */
     video.poster = m.media_url_https || '';
+    video.preload = 'none'; // 延迟加载资源
 
     const mp4 = pickBestMp4(m);        // 选 bitrate 最大的 mp4
     if (mp4) {
@@ -275,9 +277,9 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
         video.appendChild(src);
     }
 
-    /* 3️⃣ 统一自动播放体验 */
+    /* 3️⃣ 设置基础播放属性 */
     video.muted = true;
-    video.autoplay = true;
+    video.autoplay = false;
     video.playsInline = true;
 
     /* 4️⃣ duration badge */
@@ -288,8 +290,23 @@ function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement
         badge.remove();
     }
 
+    /* 5️⃣ 使用 IntersectionObserver 控制播放 */
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const targetVideo = entry.target as HTMLVideoElement;
+            if (entry.isIntersecting) {
+                targetVideo.play().catch(() => {});
+            } else {
+                targetVideo.pause();
+            }
+        });
+    }, { threshold: 0.5 });
+
+    observer.observe(video);
+
     return wrapper;
 }
+
 
 function pickBestMp4(m: TweetMediaEntity) {
     return m.video_info?.variants
