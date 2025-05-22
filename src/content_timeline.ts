@@ -54,8 +54,6 @@ export function switchToTweetCatTimeLine() {
 
 async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate: HTMLTemplateElement) {
     const validTweets = await fetchTweets('1551261351347109888', 20); // 1899045104146644992 // 1551261351347109888
-
-    // const fragment = document.createDocumentFragment();
     const tweetNodes: HTMLElement[] = [];
 
     for (const entry of validTweets.tweets) {
@@ -64,8 +62,6 @@ async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate:
         tweetNodes.push(tweetNode);
     }
 
-    // tweetCatArea.appendChild(fragment); // 一次性插入所有节点
-    // 等所有推文都加入 DOM 后，再统一计算并设置 translateY
     let cumulativeOffset = 0;
     for (const tweetNode of tweetNodes) {
         await waitForStableHeight(tweetNode);
