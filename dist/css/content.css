@@ -538,3 +538,10 @@ span.duration-badge {
     flex: 1;
     min-width: 0;
 }
+
+video {
+    width: 100%;
+    height: auto;
+    display: block;
+    visibility: visible;
+}
