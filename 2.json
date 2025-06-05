@@ -1,6 +1,6 @@
 {
-  "entryId": "tweet-1925695106209751519",
-  "sortIndex": "1925800719789588478",
+  "entryId": "tweet-1881104473332072830",
+  "sortIndex": "1930430899673890816",
   "content": {
     "entryType": "TimelineTimelineItem",
     "__typename": "TimelineTimelineItem",
@@ -10,7 +10,7 @@
       "tweet_results": {
         "result": {
           "__typename": "Tweet",
-          "rest_id": "1925695106209751519",
+          "rest_id": "1881104473332072830",
           "core": {
             "user_results": {
               "result": {
@@ -18,15 +18,20 @@
                 "id": "VXNlcjoxNTUxMjYxMzUxMzQ3MTA5ODg4",
                 "rest_id": "1551261351347109888",
                 "affiliates_highlighted_label": {},
-                "has_graduated_access": true,
-                "parody_commentary_fan_label": "None",
-                "is_blue_verified": true,
-                "profile_image_shape": "Circle",
-                "legacy": {
-                  "following": true,
-                  "can_dm": false,
-                  "can_media_tag": true,
+                "avatar": {
+                  "image_url": "https://pbs.twimg.com/profile_images/1901383181061779456/l1XwliGQ_normal.jpg"
+                },
+                "core": {
                   "created_at": "Sun Jul 24 17:41:50 +0000 2022",
+                  "name": "The Best",
+                  "screen_name": "Thebestfigen"
+                },
+                "dm_permissions": {
+                  "can_dm": false
+                },
+                "has_graduated_access": true,
+                "is_blue_verified": true,
+                "legacy": {
                   "default_profile": true,
                   "default_profile_image": false,
                   "description": "Posting cool and old viral content... About me? A lady who loves to wear red...",
@@ -36,164 +41,225 @@
                     }
                   },
                   "fast_followers_count": 0,
-                  "favourites_count": 9299,
-                  "followers_count": 1178272,
+                  "favourites_count": 9332,
+                  "followers_count": 1180274,
                   "friends_count": 1,
                   "has_custom_timelines": false,
                   "is_translator": false,
-                  "listed_count": 7014,
-                  "location": "Manhattan, NY",
-                  "media_count": 9920,
-                  "name": "The Best",
-                  "normal_followers_count": 1178272,
+                  "listed_count": 7012,
+                  "media_count": 10094,
+                  "normal_followers_count": 1180274,
                   "pinned_tweet_ids_str": [
                     "1881104473332072830"
                   ],
                   "possibly_sensitive": false,
                   "profile_banner_url": "https://pbs.twimg.com/profile_banners/1551261351347109888/1736211724",
-                  "profile_image_url_https": "https://pbs.twimg.com/profile_images/1901383181061779456/l1XwliGQ_normal.jpg",
                   "profile_interstitial_type": "",
-                  "screen_name": "Thebestfigen",
-                  "statuses_count": 11503,
+                  "statuses_count": 11705,
                   "translator_type": "none",
-                  "verified": false,
                   "want_retweets": true,
                   "withheld_in_countries": []
                 },
+                "location": {
+                  "location": "Manhattan, NY"
+                },
+                "media_permissions": {
+                  "can_media_tag": true
+                },
+                "parody_commentary_fan_label": "None",
+                "profile_image_shape": "Circle",
                 "professional": {
                   "rest_id": "1557855840899665926",
                   "professional_type": "Business",
                   "category": []
                 },
+                "privacy": {
+                  "protected": false
+                },
+                "relationship_perspectives": {
+                  "following": true
+                },
                 "tipjar_settings": {
                   "is_enabled": true
                 },
-                "super_follow_eligible": true
+                "super_follow_eligible": true,
+                "verification": {
+                  "verified": false
+                }
               }
             }
           },
           "unmention_data": {},
           "edit_control": {
             "edit_tweet_ids": [
-              "1925695106209751519"
+              "1881104473332072830"
             ],
-            "editable_until_msecs": "1747960065662",
-            "is_edit_eligible": false,
+            "editable_until_msecs": "1737328830000",
+            "is_edit_eligible": true,
             "edits_remaining": "5"
           },
           "is_translatable": false,
           "views": {
-            "state": "Enabled"
+            "count": "23001378",
+            "state": "EnabledWithCount"
           },
           "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
           "grok_analysis_button": true,
           "legacy": {
-            "bookmark_count": 0,
+            "bookmark_count": 25051,
             "bookmarked": false,
-            "created_at": "Thu May 22 23:27:45 +0000 2025",
-            "conversation_id_str": "1925695106209751519",
+            "created_at": "Sun Jan 19 22:20:30 +0000 2025",
+            "conversation_id_str": "1881104473332072830",
             "display_text_range": [
               0,
-              57
+              15
             ],
             "entities": {
               "hashtags": [],
               "media": [
                 {
-                  "display_url": "pic.x.com/WUzAFiDef7",
-                  "expanded_url": "https://x.com/Thebestfigen/status/1925666204988891383/video/1",
-                  "id_str": "1925666087925899264",
+                  "display_url": "pic.x.com/RBUIivxVk2",
+                  "expanded_url": "https://x.com/TheGoddessF/status/1881104473332072830/photo/1",
+                  "id_str": "1881104468218986496",
                   "indices": [
-                    34,
-                    57
+                    16,
+                    39
                   ],
-                  "media_key": "13_1925666087925899264",
-                  "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/1925666087925899264/img/51DJd-qjqQGBtziG.jpg",
-                  "source_status_id_str": "1925666204988891383",
-                  "source_user_id_str": "1551261351347109888",
-                  "type": "video",
-                  "url": "https://t.co/WUzAFiDef7",
-                  "additional_media_info": {
-                    "monetizable": false,
-                    "source_user": {
-                      "user_results": {
-                        "result": {
-                          "__typename": "User",
-                          "id": "VXNlcjoxNTUxMjYxMzUxMzQ3MTA5ODg4",
-                          "rest_id": "1551261351347109888",
-                          "affiliates_highlighted_label": {},
-                          "has_graduated_access": true,
-                          "parody_commentary_fan_label": "None",
-                          "is_blue_verified": true,
-                          "profile_image_shape": "Circle",
-                          "legacy": {
-                            "following": true,
-                            "can_dm": false,
-                            "can_media_tag": true,
-                            "created_at": "Sun Jul 24 17:41:50 +0000 2022",
-                            "default_profile": true,
-                            "default_profile_image": false,
-                            "description": "Posting cool and old viral content... About me? A lady who loves to wear red...",
-                            "entities": {
-                              "description": {
-                                "urls": []
-                              }
-                            },
-                            "fast_followers_count": 0,
-                            "favourites_count": 9299,
-                            "followers_count": 1178272,
-                            "friends_count": 1,
-                            "has_custom_timelines": false,
-                            "is_translator": false,
-                            "listed_count": 7014,
-                            "location": "Manhattan, NY",
-                            "media_count": 9920,
-                            "name": "The Best",
-                            "normal_followers_count": 1178272,
-                            "pinned_tweet_ids_str": [
-                              "1881104473332072830"
-                            ],
-                            "possibly_sensitive": false,
-                            "profile_banner_url": "https://pbs.twimg.com/profile_banners/1551261351347109888/1736211724",
-                            "profile_image_url_https": "https://pbs.twimg.com/profile_images/1901383181061779456/l1XwliGQ_normal.jpg",
-                            "profile_interstitial_type": "",
-                            "screen_name": "Thebestfigen",
-                            "statuses_count": 11503,
-                            "translator_type": "none",
-                            "verified": false,
-                            "want_retweets": true,
-                            "withheld_in_countries": []
-                          },
-                          "professional": {
-                            "rest_id": "1557855840899665926",
-                            "professional_type": "Business",
-                            "category": []
-                          },
-                          "tipjar_settings": {
-                            "is_enabled": true
-                          },
-                          "super_follow_eligible": true
-                        }
-                      }
-                    }
-                  },
+                  "media_key": "3_1881104468218986496",
+                  "media_url_https": "https://pbs.twimg.com/media/GhsGjB2XwAAjME-.jpg",
+                  "type": "photo",
+                  "url": "https://t.co/RBUIivxVk2",
                   "ext_media_availability": {
                     "status": "Available"
                   },
+                  "features": {
+                    "large": {
+                      "faces": [
+                        {
+                          "x": 257,
+                          "y": 51,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 443,
+                          "y": 530,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 406,
+                          "y": 105,
+                          "h": 78,
+                          "w": 78
+                        },
+                        {
+                          "x": 209,
+                          "y": 503,
+                          "h": 82,
+                          "w": 82
+                        }
+                      ]
+                    },
+                    "medium": {
+                      "faces": [
+                        {
+                          "x": 257,
+                          "y": 51,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 443,
+                          "y": 530,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 406,
+                          "y": 105,
+                          "h": 78,
+                          "w": 78
+                        },
+                        {
+                          "x": 209,
+                          "y": 503,
+                          "h": 82,
+                          "w": 82
+                        }
+                      ]
+                    },
+                    "small": {
+                      "faces": [
+                        {
+                          "x": 195,
+                          "y": 38,
+                          "h": 60,
+                          "w": 60
+                        },
+                        {
+                          "x": 337,
+                          "y": 403,
+                          "h": 60,
+                          "w": 60
+                        },
+                        {
+                          "x": 309,
+                          "y": 80,
+                          "h": 59,
+                          "w": 59
+                        },
+                        {
+                          "x": 159,
+                          "y": 383,
+                          "h": 62,
+                          "w": 62
+                        }
+                      ]
+                    },
+                    "orig": {
+                      "faces": [
+                        {
+                          "x": 257,
+                          "y": 51,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 443,
+                          "y": 530,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 406,
+                          "y": 105,
+                          "h": 78,
+                          "w": 78
+                        },
+                        {
+                          "x": 209,
+                          "y": 503,
+                          "h": 82,
+                          "w": 82
+                        }
+                      ]
+                    }
+                  },
                   "sizes": {
                     "large": {
-                      "h": 640,
-                      "w": 640,
+                      "h": 893,
+                      "w": 714,
                       "resize": "fit"
                     },
                     "medium": {
-                      "h": 640,
-                      "w": 640,
+                      "h": 893,
+                      "w": 714,
                       "resize": "fit"
                     },
                     "small": {
-                      "h": 640,
-                      "w": 640,
+                      "h": 680,
+                      "w": 544,
                       "resize": "fit"
                     },
                     "thumb": {
@@ -203,44 +269,44 @@
                     }
                   },
                   "original_info": {
-                    "height": 640,
-                    "width": 640,
-                    "focus_rects": []
-                  },
-                  "allow_download_status": {
-                    "allow_download": true
-                  },
-                  "video_info": {
-                    "aspect_ratio": [
-                      1,
-                      1
-                    ],
-                    "duration_millis": 221666,
-                    "variants": [
+                    "height": 893,
+                    "width": 714,
+                    "focus_rects": [
                       {
-                        "content_type": "application/x-mpegURL",
-                        "url": "https://video.twimg.com/amplify_video/1925666087925899264/pl/I3Z1PD8WTy9QZV2F.m3u8?tag=21&v=20d"
+                        "x": 0,
+                        "y": 313,
+                        "w": 714,
+                        "h": 400
                       },
                       {
-                        "bitrate": 432000,
-                        "content_type": "video/mp4",
-                        "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/320x320/LoN_DEqZAFRiF1zs.mp4?tag=21"
+                        "x": 0,
+                        "y": 156,
+                        "w": 714,
+                        "h": 714
                       },
                       {
-                        "bitrate": 832000,
-                        "content_type": "video/mp4",
-                        "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/540x540/lUM4mwBAr9FoJj4r.mp4?tag=21"
+                        "x": 0,
+                        "y": 79,
+                        "w": 714,
+                        "h": 814
                       },
                       {
-                        "bitrate": 1280000,
-                        "content_type": "video/mp4",
-                        "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/640x640/YmzwiepBpWG7Qo5x.mp4?tag=21"
+                        "x": 0,
+                        "y": 0,
+                        "w": 447,
+                        "h": 893
+                      },
+                      {
+                        "x": 0,
+                        "y": 0,
+                        "w": 714,
+                        "h": 893
                       }
                     ]
                   },
                   "media_results": {
                     "result": {
-                      "media_key": "13_1925666087925899264"
+                      "media_key": "3_1881104468218986496"
                     }
                   }
                 }
@@ -248,115 +314,153 @@
               "symbols": [],
               "timestamps": [],
               "urls": [],
-              "user_mentions": [
-                {
-                  "id_str": "1551261351347109888",
-                  "name": "The Best",
-                  "screen_name": "Thebestfigen",
-                  "indices": [
-                    3,
-                    16
-                  ]
-                }
-              ]
+              "user_mentions": []
             },
             "extended_entities": {
               "media": [
                 {
-                  "display_url": "pic.x.com/WUzAFiDef7",
-                  "expanded_url": "https://x.com/Thebestfigen/status/1925666204988891383/video/1",
-                  "id_str": "1925666087925899264",
+                  "display_url": "pic.x.com/RBUIivxVk2",
+                  "expanded_url": "https://x.com/TheGoddessF/status/1881104473332072830/photo/1",
+                  "id_str": "1881104468218986496",
                   "indices": [
-                    34,
-                    57
+                    16,
+                    39
                   ],
-                  "media_key": "13_1925666087925899264",
-                  "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/1925666087925899264/img/51DJd-qjqQGBtziG.jpg",
-                  "source_status_id_str": "1925666204988891383",
-                  "source_user_id_str": "1551261351347109888",
-                  "type": "video",
-                  "url": "https://t.co/WUzAFiDef7",
-                  "additional_media_info": {
-                    "monetizable": false,
-                    "source_user": {
-                      "user_results": {
-                        "result": {
-                          "__typename": "User",
-                          "id": "VXNlcjoxNTUxMjYxMzUxMzQ3MTA5ODg4",
-                          "rest_id": "1551261351347109888",
-                          "affiliates_highlighted_label": {},
-                          "has_graduated_access": true,
-                          "parody_commentary_fan_label": "None",
-                          "is_blue_verified": true,
-                          "profile_image_shape": "Circle",
-                          "legacy": {
-                            "following": true,
-                            "can_dm": false,
-                            "can_media_tag": true,
-                            "created_at": "Sun Jul 24 17:41:50 +0000 2022",
-                            "default_profile": true,
-                            "default_profile_image": false,
-                            "description": "Posting cool and old viral content... About me? A lady who loves to wear red...",
-                            "entities": {
-                              "description": {
-                                "urls": []
-                              }
-                            },
-                            "fast_followers_count": 0,
-                            "favourites_count": 9299,
-                            "followers_count": 1178272,
-                            "friends_count": 1,
-                            "has_custom_timelines": false,
-                            "is_translator": false,
-                            "listed_count": 7014,
-                            "location": "Manhattan, NY",
-                            "media_count": 9920,
-                            "name": "The Best",
-                            "normal_followers_count": 1178272,
-                            "pinned_tweet_ids_str": [
-                              "1881104473332072830"
-                            ],
-                            "possibly_sensitive": false,
-                            "profile_banner_url": "https://pbs.twimg.com/profile_banners/1551261351347109888/1736211724",
-                            "profile_image_url_https": "https://pbs.twimg.com/profile_images/1901383181061779456/l1XwliGQ_normal.jpg",
-                            "profile_interstitial_type": "",
-                            "screen_name": "Thebestfigen",
-                            "statuses_count": 11503,
-                            "translator_type": "none",
-                            "verified": false,
-                            "want_retweets": true,
-                            "withheld_in_countries": []
-                          },
-                          "professional": {
-                            "rest_id": "1557855840899665926",
-                            "professional_type": "Business",
-                            "category": []
-                          },
-                          "tipjar_settings": {
-                            "is_enabled": true
-                          },
-                          "super_follow_eligible": true
-                        }
-                      }
-                    }
-                  },
+                  "media_key": "3_1881104468218986496",
+                  "media_url_https": "https://pbs.twimg.com/media/GhsGjB2XwAAjME-.jpg",
+                  "type": "photo",
+                  "url": "https://t.co/RBUIivxVk2",
                   "ext_media_availability": {
                     "status": "Available"
                   },
+                  "features": {
+                    "large": {
+                      "faces": [
+                        {
+                          "x": 257,
+                          "y": 51,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 443,
+                          "y": 530,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 406,
+                          "y": 105,
+                          "h": 78,
+                          "w": 78
+                        },
+                        {
+                          "x": 209,
+                          "y": 503,
+                          "h": 82,
+                          "w": 82
+                        }
+                      ]
+                    },
+                    "medium": {
+                      "faces": [
+                        {
+                          "x": 257,
+                          "y": 51,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 443,
+                          "y": 530,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 406,
+                          "y": 105,
+                          "h": 78,
+                          "w": 78
+                        },
+                        {
+                          "x": 209,
+                          "y": 503,
+                          "h": 82,
+                          "w": 82
+                        }
+                      ]
+                    },
+                    "small": {
+                      "faces": [
+                        {
+                          "x": 195,
+                          "y": 38,
+                          "h": 60,
+                          "w": 60
+                        },
+                        {
+                          "x": 337,
+                          "y": 403,
+                          "h": 60,
+                          "w": 60
+                        },
+                        {
+                          "x": 309,
+                          "y": 80,
+                          "h": 59,
+                          "w": 59
+                        },
+                        {
+                          "x": 159,
+                          "y": 383,
+                          "h": 62,
+                          "w": 62
+                        }
+                      ]
+                    },
+                    "orig": {
+                      "faces": [
+                        {
+                          "x": 257,
+                          "y": 51,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 443,
+                          "y": 530,
+                          "h": 79,
+                          "w": 79
+                        },
+                        {
+                          "x": 406,
+                          "y": 105,
+                          "h": 78,
+                          "w": 78
+                        },
+                        {
+                          "x": 209,
+                          "y": 503,
+                          "h": 82,
+                          "w": 82
+                        }
+                      ]
+                    }
+                  },
                   "sizes": {
                     "large": {
-                      "h": 640,
-                      "w": 640,
+                      "h": 893,
+                      "w": 714,
                       "resize": "fit"
                     },
                     "medium": {
-                      "h": 640,
-                      "w": 640,
+                      "h": 893,
+                      "w": 714,
                       "resize": "fit"
                     },
                     "small": {
-                      "h": 640,
-                      "w": 640,
+                      "h": 680,
+                      "w": 544,
                       "resize": "fit"
                     },
                     "thumb": {
@@ -366,362 +470,78 @@
                     }
                   },
                   "original_info": {
-                    "height": 640,
-                    "width": 640,
-                    "focus_rects": []
-                  },
-                  "allow_download_status": {
-                    "allow_download": true
-                  },
-                  "video_info": {
-                    "aspect_ratio": [
-                      1,
-                      1
-                    ],
-                    "duration_millis": 221666,
-                    "variants": [
+                    "height": 893,
+                    "width": 714,
+                    "focus_rects": [
                       {
-                        "content_type": "application/x-mpegURL",
-                        "url": "https://video.twimg.com/amplify_video/1925666087925899264/pl/I3Z1PD8WTy9QZV2F.m3u8?tag=21&v=20d"
+                        "x": 0,
+                        "y": 313,
+                        "w": 714,
+                        "h": 400
                       },
                       {
-                        "bitrate": 432000,
-                        "content_type": "video/mp4",
-                        "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/320x320/LoN_DEqZAFRiF1zs.mp4?tag=21"
+                        "x": 0,
+                        "y": 156,
+                        "w": 714,
+                        "h": 714
                       },
                       {
-                        "bitrate": 832000,
-                        "content_type": "video/mp4",
-                        "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/540x540/lUM4mwBAr9FoJj4r.mp4?tag=21"
+                        "x": 0,
+                        "y": 79,
+                        "w": 714,
+                        "h": 814
                       },
                       {
-                        "bitrate": 1280000,
-                        "content_type": "video/mp4",
-                        "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/640x640/YmzwiepBpWG7Qo5x.mp4?tag=21"
+                        "x": 0,
+                        "y": 0,
+                        "w": 447,
+                        "h": 893
+                      },
+                      {
+                        "x": 0,
+                        "y": 0,
+                        "w": 714,
+                        "h": 893
                       }
                     ]
                   },
                   "media_results": {
                     "result": {
-                      "media_key": "13_1925666087925899264"
+                      "media_key": "3_1881104468218986496"
                     }
                   }
                 }
               ]
             },
-            "favorite_count": 0,
+            "favorite_count": 892655,
             "favorited": false,
-            "full_text": "RT @Thebestfigen: Amazing artist. https://t.co/WUzAFiDef7",
+            "full_text": "Awesome memory. https://t.co/RBUIivxVk2",
             "is_quote_status": false,
             "lang": "en",
             "possibly_sensitive": false,
             "possibly_sensitive_editable": true,
-            "quote_count": 0,
-            "reply_count": 0,
-            "retweet_count": 1158,
+            "quote_count": 3411,
+            "reply_count": 2283,
+            "retweet_count": 76295,
             "retweeted": false,
             "user_id_str": "1551261351347109888",
-            "id_str": "1925695106209751519",
-            "retweeted_status_result": {
-              "result": {
-                "__typename": "Tweet",
-                "rest_id": "1925666204988891383",
-                "core": {
-                  "user_results": {
-                    "result": {
-                      "__typename": "User",
-                      "id": "VXNlcjoxNTUxMjYxMzUxMzQ3MTA5ODg4",
-                      "rest_id": "1551261351347109888",
-                      "affiliates_highlighted_label": {},
-                      "has_graduated_access": true,
-                      "parody_commentary_fan_label": "None",
-                      "is_blue_verified": true,
-                      "profile_image_shape": "Circle",
-                      "legacy": {
-                        "following": true,
-                        "can_dm": false,
-                        "can_media_tag": true,
-                        "created_at": "Sun Jul 24 17:41:50 +0000 2022",
-                        "default_profile": true,
-                        "default_profile_image": false,
-                        "description": "Posting cool and old viral content... About me? A lady who loves to wear red...",
-                        "entities": {
-                          "description": {
-                            "urls": []
-                          }
-                        },
-                        "fast_followers_count": 0,
-                        "favourites_count": 9299,
-                        "followers_count": 1178272,
-                        "friends_count": 1,
-                        "has_custom_timelines": false,
-                        "is_translator": false,
-                        "listed_count": 7014,
-                        "location": "Manhattan, NY",
-                        "media_count": 9920,
-                        "name": "The Best",
-                        "normal_followers_count": 1178272,
-                        "pinned_tweet_ids_str": [
-                          "1881104473332072830"
-                        ],
-                        "possibly_sensitive": false,
-                        "profile_banner_url": "https://pbs.twimg.com/profile_banners/1551261351347109888/1736211724",
-                        "profile_image_url_https": "https://pbs.twimg.com/profile_images/1901383181061779456/l1XwliGQ_normal.jpg",
-                        "profile_interstitial_type": "",
-                        "screen_name": "Thebestfigen",
-                        "statuses_count": 11503,
-                        "translator_type": "none",
-                        "verified": false,
-                        "want_retweets": true,
-                        "withheld_in_countries": []
-                      },
-                      "professional": {
-                        "rest_id": "1557855840899665926",
-                        "professional_type": "Business",
-                        "category": []
-                      },
-                      "tipjar_settings": {
-                        "is_enabled": true
-                      },
-                      "super_follow_eligible": true
-                    }
-                  }
-                },
-                "unmention_data": {},
-                "edit_control": {
-                  "edit_tweet_ids": [
-                    "1925666204988891383"
-                  ],
-                  "editable_until_msecs": "1747953175000",
-                  "is_edit_eligible": true,
-                  "edits_remaining": "5"
-                },
-                "is_translatable": false,
-                "views": {
-                  "count": "221316",
-                  "state": "EnabledWithCount"
-                },
-                "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
-                "grok_analysis_button": true,
-                "legacy": {
-                  "bookmark_count": 969,
-                  "bookmarked": false,
-                  "created_at": "Thu May 22 21:32:55 +0000 2025",
-                  "conversation_id_str": "1925666204988891383",
-                  "display_text_range": [
-                    0,
-                    15
-                  ],
-                  "entities": {
-                    "hashtags": [],
-                    "media": [
-                      {
-                        "display_url": "pic.x.com/WUzAFiDef7",
-                        "expanded_url": "https://x.com/Thebestfigen/status/1925666204988891383/video/1",
-                        "id_str": "1925666087925899264",
-                        "indices": [
-                          16,
-                          39
-                        ],
-                        "media_key": "13_1925666087925899264",
-                        "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/1925666087925899264/img/51DJd-qjqQGBtziG.jpg",
-                        "type": "video",
-                        "url": "https://t.co/WUzAFiDef7",
-                        "additional_media_info": {
-                          "monetizable": false
-                        },
-                        "ext_media_availability": {
-                          "status": "Available"
-                        },
-                        "sizes": {
-                          "large": {
-                            "h": 640,
-                            "w": 640,
-                            "resize": "fit"
-                          },
-                          "medium": {
-                            "h": 640,
-                            "w": 640,
-                            "resize": "fit"
-                          },
-                          "small": {
-                            "h": 640,
-                            "w": 640,
-                            "resize": "fit"
-                          },
-                          "thumb": {
-                            "h": 150,
-                            "w": 150,
-                            "resize": "crop"
-                          }
-                        },
-                        "original_info": {
-                          "height": 640,
-                          "width": 640,
-                          "focus_rects": []
-                        },
-                        "allow_download_status": {
-                          "allow_download": true
-                        },
-                        "video_info": {
-                          "aspect_ratio": [
-                            1,
-                            1
-                          ],
-                          "duration_millis": 221666,
-                          "variants": [
-                            {
-                              "content_type": "application/x-mpegURL",
-                              "url": "https://video.twimg.com/amplify_video/1925666087925899264/pl/I3Z1PD8WTy9QZV2F.m3u8?tag=21&v=20d"
-                            },
-                            {
-                              "bitrate": 432000,
-                              "content_type": "video/mp4",
-                              "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/320x320/LoN_DEqZAFRiF1zs.mp4?tag=21"
-                            },
-                            {
-                              "bitrate": 832000,
-                              "content_type": "video/mp4",
-                              "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/540x540/lUM4mwBAr9FoJj4r.mp4?tag=21"
-                            },
-                            {
-                              "bitrate": 1280000,
-                              "content_type": "video/mp4",
-                              "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/640x640/YmzwiepBpWG7Qo5x.mp4?tag=21"
-                            }
-                          ]
-                        },
-                        "media_results": {
-                          "result": {
-                            "media_key": "13_1925666087925899264"
-                          }
-                        }
-                      }
-                    ],
-                    "symbols": [],
-                    "timestamps": [],
-                    "urls": [],
-                    "user_mentions": []
-                  },
-                  "extended_entities": {
-                    "media": [
-                      {
-                        "display_url": "pic.x.com/WUzAFiDef7",
-                        "expanded_url": "https://x.com/Thebestfigen/status/1925666204988891383/video/1",
-                        "id_str": "1925666087925899264",
-                        "indices": [
-                          16,
-                          39
-                        ],
-                        "media_key": "13_1925666087925899264",
-                        "media_url_https": "https://pbs.twimg.com/amplify_video_thumb/1925666087925899264/img/51DJd-qjqQGBtziG.jpg",
-                        "type": "video",
-                        "url": "https://t.co/WUzAFiDef7",
-                        "additional_media_info": {
-                          "monetizable": false
-                        },
-                        "ext_media_availability": {
-                          "status": "Available"
-                        },
-                        "sizes": {
-                          "large": {
-                            "h": 640,
-                            "w": 640,
-                            "resize": "fit"
-                          },
-                          "medium": {
-                            "h": 640,
-                            "w": 640,
-                            "resize": "fit"
-                          },
-                          "small": {
-                            "h": 640,
-                            "w": 640,
-                            "resize": "fit"
-                          },
-                          "thumb": {
-                            "h": 150,
-                            "w": 150,
-                            "resize": "crop"
-                          }
-                        },
-                        "original_info": {
-                          "height": 640,
-                          "width": 640,
-                          "focus_rects": []
-                        },
-                        "allow_download_status": {
-                          "allow_download": true
-                        },
-                        "video_info": {
-                          "aspect_ratio": [
-                            1,
-                            1
-                          ],
-                          "duration_millis": 221666,
-                          "variants": [
-                            {
-                              "content_type": "application/x-mpegURL",
-                              "url": "https://video.twimg.com/amplify_video/1925666087925899264/pl/I3Z1PD8WTy9QZV2F.m3u8?tag=21&v=20d"
-                            },
-                            {
-                              "bitrate": 432000,
-                              "content_type": "video/mp4",
-                              "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/320x320/LoN_DEqZAFRiF1zs.mp4?tag=21"
-                            },
-                            {
-                              "bitrate": 832000,
-                              "content_type": "video/mp4",
-                              "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/540x540/lUM4mwBAr9FoJj4r.mp4?tag=21"
-                            },
-                            {
-                              "bitrate": 1280000,
-                              "content_type": "video/mp4",
-                              "url": "https://video.twimg.com/amplify_video/1925666087925899264/vid/avc1/640x640/YmzwiepBpWG7Qo5x.mp4?tag=21"
-                            }
-                          ]
-                        },
-                        "media_results": {
-                          "result": {
-                            "media_key": "13_1925666087925899264"
-                          }
-                        }
-                      }
-                    ]
-                  },
-                  "favorite_count": 5798,
-                  "favorited": false,
-                  "full_text": "Amazing artist. https://t.co/WUzAFiDef7",
-                  "is_quote_status": false,
-                  "lang": "en",
-                  "possibly_sensitive": false,
-                  "possibly_sensitive_editable": true,
-                  "quote_count": 78,
-                  "reply_count": 143,
-                  "retweet_count": 1158,
-                  "retweeted": false,
-                  "user_id_str": "1551261351347109888",
-                  "id_str": "1925666204988891383"
-                }
-              }
-            }
+            "id_str": "1881104473332072830"
           },
           "quick_promote_eligibility": {
             "eligibility": "IneligibleNotProfessional"
           }
         }
       },
-      "tweetDisplayType": "Tweet"
+      "tweetDisplayType": "Tweet",
+      "socialContext": {
+        "type": "TimelineGeneralContext",
+        "contextType": "Pin",
+        "text": "Pinned"
+      }
     },
     "clientEventInfo": {
-      "component": "tweet",
-      "element": "tweet",
-      "details": {
-        "timelinesDetails": {
-          "injectionType": "RankedOrganicTweet",
-          "controllerData": "DAACDAABDAABCgABAAAAAAAAAAAKAAkaWsN17RsAAAAAAAA="
-        }
-      }
+      "component": "pinned_tweets",
+      "element": "tweet"
     }
   }
 }

@@ -115,6 +115,7 @@ export interface VideoInfo {
     duration_millis?: number;       // animated_gif 没有
     variants: VideoVariant[];
 }
+
 export class TweetMediaEntity {
     display_url: string;
     expanded_url: string;
@@ -294,17 +295,30 @@ export class TweetAuthor {
     is_blue_verified: boolean;
     legacy: AuthorLegacy;
     professional: any;
-    avatarImgUrl :string;
+    avatarImgUrl: string;
+    displayName: string;
+    screenName: string;
 
     constructor(data: any) {
         this.authorID = data.rest_id;
         this.is_blue_verified = data.is_blue_verified;
         this.legacy = new AuthorLegacy(data.legacy);
         this.professional = data.professional;
-        if (!this.legacy.profile_image_url_https){
+        if (!this.legacy.profile_image_url_https) {
             this.avatarImgUrl = data.avatar?.image_url;
-        }else{
+        } else {
             this.avatarImgUrl = this.legacy.profile_image_url_https;
+        }
+        if (!!this.legacy.displayName) {
+            this.displayName = this.legacy.displayName;
+        } else {
+            this.displayName = data.core.name;
+        }
+
+        if (!!this.legacy.screenName) {
+            this.screenName = this.legacy.screenName;
+        } else {
+            this.screenName = data.core.screen_name;
         }
     }
 }
@@ -319,7 +333,7 @@ export class TweetObj {
     source: string;
     quick_promote_eligibility: any;
     tweetContent: TweetContent;
-    card: TweetCard|null;
+    card: TweetCard | null;
     retweetedStatus?: TweetObj;
 
     constructor(tweetResult: any) {
@@ -382,7 +396,7 @@ export function extractEntryObjs(entries: any[]): { tweets: EntryObj[]; nextCurs
         }
     }
 
-    return { tweets: tweetEntries, nextCursor: bottomCursor };
+    return {tweets: tweetEntries, nextCursor: bottomCursor};
 }
 
 

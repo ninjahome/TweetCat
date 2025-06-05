@@ -33,7 +33,7 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
         target.tweetContent, tpl);
 
     updateTweetBottomButtons(article.querySelector(".tweet-actions") as HTMLElement,
-        target.tweetContent, target.author.legacy.screenName, target.views_count);
+        target.tweetContent, target.author.screenName, target.views_count);
 
     return tweetCellDiv;
 }
@@ -47,12 +47,12 @@ export function updateTweetAvatar(avatarArea: Element, author: TweetAuthor): voi
     const img = avatarArea.querySelector('img.avatar') as HTMLImageElement;
     if (img) {
         img.src = highResUrl;
-        img.alt = author.legacy.displayName;
+        img.alt = author.displayName;
     }
 
     const link = avatarArea.querySelector('a') as HTMLAnchorElement;
     if (link) {
-        link.href = `/${author.legacy.screenName}`;
+        link.href = `/${author.screenName}`;
     }
 }
 
@@ -63,23 +63,23 @@ export function updateTweetTopButtonArea(headerMeta: Element, author: TweetAutho
     // 更新昵称（大号）区域
     const screenNameLink = headerMeta.querySelector('.display-name-link') as HTMLAnchorElement;
     if (screenNameLink) {
-        screenNameLink.href = `/${author.legacy.screenName}`;
+        screenNameLink.href = `/${author.screenName}`;
         const nameSpan = screenNameLink.querySelector('.tweet-author');
-        if (nameSpan) nameSpan.textContent = author.legacy.displayName;
+        if (nameSpan) nameSpan.textContent = author.displayName;
     }
 
     // 更新小号 (@xxx)
     const userNameLink = headerMeta.querySelector('.user-name-link') as HTMLAnchorElement;
     if (userNameLink) {
-        userNameLink.href = `/${author.legacy.screenName}`;
+        userNameLink.href = `/${author.screenName}`;
         const screenNameSpan = userNameLink.querySelector('.tweet-username');
-        if (screenNameSpan) screenNameSpan.textContent = `@${author.legacy.screenName}`;
+        if (screenNameSpan) screenNameSpan.textContent = `@${author.screenName}`;
     }
 
     // 更新时间
     const timeLink = headerMeta.querySelector('.tweet-time-link') as HTMLAnchorElement;
     if (timeLink) {
-        timeLink.href = `/${author.legacy.screenName}/status/${tweetId}`;
+        timeLink.href = `/${author.screenName}/status/${tweetId}`;
         const date = new Date(createdAt);
         const timeElement = timeLink.querySelector('.tweet-time');
         if (timeElement) {
@@ -207,9 +207,9 @@ export function insertRepostedBanner(
     const container = banner.querySelector(".tweet-topmargin-container") as HTMLElement;
     container.style.display = 'block';
     const a = banner.querySelector('a.retweet-link') as HTMLAnchorElement | null;
-    if (a) a.href = `/${author.legacy.screenName}`;
+    if (a) a.href = `/${author.screenName}`;
     const disp = banner.querySelector('.retweeter-name');
-    if (disp) disp.textContent = author.legacy.displayName;
+    if (disp) disp.textContent = author.displayName;
 }
 
 export function updateTweetMediaArea(
