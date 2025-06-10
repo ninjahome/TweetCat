@@ -56,7 +56,13 @@ async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate:
     const validTweets = await fetchTweets('1551261351347109888', 20); // 1899045104146644992 // 1551261351347109888
     const tweetNodes: HTMLElement[] = [];
 
+    let count = 0;
+
     for (const entry of validTweets.tweets) {
+        count++;
+        if (count>4){
+            break;
+        }
         const tweetNode = renderTweetHTML(entry, contentTemplate);
         tweetCatArea.appendChild(tweetNode);
         tweetNodes.push(tweetNode);
