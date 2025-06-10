@@ -10,9 +10,6 @@ class HlsManager {
 
     constructor() {
         this.hls = new Hls({
-            // startLevel: 0,
-            // maxBufferLength: 10,
-            // maxBufferSize: 30 * 1000 * 1000,
         });
     }
 
