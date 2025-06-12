@@ -60,7 +60,7 @@ async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate:
 
     for (const entry of validTweets.tweets) {
         count++;
-        if (count>4){
+        if (count>8){
             break;
         }
         const tweetNode = renderTweetHTML(entry, contentTemplate);

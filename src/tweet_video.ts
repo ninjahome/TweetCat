@@ -1,40 +1,11 @@
 import {TweetMediaEntity} from "./object_tweet";
 import Hls from 'hls.js';
 
-const videoControllers = new WeakMap<HTMLVideoElement, { observer: IntersectionObserver }>();
+const videoControllers = new WeakMap<HTMLVideoElement, {
+    observer: IntersectionObserver,
+    hls: Hls | null
+}>();
 let currentPlaying: HTMLVideoElement | null = null;
-
-class HlsManager {
-    private hls: Hls;
-    private currentVideo: HTMLVideoElement | null = null;
-
-    constructor() {
-        this.hls = new Hls({
-        });
-    }
-
-    async play(video: HTMLVideoElement, src: string) {
-        if (this.currentVideo === video) return;
-        this.hls.detachMedia();
-        this.hls.loadSource(src);
-        this.hls.attachMedia(video);
-        this.currentVideo = video;
-    }
-
-    pause(video: HTMLVideoElement) {
-        if (this.currentVideo === video) {
-            video.pause();
-            this.hls.detachMedia();
-            this.currentVideo = null;
-        }
-    }
-
-    destroy() {
-        this.hls.destroy();
-    }
-}
-
-const globalHlsManager = new HlsManager();
 
 function updateDurationBadge(video: HTMLVideoElement, badge: HTMLElement, totalSeconds: number) {
     let lastShown = -1;
@@ -50,35 +21,57 @@ function updateDurationBadge(video: HTMLVideoElement, badge: HTMLElement, totalS
     });
 }
 
-function setupTwitterStyleVideo(video: HTMLVideoElement, hlsSource?: string, mp4?: {
-    url: string;
-    content_type: string
-}, durationMillis?: number, badge?: HTMLElement | null) {
-    video.preload = 'metadata';
+function setupTwitterStyleVideo(
+    video: HTMLVideoElement,
+    hlsSource?: string,
+    mp4Variants?: { url: string; content_type: string; bitrate?: number }[],
+    durationMillis?: number,
+    badge?: HTMLElement | null
+) {
+    video.preload = 'auto';
     video.muted = true;
-    video.autoplay = false;
     video.playsInline = true;
     video.controls = true;
 
+    let hls: Hls | null = null;
+
     if (hlsSource && Hls.isSupported()) {
-        globalHlsManager.play(video, hlsSource)
+        hls = new Hls({
+            maxMaxBufferLength: 60,
+            backBufferLength: 90,
+            enableWorker: true,
+            lowLatencyMode: true
+        });
+        hls.loadSource(hlsSource);
+        hls.attachMedia(video);
     } else if (hlsSource && video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = hlsSource;
         video.load();
-    } else if (mp4) {
-        const src = document.createElement("source");
-        src.src = mp4.url;
-        src.type = mp4.content_type;
-        video.appendChild(src);
+    } else if (mp4Variants && mp4Variants.length > 0) {
+        mp4Variants
+            .filter(v => v.content_type === 'video/mp4')
+            .forEach(variant => {
+                const src = document.createElement("source");
+                src.src = variant.url;
+                src.type = variant.content_type;
+                video.appendChild(src);
+            });
+        video.load();
     }
+
+    video.addEventListener('click', () => {
+        if (video.paused) {
+            video.play().catch(() => {
+            });
+        } else {
+            video.pause();
+        }
+    });
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const targetVideo = entry.target as HTMLVideoElement;
             if (entry.isIntersecting) {
-                if (hlsSource && Hls.isSupported()) {
-                    globalHlsManager.play(targetVideo, hlsSource);
-                }
                 if (currentPlaying && currentPlaying !== targetVideo) {
                     currentPlaying.pause();
                 }
@@ -86,17 +79,13 @@ function setupTwitterStyleVideo(video: HTMLVideoElement, hlsSource?: string, mp4
                 });
                 currentPlaying = targetVideo;
             } else {
-                if (targetVideo !== currentPlaying) {
-                    targetVideo.pause();
-                } else if (hlsSource && Hls.isSupported()) {
-                    globalHlsManager.pause(targetVideo);
-                }
+                targetVideo.pause();
             }
         });
-    }, {threshold: 0.5});
+    }, {threshold: 0.75});
 
     observer.observe(video);
-    videoControllers.set(video, {observer});
+    videoControllers.set(video, {observer, hls});
 
     if (badge && durationMillis != null) {
         const totalSeconds = Math.floor(durationMillis / 1000);
@@ -118,10 +107,10 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
     video.poster = m.media_url_https || '';
 
     const hlsSource = m.video_info?.variants.find(v => v.content_type === "application/x-mpegURL")?.url;
-    const mp4 = pickBestMp4(m);
+    const mp4Variants = m.video_info?.variants.filter(v => v.content_type === 'video/mp4');
     const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
 
-    setupTwitterStyleVideo(video, hlsSource, mp4, m.video_info?.duration_millis, badge);
+    setupTwitterStyleVideo(video, hlsSource, mp4Variants, m.video_info?.duration_millis, badge);
 
     return wrapper;
 }
@@ -130,13 +119,8 @@ export function cleanupVideo(video: HTMLVideoElement) {
     const controller = videoControllers.get(video);
     if (!controller) return;
     controller.observer.disconnect();
+    controller.hls?.destroy();
     videoControllers.delete(video);
-}
-
-function pickBestMp4(m: TweetMediaEntity) {
-    return m.video_info?.variants
-        ?.filter(v => v.content_type === 'video/mp4')
-        .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0))[0];
 }
 
 function msToClock(ms: number): string {
