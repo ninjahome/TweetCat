@@ -3,7 +3,8 @@ import Hls from 'hls.js';
 
 const videoControllers = new WeakMap<HTMLVideoElement, {
     observer: IntersectionObserver,
-    hls: Hls | null
+    hls: Hls | null,
+    hasStarted: boolean
 }>();
 let currentPlaying: HTMLVideoElement | null = null;
 
@@ -28,36 +29,13 @@ function setupTwitterStyleVideo(
     durationMillis?: number,
     badge?: HTMLElement | null
 ) {
-    video.preload = 'auto';
+    video.preload = 'none'; // 懒加载
     video.muted = true;
     video.playsInline = true;
     video.controls = true;
 
     let hls: Hls | null = null;
-
-    if (hlsSource && Hls.isSupported()) {
-        hls = new Hls({
-            maxMaxBufferLength: 60,
-            backBufferLength: 90,
-            enableWorker: true,
-            lowLatencyMode: true
-        });
-        hls.loadSource(hlsSource);
-        hls.attachMedia(video);
-    } else if (hlsSource && video.canPlayType("application/vnd.apple.mpegurl")) {
-        video.src = hlsSource;
-        video.load();
-    } else if (mp4Variants && mp4Variants.length > 0) {
-        mp4Variants
-            .filter(v => v.content_type === 'video/mp4')
-            .forEach(variant => {
-                const src = document.createElement("source");
-                src.src = variant.url;
-                src.type = variant.content_type;
-                video.appendChild(src);
-            });
-        video.load();
-    }
+    let hasStarted = false;
 
     video.addEventListener('click', () => {
         if (video.paused) {
@@ -71,7 +49,37 @@ function setupTwitterStyleVideo(
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const targetVideo = entry.target as HTMLVideoElement;
+            const controller = videoControllers.get(targetVideo);
+
             if (entry.isIntersecting) {
+                // 首次进入视图才开始加载并播放
+                if (controller && !controller.hasStarted) {
+                    if (hlsSource && Hls.isSupported()) {
+                        hls = new Hls({
+                            maxMaxBufferLength: 60,
+                            backBufferLength: 90,
+                            enableWorker: true,
+                            lowLatencyMode: true
+                        });
+                        hls.loadSource(hlsSource);
+                        hls.attachMedia(targetVideo);
+                        controller.hls = hls;
+                    } else if (hlsSource && targetVideo.canPlayType("application/vnd.apple.mpegurl")) {
+                        targetVideo.src = hlsSource;
+                    } else if (mp4Variants && mp4Variants.length > 0) {
+                        mp4Variants
+                            .filter(v => v.content_type === 'video/mp4')
+                            .forEach(variant => {
+                                const src = document.createElement("source");
+                                src.src = variant.url;
+                                src.type = variant.content_type;
+                                targetVideo.appendChild(src);
+                            });
+                    }
+                    targetVideo.load();
+                    controller.hasStarted = true;
+                }
+
                 if (currentPlaying && currentPlaying !== targetVideo) {
                     currentPlaying.pause();
                 }
@@ -80,12 +88,19 @@ function setupTwitterStyleVideo(
                 currentPlaying = targetVideo;
             } else {
                 targetVideo.pause();
+
+                if (controller?.hls) {
+                    controller.hls.destroy();
+                    controller.hls = null;
+                    controller.hasStarted = false;
+                    targetVideo.innerHTML = '';
+                }
             }
         });
     }, {threshold: 0.75});
 
     observer.observe(video);
-    videoControllers.set(video, {observer, hls});
+    videoControllers.set(video, {observer, hls, hasStarted});
 
     if (badge && durationMillis != null) {
         const totalSeconds = Math.floor(durationMillis / 1000);
