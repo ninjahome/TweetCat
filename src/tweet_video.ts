@@ -57,6 +57,7 @@ function attachVideoSources(video: HTMLVideoElement, hlsSource?: string, mp4Vari
     return hls;
 }
 
+
 function handleIntersection(entries: IntersectionObserverEntry[], hlsSource?: string, mp4Variants?: {
     url: string;
     content_type: string;
@@ -70,46 +71,29 @@ function handleIntersection(entries: IntersectionObserverEntry[], hlsSource?: st
 
     if (!controller) return;
 
-    const needsReload = targetVideo.readyState === 0 || targetVideo.networkState === HTMLMediaElement.NETWORK_EMPTY;
-
     if (entry.isIntersecting) {
-        if (!controller.hasStarted || needsReload) {
+        if (!controller.hasStarted) {
             const hls = attachVideoSources(targetVideo, hlsSource, mp4Variants);
             controller.hls = hls;
             controller.hasStarted = true;
-
-            const resumeTime = controller.lastTime;
-
-            const onLoaded = () => {
-                targetVideo.removeEventListener('loadedmetadata', onLoaded);
-                if (resumeTime > 0) {
-                    targetVideo.currentTime = resumeTime;
-                }
-                controller.hls?.startLoad();
-                targetVideo.play().catch(() => {
-                });
-            };
-
-            if (targetVideo.readyState >= 1) {
-                if (resumeTime > 0) {
-                    targetVideo.currentTime = resumeTime;
-                }
-                targetVideo.play().catch(() => {
-                });
-            } else {
-                targetVideo.addEventListener('loadedmetadata', onLoaded);
-            }
-        } else {
-            if (currentPlaying && currentPlaying !== targetVideo) {
-                currentPlaying.pause();
-            }
-            targetVideo.play().catch(() => {
-            });
         }
+
+        if (currentPlaying && currentPlaying !== targetVideo) {
+            currentPlaying.pause();
+        }
+
+        controller.hls?.startLoad();
+        targetVideo.play().catch(() => {
+        });
+
+        if (currentPlaying && currentPlaying !== targetVideo) {
+            currentPlaying.pause();
+        }
+        targetVideo.play().catch(() => {
+        });
 
         currentPlaying = targetVideo;
     } else {
-        controller.lastTime = targetVideo.currentTime;
         targetVideo.pause();
         // 不销毁 hls，但暂停加载视频数据以减少资源浪费
         controller.hls?.stopLoad();
