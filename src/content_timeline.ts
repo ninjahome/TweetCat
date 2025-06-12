@@ -26,6 +26,8 @@ export function appendTweetCatMenuItem() {
                 elm.addEventListener('click', () => {
                     tweetCatArea.style.display = 'none';
                     originalTweetArea.style.display = 'block';
+                    const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;
+                    tweetCatTimeLine.innerHTML = '';
                 });
             });
 
@@ -35,7 +37,6 @@ export function appendTweetCatMenuItem() {
                 tweetCatArea.style.display = 'block';
                 history.replaceState({id: 123}, '', '/#/' + selfDefineUrl);
                 const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;
-                tweetCatTimeLine.innerHTML = '';
                 fillTweetAreaByTweets(tweetCatTimeLine, contentTemplate).then();
             }
 

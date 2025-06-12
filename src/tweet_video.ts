@@ -4,7 +4,8 @@ import Hls from 'hls.js';
 const videoControllers = new WeakMap<HTMLVideoElement, {
     observer: IntersectionObserver,
     hls: Hls | null,
-    hasStarted: boolean
+    hasStarted: boolean,
+    lastTime: number
 }>();
 let currentPlaying: HTMLVideoElement | null = null;
 
@@ -30,16 +31,20 @@ function attachVideoSources(video: HTMLVideoElement, hlsSource?: string, mp4Vari
     let hls: Hls | null = null;
     if (hlsSource && Hls.isSupported()) {
         hls = new Hls({
-            maxMaxBufferLength: 60,
-            backBufferLength: 90,
             enableWorker: true,
-            lowLatencyMode: true
+            lowLatencyMode: true,
+            backBufferLength: 30,
+            maxBufferLength: 20,
+            maxMaxBufferLength: 30,
+            maxBufferSize: 10 * 1024 * 1024,
+            maxBufferHole: 0.5,
+            startPosition: -1
         });
         hls.loadSource(hlsSource);
         hls.attachMedia(video);
     } else if (hlsSource && video.canPlayType("application/vnd.apple.mpegurl")) {
         video.src = hlsSource;
-    } else if (mp4Variants && mp4Variants.length > 0) {
+    } else if (mp4Variants && mp4Variants.length > 0 && video.children.length === 0) {
         mp4Variants
             .filter(v => v.content_type === 'video/mp4')
             .forEach(variant => {
@@ -52,40 +57,63 @@ function attachVideoSources(video: HTMLVideoElement, hlsSource?: string, mp4Vari
     return hls;
 }
 
-function createVideoObserver(
-    hlsSource?: string,
-    mp4Variants?: { url: string; content_type: string; bitrate?: number }[]
-): IntersectionObserver {
-    return new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const targetVideo = entry.target as HTMLVideoElement;
-            const controller = videoControllers.get(targetVideo);
+function handleIntersection(entries: IntersectionObserverEntry[], hlsSource?: string, mp4Variants?: {
+    url: string;
+    content_type: string;
+    bitrate?: number
+}[]) {
+    if (entries.length === 0 || entries.length > 2) return;
+    const entry = entries[0];
 
-            if (entry.isIntersecting) {
-                if (controller && !controller.hasStarted) {
-                    const hls = attachVideoSources(targetVideo, hlsSource, mp4Variants);
-                    targetVideo.load();
-                    controller.hls = hls;
-                    controller.hasStarted = true;
+    const targetVideo = entry.target as HTMLVideoElement;
+    const controller = videoControllers.get(targetVideo);
+
+    if (!controller) return;
+
+    const needsReload = targetVideo.readyState === 0 || targetVideo.networkState === HTMLMediaElement.NETWORK_EMPTY;
+
+    if (entry.isIntersecting) {
+        if (!controller.hasStarted || needsReload) {
+            const hls = attachVideoSources(targetVideo, hlsSource, mp4Variants);
+            controller.hls = hls;
+            controller.hasStarted = true;
+
+            const resumeTime = controller.lastTime;
+
+            const onLoaded = () => {
+                targetVideo.removeEventListener('loadedmetadata', onLoaded);
+                if (resumeTime > 0) {
+                    targetVideo.currentTime = resumeTime;
                 }
+                controller.hls?.startLoad();
+                targetVideo.play().catch(() => {
+                });
+            };
 
-                if (currentPlaying && currentPlaying !== targetVideo) {
-                    currentPlaying.pause();
+            if (targetVideo.readyState >= 1) {
+                if (resumeTime > 0) {
+                    targetVideo.currentTime = resumeTime;
                 }
                 targetVideo.play().catch(() => {
                 });
-                currentPlaying = targetVideo;
             } else {
-                targetVideo.pause();
-                if (controller?.hls) {
-                    controller.hls.destroy();
-                    controller.hls = null;
-                    controller.hasStarted = false;
-                    targetVideo.innerHTML = '';
-                }
+                targetVideo.addEventListener('loadedmetadata', onLoaded);
             }
-        });
-    }, {threshold: 0.6});
+        } else {
+            if (currentPlaying && currentPlaying !== targetVideo) {
+                currentPlaying.pause();
+            }
+            targetVideo.play().catch(() => {
+            });
+        }
+
+        currentPlaying = targetVideo;
+    } else {
+        controller.lastTime = targetVideo.currentTime;
+        targetVideo.pause();
+        // 不销毁 hls，但暂停加载视频数据以减少资源浪费
+        controller.hls?.stopLoad();
+    }
 }
 
 function setupTwitterStyleVideo(
@@ -100,18 +128,12 @@ function setupTwitterStyleVideo(
     video.playsInline = true;
     video.controls = true;
 
-    video.addEventListener('click', () => {
-        if (video.paused) {
-            video.play().catch(() => {
-            });
-        } else {
-            video.pause();
-        }
-    });
+    const observer = new IntersectionObserver((entries) => {
+        handleIntersection(entries, hlsSource, mp4Variants);
+    }, {threshold: 0.6});
 
-    const observer = createVideoObserver(hlsSource, mp4Variants);
     observer.observe(video);
-    videoControllers.set(video, {observer, hls: null, hasStarted: false});
+    videoControllers.set(video, {observer, hls: null, hasStarted: false, lastTime: 0});
 
     if (badge && durationMillis != null) {
         const totalSeconds = Math.floor(durationMillis / 1000);
@@ -144,8 +166,15 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
 export function cleanupVideo(video: HTMLVideoElement) {
     const controller = videoControllers.get(video);
     if (!controller) return;
+
     controller.observer.disconnect();
+
+    video.pause();
     controller.hls?.destroy();
+
+    video.removeAttribute('src');
+    video.innerHTML = '';
+
     videoControllers.delete(video);
 }
 
