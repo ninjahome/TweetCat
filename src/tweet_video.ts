@@ -22,61 +22,50 @@ function updateDurationBadge(video: HTMLVideoElement, badge: HTMLElement, totalS
     });
 }
 
-function setupTwitterStyleVideo(
-    video: HTMLVideoElement,
-    hlsSource?: string,
-    mp4Variants?: { url: string; content_type: string; bitrate?: number }[],
-    durationMillis?: number,
-    badge?: HTMLElement | null
-) {
-    video.preload = 'none'; // 懒加载
-    video.muted = true;
-    video.playsInline = true;
-    video.controls = true;
-
+function attachVideoSources(video: HTMLVideoElement, hlsSource?: string, mp4Variants?: {
+    url: string;
+    content_type: string;
+    bitrate?: number
+}[]): Hls | null {
     let hls: Hls | null = null;
-    let hasStarted = false;
-
-    video.addEventListener('click', () => {
-        if (video.paused) {
-            video.play().catch(() => {
+    if (hlsSource && Hls.isSupported()) {
+        hls = new Hls({
+            maxMaxBufferLength: 60,
+            backBufferLength: 90,
+            enableWorker: true,
+            lowLatencyMode: true
+        });
+        hls.loadSource(hlsSource);
+        hls.attachMedia(video);
+    } else if (hlsSource && video.canPlayType("application/vnd.apple.mpegurl")) {
+        video.src = hlsSource;
+    } else if (mp4Variants && mp4Variants.length > 0) {
+        mp4Variants
+            .filter(v => v.content_type === 'video/mp4')
+            .forEach(variant => {
+                const src = document.createElement("source");
+                src.src = variant.url;
+                src.type = variant.content_type;
+                video.appendChild(src);
             });
-        } else {
-            video.pause();
-        }
-    });
+    }
+    return hls;
+}
 
-    const observer = new IntersectionObserver((entries) => {
+function createVideoObserver(
+    hlsSource?: string,
+    mp4Variants?: { url: string; content_type: string; bitrate?: number }[]
+): IntersectionObserver {
+    return new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             const targetVideo = entry.target as HTMLVideoElement;
             const controller = videoControllers.get(targetVideo);
 
             if (entry.isIntersecting) {
-                // 首次进入视图才开始加载并播放
                 if (controller && !controller.hasStarted) {
-                    if (hlsSource && Hls.isSupported()) {
-                        hls = new Hls({
-                            maxMaxBufferLength: 60,
-                            backBufferLength: 90,
-                            enableWorker: true,
-                            lowLatencyMode: true
-                        });
-                        hls.loadSource(hlsSource);
-                        hls.attachMedia(targetVideo);
-                        controller.hls = hls;
-                    } else if (hlsSource && targetVideo.canPlayType("application/vnd.apple.mpegurl")) {
-                        targetVideo.src = hlsSource;
-                    } else if (mp4Variants && mp4Variants.length > 0) {
-                        mp4Variants
-                            .filter(v => v.content_type === 'video/mp4')
-                            .forEach(variant => {
-                                const src = document.createElement("source");
-                                src.src = variant.url;
-                                src.type = variant.content_type;
-                                targetVideo.appendChild(src);
-                            });
-                    }
+                    const hls = attachVideoSources(targetVideo, hlsSource, mp4Variants);
                     targetVideo.load();
+                    controller.hls = hls;
                     controller.hasStarted = true;
                 }
 
@@ -88,7 +77,6 @@ function setupTwitterStyleVideo(
                 currentPlaying = targetVideo;
             } else {
                 targetVideo.pause();
-
                 if (controller?.hls) {
                     controller.hls.destroy();
                     controller.hls = null;
@@ -97,10 +85,33 @@ function setupTwitterStyleVideo(
                 }
             }
         });
-    }, {threshold: 0.75});
+    }, {threshold: 0.6});
+}
 
+function setupTwitterStyleVideo(
+    video: HTMLVideoElement,
+    hlsSource?: string,
+    mp4Variants?: { url: string; content_type: string; bitrate?: number }[],
+    durationMillis?: number,
+    badge?: HTMLElement | null
+) {
+    video.preload = 'none';
+    video.muted = true;
+    video.playsInline = true;
+    video.controls = true;
+
+    video.addEventListener('click', () => {
+        if (video.paused) {
+            video.play().catch(() => {
+            });
+        } else {
+            video.pause();
+        }
+    });
+
+    const observer = createVideoObserver(hlsSource, mp4Variants);
     observer.observe(video);
-    videoControllers.set(video, {observer, hls, hasStarted});
+    videoControllers.set(video, {observer, hls: null, hasStarted: false});
 
     if (badge && durationMillis != null) {
         const totalSeconds = Math.floor(durationMillis / 1000);
