@@ -136,13 +136,28 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
     wrapper.removeAttribute('id');
 
     const video = wrapper.querySelector('video') as HTMLVideoElement;
-    video.poster = m.media_url_https || '';
 
     const hlsSource = m.video_info?.variants.find(v => v.content_type === "application/x-mpegURL")?.url;
     const mp4Variants = m.video_info?.variants.filter(v => v.content_type === 'video/mp4');
+    const source = video.querySelector('source') as HTMLSourceElement | null;
     const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
 
-    setupTwitterStyleVideo(video, hlsSource, mp4Variants, m.video_info?.duration_millis, badge);
+    // setupTwitterStyleVideo(video, hlsSource, mp4Variants, m.video_info?.duration_millis, badge);
+
+    console.log("----->>> mp4 data: ", mp4Variants);
+
+    if (source && mp4Variants && mp4Variants.length > 0) {
+        const bestVariant = mp4Variants.sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0))[0];
+        source.src = bestVariant.url;
+        source.type = bestVariant.content_type;
+    }
+
+    video.poster = m.media_url_https || '';
+    video.autoplay = false;
+    video.controls = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
 
     return wrapper;
 }
