@@ -5,7 +5,7 @@ import {queryCategoriesFromBG, queryCategoryById} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 import {TweetKol} from "./object_TweetKol";
 import {Category} from "./object_Category";
-import {getUserIdByUsername} from "./content_tweet_api";
+import {getUserIdByUsername} from "./tweet_api";
 
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;

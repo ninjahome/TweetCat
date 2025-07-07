@@ -1,6 +1,6 @@
 import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
-import {fetchTweets} from "./content_tweet_api";
+import {fetchTweets, testTweetApi} from "./tweet_api";
 import {renderTweetHTML} from "./tweet_render";
 
 const selfDefineUrl = 'tweetCatTimeLine';
@@ -54,7 +54,8 @@ export function switchToTweetCatTimeLine() {
 }
 
 async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate: HTMLTemplateElement) {
-    const validTweets = await fetchTweets('1551261351347109888', 20); // 1899045104146644992 // 1551261351347109888
+    // testTweetApi('ShouldHaveAnima');
+    const validTweets = await fetchTweets('1315345422123180033', 20);//1315345422123180033 // 1899045104146644992 // 1551261351347109888
     const tweetNodes: HTMLElement[] = [];
 
     let count = 0;

@@ -6,7 +6,7 @@ import {isAdTweetNode, sendMsgToService} from "./utils";
 import {localGet} from "./local_storage";
 import {TweetKol} from "./object_TweetKol";
 import {Category} from "./object_Category";
-import {getUserIdByUsername} from "./content_tweet_api";
+import {getUserIdByUsername} from "./tweet_api";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;

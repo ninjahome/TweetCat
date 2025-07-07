@@ -68,7 +68,8 @@ async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): 
         "longform_notetweets_rich_text_read_enabled": true,
         "longform_notetweets_inline_media_enabled": true,
         "responsive_web_grok_image_annotation_enabled": true,
-        "responsive_web_enhance_cards_enabled": false
+        "responsive_web_enhance_cards_enabled": false,
+        "payments_enabled": false
     }));
 
     const fieldToggles = encodeURIComponent(JSON.stringify({
@@ -132,10 +133,11 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
     };
 
     const features = {
+        responsive_web_grok_bio_auto_translation_is_enabled: false,
         hidden_profile_subscriptions_enabled: true,
+        payments_enabled: false,
         profile_label_improvements_pcf_label_in_post_enabled: true,
         rweb_tipjar_consumption_enabled: true,
-        responsive_web_graphql_exclude_directive_enabled: true,
         verified_phone_label_enabled: false,
         subscriptions_verification_info_is_identity_verified_enabled: true,
         subscriptions_verification_info_verified_since_enabled: true,
@@ -144,7 +146,7 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
         subscriptions_feature_can_gift_premium: true,
         creator_subscriptions_tweet_preview_api_enabled: true,
         responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        responsive_web_graphql_timeline_navigation_enabled: true,
+        responsive_web_graphql_timeline_navigation_enabled: true
     };
 
     const fieldToggles = {
