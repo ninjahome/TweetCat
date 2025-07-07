@@ -128,40 +128,6 @@ function setupTwitterStyleVideo(
     }
 }
 
-export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
-    const wrapper = tpl.content
-        .getElementById('media-video-template')!
-        .cloneNode(true) as HTMLElement;
-
-    wrapper.removeAttribute('id');
-
-    const video = wrapper.querySelector('video') as HTMLVideoElement;
-
-    const hlsSource = m.video_info?.variants.find(v => v.content_type === "application/x-mpegURL")?.url;
-    const mp4Variants = m.video_info?.variants.filter(v => v.content_type === 'video/mp4');
-    const source = video.querySelector('source') as HTMLSourceElement | null;
-    const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
-
-    // setupTwitterStyleVideo(video, hlsSource, mp4Variants, m.video_info?.duration_millis, badge);
-
-    console.log("----->>> mp4 data: ", mp4Variants);
-
-    if (source && mp4Variants && mp4Variants.length > 0) {
-        const bestVariant = mp4Variants.sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0))[0];
-        source.src = bestVariant.url;
-        source.type = bestVariant.content_type;
-    }
-
-    video.poster = m.media_url_https || '';
-    video.autoplay = false;
-    video.controls = true;
-    video.muted = true;
-    video.playsInline = true;
-    video.preload = 'metadata';
-
-    return wrapper;
-}
-
 export function cleanupVideo(video: HTMLVideoElement) {
     const controller = videoControllers.get(video);
     if (!controller) return;
@@ -189,4 +155,94 @@ function msToClock(ms: number): string {
     return hours > 0
         ? `${hours}:${pad(minutes)}:${pad(seconds)}`
         : `${minutes}:${pad(seconds)}`;
+}
+
+export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
+    const wrapper = tpl.content
+        .getElementById('media-video-template')!
+        .cloneNode(true) as HTMLElement;
+
+    wrapper.removeAttribute('id');
+
+    const video = wrapper.querySelector('video') as HTMLVideoElement;
+    const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
+
+    const bestVariant = selectBestVideoVariant(m.video_info?.variants ?? []);
+    if (bestVariant) {
+        console.log("Selected best video:", bestVariant);
+        safeSetVideoSource(video, bestVariant.url, bestVariant.content_type);
+    }
+
+    return wrapper;
+}
+
+function selectBestVideoVariant(
+    variants: {
+        bitrate?: number;
+        content_type: string;
+        url: string;
+    }[]
+): { url: string; content_type: string } | null {
+    const hls = variants.find(v => v.content_type === 'application/x-mpegURL');
+    if (hls && typeof Hls !== 'undefined' && Hls.isSupported()) {
+        return {url: hls.url, content_type: hls.content_type};
+    }
+
+    const sortedMp4 = variants
+        .filter(v => v.content_type === 'video/mp4')
+        .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0));
+
+    let downlink = 5;
+    try {
+        const nav = navigator as any;
+        downlink = nav.connection?.downlink ?? 5;
+    } catch {
+    }
+
+    const isSlow = downlink < 1.5;
+    const selected = isSlow ? sortedMp4.at(-1) : sortedMp4[1] ?? sortedMp4[0];
+
+    return selected ? {url: selected.url, content_type: selected.content_type} : null;
+}
+
+
+function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) {
+    if (type === 'application/x-mpegURL' && typeof Hls !== 'undefined' && Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+
+        video.muted = true;
+        video.autoplay = true;
+        video.controls = true;
+        video.playsInline = true;
+
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch(err => {
+                console.warn("HLS autoplay failed:", err);
+            });
+        });
+
+        return;
+    }
+
+    // MP4 fallback
+    video.innerHTML = '';
+
+    const source = document.createElement('source');
+    source.src = url;
+    source.type = type;
+
+    video.appendChild(source);
+
+    video.preload = 'metadata';
+    video.autoplay = true;
+    video.controls = true;
+    video.muted = true;
+    video.playsInline = true;
+
+    video.load();
+    video.play().catch(err => {
+        console.warn("MP4 autoplay failed:", err);
+    });
 }
