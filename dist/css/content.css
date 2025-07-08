@@ -199,6 +199,7 @@ img, video {
     position: relative;
     text-decoration: none;
     z-index: 0;
+    overflow: auto;
 }
 
 .tweet-card {

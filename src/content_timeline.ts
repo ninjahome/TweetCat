@@ -27,9 +27,39 @@ function showOriginalTweetArea(originalTweetArea: HTMLElement) {
     originalTweetArea.style.visibility = '';
 }
 
+
+function setupTweetCatUI(menuList: HTMLElement, contentTemplate: HTMLTemplateElement) {
+    const tweetCatMenuItem = contentTemplate.content.getElementById("tweetCatMenuItem")!.cloneNode(true) as HTMLElement;
+    const tweetCatArea = contentTemplate.content.getElementById("tweetCatArea")!.cloneNode(true) as HTMLElement;
+
+    const mainArea = document.querySelector('main[role="main"]') as HTMLElement;
+    const originalTweetArea = mainArea.firstChild as HTMLElement;
+
+    menuList.querySelectorAll("a").forEach(elm => {
+        elm.addEventListener('click', () => {
+            tweetCatArea.style.display = 'none';
+            showOriginalTweetArea(originalTweetArea);
+            const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;
+            tweetCatTimeLine.innerHTML = '';
+            tweetCatTimeLine.style.removeProperty('height');
+        });
+    });
+
+    tweetCatMenuItem.onclick = (ev) => {
+        ev.preventDefault();
+        hideOriginalTweetArea(originalTweetArea);
+        tweetCatArea.style.display = 'block';
+        history.replaceState({id: 123}, '', '/#/' + selfDefineUrl);
+        const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;
+        fillTweetAreaByTweets(tweetCatTimeLine, contentTemplate).then();
+    }
+
+    menuList.insertBefore(tweetCatMenuItem, menuList.children[1]);
+    mainArea.insertBefore(tweetCatArea, originalTweetArea);
+}
+
 export function appendTweetCatMenuItem() {
     const header = document.querySelector('header[role="banner"]') as HTMLElement;
-    console.log("---------------------->>>header area:", header);
     observeSimple(document.body, () => {
         return document.querySelector('header nav[role="navigation"]') as HTMLElement;
     }, (menuList) => {
@@ -38,33 +68,7 @@ export function appendTweetCatMenuItem() {
         }
 
         parseContentHtml('html/content.html').then(contentTemplate => {
-            const tweetCatMenuItem = contentTemplate.content.getElementById("tweetCatMenuItem")!.cloneNode(true) as HTMLElement;
-            const tweetCatArea = contentTemplate.content.getElementById("tweetCatArea")!.cloneNode(true) as HTMLElement;
-
-            const mainArea = document.querySelector('main[role="main"]') as HTMLElement;
-            const originalTweetArea = mainArea.firstChild as HTMLElement;
-
-            menuList.querySelectorAll("a").forEach(elm => {
-                elm.addEventListener('click', () => {
-                    tweetCatArea.style.display = 'none';
-                    showOriginalTweetArea(originalTweetArea);
-                    const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;
-                    tweetCatTimeLine.innerHTML = '';
-                    tweetCatTimeLine.style.removeProperty('height');
-                });
-            });
-
-            tweetCatMenuItem.onclick = (ev) => {
-                ev.preventDefault();
-                hideOriginalTweetArea(originalTweetArea);
-                tweetCatArea.style.display = 'block';
-                history.replaceState({id: 123}, '', '/#/' + selfDefineUrl);
-                const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;
-                fillTweetAreaByTweets(tweetCatTimeLine, contentTemplate).then();
-            }
-
-            menuList.insertBefore(tweetCatMenuItem, menuList.children[1]);
-            mainArea.insertBefore(tweetCatArea, originalTweetArea);
+            setupTweetCatUI(menuList, contentTemplate);
         });
 
         return true;
