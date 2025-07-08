@@ -543,10 +543,12 @@ span.duration-badge {
     max-height: 590px;
     overflow: hidden;
     position: relative;
+    background-color: black;
+    border-radius: 16px;
 }
 
 .video-wrapper video {
-    width: auto;
+    width: 100%;
     height: 100%;
     object-fit: contain;
     display: block;
