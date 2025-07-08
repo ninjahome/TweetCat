@@ -61,6 +61,8 @@ function filterTweets(nodes: NodeList) {
             // console.log("------>>> is home page:", window.location.href);
             return;
         }
+        console.log("------>>> new tweet div found:");
+
         if (__blockAdStatus && isAdTweetNode(divNode)) {
             // console.log("------->>> need to block Ads");
             console.log("------>>> found ads and block it", divNode.dataset.testid);

@@ -5,6 +5,26 @@ import {renderTweetHTML} from "./tweet_render";
 
 const selfDefineUrl = 'tweetCatTimeLine';
 
+
+function hideOriginalTweetArea(originalTweetArea:HTMLElement) {
+    originalTweetArea.style.position = 'absolute';
+    originalTweetArea.style.top = '-9999px';
+    originalTweetArea.style.left = '-9999px';
+    originalTweetArea.style.width = '1px';
+    originalTweetArea.style.height = '1px';
+    originalTweetArea.style.overflow = 'hidden';
+}
+
+function showOriginalTweetArea(originalTweetArea:HTMLElement) {
+    originalTweetArea.style.position = '';
+    originalTweetArea.style.top = '';
+    originalTweetArea.style.left = '';
+    originalTweetArea.style.width = '';
+    originalTweetArea.style.height = '';
+    originalTweetArea.style.overflow = '';
+}
+
+
 export function appendTweetCatMenuItem() {
     const header = document.querySelector('header[role="banner"]') as HTMLElement;
     console.log("---------------------->>>header area:", header);
@@ -25,7 +45,7 @@ export function appendTweetCatMenuItem() {
             menuList.querySelectorAll("a").forEach(elm => {
                 elm.addEventListener('click', () => {
                     tweetCatArea.style.display = 'none';
-                    originalTweetArea.style.display = 'block';
+                    showOriginalTweetArea(originalTweetArea);
                     const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;
                     tweetCatTimeLine.innerHTML = '';
                 });
@@ -33,7 +53,7 @@ export function appendTweetCatMenuItem() {
 
             tweetCatMenuItem.onclick = (ev) => {
                 ev.preventDefault();
-                originalTweetArea.style.display = 'none';
+                hideOriginalTweetArea(originalTweetArea);
                 tweetCatArea.style.display = 'block';
                 history.replaceState({id: 123}, '', '/#/' + selfDefineUrl);
                 const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;

@@ -84,8 +84,6 @@ function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) 
         return;
     }
 
-    video.innerHTML = '';
-
     const source = document.createElement('source');
     source.src = url;
     source.type = type;
