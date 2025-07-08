@@ -6,22 +6,26 @@ import {renderTweetHTML} from "./tweet_render";
 const selfDefineUrl = 'tweetCatTimeLine';
 
 
-function hideOriginalTweetArea(originalTweetArea:HTMLElement) {
+function hideOriginalTweetArea(originalTweetArea: HTMLElement) {
     originalTweetArea.style.position = 'absolute';
     originalTweetArea.style.top = '-9999px';
     originalTweetArea.style.left = '-9999px';
     originalTweetArea.style.width = '1px';
     originalTweetArea.style.height = '1px';
     originalTweetArea.style.overflow = 'hidden';
+    originalTweetArea.style.pointerEvents = 'none';
+    originalTweetArea.style.visibility = 'hidden';
 }
 
-function showOriginalTweetArea(originalTweetArea:HTMLElement) {
+function showOriginalTweetArea(originalTweetArea: HTMLElement) {
     originalTweetArea.style.position = '';
     originalTweetArea.style.top = '';
     originalTweetArea.style.left = '';
     originalTweetArea.style.width = '';
     originalTweetArea.style.height = '';
     originalTweetArea.style.overflow = '';
+    originalTweetArea.style.pointerEvents = '';
+    originalTweetArea.style.visibility = '';
 }
 
 
@@ -78,13 +82,7 @@ async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate:
     const validTweets = await fetchTweets('1315345422123180033', 20);//1315345422123180033 // 1899045104146644992 // 1551261351347109888
     const tweetNodes: HTMLElement[] = [];
 
-    let count = 0;
-
     for (const entry of validTweets.tweets) {
-        count++;
-        if (count>4){
-            break;
-        }
         const tweetNode = renderTweetHTML(entry, contentTemplate);
         tweetCatArea.appendChild(tweetNode);
         tweetNodes.push(tweetNode);

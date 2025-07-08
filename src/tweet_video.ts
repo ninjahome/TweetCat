@@ -27,7 +27,6 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
 
     const bestVariant = selectBestVideoVariant(m.video_info?.variants ?? []);
     if (bestVariant) {
-        console.log("Selected best video:", bestVariant);
         safeSetVideoSource(video, bestVariant.url, bestVariant.content_type);
     }
 
