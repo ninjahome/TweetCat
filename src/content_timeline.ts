@@ -5,7 +5,6 @@ import {renderTweetHTML} from "./tweet_render";
 
 const selfDefineUrl = 'tweetCatTimeLine';
 
-
 function hideOriginalTweetArea(originalTweetArea: HTMLElement) {
     originalTweetArea.style.position = 'absolute';
     originalTweetArea.style.top = '-9999px';
@@ -27,7 +26,6 @@ function showOriginalTweetArea(originalTweetArea: HTMLElement) {
     originalTweetArea.style.pointerEvents = '';
     originalTweetArea.style.visibility = '';
 }
-
 
 export function appendTweetCatMenuItem() {
     const header = document.querySelector('header[role="banner"]') as HTMLElement;
@@ -52,6 +50,7 @@ export function appendTweetCatMenuItem() {
                     showOriginalTweetArea(originalTweetArea);
                     const tweetCatTimeLine = tweetCatArea.querySelector(".tweetTimeline") as HTMLElement;
                     tweetCatTimeLine.innerHTML = '';
+                    tweetCatTimeLine.style.removeProperty('height');
                 });
             });
 
@@ -78,8 +77,7 @@ export function switchToTweetCatTimeLine() {
 }
 
 async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate: HTMLTemplateElement) {
-    // testTweetApi('ShouldHaveAnima');
-    const validTweets = await fetchTweets('1315345422123180033', 20);//1315345422123180033 // 1899045104146644992 // 1551261351347109888
+    const validTweets = await fetchTweets('1315345422123180033', 20);
     const tweetNodes: HTMLElement[] = [];
 
     for (const entry of validTweets.tweets) {
@@ -95,7 +93,7 @@ async function fillTweetAreaByTweets(tweetCatArea: HTMLElement, contentTemplate:
         cumulativeOffset += tweetNode.offsetHeight;
     }
 
-    tweetCatArea.style.height = cumulativeOffset + 'px'; // 设置容器高度
+    tweetCatArea.style.height = `${cumulativeOffset}px`;
 }
 
 function waitForStableHeight(el: HTMLElement): Promise<void> {
@@ -128,4 +126,3 @@ async function loadCachedTweets() {
 
 async function pullTweetsFromSrv() {
 }
-
