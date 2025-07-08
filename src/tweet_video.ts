@@ -93,11 +93,14 @@ function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) 
         video.controls = true;
         video.playsInline = true;
 
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        const onCanPlay = () => {
+            video.removeEventListener('canplay', onCanPlay);
             video.play().catch(err => {
                 console.warn("HLS autoplay failed:", err);
             });
-        });
+        };
+
+        video.addEventListener('canplay', onCanPlay);
 
         return;
     }
