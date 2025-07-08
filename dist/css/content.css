@@ -539,9 +539,17 @@ span.duration-badge {
     min-width: 0;
 }
 
-video {
+.video-wrapper {
     width: 100%;
-    height: auto;
+    max-height: 590px;
+    overflow: hidden;
+    position: relative;
+    background: black;
+}
+
+.video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     display: block;
-    visibility: visible;
 }

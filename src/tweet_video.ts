@@ -25,9 +25,23 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
     const video = wrapper.querySelector('video') as HTMLVideoElement;
     const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
 
+    // ✅ 动态设置 aspect-ratio
+    const aspectRatio = m.video_info?.aspect_ratio;
+    if (aspectRatio && aspectRatio.length === 2) {
+        const [w, h] = aspectRatio;
+        wrapper.style.aspectRatio = `${w} / ${h}`;
+        wrapper.style.background = 'black'; // 加入黑边背景
+    }
+
     const bestVariant = selectBestVideoVariant(m.video_info?.variants ?? []);
     if (bestVariant) {
         safeSetVideoSource(video, bestVariant.url, bestVariant.content_type);
+    }
+
+    // ✅ 设置倒计时徽章
+    if (badge && m.video_info?.duration_millis) {
+        const totalSeconds = Math.floor(m.video_info.duration_millis / 1000);
+        updateDurationBadge(video, badge, totalSeconds);
     }
 
     return wrapper;
@@ -64,8 +78,13 @@ function selectBestVideoVariant(
 
 
 function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) {
+
     if (type === 'application/x-mpegURL' && typeof Hls !== 'undefined' && Hls.isSupported()) {
-        const hls = new Hls();
+        const hls = new Hls({
+            maxMaxBufferLength: 30,
+            startLevel: 0,
+            autoStartLoad: true,
+        });
         hls.loadSource(url);
         hls.attachMedia(video);
 
@@ -83,6 +102,7 @@ function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) 
         return;
     }
 
+    video.innerHTML = '';
     const source = document.createElement('source');
     source.src = url;
     source.type = type;
