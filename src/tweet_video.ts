@@ -44,6 +44,37 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
         updateDurationBadge(video, badge, totalSeconds);
     }
 
+    // ✅ 懒加载逻辑：使用 IntersectionObserver 控制播放与暂停
+    const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+            if (entry.target !== wrapper) continue;
+            if (entry.isIntersecting) {
+                video.play().catch(() => {
+                });
+            } else {
+                video.pause();
+            }
+        }
+    }, {
+        threshold: 0.5
+    });
+
+    observer.observe(wrapper);
+
+    // ✅ 清理逻辑：当视频被移除时取消 observer
+    const cleanupObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            mutation.removedNodes.forEach(node => {
+                if (node === wrapper || (node instanceof Element && node.contains(wrapper))) {
+                    observer.unobserve(wrapper);
+                    cleanupObserver.disconnect();
+                }
+            });
+        }
+    });
+
+    cleanupObserver.observe(document.body, {childList: true, subtree: true});
+
     return wrapper;
 }
 
@@ -76,9 +107,7 @@ function selectBestVideoVariant(
     return selected ? {url: selected.url, content_type: selected.content_type} : null;
 }
 
-
 function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) {
-
     if (type === 'application/x-mpegURL' && typeof Hls !== 'undefined' && Hls.isSupported()) {
         const hls = new Hls({
             maxMaxBufferLength: 30,
@@ -101,7 +130,6 @@ function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) 
         };
 
         video.addEventListener('canplay', onCanPlay);
-
         return;
     }
 
@@ -129,5 +157,4 @@ function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) 
     };
 
     video.addEventListener('canplay', onCanPlay);
-
 }
