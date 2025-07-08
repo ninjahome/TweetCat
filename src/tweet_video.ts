@@ -66,25 +66,24 @@ function selectBestVideoVariant(
 
 function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) {
     if (type === 'application/x-mpegURL' && typeof Hls !== 'undefined' && Hls.isSupported()) {
-        // const hls = new Hls();
-        // hls.loadSource(url);
-        // hls.attachMedia(video);
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
 
         video.muted = true;
-        // video.autoplay = true;
+        video.autoplay = true;
         video.controls = true;
         video.playsInline = true;
 
-        // hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        //     video.play().catch(err => {
-        //         console.warn("HLS autoplay failed:", err);
-        //     });
-        // });
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch(err => {
+                console.warn("HLS autoplay failed:", err);
+            });
+        });
 
         return;
     }
 
-    // MP4 fallback
     video.innerHTML = '';
 
     const source = document.createElement('source');
@@ -94,13 +93,13 @@ function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) 
     video.appendChild(source);
 
     video.preload = 'metadata';
-    // video.autoplay = true;
+    video.autoplay = true;
     video.controls = true;
     video.muted = true;
     video.playsInline = true;
 
-    // video.load();
-    // video.play().catch(err => {
-    //     console.warn("MP4 autoplay failed:", err);
-    // });
+    video.load();
+    video.play().catch(err => {
+        console.warn("MP4 autoplay failed:", err);
+    });
 }
