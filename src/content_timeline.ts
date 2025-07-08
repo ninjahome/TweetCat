@@ -1,6 +1,6 @@
 import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
-import {fetchTweets, testTweetApi} from "./tweet_api";
+import {fetchTweets} from "./tweet_api";
 import {renderTweetHTML} from "./tweet_render";
 
 const selfDefineUrl = 'tweetCatTimeLine';
