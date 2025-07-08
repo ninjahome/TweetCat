@@ -116,7 +116,15 @@ function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) 
     video.playsInline = true;
 
     video.load();
-    video.play().catch(err => {
-        console.warn("MP4 autoplay failed:", err);
-    });
+
+    // 使用 canplay 事件确保视频准备好后再调用 play()
+    const onCanPlay = () => {
+        video.removeEventListener('canplay', onCanPlay);
+        video.play().catch(err => {
+            console.warn("MP4 autoplay failed:", err);
+        });
+    };
+
+    video.addEventListener('canplay', onCanPlay);
+
 }
