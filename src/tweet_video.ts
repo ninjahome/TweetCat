@@ -30,7 +30,6 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
     if (aspectRatio && aspectRatio.length === 2) {
         const [w, h] = aspectRatio;
         wrapper.style.aspectRatio = `${w} / ${h}`;
-        wrapper.style.background = 'black'; // 加入黑边背景
     }
 
     const bestVariant = selectBestVideoVariant(m.video_info?.variants ?? []);
