@@ -48,7 +48,8 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
         for (const entry of entries) {
             if (entry.target !== wrapper) continue;
             if (entry.isIntersecting) {
-                video.play().catch(() => {
+                video.play().catch((err) => {
+                    console.log("------>>> video play err:", err);
                 });
             } else {
                 video.pause();
