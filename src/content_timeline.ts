@@ -12,7 +12,7 @@ const selfDefineUrl = "tweetCatTimeLine";
  * Debug  &  ResizeObserver probe
  * ------------------------------------------------------------------*/
 
-// 打开调试：在控制台执行 localStorage.setItem('tweetCatDebug','1') 然后刷新即可
+// DEBUG 永久开启，方便排查
 const DEBUG = true;
 
 function log(...args: unknown[]) {
@@ -27,7 +27,7 @@ function watchSize(el: HTMLElement, label: string) {
     const ro = new ResizeObserver((entries) => {
         for (const e of entries) {
             const {width, height} = e.contentRect;
-            log(`------>>>[size] ${label} -> ${width}×${height}px`);
+            log(`[size] ${label} -> ${width}×${height}px`);
         }
     });
     ro.observe(el);
@@ -76,7 +76,7 @@ function setupTweetCatUI(menuList: HTMLElement, contentTemplate: HTMLTemplateEle
     const originalTweetArea = mainArea.firstChild as HTMLElement;
 
     // ──────────────────────────────────────────────────────────────────
-    // 当点击 nav 里的其他 tab 时，销毁我们的时间线并恢复原生
+    // 点击其他 nav tab：销毁我们的时间线并恢复原生
     // ──────────────────────────────────────────────────────────────────
     menuList.querySelectorAll("a").forEach((elm) => {
         elm.addEventListener("click", () => {
@@ -99,7 +99,7 @@ function setupTweetCatUI(menuList: HTMLElement, contentTemplate: HTMLTemplateEle
     });
 
     // ──────────────────────────────────────────────────────────────────
-    // 点击我们自己的 Tab：进入自定义时间线
+    // 点击 TweetCat Tab：进入自定义时间线
     // ──────────────────────────────────────────────────────────────────
     tweetCatMenuItem.onclick = (ev) => {
         ev.preventDefault();
@@ -111,6 +111,14 @@ function setupTweetCatUI(menuList: HTMLElement, contentTemplate: HTMLTemplateEle
         const tweetCatTimeLine = tweetCatArea.querySelector(
             ".tweetTimeline"
         ) as HTMLElement;
+
+        // 如果用户反复点击本 tab，需清理旧内容再重建
+        tweetCatTimeLine.querySelectorAll<HTMLElement>(".tweetNode").forEach((n) => {
+            // @ts-ignore
+            n._ro?.disconnect();
+        });
+        tweetCatTimeLine.innerHTML = "";
+        tweetCatTimeLine.style.removeProperty("height");
 
         fillTweetAreaByTweets(tweetCatTimeLine, contentTemplate).catch(console.error);
     };
@@ -128,56 +136,56 @@ export function appendTweetCatMenuItem() {
         document.body,
         () => document.querySelector("header nav[role='navigation']") as HTMLElement,
         (menuList) => {
-            if (!!menuList.querySelector(".tweetCatMenuItem")) {
-                return true; // 已经插过
+            if (menuList.querySelector(".tweetCatMenuItem")) {
+                return true; // 已插入
             }
-
             parseContentHtml("html/content.html").then((contentTemplate) => {
                 setupTweetCatUI(menuList, contentTemplate);
             });
-
             return true;
         }
     );
 }
 
 export function switchToTweetCatTimeLine() {
-    const tweetCatMenuItem = document.getElementById(
-        "tweetCatMenuItem"
-    ) as HTMLAnchorElement;
+    const tweetCatMenuItem = document.getElementById("tweetCatMenuItem") as HTMLAnchorElement;
     tweetCatMenuItem?.click();
 }
 
 /* ------------------------------------------------------------------
- * 填充自定义时间线
+ * 两阶段：测量(静态) → 绝对定位
  * ------------------------------------------------------------------*/
 async function fillTweetAreaByTweets(
     tweetCatArea: HTMLElement,
     contentTemplate: HTMLTemplateElement
 ) {
-    const validTweets = await fetchTweets("1315345422123180033", 20);
-    const tweetNodes: HTMLElement[] = [];
+    const {tweets} = await fetchTweets("1315345422123180033", 20);
+    const slots: { node: HTMLElement; height: number }[] = [];
 
-    for (const entry of validTweets.tweets) {
-        const tweetNode = renderTweetHTML(entry, contentTemplate);
-        tweetNode.classList.add("tweetNode");
+    // 1️⃣ 渲染到普通流，测量自然高度
+    for (const entry of tweets) {
+        const node = renderTweetHTML(entry, contentTemplate);
+        node.classList.add("tweetNode");
 
-        // ——ResizeObserver 探针——
-        watchSize(tweetNode, `tweet#${entry.entryId}`);
+        watchSize(node, `tweet#${entry.entryId}`);
 
-        tweetCatArea.appendChild(tweetNode);
-        tweetNodes.push(tweetNode);
+        tweetCatArea.appendChild(node);
+        await waitForStableHeight(node);
+
+        slots.push({node, height: node.offsetHeight});
     }
 
-    // 手动定位（虚拟滚动的简易实现）
-    let cumulativeOffset = 0;
-    for (const tweetNode of tweetNodes) {
-        await waitForStableHeight(tweetNode);
-        tweetNode.style.transform = `translateY(${cumulativeOffset}px)`;
-        cumulativeOffset += tweetNode.offsetHeight;
+    // 2️⃣ 绝对定位并累加 top
+    let offset = 0;
+    for (const {node, height} of slots) {
+        node.style.position = "absolute";
+        node.style.left = "0";
+        node.style.top = `${offset}px`;
+        node.style.transform = "";
+        offset += height;
     }
 
-    tweetCatArea.style.height = `${cumulativeOffset}px`;
+    tweetCatArea.style.height = `${offset}px`;
 }
 
 /* ------------------------------------------------------------------
@@ -185,31 +193,22 @@ async function fillTweetAreaByTweets(
  * ------------------------------------------------------------------*/
 function waitForStableHeight(el: HTMLElement): Promise<void> {
     return new Promise((resolve) => {
-        let lastHeight = el.offsetHeight;
-        let stableCount = 0;
-
+        let last = el.offsetHeight;
+        let stable = 0;
         const check = () => {
-            const currentHeight = el.offsetHeight;
-            if (currentHeight === lastHeight) {
-                stableCount++;
-            } else {
-                stableCount = 0;
-                lastHeight = currentHeight;
+            const h = el.offsetHeight;
+            if (h === last) stable++; else {
+                stable = 0;
+                last = h;
             }
-
-            if (stableCount >= 2) {
-                resolve();
-            } else {
-                requestAnimationFrame(check);
-            }
+            if (stable >= 2) resolve(); else requestAnimationFrame(check);
         };
-
         requestAnimationFrame(check);
     });
 }
 
 /* ------------------------------------------------------------------
- * 预留：缓存 / 拉取接口
+ * 预留
  * ------------------------------------------------------------------*/
 async function loadCachedTweets() {
 }

@@ -167,11 +167,16 @@ img, video {
 .tweet-cardfloat {
     width: 100%;
     scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
-    position: absolute;
 }
 
 .tweet-cardfloat:hover {
     background-color: rgba(247,247, 247);
+}
+
+.tweetNode {
+    position: absolute;
+    left: 0;
+    width: 100%;
 }
 
 .tweetTimeline {
@@ -182,13 +187,7 @@ img, video {
     border-color: rgb(239, 243, 244);
     background-color: rgb(255, 255, 255);
     scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
-    align-items: stretch;
-    background-color: rgba(0, 0, 0, 0.00);
     box-sizing: border-box;
-    display: flex;
-    flex-basis: auto;
-    flex-direction: column;
-    flex-shrink: 0;
     list-style: none;
     padding: 0px;
     position: relative;
