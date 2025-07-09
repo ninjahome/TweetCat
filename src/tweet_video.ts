@@ -56,7 +56,7 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
             }
         }
     }, {
-        threshold: 0.75
+        threshold: 0.6
     });
 
     observer.observe(wrapper);
