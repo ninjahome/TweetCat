@@ -14,16 +14,15 @@ const selfDefineUrl = "tweetCatTimeLine";
 const DEBUG = true;
 const log = (...args: unknown[]) => DEBUG && console.debug(...args);
 
+/* ResizeObserver 调试用：打印元素实时尺寸 */
 function watchSize(el: HTMLElement, label: string) {
-    const ro = new ResizeObserver((entries) => {
-        for (const e of entries) {
-            const {width, height} = e.contentRect;
-            log(`[size] ${label} -> ${width}×${height}px`);
-        }
+    const ro = new ResizeObserver(([e]) => {
+        const {width, height} = e.contentRect;
+        log(`[size] ${label} -> ${width}×${height}px`);
     });
     ro.observe(el);
-    // @ts-ignore store for later disconnect
-    el._ro = ro;
+    // @ts-ignore
+    el._watchRO = ro;
 }
 
 /* ------------------------------------------------------------------
@@ -56,7 +55,7 @@ function showOriginalTweetArea(el: HTMLElement) {
 }
 
 /* ------------------------------------------------------------------
- * 虚拟滚动相关数据结构
+ * 虚拟滚动数据结构
  * ------------------------------------------------------------------*/
 interface Slot {
     node: HTMLElement;
@@ -66,9 +65,38 @@ interface Slot {
 }
 
 let slots: Slot[] = [];
-let timelineEl: HTMLElement; // 当前 tweetTimeline 引用
+let timelineEl: HTMLElement; // tweetTimeline ref
 
-const ONE_SCREEN = () => timelineEl?.clientHeight ?? 800; // 备用
+const ONE_SCREEN = () => timelineEl?.clientHeight ?? 800; // fall‑back
+
+/* ------------------------------------------------------------------
+ * Height compensation helpers
+ * ------------------------------------------------------------------*/
+function adjustOffsets(startIdx: number, dh: number) {
+    if (!dh) return;
+    for (let i = startIdx + 1; i < slots.length; i++) {
+        slots[i].top += dh;
+        if (slots[i].attached) {
+            slots[i].node.style.top = slots[i].top + "px";
+        }
+    }
+    const newH = (parseFloat(timelineEl.style.height || "0") + dh).toFixed(3);
+    timelineEl.style.height = newH + "px";
+}
+
+function observeSlotHeight(slot: Slot, idx: number, label: string) {
+    const ro = new ResizeObserver(([e]) => {
+        const newH = e.contentRect.height;
+        const dh = newH - slot.height;
+        if (!dh) return;
+        log(`[delta] ${label} dh=${dh}`);
+        slot.height = newH;
+        adjustOffsets(idx, dh);
+    });
+    ro.observe(slot.node);
+    // @ts-ignore 保存以便 reset 时 disconnect
+    slot.node._ro = ro;
+}
 
 /* ------------------------------------------------------------------
  * UI bootstrapping
@@ -76,18 +104,29 @@ const ONE_SCREEN = () => timelineEl?.clientHeight ?? 800; // 备用
 function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
     const menuItem = tpl.content.getElementById("tweetCatMenuItem")!.cloneNode(true) as HTMLElement;
     const area = tpl.content.getElementById("tweetCatArea")!.cloneNode(true) as HTMLElement;
-
     const main = document.querySelector("main[role='main']") as HTMLElement;
     const originalArea = main.firstChild as HTMLElement;
 
-    // 点击其他 Tab
+    const resetTimeline = () => {
+        const tl = area.querySelector(".tweetTimeline") as HTMLElement;
+        tl.querySelectorAll<HTMLElement>(".tweetNode").forEach((n) => {
+            // @ts-ignore
+            n._ro?.disconnect();
+            // @ts-ignore
+            n._watchRO?.disconnect();
+        });
+        tl.innerHTML = "";
+        tl.style.removeProperty("height");
+        slots = [];
+        tl.removeEventListener("scroll", onScroll);
+    };
+
     menuList.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => {
         area.style.display = "none";
         showOriginalTweetArea(originalArea);
-        resetTimeline(area);
+        resetTimeline();
     }));
 
-    // 点击 TweetCat Tab
     menuItem.onclick = (ev) => {
         ev.preventDefault();
         hideOriginalTweetArea(originalArea);
@@ -95,7 +134,7 @@ function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
         history.replaceState({id: 123}, "", "/#/" + selfDefineUrl);
 
         timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
-        resetTimeline(area);
+        resetTimeline();
         fillTweetAreaByTweets(timelineEl, tpl).catch(console.error);
     };
 
@@ -103,24 +142,16 @@ function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
     main.insertBefore(area, originalArea);
 }
 
-function resetTimeline(area: HTMLElement) {
-    const tl = area.querySelector(".tweetTimeline") as HTMLElement;
-    tl.querySelectorAll<HTMLElement>(".tweetNode").forEach((n) => {
-        // @ts-ignore
-        n._ro?.disconnect();
-    });
-    tl.innerHTML = "";
-    tl.style.removeProperty("height");
-    slots = [];
-    tl.removeEventListener("scroll", onScroll);
-}
-
 export function appendTweetCatMenuItem() {
-    observeSimple(document.body, () => document.querySelector("header nav[role='navigation']") as HTMLElement, (nav) => {
-        if (nav.querySelector(".tweetCatMenuItem")) return true;
-        parseContentHtml("html/content.html").then((tpl) => setupTweetCatUI(nav, tpl));
-        return true;
-    });
+    observeSimple(
+        document.body,
+        () => document.querySelector("header nav[role='navigation']") as HTMLElement,
+        (nav) => {
+            if (nav.querySelector(".tweetCatMenuItem")) return true;
+            parseContentHtml("html/content.html").then((tpl) => setupTweetCatUI(nav, tpl));
+            return true;
+        }
+    );
 }
 
 export function switchToTweetCatTimeLine() {
@@ -128,35 +159,44 @@ export function switchToTweetCatTimeLine() {
 }
 
 /* ------------------------------------------------------------------
- * 渲染 + 测量 + 初始化虚拟窗口
+ * 渲染 + 测量 + 初始化虚拟窗口（含动态补偿）
  * ------------------------------------------------------------------*/
 async function fillTweetAreaByTweets(tl: HTMLElement, tpl: HTMLTemplateElement) {
     const {tweets} = await fetchTweets("1315345422123180033", 40);
-
     let offset = 0;
-    for (const entry of tweets) {
+
+    for (const [idx, entry] of tweets.entries()) {
         const node = renderTweetHTML(entry, tpl);
         node.classList.add("tweetNode");
-        node.style.position = "static"; // flow 测量
+        node.setAttribute("data-tweet-id", String(entry.entryId));
+
+        node.style.position = "static";       // flow 测量
+        node.style.visibility = "hidden";
 
         watchSize(node, `tweet#${entry.entryId}`);
         tl.appendChild(node);
         await waitForStableHeight(node);
 
         const h = node.offsetHeight;
-        slots.push({node, height: h, top: offset, attached: true});
+        const slot: Slot = {node, height: h, top: offset, attached: true};
+        slots.push(slot);
         offset += h;
+
+        // 立即挂 ResizeObserver（动态补偿）
+        observeSlotHeight(slot, idx, `tweet#${entry.entryId}`);
     }
 
-    // 转绝对定位 & 设置 top
+    // 绝对定位 & top
     for (const s of slots) {
-        s.node.style.position = "absolute";
-        s.node.style.left = "0";
-        s.node.style.top = s.top + "px";
+        Object.assign(s.node.style, {
+            position: "absolute",
+            left: "0",
+            top: s.top + "px",
+            visibility: "visible",
+        });
     }
     tl.style.height = offset + "px";
 
-    // 初始化滚动窗口
     timelineEl = tl;
     tl.addEventListener("scroll", onScroll, {passive: true});
     updateWindow();
@@ -166,8 +206,9 @@ async function fillTweetAreaByTweets(tl: HTMLElement, tpl: HTMLTemplateElement) 
  * 虚拟滚动窗口
  * ------------------------------------------------------------------*/
 function onScroll() {
-    // 采用 requestIdleCallback，fallback 到 RAF
-    (window as any).requestIdleCallback ? (window as any).requestIdleCallback(updateWindow, {timeout: 100}) : requestAnimationFrame(updateWindow);
+    (window as any).requestIdleCallback
+        ? (window as any).requestIdleCallback(updateWindow, {timeout: 100})
+        : requestAnimationFrame(updateWindow);
 }
 
 function updateWindow() {
@@ -187,42 +228,51 @@ function updateWindow() {
             if (!s.attached) {
                 timelineEl.appendChild(s.node);
                 s.attached = true;
+                s.node.style.top = s.top + "px"; // ensure fresh top
             }
         } else if (s.attached) {
             timelineEl.removeChild(s.node);
             s.attached = false;
         }
     }
-
     log(`[window] ${start} - ${end} (viewTop=${viewTop})`);
 }
 
 function binarySearch(y: number): number {
-    let l = 0, r = slots.length - 1, m = 0;
+    let l = 0,
+        r = slots.length - 1,
+        ans = slots.length;
     while (l <= r) {
-        m = (l + r) >> 1;
+        const m = (l + r) >> 1;
         const s = slots[m];
-        if (s.top + s.height < y) l = m + 1;
-        else r = m - 1;
+        if (s.top + s.height < y) {
+            l = m + 1;
+        } else {
+            ans = m;
+            r = m - 1;
+        }
     }
-    return l;
+    return ans;
 }
 
 /* ------------------------------------------------------------------
- * 工具：等待高度稳定两帧
+ * wait for two stable frames – 避免测量期抖动
  * ------------------------------------------------------------------*/
 function waitForStableHeight(el: HTMLElement): Promise<void> {
-    return new Promise((res) => {
-        let last = el.offsetHeight, stable = 0;
-        const chk = () => {
+    return new Promise((resolve) => {
+        let last = el.offsetHeight;
+        let stable = 0;
+        const check = () => {
             const h = el.offsetHeight;
-            if (h === last) stable++; else {
+            if (h === last) stable++;
+            else {
                 stable = 0;
                 last = h;
             }
-            if (stable >= 2) res(); else requestAnimationFrame(chk);
+            if (stable >= 2) resolve();
+            else requestAnimationFrame(check);
         };
-        requestAnimationFrame(chk);
+        requestAnimationFrame(check);
     });
 }
 
