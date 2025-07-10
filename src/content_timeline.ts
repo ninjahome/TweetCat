@@ -1,8 +1,8 @@
 import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
-import {fetchTweets} from "./tweet_api";
 import {renderTweetHTML} from "./tweet_render";
 import {hideOriginalTweetArea, showOriginalTweetArea, TimelineRow, waitForStableHeight} from "./timeline_util";
+import { getNextTweets, resetTweetPager, initTweetPager } from "./tweet_data";
 
 /**
  * Route used when我们切换到自定义时间线时，写入到 location.hash
@@ -59,23 +59,12 @@ function observeRowHeight(timelineEl: HTMLElement, rows: TimelineRow[], row: Tim
 }
 
 /* ------------------------------------------------------------------
- * Window 滚动加载更多
+ * Window 滚动加载更多（参数传递rows、tpl）
  * ------------------------------------------------------------------*/
 let windowScrollHandler: ((ev: Event) => void) | null = null;
 let loadingMore = false;
 
-function loadMoreData() {
-    // 模拟2秒异步加载
-    return new Promise<void>((resolve) => {
-        setTimeout(() => {
-            console.log('[LoadMore] 加载完成，重置 loadingMore');
-            loadingMore = false;
-            resolve();
-        }, 2000);
-    });
-}
-
-function bindWindowScrollLoadMore() {
+function bindWindowScrollLoadMore(rows: TimelineRow[], tpl: HTMLTemplateElement) {
     if (windowScrollHandler) {
         window.removeEventListener("scroll", windowScrollHandler);
         windowScrollHandler = null;
@@ -90,7 +79,7 @@ function bindWindowScrollLoadMore() {
         ) {
             loadingMore = true;
             console.log("[LoadMore] 已滚动到页面底部，准备加载更多数据");
-            loadMoreData();
+            loadMoreData(rows, tpl);
         }
     };
     window.addEventListener("scroll", windowScrollHandler);
@@ -123,6 +112,7 @@ function resetTimeline(area: HTMLElement, rows: TimelineRow[]) {
         window.removeEventListener("scroll", windowScrollHandler);
         windowScrollHandler = null;
     }
+    resetTweetPager(); // 加载数据游标也要重置
 }
 
 function bindReturnToOriginal(
@@ -155,7 +145,7 @@ function bindCustomMenu(
 
         const timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
         resetTimeline(area, rows);
-        bindWindowScrollLoadMore();
+        bindWindowScrollLoadMore(rows, tpl); // 传递 rows 和 tpl
         renderAndLayoutTweets(timelineEl, tpl, rows).catch(console.error);
     });
 }
@@ -203,9 +193,16 @@ export function switchToTweetCatTimeLine() {
 /* ------------------------------------------------------------------
  * 分层: 数据获取、DOM生成、批量渲染与测量
  * ------------------------------------------------------------------*/
-async function fetchTweetEntries() {
-    const {tweets} = await fetchTweets("1315345422123180033", 40);
-    return tweets;
+
+async function renderAndLayoutTweets(
+    timelineEl: HTMLElement,
+    tpl: HTMLTemplateElement,
+    rows: TimelineRow[]
+) {
+    await initTweetPager(); // 初始化数据，内部只做一次
+    const tweets = getNextTweets(5);
+    if (tweets.length === 0) return;
+    await appendTweetsToTimeline(timelineEl, tpl, rows, tweets);
 }
 
 function buildTweetNodes(tweets: any[], tpl: HTMLTemplateElement): HTMLElement[] {
@@ -219,33 +216,44 @@ function buildTweetNodes(tweets: any[], tpl: HTMLTemplateElement): HTMLElement[]
     });
 }
 
-async function renderAndLayoutTweets(
+function appendTweetsToTimeline(
     timelineEl: HTMLElement,
     tpl: HTMLTemplateElement,
-    rows: TimelineRow[]
+    rows: TimelineRow[],
+    tweets: any[]
 ) {
-    // 数据层
-    const tweets = await fetchTweetEntries();
-    // 生成 DOM
     const nodes = buildTweetNodes(tweets, tpl);
-    // 批量插入 DOM, 隐藏测量
     nodes.forEach(n => timelineEl.appendChild(n));
-    await Promise.all(nodes.map(waitForStableHeight));
+    return Promise.all(nodes.map(waitForStableHeight)).then(() => {
+        let offset = rows.length === 0 ? 0 : rows[rows.length - 1].top + rows[rows.length - 1].height;
+        for (const [idx, node] of nodes.entries()) {
+            const h = node.offsetHeight;
+            const row = new TimelineRow(node, h, offset, true);
+            Object.assign(node.style, {
+                position: "absolute",
+                left: "0",
+                top: offset + "px",
+                visibility: "visible",
+            });
+            rows.push(row);
+            observeRowHeight(timelineEl, rows, row, rows.length - 1, `tweet#${node.getAttribute("data-tweet-id")}`);
+            offset += h;
+        }
+        timelineEl.style.height = offset + "px";
+    });
+}
 
-    // 批量测量高度和初始化+布局 rows
-    let offset = 0;
-    for (const [idx, node] of nodes.entries()) {
-        const h = node.offsetHeight;
-        const row = new TimelineRow(node, h, offset, true);
-        Object.assign(node.style, {
-            position: "absolute",
-            left: "0",
-            top: offset + "px",
-            visibility: "visible",
-        });
-        rows.push(row);
-        observeRowHeight(timelineEl, rows, row, idx, `tweet#${node.getAttribute("data-tweet-id")}`);
-        offset += h;
-    }
-    timelineEl.style.height = offset + "px";
+function loadMoreData(rows: TimelineRow[], tpl: HTMLTemplateElement) {
+    return new Promise<void>(async (resolve) => {
+        const timelineEl = document.querySelector(".tweetTimeline") as HTMLElement;
+        const nextTweets = getNextTweets(5);
+        if (nextTweets.length === 0 || !timelineEl || !tpl) {
+            loadingMore = false;
+            resolve();
+            return;
+        }
+        await appendTweetsToTimeline(timelineEl, tpl, rows, nextTweets);
+        loadingMore = false;
+        resolve();
+    });
 }
