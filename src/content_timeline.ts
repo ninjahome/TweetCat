@@ -59,6 +59,44 @@ function observeRowHeight(timelineEl: HTMLElement, rows: TimelineRow[], row: Tim
 }
 
 /* ------------------------------------------------------------------
+ * Window 滚动加载更多
+ * ------------------------------------------------------------------*/
+let windowScrollHandler: ((ev: Event) => void) | null = null;
+let loadingMore = false;
+
+function loadMoreData() {
+    // 模拟2秒异步加载
+    return new Promise<void>((resolve) => {
+        setTimeout(() => {
+            console.log('[LoadMore] 加载完成，重置 loadingMore');
+            loadingMore = false;
+            resolve();
+        }, 2000);
+    });
+}
+
+function bindWindowScrollLoadMore() {
+    if (windowScrollHandler) {
+        window.removeEventListener("scroll", windowScrollHandler);
+        windowScrollHandler = null;
+    }
+    windowScrollHandler = () => {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const windowHeight = window.innerHeight;
+        const docHeight = document.documentElement.scrollHeight;
+        if (
+            !loadingMore &&
+            scrollTop + windowHeight >= docHeight - 10
+        ) {
+            loadingMore = true;
+            console.log("[LoadMore] 已滚动到页面底部，准备加载更多数据");
+            loadMoreData();
+        }
+    };
+    window.addEventListener("scroll", windowScrollHandler);
+}
+
+/* ------------------------------------------------------------------
  * UI bootstrapping helpers
  * ------------------------------------------------------------------*/
 function createUIElements(tpl: HTMLTemplateElement) {
@@ -78,6 +116,11 @@ function resetTimeline(area: HTMLElement, rows: TimelineRow[]) {
     tl.innerHTML = "";
     tl.style.removeProperty("height");
     rows.length = 0;
+    // 解绑 window 滚动监听
+    if (windowScrollHandler) {
+        window.removeEventListener("scroll", windowScrollHandler);
+        windowScrollHandler = null;
+    }
 }
 
 function bindReturnToOriginal(
@@ -110,6 +153,7 @@ function bindCustomMenu(
 
         const timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
         resetTimeline(area, rows);
+        bindWindowScrollLoadMore();
         renderAndLayoutTweets(timelineEl, tpl, rows).catch(console.error);
     });
 }
