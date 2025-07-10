@@ -2,7 +2,7 @@ import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
 import {fetchTweets} from "./tweet_api";
 import {renderTweetHTML} from "./tweet_render";
-import {hideOriginalTweetArea, showOriginalTweetArea, Slot, waitForStableHeight} from "./timeline_util";
+import {hideOriginalTweetArea, showOriginalTweetArea, TimelineRow, waitForStableHeight} from "./timeline_util";
 
 /**
  * Route used when我们切换到自定义时间线时，写入到 location.hash
@@ -15,36 +15,47 @@ const selfDefineUrl = "tweetCatTimeLine";
 const DEBUG = true;
 const log = (...args: unknown[]) => DEBUG && console.debug(...args);
 
-let slots: Slot[] = [];
-let timelineEl: HTMLElement; // tweetTimeline ref
+// Height compensation: 批量补偿优化、requestAnimationFrame 防抖
+let adjustPending = false;
+let lastAdjustIdx = -1;
+let lastAdjustDh = 0;
 
-/* ------------------------------------------------------------------
- * Height compensation helpers
- * ------------------------------------------------------------------*/
-function adjustOffsets(startIdx: number, dh: number) {
+function scheduleAdjustOffsets(timelineEl: HTMLElement, rows: TimelineRow[], startIdx: number, dh: number) {
+    lastAdjustIdx = startIdx;
+    lastAdjustDh = dh;
+    if (!adjustPending) {
+        adjustPending = true;
+        requestAnimationFrame(() => {
+            adjustOffsets(timelineEl, rows, lastAdjustIdx, lastAdjustDh);
+            adjustPending = false;
+        });
+    }
+}
+
+function adjustOffsets(timelineEl: HTMLElement, rows: TimelineRow[], startIdx: number, dh: number) {
     if (!dh) return;
-    for (let i = startIdx + 1; i < slots.length; i++) {
-        slots[i].top += dh;
-        if (slots[i].attached) {
-            slots[i].node.style.top = slots[i].top + "px";
+    for (let i = startIdx + 1; i < rows.length; i++) {
+        rows[i].top += dh;
+        if (rows[i].attached) {
+            rows[i].node.style.top = rows[i].top + "px";
         }
     }
     const newH = (parseFloat(timelineEl.style.height || "0") + dh).toFixed(3);
     timelineEl.style.height = newH + "px";
 }
 
-function observeSlotHeight(slot: Slot, idx: number, label: string) {
+function observeRowHeight(timelineEl: HTMLElement, rows: TimelineRow[], row: TimelineRow, idx: number, label: string) {
     const ro = new ResizeObserver(([e]) => {
         const newH = e.contentRect.height;
-        const dh = newH - slot.height;
+        const dh = newH - row.height;
         if (!dh) return;
         log(`[delta] ${label} dh=${dh}`);
-        slot.height = newH;
-        adjustOffsets(idx, dh);
+        row.height = newH;
+        scheduleAdjustOffsets(timelineEl, rows, idx, dh);
     });
-    ro.observe(slot.node);
+    ro.observe(row.node);
     // @ts-ignore 保存以便 reset 时 disconnect
-    slot.node._ro = ro;
+    row.node._ro = ro;
 }
 
 /* ------------------------------------------------------------------
@@ -58,7 +69,7 @@ function createUIElements(tpl: HTMLTemplateElement) {
     return {menuItem, area};
 }
 
-function resetTimeline(area: HTMLElement) {
+function resetTimeline(area: HTMLElement, rows: TimelineRow[]) {
     const tl = area.querySelector(".tweetTimeline") as HTMLElement;
     tl.querySelectorAll<HTMLElement>(".tweetNode").forEach((n) => {
         // @ts-ignore
@@ -66,19 +77,20 @@ function resetTimeline(area: HTMLElement) {
     });
     tl.innerHTML = "";
     tl.style.removeProperty("height");
-    slots = [];
+    rows.length = 0;
 }
 
 function bindReturnToOriginal(
     menuList: HTMLElement,
     area: HTMLElement,
-    originalArea: HTMLElement
+    originalArea: HTMLElement,
+    rows: TimelineRow[]
 ) {
     menuList.querySelectorAll("a").forEach((a) => {
         a.addEventListener("click", () => {
             area.style.display = "none";
             showOriginalTweetArea(originalArea);
-            resetTimeline(area);
+            resetTimeline(area, rows);
         });
     });
 }
@@ -87,7 +99,8 @@ function bindCustomMenu(
     menuItem: HTMLElement,
     area: HTMLElement,
     originalArea: HTMLElement,
-    tpl: HTMLTemplateElement
+    tpl: HTMLTemplateElement,
+    rows: TimelineRow[]
 ) {
     menuItem.addEventListener("click", (ev) => {
         ev.preventDefault();
@@ -95,9 +108,9 @@ function bindCustomMenu(
         area.style.display = "block";
         history.replaceState({id: 123}, "", "/#/" + selfDefineUrl);
 
-        timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
-        resetTimeline(area);
-        fillTweetAreaByTweets(timelineEl, tpl).catch(console.error);
+        const timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
+        resetTimeline(area, rows);
+        renderAndLayoutTweets(timelineEl, tpl, rows).catch(console.error);
     });
 }
 
@@ -111,9 +124,10 @@ function setupTweetCatUI(
     const {menuItem, area} = createUIElements(tpl);
     const main = document.querySelector("main[role='main']") as HTMLElement;
     const originalArea = main.firstChild as HTMLElement;
+    const rows: TimelineRow[] = [];
 
-    bindReturnToOriginal(menuList, area, originalArea);
-    bindCustomMenu(menuItem, area, originalArea, tpl);
+    bindReturnToOriginal(menuList, area, originalArea, rows);
+    bindCustomMenu(menuItem, area, originalArea, tpl, rows);
 
     menuList.insertBefore(menuItem, menuList.children[1]);
     main.insertBefore(area, originalArea);
@@ -141,49 +155,51 @@ export function switchToTweetCatTimeLine() {
 }
 
 /* ------------------------------------------------------------------
- * 渲染 + 测量 + 初始化虚拟窗口（含动态补偿）
+ * 分层: 数据获取、DOM生成、批量渲染与测量
  * ------------------------------------------------------------------*/
-async function fillTweetAreaByTweets(
-    tl: HTMLElement,
-    tpl: HTMLTemplateElement
-) {
+async function fetchTweetEntries() {
     const {tweets} = await fetchTweets("1315345422123180033", 40);
-    let offset = 0;
+    return tweets;
+}
 
-    for (const [idx, entry] of tweets.entries()) {
+function buildTweetNodes(tweets: any[], tpl: HTMLTemplateElement): HTMLElement[] {
+    return tweets.map((entry) => {
         const node = renderTweetHTML(entry, tpl);
         node.classList.add("tweetNode");
         node.setAttribute("data-tweet-id", String(entry.entryId));
-
-        node.style.position = "static"; // flow 测量
+        node.style.position = "static";
         node.style.visibility = "hidden";
+        return node;
+    });
+}
 
-        tl.appendChild(node);
-        await waitForStableHeight(node);
+async function renderAndLayoutTweets(
+    timelineEl: HTMLElement,
+    tpl: HTMLTemplateElement,
+    rows: TimelineRow[]
+) {
+    // 数据层
+    const tweets = await fetchTweetEntries();
+    // 生成 DOM
+    const nodes = buildTweetNodes(tweets, tpl);
+    // 批量插入 DOM, 隐藏测量
+    nodes.forEach(n => timelineEl.appendChild(n));
+    await Promise.all(nodes.map(waitForStableHeight));
 
+    // 批量测量高度和初始化+布局 rows
+    let offset = 0;
+    for (const [idx, node] of nodes.entries()) {
         const h = node.offsetHeight;
-        const slot: Slot = {
-            node,
-            height: h,
-            top: offset,
-            attached: true,
-        };
-        slots.push(slot);
-        offset += h;
-
-        observeSlotHeight(slot, idx, `tweet#${entry.entryId}`);
-    }
-
-    // 绝对定位 & top
-    for (const s of slots) {
-        Object.assign(s.node.style, {
+        const row = new TimelineRow(node, h, offset, true);
+        Object.assign(node.style, {
             position: "absolute",
             left: "0",
-            top: s.top + "px",
+            top: offset + "px",
             visibility: "visible",
         });
+        rows.push(row);
+        observeRowHeight(timelineEl, rows, row, idx, `tweet#${node.getAttribute("data-tweet-id")}`);
+        offset += h;
     }
-    tl.style.height = offset + "px";
-
-    timelineEl = tl;
+    timelineEl.style.height = offset + "px";
 }

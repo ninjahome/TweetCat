@@ -1,11 +1,29 @@
 /* ------------------------------------------------------------------
  * 虚拟滚动数据结构
  * ------------------------------------------------------------------*/
-export interface Slot {
+export class TimelineRow {
     node: HTMLElement;
     height: number;
     top: number;
     attached: boolean;
+
+    constructor(node: HTMLElement, height: number, top: number, attached = true) {
+        this.node = node;
+        this.height = height;
+        this.top = top;
+        this.attached = attached;
+    }
+
+    setTop(newTop: number) {
+        this.top = newTop;
+        this.node.style.top = `${newTop}px`;
+    }
+
+    detach() {
+        this.attached = false;
+        this.node.style.display = "none";
+    }
+    // 其它扩展方法...
 }
 
 /* ------------------------------------------------------------------
@@ -38,7 +56,7 @@ export function showOriginalTweetArea(el: HTMLElement) {
 }
 
 
-export function binarySearch(y: number, slots: Slot[]): number {
+export function binarySearch(y: number, slots: TimelineRow[]): number {
     let l = 0,
         r = slots.length - 1,
         ans = slots.length;
