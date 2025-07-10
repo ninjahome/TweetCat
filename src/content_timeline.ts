@@ -2,7 +2,7 @@ import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
 import {fetchTweets} from "./tweet_api";
 import {renderTweetHTML} from "./tweet_render";
-import {binarySearch, hideOriginalTweetArea, showOriginalTweetArea, Slot, waitForStableHeight} from "./timeline_util";
+import {hideOriginalTweetArea, showOriginalTweetArea, Slot, waitForStableHeight} from "./timeline_util";
 
 /**
  * Route used when我们切换到自定义时间线时，写入到 location.hash
@@ -17,8 +17,6 @@ const log = (...args: unknown[]) => DEBUG && console.debug(...args);
 
 let slots: Slot[] = [];
 let timelineEl: HTMLElement; // tweetTimeline ref
-
-const ONE_SCREEN = () => timelineEl?.clientHeight ?? 800; // fall-back
 
 /* ------------------------------------------------------------------
  * Height compensation helpers
@@ -69,7 +67,6 @@ function resetTimeline(area: HTMLElement) {
     tl.innerHTML = "";
     tl.style.removeProperty("height");
     slots = [];
-    tl.removeEventListener("scroll", onScroll);
 }
 
 function bindReturnToOriginal(
@@ -174,7 +171,6 @@ async function fillTweetAreaByTweets(
         slots.push(slot);
         offset += h;
 
-        // 立即挂 ResizeObserver（动态补偿）
         observeSlotHeight(slot, idx, `tweet#${entry.entryId}`);
     }
 
@@ -190,42 +186,4 @@ async function fillTweetAreaByTweets(
     tl.style.height = offset + "px";
 
     timelineEl = tl;
-    tl.addEventListener("scroll", onScroll, {passive: true});
-    updateWindow();
-}
-
-/* ------------------------------------------------------------------
- * 虚拟滚动窗口
- * ------------------------------------------------------------------*/
-function onScroll() {
-    (window as any).requestIdleCallback
-        ? (window as any).requestIdleCallback(updateWindow, {timeout: 100})
-        : requestAnimationFrame(updateWindow);
-}
-
-function updateWindow() {
-    if (!timelineEl) return;
-    const viewTop = timelineEl.scrollTop;
-    const viewBot = viewTop + timelineEl.clientHeight;
-    const buf = ONE_SCREEN();
-    const winTop = Math.max(0, viewTop - buf);
-    const winBot = viewBot + buf;
-
-    let start = binarySearch(winTop, slots);
-    let end = binarySearch(winBot, slots);
-
-    for (let i = 0; i < slots.length; i++) {
-        const s = slots[i];
-        if (i >= start && i <= end) {
-            if (!s.attached) {
-                timelineEl.appendChild(s.node);
-                s.attached = true;
-                s.node.style.top = s.top + "px"; // ensure fresh top
-            }
-        } else if (s.attached) {
-            timelineEl.removeChild(s.node);
-            s.attached = false;
-        }
-    }
-    log(`[window] ${start} - ${end} (viewTop=${viewTop})`);
 }
