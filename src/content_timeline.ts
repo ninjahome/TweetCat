@@ -112,6 +112,8 @@ function resetTimeline(area: HTMLElement, rows: TimelineRow[]) {
     tl.querySelectorAll<HTMLElement>(".tweetNode").forEach((n) => {
         // @ts-ignore
         n._ro?.disconnect();
+        // @ts-ignore
+        delete n._ro;
     });
     tl.innerHTML = "";
     tl.style.removeProperty("height");
