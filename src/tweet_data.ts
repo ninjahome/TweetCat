@@ -1,3 +1,4 @@
+import {EntryObj} from "./object_tweet";
 
 let tweetData: any[] = [];
 let currentIdx = 0;
@@ -11,9 +12,9 @@ export async function initTweetPager() {
     }
 }
 
-export function getNextTweets(pageSize: number): any[] {
+export function getNextTweets(pageSize: number): EntryObj[] {
     if (!tweetData.length) return [];
-    const result: any[] = [];
+    const result: EntryObj[] = [];
     for (let i = 0; i < pageSize; i++) {
         result.push(tweetData[(currentIdx + i) % tweetData.length]);
     }

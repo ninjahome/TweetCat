@@ -3,6 +3,7 @@ import { parseContentHtml } from "./content";
 import { renderTweetHTML } from "./tweet_render";
 import { hideOriginalTweetArea, showOriginalTweetArea, TimelineRow } from "./timeline_util";
 import { getNextTweets, resetTweetPager, initTweetPager } from "./tweet_data";
+import {EntryObj} from "./object_tweet";
 
 /**
  * Route used when我们切换到自定义时间线时，写入到 location.hash
@@ -202,7 +203,7 @@ async function appendTweetsToTimeline(
     timelineEl: HTMLElement,
     tpl: HTMLTemplateElement,
     rows: TimelineRow[],
-    tweets: any[]
+    tweets: EntryObj[]
 ) {
     // 原 buildTweetNodes 已内联
     const nodes = tweets.map((entry) => renderTweetHTML(entry, tpl));
