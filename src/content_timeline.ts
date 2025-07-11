@@ -1,8 +1,9 @@
 import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
 import {renderTweetHTML} from "./tweet_render";
-import {hideOriginalTweetArea, showOriginalTweetArea, TimelineRow, waitForStableHeight} from "./timeline_util";
+import {hideOriginalTweetArea, showOriginalTweetArea, TimelineRow} from "./timeline_util";
 import { getNextTweets, resetTweetPager, initTweetPager } from "./tweet_data";
+// import { TimelineRow } from "./TimelineRow";
 
 /**
  * Route used when我们切换到自定义时间线时，写入到 location.hash
@@ -35,16 +36,19 @@ function scheduleAdjustOffsets(timelineEl: HTMLElement, rows: TimelineRow[], sta
 function adjustOffsets(timelineEl: HTMLElement, rows: TimelineRow[], startIdx: number, dh: number) {
     if (!dh) return;
     for (let i = startIdx + 1; i < rows.length; i++) {
-        rows[i].top += dh;
-        if (rows[i].attached) {
-            rows[i].node.style.top = rows[i].top + "px";
-        }
+        rows[i].setTop(rows[i].top + dh); // 用统一方法设置top
     }
     const newH = (parseFloat(timelineEl.style.height || "0") + dh).toFixed(3);
     timelineEl.style.height = newH + "px";
 }
 
-function observeRowHeight(timelineEl: HTMLElement, rows: TimelineRow[], row: TimelineRow, idx: number, label: string) {
+function observeRowHeight(
+    timelineEl: HTMLElement,
+    rows: TimelineRow[],
+    row: TimelineRow,
+    idx: number,
+    label: string
+) {
     const ro = new ResizeObserver(([e]) => {
         const newH = e.contentRect.height;
         const dh = newH - row.height;
@@ -54,8 +58,7 @@ function observeRowHeight(timelineEl: HTMLElement, rows: TimelineRow[], row: Tim
         scheduleAdjustOffsets(timelineEl, rows, idx, dh);
     });
     ro.observe(row.node);
-    // @ts-ignore 保存以便 reset 时 disconnect
-    row.node._ro = ro;
+    row.attachObserver(ro);
 }
 
 /* ------------------------------------------------------------------
@@ -98,12 +101,8 @@ function createUIElements(tpl: HTMLTemplateElement) {
 
 function resetTimeline(area: HTMLElement, rows: TimelineRow[]) {
     const tl = area.querySelector(".tweetTimeline") as HTMLElement;
-    tl.querySelectorAll<HTMLElement>(".tweetNode").forEach((n) => {
-        // @ts-ignore
-        n._ro?.disconnect();
-        // @ts-ignore
-        delete n._ro;
-    });
+    // 正确做法：逐行断开 observer
+    rows.forEach(r => r.disconnectObserver());
     tl.innerHTML = "";
     tl.style.removeProperty("height");
     rows.length = 0;
@@ -216,31 +215,47 @@ function buildTweetNodes(tweets: any[], tpl: HTMLTemplateElement): HTMLElement[]
     });
 }
 
-function appendTweetsToTimeline(
+async function waitForStableHeightSafe(node: HTMLElement, maxTries = 5, interval = 40): Promise<void> {
+    let tries = 0;
+    let lastH = node.offsetHeight;
+    while (tries < maxTries) {
+        await new Promise((res) => setTimeout(res, interval));
+        const newH = node.offsetHeight;
+        if (Math.abs(newH - lastH) < 1) return;
+        lastH = newH;
+        tries++;
+    }
+    // 强制返回
+}
+
+async function appendTweetsToTimeline(
     timelineEl: HTMLElement,
     tpl: HTMLTemplateElement,
     rows: TimelineRow[],
     tweets: any[]
 ) {
     const nodes = buildTweetNodes(tweets, tpl);
-    nodes.forEach(n => timelineEl.appendChild(n));
-    return Promise.all(nodes.map(waitForStableHeight)).then(() => {
-        let offset = rows.length === 0 ? 0 : rows[rows.length - 1].top + rows[rows.length - 1].height;
-        for (const [idx, node] of nodes.entries()) {
-            const h = node.offsetHeight;
-            const row = new TimelineRow(node, h, offset, true);
-            Object.assign(node.style, {
-                position: "absolute",
-                left: "0",
-                top: offset + "px",
-                visibility: "visible",
-            });
-            rows.push(row);
-            observeRowHeight(timelineEl, rows, row, rows.length - 1, `tweet#${node.getAttribute("data-tweet-id")}`);
-            offset += h;
-        }
-        timelineEl.style.height = offset + "px";
-    });
+    // 批量挂载
+    const frag = document.createDocumentFragment();
+    nodes.forEach(n => frag.appendChild(n));
+    timelineEl.appendChild(frag);
+    // 防止死循环
+    await Promise.all(nodes.map((n) => waitForStableHeightSafe(n)));
+    let offset = rows.length === 0 ? 0 : rows[rows.length - 1].top + rows[rows.length - 1].height;
+    for (const [idx, node_1] of nodes.entries()) {
+        const h = node_1.offsetHeight;
+        const row = new TimelineRow(node_1, h, offset, true);
+        Object.assign(node_1.style, {
+            position: "absolute",
+            left: "0",
+            top: offset + "px",
+            visibility: "visible",
+        });
+        rows.push(row);
+        observeRowHeight(timelineEl, rows, row, rows.length - 1, `tweet#${node_1.getAttribute("data-tweet-id")}`);
+        offset += h;
+    }
+    timelineEl.style.height = offset + "px";
 }
 
 function loadMoreData(rows: TimelineRow[], tpl: HTMLTemplateElement) {

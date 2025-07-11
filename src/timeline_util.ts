@@ -1,11 +1,14 @@
 /* ------------------------------------------------------------------
  * 虚拟滚动数据结构
  * ------------------------------------------------------------------*/
+
+// TimelineRow 类定义（只保留一份）
 export class TimelineRow {
     node: HTMLElement;
     height: number;
     top: number;
     attached: boolean;
+    private _ro?: ResizeObserver;
 
     constructor(node: HTMLElement, height: number, top: number, attached = true) {
         this.node = node;
@@ -19,13 +22,17 @@ export class TimelineRow {
         this.node.style.top = `${newTop}px`;
     }
 
-    detach() {
-        this.attached = false;
-        this.node.style.display = "none";
+    attachObserver(ro: ResizeObserver) {
+        this._ro = ro;
     }
-    // 其它扩展方法...
-}
 
+    disconnectObserver() {
+        if (this._ro) {
+            this._ro.disconnect();
+            this._ro = undefined;
+        }
+    }
+}
 /* ------------------------------------------------------------------
  * DOM utils – 隐藏 / 显示原生 TimeLine
  * ------------------------------------------------------------------*/
