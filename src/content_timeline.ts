@@ -1,8 +1,8 @@
-import { observeSimple } from "./utils";
-import { parseContentHtml } from "./content";
-import { renderTweetHTML } from "./tweet_render";
-import { hideOriginalTweetArea, showOriginalTweetArea, TimelineRow } from "./timeline_util";
-import { getNextTweets, resetTweetPager, initTweetPager } from "./tweet_data";
+import {observeSimple} from "./utils";
+import {parseContentHtml} from "./content";
+import {renderTweetHTML} from "./tweet_render";
+import {hideOriginalTweetArea, showOriginalTweetArea, TimelineRow} from "./timeline_util";
+import {getNextTweets, resetTweetPager, initTweetPager} from "./tweet_data";
 import {EntryObj} from "./object_tweet";
 
 /**
@@ -80,7 +80,7 @@ function bindWindowScrollLoadMore(rows: TimelineRow[], tpl: HTMLTemplateElement)
         const scrollTop = window.scrollY || document.documentElement.scrollTop;
         const windowHeight = window.innerHeight;
         const docHeight = document.documentElement.scrollHeight;
-        if (!loadingMore && scrollTop + windowHeight >= docHeight - 10) {
+        if (!loadingMore && scrollTop + windowHeight >= docHeight - 200) {
             loadingMore = true;
             console.log("[LoadMore] 已滚动到页面底部，准备加载更多数据");
             loadMoreData(rows, tpl).then(() => {
@@ -133,7 +133,7 @@ function bindCustomMenu(
         ev.preventDefault();
         hideOriginalTweetArea(originalArea);
         area.style.display = "block";
-        history.replaceState({ id: 123 }, "", "/#/" + selfDefineUrl);
+        history.replaceState({id: 123}, "", "/#/" + selfDefineUrl);
         const timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
         resetTimeline(area, rows);
         bindWindowScrollLoadMore(rows, tpl);
@@ -218,7 +218,8 @@ async function appendTweetsToTimeline(
         Object.assign(node_1.style, {
             position: "absolute",
             left: "0",
-            top: offset + "px",
+            transform: `translateY(${offset}px)`, // 替换 top
+            width: "100%", // 显式设置宽度
             visibility: "visible",
         });
         rows.push(row);

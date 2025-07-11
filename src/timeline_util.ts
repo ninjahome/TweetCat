@@ -19,7 +19,7 @@ export class TimelineRow {
 
     setTop(newTop: number) {
         this.top = newTop;
-        this.node.style.top = `${newTop}px`;
+        this.node.style.transform = `translateY(${top}px)`;
     }
 
     attachObserver(ro: ResizeObserver) {
