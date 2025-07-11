@@ -122,14 +122,14 @@ function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) 
         video.controls = true;
         video.playsInline = true;
 
-        const onCanPlay = () => {
-            video.removeEventListener('canplay', onCanPlay);
-            video.play().catch(err => {
-                console.warn("HLS autoplay failed:", err);
-            });
-        };
-
-        video.addEventListener('canplay', onCanPlay);
+        // const onCanPlay = () => {
+        //     video.removeEventListener('canplay', onCanPlay);
+        //     video.play().catch(err => {
+        //         console.warn("HLS autoplay failed:", err);
+        //     });
+        // };
+        //
+        // video.addEventListener('canplay', onCanPlay);
         return;
     }
 
@@ -149,12 +149,12 @@ function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) 
     video.load();
 
     // 使用 canplay 事件确保视频准备好后再调用 play()
-    const onCanPlay = () => {
-        video.removeEventListener('canplay', onCanPlay);
-        video.play().catch(err => {
-            console.warn("MP4 autoplay failed:", err);
-        });
-    };
-
-    video.addEventListener('canplay', onCanPlay);
+    // const onCanPlay = () => {
+    //     video.removeEventListener('canplay', onCanPlay);
+    //     video.play().catch(err => {
+    //         console.warn("MP4 autoplay failed:", err);
+    //     });
+    // };
+    //
+    // video.addEventListener('canplay', onCanPlay);
 }
