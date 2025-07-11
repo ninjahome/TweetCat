@@ -33,18 +33,46 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
             url: browser.runtime.getURL("html/welcome.html")
         }).then();
     }
-    checkAndInitDatabase().then();
-    initDefaultQueryKey();
+    (async () => {
+        await checkAndInitDatabase();
+        await initDefaultQueryKey();
+    })();
 });
 
-function initDefaultQueryKey() {
-    localSet(__DBK_query_id_map, defaultQueryKeyMap).then()
-    console.log("----->>> init default query key map success!")
+
+async function initDefaultQueryKey() {
+    let existMap = await localGet(__DBK_query_id_map);
+
+    // 不存在，直接存
+    if (!existMap || typeof existMap !== "object") {
+        await localSet(__DBK_query_id_map, defaultQueryKeyMap);
+        console.log("----->>> init default query key map success! (full set)");
+        return;
+    }
+
+    // 部分 key 缺失，用默认值补全
+    let needUpdate = false;
+    for (const key of Object.keys(defaultQueryKeyMap)) {
+        if (!(key in existMap)) {
+            existMap[key] = defaultQueryKeyMap[key];
+            needUpdate = true;
+        }
+    }
+
+    if (needUpdate) {
+        await localSet(__DBK_query_id_map, existMap);
+        console.log("----->>> init default query key map success! (partial update)");
+    } else {
+        console.log("----->>> init default query key map: already up to date");
+    }
 }
 
+
 browser.runtime.onStartup.addListener(() => {
-    console.log('------>>> onStartup......');
-    checkAndInitDatabase().then();
+    (async () => {
+        console.log('------>>> onStartup......');
+        await checkAndInitDatabase();
+    })();
 });
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
@@ -63,7 +91,7 @@ async function handleNavigation(details: WebNavigation.OnCompletedDetailsType | 
             isHome: details.url === __targetUrlToFilter
         });
     } catch (e) {
-        console.log("------>>> navigation message error:", e);
+        // console.log("------>>> navigation message error:", e);
     }
 }
 
@@ -102,12 +130,12 @@ browser.webRequest.onBeforeRequest.addListener(
         if (!watchedOps.includes(operationName)) {
             return;
         }
-        // console.log(`------>>>[GraphQL QueryId Update] ${operationName} → ${queryId}`);
-        localGet(__DBK_query_id_map).then(data => {
+        // console.log(`------>>>[GraphQL QueryId:] ${operationName} → ${queryId}`);
+        localGet(__DBK_query_id_map).then(async data => {
             const existingMap: Record<string, string> = data as Record<string, string> || {}
             if (!existingMap[operationName] || existingMap[operationName] !== queryId) {
                 existingMap[operationName] = queryId;
-                localSet(__DBK_query_id_map, existingMap).then();
+                await localSet(__DBK_query_id_map, existingMap).then();
                 console.log(`------>>>[GraphQL QueryId Update] ${operationName} → ${queryId}`);
             }
         });

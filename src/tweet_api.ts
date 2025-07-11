@@ -10,7 +10,7 @@ async function getUrlWithQueryID(key: string): Promise<string | null> {
     if (!queryID) {
         return null;
     }
-
+    // console.log("------------->>>>>>>>>>>>>>>>>>>>>query id:", queryID);
     return `${BASE_URL}${queryID}/${key}`
 }
 
@@ -170,13 +170,14 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
         credentials: 'include',
     });
 
+    console.log(JSON.stringify(response));
+
     if (!response.ok) {
         console.error(`Failed to get userId for ${username}:`, response.status);
         return null;
     }
 
     const result = await response.json();
-    // console.log(result);
     const userId = result?.data?.user?.result?.rest_id;
     return userId ?? null;
 }

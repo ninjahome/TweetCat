@@ -53,10 +53,10 @@ export const watchedOps = [
 ];
 
 export const defaultQueryKeyMap: Record<string, string> = {
-    UserByScreenName: "32pL5BWe9WKeSK1MoPvFQQ",
-    UserTweets: "M3Hpkrb8pjWkEuGdLeXMOA",
+    UserByScreenName: "x3RLKWW1Tl7JgU7YtGxuzw",
+    UserTweets: "MdhoJlJzYWas9JNmFz7H3A",
     HomeLatestTimeline: "nMyTQqsJiUGBKLGNSQamAA",
     TweetDetail: "b9Yw90FMr_zUb8DvA8r2ug",
-    UsersByRestIds: "PyRggX3LQweP9nSF6PHliA",
+    UsersByRestIds: "kCBEQ-OvWNVtotaYmqG0aw",
     SearchTimeline: "fL2MBiqXPk5pSrOS5ACLdA",
 }
