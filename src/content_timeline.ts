@@ -69,7 +69,11 @@ function bindWindowScrollLoadMore(rows: TimelineRow[], tpl: HTMLTemplateElement)
         window.removeEventListener("scroll", windowScrollHandler);
         windowScrollHandler = null;
     }
+    let lastScrollTime = 0;
     windowScrollHandler = () => {
+        const now = Date.now();
+        if (now - lastScrollTime < 100) return; // 限制每100ms触发一次
+        lastScrollTime = now;
         const scrollTop = window.scrollY || document.documentElement.scrollTop;
         const windowHeight = window.innerHeight;
         const docHeight = document.documentElement.scrollHeight;
@@ -224,11 +228,16 @@ async function appendTweetsToTimeline(
     timelineEl.style.height = offset + "px";
 }
 
-function loadMoreData(rows: TimelineRow[], tpl: HTMLTemplateElement) {
+async function loadMoreData(rows: TimelineRow[], tpl: HTMLTemplateElement) {
     return new Promise<void>(async (resolve) => {
         const timelineEl = document.querySelector(".tweetTimeline") as HTMLElement;
+        if (!timelineEl || !tpl) {
+            console.warn("[LoadMore] timelineEl or tpl is missing");
+            resolve();
+            return;
+        }
         const nextTweets = getNextTweets(5);
-        if (nextTweets.length === 0 || !timelineEl || !tpl) {
+        if (nextTweets.length === 0) {
             resolve();
             return;
         }
