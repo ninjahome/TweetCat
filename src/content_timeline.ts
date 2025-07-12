@@ -23,24 +23,30 @@ function batchAdjustOffsets(timelineEl: HTMLElement, rows: TimelineRow[]) {
             let totalDh = 0;
             let startIdx = -1;
 
-            // 检查所有行的高度变化
+            // 批量先读取高度，防止多次reflow
+            const newHeights = rows.map(r => r.node.offsetHeight);
+
             for (let i = 0; i < rows.length; i++) {
-                const newH = rows[i].node.offsetHeight;
-                const dh = newH - rows[i].height;
+                const dh = newHeights[i] - rows[i].height;
                 if (dh) {
                     if (startIdx === -1) startIdx = i;
-                    rows[i].height = newH;
+                    rows[i].height = newHeights[i];
                     totalDh += dh;
                 }
             }
 
             // 批量更新后续行的位置
             if (startIdx !== -1 && totalDh !== 0) {
+                let offset = rows[startIdx].top + rows[startIdx].height;
                 for (let i = startIdx + 1; i < rows.length; i++) {
-                    rows[i].setTop(rows[i].top + totalDh);
+                    rows[i].top = offset;
+                    rows[i].node.style.transform = `translateY(${offset}px)`;
+                    offset += rows[i].height;
                 }
-                const newH = (parseFloat(timelineEl.style.height || "0") + totalDh).toFixed(3);
-                timelineEl.style.height = newH + "px";
+                // 只在高度变化时更新容器高度
+                if (timelineEl.style.height !== `${offset}px`) {
+                    timelineEl.style.height = `${offset}px`;
+                }
             }
             adjustPending = false;
         });
@@ -204,28 +210,43 @@ async function appendTweetsToTimeline(
     tweets: EntryObj[]
 ) {
     const nodes = tweets.map((entry) => renderTweetHTML(entry, tpl));
-    const frag = document.createDocumentFragment();
+    // 提前设置 will-change，优化 transform
     nodes.forEach(n => {
-        n.style.minHeight = "100px"; // 设置默认最小高度
-        frag.appendChild(n);
+        n.style.willChange = "transform";
+        n.style.minHeight = "100px";
     });
+
+    const frag = document.createDocumentFragment();
+    nodes.forEach(n => frag.appendChild(n));
     timelineEl.appendChild(frag);
+
+    // 统一等待所有节点高度稳定，避免 reflow thrashing
     await Promise.all(nodes.map((n) => waitForStableHeightSafe(n)));
+
+    // 批量读取高度
+    const heights = nodes.map(n => n.offsetHeight);
+
+    // 批量计算 offset，批量设置样式
     let offset = rows.length === 0 ? 0 : rows[rows.length - 1].top + rows[rows.length - 1].height;
-    for (const node_1 of nodes) {
-        const h = node_1.offsetHeight;
-        const row = new TimelineRow(node_1, h, offset, true);
-        Object.assign(node_1.style, {
+    for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+        const h = heights[i];
+        const row = new TimelineRow(node, h, offset, true);
+        Object.assign(node.style, {
             position: "absolute",
             left: "0",
             transform: `translateY(${offset}px)`,
             width: "100%",
             visibility: "visible",
+            willChange: "transform"
         });
         rows.push(row);
         offset += h;
     }
-    timelineEl.style.height = offset + "px";
+    // 只在高度变化时写入
+    if (timelineEl.style.height !== `${offset}px`) {
+        timelineEl.style.height = `${offset}px`;
+    }
 }
 
 async function loadMoreData(rows: TimelineRow[], tpl: HTMLTemplateElement) {
