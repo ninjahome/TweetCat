@@ -195,7 +195,8 @@ img, video {
     position: relative;
     text-decoration: none;
     z-index: 0;
-    overflow: auto;
+    overflow: hidden;
+    min-height: 100%;
 }
 
 .tweet-card {
