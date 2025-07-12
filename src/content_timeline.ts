@@ -14,55 +14,48 @@ const selfDefineUrl = "tweetCatTimeLine";
 // Height compensation: 批量补偿优化、requestAnimationFrame 防抖
 // -----------------------------
 let adjustPending = false;
-let lastAdjustIdx = -1;
-let lastAdjustDh = 0;
+let timelineObserver: ResizeObserver | null = null;
 
-function scheduleAdjustOffsets(
-    timelineEl: HTMLElement,
-    rows: TimelineRow[],
-    startIdx: number,
-    dh: number
-) {
-    lastAdjustIdx = startIdx;
-    lastAdjustDh = dh;
+function batchAdjustOffsets(timelineEl: HTMLElement, rows: TimelineRow[]) {
     if (!adjustPending) {
         adjustPending = true;
         requestAnimationFrame(() => {
-            adjustOffsets(timelineEl, rows, lastAdjustIdx, lastAdjustDh);
+            let totalDh = 0;
+            let startIdx = -1;
+
+            // 检查所有行的高度变化
+            for (let i = 0; i < rows.length; i++) {
+                const newH = rows[i].node.offsetHeight;
+                const dh = newH - rows[i].height;
+                if (dh) {
+                    if (startIdx === -1) startIdx = i;
+                    rows[i].height = newH;
+                    totalDh += dh;
+                }
+            }
+
+            // 批量更新后续行的位置
+            if (startIdx !== -1 && totalDh !== 0) {
+                for (let i = startIdx + 1; i < rows.length; i++) {
+                    rows[i].setTop(rows[i].top + totalDh);
+                }
+                const newH = (parseFloat(timelineEl.style.height || "0") + totalDh).toFixed(3);
+                timelineEl.style.height = newH + "px";
+            }
             adjustPending = false;
         });
     }
 }
 
-function adjustOffsets(
-    timelineEl: HTMLElement,
-    rows: TimelineRow[],
-    startIdx: number,
-    dh: number
-) {
-    if (!dh) return;
-    for (let i = startIdx + 1; i < rows.length; i++) {
-        rows[i].setTop(rows[i].top + dh);
+function observeTimelineHeight(timelineEl: HTMLElement, rows: TimelineRow[]) {
+    if (timelineObserver) {
+        timelineObserver.disconnect();
     }
-    const newH = (parseFloat(timelineEl.style.height || "0") + dh).toFixed(3);
-    timelineEl.style.height = newH + "px";
-}
-
-function observeRowHeight(
-    timelineEl: HTMLElement,
-    rows: TimelineRow[],
-    row: TimelineRow,
-    idx: number
-) {
-    const ro = new ResizeObserver(([e]) => {
-        const newH = e.contentRect.height;
-        const dh = newH - row.height;
-        if (!dh) return;
-        row.height = newH;
-        scheduleAdjustOffsets(timelineEl, rows, idx, dh);
+    timelineObserver = new ResizeObserver(() => {
+        batchAdjustOffsets(timelineEl, rows);
     });
-    ro.observe(row.node);
-    row.attachObserver(ro);
+    timelineObserver.observe(timelineEl);
+    return timelineObserver;
 }
 
 // -----------------------------
@@ -104,6 +97,10 @@ function resetTimeline(area: HTMLElement, rows: TimelineRow[]) {
         window.removeEventListener("scroll", windowScrollHandler);
         windowScrollHandler = null;
     }
+    if (timelineObserver) {
+        timelineObserver.disconnect();
+        timelineObserver = null;
+    }
     resetTweetPager();
 }
 
@@ -138,14 +135,11 @@ function bindCustomMenu(
         resetTimeline(area, rows);
         bindWindowScrollLoadMore(rows, tpl);
         renderAndLayoutTweets(timelineEl, tpl, rows).catch(console.error);
+        observeTimelineHeight(timelineEl, rows); // 初始化时设置 ResizeObserver
     });
 }
 
-// -----------------------------
-// UI bootstrapping
-// -----------------------------
 function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
-    // 直接在这里解构 template
     const menuItem = tpl.content.getElementById("tweetCatMenuItem")!.cloneNode(true) as HTMLElement;
     const area = tpl.content.getElementById("tweetCatArea")!.cloneNode(true) as HTMLElement;
     const main = document.querySelector("main[role='main']") as HTMLElement;
@@ -187,7 +181,7 @@ async function renderAndLayoutTweets(
     await appendTweetsToTimeline(timelineEl, tpl, rows, tweets);
 }
 
-async function waitForStableHeightSafe(node: HTMLElement, maxTries = 5, interval = 40): Promise<void> {
+async function waitForStableHeightSafe(node: HTMLElement, maxTries = 3, interval = 20): Promise<void> {
     let tries = 0;
     let lastH = node.offsetHeight;
     while (tries < maxTries) {
@@ -205,10 +199,12 @@ async function appendTweetsToTimeline(
     rows: TimelineRow[],
     tweets: EntryObj[]
 ) {
-    // 原 buildTweetNodes 已内联
     const nodes = tweets.map((entry) => renderTweetHTML(entry, tpl));
     const frag = document.createDocumentFragment();
-    nodes.forEach(n => frag.appendChild(n));
+    nodes.forEach(n => {
+        n.style.minHeight = "100px"; // 设置默认最小高度
+        frag.appendChild(n);
+    });
     timelineEl.appendChild(frag);
     await Promise.all(nodes.map((n) => waitForStableHeightSafe(n)));
     let offset = rows.length === 0 ? 0 : rows[rows.length - 1].top + rows[rows.length - 1].height;
@@ -218,12 +214,11 @@ async function appendTweetsToTimeline(
         Object.assign(node_1.style, {
             position: "absolute",
             left: "0",
-            transform: `translateY(${offset}px)`, // 替换 top
-            width: "100%", // 显式设置宽度
+            transform: `translateY(${offset}px)`,
+            width: "100%",
             visibility: "visible",
         });
         rows.push(row);
-        observeRowHeight(timelineEl, rows, row, rows.length - 1);
         offset += h;
     }
     timelineEl.style.height = offset + "px";
