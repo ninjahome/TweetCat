@@ -10,6 +10,37 @@ import {
     resetTweetPager
 } from "./timeline_data";
 
+export class TweetManager {
+    scroller: VirtualScroller | null = null;
+
+    constructor(
+        private readonly timelineEl: HTMLElement,
+        private readonly tpl: HTMLTemplateElement
+    ) {
+    }
+
+    async initFirstPage() {
+        this.dispose();
+        await initTweetPager();
+        const tweets = getNextTweets(5);
+        if (tweets.length) await appendTweetsToTimeline(this.timelineEl, this.tpl, tweets);
+        this.scroller = new VirtualScroller(this.timelineEl, this.tpl);
+    }
+
+    dispose() {
+        this.timelineEl.innerHTML = "";
+        this.timelineEl.style.removeProperty("height");
+
+        this.scroller?.dispose();
+        this.scroller = null;
+
+        cells.forEach(c => c.unmount());
+        cells.length = 0;
+        listHeight = 0;
+        resetTweetPager();
+    }
+}
+
 /* ------------ 全局缓存 ------------ */
 const cells: TweetCatCell[] = [];
 let listHeight = 0;
@@ -27,21 +58,15 @@ function onCellHeightChange(cell: TweetCatCell, dh: number, timelineEl: HTMLElem
         }
     }
     listHeight += dh;
-    timelineEl.style.height = `${listHeight}px`;
+    // timelineEl.style.height = `${listHeight}px`;
+    timelineEl.style.height = `${Math.max(tweetCatTimeLineDefaultHeight, listHeight)}px`;
+    console.log("timelineEl.style.height ===========>>>>:", timelineEl.style.height)
 }
+
 
 /* ------------ 渲染 / 加载更多 ------------ */
-let scroller: VirtualScroller | null = null;
 
-export async function renderAndLayoutTweets(
-    timelineEl: HTMLElement,
-    tpl: HTMLTemplateElement
-) {
-    await initTweetPager();
-    const tweets = getNextTweets(5);
-    if (tweets.length) await appendTweetsToTimeline(timelineEl, tpl, tweets);
-    scroller = new VirtualScroller(timelineEl, tpl);
-}
+const tweetCatTimeLineDefaultHeight = 10240;
 
 export async function appendTweetsToTimeline(
     timelineEl: HTMLElement,
@@ -56,9 +81,9 @@ export async function appendTweetsToTimeline(
         cells.push(cell);
         offset += cell.height;
     }
-
     listHeight = offset;
-    timelineEl.style.height = `${listHeight}px`;
+    timelineEl.style.height = `${Math.max(tweetCatTimeLineDefaultHeight, listHeight)}px`;
+    console.log("timelineEl.style.height =====2======>>>>:", timelineEl.style.height)
 }
 
 export async function loadMoreData(tpl: HTMLTemplateElement) {
@@ -69,23 +94,6 @@ export async function loadMoreData(tpl: HTMLTemplateElement) {
     if (!next.length) return;
 
     await appendTweetsToTimeline(timelineEl, tpl, next);
-}
-
-/* ------------ reset / 清理 ------------ */
-export function resetTimeline(area: HTMLElement) {
-    const tl = area.querySelector(".tweetTimeline") as HTMLElement;
-    tl.innerHTML = "";
-    tl.style.removeProperty("height");
-
-    scroller?.dispose();
-    scroller = null;
-
-    /* 卸载所有 cell */
-    cells.forEach(c => c.unmount());
-    cells.length = 0;
-    listHeight = 0;
-
-    resetTweetPager();
 }
 
 

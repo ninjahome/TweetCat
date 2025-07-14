@@ -1,15 +1,14 @@
 import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
-import {
-    renderAndLayoutTweets,
-    resetTimeline, VirtualScroller
-} from "./timeline_manager";
+import {TweetManager} from "./timeline_manager";
 
 const selfDefineUrl = "tweetCatTimeLine";
+let manager: TweetManager | null = null;
 
 /**
  * Route used when我们切换到自定义时间线时，写入到 location.hash
  */
+
 function bindReturnToOriginal(
     menuList: HTMLElement,
     area: HTMLElement,
@@ -19,7 +18,7 @@ function bindReturnToOriginal(
         a.addEventListener("click", () => {
             area.style.display = "none";
             showOriginalTweetArea(originalArea);
-            resetTimeline(area);
+            manager?.dispose();
         });
     });
 }
@@ -30,15 +29,14 @@ function bindTweetCatMenu(
     originalArea: HTMLElement,
     tpl: HTMLTemplateElement
 ) {
-    menuItem.addEventListener("click", (ev) => {
+    const timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
+    manager = new TweetManager(timelineEl, tpl);
+    menuItem.addEventListener("click", async (ev) => {
         ev.preventDefault();
         hideOriginalTweetArea(originalArea);
         area.style.display = "block";
         history.replaceState({id: 123}, "", "/#/" + selfDefineUrl);
-        const timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
-        resetTimeline(area);
-        renderAndLayoutTweets(timelineEl, tpl).then(()=>{
-        }).catch(console.error);
+        await manager?.initFirstPage();
     });
 }
 
