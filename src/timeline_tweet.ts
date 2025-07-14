@@ -26,7 +26,8 @@ export class TweetCatCell {
         private readonly data: EntryObj,
         private readonly tpl: HTMLTemplateElement,
         private readonly reportDh: (cell: TweetCatCell, dh: number) => void
-    ) {}
+    ) {
+    }
 
     /** 首次或再次挂载 */
     async mount(parent: HTMLElement, offset: number) {
@@ -59,6 +60,7 @@ export class TweetCatCell {
     /** 从 DOM 移除 */
     unmount() {
         if (this.node?.isConnected) this.node.remove();
+        this.node = null as any;        // 让 GC 可回收 //TODO::node pool logic
     }
 
     /** 在交互或媒体 onload 时手动调用 */

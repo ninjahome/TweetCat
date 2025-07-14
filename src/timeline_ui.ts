@@ -1,9 +1,8 @@
 import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
 import {
-    bindWindowScrollLoadMore,
     renderAndLayoutTweets,
-    resetTimeline
+    resetTimeline, VirtualScroller
 } from "./timeline_manager";
 
 const selfDefineUrl = "tweetCatTimeLine";
@@ -38,8 +37,8 @@ function bindTweetCatMenu(
         history.replaceState({id: 123}, "", "/#/" + selfDefineUrl);
         const timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
         resetTimeline(area);
-        bindWindowScrollLoadMore(tpl);
-        renderAndLayoutTweets(timelineEl, tpl).catch(console.error);
+        renderAndLayoutTweets(timelineEl, tpl).then(()=>{
+        }).catch(console.error);
     });
 }
 

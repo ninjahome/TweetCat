@@ -10,9 +10,6 @@ import {
     resetTweetPager
 } from "./timeline_data";
 
-/* 让 UI 仍能 import { TimelineRow } */
-export type TimelineRow = TweetCatCell;
-
 /* ------------ 全局缓存 ------------ */
 const cells: TweetCatCell[] = [];
 let listHeight = 0;
@@ -34,6 +31,8 @@ function onCellHeightChange(cell: TweetCatCell, dh: number, timelineEl: HTMLElem
 }
 
 /* ------------ 渲染 / 加载更多 ------------ */
+let scroller: VirtualScroller | null = null;
+
 export async function renderAndLayoutTweets(
     timelineEl: HTMLElement,
     tpl: HTMLTemplateElement
@@ -41,6 +40,7 @@ export async function renderAndLayoutTweets(
     await initTweetPager();
     const tweets = getNextTweets(5);
     if (tweets.length) await appendTweetsToTimeline(timelineEl, tpl, tweets);
+    scroller = new VirtualScroller(timelineEl, tpl);
 }
 
 export async function appendTweetsToTimeline(
@@ -71,43 +71,14 @@ export async function loadMoreData(tpl: HTMLTemplateElement) {
     await appendTweetsToTimeline(timelineEl, tpl, next);
 }
 
-/* ------------ 滚动监听（与 UI 保持兼容） ------------ */
-let windowScrollHandler: ((e: Event) => void) | null = null;
-let loadingMore = false;
-
-export function bindWindowScrollLoadMore(tpl: HTMLTemplateElement) {
-    if (windowScrollHandler) {
-        window.removeEventListener("scroll", windowScrollHandler);
-        windowScrollHandler = null;
-    }
-
-    let lastScroll = 0;
-    windowScrollHandler = () => {
-        const now = Date.now();
-        if (now - lastScroll < 100) return;
-        lastScroll = now;
-
-        const scrollTop = window.scrollY || document.documentElement.scrollTop;
-        const windowH  = window.innerHeight;
-        const docH     = document.documentElement.scrollHeight;
-
-        if (!loadingMore && scrollTop + windowH >= docH - 200) {
-            loadingMore = true;
-            loadMoreData(tpl).finally(() => (loadingMore = false));
-        }
-    };
-    window.addEventListener("scroll", windowScrollHandler, {passive: true});
-}
-
 /* ------------ reset / 清理 ------------ */
 export function resetTimeline(area: HTMLElement) {
     const tl = area.querySelector(".tweetTimeline") as HTMLElement;
     tl.innerHTML = "";
     tl.style.removeProperty("height");
 
-    /* 解绑滚动 */
-    windowScrollHandler && window.removeEventListener("scroll", windowScrollHandler);
-    windowScrollHandler = null;
+    scroller?.dispose();
+    scroller = null;
 
     /* 卸载所有 cell */
     cells.forEach(c => c.unmount());
@@ -115,4 +86,72 @@ export function resetTimeline(area: HTMLElement) {
     listHeight = 0;
 
     resetTweetPager();
+}
+
+
+export class VirtualScroller {
+    private buffer = 600;             // 可视区上下缓冲 px
+    private loadingMore = false;
+
+    constructor(
+        private readonly timelineEl: HTMLElement,
+        private readonly tpl: HTMLTemplateElement
+    ) {
+        this.onScroll = this.onScroll.bind(this);
+        window.addEventListener("scroll", this.onScroll, {passive: true});
+        this.onScroll();                // 首帧打印一下
+    }
+
+    private onScroll() {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const vh = window.innerHeight;
+        const visibleTop = scrollTop - this.buffer;
+        const visibleBottom = scrollTop + vh + this.buffer;
+
+        const fromIdx = findFirstOverlap(visibleTop);
+        const toIdx = findLastOverlap(visibleBottom);
+
+        console.log("[VS] visibleTop:", visibleTop,
+            "visibleBottom:", visibleBottom,
+            "⟶ range:", fromIdx, "→", toIdx);
+
+        if (!this.loadingMore && toIdx >= cells.length - 1) {
+            this.loadingMore = true;
+            loadMoreData(this.tpl).finally(() => (this.loadingMore = false));
+        }
+    }
+
+    dispose() {
+        window.removeEventListener("scroll", this.onScroll);
+    }
+}
+
+
+/* ---------- 求可见区索引 ---------- */
+function findFirstOverlap(top: number): number {
+    let l = 0, r = cells.length - 1, ans = cells.length;
+    while (l <= r) {
+        const m = (l + r) >> 1;
+        if (cells[m].offset + cells[m].height > top) {
+            ans = m;
+            r = m - 1;
+        } else {
+            l = m + 1;
+        }
+    }
+    return ans;
+}
+
+function findLastOverlap(bottom: number): number {
+    let l = 0, r = cells.length - 1, ans = -1;
+    while (l <= r) {
+        const m = (l + r) >> 1;
+        if (cells[m].offset < bottom) {
+            ans = m;
+            l = m + 1;
+        } else {
+            r = m - 1;
+        }
+    }
+    return ans;
 }
