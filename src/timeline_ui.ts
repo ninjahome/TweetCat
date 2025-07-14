@@ -2,10 +2,9 @@ import {observeSimple} from "./utils";
 import {parseContentHtml} from "./content";
 import {
     bindWindowScrollLoadMore,
-    observeTimelineHeight, renderAndLayoutTweets,
+    renderAndLayoutTweets,
     resetTimeline
 } from "./timeline_manager";
-import {TweetCatCell} from "./tweetcat_cell";
 
 const selfDefineUrl = "tweetCatTimeLine";
 
@@ -15,14 +14,13 @@ const selfDefineUrl = "tweetCatTimeLine";
 function bindReturnToOriginal(
     menuList: HTMLElement,
     area: HTMLElement,
-    originalArea: HTMLElement,
-    rows: TweetCatCell[]
+    originalArea: HTMLElement
 ) {
     menuList.querySelectorAll("a").forEach((a) => {
         a.addEventListener("click", () => {
             area.style.display = "none";
             showOriginalTweetArea(originalArea);
-            resetTimeline(area, rows);
+            resetTimeline(area);
         });
     });
 }
@@ -31,8 +29,7 @@ function bindTweetCatMenu(
     menuItem: HTMLElement,
     area: HTMLElement,
     originalArea: HTMLElement,
-    tpl: HTMLTemplateElement,
-    rows: TweetCatCell[]
+    tpl: HTMLTemplateElement
 ) {
     menuItem.addEventListener("click", (ev) => {
         ev.preventDefault();
@@ -40,10 +37,9 @@ function bindTweetCatMenu(
         area.style.display = "block";
         history.replaceState({id: 123}, "", "/#/" + selfDefineUrl);
         const timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
-        resetTimeline(area, rows);
-        bindWindowScrollLoadMore(rows, tpl);
-        renderAndLayoutTweets(timelineEl, tpl, rows).catch(console.error);
-        observeTimelineHeight(timelineEl, rows); // 初始化时设置 ResizeObserver
+        resetTimeline(area);
+        bindWindowScrollLoadMore(tpl);
+        renderAndLayoutTweets(timelineEl, tpl).catch(console.error);
     });
 }
 
@@ -52,9 +48,8 @@ function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
     const area = tpl.content.getElementById("tweetCatArea")!.cloneNode(true) as HTMLElement;
     const main = document.querySelector("main[role='main']") as HTMLElement;
     const originalArea = main.firstChild as HTMLElement;
-    const rows: TweetCatCell[] = [];
-    bindReturnToOriginal(menuList, area, originalArea, rows);
-    bindTweetCatMenu(menuItem, area, originalArea, tpl, rows);
+    bindReturnToOriginal(menuList, area, originalArea);
+    bindTweetCatMenu(menuItem, area, originalArea, tpl);
     menuList.insertBefore(menuItem, menuList.children[1]);
     main.insertBefore(area, originalArea);
 }
