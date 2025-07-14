@@ -99,7 +99,6 @@ function bindWindowScrollLoadMore(rows: TimelineRow[], tpl: HTMLTemplateElement)
 // -----------------------------
 function resetTimeline(area: HTMLElement, rows: TimelineRow[]) {
     const tl = area.querySelector(".tweetTimeline") as HTMLElement;
-    rows.forEach(r => r.disconnectObserver());
     tl.innerHTML = "";
     tl.style.removeProperty("height");
     rows.length = 0;
@@ -173,10 +172,6 @@ export function appendTweetCatMenuItem() {
     );
 }
 
-export function switchToTweetCatTimeLine() {
-    (document.getElementById("tweetCatMenuItem") as HTMLAnchorElement)?.click();
-}
-
 // -----------------------------
 // 分层: 数据获取、DOM生成、批量渲染与测量
 // -----------------------------
@@ -231,7 +226,7 @@ async function appendTweetsToTimeline(
     for (let i = 0; i < nodes.length; i++) {
         const node = nodes[i];
         const h = heights[i];
-        const row = new TimelineRow(node, h, offset, true);
+        const row = new TimelineRow(node, h, offset);
         Object.assign(node.style, {
             position: "absolute",
             left: "0",

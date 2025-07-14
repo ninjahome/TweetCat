@@ -7,32 +7,14 @@ export class TimelineRow {
     node: HTMLElement;
     height: number;
     top: number;
-    attached: boolean;
-    private _ro?: ResizeObserver;
 
-    constructor(node: HTMLElement, height: number, top: number, attached = true) {
+    constructor(node: HTMLElement, height: number, top: number) {
         this.node = node;
         this.height = height;
         this.top = top;
-        this.attached = attached;
-    }
-
-    setTop(newTop: number) {
-        this.top = newTop;
-        this.node.style.transform = `translateY(${top}px)`;
-    }
-
-    attachObserver(ro: ResizeObserver) {
-        this._ro = ro;
-    }
-
-    disconnectObserver() {
-        if (this._ro) {
-            this._ro.disconnect();
-            this._ro = undefined;
-        }
     }
 }
+
 /* ------------------------------------------------------------------
  * DOM utils – 隐藏 / 显示原生 TimeLine
  * ------------------------------------------------------------------*/
@@ -63,41 +45,13 @@ export function showOriginalTweetArea(el: HTMLElement) {
 }
 
 
-export function binarySearch(y: number, slots: TimelineRow[]): number {
-    let l = 0,
-        r = slots.length - 1,
-        ans = slots.length;
+/** 小工具：返回 <= value 的最后一个索引 */
+function binarySearch(arr: number[], value: number) {
+    let l = 0, r = arr.length - 1;
     while (l <= r) {
         const m = (l + r) >> 1;
-        const s = slots[m];
-        if (s.top + s.height < y) {
-            l = m + 1;
-        } else {
-            ans = m;
-            r = m - 1;
-        }
+        if (arr[m] <= value) l = m + 1;
+        else r = m - 1;
     }
-    return ans;
+    return r;
 }
-
-/* ------------------------------------------------------------------
- * wait for two stable frames – 避免测量期抖动
- * ------------------------------------------------------------------*/
-export function waitForStableHeight(el: HTMLElement): Promise<void> {
-    return new Promise((resolve) => {
-        let last = el.offsetHeight;
-        let stable = 0;
-        const check = () => {
-            const h = el.offsetHeight;
-            if (h === last) stable++;
-            else {
-                stable = 0;
-                last = h;
-            }
-            if (stable >= 2) resolve();
-            else requestAnimationFrame(check);
-        };
-        requestAnimationFrame(check);
-    });
-}
-
