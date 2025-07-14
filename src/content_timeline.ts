@@ -3,9 +3,9 @@ import {parseContentHtml} from "./content";
 import {
     bindWindowScrollLoadMore,
     observeTimelineHeight, renderAndLayoutTweets,
-    resetTimeline,
-    TimelineRow
+    resetTimeline
 } from "./timeline_manager";
+import {TweetCatCell} from "./tweetcat_cell";
 
 const selfDefineUrl = "tweetCatTimeLine";
 
@@ -16,7 +16,7 @@ function bindReturnToOriginal(
     menuList: HTMLElement,
     area: HTMLElement,
     originalArea: HTMLElement,
-    rows: TimelineRow[]
+    rows: TweetCatCell[]
 ) {
     menuList.querySelectorAll("a").forEach((a) => {
         a.addEventListener("click", () => {
@@ -32,7 +32,7 @@ function bindTweetCatMenu(
     area: HTMLElement,
     originalArea: HTMLElement,
     tpl: HTMLTemplateElement,
-    rows: TimelineRow[]
+    rows: TweetCatCell[]
 ) {
     menuItem.addEventListener("click", (ev) => {
         ev.preventDefault();
@@ -52,7 +52,7 @@ function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
     const area = tpl.content.getElementById("tweetCatArea")!.cloneNode(true) as HTMLElement;
     const main = document.querySelector("main[role='main']") as HTMLElement;
     const originalArea = main.firstChild as HTMLElement;
-    const rows: TimelineRow[] = [];
+    const rows: TweetCatCell[] = [];
     bindReturnToOriginal(menuList, area, originalArea, rows);
     bindTweetCatMenu(menuItem, area, originalArea, tpl, rows);
     menuList.insertBefore(menuItem, menuList.children[1]);
