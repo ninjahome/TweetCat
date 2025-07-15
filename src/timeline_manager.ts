@@ -10,7 +10,7 @@ import {
     resetTweetPager
 } from "./timeline_data";
 
-import {VirtualScroller} from "./timelin_virtualscroller";
+import {VirtualScroller} from "./timeline_virtualscroller";
 
 const FAKE_TOTAL_COUNT = 100;
 
@@ -115,3 +115,46 @@ export class TweetManager {
         return this.cells;
     }
 }
+
+export class NodePool {
+    private pool: Map<string, HTMLElement> = new Map();
+
+    constructor(private readonly maxSize: number = 1000) {
+    }
+
+    acquire(id: string): HTMLElement | undefined {
+        const node = this.pool.get(id);
+        if (node) {
+            this.pool.delete(id);
+            console.log(`[NodePool] Reuse node for id=${id}`);
+        }
+        console.log(`[NodePool] acquire id=${id} => ${!!node ? "HIT" : "MISS"}`);
+        return node;
+    }
+
+    release(id: string, node: HTMLElement) {
+        if (this.pool.has(id)) return;  // 防止重复加入
+
+        if (this.pool.size >= this.maxSize) {
+            // 丢弃最早的一个
+            const oldestId = this.pool.keys().next().value as string;
+            this.pool.delete(oldestId);
+            console.log(`[NodePool] Discard oldest node id=${oldestId}`);
+        }
+
+        this.pool.set(id, node);
+        console.log(`[NodePool] Released node id=${id}, current size: ${this.pool.size}`);
+    }
+
+    size() {
+        return this.pool.size;
+    }
+
+    clear() {
+        this.pool.clear();
+        console.log(`[NodePool] Cleared`);
+    }
+}
+
+
+export const globalNodePool = new NodePool();

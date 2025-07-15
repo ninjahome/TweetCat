@@ -5,6 +5,7 @@
 
 import {EntryObj} from "./object_tweet";
 import {renderTweetHTML} from "./tweet_render";
+import {globalNodePool} from "./timeline_manager";
 
 async function waitStable(node: HTMLElement, tries = 3, interval = 20) {
     let last = node.offsetHeight;
@@ -21,6 +22,7 @@ export class TweetCatCell {
     offset = 0;
     height = 0;
     private video?: HTMLVideoElement;
+    private readonly id: string;
 
     /** 核心 Manager 在创建时注入，用来汇报 Δh */
     constructor(
@@ -28,6 +30,7 @@ export class TweetCatCell {
         private readonly tpl: HTMLTemplateElement,
         private readonly reportDh: (cell: TweetCatCell, dh: number) => void
     ) {
+        this.id = data.entryId;
     }
 
     /** 首次或再次挂载 */
@@ -36,7 +39,9 @@ export class TweetCatCell {
 
         /* 首次创建 DOM */
         if (!this.node) {
-            this.node = renderTweetHTML(this.data, this.tpl);
+            // this.node = renderTweetHTML(this.data, this.tpl);
+            this.node = globalNodePool.acquire(this.id) ?? renderTweetHTML(this.data, this.tpl);
+
             Object.assign(this.node.style, {
                 willChange: "transform",
                 position: "absolute",
@@ -69,8 +74,12 @@ export class TweetCatCell {
         if (this.video) {
             videoObserver.unobserve(this.video);
         }
+
         if (this.node?.isConnected) this.node.remove();
-        // this.node = null as any;        // 让 GC 可回收 //TODO::node pool logic
+
+        globalNodePool.release(this.id, this.node);
+
+        this.node = null as any;
     }
 
     /** 在交互或媒体 onload 时手动调用 */

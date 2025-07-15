@@ -64,8 +64,6 @@ export class VirtualScroller {
             return;  // 无变化，直接退出
         }
 
-        console.log(`[VS] range: ${fromIdx}→${toIdx}`);
-
         // 卸载前缀
         for (let i = this.curFirst; i < fromIdx; i++) {
             cells[i].unmount();
