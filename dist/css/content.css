@@ -150,13 +150,6 @@ img, video {
     font-weight: 1000;
 }
 
-.tweet-main {
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    flex-shrink: 1;
-    flex-grow: 1;
-}
 
 .tweet-main-content {
     width: 1050px;
@@ -179,6 +172,24 @@ img, video {
     position: absolute;
     left: 0;
     width: 100%;
+}
+
+
+.tweet-main {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 1;
+    flex-grow: 1;
+}
+
+.tweet-rightBox {
+    flex: 0 0 350px;        /* 明确声明：固定列宽，不伸缩 */
+    width: 350px;
+    position: fixed;
+    top: 0;
+    right: 70px;
+    padding: 12px 0 16px;
 }
 
 .tweetTimeline {
@@ -511,12 +522,7 @@ span.duration-badge {
     height: 18px;
     fill: currentColor;
 }
-.tweet-rightBox{
-    width: 350px;
-    margin-right: 70px;
-    padding-top: 12px;
-    padding-bottom: 16px;
-}
+
 .trending-tweet {
     padding: 12px 16px;
     gap: 12px;
