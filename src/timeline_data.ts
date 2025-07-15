@@ -30,4 +30,5 @@ export function getNextTweets(pageSize: number): EntryObj[] {
 
 export function resetTweetPager() {
     currentIdx = 0;
+    tweetData.length = 0;
 }
