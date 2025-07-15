@@ -1,10 +1,10 @@
 
-const poolDebug = true;
+const poolDebug = false;
 const log = (...args: any[]) => poolDebug && console.log("[TweetCat]", ...args);
 export class NodePool {
     private pool: Map<string, HTMLElement> = new Map();
 
-    constructor(private readonly maxSize: number = 1000) {
+    constructor(private readonly maxSize: number = 300) {
     }
 
     acquire(id: string): HTMLElement | undefined {
