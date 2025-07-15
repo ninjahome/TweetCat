@@ -159,7 +159,9 @@ img, video {
 
 .tweet-cardfloat {
     width: 100%;
-    position: static;
+    min-height: 100px;
+    left: 0;
+    will-change: transform;
     visibility: hidden;
     scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
 }

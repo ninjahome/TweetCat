@@ -43,15 +43,11 @@ export class TweetCatCell {
             this.node = globalNodePool.acquire(this.id) ?? renderTweetHTML(this.data, this.tpl);
 
             Object.assign(this.node.style, {
-                willChange: "transform",
                 position: "absolute",
                 left: 0,
-                width: "100%",
-                minHeight: "100px",
                 visibility: "visible"
             });
             this.video = this.node.querySelector("video") ?? undefined;
-            // console.log("-------->>>> first mount node:", offset);
         }
 
         /* 放进文档并定位 */
