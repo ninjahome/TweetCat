@@ -5,7 +5,7 @@
 
 import {EntryObj} from "./object_tweet";
 import {renderTweetHTML} from "./tweet_render";
-import {globalNodePool} from "./timeline_manager";
+import {globalNodePool} from "./timeline_node_pool";
 
 async function waitStable(node: HTMLElement, tries = 3, interval = 20) {
     let last = node.offsetHeight;

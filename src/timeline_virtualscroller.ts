@@ -75,7 +75,7 @@ export class VirtualScroller {
         // 挂载前段
         const firstNode = this.timelineEl.firstChild;
 
-        const mountCount = this.curFirst - fromIdx + 1;
+        // const mountCount = this.curFirst - fromIdx + 1;
         // console.log(`[batchMountCells] 节点数: ${mountCount} (from: ${fromIdx}, to: ${this.curFirst})`);
 
         for (let i = fromIdx; i < this.curFirst; i++) {
