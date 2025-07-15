@@ -54,12 +54,18 @@ export class VirtualScroller {
         const visibleBottom = scrollTop + vh + this.buffer;
         const fromIdx = this.findFirstOverlap(visibleTop, cells);
         const toIdx = this.findLastOverlap(visibleBottom, cells);
-        console.log(`[VS] range: ${fromIdx}→${toIdx}`);
         return [fromIdx, toIdx];
     }
 
     /** ③ 差分挂载/卸载：把 diffMountUnmount 也搬进来 */
     private diffMountUnmount(fromIdx: number, toIdx: number, cells: TweetCatCell[]) {
+
+        if (fromIdx === this.curFirst && toIdx === this.curLast) {
+            return;  // 无变化，直接退出
+        }
+
+        console.log(`[VS] range: ${fromIdx}→${toIdx}`);
+
         // 卸载前缀
         for (let i = this.curFirst; i < fromIdx; i++) {
             cells[i].unmount();
@@ -70,6 +76,10 @@ export class VirtualScroller {
         }
         // 挂载前段
         const firstNode = this.timelineEl.firstChild;
+
+        const mountCount = this.curFirst - fromIdx + 1;
+        // console.log(`[batchMountCells] 节点数: ${mountCount} (from: ${fromIdx}, to: ${this.curFirst})`);
+
         for (let i = fromIdx; i < this.curFirst; i++) {
             cells[i].mount(this.timelineEl, cells[i].offset);
             if (firstNode) this.timelineEl.insertBefore(cells[i].node, firstNode);

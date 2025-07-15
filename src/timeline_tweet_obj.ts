@@ -46,6 +46,7 @@ export class TweetCatCell {
                 visibility: "visible"
             });
             this.video = this.node.querySelector("video") ?? undefined;
+            // console.log("-------->>>> first mount node:", offset);
         }
 
         /* 放进文档并定位 */
@@ -69,7 +70,7 @@ export class TweetCatCell {
             videoObserver.unobserve(this.video);
         }
         if (this.node?.isConnected) this.node.remove();
-        this.node = null as any;        // 让 GC 可回收 //TODO::node pool logic
+        // this.node = null as any;        // 让 GC 可回收 //TODO::node pool logic
     }
 
     /** 在交互或媒体 onload 时手动调用 */
@@ -86,7 +87,9 @@ const videoObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         const video = entry.target as HTMLVideoElement;
         if (entry.isIntersecting) {
-            video.play().catch(console.error);
+            video.play().catch(err => {
+                console.log("------>>> video play failed:", err)
+            });
         } else {
             video.pause();
         }
