@@ -2,7 +2,7 @@
  * 核心 Manager —— 缓存 TweetCatCell + 顺推 offset + 加载更多
  * ------------------------------------------------------------------*/
 
-import {TweetCatCell} from "./timeline_tweet";
+import {TweetCatCell} from "./timeline_tweet_obj";
 import {EntryObj} from "./object_tweet";
 import {
     getNextTweets,
@@ -58,16 +58,11 @@ function onCellHeightChange(cell: TweetCatCell, dh: number, timelineEl: HTMLElem
         }
     }
     listHeight += dh;
-    // timelineEl.style.height = `${listHeight}px`;
-    timelineEl.style.height = `${Math.max(tweetCatTimeLineDefaultHeight, listHeight)}px`;
-    console.log("timelineEl.style.height ===========>>>>:", timelineEl.style.height)
+    setTimelineHeight(timelineEl, listHeight, cells.length);
 }
 
 
 /* ------------ 渲染 / 加载更多 ------------ */
-
-const tweetCatTimeLineDefaultHeight = 10240;
-
 export async function appendTweetsToTimeline(
     timelineEl: HTMLElement,
     tpl: HTMLTemplateElement,
@@ -82,8 +77,7 @@ export async function appendTweetsToTimeline(
         offset += cell.height;
     }
     listHeight = offset;
-    timelineEl.style.height = `${Math.max(tweetCatTimeLineDefaultHeight, listHeight)}px`;
-    console.log("timelineEl.style.height =====2======>>>>:", timelineEl.style.height)
+    setTimelineHeight(timelineEl, listHeight, cells.length);
 }
 
 export async function loadMoreData(tpl: HTMLTemplateElement) {
@@ -162,4 +156,34 @@ function findLastOverlap(bottom: number): number {
         }
     }
     return ans;
+}
+
+// 在文件顶部或合适的位置，先定义一个常量
+const FAKE_TOTAL_COUNT = 100;
+
+/**
+ * 根据真实内容高度与已加载条目数，
+ * 在真实内容高度与平均高度×FAKE_TOTAL_COUNT 之间取大，
+ * 并写入 timelineEl.style.height
+ */
+export function setTimelineHeight(
+    timelineEl: HTMLElement,
+    listHeight: number,
+    loadedCount: number,
+    fakeTotalCount = FAKE_TOTAL_COUNT
+) {
+    // 如果还没加载或传入值异常，就直接用真实高度
+    if (!loadedCount || listHeight <= 0) {
+        timelineEl.style.height = `${listHeight}px`;
+        return;
+    }
+
+    // 计算平均高度 & 伪造总高度
+    const avgH = listHeight / loadedCount;
+    const fakeTotalH = avgH * fakeTotalCount;
+
+    // 最终高度取两者的最大值
+    const finalH = Math.max(listHeight, fakeTotalH);
+
+    timelineEl.style.height = `${finalH}px`;
 }
