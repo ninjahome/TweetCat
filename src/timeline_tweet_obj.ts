@@ -20,6 +20,7 @@ export class TweetCatCell {
     node!: HTMLElement;
     offset = 0;
     height = 0;
+    private video?: HTMLVideoElement;
 
     /** 核心 Manager 在创建时注入，用来汇报 Δh */
     constructor(
@@ -44,11 +45,16 @@ export class TweetCatCell {
                 minHeight: "100px",
                 visibility: "visible"
             });
+            this.video = this.node.querySelector("video") ?? undefined;
         }
 
         /* 放进文档并定位 */
         this.node.style.transform = `translateY(${this.offset}px)`;
         parent.appendChild(this.node);
+
+        if (this.video) {
+            videoObserver.observe(this.video);
+        }
 
         /* 若尚未测量，等待稳定后记录高度 */
         if (!this.height) {
@@ -59,6 +65,9 @@ export class TweetCatCell {
 
     /** 从 DOM 移除 */
     unmount() {
+        if (this.video) {
+            videoObserver.unobserve(this.video);
+        }
         if (this.node?.isConnected) this.node.remove();
         this.node = null as any;        // 让 GC 可回收 //TODO::node pool logic
     }
@@ -71,3 +80,18 @@ export class TweetCatCell {
         this.reportDh(this, dh);       // 汇报给核心 Manager
     }
 }
+
+
+const videoObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        const video = entry.target as HTMLVideoElement;
+        if (entry.isIntersecting) {
+            video.play().catch(console.error);
+        } else {
+            video.pause();
+        }
+    });
+}, {
+    root: null,
+    threshold: 0.75
+});
