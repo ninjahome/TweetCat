@@ -92,11 +92,11 @@ export class TweetManager {
         // 2. 更新 listHeight（已加载部分的真实或预估总高度）
         this.listHeight = this.offsets[this.offsets.length - 1];
 
-        // 3. 重新计算容器总高度 = 已加载高度 + 估算高度 * 未加载条数
-        const loadedCount = this.cells.length;
-        const unknownCount = this.totalCount - loadedCount;
-        const totalHeight = this.listHeight + unknownCount * this.estHeight;
-        this.timelineEl.style.height = `${totalHeight}px`;
+        // 3. 更新容器高度
+        this.applyContainerHeight();
+
+        // ★新增：通知 scroller 重新计算
+        this.scroller?.refresh();
     }
 
     async loadMoreData() {
@@ -112,16 +112,18 @@ export class TweetManager {
 
     public updateHeightAt(idx: number, newH: number): void {
         const len = this.heights.length;              // 已加载条数
-        const oldTotal = this.offsets[len];           // 修正前总高（含末尾 sentinel）
+        if (idx < 0 || idx >= len) return;
+
         const oldH = this.heights[idx];
         const dh = newH - oldH;
+        if (!dh) return;
 
         // 1. 更新该项高度
         this.heights[idx] = newH;
 
-        // 2. 局部重算 offsets（idx 之后的每项 + sentinel）
+        // 2. 局部重算 offsets（idx+1..len-1）
         for (let j = idx + 1; j < len; j++) {
-            this.offsets[j] = this.offsets[j - 1] + (this.heights[j - 1] ?? this.estHeight);
+            this.offsets[j] = this.offsets[j - 1] + this.heights[j - 1];
 
             // 同步 cell.offset & 已挂载节点 translateY
             if (j < this.cells.length) {
@@ -134,25 +136,23 @@ export class TweetManager {
             }
         }
 
-        // 末尾 sentinel（已加载总高度）
-        this.offsets[len] = this.offsets[len - 1] + (this.heights[len - 1] ?? 0);
+        // 3. 末尾 sentinel（== 已加载总高度）
+        this.offsets[len] = this.offsets[len - 1] + this.heights[len - 1];
 
-        // 3. 更新 listHeight（已加载真实高）
+        // 4. 更新 listHeight（已加载真实高）
         this.listHeight = this.offsets[len];
 
-        // 4. 重新设置容器总高度（真实已加载 + 未加载估值）
-        const unknownCount = this.totalCount - len;
-        const totalH = this.listHeight + unknownCount * this.estHeight;
-        this.timelineEl.style.height = `${totalH}px`;
+        // 5. 更新容器高度（真实+估）——别省略
+        this.applyContainerHeight();
 
-        // 5. 打印调试日志
-        const newTotal = this.offsets[len];
-        const deltaTotal = newTotal - oldTotal;
-        // console.log('[Mgr] Δheight idx=', idx,
-        //     'old=', oldH, 'new=', newH,
-        //     'dh=', dh,
-        //     'Δtotal=', deltaTotal,
-        //     'loadedTotal=', newTotal);
+        // 6. 动态更新 estHeight（指数平滑）
+        this.updateEstHeight(newH);
+
+        // 7. 若该高度变化发生在当前可视区之前 → 通知 VirtualScroller 做滚动锚定补偿
+        const sc = this.scroller;
+        if (sc && idx < sc.getCurFirst()) {
+            sc.queueAnchor(dh);   // dh>0：上方变高 → 需要向下补移；dh<0 相反
+        }
     }
 
     public getHeights(): number[] {
@@ -190,4 +190,7 @@ export class TweetManager {
         this.applyContainerHeight();
     }
 
+    public getEstHeight(): number {
+        return this.estHeight;
+    }
 }
