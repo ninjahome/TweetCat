@@ -16,6 +16,9 @@ export class VirtualScroller {
     private diffRunning = false;
     private pendingRange: [number, number] | null = null;
 
+    private overscanScreens = 0.5;
+    private maxMountCount   = 16;
+
     /** 加载节流 */
     private lastLoadTs = 0;
     private minLoadInterval = 350; // ms; 可按需要调
@@ -36,6 +39,12 @@ export class VirtualScroller {
         window.addEventListener("resize", this.onResize);
         this.updateBuffer();
         this.rafLoop();
+
+        console.log('[VS] init', {
+            overscanScreens: this.overscanScreens,
+            maxMountCount: this.maxMountCount,
+            minLoadInterval: this.minLoadInterval,
+        });
     }
 
     /** Manager 通知：上方高度变动 dh，需要在下一帧 scrollBy 补偿 */
@@ -83,9 +92,7 @@ export class VirtualScroller {
                 this.lastScrollTop = curScrollTop;
                 this.rafUpdates++;
 
-                const offsets = this.manager.getOffsets();
-                const [fromIdx, toIdx] = this.computeVisibleRange(offsets);
-
+                const [fromIdx, toIdx] = this.computeMountRange();
                 this.requestDiff(fromIdx, toIdx);
             }
 
@@ -271,5 +278,30 @@ export class VirtualScroller {
         if (this.pendingRange) {
             this.runDiff();
         }
+    }
+
+    private computeMountRange(): [number, number] {
+        const offsets = this.manager.getOffsets();
+        const cellsLen = this.manager.getCells().length;
+        if (cellsLen === 0 || offsets.length === 1) return [0, -1];
+
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const vh        = window.innerHeight;
+
+        const visFirst  = this.findFirstOverlap(scrollTop, offsets);
+        const visLast   = this.findLastOverlap(scrollTop + vh, offsets);
+
+        const avgH      = this.manager.getAvgHeight();
+        const overscanPx= vh * this.overscanScreens;
+        let overscanCnt = Math.max(2, Math.ceil(overscanPx / avgH));
+
+        let fromIdx = Math.max(0, visFirst - overscanCnt);
+        let toIdx   = Math.min(cellsLen - 1, visLast + overscanCnt);
+
+        if (toIdx - fromIdx + 1 > this.maxMountCount) {
+            toIdx = fromIdx + this.maxMountCount - 1;
+            if (toIdx >= cellsLen) toIdx = cellsLen - 1;
+        }
+        return [fromIdx, toIdx];
     }
 }

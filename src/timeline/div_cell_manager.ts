@@ -193,4 +193,9 @@ export class TweetManager {
     public getEstHeight(): number {
         return this.estHeight;
     }
+
+    public getAvgHeight(): number {
+        const n = this.heights.length;
+        return n ? this.listHeight / n : this.estHeight;
+    }
 }
