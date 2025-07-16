@@ -1,6 +1,6 @@
-import {observeSimple} from "./utils";
-import {parseContentHtml} from "./content";
-import {TweetManager} from "./timeline_manager";
+import {observeSimple} from "../utils";
+import {parseContentHtml} from "../content";
+import {TweetManager} from "./manager";
 
 const selfDefineUrl = "tweetCatTimeLine";
 let manager: TweetManager | null = null;

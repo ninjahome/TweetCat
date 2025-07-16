@@ -1,7 +1,7 @@
-import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./object_tweet";
-import {formatCount, formatTweetTime} from "./utils";
+import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./tweet_obj";
+import {formatCount, formatTweetTime} from "../utils";
 
-import {videoRender} from "./tweet_video";
+import {videoRender} from "./video_render";
 
 export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;

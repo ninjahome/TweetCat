@@ -6,7 +6,7 @@ import {
 import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "./consts";
 import {addCustomStyles, isTwitterUserProfile} from "./utils";
 import {TweetKol} from "./object_TweetKol";
-import {appendTweetCatMenuItem} from "./timeline_ui";
+import {appendTweetCatMenuItem} from "./timeline/timeline_ui";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;

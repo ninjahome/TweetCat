@@ -1,7 +1,7 @@
-import {getBearerToken} from "./utils";
-import {localGet} from "./local_storage";
-import {__DBK_query_id_map, UserByScreenName, UserTweets} from "./consts";
-import {EntryObj, parseTimelineFromGraphQL} from "./object_tweet";
+import {getBearerToken} from "../utils";
+import {localGet} from "../local_storage";
+import {__DBK_query_id_map, UserByScreenName, UserTweets} from "../consts";
+import {EntryObj, parseTimelineFromGraphQL} from "./tweet_obj";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(key: string): Promise<string | null> {

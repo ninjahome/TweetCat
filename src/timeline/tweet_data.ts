@@ -1,5 +1,5 @@
-import {EntryObj} from "./object_tweet";
-import {fetchTweets, getUserIdByUsername} from "./tweet_api";
+import {EntryObj} from "./tweet_obj";
+import {fetchTweets, getUserIdByUsername} from "./twitter_api";
 
 let tweetData: any[] = [];
 let currentIdx = 0;
@@ -7,7 +7,7 @@ let currentIdx = 0;
 export async function initTweetPager() {
     if (tweetData.length === 0) {
         // console.log("------>>>user id:", await getUserIdByUsername('xingyun09039849'));
-        const {tweets, nextCursor, isEnd} = await fetchTweets("1861626580579360768", 20);//1861626580579360768//1315345422123180033
+        const {tweets, nextCursor, isEnd} = await fetchTweets("1315345422123180033", 20);//1861626580579360768//1315345422123180033
         tweetData = tweets;
         if (nextCursor) {
             const {tweets} = await fetchTweets("1861626580579360768", 20, nextCursor);

@@ -2,15 +2,15 @@
  * 核心 Manager —— 缓存 TweetCatCell + 顺推 offset + 加载更多
  * ------------------------------------------------------------------*/
 
-import {TweetCatCell} from "./timeline_tweet_obj";
-import {EntryObj} from "./object_tweet";
+import {TweetCatCell} from "./tweet_div_cell";
+import {EntryObj} from "./tweet_obj";
 import {
     getNextTweets,
     initTweetPager,
     resetTweetPager
-} from "./timeline_data";
+} from "./tweet_data";
 
-import {VirtualScroller} from "./timeline_virtualscroller";
+import {VirtualScroller} from "./virtual_scroller";
 
 const FAKE_TOTAL_COUNT = 100;
 
