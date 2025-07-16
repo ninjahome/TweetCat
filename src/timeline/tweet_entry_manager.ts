@@ -1,4 +1,4 @@
-import {EntryObj} from "./tweet_obj";
+import {EntryObj} from "./tweet_entry";
 import {fetchTweets, getUserIdByUsername} from "./twitter_api";
 
 let tweetData: any[] = [];

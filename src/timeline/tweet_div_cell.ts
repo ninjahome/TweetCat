@@ -3,9 +3,9 @@
  * ------------------------------------------------------------------*/
 
 
-import {EntryObj} from "./tweet_obj";
+import {EntryObj} from "./tweet_entry";
 import {renderTweetHTML} from "./tweet_render";
-import {globalNodePool} from "./node_pool";
+import {globalNodePool} from "./div_node_pool";
 
 async function waitStable(node: HTMLElement, tries = 3, interval = 20) {
     let last = node.offsetHeight;

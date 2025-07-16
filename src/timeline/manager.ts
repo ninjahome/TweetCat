@@ -3,12 +3,12 @@
  * ------------------------------------------------------------------*/
 
 import {TweetCatCell} from "./tweet_div_cell";
-import {EntryObj} from "./tweet_obj";
+import {EntryObj} from "./tweet_entry";
 import {
     getNextTweets,
     initTweetPager,
     resetTweetPager
-} from "./tweet_data";
+} from "./tweet_entry_manager";
 
 import {VirtualScroller} from "./virtual_scroller";
 

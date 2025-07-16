@@ -1,4 +1,4 @@
-import {TweetMediaEntity} from "./tweet_obj";
+import {TweetMediaEntity} from "./tweet_entry";
 import Hls from 'hls.js';
 
 function updateDurationBadge(video: HTMLVideoElement, badge: HTMLElement, totalSeconds: number) {
