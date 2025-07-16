@@ -5,12 +5,13 @@ let tweetData: any[] = [];
 let currentIdx = 0;
 
 export async function initTweetPager() {
+    const userID = '1315345422123180033'////1861626580579360768//1315345422123180033
     if (tweetData.length === 0) {
         // console.log("------>>>user id:", await getUserIdByUsername('xingyun09039849'));
-        const {tweets, nextCursor, isEnd} = await fetchTweets("1315345422123180033", 20);//1861626580579360768//1315345422123180033
+        const {tweets, nextCursor, isEnd} = await fetchTweets(userID, 20);
         tweetData = tweets;
         if (nextCursor) {
-            const {tweets} = await fetchTweets("1861626580579360768", 20, nextCursor);
+            const {tweets} = await fetchTweets(userID, 20, nextCursor);
             tweetData.push(...tweets);
         }
         console.log("------->>> tweet length:", tweetData.length);

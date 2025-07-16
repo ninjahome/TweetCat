@@ -1,21 +1,29 @@
-import {TweetManager} from "./manager";
-import {TweetCatCell} from "./tweet_div_cell";
-
+import {TweetManager} from "./div_cell_manager";
 export class VirtualScroller {
     private buffer = 0;
     private loadingMore = false;
     private scrollPending = false;
 
-    // ① 差分挂载状态
+    // 差分挂载状态
     private curFirst = 0;
     private curLast = -1;
 
     private scrollEvents = 0;
     private rafUpdates = 0;
+    private lastScrollTop = 0;
+
+    private diffRunning = false;
+    private pendingRange: [number, number] | null = null;
+
+    /** 加载节流 */
+    private lastLoadTs = 0;
+    private minLoadInterval = 350; // ms; 可按需要调
+    /** 基于像素的触底预取（比 index 更稳，配合 atTail） */
+    private prefetchPxFactor = 2; // 预取 2 屏
+
 
     constructor(
         private readonly timelineEl: HTMLElement,
-        private readonly tpl: HTMLTemplateElement,
         private readonly manager: TweetManager,
     ) {
         this.onScroll = this.onScroll.bind(this);
@@ -28,6 +36,11 @@ export class VirtualScroller {
         this.rafLoop();
     }
 
+    /** 强制刷新，可用于首次渲染或手动触发更新视图 */
+    public refresh(): void {
+        this.scrollPending = true;
+    }
+
     private onResize() {
         this.updateBuffer();
     }
@@ -37,46 +50,6 @@ export class VirtualScroller {
         console.log(`[VS] Buffer updated: ${this.buffer}px`);
     }
 
-    private findFirstOverlap(top: number, cells: TweetCatCell[]): number {
-        let l = 0, r = cells.length - 1, ans = cells.length;
-        while (l <= r) {
-            const m = (l + r) >> 1;
-            if (cells[m].offset + cells[m].height > top) {
-                ans = m;
-                r = m - 1;
-            } else {
-                l = m + 1;
-            }
-        }
-        return ans;
-    }
-
-    private findLastOverlap(bottom: number, cells: TweetCatCell[]): number {
-        let l = 0, r = cells.length - 1, ans = -1;
-        while (l <= r) {
-            const m = (l + r) >> 1;
-            if (cells[m].offset < bottom) {
-                ans = m;
-                l = m + 1;
-            } else {
-                r = m - 1;
-            }
-        }
-        return ans;
-    }
-
-    /** ② 可见区计算 */
-    private computeVisibleRange(cells: TweetCatCell[]): [number, number] {
-        const scrollTop = window.scrollY || document.documentElement.scrollTop;
-        const vh = window.innerHeight;
-        const visibleTop = scrollTop - this.buffer;
-        const visibleBottom = scrollTop + vh + this.buffer;
-        const fromIdx = this.findFirstOverlap(visibleTop, cells);
-        const toIdx = this.findLastOverlap(visibleBottom, cells);
-        return [fromIdx, toIdx];
-    }
-
-    /** 主滚动处理 */
     private onScroll() {
         this.scrollPending = true;
         this.scrollEvents++;
@@ -87,73 +60,174 @@ export class VirtualScroller {
         window.removeEventListener("resize", this.onResize);
     }
 
-    private lastScrollTop = 0;
-
-    private rafLoop() {
+    private rafLoop(): void {
         requestAnimationFrame(() => {
-            const currentScrollTop = window.scrollY || document.documentElement.scrollTop;
-            if (this.scrollPending || currentScrollTop !== this.lastScrollTop) {
+            const curScrollTop = window.scrollY || document.documentElement.scrollTop;
+
+            if (this.scrollPending || curScrollTop !== this.lastScrollTop) {
                 this.scrollPending = false;
-                this.lastScrollTop = currentScrollTop;
+                this.lastScrollTop = curScrollTop;
                 this.rafUpdates++;
 
-                // console.log(`[VS] RAF update #${this.rafUpdates} / scrolls: ${this.scrollEvents} @ ${performance.now().toFixed(2)}ms`);
+                const offsets = this.manager.getOffsets();
+                const [fromIdx, toIdx] = this.computeVisibleRange(offsets);
 
-                const cells = this.manager.getCells();
-                const [fromIdx, toIdx] = this.computeVisibleRange(cells);
-                this.diffMountUnmount(fromIdx, toIdx, cells);
-                console.log(`[VS] Current DOM count: ${this.timelineEl.childNodes.length}`);
-                // 触底加载
-                if (!this.loadingMore && toIdx >= cells.length - 1) {
-                    this.loadingMore = true;
-                    console.log(`[VS] Trigger loadMoreData at index=${toIdx}`);
-                    this.manager.loadMoreData(this.tpl).finally(() => this.loadingMore = false);
-                }
+                this.requestDiff(fromIdx, toIdx);
             }
+
+            // ---- load check ----
+            const offsets2 = this.manager.getOffsets();
+            const [chkFrom, chkTo] = this.computeVisibleRange(offsets2);
+
+            const cellsLen = this.manager.getCells().length;
+            const totalCnt = this.manager.getTotalCount();
+            const atTail = chkTo >= cellsLen - 1 && cellsLen < totalCnt;
+
+            // 像素基准触底（更容错）：当滚动下沿 + 预取X屏 超过已加载高度时也拉
+            const vh = window.innerHeight;
+            const bottomPx = curScrollTop + vh;
+            const loadedPx = offsets2[offsets2.length - 1] ?? 0;
+            const pixelNeed = bottomPx + vh * this.prefetchPxFactor >= loadedPx;
+
+            // 列表空（未加载）兜底
+            const listEmpty = offsets2.length === 1 && cellsLen < totalCnt;
+
+            // 节流：最短间隔
+            const now = performance.now();
+            const allowedByTime = now - this.lastLoadTs > this.minLoadInterval;
+
+            if (!this.loadingMore && allowedByTime && (atTail || listEmpty || pixelNeed)) {
+                this.loadingMore = true;
+                this.lastLoadTs = now;
+                console.log(
+                    `[VS] Trigger loadMoreData (chkTo=${chkTo}, cells=${cellsLen}, pixelNeed=${pixelNeed})`
+                );
+                this.manager
+                    .loadMoreData()
+                    .catch(e => console.error('[VS] loadMoreData failed', e))
+                    .finally(() => {
+                        this.loadingMore = false;
+                    });
+            }
+
             this.rafLoop();
         });
     }
 
-    private diffMountUnmount(fromIdx: number, toIdx: number, cells: TweetCatCell[]) {
-        if (fromIdx === this.curFirst && toIdx === this.curLast) {
-            console.log(`[VS] diffMountUnmount skipped, same range: ${fromIdx} → ${toIdx}`);
-            return;
-        }
-        console.log(`[VS] visible index range: ${fromIdx} → ${toIdx}`);
+    private async diffMountUnmount(fromIdx: number, toIdx: number) {
+        if (fromIdx === this.curFirst && toIdx === this.curLast) return;   // ← 新增
 
-        // ========== 前向滚动（下滑） ==========
+        const cells = this.manager.getCells();
+        const offsets = this.manager.getOffsets();
+        const heights = this.manager.getHeights();
+        // 卸载前缀
         if (fromIdx > this.curFirst) {
-            console.log(`[VS] Unmount prefix: ${this.curFirst} to ${fromIdx - 1}`);
             for (let i = this.curFirst; i < fromIdx; i++) {
                 cells[i].unmount();
             }
         }
-        if (toIdx > this.curLast) {
-            console.log(`[VS] Mount suffix: ${this.curLast + 1} to ${toIdx}`);
-            for (let i = this.curLast + 1; i <= toIdx; i++) {
-                cells[i].mount(this.timelineEl, cells[i].offset);
-                this.timelineEl.appendChild(cells[i].node);
-            }
-        }
-
-        // ========== 后向滚动（上滑） ==========
-        if (fromIdx < this.curFirst) {
-            console.log(`[VS] Mount prefix: ${fromIdx} to ${this.curFirst - 1}`);
-            const firstNode = this.timelineEl.firstChild;
-            for (let i = fromIdx; i < this.curFirst; i++) {
-                cells[i].mount(this.timelineEl, cells[i].offset);
-                if (firstNode) this.timelineEl.insertBefore(cells[i].node, firstNode);
-            }
-        }
+        // 卸载后缀
         if (toIdx < this.curLast) {
-            console.log(`[VS] Unmount suffix: ${toIdx + 1} to ${this.curLast}`);
             for (let i = toIdx + 1; i <= this.curLast; i++) {
                 cells[i].unmount();
             }
         }
 
+        // 挂载后缀
+        if (toIdx > this.curLast) {
+            for (let i = this.curLast + 1; i <= toIdx; i++) {
+                await cells[i].mount(this.timelineEl, offsets[i]);
+                const newH = cells[i].height;
+                if (newH !== heights[i]) {
+                    // 委托 manager 更新高度及偏移
+                    this.manager.updateHeightAt(i, newH);
+                }
+            }
+        }
+
+        // 挂载前缀
+        if (fromIdx < this.curFirst) {
+            for (let i = fromIdx; i < this.curFirst; i++) {
+                const ref = this.timelineEl.firstChild;             // ① 先记录当前首节点
+                await cells[i].mount(this.timelineEl, offsets[i]);  // ② mount 会把 node 追加到尾部
+                if (ref) this.timelineEl.insertBefore(cells[i].node, ref); // ③ 再插到最前
+                const newH = cells[i].height;
+                if (newH !== heights[i]) {
+                    this.manager.updateHeightAt(i, newH);
+                }
+            }
+        }
+
         this.curFirst = fromIdx;
         this.curLast = toIdx;
+
+        console.log(`[VS] DOM count: ${this.timelineEl.childNodes.length}`);
+    }
+
+    private findFirstOverlap(top: number, offsets: number[]): number {
+        let l = 0, r = offsets.length - 2, ans = offsets.length - 1;
+        while (l <= r) {
+            const m = (l + r) >> 1;
+            if (offsets[m + 1] > top) {
+                ans = m;
+                r = m - 1;
+            } else {
+                l = m + 1;
+            }
+        }
+        return ans;
+    }
+
+    private findLastOverlap(bottom: number, offsets: number[]): number {
+        let l = 0, r = offsets.length - 2, ans = -1;
+        while (l <= r) {
+            const m = (l + r) >> 1;
+            if (offsets[m] < bottom) {
+                ans = m;
+                l = m + 1;
+            } else {
+                r = m - 1;
+            }
+        }
+        return ans;
+    }
+
+    private computeVisibleRange(offsets: number[]): [number, number] {
+        if (offsets.length === 1) return [0, -1];  // ← 空列表直接返回
+
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const top = scrollTop - this.buffer;
+        const bottom = scrollTop + window.innerHeight + this.buffer;
+        return [
+            this.findFirstOverlap(top, offsets),
+            this.findLastOverlap(bottom, offsets)
+        ];
+    }
+
+    /** 请求一次 diff；若当前 diff 正在执行，则只记录最新范围，稍后批处理 */
+    private requestDiff(from: number, to: number): void {
+        // 若 computeVisibleRange 返回空（to < from），规整
+        if (to < from) to = from - 1;
+        this.pendingRange = [from, to];
+        if (!this.diffRunning) {
+            this.runDiff();
+        }
+    }
+
+    private async runDiff(): Promise<void> {
+        const pr = this.pendingRange;
+        if (!pr) return;
+        this.pendingRange = null;
+        this.diffRunning = true;
+        try {
+            await this.diffMountUnmount(pr[0], pr[1]);
+        } finally {
+            this.diffRunning = false;
+        }
+        // 如果期间又来了新范围，继续跑
+        if (this.pendingRange) {
+            this.runDiff();
+        }
     }
 
 }
