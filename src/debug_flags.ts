@@ -5,9 +5,9 @@ export const DBG = {
     VIS: false,  // 可留作以后扩展
     PAGE: false,
     CELL: false,
-    ENTRY_PAGER: false,
+    ENTRY_PAGER: true,
     TWEET_MANAGER: true,
-    NODE_POOL:true,
+    NODE_POOL:false,
 };
 
 export function logMount(...args: any[]) {
@@ -18,12 +18,15 @@ export function logAnchor(...args: any[]) {
     if (DBG.ANCHOR) console.log.apply(console, args);
 }
 
-export function logEntry(...args: any[]) {
+export function logPager(...args: any[]) {
     if (DBG.ENTRY_PAGER) console.log.apply(console, args);
 }
-
 
 export function logPool(...args: any[]) {
     if (DBG.NODE_POOL) console.log.apply(console, args);
 }
 
+
+export function logTweetMgn(...args: any[]) {
+    if (DBG.TWEET_MANAGER) console.log.apply(console, args);
+}

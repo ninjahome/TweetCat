@@ -8,9 +8,10 @@ import {
     getNextTweets,
     initTweetPager,
     resetTweetPager
-} from "./tweet_entry_manager";
+} from "./tweet_pager";
 
 import {VirtualScroller} from "./virtual_scroller";
+import {logTweetMgn} from "../debug_flags";
 
 const FAKE_TOTAL_COUNT = 100;
 const PAGE_SIZE = 15; // 或根据视窗计算
@@ -49,7 +50,7 @@ export class TweetManager {
         const estHeight = this.estHeight;
         const initCount = Math.ceil(window.innerHeight / estHeight) + INIT_EXTRA; // 额外 buffer
         const tweets = await getNextTweets(initCount);
-        console.log("------>>> tweets length:", tweets.length)
+        logTweetMgn("------>>> tweets length:", tweets.length)
         if (tweets.length) await this.appendTweetsToTimeline(tweets);
         this.scroller = new VirtualScroller(this.timelineEl, this);
         this.scroller.refresh();
