@@ -7,6 +7,7 @@ export const DBG = {
     CELL: false,
     ENTRY_PAGER: false,
     TWEET_MANAGER: true,
+    NODE_POOL:true,
 };
 
 export function logMount(...args: any[]) {
@@ -20,3 +21,9 @@ export function logAnchor(...args: any[]) {
 export function logEntry(...args: any[]) {
     if (DBG.ENTRY_PAGER) console.log.apply(console, args);
 }
+
+
+export function logPool(...args: any[]) {
+    if (DBG.NODE_POOL) console.log.apply(console, args);
+}
+

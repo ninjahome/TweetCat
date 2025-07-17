@@ -1,6 +1,5 @@
+import {logPool} from "../debug_flags";
 
-const poolDebug = false;
-const log = (...args: any[]) => poolDebug && console.log("[TweetCat]", ...args);
 export class NodePool {
     private pool: Map<string, HTMLElement> = new Map();
 
@@ -11,9 +10,9 @@ export class NodePool {
         const node = this.pool.get(id);
         if (node) {
             this.pool.delete(id);
-            log(`[NodePool] Reuse node for id=${id}`);
+            logPool(`[NodePool] Reuse node for id=${id}`);
         }
-        log(`[NodePool] acquire id=${id} => ${!!node ? "HIT" : "MISS"}`);
+        logPool(`[NodePool] acquire id=${id} => ${!!node ? "HIT" : "MISS"}`);
         return node;
     }
 
@@ -25,14 +24,14 @@ export class NodePool {
             if (oldestEntry) {
                 const [oldestId, oldestNode] = oldestEntry;
                 this.pool.delete(oldestId);
-                log(`[NodePool] Discard oldest node id=${oldestId}`);
+                logPool(`[NodePool] Discard oldest node id=${oldestId}`);
                 oldestNode.remove();
                 oldestNode.innerHTML = "";
             }
         }
 
         this.pool.set(id, node);
-        log(`[NodePool] Released node id=${id}, current size: ${this.pool.size}`);
+        logPool(`[NodePool] Released node id=${id}, current size: ${this.pool.size}`);
     }
 
     size() {
@@ -41,9 +40,8 @@ export class NodePool {
 
     clear() {
         this.pool.clear();
-        log(`[NodePool] Cleared`);
+        logPool(`[NodePool] Cleared`);
     }
 }
-
 
 export const globalNodePool = new NodePool();
