@@ -8,6 +8,7 @@ export const DBG = {
     ENTRY_PAGER: true,
     TWEET_MANAGER: true,
     NODE_POOL:false,
+    DIFF:true,
 };
 
 export function logMount(...args: any[]) {
@@ -29,4 +30,7 @@ export function logPool(...args: any[]) {
 
 export function logTweetMgn(...args: any[]) {
     if (DBG.TWEET_MANAGER) console.log.apply(console, args);
+}
+export function logDiff(...args: any[]) {
+    if (DBG.DIFF) console.log.apply(console, args);
 }
