@@ -1,8 +1,22 @@
 // debug_flags.ts
 export const DBG = {
-    ANCHOR: true,   // 风险1相关
-    MOUNT:  true,   // 风险2相关
-    DIFF:   true,   // 风险3相关
-    VERBOSE_SCROLL: false, // 如需
-    ENTRY_PAGER:true,
+    MOUNT: true,   // ← 这次测试要开
+    ANCHOR: true,   // ← 这次测试要开
+    VIS: false,  // 可留作以后扩展
+    PAGE: false,
+    CELL: false,
+    ENTRY_PAGER: false,
+    TWEET_MANAGER: true,
 };
+
+export function logMount(...args: any[]) {
+    if (DBG.MOUNT) console.log.apply(console, args);
+}
+
+export function logAnchor(...args: any[]) {
+    if (DBG.ANCHOR) console.log.apply(console, args);
+}
+
+export function logEntry(...args: any[]) {
+    if (DBG.ENTRY_PAGER) console.log.apply(console, args);
+}

@@ -48,7 +48,7 @@ export class TweetManager {
 
         const estHeight = this.estHeight;
         const initCount = Math.ceil(window.innerHeight / estHeight) + INIT_EXTRA; // 额外 buffer
-        const tweets = getNextTweets(initCount);
+        const tweets = await getNextTweets(initCount);
         console.log("------>>> tweets length:", tweets.length)
         if (tweets.length) await this.appendTweetsToTimeline(tweets);
         this.scroller = new VirtualScroller(this.timelineEl, this);
@@ -100,7 +100,7 @@ export class TweetManager {
     }
 
     async loadMoreData() {
-        const next = getNextTweets(PAGE_SIZE);
+        const next = await getNextTweets(PAGE_SIZE);
         if (!next.length) return;
 
         await this.appendTweetsToTimeline(next);

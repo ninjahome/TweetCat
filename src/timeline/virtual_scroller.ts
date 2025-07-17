@@ -1,4 +1,5 @@
 import {TweetManager} from "./div_cell_manager";
+import {logAnchor, logMount} from "../debug_flags";
 
 export class VirtualScroller {
     private buffer = 0;
@@ -40,6 +41,7 @@ export class VirtualScroller {
 
     /** Manager 通知：上方高度变动 dh，需要在下一帧 scrollBy 补偿 */
     public queueAnchor(dh: number): void {
+        logAnchor(`[VS] Anchor queued dh=${dh} totalDh=${this.anchorDh + dh} scrollTop=${window.scrollY}`);
         this.anchorDh += dh;
         // 确保 rAF 下一帧会重算可视区并应用补偿
         this.scrollPending = true;
@@ -84,12 +86,15 @@ export class VirtualScroller {
                 this.rafUpdates++;
                 const offsets = this.manager.getOffsets();
                 const [fromIdx, toIdx] = this.computeVisibleRange(offsets);
+                logMount(`[VS] visRange from=${fromIdx} to=${toIdx} len=${toIdx >= fromIdx ? (toIdx - fromIdx + 1) : 0}`);
                 this.requestDiff(fromIdx, toIdx);
             }
 
 
             // ---- 锚定补偿（上方高度变化）----
             if (this.anchorDh !== 0) {
+                const before = window.scrollY || document.documentElement.scrollTop;
+                logAnchor(`[VS] Anchor apply scrollBy(${this.anchorDh}) from=${before}`);
                 window.scrollBy(0, this.anchorDh);
                 this.anchorDh = 0;
                 // 标记需要重新计算一次（scrollTop改变）
@@ -137,6 +142,7 @@ export class VirtualScroller {
     }
 
     private async diffMountUnmount(fromIdx: number, toIdx: number) {
+        logMount(`[VS] diffMountUnmount IN  curFirst=${this.curFirst} curLast=${this.curLast} -> ${fromIdx}..${toIdx}`);
 
         const cells = this.manager.getCells();
         const offsets = this.manager.getOffsets();
@@ -202,7 +208,8 @@ export class VirtualScroller {
         this.curFirst = fromIdx;
         this.curLast = toIdx;
 
-        console.log(`[VS] DOM count: ${this.timelineEl.childNodes.length}`);
+        logMount(`[VS] DOM count: ${this.timelineEl.childNodes.length}`);
+        logMount(`[VS] diffMountUnmount OUT curFirst=${this.curFirst} curLast=${this.curLast}  DOM=${this.timelineEl.childNodes.length}`);
     }
 
     private findFirstOverlap(top: number, offsets: number[]): number {
@@ -249,6 +256,7 @@ export class VirtualScroller {
     private requestDiff(from: number, to: number): void {
         // 若 computeVisibleRange 返回空（to < from），规整
         if (to < from) to = from - 1;
+        logMount(`[VS] requestDiff from=${from} to=${to} diffRunning=${this.diffRunning}`);
         this.pendingRange = [from, to];
         if (!this.diffRunning) {
             this.runDiff();
@@ -260,12 +268,15 @@ export class VirtualScroller {
         if (!pr) return;
         this.pendingRange = null;
         this.diffRunning = true;
+        logMount(`[VS] runDiff start from=${pr[0]} to=${pr[1]}`);
         try {
             await this.diffMountUnmount(pr[0], pr[1]);
         } finally {
             this.diffRunning = false;
         }
-        // 如果期间又来了新范围，继续跑
+
+        logMount(`[VS] runDiff end   from=${pr[0]} to=${pr[1]} nextPending=${this.pendingRange?'Y':'N'}`);
+
         if (this.pendingRange) {
             this.runDiff();
         }
