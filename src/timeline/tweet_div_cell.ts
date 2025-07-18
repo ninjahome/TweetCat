@@ -24,12 +24,14 @@ export class TweetCatCell {
     height = 0;
     private video?: HTMLVideoElement;
     private readonly id: string;
+    public index!: number;  // 由 Manager 填
 
     /** 核心 Manager 在创建时注入，用来汇报 Δh */
     constructor(
         private readonly data: EntryObj,
         private readonly tpl: HTMLTemplateElement,
-        private readonly reportDh: (cell: TweetCatCell, dh: number) => void
+        private readonly reportDh: (cell: TweetCatCell, dh: number) => void,
+        private readonly getLatestOffset: (idx: number) => number   // ★ 新增
     ) {
         this.id = data.entryId;
     }
@@ -50,6 +52,12 @@ export class TweetCatCell {
 
         /* 放进文档并定位 */
         this.node.style.transform = `translateY(${this.offset}px)`;
+
+        const latest = this.getLatestOffset(this.index);   // 通过前述回调拿
+        const ty = parseInt(this.node.style.transform.match(/-?\d+/)?.[0] ?? 'NaN');
+        if (ty !== latest) console.warn('[DESYNC]', this.index, ty, '≠', latest);
+
+
         parent.appendChild(this.node);
 
         if (this.video) {

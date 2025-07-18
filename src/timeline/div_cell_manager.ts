@@ -77,7 +77,8 @@ export class TweetManager {
     async appendTweetsToTimeline(tweets: EntryObj[]) {
         // 1. 把新 tweets 转为 cells，预设高度
         for (const tw of tweets) {
-            const cell = new TweetCatCell(tw, this.tpl, this.onCellDh);
+            const cell = new TweetCatCell(tw, this.tpl, this.onCellDh, (idx) => this.offsets[idx]);
+            cell.index = this.cells.length;
             this.cells.push(cell);
 
             // 用 estHeight 作为尚未测量项的占位高度
@@ -129,6 +130,10 @@ export class TweetManager {
                 cell.offset = this.offsets[j];
                 const node = cell.node;
                 if (node?.isConnected) {
+                    const ty = parseInt(node.style.transform.match(/-?\d+/)?.[0] ?? 'NaN');
+                    if (ty !== this.offsets[j]) {
+                        console.warn('[DESYNC]', j, 'ty=', ty, 'offset=', this.offsets[j]);
+                    }
                     node.style.transform = `translateY(${this.offsets[j]}px)`;
                 }
                 if (!node?.isConnected) logDiff(`[UH] idx=${idx} -> j=${j} node NOT mounted`);
