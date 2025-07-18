@@ -13,7 +13,7 @@ import {
 import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../debug_flags";
 
-const FAKE_TOTAL_COUNT = 100;
+const FAKE_TOTAL_COUNT = 2000;
 const PAGE_SIZE = 15; // 或根据视窗计算
 
 // --- 可调参数 -------------------------------------------------------
@@ -158,10 +158,6 @@ export class TweetManager {
 
     public getOffsets(): number[] {
         return this.offsets;
-    }
-
-    public getTotalCount(): number {
-        return this.totalCount;
     }
 
     /** 给 TweetCatCell 的 Δh 回调，包装成 updateHeightAt */

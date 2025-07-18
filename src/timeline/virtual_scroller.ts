@@ -19,6 +19,7 @@ export class VirtualScroller {
     private rafPending = false;   // 防止重复排队
 
     private static readonly FAST_RATIO = 3;   // ≥3 行即快速
+    private static readonly PREFETCH_GAP = 10;
 
     /* ---------------- 构造 ---------------- */
     constructor(
@@ -108,7 +109,6 @@ export class VirtualScroller {
         needUpdate: boolean;
         curTop: number;
         isFastMode: boolean;
-        delta: number;           // 若你不再用，可删
     } {
         const curTop = window.scrollY || document.documentElement.scrollTop;
         const delta = Math.abs(curTop - this.liteLastTop);
@@ -117,7 +117,7 @@ export class VirtualScroller {
         const needUpdate = delta >= threshold;
         const isFastMode = needUpdate && delta >= threshold * VirtualScroller.FAST_RATIO;
 
-        return {needUpdate, curTop, isFastMode, delta};
+        return {needUpdate, curTop, isFastMode};
     }
 
 
@@ -125,7 +125,7 @@ export class VirtualScroller {
         this.buffer = window.innerHeight * 1.2;
     }
 
-    private async diffMountUnmount(fromIdx: number, toIdx: number) {
+    private async diffMountUnmount(fromIdx: number, toIdx: number): Promise<boolean> {
         logDiff(`[VS] diffMountUnmount IN  curFirst=${this.curFirst} curLast=${this.curLast} -> ${fromIdx}..${toIdx}`);
 
         const cells = this.manager.getCells();
@@ -139,10 +139,10 @@ export class VirtualScroller {
         if (toIdx < fromIdx) {
             this.curFirst = fromIdx;
             this.curLast = toIdx;
-            return;
+            return false;
         }
 
-        if (fromIdx === this.curFirst && toIdx === this.curLast) return;   // ← 新增
+        if (fromIdx === this.curFirst && toIdx === this.curLast) return false;   // ← 新增
 
         // 卸载前缀
         if (fromIdx > this.curFirst) {
@@ -192,6 +192,7 @@ export class VirtualScroller {
         this.curLast = toIdx;
 
         logDiff(`[VS] diffMountUnmount OUT curFirst=${this.curFirst} curLast=${this.curLast}  DOM=${this.timelineEl.childNodes.length}`);
+        return this.curLast > lastValid - VirtualScroller.PREFETCH_GAP
     }
 
     private computeVisibleRange(offsets: number[]): [number, number] {
@@ -236,9 +237,19 @@ export class VirtualScroller {
     private async diffNormal() {
         const [from, to] = this.computeVisibleRange(this.manager.getOffsets());
         logDiff(`[VS-lite] normal mode newRange ${from}..${to}`);
-        await this.diffMountUnmount(from, to);
+        const needMoreData = await this.diffMountUnmount(from, to);
+        if (!needMoreData || this.loadingMore) return;
+
+        this.loadingMore = true;
+        this.manager.loadMoreData().catch(e => console.error('[VS] loadMoreData failed', e)).finally(() => {
+            this.loadingMore = true;
+        })
     }
 
+    private shouldLoadMoreByIndex(): boolean {
+        const cellsLen = this.manager.getCells().length;
+        return this.curLast >= cellsLen - VirtualScroller.PREFETCH_GAP
+    }
 }
 
 export function findLastOverlap(bottom: number, offsets: number[]): number {

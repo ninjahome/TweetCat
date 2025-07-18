@@ -309,18 +309,16 @@ export class TweetAuthor {
         } else {
             this.avatarImgUrl = this.legacy.profile_image_url_https;
         }
-        if (!!this.legacy.displayName) {
+        if (this.legacy.displayName) {
             this.displayName = this.legacy.displayName;
         } else {
-            this.displayName =
-                data.core?.user_results?.result?.core?.name ?? '';
+            this.displayName = data.core?.name ?? '';
         }
 
-        if (!!this.legacy.screenName) {
+        if (this.legacy.screenName) {
             this.screenName = this.legacy.screenName;
         } else {
-            this.screenName =
-                data.core?.user_results?.result?.core?.screen_name ?? '';
+            this.screenName = data.core?.screen_name ?? '';
         }
     }
 }
