@@ -84,7 +84,7 @@ export async function getNextTweets(pageSize: number): Promise<EntryObj[]> {
     const page = tweetData.slice(currentIdx, endIdx);
     currentIdx = endIdx; // 前进
 
-    if (DBG.ENTRY_PAGER) {
+    if (DBG.PAGER) {
         const firstId = page[0] ? getTweetId(page[0]) : 'none';
         const lastId = page[page.length - 1] ? getTweetId(page[page.length - 1]) : 'none';
         logPager('[Pager] getNextTweets -> %d items (req=%d) cur=%d/%d isEnd=%s first=%s last=%s',

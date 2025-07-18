@@ -312,13 +312,15 @@ export class TweetAuthor {
         if (!!this.legacy.displayName) {
             this.displayName = this.legacy.displayName;
         } else {
-            this.displayName = data.core.name;
+            this.displayName =
+                data.core?.user_results?.result?.core?.name ?? '';
         }
 
         if (!!this.legacy.screenName) {
             this.screenName = this.legacy.screenName;
         } else {
-            this.screenName = data.core.screen_name;
+            this.screenName =
+                data.core?.user_results?.result?.core?.screen_name ?? '';
         }
     }
 }
@@ -336,20 +338,21 @@ export class TweetObj {
     card: TweetCard | null;
     retweetedStatus?: TweetObj;
 
-    constructor(tweetResult: any) {
-        this.rest_id = tweetResult.rest_id;
-        this.unmention_data = tweetResult.unmention_data;
-        this.author = new TweetAuthor(tweetResult.core.user_results.result);
-        this.edit_control = tweetResult.edit_control;
-        this.is_translatable = tweetResult.is_translatable;
-        this.views_count = tweetResult.views?.count ? parseInt(tweetResult.views.count) : 0;
-        this.source = tweetResult.source;
-        this.quick_promote_eligibility = tweetResult.quick_promote_eligibility;
-        this.tweetContent = new TweetContent(tweetResult.legacy);
-        this.card = tweetResult.card ? new TweetCard(tweetResult.card) : null;
-        if (tweetResult?.legacy?.retweeted_status_result?.result) {
+    constructor(raw: any) {
+        const data = raw?.tweet ?? raw;
+        this.rest_id = data.rest_id;
+        this.unmention_data = data.unmention_data;
+        this.author = new TweetAuthor(data.core.user_results.result);
+        this.edit_control = data.edit_control;
+        this.is_translatable = data.is_translatable;
+        this.views_count = data.views?.count ? parseInt(data.views.count) : 0;
+        this.source = data.source;
+        this.quick_promote_eligibility = data.quick_promote_eligibility;
+        this.tweetContent = new TweetContent(data.legacy);
+        this.card = data.card ? new TweetCard(data.card) : null;
+        if (data?.legacy?.retweeted_status_result?.result) {
             this.retweetedStatus = new TweetObj(
-                tweetResult.legacy.retweeted_status_result.result
+                data.legacy.retweeted_status_result.result
             );
         }
     }
@@ -384,19 +387,32 @@ export class EntryObj {
 }
 
 // 批量解析 entries 的函数
-export function extractEntryObjs(entries: any[]): { tweets: EntryObj[]; nextCursor: string | null } {
+export function extractEntryObjs(entries: any[]): {
+    tweets: EntryObj[];
+    nextCursor: string | null;
+    topCursor: string | null;
+} {
     const tweetEntries: EntryObj[] = [];
     let bottomCursor: string | null = null;
+    let topCursor = null;
 
     for (const entry of entries) {
         if (entry?.content?.entryType === 'TimelineTimelineItem') {
-            tweetEntries.push(new EntryObj(entry));
-        } else if (entry?.content?.entryType === 'TimelineTimelineCursor' && entry?.content?.cursorType === 'Bottom') {
-            bottomCursor = entry.content.value;
+            try {
+                tweetEntries.push(new EntryObj(entry));
+            } catch (e) {
+                console.warn("parse entry failed :", e, " data:", entry)
+            }
+        } else if (entry?.content?.entryType === 'TimelineTimelineCursor') {
+            if (entry.content.cursorType === 'Bottom') bottomCursor = entry.content.value;
+            else if (entry.content.cursorType === 'Top') topCursor = entry.content.value;
+        } else if (entry.content.entryType === 'TimelineTimelineModule') continue;
+        else {
+            console.log("unknown entry type", entry);
         }
     }
 
-    return {tweets: tweetEntries, nextCursor: bottomCursor};
+    return {tweets: tweetEntries, nextCursor: bottomCursor, topCursor};
 }
 
 

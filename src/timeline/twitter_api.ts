@@ -217,9 +217,9 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
     }
 
     const result = await response.json();
+    // console.log("--------------tmp=========>>>api result:\n", result);
     const {tweets, nextCursor} = parseTimelineFromGraphQL(result);
     const isEnd = tweets.length === 0 || nextCursor === null;
-    // console.log("--------------tmp=========>>>tmp:\n", result);
     return {
         tweets,
         nextCursor,

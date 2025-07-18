@@ -53,7 +53,6 @@ export class TweetManager {
         logTweetMgn("------>>> tweets length:", tweets.length)
         if (tweets.length) await this.appendTweetsToTimeline(tweets);
         this.scroller = new VirtualScroller(this.timelineEl, this);
-        this.scroller.refresh();
     }
 
     dispose() {
@@ -95,9 +94,6 @@ export class TweetManager {
 
         // 3. 更新容器高度
         this.applyContainerHeight();
-
-        // ★新增：通知 scroller 重新计算
-        this.scroller?.refresh();
     }
 
     async loadMoreData() {

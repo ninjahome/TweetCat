@@ -1,11 +1,10 @@
 export const DBG = {
-    MOUNT: true,
-    ANCHOR: true,
+    MOUNT: false,
+    ANCHOR: false,
     VIS: false,
-    PAGE: false,
     CELL: false,
-    ENTRY_PAGER: false,
-    TWEET_MANAGER: true,
+    PAGER: true,
+    TWEET_MANAGER: false,
     NODE_POOL: false,
     DIFF: true,
 };
@@ -19,7 +18,7 @@ export function logAnchor(...args: any[]) {
 }
 
 export function logPager(...args: any[]) {
-    if (DBG.ENTRY_PAGER) console.log.apply(console, args);
+    if (DBG.PAGER) console.log.apply(console, args);
 }
 
 export function logPool(...args: any[]) {
