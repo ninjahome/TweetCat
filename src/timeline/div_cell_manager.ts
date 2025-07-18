@@ -11,7 +11,7 @@ import {
 } from "./tweet_pager";
 
 import {VirtualScroller} from "./virtual_scroller";
-import {logTweetMgn} from "../debug_flags";
+import {logDiff, logTweetMgn} from "../debug_flags";
 
 const FAKE_TOTAL_COUNT = 2000;
 const PAGE_SIZE = 15; // 或根据视窗计算
@@ -108,11 +108,12 @@ export class TweetManager {
     }
 
     public updateHeightAt(idx: number, newH: number): void {
+        const oldH = this.heights[idx];
+        const dh = newH - oldH;
+        logDiff(`[UH] idx=${idx} dh=${dh}`);
         const len = this.heights.length;              // 已加载条数
         if (idx < 0 || idx >= len) return;
 
-        const oldH = this.heights[idx];
-        const dh = newH - oldH;
         if (!dh) return;
 
         // 1. 更新该项高度
@@ -130,6 +131,7 @@ export class TweetManager {
                 if (node?.isConnected) {
                     node.style.transform = `translateY(${this.offsets[j]}px)`;
                 }
+                if (!node?.isConnected) logDiff(`[UH] idx=${idx} -> j=${j} node NOT mounted`);
             }
         }
 

@@ -1,5 +1,5 @@
 export const DBG = {
-    MOUNT: false,
+    MOUNT: true,
     ANCHOR: false,
     VIS: false,
     CELL: false,

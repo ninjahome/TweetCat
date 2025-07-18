@@ -18,6 +18,8 @@ export class VirtualScroller {
 
     private rafPending = false;   // 防止重复排队
 
+    private diffRunning = false;
+
     private static readonly FAST_RATIO = 3;   // ≥3 行即快速
     private static readonly PREFETCH_GAP = 10;
 
@@ -127,72 +129,79 @@ export class VirtualScroller {
 
     private async diffMountUnmount(fromIdx: number, toIdx: number): Promise<boolean> {
         logDiff(`[VS] diffMountUnmount IN  curFirst=${this.curFirst} curLast=${this.curLast} -> ${fromIdx}..${toIdx}`);
+        if (this.diffRunning) {
+            logDiff('[DMM] ⚠️ parallel call detected');
+        }
+        this.diffRunning = true;          // --- 探针开始
+        try {
+            const cells = this.manager.getCells();
+            const offsets = this.manager.getOffsets();
+            const heights = this.manager.getHeights();
 
-        const cells = this.manager.getCells();
-        const offsets = this.manager.getOffsets();
-        const heights = this.manager.getHeights();
+            const lastValid = cells.length - 1;
+            if (toIdx > lastValid) toIdx = lastValid;
+            if (fromIdx < 0) fromIdx = 0;
 
-        const lastValid = cells.length - 1;
-        if (toIdx > lastValid) toIdx = lastValid;
-        if (fromIdx < 0) fromIdx = 0;
+            if (toIdx < fromIdx) {
+                this.curFirst = fromIdx;
+                this.curLast = toIdx;
+                return false;
+            }
 
-        if (toIdx < fromIdx) {
+            if (fromIdx === this.curFirst && toIdx === this.curLast) return false;   // ← 新增
+
+            // 卸载前缀
+            if (fromIdx > this.curFirst) {
+                for (let i = this.curFirst; i < fromIdx; i++) {
+                    cells[i].unmount();
+                }
+            }
+            // 卸载后缀
+            if (toIdx < this.curLast) {
+                for (let i = toIdx + 1; i <= this.curLast; i++) {
+                    cells[i].unmount();
+                    if (cells[i].height < 20) {
+                        console.warn('[VS] suspicious tiny height', i, cells[i].height, cells[i]);
+                    }
+                }
+            }
+
+            // 挂载后缀
+            if (toIdx > this.curLast) {
+                for (let i = this.curLast + 1; i <= toIdx; i++) {
+                    await cells[i].mount(this.timelineEl, offsets[i]);
+                    const newH = cells[i].height;
+                    if (newH !== heights[i]) {
+                        // 委托 manager 更新高度及偏移
+                        this.manager.updateHeightAt(i, newH);
+                    }
+                }
+            }
+
+            // 挂载前缀
+            if (fromIdx < this.curFirst) {
+                for (let i = fromIdx; i < this.curFirst; i++) {
+                    const ref = this.timelineEl.firstChild;             // ① 先记录当前首节点
+                    await cells[i].mount(this.timelineEl, offsets[i]);  // ② mount 会把 node 追加到尾部
+                    if (cells[i].height < 20) {
+                        console.warn('[VS] suspicious tiny height', i, cells[i].height, cells[i]);
+                    }
+                    if (ref) this.timelineEl.insertBefore(cells[i].node, ref); // ③ 再插到最前
+                    const newH = cells[i].height;
+                    if (newH !== heights[i]) {
+                        this.manager.updateHeightAt(i, newH);
+                    }
+                }
+            }
+
             this.curFirst = fromIdx;
             this.curLast = toIdx;
-            return false;
+
+            logDiff(`[VS] diffMountUnmount OUT curFirst=${this.curFirst} curLast=${this.curLast}  DOM=${this.timelineEl.childNodes.length}`);
+            return this.curLast > lastValid - VirtualScroller.PREFETCH_GAP
+        } finally {
+            this.diffRunning = false;     // --- 探针结束
         }
-
-        if (fromIdx === this.curFirst && toIdx === this.curLast) return false;   // ← 新增
-
-        // 卸载前缀
-        if (fromIdx > this.curFirst) {
-            for (let i = this.curFirst; i < fromIdx; i++) {
-                cells[i].unmount();
-            }
-        }
-        // 卸载后缀
-        if (toIdx < this.curLast) {
-            for (let i = toIdx + 1; i <= this.curLast; i++) {
-                cells[i].unmount();
-                if (cells[i].height < 20) {
-                    console.warn('[VS] suspicious tiny height', i, cells[i].height, cells[i]);
-                }
-            }
-        }
-
-        // 挂载后缀
-        if (toIdx > this.curLast) {
-            for (let i = this.curLast + 1; i <= toIdx; i++) {
-                await cells[i].mount(this.timelineEl, offsets[i]);
-                const newH = cells[i].height;
-                if (newH !== heights[i]) {
-                    // 委托 manager 更新高度及偏移
-                    this.manager.updateHeightAt(i, newH);
-                }
-            }
-        }
-
-        // 挂载前缀
-        if (fromIdx < this.curFirst) {
-            for (let i = fromIdx; i < this.curFirst; i++) {
-                const ref = this.timelineEl.firstChild;             // ① 先记录当前首节点
-                await cells[i].mount(this.timelineEl, offsets[i]);  // ② mount 会把 node 追加到尾部
-                if (cells[i].height < 20) {
-                    console.warn('[VS] suspicious tiny height', i, cells[i].height, cells[i]);
-                }
-                if (ref) this.timelineEl.insertBefore(cells[i].node, ref); // ③ 再插到最前
-                const newH = cells[i].height;
-                if (newH !== heights[i]) {
-                    this.manager.updateHeightAt(i, newH);
-                }
-            }
-        }
-
-        this.curFirst = fromIdx;
-        this.curLast = toIdx;
-
-        logDiff(`[VS] diffMountUnmount OUT curFirst=${this.curFirst} curLast=${this.curLast}  DOM=${this.timelineEl.childNodes.length}`);
-        return this.curLast > lastValid - VirtualScroller.PREFETCH_GAP
     }
 
     private computeVisibleRange(offsets: number[]): [number, number] {
@@ -215,6 +224,7 @@ export class VirtualScroller {
 
     private liteRafTick = async () => {
         try {
+            logDiff('[RAF] enter', performance.now());
             const {needUpdate, curTop, isFastMode} = this.checkLiteUpdate();
             if (!needUpdate) return;
 
@@ -235,6 +245,7 @@ export class VirtualScroller {
     }
 
     private async diffNormal() {
+
         const [from, to] = this.computeVisibleRange(this.manager.getOffsets());
         logDiff(`[VS-lite] normal mode newRange ${from}..${to}`);
         const needMoreData = await this.diffMountUnmount(from, to);
