@@ -3,7 +3,7 @@ export const DBG = {
     ANCHOR: false,
     VIS: false,
     CELL: false,
-    PAGER: true,
+    PAGER: false,
     TWEET_MANAGER: false,
     NODE_POOL: false,
     DIFF: true,

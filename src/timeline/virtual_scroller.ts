@@ -16,8 +16,9 @@ export class VirtualScroller {
     private liteLastTop = 0;
     private liteOnScrollBound?: () => void;
 
-    private liteDirty = false;        // scroll 后待处理标记
-    private liteRafPending = false;   // 防止重复排队
+    private rafPending = false;   // 防止重复排队
+
+    private static readonly FAST_RATIO = 3;   // ≥3 行即快速
 
     /* ---------------- 构造 ---------------- */
     constructor(
@@ -100,16 +101,25 @@ export class VirtualScroller {
     }
 
     /**
-     * 判断 Lite 模式是否需要更新。
-     * 内部直接读取 scrollTop 并计算 delta。
-     * @returns { needUpdate: boolean; curTop: number; delta: number }
+     * 计算本次滚动是否需要 diff，以及是否属于快速滚动。
+     * 先判 needUpdate；若需要，再判定 isFastMode（>= FAST_RATIO）
      */
-    private checkLiteUpdate(): { needUpdate: boolean; curTop: number; delta: number } {
+    private checkLiteUpdate(): {
+        needUpdate: boolean;
+        curTop: number;
+        isFastMode: boolean;
+        delta: number;           // 若你不再用，可删
+    } {
         const curTop = window.scrollY || document.documentElement.scrollTop;
         const delta = Math.abs(curTop - this.liteLastTop);
         const threshold = this.manager.getEstHeight();
-        return {needUpdate: delta >= threshold, curTop, delta};
+
+        const needUpdate = delta >= threshold;
+        const isFastMode = needUpdate && delta >= threshold * VirtualScroller.FAST_RATIO;
+
+        return {needUpdate, curTop, isFastMode, delta};
     }
+
 
     private onResize() {
         this.buffer = window.innerHeight * 1.2;
@@ -197,44 +207,38 @@ export class VirtualScroller {
     }
 
     private liteOnScroll(): void {
-        // logDiff(`[VS-lite] liteOnScroll....)`);
-        // 仅做标记，不做计算
-        this.liteDirty = true;
+        if (this.rafPending) return;          // 已有任务在队列或进行中
+        this.rafPending = true;
+        requestAnimationFrame(this.liteRafTick);
+    }
 
-        // 如未排队，则在下一帧执行 liteRafTick
-        if (!this.liteRafPending) {
-            this.liteRafPending = true;
-            requestAnimationFrame(this.liteRafTick);
+    private liteRafTick = async () => {
+        try {
+            const {needUpdate, curTop, isFastMode} = this.checkLiteUpdate();
+            if (!needUpdate) return;
+
+            if (isFastMode) await this.diffFastMount();
+            else await this.diffNormal();
+
+            this.liteLastTop = curTop;
+
+        } catch (e) {
+            console.error("[VS-lite] Raf tick error:", e);
+        } finally {
+            this.rafPending = false;
         }
     }
 
-    private liteRafTick = () => {
-        // logDiff(`[VS-lite] start to compute diff by raf....)`);
-        this.liteRafPending = false;        // 本帧已执行
+    private async diffFastMount() {
+        logDiff("[VS-lite] fast mode, defer diff");
+    }
 
-        if (!this.liteDirty) return;
-        this.liteDirty = false;
-
-        const {needUpdate, curTop, delta} = this.checkLiteUpdate();
-        if (!needUpdate) {
-            // 滚动不足阈值，更新基准后退出
-            this.liteLastTop = curTop;
-            return;
-        }
-
-        this.liteLastTop = curTop;
-
-        // 1) 计算新可视区
+    private async diffNormal() {
         const [from, to] = this.computeVisibleRange(this.manager.getOffsets());
+        logDiff(`[VS-lite] normal mode newRange ${from}..${to}`);
+        await this.diffMountUnmount(from, to);
+    }
 
-        // 2) diff 挂载 / 卸载
-        this.diffMountUnmount(from, to).then(() => {
-            logDiff(`[VS-lite] diff done newRange ${from}..${to}`);
-        });
-
-        // 3) 如需加载更多（沿用旧逻辑，可选放这里）
-        // this.tryLoadMore();   ← 若你选方案 B，可在此调用
-    };
 }
 
 export function findLastOverlap(bottom: number, offsets: number[]): number {
