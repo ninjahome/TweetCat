@@ -1,14 +1,13 @@
-// debug_flags.ts
 export const DBG = {
-    MOUNT: true,   // ← 这次测试要开
-    ANCHOR: true,   // ← 这次测试要开
-    VIS: false,  // 可留作以后扩展
+    MOUNT: true,
+    ANCHOR: true,
+    VIS: false,
     PAGE: false,
     CELL: false,
-    ENTRY_PAGER: true,
+    ENTRY_PAGER: false,
     TWEET_MANAGER: true,
-    NODE_POOL:false,
-    DIFF:true,
+    NODE_POOL: false,
+    DIFF: true,
 };
 
 export function logMount(...args: any[]) {
@@ -31,6 +30,7 @@ export function logPool(...args: any[]) {
 export function logTweetMgn(...args: any[]) {
     if (DBG.TWEET_MANAGER) console.log.apply(console, args);
 }
+
 export function logDiff(...args: any[]) {
     if (DBG.DIFF) console.log.apply(console, args);
 }

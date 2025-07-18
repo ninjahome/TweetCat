@@ -2,6 +2,7 @@ import {TweetManager} from "./div_cell_manager";
 import {logAnchor, logMount} from "../debug_flags";
 
 export class VirtualScroller {
+    /* ---------------- 原有字段 ---------------- */
     private buffer = 0;
     private loadingMore = false;
     private scrollPending = false;
@@ -19,12 +20,21 @@ export class VirtualScroller {
 
     /** 加载节流 */
     private lastLoadTs = 0;
-    private minLoadInterval = 350; // ms; 可按需要调
-    /** 基于像素的触底预取（比 index 更稳，配合 atTail） */
-    private prefetchPxFactor = 2; // 预取 2 屏
+    private minLoadInterval = 350;        // ms
+    private prefetchPxFactor = 2;         // 预取 2 屏
+
     /** 滚动锚定补偿累计（上方高度变化时由 Manager.queueAnchor 调用） */
     private anchorDh = 0;
 
+    /* ---------------- Lite 模式字段 ---------------- */
+    /** Lite 模式：上一次已处理的 scrollTop（阈值累积基准） */
+    private liteLastTop = 0;
+    /** Lite 模式启用标志 */
+    private liteEnabled = false;
+    /** Lite 模式滚动监听引用（方便移除） */
+    private liteOnScrollBound?: () => void;
+
+    /* ---------------- 构造 ---------------- */
     constructor(
         private readonly timelineEl: HTMLElement,
         private readonly manager: TweetManager,
@@ -32,18 +42,28 @@ export class VirtualScroller {
         this.onScroll = this.onScroll.bind(this);
         this.rafLoop = this.rafLoop.bind(this);
 
-        window.addEventListener("scroll", this.onScroll, {passive: true});
+        /* ❌ 默认停用原高频 scroll 逻辑；Lite 模式会另行绑定 */
+        // window.addEventListener("scroll", this.onScroll, { passive: true });
+
         this.onResize = this.onResize.bind(this);
         window.addEventListener("resize", this.onResize);
+
         this.updateBuffer();
-        this.rafLoop();
+
+        /* ❌ 默认停用原 rafLoop；Lite 模式不需要 */
+        // this.rafLoop();
+
+        this.enableLiteMode();
     }
+
+    /* ---------------- 原有公共接口（保持不动，必要时仍可用） ---------------- */
 
     /** Manager 通知：上方高度变动 dh，需要在下一帧 scrollBy 补偿 */
     public queueAnchor(dh: number): void {
-        logAnchor(`[VS] Anchor queued dh=${dh} totalDh=${this.anchorDh + dh} scrollTop=${window.scrollY}`);
+        logAnchor(
+            `[VS] Anchor queued dh=${dh} totalDh=${this.anchorDh + dh} scrollTop=${window.scrollY}`
+        );
         this.anchorDh += dh;
-        // 确保 rAF 下一帧会重算可视区并应用补偿
         this.scrollPending = true;
     }
 
@@ -54,7 +74,103 @@ export class VirtualScroller {
 
     /** 强制刷新，可用于首次渲染或手动触发更新视图 */
     public refresh(): void {
+        /* Lite 模式下仅标记 scrollPending，实际行为由 Lite 逻辑决定 */
         this.scrollPending = true;
+    }
+
+    dispose() {
+        /* 原 scroll 监听（默认未启用） */
+        // window.removeEventListener("scroll", this.onScroll);
+        this.disableLiteMode();
+        window.removeEventListener("resize", this.onResize);
+    }
+
+    /* ---------------- Lite 模式 API ---------------- */
+
+    /**
+     * 启用 Lite 模式：只挂载首屏数据；后续滚动仅打印
+     * “需要 / 跳过 更新”日志，不做挂载/卸载。
+     */
+    public async enableLiteMode(): Promise<void> {
+        if (this.liteEnabled) return;
+        this.liteEnabled = true;
+
+        // 1) 挂载首屏
+        await this.liteMountInitialBatch();
+
+        // 2) 初始化滚动基准
+        this.liteLastTop = window.scrollY || document.documentElement.scrollTop;
+
+        // 3) 轻量滚动监听
+        this.liteOnScrollBound = this.liteOnScroll.bind(this);
+        window.addEventListener("scroll", this.liteOnScrollBound, {passive: true});
+
+        console.log("[VS-lite] enabled");
+    }
+
+    /** 可选：停用 Lite 模式，移除轻量监听 */
+    public disableLiteMode(): void {
+        if (!this.liteEnabled) return;
+        this.liteEnabled = false;
+        if (this.liteOnScrollBound) {
+            window.removeEventListener("scroll", this.liteOnScrollBound);
+            this.liteOnScrollBound = undefined;
+        }
+        console.log("[VS-lite] disabled");
+    }
+
+    /* ---------------- Lite 模式内部实现 ---------------- */
+
+    /** Lite：挂载首屏 tweets，直到填满视口高度 */
+    private async liteMountInitialBatch(): Promise<void> {
+        const cells = this.manager.getCells();
+        const offsets = this.manager.getOffsets();
+        const heights = this.manager.getHeights();
+
+        if (cells.length === 0) return;
+
+        let acc = 0;
+        let last = -1;
+
+        for (let i = 0; i < cells.length; i++) {
+            await cells[i].mount(this.timelineEl, offsets[i]);
+            const h = cells[i].height;
+            if (h !== heights[i]) {
+                this.manager.updateHeightAt(i, h);
+            }
+            acc += h;
+            last = i;
+        }
+
+        this.curFirst = 0;
+        this.curLast = last;
+        logMount(`[VS-lite] initial mounted 0..${last} (px=${acc})`);
+    }
+
+    /** Lite：滚动时只做 Δ 计算并打印日志 */
+    private liteOnScroll(): void {
+        if (!this.liteEnabled) return;
+
+        const cur = window.scrollY || document.documentElement.scrollTop;
+        const delta = Math.abs(cur - this.liteLastTop);
+        const threshold = this.manager.getEstHeight();
+
+        if (delta >= threshold) {
+            console.log(`[VS-lite] need update tweets delta=${delta} >= threshold=${threshold}`);
+            this.liteLastTop = cur; // 更新基准
+            const pr = this.computeVisibleRange(this.manager.getOffsets())
+            this.diffMountUnmount(pr[0], pr[1]).then(() => {
+                console.log(`[VS-lite] compute visible range from =${pr[0]} to=${pr[1]}`);
+            });
+        } else {
+            // console.log(`[VS-lite] skip update delta=${delta} < threshold=${threshold}`);
+        }
+    }
+
+    /* ---------------- 原有 scroll / resize / rafLoop 逻辑（默认停用） ---------------- */
+    private onScroll() {
+        this.scrollPending = true;
+        this.scrollEvents++;
     }
 
     private onResize() {
@@ -63,19 +179,9 @@ export class VirtualScroller {
 
     private updateBuffer() {
         this.buffer = window.innerHeight * 1.2;
-        // console.log(`[VS] Buffer updated: ${this.buffer}px`);
     }
 
-    private onScroll() {
-        this.scrollPending = true;
-        this.scrollEvents++;
-    }
-
-    dispose() {
-        window.removeEventListener("scroll", this.onScroll);
-        window.removeEventListener("resize", this.onResize);
-    }
-
+    /* ---------- 以下函数保留以备将来恢复复杂逻辑；Lite 模式不会调用 ---------- */
     private rafLoop(): void {
         requestAnimationFrame(() => {
             const curScrollTop = window.scrollY || document.documentElement.scrollTop;
@@ -126,9 +232,7 @@ export class VirtualScroller {
             if (!this.loadingMore && allowedByTime && (atTail || listEmpty || pixelNeed)) {
                 this.loadingMore = true;
                 this.lastLoadTs = now;
-                console.log(
-                    `[VS] Trigger loadMoreData (chkTo=${chkTo}, cells=${cellsLen}, pixelNeed=${pixelNeed})`
-                );
+                console.log(`[VS] Trigger loadMoreData (chkTo=${chkTo}, cells=${cellsLen}, pixelNeed=${pixelNeed})`);
                 this.manager
                     .loadMoreData()
                     .catch(e => console.error('[VS] loadMoreData failed', e))
@@ -153,7 +257,6 @@ export class VirtualScroller {
         if (fromIdx < 0) fromIdx = 0;
 
         if (toIdx < fromIdx) {
-            // 空范围
             this.curFirst = fromIdx;
             this.curLast = toIdx;
             return;
@@ -208,7 +311,6 @@ export class VirtualScroller {
         this.curFirst = fromIdx;
         this.curLast = toIdx;
 
-        logMount(`[VS] DOM count: ${this.timelineEl.childNodes.length}`);
         logMount(`[VS] diffMountUnmount OUT curFirst=${this.curFirst} curLast=${this.curLast}  DOM=${this.timelineEl.childNodes.length}`);
     }
 
@@ -241,20 +343,19 @@ export class VirtualScroller {
     }
 
     private computeVisibleRange(offsets: number[]): [number, number] {
-        if (offsets.length === 1) return [0, -1];  // ← 空列表直接返回
+        if (offsets.length === 1) return [0, -1];
 
         const scrollTop = window.scrollY || document.documentElement.scrollTop;
         const top = scrollTop - this.buffer;
         const bottom = scrollTop + window.innerHeight + this.buffer;
         return [
             this.findFirstOverlap(top, offsets),
-            this.findLastOverlap(bottom, offsets)
+            this.findLastOverlap(bottom, offsets),
         ];
     }
 
     /** 请求一次 diff；若当前 diff 正在执行，则只记录最新范围，稍后批处理 */
     private requestDiff(from: number, to: number): void {
-        // 若 computeVisibleRange 返回空（to < from），规整
         if (to < from) to = from - 1;
         logMount(`[VS] requestDiff from=${from} to=${to} diffRunning=${this.diffRunning}`);
         this.pendingRange = [from, to];
@@ -275,7 +376,7 @@ export class VirtualScroller {
             this.diffRunning = false;
         }
 
-        logMount(`[VS] runDiff end   from=${pr[0]} to=${pr[1]} nextPending=${this.pendingRange?'Y':'N'}`);
+        logMount(`[VS] runDiff end   from=${pr[0]} to=${pr[1]} nextPending=${this.pendingRange ? "Y" : "N"}`);
 
         if (this.pendingRange) {
             this.runDiff();

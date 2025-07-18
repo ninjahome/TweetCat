@@ -20,7 +20,7 @@ let seenIds: Set<string> = new Set();
 
 const userID = '1315345422123180033'; // 1594535159373733889//1315345422123180033
 
-//error userid  1594535159373733889
+//error userid  1594535159373733889  //CHNN00001
 /* ------------------------------------------------------------------ *
  * 工具：提取 EntryObj 唯一 tweet id
  * 根据你实际 EntryObj 结构调整此函数！
@@ -52,8 +52,7 @@ export async function initTweetPager(initialPageSize: number = DEFAULT_INIT_PAGE
     }
     await ensureCacheSize(initialPageSize);
     currentIdx = 0;
-        logPager('[Pager] init done tweets=%d nextCursor=%s isEnd=%s',
-            tweetData.length, nextCursor, isEnd);
+    logPager('[Pager] init done tweets=%d nextCursor=%s isEnd=%s', tweetData.length, nextCursor, isEnd);
 }
 
 
@@ -78,8 +77,7 @@ export async function getNextTweets(pageSize: number): Promise<EntryObj[]> {
     // 现在可安全 slice（最多到 tweetData.length）
     const endIdx = Math.min(target, tweetData.length);
     if (currentIdx >= endIdx) {
-        logPager('[Pager] no more tweets. currentIdx=%d len=%d isEnd=%s',
-            currentIdx, tweetData.length, isEnd);
+        logPager('[Pager] no more tweets. currentIdx=%d len=%d isEnd=%s', currentIdx, tweetData.length, isEnd);
         return [];
     }
 
