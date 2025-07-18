@@ -1,5 +1,5 @@
 import {TweetManager} from "./div_cell_manager";
-import {logAnchor, logMount} from "../debug_flags";
+import {logAnchor, logDiff, logMount} from "../debug_flags";
 
 export class VirtualScroller {
     /* ---------------- 原有字段 ---------------- */
@@ -144,7 +144,7 @@ export class VirtualScroller {
 
         this.curFirst = 0;
         this.curLast = last;
-        logMount(`[VS-lite] initial mounted 0..${last} (px=${acc})`);
+        logDiff(`[VS-lite] initial mounted 0..${last} (px=${acc})`);
     }
 
     /** Lite：滚动时只做 Δ 计算并打印日志 */
@@ -156,11 +156,11 @@ export class VirtualScroller {
         const threshold = this.manager.getEstHeight();
 
         if (delta >= threshold) {
-            console.log(`[VS-lite] need update tweets delta=${delta} >= threshold=${threshold}`);
+            logDiff(`[VS-lite] need update tweets delta=${delta} >= threshold=${threshold}`);
             this.liteLastTop = cur; // 更新基准
             const pr = this.computeVisibleRange(this.manager.getOffsets())
             this.diffMountUnmount(pr[0], pr[1]).then(() => {
-                console.log(`[VS-lite] compute visible range from =${pr[0]} to=${pr[1]}`);
+                logDiff(`[VS-lite] compute visible range from =${pr[0]} to=${pr[1]}`);
             });
         } else {
             // console.log(`[VS-lite] skip update delta=${delta} < threshold=${threshold}`);
@@ -192,7 +192,7 @@ export class VirtualScroller {
                 this.rafUpdates++;
                 const offsets = this.manager.getOffsets();
                 const [fromIdx, toIdx] = this.computeVisibleRange(offsets);
-                logMount(`[VS] visRange from=${fromIdx} to=${toIdx} len=${toIdx >= fromIdx ? (toIdx - fromIdx + 1) : 0}`);
+                logDiff(`[VS] visRange from=${fromIdx} to=${toIdx} len=${toIdx >= fromIdx ? (toIdx - fromIdx + 1) : 0}`);
                 this.requestDiff(fromIdx, toIdx);
             }
 
@@ -232,7 +232,7 @@ export class VirtualScroller {
             if (!this.loadingMore && allowedByTime && (atTail || listEmpty || pixelNeed)) {
                 this.loadingMore = true;
                 this.lastLoadTs = now;
-                console.log(`[VS] Trigger loadMoreData (chkTo=${chkTo}, cells=${cellsLen}, pixelNeed=${pixelNeed})`);
+                logDiff(`[VS] Trigger loadMoreData (chkTo=${chkTo}, cells=${cellsLen}, pixelNeed=${pixelNeed})`);
                 this.manager
                     .loadMoreData()
                     .catch(e => console.error('[VS] loadMoreData failed', e))
@@ -246,7 +246,7 @@ export class VirtualScroller {
     }
 
     private async diffMountUnmount(fromIdx: number, toIdx: number) {
-        logMount(`[VS] diffMountUnmount IN  curFirst=${this.curFirst} curLast=${this.curLast} -> ${fromIdx}..${toIdx}`);
+        logDiff(`[VS] diffMountUnmount IN  curFirst=${this.curFirst} curLast=${this.curLast} -> ${fromIdx}..${toIdx}`);
 
         const cells = this.manager.getCells();
         const offsets = this.manager.getOffsets();
@@ -311,7 +311,7 @@ export class VirtualScroller {
         this.curFirst = fromIdx;
         this.curLast = toIdx;
 
-        logMount(`[VS] diffMountUnmount OUT curFirst=${this.curFirst} curLast=${this.curLast}  DOM=${this.timelineEl.childNodes.length}`);
+        logDiff(`[VS] diffMountUnmount OUT curFirst=${this.curFirst} curLast=${this.curLast}  DOM=${this.timelineEl.childNodes.length}`);
     }
 
     private findFirstOverlap(top: number, offsets: number[]): number {
@@ -357,7 +357,7 @@ export class VirtualScroller {
     /** 请求一次 diff；若当前 diff 正在执行，则只记录最新范围，稍后批处理 */
     private requestDiff(from: number, to: number): void {
         if (to < from) to = from - 1;
-        logMount(`[VS] requestDiff from=${from} to=${to} diffRunning=${this.diffRunning}`);
+        logDiff(`[VS] requestDiff from=${from} to=${to} diffRunning=${this.diffRunning}`);
         this.pendingRange = [from, to];
         if (!this.diffRunning) {
             this.runDiff();
@@ -369,14 +369,14 @@ export class VirtualScroller {
         if (!pr) return;
         this.pendingRange = null;
         this.diffRunning = true;
-        logMount(`[VS] runDiff start from=${pr[0]} to=${pr[1]}`);
+        logDiff(`[VS] runDiff start from=${pr[0]} to=${pr[1]}`);
         try {
             await this.diffMountUnmount(pr[0], pr[1]);
         } finally {
             this.diffRunning = false;
         }
 
-        logMount(`[VS] runDiff end   from=${pr[0]} to=${pr[1]} nextPending=${this.pendingRange ? "Y" : "N"}`);
+        logDiff(`[VS] runDiff end   from=${pr[0]} to=${pr[1]} nextPending=${this.pendingRange ? "Y" : "N"}`);
 
         if (this.pendingRange) {
             this.runDiff();
