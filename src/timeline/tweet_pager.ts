@@ -145,7 +145,7 @@ async function fetchBatch(batchSize: number): Promise<number> {
             const r = await fetchTweets(userID, batchSize, nextCursor ?? undefined);
             tweets = r.tweets ?? [];
             nc = r.nextCursor ?? null;
-            end = !!r.isEnd;
+            end = r.isEnd;
         } catch (err) {
             logPager('[Pager] fetchBatch ERROR %o', err);
             // 出错时，不推进 cursor；added=0

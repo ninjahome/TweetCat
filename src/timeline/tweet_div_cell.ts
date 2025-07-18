@@ -36,11 +36,8 @@ export class TweetCatCell {
 
     /** 首次或再次挂载 */
     async mount(parent: HTMLElement, offset: number) {
-        logMount(`[Cell#${this.id}] mount offset=${offset} isNew=${!this.node} nodeInPool=${!!this.node}`);
         this.offset = offset;
-        /* 首次创建 DOM */
         if (!this.node) {
-            // this.node = renderTweetHTML(this.data, this.tpl);
             this.node = globalNodePool.acquire(this.id) ?? renderTweetHTML(this.data, this.tpl);
 
             Object.assign(this.node.style, {
@@ -63,10 +60,9 @@ export class TweetCatCell {
         if (!this.height) {
             await waitStable(this.node);
             this.height = this.node.offsetHeight;
-            logMount(
-                `[Cell#${this.id}] mounted h=${this.height}`
-            );
         }
+
+        logMount(`[Cell#${this.id}] mount offset=${offset} height=${this.height}`);
     }
 
     /** 从 DOM 移除 */
