@@ -40,10 +40,11 @@ export class VirtualScroller {
 
     /** Manager 通知：上方高度变动 dh，需要在下一帧 scrollBy 补偿 */
     public queueAnchor(dh: number): void {
-        console.trace('[QUEUE-ANCHOR] dh=', dh);
-        logAnchor(
-            `[VS] Anchor queued dh=${dh} totalDh=${this.anchorDh + dh} scrollTop=${window.scrollY}`
-        );
+        console.info('[QA]', {
+            dh,
+            total: this.anchorDh + dh,
+            scrollTop: window.scrollY || document.documentElement.scrollTop
+        });
         this.anchorDh += dh;
     }
 

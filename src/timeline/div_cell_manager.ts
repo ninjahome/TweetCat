@@ -109,75 +109,49 @@ export class TweetManager {
     }
 
     public updateHeightAt(idx: number, newH: number): void {
-        /* ---------- Δh 基本信息 ---------- */
-        const oldH      = this.heights[idx];
-        const dh        = newH - oldH;
-        const topBefore = this.offsets[idx];                    // 变动前该行的 top
+        const oldH = this.heights[idx];
+        const dh = newH - oldH;
         const scrollTop = window.scrollY || document.documentElement.scrollTop;
 
-        // 供调试：变动行在视口中的相对位置（补偿前）
-        const rowTop    = topBefore;
-        const rowBottom = rowTop + newH;
-        const vpTop     = scrollTop;
+        // 无意义或索引越界时直接返回
+        if (idx < 0 || idx >= this.heights.length || dh === 0) return;
 
-        logDiff(
-            `[UH] idx=${idx} dh=${dh} top=${topBefore} ` +
-            `scrollTop=${scrollTop} curFirst=${this.scroller?.getCurFirst()}`
-        );
-        logDiff(
-            `[UH?] idx=${idx} rowTop=${rowTop} rowBottom=${rowBottom} vpTop=${vpTop}`
-        );
+        // 1. 打印高度变化的核心信息
+        console.debug(`[UH] idx=${idx} dh=${dh} scrollTop=${scrollTop} curFirst=${this.scroller?.getCurFirst()}`);
 
-        const len = this.heights.length;
-        if (idx < 0 || idx >= len || !dh) return;
-
-        /* ---------- 1. 更新本行高度 ---------- */
+        // 2. 更新本行高度
         this.heights[idx] = newH;
+        const selfCell = this.cells[idx];
+        if (selfCell) {
+            selfCell.height = newH;
+        }
 
-        /* ---------- 2. 重新计算 idx+1..len-1 的 offsets 并同步 DOM ---------- */
-        for (let j = idx + 1; j < len; j++) {
+        // 3. 重新计算并同步所有后续 offsets & DOM translateY
+        for (let j = idx + 1; j <= this.heights.length; j++) {
+            // offsets 长度 = heights.length + 1
             this.offsets[j] = this.offsets[j - 1] + this.heights[j - 1];
-
             if (j < this.cells.length) {
-                const cell = this.cells[j];
-                cell.offset = this.offsets[j];
-                const node = cell.node;
-
-                if (node?.isConnected) {
-                    const ty = parseInt(node.style.transform.match(/-?\d+/)?.[0] ?? 'NaN');
-                    if (ty !== this.offsets[j]) {
-                        console.warn('[DESYNC]', j, 'ty=', ty, 'offset=', this.offsets[j]);
-                    }
-                    node.style.transform = `translateY(${this.offsets[j]}px)`;
-                } else {
-                    logDiff(`[UH] idx=${idx} -> j=${j} node NOT mounted`);
+                const c = this.cells[j];
+                c.offset = this.offsets[j];
+                if (c.node?.isConnected) {
+                    c.node.style.transform = `translateY(${this.offsets[j]}px)`;
                 }
             }
         }
 
-        /* ---------- 3. 更新末尾 sentinel ---------- */
-        this.offsets[len] = this.offsets[len - 1] + this.heights[len - 1];
-
-        /* ---------- 4. 同步 listHeight & 容器高度 ---------- */
-        this.listHeight = this.offsets[len];
+        // 4. 更新容器高度
+        this.listHeight = this.offsets[this.heights.length];
         this.applyContainerHeight();
 
-        /* ---------- 5. 更新 estHeight（指数平滑） ---------- */
+        // 5. 更新 estHeight（仍保留）
         this.updateEstHeight(newH);
 
-        /* ---------- 6. 如有需要，告知 VirtualScroller 做锚定补偿 ---------- */
-        const sc = this.scroller;
-
-        // ① 几何判定：整行在视口上方 → 必须补偿
-        if (sc && rowBottom <= vpTop) {
-            console.trace('[UH] queueAnchor by geometry', idx);
-            sc.queueAnchor(dh);
-        }
-
-        // ② 旧的 idx 判定：行号在当前渲染区之前
-        if (sc && idx < sc.getCurFirst()) {
-            console.trace('[UH] queueAnchor by idx', idx);
-            sc.queueAnchor(dh);
+        // 6. 判断是否需要锚点补偿，并打印相关日志
+        const rowBottom = this.offsets[idx] + newH;
+        const curFirst = this.scroller!.getCurFirst();
+        if (rowBottom <= scrollTop || idx < curFirst) {
+            console.info(`[QA] queueAnchor dh=${dh} idx=${idx} curFirst=${curFirst} scrollTop=${scrollTop}`);
+            this.scroller!.queueAnchor(dh);
         }
     }
 
