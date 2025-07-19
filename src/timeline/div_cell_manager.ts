@@ -109,53 +109,75 @@ export class TweetManager {
     }
 
     public updateHeightAt(idx: number, newH: number): void {
-        const oldH = this.heights[idx];
-        const dh = newH - oldH;
-        logDiff(`[UH] idx=${idx} dh=${dh}`);
-        const len = this.heights.length;              // 已加载条数
-        if (idx < 0 || idx >= len) return;
+        /* ---------- Δh 基本信息 ---------- */
+        const oldH      = this.heights[idx];
+        const dh        = newH - oldH;
+        const topBefore = this.offsets[idx];                    // 变动前该行的 top
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
 
-        if (!dh) return;
+        // 供调试：变动行在视口中的相对位置（补偿前）
+        const rowTop    = topBefore;
+        const rowBottom = rowTop + newH;
+        const vpTop     = scrollTop;
 
-        // 1. 更新该项高度
+        logDiff(
+            `[UH] idx=${idx} dh=${dh} top=${topBefore} ` +
+            `scrollTop=${scrollTop} curFirst=${this.scroller?.getCurFirst()}`
+        );
+        logDiff(
+            `[UH?] idx=${idx} rowTop=${rowTop} rowBottom=${rowBottom} vpTop=${vpTop}`
+        );
+
+        const len = this.heights.length;
+        if (idx < 0 || idx >= len || !dh) return;
+
+        /* ---------- 1. 更新本行高度 ---------- */
         this.heights[idx] = newH;
 
-        // 2. 局部重算 offsets（idx+1..len-1）
+        /* ---------- 2. 重新计算 idx+1..len-1 的 offsets 并同步 DOM ---------- */
         for (let j = idx + 1; j < len; j++) {
             this.offsets[j] = this.offsets[j - 1] + this.heights[j - 1];
 
-            // 同步 cell.offset & 已挂载节点 translateY
             if (j < this.cells.length) {
                 const cell = this.cells[j];
                 cell.offset = this.offsets[j];
                 const node = cell.node;
+
                 if (node?.isConnected) {
                     const ty = parseInt(node.style.transform.match(/-?\d+/)?.[0] ?? 'NaN');
                     if (ty !== this.offsets[j]) {
                         console.warn('[DESYNC]', j, 'ty=', ty, 'offset=', this.offsets[j]);
                     }
                     node.style.transform = `translateY(${this.offsets[j]}px)`;
+                } else {
+                    logDiff(`[UH] idx=${idx} -> j=${j} node NOT mounted`);
                 }
-                if (!node?.isConnected) logDiff(`[UH] idx=${idx} -> j=${j} node NOT mounted`);
             }
         }
 
-        // 3. 末尾 sentinel（== 已加载总高度）
+        /* ---------- 3. 更新末尾 sentinel ---------- */
         this.offsets[len] = this.offsets[len - 1] + this.heights[len - 1];
 
-        // 4. 更新 listHeight（已加载真实高）
+        /* ---------- 4. 同步 listHeight & 容器高度 ---------- */
         this.listHeight = this.offsets[len];
-
-        // 5. 更新容器高度（真实+估）——别省略
         this.applyContainerHeight();
 
-        // 6. 动态更新 estHeight（指数平滑）
+        /* ---------- 5. 更新 estHeight（指数平滑） ---------- */
         this.updateEstHeight(newH);
 
-        // 7. 若该高度变化发生在当前可视区之前 → 通知 VirtualScroller 做滚动锚定补偿
+        /* ---------- 6. 如有需要，告知 VirtualScroller 做锚定补偿 ---------- */
         const sc = this.scroller;
+
+        // ① 几何判定：整行在视口上方 → 必须补偿
+        if (sc && rowBottom <= vpTop) {
+            console.trace('[UH] queueAnchor by geometry', idx);
+            sc.queueAnchor(dh);
+        }
+
+        // ② 旧的 idx 判定：行号在当前渲染区之前
         if (sc && idx < sc.getCurFirst()) {
-            sc.queueAnchor(dh);   // dh>0：上方变高 → 需要向下补移；dh<0 相反
+            console.trace('[UH] queueAnchor by idx', idx);
+            sc.queueAnchor(dh);
         }
     }
 
