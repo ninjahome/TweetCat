@@ -154,7 +154,7 @@ export class TweetManager {
         await waitStableAll(nodesToStable);
 
         this.unmountCellsBefore(startIdx);
-        logTweetMgn(`[fastMountBatch] after unmount, first mounted cell index: ${startIdx}, offset=${this.offsets[startIdx]}, height=${this.heights[startIdx]}`);
+        logTweetMgn(`[fastMountBatch] after unmount, first mounted cell index: ${startIdx}, offset=${this.offsets[startIdx] ?? 'N/A'}, height=${this.heights[startIdx] ?? 'N/A'}`);
         this.unmountCellsAfter(endIndex);
 
         for (let i = startIdx; i < endIndex; i++) {
