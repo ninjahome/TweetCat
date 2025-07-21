@@ -23,7 +23,7 @@ export class TweetManager {
     private offsets: number[] = [0];
     public static readonly EST_HEIGHT = 500;
     private static readonly PAGE_SIZE = 500;
-    private readonly MaxTweetOnce = 30;
+    private static readonly MaxTweetOnce = 30;
     private readonly bufferPx = TweetManager.EST_HEIGHT * 2;
 
     constructor(
@@ -108,24 +108,24 @@ export class TweetManager {
         const missingHeight = viewEnd + 2 * buffer - this.listHeight;
         if (missingHeight <= 0) return;
 
-        let missingCount = Math.ceil(missingHeight / estH);
-        if (missingCount > this.MaxTweetOnce) missingCount = this.MaxTweetOnce;
+        const missingCount = Math.min(Math.ceil(missingHeight / estH), TweetManager.MaxTweetOnce);
         await this.loadAndRenderTweetCell(missingCount);
-
 
         const startIdx = Math.max(0, Math.floor((viewStart - buffer) / estH));
         const endIdx = this.cells.length
 
-        const nodesToStable: HTMLElement[] = [];
-
+        const mountPromises: Promise<HTMLElement>[] = [];
         for (let i = startIdx; i < endIdx; i++) {
             const cell = this.cells[i];
-            if (cell && !cell.node?.isConnected) {
-                await cell.mount(this.timelineEl, true);
+            if (cell && cell.node?.isConnected) {
+                mountPromises.push(Promise.resolve(cell.node));
+            } else if (cell) {
+                mountPromises.push(cell.mount(this.timelineEl, true).then(() => cell.node));
             }
-            nodesToStable.push(cell.node);
         }
+        const nodesToStable = await Promise.all(mountPromises);
         await waitStableAll(nodesToStable);
+
 
         let offset = Math.max(Math.floor(viewStart - buffer), 0);
         for (let i = startIdx; i < endIdx; i++) {
@@ -140,7 +140,7 @@ export class TweetManager {
 
         this.offsets[endIdx] = offset;
         this.listHeight = offset;
-        this.timelineEl.style.height = `${this.listHeight}px`;
+        this.timelineEl.style.height = `${Math.max(this.listHeight, 20400)}px`;
     }
 }
 

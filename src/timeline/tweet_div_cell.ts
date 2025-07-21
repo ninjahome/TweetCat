@@ -56,7 +56,7 @@ export class TweetCatCell {
             this.height = this.node.offsetHeight;
         }
 
-        logMount(`[Cell#${this.id}] mount  height=${this.height}`);
+        logMount(`[Cell#${this.id}] mount  height=${this.height} skipStable=${skipStable}`);
     }
 
     /** 从 DOM 移除 */
