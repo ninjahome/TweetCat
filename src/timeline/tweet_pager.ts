@@ -2,7 +2,7 @@
  * Tweet Pager State
  * ------------------------------------------------------------------ */
 import {EntryObj} from "./tweet_entry";
-import {DBG, logPager} from "../debug_flags";
+import {logPager} from "../debug_flags";
 import {fetchTweets, getUserIdByUsername} from "./twitter_api";
 
 /* ------------------------------------------------------------------ *
@@ -21,30 +21,11 @@ let seenIds: Set<string> = new Set();
 const userID = '1315345422123180033'; // 1594535159373733889//1315345422123180033
 
 //error userid  1594535159373733889  //CHNN00001
-/* ------------------------------------------------------------------ *
- * 工具：提取 EntryObj 唯一 tweet id
- * 根据你实际 EntryObj 结构调整此函数！
- * ------------------------------------------------------------------ */
-function getTweetId(e: EntryObj): string | undefined {
-    // 请调整以下字段优先级以匹配真实数据结构
-    // 下面写法“取到就用”，都没有则返回 undefined
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    return (
-        // 常见路径
-        (e as any)?.tweet?.id ??
-        (e as any)?.tweet?.rest_id ??
-        (e as any)?.id ??
-        (e as any)?.entryId ??
-        undefined
-    );
-}
-
 
 /* ------------------------------------------------------------------ *
  * 初始化：确保至少抓到 initialPageSize 条（或直到 isEnd）
  * ------------------------------------------------------------------ */
-export async function initTweetPager(initialPageSize: number = DEFAULT_INIT_PAGE): Promise<void> {
+export async function initTweetPagerCache(initialPageSize: number = DEFAULT_INIT_PAGE): Promise<void> {
     // console.log("-------->>>> user id by name:",await getUserIdByUsername('xiaoxiaowai123'));
     if (tweetData.length > 0) {
         logPager('[Pager] init skipped, already have %d tweets.', tweetData.length);
@@ -84,12 +65,9 @@ export async function getNextTweets(pageSize: number): Promise<EntryObj[]> {
     const page = tweetData.slice(currentIdx, endIdx);
     currentIdx = endIdx; // 前进
 
-    if (DBG.PAGER) {
-        const firstId = page[0] ? getTweetId(page[0]) : 'none';
-        const lastId = page[page.length - 1] ? getTweetId(page[page.length - 1]) : 'none';
-        logPager('[Pager] getNextTweets -> %d items (req=%d) cur=%d/%d isEnd=%s first=%s last=%s',
-            page.length, pageSize, currentIdx, tweetData.length, isEnd, firstId, lastId);
-    }
+    logPager('[Pager] getNextTweets -> %d items (req=%d) cur=%d/%d isEnd=%s first=%s last=%s',
+        page.length, pageSize, currentIdx, tweetData.length, isEnd,
+        page[0]?.entryId, page[page.length - 1]?.entryId);
     return page;
 }
 
@@ -155,7 +133,7 @@ async function fetchBatch(batchSize: number): Promise<number> {
         // 去重
         let added = 0, dup = 0;
         for (const t of tweets) {
-            const id = getTweetId(t);
+            const id = t.entryId;
             if (!id) {
                 dup++; // 无 id，当重复处理
                 continue;

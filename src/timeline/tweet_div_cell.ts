@@ -2,7 +2,6 @@
  * TweetCatCell 负责单行 tweet 的 DOM 生命周期 + 手动高度上报
  * ------------------------------------------------------------------*/
 
-
 import {EntryObj} from "./tweet_entry";
 import {renderTweetHTML} from "./tweet_render";
 import {globalNodePool} from "./div_node_pool";
@@ -20,25 +19,20 @@ async function waitStable(node: HTMLElement, tries = 3, interval = 20) {
 
 export class TweetCatCell {
     node!: HTMLElement;
-    offset = 0;
     height = 0;
     private video?: HTMLVideoElement;
     private readonly id: string;
-    public index!: number;  // 由 Manager 填
 
-    /** 核心 Manager 在创建时注入，用来汇报 Δh */
     constructor(
         private readonly data: EntryObj,
         private readonly tpl: HTMLTemplateElement,
         private readonly reportDh: (cell: TweetCatCell, dh: number) => void,
-        private readonly getLatestOffset: (idx: number) => number   // ★ 新增
-    ) {
+        public readonly index: number) {
         this.id = data.entryId;
     }
 
     /** 首次或再次挂载 */
-    async mount(parent: HTMLElement, offset: number) {
-        this.offset = offset;
+    async mount(parent: HTMLElement, skipStable = false) {
         if (!this.node) {
             this.node = globalNodePool.acquire(this.id) ?? renderTweetHTML(this.data, this.tpl);
 
@@ -50,14 +44,6 @@ export class TweetCatCell {
             this.video = this.node.querySelector("video") ?? undefined;
         }
 
-        /* 放进文档并定位 */
-        this.node.style.transform = `translateY(${this.offset}px)`;
-
-        const latest = this.getLatestOffset(this.index);   // 通过前述回调拿
-        const ty = parseInt(this.node.style.transform.match(/-?\d+/)?.[0] ?? 'NaN');
-        if (ty !== latest) console.warn('[DESYNC]', this.index, ty, '≠', latest);
-
-
         parent.appendChild(this.node);
 
         if (this.video) {
@@ -65,12 +51,12 @@ export class TweetCatCell {
         }
 
         /* 若尚未测量，等待稳定后记录高度 */
-        if (!this.height) {
+        if (!skipStable && !this.height) {
             await waitStable(this.node);
             this.height = this.node.offsetHeight;
         }
 
-        logMount(`[Cell#${this.id}] mount offset=${offset} height=${this.height}`);
+        logMount(`[Cell#${this.id}] mount  height=${this.height}`);
     }
 
     /** 从 DOM 移除 */
