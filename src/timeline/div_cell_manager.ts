@@ -144,8 +144,11 @@ export class TweetManager {
                 mountPromises.push(Promise.resolve(cell.node));
             }
         }
+
         const nodesToStable = await Promise.all(mountPromises);
         await waitStableAll(nodesToStable);
+
+        this.unmountCellsBefore(startIndex);
 
         for (let i = startIndex; i < endIndex; i++) {
             const cell = this.cells[i];
@@ -171,6 +174,16 @@ export class TweetManager {
         if (window.scrollY > maxScrollTop) {
             logTweetMgn(`[fastMountBatch] scrollTop=${window.scrollY} 超过 maxScrollTop=${maxScrollTop}, triggering scroll rollback`);
             window.scrollTo(0, maxScrollTop);
+        }
+    }
+
+    private unmountCellsBefore(startIndex: number) {
+        for (let i = 0; i < startIndex; i++) {
+            const cell = this.cells[i];
+            if (cell?.node?.isConnected) {
+                cell.unmount();
+                logTweetMgn(`[unmountCellsBefore] unmounted cell[${i}] before startIndex=${startIndex}`);
+            }
         }
     }
 
