@@ -18,7 +18,7 @@ export class VirtualScroller {
     public async initFirstPage() {
         this.isRendering = true;
         const top = window.scrollY || document.documentElement.scrollTop;
-        await this.manager.mountBatch(top, top + TweetManager.EST_HEIGHT * VirtualScroller.FAST_RATIO, true);
+        await this.manager.mountBatch(top, TweetManager.EST_HEIGHT * VirtualScroller.FAST_RATIO, true);
         this.isRendering = false;
     }
 
@@ -36,9 +36,8 @@ export class VirtualScroller {
         logVS(`[rafTick] trigger: curTop=${curTop}, window.innerHeight=${window.innerHeight}, timelineEl height=${this.manager['timelineEl'].style.height}`);
         logVS(`------>>> raf tick need to update: lastTop=${this.lastTop}  curTop=${curTop} fastMode=${isFastMode}`)
 
-        const bottom = curTop + window.innerHeight;
         this.isRendering = true;
-        await this.manager.mountBatch(curTop, bottom, isFastMode);
+        await this.manager.mountBatch(curTop, window.innerHeight, isFastMode);
         this.isRendering = false;
         this.lastTop = curTop;
     }
