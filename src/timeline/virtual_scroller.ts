@@ -32,7 +32,8 @@ export class VirtualScroller {
 
         const {needUpdate, curTop, isFastMode} = this.checkLiteUpdate();
         if (!needUpdate) return;
-
+        // ✅ 只在确实要更新时记录
+        logVS(`[rafTick] trigger: curTop=${curTop}, window.innerHeight=${window.innerHeight}, timelineEl height=${this.manager['timelineEl'].style.height}`);
         logVS(`------>>> raf tick need to update: lastTop=${this.lastTop}  curTop=${curTop} fastMode=${isFastMode}`)
 
         const bottom = curTop + window.innerHeight;
@@ -51,12 +52,29 @@ export class VirtualScroller {
         this.lastTop = 0;
     }
 
+    private scrollPositions: number[] = [];
+    private static readonly CHECK_FRAMES = 3;
+
     private checkLiteUpdate(): { needUpdate: boolean; curTop: number; isFastMode: boolean; } {
         const curTop = window.scrollY || document.documentElement.scrollTop;
-        const delta = Math.abs(curTop - this.lastTop);
+        this.scrollPositions.push(curTop);
+
+        if (this.scrollPositions.length < VirtualScroller.CHECK_FRAMES) {
+            return { needUpdate: false, curTop, isFastMode: false };
+        }
+        if (this.scrollPositions.length > VirtualScroller.CHECK_FRAMES) {
+            this.scrollPositions.shift();
+        }
+
+        const maxDelta = Math.max(...this.scrollPositions.map(t => Math.abs(t - this.lastTop)));
         const threshold = TweetManager.EST_HEIGHT;
-        const needUpdate = delta >= threshold;
-        const isFastMode = needUpdate && delta >= VirtualScroller.FAST_RATIO * threshold;
-        return {needUpdate, curTop, isFastMode};
+        const isFastMode = maxDelta >= VirtualScroller.FAST_RATIO * threshold;
+        const needUpdate = maxDelta >= threshold;
+
+        if (needUpdate) {
+            this.scrollPositions = []; // 清空，准备下一轮
+        }
+
+        return { needUpdate, curTop, isFastMode };
     }
 }
