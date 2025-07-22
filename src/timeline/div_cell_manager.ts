@@ -3,7 +3,6 @@
  * ------------------------------------------------------------------*/
 
 import {TweetCatCell} from "./tweet_div_cell";
-import {EntryObj} from "./tweet_entry";
 import {
     getNextTweets,
     initTweetPagerCache,
@@ -34,9 +33,7 @@ export class TweetManager {
             logTweetMgn("------>>> tweet cache init success");
         })
         this.scroller = new VirtualScroller(this);
-        this.scroller.initFirstPage().then(() => {
-            window.scrollTo(0, 0);
-        });
+        this.scroller.initFirstPage().then();
     }
 
     async dispose() {
@@ -95,7 +92,7 @@ export class TweetManager {
             startIdx = Math.max(0, endIndex - totalRenderCount);
         }
 
-        logTweetMgn(`[fastMountBatch] viewport=(${viewStart}, ${viewportHeight}), target index range: [${startIdx}, ${endIndex})`);
+        logTweetMgn(`[fastMountBatch] startIdx=${startIdx}, endIndex=${endIndex}, cells.length=${this.cells.length}`); // <-- 这里！
 
         if (endIndex > this.cells.length) {
             const needCount = endIndex - this.cells.length;
@@ -132,6 +129,7 @@ export class TweetManager {
         this.unmountCellsBefore(startIdx);
         logTweetMgn(`[fastMountBatch] after unmount, first mounted cell index: ${startIdx}, offset=${this.offsets[startIdx] ?? 'N/A'}, height=${this.heights[startIdx] ?? 'N/A'}`);
         this.unmountCellsAfter(endIndex);
+        logTweetMgn(`[fastMountBatch] after unmountCellsAfter: endIndex=${endIndex}`);
 
         for (let i = startIdx; i < endIndex; i++) {
             const cell = this.cells[i];
@@ -145,20 +143,23 @@ export class TweetManager {
         }
 
         this.offsets[endIndex] = offset;
-        this.listHeight = offset;
-
+        this.listHeight = Math.max(this.listHeight, offset);
         this.timelineEl.style.height = this.listHeight < 20400
             ? `${20400}px`
             : `${this.listHeight + buffer}px`;
 
         logTweetMgn(`[fastMountBatch] completed: listHeight=${this.listHeight}, scrollTop=${window.scrollY}`);
 
-        // const maxScrollTop = this.listHeight - window.innerHeight;
-        const maxScrollTop = (this.offsets[this.cells.length - 1] ?? 0) - window.innerHeight + (this.bufferPx / 2);
+        const mountedCount = endIndex - startIdx;
+        const middleIndex = startIdx + Math.floor(mountedCount / 2);
+        const bottomOffset = this.offsets[endIndex - 1] ?? this.listHeight;
+        const maxScrollTop = this.offsets[middleIndex] || bottomOffset - window.innerHeight;
 
         if (window.scrollY > maxScrollTop) {
             logTweetMgn(`[fastMountBatch] scrollTop=${window.scrollY} 超过 maxScrollTop=${maxScrollTop}, triggering scroll rollback`);
             window.scrollTo(0, maxScrollTop);
+            // this.scroller?.scrollToTop(maxScrollTop);
+            return;
         }
         logTweetMgn(`[fastMountBatch] after scroll rollback: scrollTop=${window.scrollY}, maxScrollTop=${maxScrollTop}, first mounted cell offset=${this.offsets[startIdx]}`);
     }

@@ -12,14 +12,14 @@ export class VirtualScroller {
     constructor(private readonly manager: TweetManager) {
         this.onScrollBound = this.onScroll.bind(this);
         window.addEventListener("scroll", this.onScrollBound, {passive: true});
-        this.lastTop = window.scrollY || document.documentElement.scrollTop;
     }
 
     public async initFirstPage() {
+        this.lastTop = window.scrollY || document.documentElement.scrollTop;
         this.isRendering = true;
-        const top = window.scrollY || document.documentElement.scrollTop;
-        await this.manager.mountBatch(top, TweetManager.EST_HEIGHT * VirtualScroller.FAST_RATIO, true);
+        await this.manager.mountBatch(this.lastTop, TweetManager.EST_HEIGHT * VirtualScroller.FAST_RATIO, true);
         this.isRendering = false;
+        window.scrollTo(0, 0);
     }
 
     private onScroll(): void {
@@ -59,7 +59,7 @@ export class VirtualScroller {
         this.scrollPositions.push(curTop);
 
         if (this.scrollPositions.length < VirtualScroller.CHECK_FRAMES) {
-            return { needUpdate: false, curTop, isFastMode: false };
+            return {needUpdate: false, curTop, isFastMode: false};
         }
         if (this.scrollPositions.length > VirtualScroller.CHECK_FRAMES) {
             this.scrollPositions.shift();
@@ -74,6 +74,18 @@ export class VirtualScroller {
             this.scrollPositions = []; // 清空，准备下一轮
         }
 
-        return { needUpdate, curTop, isFastMode };
+        return {needUpdate, curTop, isFastMode};
+    }
+
+    public scrollToTop(pos: number) {
+        this.isRendering = true;          // 防止这一帧触发 rafTick
+        window.scrollTo(0, pos);
+        this.lastTop = pos;
+        this.scrollPositions = [];        // 清空采样，避免 maxDelta 异常大
+        // 用 setTimeout 0 或 rAF 再把 isRendering 置回 false
+        requestAnimationFrame(() => {
+            this.isRendering = false;
+        });
+        logVS(`[scrollToTop] pos=${pos}, lastTop(before)=${this.lastTop}`);
     }
 }
