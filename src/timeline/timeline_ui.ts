@@ -30,13 +30,13 @@ function bindTweetCatMenu(
     tpl: HTMLTemplateElement
 ) {
     const timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
-    manager = new TweetManager(timelineEl, tpl);
     menuItem.addEventListener("click", async (ev) => {
         ev.preventDefault();
         hideOriginalTweetArea(originalArea);
         area.style.display = "block";
         history.replaceState({id: 123}, "", "/#/" + selfDefineUrl);
-        await manager?.initFirstPage();
+        manager?.dispose();
+        manager = new TweetManager(timelineEl, tpl);
     });
 }
 
