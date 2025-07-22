@@ -7,7 +7,10 @@ export class VirtualScroller {
 
     private onScrollBound?: () => void;
 
+    private pendingMountTimer: number | null = null;
+    private lastDetectTop: number = 0;
     private static readonly FAST_RATIO = 3;
+    private static readonly STABILIZE_DELAY = 80;  // ms
 
     constructor(private readonly manager: TweetManager) {
         this.onScrollBound = this.onScroll.bind(this);
@@ -35,11 +38,7 @@ export class VirtualScroller {
         // ✅ 只在确实要更新时记录
         logVS(`[rafTick] trigger: curTop=${curTop}, window.innerHeight=${window.innerHeight}, timelineEl height=${this.manager['timelineEl'].style.height}`);
         logVS(`------>>> raf tick need to update: lastTop=${this.lastTop}  curTop=${curTop} fastMode=${isFastMode}`)
-
-        this.isRendering = true;
-        await this.manager.mountBatch(curTop, window.innerHeight, isFastMode);
-        this.isRendering = false;
-        this.lastTop = curTop;
+        this.scheduleMountAtStablePosition(curTop, isFastMode);
     }
 
     dispose() {
@@ -47,6 +46,12 @@ export class VirtualScroller {
             window.removeEventListener("scroll", this.onScrollBound);
             this.onScrollBound = undefined;
         }
+
+        if (this.pendingMountTimer) {
+            clearTimeout(this.pendingMountTimer);
+            this.pendingMountTimer = null;
+        }
+
         this.isRendering = false;
         this.lastTop = 0;
     }
@@ -88,4 +93,36 @@ export class VirtualScroller {
         });
         logVS(`[scrollToTop] pos=${pos}, lastTop(before)=${this.lastTop}`);
     }
+
+
+    private scheduleMountAtStablePosition(curTop: number, isFastMode: boolean) {
+        if (this.pendingMountTimer !== null) {
+            clearTimeout(this.pendingMountTimer);
+        }
+        this.lastDetectTop = curTop;
+
+        this.pendingMountTimer = window.setTimeout(async () => {
+            const latestTop = window.scrollY || document.documentElement.scrollTop;
+            const deltaSinceDetect = Math.abs(latestTop - this.lastDetectTop);
+
+            logVS(`[stabilizeCheck] latestTop=${latestTop}, lastDetectTop=${this.lastDetectTop}, delta=${deltaSinceDetect}`);
+
+            if (deltaSinceDetect <= TweetManager.EST_HEIGHT) {
+                await this.mountAtStablePosition(latestTop, isFastMode);
+            } else {
+                logVS(`[stabilizeCheck] skipped mount: still unstable (delta=${deltaSinceDetect})`);
+            }
+            this.pendingMountTimer = null;
+        }, VirtualScroller.STABILIZE_DELAY);
+    }
+
+    private async mountAtStablePosition(curTop: number, isFastMode: boolean) {
+        if (this.isRendering) return;
+
+        this.isRendering = true;
+        // await this.manager.mountBatch(curTop, window.innerHeight, isFastMode);
+        this.isRendering = false;
+        this.lastTop = curTop;
+    }
+
 }
