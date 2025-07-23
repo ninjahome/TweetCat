@@ -88,16 +88,11 @@ export class VirtualScroller {
     }
 
     public scrollToTop(pos: number) {
-        this.isRendering = true;          // 防止这一帧触发 rafTick
+        this.isRendering = true;
         window.scrollTo(0, pos);
-        this.lastTop = pos;
-        this.scrollPositions = [];        // 清空采样，避免 maxDelta 异常大
-        // 用 setTimeout 0 或 rAF 再把 isRendering 置回 false
+        this.scrollPositions = [];
         requestAnimationFrame(() => {
             this.isRendering = false;
-            requestAnimationFrame(() => {
-                this.rafTick().then(); // ✅ 延后一帧触发，更平滑
-            });
         });
         logVS(`[scrollToTop] pos=${pos}, lastTop(before)=${this.lastTop}`);
     }
