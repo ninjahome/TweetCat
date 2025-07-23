@@ -77,6 +77,7 @@ export class VirtualScroller {
 
         if (needUpdate) {
             this.scrollPositions = []; // 清空，准备下一轮
+            logVS(`[checkLite] curTop=${curTop}, lastTop=${this.lastTop}, maxDelta=${maxDelta}, threshold=${threshold}, need=${needUpdate}, fast=${isFastMode}`);
         }
 
         return {needUpdate, curTop, isFastMode};
@@ -97,15 +98,17 @@ export class VirtualScroller {
 
     private scheduleMountAtStablePosition(curTop: number, isFastMode: boolean) {
         if (this.pendingMountTimer !== null) {
+            logVS(`[schedule] clear previous timer ${this.pendingMountTimer}`);
             clearTimeout(this.pendingMountTimer);
         }
         this.lastDetectTop = curTop;
 
         this.pendingMountTimer = window.setTimeout(async () => {
+
             const latestTop = window.scrollY || document.documentElement.scrollTop;
             const deltaSinceDetect = Math.abs(latestTop - this.lastDetectTop);
 
-            logVS(`[stabilizeCheck] latestTop=${latestTop}, lastDetectTop=${this.lastDetectTop}, delta=${deltaSinceDetect}`);
+            logVS(`[timerFire] @${performance.now().toFixed(1)}ms latestTop=${latestTop}, delta=${deltaSinceDetect}, detectTop=${this.lastDetectTop}`);
 
             if (deltaSinceDetect <= TweetManager.EST_HEIGHT) {
                 await this.mountAtStablePosition(latestTop, isFastMode);
@@ -114,15 +117,24 @@ export class VirtualScroller {
             }
             this.pendingMountTimer = null;
         }, VirtualScroller.STABILIZE_DELAY);
+
+        logVS(`[schedule] set timer @${performance.now().toFixed(1)}ms, curTop=${curTop}, fast=${isFastMode}`);
     }
 
     private async mountAtStablePosition(curTop: number, isFastMode: boolean) {
-        if (this.isRendering) return;
-
+        if (this.isRendering) {
+            logVS(`[mountAtStablePosition] skip because isRendering=true`);
+            return;
+        }
         this.isRendering = true;
-        // await this.manager.mountBatch(curTop, window.innerHeight, isFastMode);
-        this.isRendering = false;
-        this.lastTop = curTop;
-    }
 
+        logVS(`[mountAtStablePosition] start curTop=${curTop}, fast=${isFastMode}`);
+        try {
+            await this.manager.mountBatch(curTop, window.innerHeight, isFastMode);
+            this.lastTop = curTop;
+        } finally {
+            this.isRendering = false;
+            logVS(`[mountAtStablePosition] done lastTop=${this.lastTop}, isRendering=${this.isRendering}`);
+        }
+    }
 }

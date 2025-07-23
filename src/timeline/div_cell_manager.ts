@@ -157,8 +157,7 @@ export class TweetManager {
 
         if (window.scrollY > maxScrollTop) {
             logTweetMgn(`[fastMountBatch] scrollTop=${window.scrollY} 超过 maxScrollTop=${maxScrollTop}, triggering scroll rollback`);
-            window.scrollTo(0, maxScrollTop);
-            // this.scroller?.scrollToTop(maxScrollTop);
+            this.scroller?.scrollToTop(maxScrollTop);
             return;
         }
         logTweetMgn(`[fastMountBatch] after scroll rollback: scrollTop=${window.scrollY}, maxScrollTop=${maxScrollTop}, first mounted cell offset=${this.offsets[startIdx]}`);
@@ -184,7 +183,6 @@ export class TweetManager {
         }
     }
 
-
     private async loadAndRenderTweetCell(pageSize: number = TweetManager.PAGE_SIZE) {
         if (this.isRendering) return;
 
@@ -207,7 +205,6 @@ export class TweetManager {
             this.isRendering = false;
         }
     }
-
 }
 
 
