@@ -18,11 +18,11 @@ export class VirtualScroller {
     }
 
     public async initFirstPage() {
-        this.lastTop = window.scrollY || document.documentElement.scrollTop;
         this.isRendering = true;
-        await this.manager.mountBatch(this.lastTop, TweetManager.EST_HEIGHT * VirtualScroller.FAST_RATIO, true);
+        await this.manager.mountBatch(0, TweetManager.EST_HEIGHT * VirtualScroller.FAST_RATIO, true);
         this.isRendering = false;
         window.scrollTo(0, 0);
+        this.lastTop = 0;
     }
 
     private onScroll(): void {
