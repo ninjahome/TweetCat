@@ -192,6 +192,29 @@ export class TweetManager {
 
     }
 
+    private async loadAndRenderTweetCell(pageSize: number = TweetManager.PAGE_SIZE) {
+        if (this.isRendering) return;
+        this.isRendering = true;
+
+        try {
+            const tweets = await getNextTweets(pageSize);
+            if (!tweets.length) return;//TODO:: no more tweet data!!
+            logTweetMgn('------>>> prepare render ' + tweets.length + ' tweets to tweetCat cell')
+            for (const tw of tweets) {
+                const lastIdx = this.cells.length;
+                const cell = new TweetCatCell(tw, this.tpl, this.onCellDh, lastIdx);
+                this.cells.push(cell);
+            }
+            logTweetMgn('------>>> prepare render ' + tweets.length + ' tweets to tweetCat cell')
+
+        } catch (e) {
+            console.warn("------>>> load and render tweetCat cell err:", e)
+        } finally {
+            this.isRendering = false;
+        }
+    }
+
+
     private unmountCellsBefore(startIndex: number) {
 
         for (let i = 0; i < startIndex; i++) {
