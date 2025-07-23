@@ -119,6 +119,7 @@ export class VirtualScroller {
                 // 未回滚，直接用真实位置同步 lastTop
                 const realTop = window.scrollY || document.documentElement.scrollTop;
                 this.lastTop = realTop;
+                this.scrollPositions = [];
                 logVS(`[mountAtStablePosition] after mount: scrollY=${realTop}, lastTop=${this.lastTop}`);
             }
         } finally {
