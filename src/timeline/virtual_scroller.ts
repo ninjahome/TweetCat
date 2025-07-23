@@ -88,20 +88,9 @@ export class VirtualScroller {
     }
 
     public scrollToTop(pos: number) {
-        this.isRendering = true;
+        this.lastTop = pos;
         this.scrollPositions = [];
-
-        // 多帧确保 scroll 生效
-        requestAnimationFrame(() => {
-            window.scrollTo(0, pos);
-            logVS('After scrollTo:', window.scrollY, document.documentElement.scrollHeight);
-            requestAnimationFrame(() => {
-                this.isRendering = false;
-                this.rafTick(); // 强制更新位置检查
-            });
-        });
-
-        logVS(`[scrollToTop] scheduled pos=${pos}`);
+        window.scrollTo(0, pos);
     }
 
 
@@ -166,5 +155,4 @@ export class VirtualScroller {
 
         logVS(`[schedule] set timer id=${this.pendingMountTimer} delay=${delay} curTop=${curTop} fast=${isFastMode} try=${tries}`);
     }
-
 }
