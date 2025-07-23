@@ -12,6 +12,10 @@ export class VirtualScroller {
     private static readonly FAST_RATIO = 3;
     private static readonly STABILIZE_DELAY = 80;  // ms
 
+    private static readonly BACKOFF_STEP = 20;      // 每次重试额外增加的延时
+    private unstableTries = 0;
+    private static readonly MAX_TRIES = 5;
+
     constructor(private readonly manager: TweetManager) {
         this.onScrollBound = this.onScroll.bind(this);
         window.addEventListener("scroll", this.onScrollBound, {passive: true});
@@ -96,31 +100,6 @@ export class VirtualScroller {
     }
 
 
-    private scheduleMountAtStablePosition(curTop: number, isFastMode: boolean) {
-        if (this.pendingMountTimer !== null) {
-            logVS(`[schedule] clear previous timer ${this.pendingMountTimer}`);
-            clearTimeout(this.pendingMountTimer);
-        }
-        this.lastDetectTop = curTop;
-
-        this.pendingMountTimer = window.setTimeout(async () => {
-
-            const latestTop = window.scrollY || document.documentElement.scrollTop;
-            const deltaSinceDetect = Math.abs(latestTop - this.lastDetectTop);
-
-            logVS(`[timerFire] @${performance.now().toFixed(1)}ms latestTop=${latestTop}, delta=${deltaSinceDetect}, detectTop=${this.lastDetectTop}`);
-
-            if (deltaSinceDetect <= TweetManager.EST_HEIGHT) {
-                await this.mountAtStablePosition(latestTop, isFastMode);
-            } else {
-                logVS(`[stabilizeCheck] skipped mount: still unstable (delta=${deltaSinceDetect})`);
-            }
-            this.pendingMountTimer = null;
-        }, VirtualScroller.STABILIZE_DELAY);
-
-        logVS(`[schedule] set timer @${performance.now().toFixed(1)}ms, curTop=${curTop}, fast=${isFastMode}`);
-    }
-
     private async mountAtStablePosition(curTop: number, isFastMode: boolean) {
         if (this.isRendering) {
             logVS(`[mountAtStablePosition] skip because isRendering=true`);
@@ -130,11 +109,56 @@ export class VirtualScroller {
 
         logVS(`[mountAtStablePosition] start curTop=${curTop}, fast=${isFastMode}`);
         try {
-            await this.manager.mountBatch(curTop, window.innerHeight, isFastMode);
-            this.lastTop = curTop;
+            const res = await this.manager.mountBatch(curTop, window.innerHeight, isFastMode);
+
+            if (res.needScroll && typeof res.targetTop === 'number') {
+                // 统一用 scrollToTop，内部会写 lastTop + 清采样
+                this.scrollToTop(res.targetTop);
+                logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
+            } else {
+                // 未回滚，直接用真实位置同步 lastTop
+                const realTop = window.scrollY || document.documentElement.scrollTop;
+                this.lastTop = realTop;
+                logVS(`[mountAtStablePosition] after mount: scrollY=${realTop}, lastTop=${this.lastTop}`);
+            }
         } finally {
             this.isRendering = false;
             logVS(`[mountAtStablePosition] done lastTop=${this.lastTop}, isRendering=${this.isRendering}`);
         }
     }
+
+
+    private scheduleMountAtStablePosition(curTop: number, isFastMode: boolean) {
+        if (this.pendingMountTimer !== null) {
+            logVS(`[schedule] clear previous timer ${this.pendingMountTimer}`);
+            clearTimeout(this.pendingMountTimer);
+        }
+        this.lastDetectTop = curTop;
+
+        // 捕获当前 tries 用于 backoff
+        const tries = ++this.unstableTries;
+        const delay = VirtualScroller.STABILIZE_DELAY + (tries - 1) * VirtualScroller.BACKOFF_STEP;
+
+        this.pendingMountTimer = window.setTimeout(async () => {
+            const latestTop = window.scrollY || document.documentElement.scrollTop;
+            const delta = Math.abs(latestTop - this.lastDetectTop);
+            logVS(`[timerFire] @${performance.now().toFixed(1)}ms latestTop=${latestTop}, delta=${delta}, detectTop=${this.lastDetectTop}, tries=${tries}`);
+
+            this.pendingMountTimer = null;
+
+            if (delta <= TweetManager.EST_HEIGHT) {
+                this.unstableTries = 0;
+                await this.mountAtStablePosition(latestTop, isFastMode);
+            } else if (tries < VirtualScroller.MAX_TRIES) {
+                logVS(`[stabilizeCheck] unstable(delta=${delta}) retry #${tries}`);
+                this.scheduleMountAtStablePosition(latestTop, isFastMode);
+            } else {
+                logVS(`[stabilizeCheck] give up after ${tries} tries (delta=${delta})`);
+                this.unstableTries = 0;
+            }
+        }, delay);
+
+        logVS(`[schedule] set timer id=${this.pendingMountTimer} delay=${delay} curTop=${curTop} fast=${isFastMode} try=${tries}`);
+    }
+
 }

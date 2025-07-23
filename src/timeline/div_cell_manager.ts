@@ -12,6 +12,11 @@ import {
 import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../debug_flags";
 
+export interface MountResult {
+    needScroll: boolean;
+    targetTop?: number;   // needScroll=true 时必填
+}
+
 export class TweetManager {
 
     private isRendering = false;
@@ -54,6 +59,8 @@ export class TweetManager {
         await resetTweetPager();
 
         this.isRendering = false;
+
+        this.lastWindow = undefined;
     }
 
     private readonly onCellDh = (cell: TweetCatCell, dh: number) => {
@@ -66,17 +73,23 @@ export class TweetManager {
     public updateHeightAt(idx: number, newH: number): void {
     }
 
-
-    async mountBatch(viewStart: number, viewportHeight: number, fastMode: boolean = false) {
+    async mountBatch(viewStart: number, viewportHeight: number, fastMode: boolean = false): Promise<MountResult> {
         logTweetMgn(`批量挂载 start=${viewStart}, height=${viewportHeight} fastMode=${fastMode}`);
 
         if (this.listHeight <= viewStart || fastMode) {
-            await this.fastMountBatch(viewStart, viewportHeight);
-            return
+            const t0 = performance.now();
+            const oldListHeight = this.listHeight;
+            const result = await this.fastMountBatch(viewStart, viewportHeight);
+            logTweetMgn(`[fastMountBatch] cost=${(performance.now() - t0).toFixed(1)}ms`);
+            logTweetMgn(`[fastMountBatch] listHeight: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
+            return result;
         }
+        return {needScroll: false};
     }
 
-    private async fastMountBatch(viewStart: number, viewportHeight: number) {
+    private lastWindow?: { s: number; e: number };
+
+    private async fastMountBatch(viewStart: number, viewportHeight: number): Promise<MountResult> {
         const estH = TweetManager.EST_HEIGHT;
         const buffer = this.bufferPx;
 
@@ -85,6 +98,20 @@ export class TweetManager {
 
         let startIdx = Math.max(0, Math.floor(viewStart / estH) - 2);
         let endIndex = startIdx + totalRenderCount;
+
+
+        const sameWindow = this.lastWindow
+            && this.lastWindow.s === startIdx
+            && this.lastWindow.e === endIndex
+
+        logTweetMgn(`[fastMountBatch] window=(${startIdx},${endIndex}), sameWindow=${!!sameWindow}`);
+
+        if (sameWindow) {
+            logTweetMgn(`[fastMountBatch] skip same window`);
+            return {needScroll: false};
+        }
+        this.lastWindow = {s: startIdx, e: endIndex};
+
 
         const maxEndIndex = this.cells.length + TweetManager.MaxTweetOnce;
         if (endIndex > maxEndIndex) {
@@ -155,15 +182,21 @@ export class TweetManager {
         const bottomOffset = this.offsets[endIndex - 1] ?? this.listHeight;
         const maxScrollTop = this.offsets[middleIndex] || bottomOffset - window.innerHeight;
 
-        if (window.scrollY > maxScrollTop) {
-            logTweetMgn(`[fastMountBatch] scrollTop=${window.scrollY} 超过 maxScrollTop=${maxScrollTop}, triggering scroll rollback`);
-            this.scroller?.scrollToTop(maxScrollTop);
-            return;
+        const needScroll = window.scrollY > maxScrollTop;
+        if (needScroll) {
+            logTweetMgn(`[fastMountBatch] need rollback to ${maxScrollTop}, before=${window.scrollY}`);
+        } else {
+            logTweetMgn(`[fastMountBatch] no rollback, scrollTop=${window.scrollY}, maxScrollTop=${maxScrollTop}`);
         }
-        logTweetMgn(`[fastMountBatch] after scroll rollback: scrollTop=${window.scrollY}, maxScrollTop=${maxScrollTop}, first mounted cell offset=${this.offsets[startIdx]}`);
+
+        return needScroll
+            ? {needScroll: true, targetTop: maxScrollTop}
+            : {needScroll: false};
+
     }
 
     private unmountCellsBefore(startIndex: number) {
+
         for (let i = 0; i < startIndex; i++) {
             const cell = this.cells[i];
             if (cell?.node?.isConnected) {
