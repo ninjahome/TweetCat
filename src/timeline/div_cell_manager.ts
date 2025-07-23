@@ -11,6 +11,7 @@ import {
 
 import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../debug_flags";
+import {ResizeLogger} from "./GlobalResizeObserver";
 
 export interface MountResult {
     needScroll: boolean;
@@ -70,8 +71,41 @@ export class TweetManager {
         this.updateHeightAt(idx, newH);
     };
 
-    public updateHeightAt(idx: number, newH: number): void {
-    }
+    public updateHeightAt = (idx: number, newH: number): void => {
+        const oldH = this.heights[idx] ?? TweetManager.EST_HEIGHT;
+        const delta = newH - oldH;
+        if (Math.abs(delta) < 1) return;
+
+        this.heights[idx] = newH;
+
+        let offset = this.offsets[idx];
+        for (let i = idx; i < this.cells.length; i++) {
+            this.offsets[i] = offset;
+            const cell = this.cells[i];
+            if (cell?.node?.isConnected) {
+                cell.node.style.transform = `translateY(${offset}px)`;
+            }
+            offset += this.heights[i] ?? TweetManager.EST_HEIGHT;
+        }
+
+        this.offsets[this.cells.length] = offset;
+        this.listHeight = offset;
+        this.timelineEl.style.height = this.listHeight < 20400
+            ? `20400px`
+            : `${this.listHeight + this.bufferPx}px`;
+
+        const changedOffset = this.offsets[idx] ?? 0;
+        const curTop = window.scrollY;
+        const shouldAdjustScroll = curTop > changedOffset;
+
+        if (shouldAdjustScroll && this.scroller) {
+            const newTop = curTop + delta;
+            this.scroller.scrollToTop(newTop); // ✅ 交由 VirtualScroller 管理滚动状态
+            logTweetMgn(`[updateHeightAt] adjusted via VirtualScroller: scrollTop ${curTop} -> ${newTop}`);
+        }
+
+        logTweetMgn(`[updateHeightAt] cell[${idx}] height updated: ${oldH} -> ${newH}, delta=${delta}`);
+    };
 
     async mountBatch(viewStart: number, viewportHeight: number, fastMode: boolean = false): Promise<MountResult> {
         logTweetMgn(`批量挂载 start=${viewStart}, height=${viewportHeight} fastMode=${fastMode}`);
@@ -164,6 +198,8 @@ export class TweetManager {
             cell.node.style.transform = `translateY(${offset}px)`;
             logTweetMgn(`[fastMountBatch] cell[${i}] mounted at offset=${offset}, height=${realH}`);
             offset += realH;
+
+            ResizeLogger.observe(cell.node, i, this.updateHeightAt);
         }
 
         this.offsets[endIndex] = offset;
@@ -220,6 +256,7 @@ export class TweetManager {
         for (let i = 0; i < startIndex; i++) {
             const cell = this.cells[i];
             if (cell?.node?.isConnected) {
+                ResizeLogger.unobserve(cell.node);
                 cell.unmount();
                 logTweetMgn(`[unmountCellsBefore] unmounted cell[${i}] before startIndex=${startIndex}`);
             }
@@ -230,6 +267,7 @@ export class TweetManager {
         for (let i = endIndex; i < this.cells.length; i++) {
             const cell = this.cells[i];
             if (cell && cell.node?.isConnected) {
+                ResizeLogger.unobserve(cell.node);
                 cell.unmount();
                 logTweetMgn(`[unmountCellsAfter] unmounted cell[${i}] after endIndex=${endIndex}`);
             }

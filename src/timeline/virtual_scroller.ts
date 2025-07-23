@@ -95,6 +95,9 @@ export class VirtualScroller {
         // 用 setTimeout 0 或 rAF 再把 isRendering 置回 false
         requestAnimationFrame(() => {
             this.isRendering = false;
+            requestAnimationFrame(() => {
+                this.rafTick().then(); // ✅ 延后一帧触发，更平滑
+            });
         });
         logVS(`[scrollToTop] pos=${pos}, lastTop(before)=${this.lastTop}`);
     }
