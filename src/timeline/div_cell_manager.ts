@@ -100,19 +100,6 @@ export class TweetManager {
         let endIndex = startIdx + totalRenderCount;
 
 
-        const sameWindow = this.lastWindow
-            && this.lastWindow.s === startIdx
-            && this.lastWindow.e === endIndex
-
-        logTweetMgn(`[fastMountBatch] window=(${startIdx},${endIndex}), sameWindow=${!!sameWindow}`);
-
-        if (sameWindow) {
-            logTweetMgn(`[fastMountBatch] skip same window`);
-            return {needScroll: false};
-        }
-        this.lastWindow = {s: startIdx, e: endIndex};
-
-
         const maxEndIndex = this.cells.length + TweetManager.MaxTweetOnce;
         if (endIndex > maxEndIndex) {
             endIndex = maxEndIndex;
@@ -127,6 +114,16 @@ export class TweetManager {
             await this.loadAndRenderTweetCell(needCount);
             endIndex = Math.min(endIndex, this.cells.length);
         }
+
+        const sameWindow = this.lastWindow && this.lastWindow.s === startIdx && this.lastWindow.e === endIndex
+
+        logTweetMgn(`[fastMountBatch] window=(${startIdx},${endIndex}), sameWindow=${!!sameWindow}`);
+
+        if (sameWindow) {
+            logTweetMgn(`[fastMountBatch] skip same window`);
+            return {needScroll: false};
+        }
+        this.lastWindow = {s: startIdx, e: endIndex};
 
         logTweetMgn(`[fastMountBatch] rendering cells index: [${startIdx}, ${endIndex})`);
         if (startIdx > 0) {
@@ -213,29 +210,6 @@ export class TweetManager {
                 cell.unmount();
                 logTweetMgn(`[unmountCellsAfter] unmounted cell[${i}] after endIndex=${endIndex}`);
             }
-        }
-    }
-
-    private async loadAndRenderTweetCell(pageSize: number = TweetManager.PAGE_SIZE) {
-        if (this.isRendering) return;
-
-        this.isRendering = true;
-
-        try {
-            const tweets = await getNextTweets(pageSize);
-            if (!tweets.length) return;//TODO:: no more tweet data!!
-            logTweetMgn('------>>> prepare render ' + tweets.length + ' tweets to tweetCat cell')
-            for (const tw of tweets) {
-                const lastIdx = this.cells.length;
-                const cell = new TweetCatCell(tw, this.tpl, this.onCellDh, lastIdx);
-                this.cells.push(cell);
-            }
-            logTweetMgn('------>>> prepare render ' + tweets.length + ' tweets to tweetCat cell')
-
-        } catch (e) {
-            console.warn("------>>> load and render tweetCat cell err:", e)
-        } finally {
-            this.isRendering = false;
         }
     }
 }
