@@ -4,7 +4,7 @@ type ResizeLogInfo = {
     onUpdate: (index: number, newHeight: number) => void;
 };
 
-export class GlobalResizeObserverManager {
+export class TweetResizeObserverManager {
     private observer: ResizeObserver;
     private cellMap = new WeakMap<HTMLElement, ResizeLogInfo>();
 
@@ -109,4 +109,3 @@ export class GlobalResizeObserverManager {
     }
 }
 
-export const ResizeLogger = new GlobalResizeObserverManager();

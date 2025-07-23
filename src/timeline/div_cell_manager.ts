@@ -11,7 +11,7 @@ import {
 
 import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../debug_flags";
-import {ResizeLogger} from "./GlobalResizeObserver";
+import {TweetResizeObserverManager} from "./tweet_resize_observer";
 
 export interface MountResult {
     needScroll: boolean;
@@ -19,6 +19,7 @@ export interface MountResult {
 }
 
 export class TweetManager {
+    private resizeLogger:TweetResizeObserverManager;
 
     private isRendering = false;
     private scroller: VirtualScroller | null = null;
@@ -35,6 +36,7 @@ export class TweetManager {
         private readonly timelineEl: HTMLElement,
         private readonly tpl: HTMLTemplateElement
     ) {
+        this.resizeLogger = new TweetResizeObserverManager();
         initTweetPagerCache().then(() => {
             logTweetMgn("------>>> tweet cache init success");
         })
@@ -62,6 +64,7 @@ export class TweetManager {
         this.isRendering = false;
 
         this.lastWindow = undefined;
+        this.resizeLogger.disconnect();
     }
 
     private readonly onCellDh = (cell: TweetCatCell, dh: number) => {
@@ -199,7 +202,7 @@ export class TweetManager {
             logTweetMgn(`[fastMountBatch] cell[${i}] mounted at offset=${offset}, height=${realH}`);
             offset += realH;
 
-            ResizeLogger.observe(cell.node, i, this.updateHeightAt);
+            this.resizeLogger.observe(cell.node, i, this.updateHeightAt);
         }
 
         this.offsets[endIndex] = offset;
@@ -256,7 +259,7 @@ export class TweetManager {
         for (let i = 0; i < startIndex; i++) {
             const cell = this.cells[i];
             if (cell?.node?.isConnected) {
-                ResizeLogger.unobserve(cell.node);
+                this.resizeLogger.unobserve(cell.node);
                 cell.unmount();
                 logTweetMgn(`[unmountCellsBefore] unmounted cell[${i}] before startIndex=${startIndex}`);
             }
@@ -267,7 +270,7 @@ export class TweetManager {
         for (let i = endIndex; i < this.cells.length; i++) {
             const cell = this.cells[i];
             if (cell && cell.node?.isConnected) {
-                ResizeLogger.unobserve(cell.node);
+                this.resizeLogger.unobserve(cell.node);
                 cell.unmount();
                 logTweetMgn(`[unmountCellsAfter] unmounted cell[${i}] after endIndex=${endIndex}`);
             }
