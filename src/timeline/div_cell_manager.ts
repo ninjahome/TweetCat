@@ -19,7 +19,7 @@ export interface MountResult {
 }
 
 export class TweetManager {
-    private resizeLogger:TweetResizeObserverManager;
+    private resizeLogger: TweetResizeObserverManager;
 
     private isRendering = false;
     private scroller: VirtualScroller | null = null;
@@ -111,16 +111,17 @@ export class TweetManager {
     };
 
     async mountBatch(viewStart: number, viewportHeight: number, fastMode: boolean = false): Promise<MountResult> {
-        logTweetMgn(`批量挂载 start=${viewStart}, height=${viewportHeight} fastMode=${fastMode}`);
+        logTweetMgn(`[mountBatch] 判断 listHeight=${this.listHeight} <= viewStart+height=${viewStart}+${viewportHeight}=${viewStart + viewportHeight}, fastMode=${fastMode}`);
 
-        if (this.listHeight <= viewStart || fastMode) {
+        if (this.listHeight <= viewStart + viewportHeight || fastMode) {
             const t0 = performance.now();
             const oldListHeight = this.listHeight;
             const result = await this.fastMountBatch(viewStart, viewportHeight);
-            logTweetMgn(`[fastMountBatch] cost=${(performance.now() - t0).toFixed(1)}ms`);
-            logTweetMgn(`[fastMountBatch] listHeight: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
+            logTweetMgn(`[fastMountBatch] cost=${(performance.now() - t0).toFixed(1)}ms istHeight: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
             return result;
         }
+
+        logTweetMgn(`[fastMountBatch] normal logic: ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
         return {needScroll: false};
     }
 
@@ -218,7 +219,8 @@ export class TweetManager {
         const bottomOffset = this.offsets[endIndex - 1] ?? this.listHeight;
         const maxScrollTop = this.offsets[middleIndex] || bottomOffset - window.innerHeight;
 
-        const needScroll = window.scrollY > maxScrollTop;
+        const realScrollTop = window.scrollY || document.documentElement.scrollTop;
+        const needScroll = realScrollTop > maxScrollTop;
         if (needScroll) {
             logTweetMgn(`[fastMountBatch] need rollback to ${maxScrollTop}, before=${window.scrollY}`);
         } else {

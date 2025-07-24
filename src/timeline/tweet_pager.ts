@@ -18,15 +18,15 @@ const DEFAULT_INIT_PAGE = 20;      // 可按需调整
 // 用于缓存已存在的 tweet id，防止重复（核心补丁）
 let seenIds: Set<string> = new Set();
 
-const userID = '1315345422123180033'; // 1594535159373733889//1315345422123180033
+const userID = '1315345422123180033'; // 1594535159373733889//1315345422123180033//1491062057734606851
 
 //error userid  1594535159373733889  //CHNN00001
-
+//1491062057734606851//ZhuzhuJennifer
 /* ------------------------------------------------------------------ *
  * 初始化：确保至少抓到 initialPageSize 条（或直到 isEnd）
  * ------------------------------------------------------------------ */
 export async function initTweetPagerCache(initialPageSize: number = DEFAULT_INIT_PAGE): Promise<void> {
-    // console.log("-------->>>> user id by name:",await getUserIdByUsername('xiaoxiaowai123'));
+    console.log("-------->>>> user id by name:",await getUserIdByUsername('ZhuzhuJennifer'));
     if (tweetData.length > 0) {
         logPager('[Pager] init skipped, already have %d tweets.', tweetData.length);
         return;
