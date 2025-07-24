@@ -87,6 +87,7 @@ export class VirtualScroller {
 
         if (needUpdate) {
             this.scrollPositions = []; // 清空，准备下一轮
+            this.lastTop = curTop;
             logVS(`[checkLite] curTop=${curTop}, lastTop=${this.lastTop}, maxDelta=${maxDelta}, threshold=${threshold}, need=${needUpdate}, fast=${isFastMode}`);
         }
 
@@ -107,16 +108,15 @@ export class VirtualScroller {
         logVS(`[scrollToTop] trigger: pos=${pos}`);
         this.scrollLocked = true;
         this.scrollPositions = [];
-        this.lastTop = pos; // 先设置，防止 checkLite 期间误判
-
         window.scrollTo(0, pos);
 
-        waitScrollStabilize(() => {
-            this.lastTop = window.scrollY;  // 最终确认
+        waitScrollStabilizeTo(pos, (finalY, reason) => {
+            this.lastTop = finalY;
             this.scrollLocked = false;
-            logVS(`[scrollToTop] stabilized at ${window.scrollY}, lock released`);
+            logVS(`[scrollToTop] stabilized at ${finalY}, lock released (${reason})`);
         });
     }
+
 
     private async mountAtStablePosition(curTop: number, isFastMode: boolean) {
         if (this.isRendering) {
@@ -133,10 +133,10 @@ export class VirtualScroller {
                 this.scrollToTop(res.targetTop);
                 logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
             } else {
-                // const realTop = window.scrollY || document.documentElement.scrollTop;
-                // this.lastTop = realTop;
-                // this.scrollPositions = [];
-                // logVS(`[mountAtStablePosition] after mount: scrollY=${realTop}, lastTop=${this.lastTop}`);
+                const realTop = window.scrollY || document.documentElement.scrollTop;
+                this.lastTop = realTop;
+                this.scrollPositions = [];
+                logVS(`[mountAtStablePosition] after mount: scrollY=${realTop}, lastTop=${this.lastTop}`);
             }
         } finally {
             this.isRendering = false;
@@ -177,16 +177,37 @@ export class VirtualScroller {
     }
 }
 
-export function waitScrollStabilize(onStabilized: () => void) {
-    const EPSILON = 2;
-    const MAX_STABLE_FRAMES = 6;
+
+export function waitScrollStabilizeTo(
+    targetY: number,
+    onStabilized: (actualY: number, reason: "scroll stabilized" | "watchdog timeout") => void,
+    options?: {
+        epsilon?: number;         // 允许误差
+        stableFrames?: number;    // 连续帧数
+        timeoutMs?: number;       // 最长等待时间
+    }
+) {
+    const EPSILON = options?.epsilon ?? 2;
+    const MAX_STABLE_FRAMES = options?.stableFrames ?? 6;
+    const MAX_TIMEOUT = options?.timeoutMs ?? 1000;
+
     let stableCount = 0;
     let lastY = -1;
+    let watchdogTriggered = false;
 
-    const targetY = window.scrollY || document.documentElement.scrollTop;
+    const startTime = performance.now();
+
+    const watchdog = setTimeout(() => {
+        watchdogTriggered = true;
+        const y = window.scrollY;
+        if (Math.abs(y - targetY) > EPSILON) {
+            window.scrollTo(0, targetY); // 二次校正 scroll
+        }
+        onStabilized(y, "watchdog timeout");
+    }, MAX_TIMEOUT);
 
     const checkFrame = () => {
-        const y = window.scrollY || document.documentElement.scrollTop;
+        const y = window.scrollY;
 
         if (Math.abs(y - targetY) <= EPSILON) {
             if (y === lastY) {
@@ -201,8 +222,9 @@ export function waitScrollStabilize(onStabilized: () => void) {
         lastY = y;
 
         if (stableCount >= MAX_STABLE_FRAMES) {
-            onStabilized();
-        } else {
+            clearTimeout(watchdog);
+            onStabilized(y, "scroll stabilized");
+        } else if (!watchdogTriggered) {
             requestAnimationFrame(checkFrame);
         }
     };
