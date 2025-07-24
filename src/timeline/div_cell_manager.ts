@@ -97,6 +97,9 @@ export class TweetManager {
             ? `20400px`
             : `${this.listHeight + this.bufferPx}px`;
 
+        // this.timelineEl.style.height = `${this.listHeight + this.bufferPx}px`
+
+
         const changedOffset = this.offsets[idx] ?? 0;
         const curTop = window.scrollY;
         const shouldAdjustScroll = curTop > changedOffset;
@@ -111,9 +114,7 @@ export class TweetManager {
     };
 
     async mountBatch(viewStart: number, viewportHeight: number, fastMode: boolean = false): Promise<MountResult> {
-        logTweetMgn(`[mountBatch] 判断 listHeight=${this.listHeight} <= viewStart+height=${viewStart}+${viewportHeight}=${viewStart + viewportHeight}, fastMode=${fastMode}`);
-
-        if (this.listHeight <= viewStart + viewportHeight || fastMode) {
+        if (fastMode) {
             const t0 = performance.now();
             const oldListHeight = this.listHeight;
             const result = await this.fastMountBatch(viewStart, viewportHeight);
@@ -121,7 +122,7 @@ export class TweetManager {
             return result;
         }
 
-        logTweetMgn(`[fastMountBatch] normal logic: ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
+        logTweetMgn(`[fastMountBatch] normal logic: viewStart=${viewStart}`);
         return {needScroll: false};
     }
 
@@ -212,6 +213,8 @@ export class TweetManager {
             ? `${20400}px`
             : `${this.listHeight + buffer}px`;
 
+        // this.timelineEl.style.height = `${this.listHeight + this.bufferPx}px`
+
         logTweetMgn(`[fastMountBatch] completed: listHeight=${this.listHeight}, scrollTop=${window.scrollY}`);
 
         const mountedCount = endIndex - startIdx;
@@ -246,7 +249,6 @@ export class TweetManager {
                 const cell = new TweetCatCell(tw, this.tpl, this.onCellDh, lastIdx);
                 this.cells.push(cell);
             }
-            logTweetMgn('------>>> prepare render ' + tweets.length + ' tweets to tweetCat cell')
 
         } catch (e) {
             console.warn("------>>> load and render tweetCat cell err:", e)
@@ -281,7 +283,7 @@ export class TweetManager {
 }
 
 
-async function waitStableAll(nodes: HTMLElement[], tries = 3, interval = 20) {
+async function waitStableAll(nodes: HTMLElement[], tries = 3, interval = 50) {
     if (nodes.length === 0) return;
     let lastHeights = nodes.map(node => node.offsetHeight);
     while (tries-- > 0) {
