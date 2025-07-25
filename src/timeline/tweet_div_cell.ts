@@ -35,6 +35,7 @@ export class TweetCatCell {
     async mount(parent: HTMLElement, skipStable = false) {
         if (!this.node) {
             this.node = globalNodePool.acquire(this.id) ?? renderTweetHTML(this.data, this.tpl);
+            globalNodePool.register(this, this.node);
 
             Object.assign(this.node.style, {
                 position: "absolute",
@@ -70,6 +71,7 @@ export class TweetCatCell {
 
         if (this.node?.isConnected) this.node.remove();
 
+        globalNodePool.unregister(this.node);
         globalNodePool.release(this.id, this.node);
 
         this.node = null as any;

@@ -12,6 +12,7 @@ import {
 import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../debug_flags";
 import {TweetResizeObserverManager} from "./tweet_resize_observer";
+import {findCellFromNode} from "./div_node_pool";
 
 export interface MountResult {
     needScroll: boolean;
@@ -33,6 +34,7 @@ export class TweetManager {
     private readonly bufferPx = TweetManager.EST_HEIGHT * 4;
     private lastWindow?: { s: number; e: number };
     private static readonly EXTRA_BUFFER_COUNT = 4;
+    private static readonly MIN_TWEETS_COUNT = 6;
 
     constructor(
         private readonly timelineEl: HTMLElement,
@@ -116,7 +118,8 @@ export class TweetManager {
     };
 
     async mountBatch(viewStart: number, viewportHeight: number, fastMode: boolean = false): Promise<MountResult> {
-        logTweetMgn(`[mountBatch] batch mount: viewStart=${viewStart} viewportHeight=${viewportHeight} fastMode=${fastMode}`);
+        logTweetMgn(`[mountBatch] batch mount: viewStart=${viewStart}
+         viewportHeight=${viewportHeight} fastMode=${fastMode}`);
 
         const t0 = performance.now();
         const oldListHeight = this.listHeight;
@@ -125,11 +128,11 @@ export class TweetManager {
         if (fastMode) result = await this.fastMountBatch(viewStart, viewportHeight);
         else result = await this.normalMountBatch(viewStart, viewportHeight);
 
-        logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
+        logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms
+         height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
         return result;
 
     }
-
 
     private async fastMountBatch(viewStart: number, viewportHeight: number): Promise<MountResult> {
 
@@ -162,7 +165,8 @@ export class TweetManager {
 
         const firstOffset = this.offsets[startIdx] ?? -1;
         const firstHeight = this.heights[startIdx] ?? -1;
-        logTweetMgn(`[fastMountBatch] before mount: startIdx=${startIdx}, offset=${firstOffset}, height=${firstHeight}, current scrollTop=${window.scrollY}`);
+        logTweetMgn(`[fastMountBatch] before mount: startIdx=${startIdx}, offset=${firstOffset}, 
+        height=${firstHeight}, current scrollTop=${window.scrollY}`);
 
         const mountPromises: Promise<HTMLElement>[] = [];
         for (let i = startIdx; i < endIndex; i++) {
@@ -178,7 +182,8 @@ export class TweetManager {
         await waitStableAll(nodesToStable);
 
         this.unmountCellsBefore(startIdx);
-        logTweetMgn(`[fastMountBatch] after unmount, first mounted cell index: ${startIdx}, offset=${this.offsets[startIdx] ?? 'N/A'}, height=${this.heights[startIdx] ?? 'N/A'}`);
+        logTweetMgn(`[fastMountBatch] after unmount, first mounted cell index: ${startIdx}, 
+        offset=${this.offsets[startIdx] ?? 'N/A'}, height=${this.heights[startIdx] ?? 'N/A'}`);
         this.unmountCellsAfter(endIndex);
         logTweetMgn(`[fastMountBatch] after unmountCellsAfter: endIndex=${endIndex}`);
 
@@ -271,22 +276,20 @@ export class TweetManager {
 
     private async normalMountBatch(viewStart: number, viewportHeight: number): Promise<MountResult> {
         const estH = TweetManager.EST_HEIGHT;
+        const derived = this.deriveWindowFromMountedNodes();
+        let startIdx: number, endIndex: number;
+
+        if (derived) {
+            [startIdx, endIndex] = derived;
+            logTweetMgn(`[normalMountBatch] derived window: [${startIdx}, ${endIndex})`);
+        } else {
+            [startIdx, endIndex] = this.estimateWindow(viewStart, viewportHeight);
+            logTweetMgn(`[normalMountBatch] fallback estimate window: [${startIdx}, ${endIndex})`);
+        }
 
         const cells = this.cells;
         const offsets = this.offsets;
         const heights = this.heights;
-        let [startIdx, endIndex] = this.estimateWindow(viewStart, viewportHeight);
-
-        const sameWindow = this.isSameWindow(startIdx, endIndex);
-        if (sameWindow) {
-            logTweetMgn(`[normalMountBatch] skip same window: current=[${startIdx},${endIndex}) within lastWindow=[${this.lastWindow!.s},${this.lastWindow!.e})`);
-            return {needScroll: false};
-        }
-
-        this.lastWindow = {s: startIdx, e: endIndex};
-        logTweetMgn(`[normalMountBatch] mounting cells index: [${startIdx}, ${endIndex})`);
-
-        // 加载新推文（如果需要）
         if (endIndex > cells.length) {
             const needCount = endIndex - cells.length;
             logTweetMgn(`[normalMountBatch] need to load ${needCount} new tweets`);
@@ -294,47 +297,58 @@ export class TweetManager {
             endIndex = Math.min(endIndex, cells.length);
         }
 
-        // 挂载未挂载的推文节点
-        const mountPromises: Promise<HTMLElement>[] = [];
-        for (let i = startIdx; i < endIndex; i++) {
-            const cell = cells[i];
-            if (!cell.node?.isConnected) {
-                logTweetMgn(`[normalMountBatch]  cell[${i}] need to mount `);
-                mountPromises.push(cell.mount(this.timelineEl, false).then(() => cell.node));
-            }
+        const sameWindow = this.isSameWindow(startIdx, endIndex);
+        if (sameWindow) {
+            logTweetMgn(`[normalMountBatch] skip same window: 
+            current=[${startIdx},${endIndex}) within lastWindow=[${this.lastWindow!.s},${this.lastWindow!.e})`);
+            return {needScroll: false};
         }
 
-        const nodes = await Promise.all(mountPromises);
-        await waitStableAll(nodes);
+        this.lastWindow = {s: startIdx, e: endIndex};
+        logTweetMgn(`[normalMountBatch] mounting cells index: [${startIdx}, ${endIndex})`);
 
-        // 计算并更新 offset + height + transform
-        let offset = offsets[startIdx] ?? startIdx * estH;
-        for (let i = startIdx; i < endIndex; i++) {
-            const cell = cells[i];
-            const realH = cell.node.offsetHeight || estH;
-            cell.height = realH;
-            heights[i] = realH;
-            offsets[i] = offset;
-            cell.node.style.transform = `translateY(${offset}px)`;
-            offset += realH;
-
-            this.resizeLogger.observe(cell.node, i, this.updateHeightAt);
-            logTweetMgn(`[normalMountBatch] mounted cell[${i}] at offset=${offset - realH}, height=${realH}`);
-        }
-
-        offsets[endIndex] = offset;
-
-        // 卸载窗口外的节点
-        this.unmountCellsBefore(startIdx);
-        this.unmountCellsAfter(endIndex);
-
-        // 更新容器高度
-        this.listHeight = Math.max(this.listHeight, offset);
-        this.timelineEl.style.height = this.listHeight < 20400
-            ? `20400px`
-            : `${this.listHeight + this.bufferPx}px`;
-
-        logTweetMgn(`[normalMountBatch] done, listHeight=${this.listHeight}, scrollTop=${window.scrollY}`);
+        //
+        // // 挂载未挂载的推文节点
+        // const mountPromises: Promise<HTMLElement>[] = [];
+        // for (let i = startIdx; i < endIndex; i++) {
+        //     const cell = cells[i];
+        //     if (!cell.node?.isConnected) {
+        //         logTweetMgn(`[normalMountBatch]  cell[${i}] need to mount `);
+        //         mountPromises.push(cell.mount(this.timelineEl, false).then(() => cell.node));
+        //     }
+        // }
+        //
+        // const nodes = await Promise.all(mountPromises);
+        // await waitStableAll(nodes);
+        //
+        // // 计算并更新 offset + height + transform
+        // let offset = offsets[startIdx] ?? startIdx * estH;
+        // for (let i = startIdx; i < endIndex; i++) {
+        //     const cell = cells[i];
+        //     const realH = cell.node.offsetHeight || estH;
+        //     cell.height = realH;
+        //     heights[i] = realH;
+        //     offsets[i] = offset;
+        //     cell.node.style.transform = `translateY(${offset}px)`;
+        //     offset += realH;
+        //
+        //     this.resizeLogger.observe(cell.node, i, this.updateHeightAt);
+        //     logTweetMgn(`[normalMountBatch] mounted cell[${i}] at offset=${offset - realH}, height=${realH}`);
+        // }
+        //
+        // offsets[endIndex] = offset;
+        //
+        // // 卸载窗口外的节点
+        // this.unmountCellsBefore(startIdx);
+        // this.unmountCellsAfter(endIndex);
+        //
+        // // 更新容器高度
+        // this.listHeight = Math.max(this.listHeight, offset);
+        // this.timelineEl.style.height = this.listHeight < 20400
+        //     ? `20400px`
+        //     : `${this.listHeight + this.bufferPx}px`;
+        //
+        // logTweetMgn(`[normalMountBatch] done, listHeight=${this.listHeight}, scrollTop=${window.scrollY}`);
 
         return {needScroll: false};
     }
@@ -360,6 +374,29 @@ export class TweetManager {
         }
 
         return [startIdx, endIndex];
+    }
+
+
+    private deriveWindowFromMountedNodes(): [number, number] | null {
+        const EXPAND = TweetManager.EXTRA_BUFFER_COUNT / 2;
+        const MIN_COUNT = TweetManager.MIN_TWEETS_COUNT
+
+        const cellsInView = Array.from(this.timelineEl.querySelectorAll(".tweet-cardfloat"))
+            .filter(el => {
+                const rect = el.getBoundingClientRect();
+                return rect.bottom > 0 && rect.top < window.innerHeight;
+            });
+
+        if (cellsInView.length === 0) return null;
+
+        const visibleEl = cellsInView[Math.floor(cellsInView.length / 2)] as HTMLElement;
+        const matchedCell = findCellFromNode(visibleEl);
+        if (!matchedCell) return null;
+
+        const centerIdx = matchedCell.index;
+        const startIdx = Math.max(0, centerIdx - EXPAND);
+        logTweetMgn(`[deriveWindowFromMountedNodes], centerIdx=${centerIdx}, startIdx=${startIdx}`);
+        return [startIdx, startIdx + MIN_COUNT];
     }
 }
 

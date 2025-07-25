@@ -1,7 +1,10 @@
 import {logPool} from "../debug_flags";
+import {TweetCatCell} from "./tweet_div_cell";
 
 export class NodePool {
     private pool: Map<string, HTMLElement> = new Map();
+
+    private nodeToCellMap: Map<HTMLElement, TweetCatCell> = new Map();
 
     constructor(private readonly maxSize: number = 300) {
     }
@@ -40,8 +43,25 @@ export class NodePool {
 
     clear() {
         this.pool.clear();
+        this.nodeToCellMap.clear();
         logPool(`[NodePool] Cleared`);
+    }
+
+    register(cell: TweetCatCell, node: HTMLElement) {
+        this.nodeToCellMap.set(node, cell);
+    }
+
+    unregister(node: HTMLElement) {
+        this.nodeToCellMap.delete(node);
+    }
+
+    getCellFromNode(node: HTMLElement): TweetCatCell | undefined {
+        return this.nodeToCellMap.get(node);
     }
 }
 
 export const globalNodePool = new NodePool();
+// 工具函数
+export function findCellFromNode(node: HTMLElement): TweetCatCell | undefined {
+    return globalNodePool.getCellFromNode(node);
+}
