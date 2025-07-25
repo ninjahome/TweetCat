@@ -118,7 +118,7 @@ export class TweetManager {
             const t0 = performance.now();
             const oldListHeight = this.listHeight;
             const result = await this.fastMountBatch(viewStart, viewportHeight);
-            logTweetMgn(`[fastMountBatch] cost=${(performance.now() - t0).toFixed(1)}ms istHeight: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
+            logTweetMgn(`[fastMountBatch] cost=${(performance.now() - t0).toFixed(1)}ms list height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
             return result;
         }
 

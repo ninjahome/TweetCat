@@ -110,7 +110,7 @@ export class VirtualScroller {
         this.pendingMountTimer = window.setTimeout(async () => {
             const latestTop = window.scrollY || document.documentElement.scrollTop;
             const delta = Math.abs(latestTop - this.lastDetectedTop);
-            logVS(`[timerFire] @${performance.now().toFixed(1)}ms latestTop=${latestTop}, delta=${delta}, lastTop=${this.lastTop}, tries=${tries}`);
+            logVS(`[timerFire] @${performance.now().toFixed(1)}ms startTop==${startTop}, latestTop=${latestTop}, delta=${delta}, lastTop=${this.lastTop}, tries=${tries}`);
 
             this.pendingMountTimer = null;
 
@@ -119,7 +119,7 @@ export class VirtualScroller {
                 const isFastMode = Math.abs(latestTop - this.lastTop) >= VirtualScroller.FAST_RATIO * TweetManager.EST_HEIGHT;
                 await this.mountAtStablePosition(this.lastDetectedTop, isFastMode);
             } else if (tries < VirtualScroller.MAX_TRIES) {
-                logVS(`[stabilizeCheck] unstable(delta=${delta}) retry #${tries}`);
+                logVS(`[stabilizeCheck] unstable(delta=${delta}) retry #${tries}  latestTop=${latestTop}, lastDetectedTop=${this.lastDetectedTop}`);
                 this.scheduleMountAtStablePosition(latestTop);
             } else {
                 logVS(`[stabilizeCheck] give up after ${tries} tries (delta=${delta})`);
