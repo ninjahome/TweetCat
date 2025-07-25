@@ -30,7 +30,7 @@ export class VirtualScroller {
 
     private onScroll(): void {
         if (this.isRendering) {
-            logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
+            // logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
             return;
         }
 
@@ -88,10 +88,13 @@ export class VirtualScroller {
             if (res.needScroll && typeof res.targetTop === 'number') {
                 this.scrollToTop(res.targetTop);
                 logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
+            } else {
+                this.lastTop = window.scrollY || document.documentElement.scrollTop;
+                logVS(`[mountAtStablePosition] updated lastTop=${this.lastTop} after stable mount`);
             }
         } finally {
             this.isRendering = false;
-            logVS(`[mountAtStablePosition]mount done: isRendering=${this.isRendering} scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop} lastTop=${this.lastTop}`);
+            logVS(`[mountAtStablePosition]mount done: isRendering=${this.isRendering} current scrollY=${window.scrollY, document.documentElement.scrollTop} lastTop=${this.lastTop}`);
             // setTimeout(() => {
             //     logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
             // }, 1000)

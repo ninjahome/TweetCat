@@ -26,7 +26,7 @@ const userID = '1315345422123180033'; // 1594535159373733889//131534542212318003
  * 初始化：确保至少抓到 initialPageSize 条（或直到 isEnd）
  * ------------------------------------------------------------------ */
 export async function initTweetPagerCache(initialPageSize: number = DEFAULT_INIT_PAGE): Promise<void> {
-    console.log("-------->>>> user id by name:",await getUserIdByUsername('ZhuzhuJennifer'));
+    // console.log("-------->>>> user id by name:",await getUserIdByUsername('ZhuzhuJennifer'));
     if (tweetData.length > 0) {
         logPager('[Pager] init skipped, already have %d tweets.', tweetData.length);
         return;
