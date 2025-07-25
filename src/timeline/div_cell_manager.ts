@@ -123,7 +123,7 @@ export class TweetManager {
         const t0 = performance.now();
         const oldListHeight = this.listHeight;
 
-        let result
+        let result = {needScroll: false};
         if (fastMode) result = await this.fastMountBatch(viewStart, viewportHeight);
         else result = await this.normalMountBatch(viewStart, viewportHeight);
 
@@ -351,17 +351,17 @@ export class TweetManager {
         logTweetMgn(`[normalMountBatch]  needRelayOut= [${needRelayOut}], mount start idx=${mountStartIdx}`
             + ` start offset=${offset} (source: ${needRelayOut ? "anchor" : "lastKnownInRange"})`);
 
-        const mountedNodes: HTMLElement[] = [];
-        for (let i = mountStartIdx; i < endIndex; i++) {
-            const cell = cells[i];
-            if (!cell.node?.isConnected) {
-                logTweetMgn(`[normalMountBatch] cell[${i}] need to mount`);
-                await cell.mount(this.timelineEl, false);  // 内部包含稳定等待
-            }
-            mountedNodes.push(cell.node);
-        }
-        await waitStableAll(mountedNodes);
-        logTweetMgn(`[normalMountBatch]  node number to mount [${mountedNodes.length}] `);
+        // const mountedNodes: HTMLElement[] = [];
+        // for (let i = mountStartIdx; i < endIndex; i++) {
+        //     const cell = cells[i];
+        //     if (!cell.node?.isConnected) {
+        //         logTweetMgn(`[normalMountBatch] cell[${i}] need to mount`);
+        //         await cell.mount(this.timelineEl, false);  // 内部包含稳定等待
+        //     }
+        //     mountedNodes.push(cell.node);
+        // }
+        // await waitStableAll(mountedNodes);
+        // logTweetMgn(`[normalMountBatch]  node number to mount [${mountedNodes.length}] `);
 
         //
         // // 计算并更新 offset + height + transform
