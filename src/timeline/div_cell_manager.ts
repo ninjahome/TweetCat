@@ -118,8 +118,7 @@ export class TweetManager {
     };
 
     async mountBatch(viewStart: number, viewportHeight: number, fastMode: boolean = false): Promise<MountResult> {
-        logTweetMgn(`[mountBatch] batch mount: viewStart=${viewStart}
-         viewportHeight=${viewportHeight} fastMode=${fastMode}`);
+        logTweetMgn(`[mountBatch] batch mount: viewStart=${viewStart}  viewportHeight=${viewportHeight} fastMode=${fastMode}`);
 
         const t0 = performance.now();
         const oldListHeight = this.listHeight;
@@ -128,8 +127,8 @@ export class TweetManager {
         if (fastMode) result = await this.fastMountBatch(viewStart, viewportHeight);
         else result = await this.normalMountBatch(viewStart, viewportHeight);
 
-        logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms
-         height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
+        logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms `
+            + `  height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
         return result;
 
     }
@@ -274,6 +273,46 @@ export class TweetManager {
         }
     }
 
+    private hasUsableOffset(index: number): boolean {
+        return this.offsets[index] !== undefined && this.heights[index] !== undefined;
+    }
+
+    private findKnownOffsetAnchor(startIdx: number): number {
+        const MAX_LOOKBACK = 4;
+        for (let i = startIdx - 1; i >= 0 && i >= startIdx - MAX_LOOKBACK; i--) {
+            if (this.hasUsableOffset(i)) return i;
+        }
+        return -1;
+    }
+
+    private findLastKnownOffsetIndex(startIdx: number, endIdx: number): number {
+        for (let i = endIdx - 1; i >= startIdx; i--) {
+            if (this.hasUsableOffset(i)) return i;
+        }
+        return -1;
+    }
+
+    private resolveMountStartIdx(startIdx: number, endIdx: number): {
+        mountStartIdx: number;
+        needRelayOut: boolean;
+    } {
+        if (this.hasUsableOffset(startIdx)) {
+            const mountStartIdx = this.findLastKnownOffsetIndex(startIdx, endIdx);
+            if (mountStartIdx < 0) throw new Error("Unexpected: known offset at startIdx but none found in range");
+            return {mountStartIdx, needRelayOut: false};
+        }
+
+        const anchor = this.findKnownOffsetAnchor(startIdx);
+        if (anchor >= 0) {
+            return {mountStartIdx: anchor, needRelayOut: true};
+        }
+
+        const mountStartIdx = this.findLastKnownOffsetIndex(startIdx, endIdx);
+        if (mountStartIdx < 0) throw new Error("No known offset found in entire range");
+        return {mountStartIdx, needRelayOut: false};
+    }
+
+
     private async normalMountBatch(viewStart: number, viewportHeight: number): Promise<MountResult> {
         const estH = TweetManager.EST_HEIGHT;
         const derived = this.deriveWindowFromMountedNodes();
@@ -299,27 +338,31 @@ export class TweetManager {
 
         const sameWindow = this.isSameWindow(startIdx, endIndex);
         if (sameWindow) {
-            logTweetMgn(`[normalMountBatch] skip same window: 
-            current=[${startIdx},${endIndex}) within lastWindow=[${this.lastWindow!.s},${this.lastWindow!.e})`);
+            logTweetMgn(`[normalMountBatch] skip same window: current=[${startIdx},${endIndex})`
+                + ` within lastWindow=[${this.lastWindow!.s},${this.lastWindow!.e})`);
             return {needScroll: false};
         }
 
         this.lastWindow = {s: startIdx, e: endIndex};
         logTweetMgn(`[normalMountBatch] mounting cells index: [${startIdx}, ${endIndex})`);
 
-        //
-        // // 挂载未挂载的推文节点
-        // const mountPromises: Promise<HTMLElement>[] = [];
-        // for (let i = startIdx; i < endIndex; i++) {
-        //     const cell = cells[i];
-        //     if (!cell.node?.isConnected) {
-        //         logTweetMgn(`[normalMountBatch]  cell[${i}] need to mount `);
-        //         mountPromises.push(cell.mount(this.timelineEl, false).then(() => cell.node));
-        //     }
-        // }
-        //
-        // const nodes = await Promise.all(mountPromises);
-        // await waitStableAll(nodes);
+        const {mountStartIdx, needRelayOut} = this.resolveMountStartIdx(startIdx, endIndex);
+        let offset = offsets[mountStartIdx] ?? startIdx * estH;
+        logTweetMgn(`[normalMountBatch]  needRelayOut= [${needRelayOut}], mount start idx=${mountStartIdx}`
+            + ` start offset=${offset} (source: ${needRelayOut ? "anchor" : "lastKnownInRange"})`);
+
+        const mountedNodes: HTMLElement[] = [];
+        for (let i = mountStartIdx; i < endIndex; i++) {
+            const cell = cells[i];
+            if (!cell.node?.isConnected) {
+                logTweetMgn(`[normalMountBatch] cell[${i}] need to mount`);
+                await cell.mount(this.timelineEl, false);  // 内部包含稳定等待
+            }
+            mountedNodes.push(cell.node);
+        }
+        await waitStableAll(mountedNodes);
+        logTweetMgn(`[normalMountBatch]  node number to mount [${mountedNodes.length}] `);
+
         //
         // // 计算并更新 offset + height + transform
         // let offset = offsets[startIdx] ?? startIdx * estH;
