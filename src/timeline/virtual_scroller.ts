@@ -29,7 +29,7 @@ export class VirtualScroller {
     }
 
     private onScroll(): void {
-        if (this.isRendering){
+        if (this.isRendering) {
             logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
             return;
         }
