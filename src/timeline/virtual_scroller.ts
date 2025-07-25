@@ -29,12 +29,15 @@ export class VirtualScroller {
     }
 
     private onScroll(): void {
-        if (this.isRendering) return;
+        if (this.isRendering){
+            logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
+            return;
+        }
 
         const {needUpdate, curTop, isFastMode} = this.checkLiteUpdate();
         if (!needUpdate) return;
 
-        logVS(`[checkLite]need to update curTop=${curTop}, lastTop=${this.lastTop}, maxDelta=${this.lastTop - curTop}, fast=${isFastMode}`);
+        logVS(`[onScroll]need to update curTop=${curTop}, lastTop=${this.lastTop}, maxDelta=${this.lastTop - curTop}, fast=${isFastMode}`);
 
         this.isRendering = true;
         this.lastTop = curTop;
@@ -87,13 +90,11 @@ export class VirtualScroller {
                 logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
             }
         } finally {
-            // const curTop = window.scrollY || document.documentElement.scrollTop;
-            logVS(`[mountAtStablePosition]mount done: scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop} lastTop=${this.lastTop}`);
-            setTimeout(() => {
-                // const curTop = window.scrollY || document.documentElement.scrollTop;
-                logVS(`[mountAtStablePosition]1秒后: scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
-                this.isRendering = false;
-            }, 1000)
+            this.isRendering = false;
+            logVS(`[mountAtStablePosition]mount done: isRendering=${this.isRendering} scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop} lastTop=${this.lastTop}`);
+            // setTimeout(() => {
+            //     logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
+            // }, 1000)
         }
     }
 

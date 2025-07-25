@@ -54,9 +54,10 @@ export class TweetCatCell {
         if (!skipStable && !this.height) {
             await waitStable(this.node);
             this.height = this.node.offsetHeight;
+            logMount(`[Cell#${this.id}] mount  height=${this.height} }`);
         }
 
-        logMount(`[Cell#${this.id}] mount  height=${this.height} skipStable=${skipStable}`);
+        logMount(`[Cell#${this.id}] mount skipStable=${skipStable}`);
     }
 
     /** 从 DOM 移除 */
