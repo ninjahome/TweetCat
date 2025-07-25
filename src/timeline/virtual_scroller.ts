@@ -75,7 +75,7 @@ export class VirtualScroller {
     }
 
     public scrollToTop(pos: number) {
-        logVS(`[scrollToTop] trigger: pos=${pos}`);
+        logVS(`[scrollToTop] trigger: pos=${pos}  isRendering=${this.isRendering} lastTop=${this.lastTop}  scrollY=${window.scrollY}`);
         window.scrollTo(0, pos);
         this.lastTop = pos;
     }
