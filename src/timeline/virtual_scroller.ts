@@ -29,8 +29,8 @@ export class VirtualScroller {
     }
 
     private onScroll(): void {
+        // logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
         if (this.isRendering) {
-            // logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
             return;
         }
 
@@ -93,8 +93,12 @@ export class VirtualScroller {
                 logVS(`[mountAtStablePosition] updated lastTop=${this.lastTop} after stable mount`);
             }
         } finally {
-            this.isRendering = false;
-            logVS(`[mountAtStablePosition]mount done: isRendering=${this.isRendering} current scrollY=${window.scrollY, document.documentElement.scrollTop} lastTop=${this.lastTop}`);
+
+            deferByFrames(() => {
+                this.isRendering = false;
+                logVS(`[mountAtStablePosition] isRendering=false set in next frame, scrollY=${window.scrollY}, lastTop=${this.lastTop}`);
+            }, 3);
+
             // setTimeout(() => {
             //     logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
             // }, 1000)
@@ -136,3 +140,14 @@ export class VirtualScroller {
     }
 }
 
+// utils/timing.ts
+export function deferByFrames(callback: () => void, frameCount: number = 3): void {
+    const step = (n: number) => {
+        if (n <= 1) {
+            requestAnimationFrame(() => callback());
+        } else {
+            requestAnimationFrame(() => step(n - 1));
+        }
+    };
+    step(frameCount);
+}

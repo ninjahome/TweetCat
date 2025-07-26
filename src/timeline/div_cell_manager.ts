@@ -299,16 +299,19 @@ export class TweetManager {
         if (this.hasUsableOffset(startIdx)) {
             const mountStartIdx = this.findLastKnownOffsetIndex(startIdx, endIdx);
             if (mountStartIdx < 0) throw new Error("Unexpected: known offset at startIdx but none found in range");
+            logTweetMgn(`[resolveMountStartIdx] ✅ case 1: startIdx=${startIdx} has offset -> use ${mountStartIdx}`);
             return {mountStartIdx, needRelayOut: false};
         }
 
         const anchor = this.findKnownOffsetAnchor(startIdx);
         if (anchor >= 0) {
+            logTweetMgn(`[resolveMountStartIdx] ✅ case 2: found anchor at ${anchor}, relay out`);
             return {mountStartIdx: anchor, needRelayOut: true};
         }
 
         const mountStartIdx = this.findLastKnownOffsetIndex(startIdx, endIdx);
         if (mountStartIdx < 0) throw new Error("No known offset found in entire range");
+        logTweetMgn(`[resolveMountStartIdx] ✅ case 3: fallback to mountStartIdx=${mountStartIdx}, skip empty region`);
         return {mountStartIdx, needRelayOut: false};
     }
 
