@@ -97,11 +97,11 @@ export class VirtualScroller {
             deferByFrames(() => {
                 this.isRendering = false;
                 logVS(`[mountAtStablePosition] isRendering=false set in next frame, scrollY=${window.scrollY}, lastTop=${this.lastTop}`);
-            }, 3);
+            }, 6);
 
-            // setTimeout(() => {
-            //     logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
-            // }, 1000)
+            setTimeout(() => {
+                logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
+            }, 1000)
         }
     }
 
