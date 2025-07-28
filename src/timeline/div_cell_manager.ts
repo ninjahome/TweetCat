@@ -35,6 +35,7 @@ export class TweetManager {
     private lastWindow?: { s: number; e: number };
     private static readonly EXTRA_BUFFER_COUNT = 4;
     private static readonly MIN_TWEETS_COUNT = 6;
+    private static readonly TWEET_LIME_HEIGHT = 20400;
 
     constructor(
         private readonly timelineEl: HTMLElement,
@@ -46,6 +47,8 @@ export class TweetManager {
         })
         this.scroller = new VirtualScroller(this);
         this.scroller.initFirstPage().then();
+        this.timelineEl.style.height = TweetManager.TWEET_LIME_HEIGHT + `px`;
+
     }
 
     async dispose() {
@@ -97,8 +100,8 @@ export class TweetManager {
 
         this.offsets[this.cells.length] = offset;
         this.listHeight = offset;
-        this.timelineEl.style.height = this.listHeight < 20400
-            ? `20400px`
+        this.timelineEl.style.height = this.listHeight < TweetManager.TWEET_LIME_HEIGHT
+            ? TweetManager.TWEET_LIME_HEIGHT + `px`
             : `${this.listHeight + this.bufferPx}px`;
 
         // this.timelineEl.style.height = `${this.listHeight + this.bufferPx}px`
@@ -125,7 +128,7 @@ export class TweetManager {
 
         let result = {needScroll: false};
         if (fastMode) result = await this.fastMountBatch(viewStart, viewportHeight);
-        else result = await this.normalMountBatch(viewStart, viewportHeight);
+        // else result = await this.normalMountBatch(viewStart, viewportHeight);
 
         logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms `
             + `  height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
@@ -201,8 +204,8 @@ export class TweetManager {
 
         this.offsets[endIndex] = offset;
         this.listHeight = Math.max(this.listHeight, offset);
-        this.timelineEl.style.height = this.listHeight < 20400
-            ? `${20400}px`
+        this.timelineEl.style.height = this.listHeight < TweetManager.TWEET_LIME_HEIGHT
+            ? `${TweetManager.TWEET_LIME_HEIGHT}px`
             : `${this.listHeight + this.bufferPx}px`;
 
         // this.timelineEl.style.height = `${this.listHeight + this.bufferPx}px`
