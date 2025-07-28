@@ -15,6 +15,61 @@ export class VirtualScroller {
     private static readonly MAX_TRIES = 5;
 
 
+    private scrollLocked = false;
+    private static readonly EDGE_EPS = 4; // px
+
+    private atBottom(): boolean {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        return Math.abs(window.scrollY - maxScroll) <= VirtualScroller.EDGE_EPS;
+    }
+
+    /** 只负责把视口从底部挪开 1px */
+    private unlockBottomAnchor() {
+        if (this.atBottom()) {
+            logVS(`[unlockBottomAnchor] touch bottom lastTop=${this.lastTop} scrollY=${window.scrollY} `);
+            window.scrollTo(0, window.scrollY - VirtualScroller.EDGE_EPS);
+        }
+    }
+
+    private addTempBottomPad(px = 120): HTMLElement {
+        const pad = document.createElement("div");
+        pad.style.cssText = `
+        height:${px}px;
+        width:100%;
+        background:red;   /* 方便肉眼看到 */
+        pointer-events:none;
+    `;
+
+        /* 记录插 pad 前 scrollHeight */
+        const before = document.documentElement.scrollHeight;
+        const beforeH = parseFloat(this.manager.timelineEl.style.height) || 0;
+
+        this.manager.timelineEl.appendChild(pad);
+        this.manager.timelineEl.style.height = `${beforeH + px}px`;
+
+        /* 插 pad 后再次打印 scrollHeight */
+        const after = document.documentElement.scrollHeight;
+        logVS(`[pad] add ${px}px, timelineEl.height ${beforeH}px → ${beforeH + px}px; `
+            + `scrollHeight ${before}px → ${after}px`);
+
+        return pad;
+    }
+
+    public scrollToTop(pos: number) {
+        this.ensureBottomPad(this.manager.listHeight, this.manager.bufferPx);
+
+        this.lastTop = pos;
+        this.scrollLocked = true;
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                window.scrollTo(0, pos);
+                this.scrollLocked = false;
+            });
+        });
+    }
+
+
     constructor(private readonly manager: TweetManager) {
         this.onScrollBound = this.onScroll.bind(this);
         window.addEventListener("scroll", this.onScrollBound, {passive: true});
@@ -30,7 +85,7 @@ export class VirtualScroller {
 
     private onScroll(): void {
         // logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
-        if (this.isRendering) {
+        if (this.scrollLocked || this.isRendering) {
             return;
         }
 
@@ -74,12 +129,39 @@ export class VirtualScroller {
         return {needUpdate, curTop, isFastMode};
     }
 
-    public scrollToTop(pos: number) {
-        logVS(`[scrollToTop] trigger: pos=${pos}  isRendering=${this.isRendering} lastTop=${this.lastTop}  scrollY=${window.scrollY}`);
-        window.scrollTo(0, pos);
-        this.lastTop = pos;
-    }
+    // public scrollToTop(pos: number) {
+    //     logVS(`[scrollToTop] trigger: pos=${pos}  isRendering=${this.isRendering} lastTop=${this.lastTop}  scrollY=${window.scrollY}`);
+    //     window.scrollTo(0, pos);
+    // }
 
+    // public scrollToTop(pos: number) {
+    //     const onePixelAboveBottom = document.documentElement.scrollHeight - window.innerHeight - 19;
+    //     window.scrollTo(0, onePixelAboveBottom); // 解除“到底”
+    //
+    //     setTimeout(() => {
+    //         window.scrollTo(0, pos); // 再跳转目标位置
+    //     }, 20);
+    // }
+
+    public bottomPad: HTMLElement | null = null;
+    static readonly EXTRA_GAP = 120;
+
+    public ensureBottomPad(listHeight: number, buffer: number) {
+        if (!this.bottomPad) {          // 只在第一次创建
+            const pad = document.createElement('div');
+            pad.style.cssText = `
+           position:absolute;
+           left:0;
+           height:${VirtualScroller.EXTRA_GAP}px;
+           width:100%;
+           background:red;          /* 验证阶段可见，最终去掉 */
+           pointer-events:none;
+        `;
+            this.manager.timelineEl.appendChild(pad);
+            this.bottomPad = pad;
+        }
+        this.bottomPad!.style.top = `${listHeight + buffer}px`;   // 始终贴在最新底部
+    }
 
     private async mountAtStablePosition(startView: number, isFastMode: boolean) {
         logVS(`[mountAtStablePosition] start startView=${startView} lastTop=${this.lastTop}, fast=${isFastMode}`);
@@ -94,14 +176,15 @@ export class VirtualScroller {
             }
         } finally {
 
-            deferByFrames(() => {
-                this.isRendering = false;
-                logVS(`[mountAtStablePosition] isRendering=false set in next frame, scrollY=${window.scrollY}, lastTop=${this.lastTop}`);
-            }, 6);
+            // deferByFrames(() => {
+            //     logVS(`[mountAtStablePosition] isRendering=false set in next frame, scrollY=${window.scrollY}, lastTop=${this.lastTop}`);
+            // }, 6);
 
             setTimeout(() => {
+                this.isRendering = false;
+                this.lastTop = window.scrollY;
                 logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
-            }, 1000)
+            }, 1_000)
         }
     }
 

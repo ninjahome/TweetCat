@@ -25,20 +25,20 @@ export class TweetManager {
     private isRendering = false;
     private scroller: VirtualScroller | null = null;
     private cells: TweetCatCell[] = [];
-    private listHeight: number = 0;
+    public listHeight: number = 0;
     private heights: number[] = [];
     private offsets: number[] = [0];
     public static readonly EST_HEIGHT = 500;
     private static readonly PAGE_SIZE = 30;
     private static readonly MaxTweetOnce = 30;
-    private readonly bufferPx = TweetManager.EST_HEIGHT * 4;
+    public readonly bufferPx = TweetManager.EST_HEIGHT * 4;
     private lastWindow?: { s: number; e: number };
     private static readonly EXTRA_BUFFER_COUNT = 4;
     private static readonly MIN_TWEETS_COUNT = 6;
     private static readonly TWEET_LIME_HEIGHT = 20400;
 
     constructor(
-        private readonly timelineEl: HTMLElement,
+        public readonly timelineEl: HTMLElement,
         private readonly tpl: HTMLTemplateElement
     ) {
         this.resizeLogger = new TweetResizeObserverManager();
@@ -132,6 +132,16 @@ export class TweetManager {
 
         logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms `
             + `  height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
+
+        const gap = this.scroller?.bottomPad ? VirtualScroller.EXTRA_GAP : 0;
+
+        const dynamicH = this.listHeight + this.bufferPx + gap;
+        const minH     = TweetManager.TWEET_LIME_HEIGHT + gap;   // 给固定底线也加相同 gap
+
+        this.timelineEl.style.height = `${Math.max(dynamicH, minH)}px`;
+
+        this.scroller?.ensureBottomPad(this.listHeight, this.bufferPx);
+
         return result;
 
     }
@@ -228,7 +238,6 @@ export class TweetManager {
         return needScroll
             ? {needScroll: true, targetTop: maxScrollTop}
             : {needScroll: false};
-
     }
 
     private async loadAndRenderTweetCell(pageSize: number = TweetManager.PAGE_SIZE) {
