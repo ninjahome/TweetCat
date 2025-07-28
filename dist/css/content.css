@@ -210,7 +210,6 @@ img, video {
     z-index: 0;
     overflow: hidden;
     min-height: 100%;
-    overflow-anchor: none;
 }
 
 .tweet-card {
