@@ -160,6 +160,7 @@ export class VirtualScroller {
         logVS(`[mountAtStablePosition] start startView=${startView} lastTop=${this.lastTop}, fast=${isFastMode}`);
         try {
             const res = await this.manager.mountBatch(startView, window.innerHeight, isFastMode);
+
             if (res.needScroll && typeof res.targetTop === 'number') {
                 this.scrollToTop(res.targetTop);
                 logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
