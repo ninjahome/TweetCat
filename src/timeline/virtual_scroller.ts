@@ -14,7 +14,6 @@ export class VirtualScroller {
     private unstableTries = 0;
     private static readonly MAX_TRIES = 5;
 
-
     private scrollLocked = false;
     private static readonly EDGE_EPS = 4; // px
 
@@ -31,50 +30,12 @@ export class VirtualScroller {
         }
     }
 
-    private addTempBottomPad(px = 120): HTMLElement {
-        const pad = document.createElement("div");
-        pad.style.cssText = `
-        height:${px}px;
-        width:100%;
-        background:red;   /* 方便肉眼看到 */
-        pointer-events:none;
-    `;
-
-        /* 记录插 pad 前 scrollHeight */
-        const before = document.documentElement.scrollHeight;
-        const beforeH = parseFloat(this.manager.timelineEl.style.height) || 0;
-
-        this.manager.timelineEl.appendChild(pad);
-        this.manager.timelineEl.style.height = `${beforeH + px}px`;
-
-        /* 插 pad 后再次打印 scrollHeight */
-        const after = document.documentElement.scrollHeight;
-        logVS(`[pad] add ${px}px, timelineEl.height ${beforeH}px → ${beforeH + px}px; `
-            + `scrollHeight ${before}px → ${after}px`);
-
-        return pad;
-    }
-
     public scrollToTop(pos: number) {
         this.ensureBottomPad(this.manager.listHeight, this.manager.bufferPx);
         this.scrollLocked = true;
         window.scrollTo(0, pos);
         this.lastTop = pos;
         this.scrollLocked = false;
-    }
-
-    private finishRenderingSafely() {
-        // rAF‑A：等这一帧所有同步样式计算
-        requestAnimationFrame(() => {
-            // rAF‑B：保证 scrollTo 执行后的回流也结束
-            requestAnimationFrame(() => {
-                // micro‑task：把 isRendering 更新放到调用栈最尾
-                Promise.resolve().then(() => {
-                    this.isRendering = false;
-                    this.lastTop = window.scrollY;   // 再同步一下基准
-                });
-            });
-        });
     }
 
     constructor(private readonly manager: TweetManager) {
@@ -177,7 +138,7 @@ export class VirtualScroller {
                 this.lastTop = window.scrollY;
                 this.isRendering = false;
                 logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
-            }, 1_000)
+            }, 4_000)
         }
     }
 

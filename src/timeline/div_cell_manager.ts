@@ -104,9 +104,6 @@ export class TweetManager {
             ? TweetManager.TWEET_LIME_HEIGHT + `px`
             : `${this.listHeight + this.bufferPx}px`;
 
-        // this.timelineEl.style.height = `${this.listHeight + this.bufferPx}px`
-
-
         const changedOffset = this.offsets[idx] ?? 0;
         const curTop = window.scrollY;
         const shouldAdjustScroll = curTop > changedOffset;
