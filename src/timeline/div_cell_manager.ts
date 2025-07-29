@@ -136,7 +136,7 @@ export class TweetManager {
         const gap = this.scroller?.bottomPad ? VirtualScroller.EXTRA_GAP : 0;
 
         const dynamicH = this.listHeight + this.bufferPx + gap;
-        const minH     = TweetManager.TWEET_LIME_HEIGHT + gap;   // 给固定底线也加相同 gap
+        const minH = TweetManager.TWEET_LIME_HEIGHT + gap;   // 给固定底线也加相同 gap
 
         this.timelineEl.style.height = `${Math.max(dynamicH, minH)}px`;
 

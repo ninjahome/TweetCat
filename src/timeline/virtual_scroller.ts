@@ -55,21 +55,6 @@ export class VirtualScroller {
         return pad;
     }
 
-    public scrollToTop(pos: number) {
-        this.ensureBottomPad(this.manager.listHeight, this.manager.bufferPx);
-
-        this.lastTop = pos;
-        this.scrollLocked = true;
-
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                window.scrollTo(0, pos);
-                this.scrollLocked = false;
-            });
-        });
-    }
-
-
     constructor(private readonly manager: TweetManager) {
         this.onScrollBound = this.onScroll.bind(this);
         window.addEventListener("scroll", this.onScrollBound, {passive: true});
@@ -129,20 +114,6 @@ export class VirtualScroller {
         return {needUpdate, curTop, isFastMode};
     }
 
-    // public scrollToTop(pos: number) {
-    //     logVS(`[scrollToTop] trigger: pos=${pos}  isRendering=${this.isRendering} lastTop=${this.lastTop}  scrollY=${window.scrollY}`);
-    //     window.scrollTo(0, pos);
-    // }
-
-    // public scrollToTop(pos: number) {
-    //     const onePixelAboveBottom = document.documentElement.scrollHeight - window.innerHeight - 19;
-    //     window.scrollTo(0, onePixelAboveBottom); // 解除“到底”
-    //
-    //     setTimeout(() => {
-    //         window.scrollTo(0, pos); // 再跳转目标位置
-    //     }, 20);
-    // }
-
     public bottomPad: HTMLElement | null = null;
     static readonly EXTRA_GAP = 120;
 
@@ -165,27 +136,16 @@ export class VirtualScroller {
 
     private async mountAtStablePosition(startView: number, isFastMode: boolean) {
         logVS(`[mountAtStablePosition] start startView=${startView} lastTop=${this.lastTop}, fast=${isFastMode}`);
-        try {
-            const res = await this.manager.mountBatch(startView, window.innerHeight, isFastMode);
-            if (res.needScroll && typeof res.targetTop === 'number') {
-                this.scrollToTop(res.targetTop);
-                logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
-            } else {
-                this.lastTop = window.scrollY || document.documentElement.scrollTop;
-                logVS(`[mountAtStablePosition] updated lastTop=${this.lastTop} after stable mount`);
-            }
-        } finally {
-
-            // deferByFrames(() => {
-            //     logVS(`[mountAtStablePosition] isRendering=false set in next frame, scrollY=${window.scrollY}, lastTop=${this.lastTop}`);
-            // }, 6);
-
-            setTimeout(() => {
-                this.isRendering = false;
-                this.lastTop = window.scrollY;
-                logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
-            }, 1_000)
+        const res = await this.manager.mountBatch(startView, window.innerHeight, isFastMode);
+        if (res.needScroll && typeof res.targetTop === 'number') {
+            await this.scrollToTop(res.targetTop);           // ← 等回滚完
+            logVS(`[mountAtStablePosition] rollback done → ${res.targetTop}`);
+            return;
         }
+
+        this.lastTop = window.scrollY;
+        await this.finishRenderingSafely();                // ← 真正重置 isRendering
+        logVS(`[mountAtStablePosition] settle, lastTop=${this.lastTop}`);
     }
 
     private scheduleMountAtStablePosition(startTop: number) {
@@ -221,6 +181,54 @@ export class VirtualScroller {
 
         logVS(`[schedule] set timer id=${this.pendingMountTimer} delay=${delay} lastTop=${this.lastTop} lastDetectedTop=${this.lastDetectedTop} try=${tries}`);
     }
+
+
+    /** 把视口安全移到 targetTop，Promise resolve 时滚动已稳定 */
+    public scrollToTop(targetTop: number): Promise<void> {
+        return new Promise(resolve => {
+            this.ensureBottomPad(this.manager.listHeight, this.manager.bufferPx);
+            this.scrollLocked = true;
+            this.lastTop = targetTop;
+
+            requestAnimationFrame(() => {          // rAF‑A
+                requestAnimationFrame(() => {        // rAF‑B
+                    window.scrollTo(0, targetTop);
+
+                    requestAnimationFrame(() => {      // rAF‑C
+                        Promise.resolve().then(() => {
+                            this.scrollLocked = false;
+                            resolve();                     // <- 释放给调用方
+                        });
+                    });
+                });
+            });
+        });
+    }
+
+    private async finishRenderingSafely() {
+        await this.waitScrollSettled(3);
+        this.isRendering = false;
+        logVS(`[finishRenderingSafely] done, isRendering=${this.isRendering}, scrollY=${window.scrollY}`);
+    }
+
+    /** 连续 stableFrames 帧 scrollY 误差 ≤ threshold 视为稳定 */
+    private waitScrollSettled(threshold = 1, stableFrames = 2): Promise<void> {
+        return new Promise(resolve => {
+            let last = window.scrollY, stable = 0;
+            const tick = () => {
+                const cur = window.scrollY;
+                if (Math.abs(cur - last) <= threshold) {
+                    if (++stable >= stableFrames) return resolve();
+                } else {
+                    stable = 0;
+                    last = cur;
+                }
+                requestAnimationFrame(tick);
+            };
+            requestAnimationFrame(tick);
+        });
+    }
+
 }
 
 // utils/timing.ts
