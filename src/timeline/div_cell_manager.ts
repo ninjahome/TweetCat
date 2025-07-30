@@ -132,11 +132,19 @@ export class TweetManager {
 
         logTweetMgn(`[fastMountBatch] startIdx=${startIdx}, endIndex=${endIndex}, cells.length=${this.cells.length}`); // <-- 这里！
 
+        let isAtBottom = false;
         if (endIndex > this.cells.length) {
             const needCount = endIndex - this.cells.length;
             logTweetMgn(`[fastMountBatch] need to load ${needCount} more tweets`);
             await this.loadAndRenderTweetCell(needCount);
             endIndex = Math.min(endIndex, this.cells.length);
+            isAtBottom = window.scrollY + window.innerHeight >= TweetManager.TWEET_LIME_HEIGHT - 4;
+        }
+
+        if (isAtBottom) {
+            const estRollbackTop = this.offsets[startIdx] ?? (startIdx * TweetManager.EST_HEIGHT);
+            logTweetMgn(`[fastMountBatch] ⚠️ overscroll detected, prepare rollback to ${estRollbackTop}`);
+            window.scrollTo({top: estRollbackTop});
         }
 
         if (this.isSameWindow(startIdx, endIndex)) {
@@ -201,7 +209,7 @@ export class TweetManager {
         const maxScrollTop = this.offsets[middleIndex] || bottomOffset - window.innerHeight;
 
         const realScrollTop = window.scrollY || document.documentElement.scrollTop;
-        const needScroll = realScrollTop > maxScrollTop;
+        const needScroll = realScrollTop > maxScrollTop || isAtBottom;
         if (needScroll) {
             logTweetMgn(`[fastMountBatch] need rollback to ${maxScrollTop}, before=${window.scrollY}`);
         } else {
@@ -374,7 +382,7 @@ export class TweetManager {
         // this.unmountCellsAfter(endIndex);
         //
         // // 更新容器高度
-     // this.finalizeListHeight(offset);
+        // this.finalizeListHeight(offset);
         //
         // logTweetMgn(`[normalMountBatch] done, listHeight=${this.listHeight}, scrollTop=${window.scrollY}`);
 

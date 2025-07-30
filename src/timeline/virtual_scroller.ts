@@ -15,8 +15,10 @@ export class VirtualScroller {
     private static readonly MAX_TRIES = 5;
 
     public scrollToTop(pos: number) {
-        window.scrollTo(0, pos);
-        this.lastTop = pos;
+        deferByFrames(() => {
+            window.scrollTo(0, pos);
+            this.lastTop = pos;
+        }, 2);
     }
 
     constructor(private readonly manager: TweetManager) {
@@ -87,7 +89,7 @@ export class VirtualScroller {
             const res = await this.manager.mountBatch(startView, window.innerHeight, isFastMode);
 
             if (res.needScroll && typeof res.targetTop === 'number') {
-                this.scrollToTop(res.targetTop);
+                this.scrollToTop(res.targetTop!);
                 logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
             }
         } finally {
@@ -96,10 +98,6 @@ export class VirtualScroller {
                 this.isRendering = false;
                 logVS(`[mountAtStablePosition] isRendering=false set in next frame, scrollY=${window.scrollY}, lastTop=${this.lastTop}`);
             }, 6);
-            // setTimeout(() => {
-            //     this.lastTop = window.scrollY;
-            //     logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
-            // }, 4_000)
         }
     }
 
