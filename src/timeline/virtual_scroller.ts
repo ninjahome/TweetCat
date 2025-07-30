@@ -35,12 +35,12 @@ export class VirtualScroller {
     }
 
     private onScroll(): void {
-        // logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
+        logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
         if (this.isRendering) {
             return;
         }
 
-        const {needUpdate, curTop, isFastMode} = this.checkLiteUpdate();
+        const {needUpdate, curTop, isFastMode} = this.scrollStatusCheck();
         if (!needUpdate) return;
 
         logVS(`[onScroll]need to update curTop=${curTop}, lastTop=${this.lastTop}, maxDelta=${this.lastTop - curTop}, fast=${isFastMode}`);
@@ -68,26 +68,19 @@ export class VirtualScroller {
         this.lastTop = 0;
     }
 
-
-    private checkLiteUpdate(): { needUpdate: boolean; curTop: number; isFastMode: boolean; } {
+    private scrollStatusCheck(): { needUpdate: boolean; curTop: number; isFastMode: boolean; } {
         const curTop = window.scrollY || document.documentElement.scrollTop;
         const delta = Math.abs(curTop - this.lastTop) //Math.max(...this.scrollPositions.map(t => ));
         const threshold = TweetManager.EST_HEIGHT;
         const isFastMode = delta >= VirtualScroller.FAST_RATIO * threshold;
         const needUpdate = delta >= threshold;
-
         return {needUpdate, curTop, isFastMode};
     }
-
-    public bottomPad: HTMLElement | null = null;
-    static readonly EXTRA_GAP = 120;
-
 
     private async mountAtStablePosition(startView: number, isFastMode: boolean) {
         logVS(`[mountAtStablePosition] start startView=${startView} lastTop=${this.lastTop}, fast=${isFastMode}`);
         try {
             const res = await this.manager.mountBatch(startView, window.innerHeight, isFastMode);
-
             if (res.needScroll && typeof res.targetTop === 'number') {
                 this.scrollToTop(res.targetTop!);
                 logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);

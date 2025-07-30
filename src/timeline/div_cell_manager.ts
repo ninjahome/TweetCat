@@ -138,7 +138,7 @@ export class TweetManager {
             logTweetMgn(`[fastMountBatch] need to load ${needCount} more tweets`);
             await this.loadAndRenderTweetCell(needCount);
             endIndex = Math.min(endIndex, this.cells.length);
-            isAtBottom = window.scrollY + window.innerHeight >= TweetManager.TWEET_LIME_HEIGHT - 4;
+            isAtBottom = this.isAtTimelineBottom();
         }
 
         if (isAtBottom) {
@@ -441,6 +441,15 @@ export class TweetManager {
         this.timelineEl.style.height = this.listHeight < TweetManager.TWEET_LIME_HEIGHT
             ? `${TweetManager.TWEET_LIME_HEIGHT}px`
             : `${this.listHeight + this.bufferPx}px`;
+    }
+
+    private isAtTimelineBottom(): boolean {
+        const EDGE_EPS = 4;
+        const scrollBottom = window.scrollY + window.innerHeight;
+        const timelineHeight = Math.max(this.timelineEl.clientHeight, TweetManager.TWEET_LIME_HEIGHT);
+        const atBottom = scrollBottom >= timelineHeight - EDGE_EPS;
+        console.log(`[isAtTimelineBottom] scrollBottom=${scrollBottom}, timelineHeight=${timelineHeight}, atBottom=${atBottom}`);
+        return atBottom;
     }
 }
 
