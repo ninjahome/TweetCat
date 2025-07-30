@@ -87,13 +87,6 @@ export class VirtualScroller {
         return {needUpdate, curTop, isFastMode};
     }
 
-    private async mountAtStablePosition(startView: number, isFastMode: boolean) {
-        logVS(`[mountAtStablePosition] start startView=${startView} lastTop=${this.lastTop}, fast=${isFastMode}`);
-        const res = await this.manager.mountBatch(startView, window.innerHeight, isFastMode);
-        this.scrollToTop(res)
-
-    }
-
     private scheduleMountAtStablePosition(startTop: number) {
         if (this.pendingMountTimer !== null) {
             logVS(`[schedule] clear previous timer ${this.pendingMountTimer}`);
@@ -113,12 +106,13 @@ export class VirtualScroller {
             if (delta <= TweetManager.EST_HEIGHT) {
                 this.unstableTries = 0;
                 const isFastMode = Math.abs(latestTop - this.lastTop) >= VirtualScroller.FAST_RATIO * TweetManager.EST_HEIGHT;
-                await this.mountAtStablePosition(this.lastDetectedTop, isFastMode);
+                const res = await this.manager.mountBatch(this.lastDetectedTop, window.innerHeight, isFastMode);
+                this.scrollToTop(res)
             } else if (tries < VirtualScroller.MAX_TRIES) {
-                logVS(`[stabilizeCheck] unstable(delta=${delta}) retry #${tries}  latestTop=${latestTop}, lastDetectedTop=${this.lastDetectedTop}`);
+                logVS(`[scheduleMountAtStablePosition] unstable(delta=${delta}) retry #${tries}  latestTop=${latestTop}, lastDetectedTop=${this.lastDetectedTop}`);
                 this.scheduleMountAtStablePosition(latestTop);
             } else {
-                logVS(`[stabilizeCheck] give up after ${tries} tries (delta=${delta})`);
+                logVS(`[scheduleMountAtStablePosition] give up after ${tries} tries (delta=${delta})`);
                 this.unstableTries = 0;
                 this.isRendering = false;
             }

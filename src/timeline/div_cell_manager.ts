@@ -41,6 +41,14 @@ export class TweetManager {
         public readonly timelineEl: HTMLElement,
         private readonly tpl: HTMLTemplateElement
     ) {
+        this.timelineEl.style.overscrollBehavior = "none";
+        document.documentElement.style.overscrollBehavior = "none";
+        this.timelineEl.style.minHeight = '300vh';
+        if (typeof history !== 'undefined' && 'scrollRestoration' in history) {
+            logTweetMgn("------>>> disable auto scroll");
+            history.scrollRestoration = 'manual';
+        }
+
         this.resizeLogger = new TweetResizeObserverManager();
         initTweetPagerCache().then(() => {
             logTweetMgn("------>>> tweet cache init success");
@@ -122,7 +130,7 @@ export class TweetManager {
         // else result = await this.normalMountBatch(viewStart, viewportHeight);
 
         logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms `
-            + `  height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
+            + `  height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.minHeight}`);
         return result;
     }
 
@@ -202,12 +210,6 @@ export class TweetManager {
 
         const realScrollTop = window.scrollY || document.documentElement.scrollTop;
         const needScroll = realScrollTop > maxScrollTop;
-        if (needScroll) {
-            logTweetMgn(`[fastMountBatch] need rollback to ${maxScrollTop}, before=${window.scrollY}`);
-        } else {
-            logTweetMgn(`[fastMountBatch] no rollback, scrollTop=${window.scrollY}, maxScrollTop=${maxScrollTop}`);
-        }
-
         return needScroll
             ? {needScroll: true, targetTop: maxScrollTop}
             : {needScroll: false};
@@ -427,12 +429,23 @@ export class TweetManager {
         return [startIdx, startIdx + MIN_COUNT];
     }
 
+    // private finalizeListHeight(offset: number) {
+    //     this.offsets[this.cells.length] = offset;
+    //     this.listHeight = offset;
+    //     this.timelineEl.style.minHeight = this.listHeight < TweetManager.TWEET_LIME_HEIGHT
+    //         ? `${TweetManager.TWEET_LIME_HEIGHT}px`
+    //         : `${this.listHeight + this.bufferPx}px`;
+    // }
+
     private finalizeListHeight(offset: number) {
         this.offsets[this.cells.length] = offset;
         this.listHeight = offset;
-        this.timelineEl.style.height = this.listHeight < TweetManager.TWEET_LIME_HEIGHT
-            ? `${TweetManager.TWEET_LIME_HEIGHT}px`
-            : `${this.listHeight + this.bufferPx}px`;
+
+        const minRequiredHeight = offset + window.innerHeight + this.bufferPx;
+        const safeHeight = Math.max(minRequiredHeight, TweetManager.TWEET_LIME_HEIGHT);
+        this.timelineEl.style.height = `${safeHeight}px`;
+
+        logTweetMgn(`[finalizeListHeight] offset=${offset}, applied height=${safeHeight}`);
     }
 
     private isAtTimelineBottom(): boolean {
