@@ -104,7 +104,7 @@ export class TweetManager {
 
         if (shouldAdjustScroll && this.scroller) {
             const newTop = curTop + delta;
-            this.scroller.scrollToTop(newTop); // ✅ 交由 VirtualScroller 管理滚动状态
+            this.scroller.scrollToTop({needScroll: true, targetTop: newTop}); // ✅ 交由 VirtualScroller 管理滚动状态
             logTweetMgn(`[updateHeightAt] adjusted via VirtualScroller: scrollTop ${curTop} -> ${newTop}`);
         }
 
@@ -119,7 +119,7 @@ export class TweetManager {
 
         let result = {needScroll: false};
         if (fastMode) result = await this.fastMountBatch(viewStart, viewportHeight);
-        else result = await this.normalMountBatch(viewStart, viewportHeight);
+        // else result = await this.normalMountBatch(viewStart, viewportHeight);
 
         logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms `
             + `  height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
@@ -132,19 +132,11 @@ export class TweetManager {
 
         logTweetMgn(`[fastMountBatch] startIdx=${startIdx}, endIndex=${endIndex}, cells.length=${this.cells.length}`); // <-- 这里！
 
-        let isAtBottom = false;
         if (endIndex > this.cells.length) {
             const needCount = endIndex - this.cells.length;
             logTweetMgn(`[fastMountBatch] need to load ${needCount} more tweets`);
             await this.loadAndRenderTweetCell(needCount);
             endIndex = Math.min(endIndex, this.cells.length);
-            isAtBottom = this.isAtTimelineBottom();
-        }
-
-        if (isAtBottom) {
-            const estRollbackTop = this.offsets[startIdx] ?? (startIdx * TweetManager.EST_HEIGHT);
-            logTweetMgn(`[fastMountBatch] ⚠️ overscroll detected, prepare rollback to ${estRollbackTop}`);
-            window.scrollTo({top: estRollbackTop});
         }
 
         if (this.isSameWindow(startIdx, endIndex)) {
@@ -209,7 +201,7 @@ export class TweetManager {
         const maxScrollTop = this.offsets[middleIndex] || bottomOffset - window.innerHeight;
 
         const realScrollTop = window.scrollY || document.documentElement.scrollTop;
-        const needScroll = realScrollTop > maxScrollTop || isAtBottom;
+        const needScroll = realScrollTop > maxScrollTop;
         if (needScroll) {
             logTweetMgn(`[fastMountBatch] need rollback to ${maxScrollTop}, before=${window.scrollY}`);
         } else {

@@ -1,4 +1,4 @@
-import {TweetManager} from "./div_cell_manager";
+import {MountResult, TweetManager} from "./div_cell_manager";
 import {logVS} from "../debug_flags";
 
 export class VirtualScroller {
@@ -14,11 +14,21 @@ export class VirtualScroller {
     private unstableTries = 0;
     private static readonly MAX_TRIES = 5;
 
-    public scrollToTop(pos: number) {
-        deferByFrames(() => {
-            window.scrollTo(0, pos);
-            this.lastTop = pos;
-        }, 2);
+    public scrollToTop(res: MountResult) {
+        if (res.needScroll && typeof res.targetTop === 'number') {
+            const pos = res.targetTop
+            deferByFrames(() => {
+                logVS(`[scrollToTop] start to scroll to ${pos}`);
+                window.scrollTo(0, pos);
+                this.lastTop = pos;
+                this.isRendering = false;
+            }, 2);
+            logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
+        } else {
+            this.lastTop = window.scrollY || document.documentElement.scrollTop;
+            this.isRendering = false;
+            logVS(`[mountAtStablePosition] no rollback  lastTop=${this.lastTop}`);
+        }
     }
 
     constructor(private readonly manager: TweetManager) {
@@ -79,19 +89,9 @@ export class VirtualScroller {
 
     private async mountAtStablePosition(startView: number, isFastMode: boolean) {
         logVS(`[mountAtStablePosition] start startView=${startView} lastTop=${this.lastTop}, fast=${isFastMode}`);
-        try {
-            const res = await this.manager.mountBatch(startView, window.innerHeight, isFastMode);
-            if (res.needScroll && typeof res.targetTop === 'number') {
-                this.scrollToTop(res.targetTop!);
-                logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
-            }
-        } finally {
-            deferByFrames(() => {
-                this.lastTop = window.scrollY || document.documentElement.scrollTop;
-                this.isRendering = false;
-                logVS(`[mountAtStablePosition] isRendering=false set in next frame, scrollY=${window.scrollY}, lastTop=${this.lastTop}`);
-            }, 6);
-        }
+        const res = await this.manager.mountBatch(startView, window.innerHeight, isFastMode);
+        this.scrollToTop(res)
+
     }
 
     private scheduleMountAtStablePosition(startTop: number) {
