@@ -47,8 +47,6 @@ export class TweetManager {
         })
         this.scroller = new VirtualScroller(this);
         this.scroller.initFirstPage().then();
-        this.timelineEl.style.height = TweetManager.TWEET_LIME_HEIGHT + `px`;
-
     }
 
     async dispose() {
@@ -98,11 +96,7 @@ export class TweetManager {
             offset += this.heights[i] ?? TweetManager.EST_HEIGHT;
         }
 
-        this.offsets[this.cells.length] = offset;
-        this.listHeight = offset;
-        this.timelineEl.style.height = this.listHeight < TweetManager.TWEET_LIME_HEIGHT
-            ? TweetManager.TWEET_LIME_HEIGHT + `px`
-            : `${this.listHeight + this.bufferPx}px`;
+        this.finalizeListHeight(offset);
 
         const changedOffset = this.offsets[idx] ?? 0;
         const curTop = window.scrollY;
@@ -129,18 +123,7 @@ export class TweetManager {
 
         logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms `
             + `  height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.height}`);
-
-        const gap = this.scroller?.bottomPad ? VirtualScroller.EXTRA_GAP : 0;
-
-        const dynamicH = this.listHeight + this.bufferPx + gap;
-        const minH = TweetManager.TWEET_LIME_HEIGHT + gap;   // 给固定底线也加相同 gap
-
-        this.timelineEl.style.height = `${Math.max(dynamicH, minH)}px`;
-
-        this.scroller?.ensureBottomPad(this.listHeight, this.bufferPx);
-
         return result;
-
     }
 
     private async fastMountBatch(viewStart: number, viewportHeight: number): Promise<MountResult> {
@@ -208,14 +191,7 @@ export class TweetManager {
 
             this.resizeLogger.observe(cell.node, i, this.updateHeightAt);
         }
-
-        this.offsets[endIndex] = offset;
-        this.listHeight = Math.max(this.listHeight, offset);
-        this.timelineEl.style.height = this.listHeight < TweetManager.TWEET_LIME_HEIGHT
-            ? `${TweetManager.TWEET_LIME_HEIGHT}px`
-            : `${this.listHeight + this.bufferPx}px`;
-
-        // this.timelineEl.style.height = `${this.listHeight + this.bufferPx}px`
+        this.finalizeListHeight(offset);
 
         logTweetMgn(`[fastMountBatch] completed: listHeight=${this.listHeight}, scrollTop=${window.scrollY}`);
 
@@ -398,10 +374,7 @@ export class TweetManager {
         // this.unmountCellsAfter(endIndex);
         //
         // // 更新容器高度
-        // this.listHeight = Math.max(this.listHeight, offset);
-        // this.timelineEl.style.height = this.listHeight < 20400
-        //     ? `20400px`
-        //     : `${this.listHeight + this.bufferPx}px`;
+     // this.finalizeListHeight(offset);
         //
         // logTweetMgn(`[normalMountBatch] done, listHeight=${this.listHeight}, scrollTop=${window.scrollY}`);
 
@@ -452,6 +425,14 @@ export class TweetManager {
         const startIdx = Math.max(0, centerIdx - EXPAND);
         logTweetMgn(`[deriveWindowFromMountedNodes], centerIdx=${centerIdx}, startIdx=${startIdx}`);
         return [startIdx, startIdx + MIN_COUNT];
+    }
+
+    private finalizeListHeight(offset: number) {
+        this.offsets[this.cells.length] = offset;
+        this.listHeight = offset;
+        this.timelineEl.style.height = this.listHeight < TweetManager.TWEET_LIME_HEIGHT
+            ? `${TweetManager.TWEET_LIME_HEIGHT}px`
+            : `${this.listHeight + this.bufferPx}px`;
     }
 }
 

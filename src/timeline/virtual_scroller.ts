@@ -14,28 +14,9 @@ export class VirtualScroller {
     private unstableTries = 0;
     private static readonly MAX_TRIES = 5;
 
-    private scrollLocked = false;
-    private static readonly EDGE_EPS = 4; // px
-
-    private atBottom(): boolean {
-        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-        return Math.abs(window.scrollY - maxScroll) <= VirtualScroller.EDGE_EPS;
-    }
-
-    /** 只负责把视口从底部挪开 1px */
-    private unlockBottomAnchor() {
-        if (this.atBottom()) {
-            logVS(`[unlockBottomAnchor] touch bottom lastTop=${this.lastTop} scrollY=${window.scrollY} `);
-            window.scrollTo(0, window.scrollY - VirtualScroller.EDGE_EPS);
-        }
-    }
-
     public scrollToTop(pos: number) {
-        this.ensureBottomPad(this.manager.listHeight, this.manager.bufferPx);
-        this.scrollLocked = true;
         window.scrollTo(0, pos);
         this.lastTop = pos;
-        this.scrollLocked = false;
     }
 
     constructor(private readonly manager: TweetManager) {
@@ -53,7 +34,7 @@ export class VirtualScroller {
 
     private onScroll(): void {
         // logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
-        if (this.scrollLocked || this.isRendering) {
+        if (this.isRendering) {
             return;
         }
 
@@ -87,7 +68,6 @@ export class VirtualScroller {
 
 
     private checkLiteUpdate(): { needUpdate: boolean; curTop: number; isFastMode: boolean; } {
-
         const curTop = window.scrollY || document.documentElement.scrollTop;
         const delta = Math.abs(curTop - this.lastTop) //Math.max(...this.scrollPositions.map(t => ));
         const threshold = TweetManager.EST_HEIGHT;
@@ -100,22 +80,6 @@ export class VirtualScroller {
     public bottomPad: HTMLElement | null = null;
     static readonly EXTRA_GAP = 120;
 
-    public ensureBottomPad(listHeight: number, buffer: number) {
-        if (!this.bottomPad) {          // 只在第一次创建
-            const pad = document.createElement('div');
-            pad.style.cssText = `
-           position:absolute;
-           left:0;
-           height:${VirtualScroller.EXTRA_GAP}px;
-           width:100%;
-           background:red;          /* 验证阶段可见，最终去掉 */
-           pointer-events:none;
-        `;
-            this.manager.timelineEl.appendChild(pad);
-            this.bottomPad = pad;
-        }
-        this.bottomPad!.style.top = `${listHeight + buffer}px`;   // 始终贴在最新底部
-    }
 
     private async mountAtStablePosition(startView: number, isFastMode: boolean) {
         logVS(`[mountAtStablePosition] start startView=${startView} lastTop=${this.lastTop}, fast=${isFastMode}`);
@@ -125,20 +89,17 @@ export class VirtualScroller {
             if (res.needScroll && typeof res.targetTop === 'number') {
                 this.scrollToTop(res.targetTop);
                 logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
-            } else {
-                this.lastTop = window.scrollY || document.documentElement.scrollTop;
-                this.isRendering = false;
-                logVS(`[mountAtStablePosition] updated lastTop=${this.lastTop} after stable mount`);
             }
         } finally {
-            // deferByFrames(() => {
-            //     logVS(`[mountAtStablePosition] isRendering=false set in next frame, scrollY=${window.scrollY}, lastTop=${this.lastTop}`);
-            // }, 6);
-            setTimeout(() => {
-                this.lastTop = window.scrollY;
+            deferByFrames(() => {
+                this.lastTop = window.scrollY || document.documentElement.scrollTop;
                 this.isRendering = false;
-                logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
-            }, 4_000)
+                logVS(`[mountAtStablePosition] isRendering=false set in next frame, scrollY=${window.scrollY}, lastTop=${this.lastTop}`);
+            }, 6);
+            // setTimeout(() => {
+            //     this.lastTop = window.scrollY;
+            //     logVS(`[mountAtStablePosition]1秒后: isRendering=${this.isRendering}  scrollY=${window.scrollY} scrollTop=${document.documentElement.scrollTop}    lastTop=${this.lastTop}`);
+            // }, 4_000)
         }
     }
 
