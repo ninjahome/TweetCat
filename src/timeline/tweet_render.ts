@@ -6,6 +6,7 @@ import {videoRender} from "./video_render";
 export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;
     tweetCellDiv.removeAttribute('id')
+    tweetCellDiv.style.overflowAnchor = 'none';
 
     const article = tweetCellDiv.querySelector('article');
     if (!article) return tweetCellDiv;

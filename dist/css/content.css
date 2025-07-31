@@ -164,6 +164,7 @@ img, video {
     will-change: transform;
     visibility: hidden;
     scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
+    overflow-anchor: none;
 }
 
 .tweet-cardfloat:hover {
