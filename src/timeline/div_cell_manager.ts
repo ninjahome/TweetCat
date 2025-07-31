@@ -43,7 +43,6 @@ export class TweetManager {
     ) {
         this.timelineEl.style.overscrollBehavior = "none";
         document.documentElement.style.overscrollBehavior = "none";
-        this.timelineEl.style.minHeight = '300vh';
         if (typeof history !== 'undefined' && 'scrollRestoration' in history) {
             logTweetMgn("------>>> disable auto scroll");
             history.scrollRestoration = 'manual';
@@ -60,6 +59,7 @@ export class TweetManager {
     async dispose() {
         this.timelineEl.innerHTML = "";
         this.timelineEl.style.removeProperty("height");
+        this.timelineEl.style.removeProperty("min-height");
 
         this.scroller?.dispose();
         this.scroller = null;
@@ -443,7 +443,7 @@ export class TweetManager {
 
         const minRequiredHeight = offset + window.innerHeight + this.bufferPx;
         const safeHeight = Math.max(minRequiredHeight, TweetManager.TWEET_LIME_HEIGHT);
-        this.timelineEl.style.height = `${safeHeight}px`;
+        this.timelineEl.style.minHeight = `${safeHeight}px`;
 
         logTweetMgn(`[finalizeListHeight] offset=${offset}, applied height=${safeHeight}`);
     }
