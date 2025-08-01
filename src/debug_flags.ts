@@ -1,29 +1,22 @@
+/** dbg.ts ---------------------------------------------------------- */
 export const DBG = {
-    MOUNT: false,
-    ANCHOR: false,
-    VIS: true,
-    CELL: false,
-    PAGER: false,
-    TWEET_MANAGER: true,
-    NODE_POOL: false,
-};
+    MOUNT:        false,
+    VIS:          true,
+    PAGER:        false,
+    TWEET_MANAGER:true,
+    NODE_POOL:    false,
+} as const;
 
-export function logMount(...args: any[]) {
-    if (DBG.MOUNT) console.log.apply(console, args);
+/** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
+function makeLogger(flagKey: keyof typeof DBG, label: string) {
+    return (...args: any[]) => {
+        if (DBG[flagKey]) console.log(`[${label}]`, ...args);
+    };
 }
 
-export function logPager(...args: any[]) {
-    if (DBG.PAGER) console.log.apply(console, args);
-}
-
-export function logPool(...args: any[]) {
-    if (DBG.NODE_POOL) console.log.apply(console, args);
-}
-
-export function logTweetMgn(...args: any[]) {
-    if (DBG.TWEET_MANAGER) console.log.apply(console, args);
-}
-
-export function logVS(...args: any[]) {
-    if (DBG.VIS) console.log.apply(console, args);
-}
+/* 导出各模块 logger ------------------------------------------------ */
+export const logMount       = makeLogger('MOUNT',         'TweetCellMount');
+export const logVS          = makeLogger('VIS',           'VirtualScroller');
+export const logPager       = makeLogger('PAGER',         'TweetDataPager');
+export const logTweetMgn    = makeLogger('TWEET_MANAGER', 'TweetMgr');
+export const logPool    = makeLogger('NODE_POOL',     'TweetNodePool');
