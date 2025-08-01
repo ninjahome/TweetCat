@@ -1,5 +1,6 @@
 import {MountResult, TweetManager} from "./div_cell_manager";
 import {logVS} from "../debug_flags";
+import {deferByFrames} from "../utils";
 
 export class VirtualScroller {
     private isRendering = false;
@@ -123,14 +124,3 @@ export class VirtualScroller {
     }
 }
 
-// utils/timing.ts
-export function deferByFrames(callback: () => void, frameCount: number = 3): void {
-    const step = (n: number) => {
-        if (n <= 1) {
-            requestAnimationFrame(() => callback());
-        } else {
-            requestAnimationFrame(() => step(n - 1));
-        }
-    };
-    step(frameCount);
-}

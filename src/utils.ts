@@ -222,3 +222,14 @@ export function formatTweetTime(
     }
     return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
 }
+
+export function deferByFrames(callback: () => void, frameCount: number = 3): void {
+    const step = (n: number) => {
+        if (n <= 1) {
+            requestAnimationFrame(() => callback());
+        } else {
+            requestAnimationFrame(() => step(n - 1));
+        }
+    };
+    step(frameCount);
+}
