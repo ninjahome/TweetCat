@@ -122,21 +122,26 @@ function setGrokSvg(html: string) {
     const svg = link?.querySelector('svg');
     if (!svg) return;
 
-    /* 用 template 替换 viewBox + path-d */
+    /* ------- 早退：已经是目标 viewBox 就什么也不做 ------- */
+    const wantedViewBox =
+        html.includes('viewBox="0 0 33 32"') ? '0 0 33 32' : '0 0 42 42';
+    if (svg.getAttribute('viewBox') === wantedViewBox) return;
+
+    /* ------- 真正执行替换 ------- */
     const tpl = document.createElement('template');
     tpl.innerHTML = html.trim();
-    const targetSvg = tpl.content.querySelector('svg')!;
+    const tgtSvg = tpl.content.querySelector('svg')!;
 
-    svg.setAttribute('viewBox', targetSvg.getAttribute('viewBox')!);
+    svg.setAttribute('viewBox', tgtSvg.getAttribute('viewBox')!);
+
     const curPath = svg.querySelector('path')!;
-    const tgtPath = targetSvg.querySelector('path')!;
-
-    // 复制核心属性
+    const tgtPath = tgtSvg.querySelector('path')!;
     ['d', 'clip-rule', 'fill-rule', 'stroke-width'].forEach(attr => {
-        const val = tgtPath.getAttribute(attr);
-        if (val !== null) curPath.setAttribute(attr, val);
+        const v = tgtPath.getAttribute(attr);
+        if (v !== null) curPath.setAttribute(attr, v);
     });
 }
+
 
 export const swapSvgToNormal = () => setGrokSvg(GROK_SVG_NORMAL);
 export const swapSvgToSelected = () => setGrokSvg(GROK_SVG_SELECTED);

@@ -1,7 +1,13 @@
 import {deferByFrames, observeSimple} from "../utils";
 import {parseContentHtml} from "../content";
 import {TweetManager} from "./div_cell_manager";
-import {handleGrokMenuClick, isInTweetCatRoute, navigateToTweetCat} from "./route_helper";
+import {
+    handleGrokMenuClick,
+    isInTweetCatRoute,
+    navigateToTweetCat,
+    swapSvgToNormal,
+    swapSvgToSelected
+} from "./route_helper";
 import {logGuard} from "../debug_flags";
 
 let manager: TweetManager | null = null;
@@ -22,9 +28,6 @@ function bindTweetCatMenu(menuItem: HTMLElement) {
 let mounted = false;
 
 function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
-
-    snapshotGrokSvg();
-
     const menuItem = tpl.content.getElementById('tweetCatMenuItem')!.cloneNode(true) as HTMLElement;
     const area = tpl.content.getElementById('tweetCatArea')!.cloneNode(true) as HTMLElement;
     area.style.display = 'none';
@@ -38,43 +41,11 @@ function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
 
     /* ---------- 生命周期 ----------------------------- */
     window.addEventListener('tc-mount', () => {
-
-        if (mounted) return;           // 已挂载则直接返回
-        mounted = true;
-
-        logGuard('<< tc-mount >>');
-        ensureGrokNormalIcon();
-        hideOriginalTweetArea(originalArea);
-        deferByFrames(() => {
-            demoteGrokFont()
-        }, 2)
-
-        area.style.display = 'block';
-        const timelineEl = area.querySelector('.tweetTimeline') as HTMLElement;
-
-        manager?.dispose();
-        manager = new TweetManager(timelineEl, tpl);
+        tcMount(area, originalArea, tpl);
     });
 
     window.addEventListener('tc-unmount', () => {
-
-        if (!mounted) return;          // 未挂载则忽略
-        mounted = false;
-
-        logGuard('<< tc-unmount >>');
-
-        stopWatchingGrok();
-
-        deferByFrames(() => {
-            swapSvgToSelected();
-            restoreGrokFont();
-            snapshotGrokSvg();
-        }, 2)
-
-        area.style.display = 'none';
-        showOriginalTweetArea(originalArea);
-        manager?.dispose();
-        manager = null;
+        tcUnmount(area, originalArea);
     });
 
     /* ---------- 首屏直链补发 --------------------------- */
@@ -87,7 +58,54 @@ function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
         window.dispatchEvent(new CustomEvent('tc-mount'));
     }
 
-    bindGrokMenuHook();
+    const grokLink = document.querySelector('a[href="/i/grok"]') as HTMLAnchorElement | null;
+    grokLink?.addEventListener('click', handleGrokMenuClick, {passive: false});
+}
+
+function stopWatchingGrok() {
+    grokMo?.disconnect();
+    grokMo = null;
+}
+
+function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplateElement) {
+    if (mounted) return;           // 已挂载则直接返回
+    mounted = true;
+
+    logGuard('<< tc-mount >>');
+    ensureGrokNormalIcon();
+    hideOriginalTweetArea(originalArea);
+    deferByFrames(demoteGrokFont, 2);
+
+    area.style.display = 'block';
+    const timelineEl = area.querySelector('.tweetTimeline') as HTMLElement;
+
+    manager?.dispose();
+    manager = new TweetManager(timelineEl, tpl);
+}
+
+function tcUnmount(area: HTMLElement, originalArea: HTMLElement) {
+    if (!mounted) return;          // 未挂载则忽略
+    mounted = false;
+
+    logGuard('<< tc-unmount >>');
+    stopWatchingGrok();
+
+    deferByFrames(() => {
+        const isNowInGrok = location.pathname === '/i/grok' &&
+            !location.hash.startsWith('#/tweetCatTimeLine');
+        if (isNowInGrok) {
+            swapSvgToSelected();
+            restoreGrokFont();
+        } else {
+            swapSvgToNormal();   // 保险再细化一次
+            demoteGrokFont();
+        }
+    }, 2)
+
+    area.style.display = 'none';
+    showOriginalTweetArea(originalArea);
+    manager?.dispose();
+    manager = null;
 }
 
 export function appendTweetCatMenuItem() {
@@ -100,13 +118,6 @@ export function appendTweetCatMenuItem() {
             return true;
         }
     );
-}
-
-function bindGrokMenuHook() {
-    const grokLink = document.querySelector('a[href="/i/grok"]') as HTMLAnchorElement | null;
-    if (!grokLink) return;
-
-    grokLink.addEventListener('click', handleGrokMenuClick, {passive: false});
 }
 
 /* ------------------------------------------------------------------
@@ -139,102 +150,17 @@ export function showOriginalTweetArea(el: HTMLElement) {
 }
 
 
-let grokSvgNormal = '';     // 未选中（细线）版
-let grokSvgSelected = '';    // 选中（粗线）版
-
-function snapshotGrokSvg() {
-    const link = document.querySelector('a[href="/i/grok"]') as HTMLElement | null;
-    const svg = link?.querySelector('svg') as SVGSVGElement | null;
-
-    if (!link || !svg) return;                         // ★ 提前返回，避免写空缓存
-
-    const viewBox = svg.getAttribute('viewBox') ?? '';
-    if (viewBox === '0 0 33 32') {                     // 细线 ⇒ 未选中
-        grokSvgNormal = svg.outerHTML;
-    } else if (viewBox === '0 0 42 42') {              // 粗线 ⇒ 选中
-        grokSvgSelected = svg.outerHTML;
-    }
-}
-
-/* 把指定 attrs 从 src 复制到 dst（若存在） */
-function syncAttrs(
-    src: Element,
-    dst: Element,
-    attrs: string[] = ['d', 'clip-rule', 'fill-rule']
-) {
-    attrs.forEach(name => {
-        const val = src.getAttribute(name);
-        if (val !== null) dst.setAttribute(name, val);
-    });
-}
-
-
 let grokMo: MutationObserver | null = null;
-
-function swapSvgToNormal() {
-    const link = document.querySelector('a[href="/i/grok"]');
-    const svg = link?.querySelector('svg');
-    if (!svg) return;
-
-    /* ★ 若当前是粗线，且未缓存过，先缓存粗图 */
-    if (svg.getAttribute('viewBox') === '0 0 42 42' && !grokSvgSelected) {
-        grokSvgSelected = svg.outerHTML;
-    }
-
-    /* 已是细线则返回 */
-    if (svg.getAttribute('viewBox') === '0 0 33 32') return;
-    if (!grokSvgNormal) return;                       // 细图仍未拿到 → 跳过
-
-    const tpl = document.createElement('template');
-    tpl.innerHTML = grokSvgNormal.trim();
-    const fineSvg = tpl.content.querySelector('svg')!;
-
-    /* ① viewBox */
-    svg.setAttribute('viewBox', fineSvg.getAttribute('viewBox')!);
-    /* ② path d + 规则属性 */
-    const curPath = svg.querySelector('path')!;
-    const finePath = fineSvg.querySelector('path')!;
-    syncAttrs(finePath, curPath, ['d', 'clip-rule', 'fill-rule']);
-}
-
-function swapSvgToSelected() {
-    if (!grokSvgSelected) return;                      // 粗图没缓存 → 跳过
-    const link = document.querySelector('a[href="/i/grok"]');
-    const svg = link?.querySelector('svg');
-    if (!svg) return;
-
-    if (svg.getAttribute('viewBox') === '0 0 42 42') return; // 已是粗线
-
-    const tpl = document.createElement('template');
-    tpl.innerHTML = grokSvgSelected.trim();
-    const selSvg = tpl.content.querySelector('svg')!;
-
-    svg.setAttribute('viewBox', selSvg.getAttribute('viewBox')!);
-
-    const curPath = svg.querySelector('path')!;
-    const selPath = selSvg.querySelector('path')!;
-    syncAttrs(selPath, curPath, ['d', 'clip-rule', 'fill-rule']);
-}
 
 /* 在 tc-mount 时调用：加两帧延迟 + MutationObserver */
 function ensureGrokNormalIcon() {
-    // 两帧后执行，避开 React 下一轮 commit
-    requestAnimationFrame(() => {
-        requestAnimationFrame(swapSvgToNormal);
-    });
-
+    deferByFrames(swapSvgToNormal, 2)
     // 再监听 Grok 按钮子树，如被 React 覆盖再兜回来
     if (grokMo) grokMo.disconnect();
     const link = document.querySelector('a[href="/i/grok"]');
     if (!link) return;
     grokMo = new MutationObserver(swapSvgToNormal);
     grokMo.observe(link, {childList: true, subtree: true, attributes: true});
-}
-
-/* 在 tc-unmount 时调用 */
-function stopWatchingGrok() {
-    grokMo?.disconnect();
-    grokMo = null;
 }
 
 
