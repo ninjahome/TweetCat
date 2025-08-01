@@ -560,3 +560,22 @@ span.duration-badge {
     object-fit: contain;
     display: block;
 }
+
+
+/* ---------- TweetCat 被选中时的统一类 ---------- */
+a.tweetCatMenuItem.tc-selected,
+a.tweetCatMenuItem.tc-selected:hover {
+    background-color: rgba(29, 155, 240, .1);   /* 背景淡蓝 */
+    border-radius: 9999px;                      /* 和官方一样的全圆角 */
+}
+
+/* 图标改成蓝色 */
+a.tweetCatMenuItem.tc-selected svg path {
+    fill: rgb(29, 155, 240);
+}
+
+/* 文本：蓝色 + 粗体 */
+a.tweetCatMenuItem.tc-selected .tweettabname {
+    color: rgb(29, 155, 240);
+    font-weight: 700;
+}

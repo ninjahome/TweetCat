@@ -42,9 +42,11 @@ function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
     /* ---------- 生命周期 ----------------------------- */
     window.addEventListener('tc-mount', () => {
         tcMount(area, originalArea, tpl);
+        menuItem.classList.add("tc-selected")
     });
 
     window.addEventListener('tc-unmount', () => {
+        menuItem.classList.remove("tc-selected")
         tcUnmount(area, originalArea);
     });
 
