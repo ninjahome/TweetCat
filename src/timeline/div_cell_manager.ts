@@ -44,11 +44,10 @@ export class TweetManager {
         this.timelineEl.style.overscrollBehavior = "none";
         document.documentElement.style.overscrollBehavior = "none";
         this.resizeLogger = new TweetResizeObserverManager();
-        initTweetPagerCache().then(() => {
-            logTweetMgn("------>>> tweet cache init success");
-        })
+        initTweetPagerCache().then()
         this.scroller = new VirtualScroller(this);
         this.scroller.initFirstPage().then();
+        logTweetMgn("------>>> tweet manager init success");
     }
 
     public scrollToTop(){
@@ -56,6 +55,7 @@ export class TweetManager {
     }
 
     async dispose() {
+        logTweetMgn("------>>> tweet manager disposed!");
         this.timelineEl.innerHTML = "";
         this.timelineEl.style.removeProperty("height");
         this.timelineEl.style.removeProperty("min-height");
