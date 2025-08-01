@@ -25,6 +25,7 @@ module.exports = (env, argv) => {
         entry: {
             background: path.resolve(__dirname, './src/background.ts'),
             welcome: path.resolve(__dirname, './src/welcome.ts'),
+            injection: path.resolve(__dirname, './src/injection.ts'),
             dashboard: path.resolve(__dirname, './src/dashboard.ts'),
             content: path.resolve(__dirname, './src/content.ts'),
             kol_mg: path.resolve(__dirname, './src/kol_mg.ts'),

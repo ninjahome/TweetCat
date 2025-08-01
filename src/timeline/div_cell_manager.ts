@@ -43,17 +43,16 @@ export class TweetManager {
     ) {
         this.timelineEl.style.overscrollBehavior = "none";
         document.documentElement.style.overscrollBehavior = "none";
-        if (typeof history !== 'undefined' && 'scrollRestoration' in history) {
-            logTweetMgn("------>>> disable auto scroll");
-            history.scrollRestoration = 'manual';
-        }
-
         this.resizeLogger = new TweetResizeObserverManager();
         initTweetPagerCache().then(() => {
             logTweetMgn("------>>> tweet cache init success");
         })
         this.scroller = new VirtualScroller(this);
         this.scroller.initFirstPage().then();
+    }
+
+    public scrollToTop(){
+        this.scroller?.scrollToTop({needScroll:true, targetTop:0})
     }
 
     async dispose() {

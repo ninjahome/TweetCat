@@ -1,56 +1,86 @@
 import {observeSimple} from "../utils";
 import {parseContentHtml} from "../content";
 import {TweetManager} from "./div_cell_manager";
+import {isInTweetCatRoute, navigateToTweetCat} from "./route_helper";
+import {logGuard} from "../debug_flags";
 
-const selfDefineUrl = "tweetCatTimeLine";
 let manager: TweetManager | null = null;
 
-/**
- * Route used when我们切换到自定义时间线时，写入到 location.hash
- */
 
-function bindReturnToOriginal(
-    menuList: HTMLElement,
-    area: HTMLElement,
-    originalArea: HTMLElement
-) {
-    menuList.querySelectorAll("a").forEach((a) => {
-        a.addEventListener("click", () => {
-            area.style.display = "none";
-            showOriginalTweetArea(originalArea);
-            manager?.dispose();
-        });
+function bindTweetCatMenu(menuItem: HTMLElement) {
+    menuItem.addEventListener("click", async (ev) => {
+        ev.preventDefault();
+        if (isInTweetCatRoute()) {
+            logGuard('reenter tweetCat menu');
+            manager?.scrollToTop();
+            return;
+        }
+        logGuard('menu click → routeToTweetCat');
+        navigateToTweetCat();
     });
 }
 
-function bindTweetCatMenu(
-    menuItem: HTMLElement,
-    area: HTMLElement,
-    originalArea: HTMLElement,
-    tpl: HTMLTemplateElement
-) {
-    const timelineEl = area.querySelector(".tweetTimeline") as HTMLElement;
-    menuItem.addEventListener("click", async (ev) => {
-        ev.preventDefault();
+function hideGrokUIOnce() {
+    if (document.getElementById('tc-hide-grok')) return;   // 已注入
+    const css = '[data-testid="grokChatPromptContainer"],' +
+        '[data-testid="grokChatRoot"]{display:none!important;}';
+    const style = document.createElement('style');
+    style.id = 'tc-hide-grok';
+    style.textContent = css;
+    document.head.appendChild(style);
+}
+
+let mounted = false;
+function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
+    const menuItem = tpl.content.getElementById('tweetCatMenuItem')!.cloneNode(true) as HTMLElement;
+    const area     = tpl.content.getElementById('tweetCatArea')!.cloneNode(true)  as HTMLElement;
+    area.style.display = 'none';
+
+    const main          = document.querySelector("main[role='main']") as HTMLElement;
+    const originalArea  = main.firstChild as HTMLElement;
+
+    bindTweetCatMenu(menuItem);
+    menuList.insertBefore(menuItem, menuList.children[1]);
+    main.insertBefore(area, originalArea);
+
+    /* ---------- 生命周期 ----------------------------- */
+    window.addEventListener('tc-mount', () => {
+
+        if (mounted) return;           // 已挂载则直接返回
+        mounted = true;
+
+        logGuard('<< tc-mount >>');
+        hideGrokUIOnce();
         hideOriginalTweetArea(originalArea);
-        area.style.display = "block";
-        history.replaceState({id: 123}, "", "/#/" + selfDefineUrl);
+
+        area.style.display = 'block';
+        const timelineEl = area.querySelector('.tweetTimeline') as HTMLElement;
+
         manager?.dispose();
         manager = new TweetManager(timelineEl, tpl);
     });
-}
 
-function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
-    const menuItem = tpl.content.getElementById("tweetCatMenuItem")!.cloneNode(true) as HTMLElement;
-    const area = tpl.content.getElementById("tweetCatArea")!.cloneNode(true) as HTMLElement;
-    const main = document.querySelector("main[role='main']") as HTMLElement;
-    const originalArea = main.firstChild as HTMLElement;
-    bindReturnToOriginal(menuList, area, originalArea);
-    bindTweetCatMenu(menuItem, area, originalArea, tpl);
-    menuList.insertBefore(menuItem, menuList.children[1]);
-    main.insertBefore(area, originalArea);
-}
+    window.addEventListener('tc-unmount', () => {
+        if (!mounted) return;          // 未挂载则忽略
+        mounted = false;
 
+        logGuard('<< tc-unmount >>');
+        area.style.display = 'none';
+        showOriginalTweetArea(originalArea);
+        manager?.dispose();
+        manager = null;
+    });
+
+    /* ---------- 首屏直链补发 --------------------------- */
+    const alreadyInTweetCat =
+        location.pathname === '/i/grok' &&
+        location.hash.startsWith('#/tweetCatTimeLine');
+
+    if (alreadyInTweetCat) {
+        logGuard('setup complete – dispatch synthetic tc-mount');
+        window.dispatchEvent(new CustomEvent('tc-mount'));
+    }
+}
 export function appendTweetCatMenuItem() {
     observeSimple(
         document.body,
