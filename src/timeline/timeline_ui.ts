@@ -1,7 +1,7 @@
 import {observeSimple} from "../utils";
 import {parseContentHtml} from "../content";
 import {TweetManager} from "./div_cell_manager";
-import {isInTweetCatRoute, navigateToTweetCat} from "./route_helper";
+import {handleGrokMenuClick, isInTweetCatRoute, navigateToTweetCat} from "./route_helper";
 import {logGuard} from "../debug_flags";
 
 let manager: TweetManager | null = null;
@@ -80,6 +80,8 @@ function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
         logGuard('setup complete – dispatch synthetic tc-mount');
         window.dispatchEvent(new CustomEvent('tc-mount'));
     }
+
+    bindGrokMenuHook();
 }
 export function appendTweetCatMenuItem() {
     observeSimple(
@@ -93,6 +95,12 @@ export function appendTweetCatMenuItem() {
     );
 }
 
+function bindGrokMenuHook() {
+    const grokLink = document.querySelector('a[href="/i/grok"]') as HTMLAnchorElement | null;
+    if (!grokLink) return;
+
+    grokLink.addEventListener('click', handleGrokMenuClick, { passive: false });
+}
 
 /* ------------------------------------------------------------------
  * DOM utils – 隐藏 / 显示原生 TimeLine

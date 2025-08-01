@@ -85,3 +85,14 @@ export function navigateToTweetCat(): void {
     // ③ 我们自己的挂载 / 去抖
     handleLocationChange();
 }
+
+export function handleGrokMenuClick(ev: MouseEvent): void {
+    if (!location.hash.startsWith(HASH)) return;  // 不在 TweetCat → 让 Twitter 处理
+
+    ev.preventDefault();                          // 阻止 Twitter 默认逻辑
+    logGuard('grok menu click → exitTweetCat');
+    history.replaceState({}, '', PATH);
+    logRoute('replaceState →', PATH);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    handleLocationChange();                              // 清除 hash + 派发 tc-unmount
+}
