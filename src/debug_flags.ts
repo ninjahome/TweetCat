@@ -1,12 +1,12 @@
 /** dbg.ts ---------------------------------------------------------- */
 export const DBG = {
     MOUNT: false,
-    VIS: false,
+    VIS: true,
     PAGER: false,
     TWEET_MANAGER: true,
     NODE_POOL: false,
-    ROUTE: true,    // ← 新增：路由相关
-    GUARD: true,    // ← 新增：guard 相关
+    ROUTE: false,    // ← 新增：路由相关
+    GUARD: false,    // ← 新增：guard 相关
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */

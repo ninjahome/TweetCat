@@ -126,7 +126,7 @@ export class TweetManager {
 
         let result = {needScroll: false};
         if (fastMode) result = await this.fastMountBatch(viewStart, viewportHeight);
-        // else result = await this.normalMountBatch(viewStart, viewportHeight);
+        else result = await this.normalMountBatch(viewStart, viewportHeight);
 
         logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms `
             + `  height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.minHeight}`);
