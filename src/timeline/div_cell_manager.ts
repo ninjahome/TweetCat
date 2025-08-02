@@ -1,7 +1,3 @@
-/* ------------------------------------------------------------------
- * 核心 Manager —— 缓存 TweetCatCell + 顺推 offset + 加载更多
- * ------------------------------------------------------------------*/
-
 import {TweetCatCell} from "./tweet_div_cell";
 import {
     getNextTweets,
@@ -188,10 +184,9 @@ export class TweetManager {
             this.heights[i] = realH;
             this.offsets[i] = offset;
             cell.node.style.transform = `translateY(${offset}px)`;
+            logTweetMgn(`[fastMountBatch] cell[${i}] mounted at offset=${offset}, height=${realH}`);
             offset += realH;
             this.resizeLogger.observe(cell.node, i, this.updateHeightAt);
-
-            logTweetMgn(`[fastMountBatch] cell[${i}] mounted at offset=${offset}, height=${realH}`);
         }
 
         // 卸载窗口外的节点
@@ -328,15 +323,17 @@ export class TweetManager {
             this.heights[i] = realH;
             this.offsets[i] = offset;
             cell.node.style.transform = `translateY(${offset}px)`;
-            offset += realH;
 
+            logTweetMgn(`[normalMountBatch] mounted cell[${i}] at offset=${offset}, height=${realH}`);
+            offset += realH;
             this.resizeLogger.observe(cell.node, i, this.updateHeightAt);
-            logTweetMgn(`[normalMountBatch] mounted cell[${i}] at offset=${offset - realH}, height=${realH}`);
         }
 
         // 卸载窗口外的节点
         this.unmountCellsBefore(startIdx);
         this.unmountCellsAfter(endIndex);
+
+        if (this.cells[startIdx].node.previousSibling) this.reorderMountedNodes(startIdx, endIndex)
 
         // 更新容器高度
         this.finalizeListHeight(offset);
@@ -345,6 +342,17 @@ export class TweetManager {
 
         return {needScroll: false};
     }
+
+    private reorderMountedNodes(startIdx: number, endIndex: number) {
+        // 在 normal/fastMountBatch 完成高度计算后，加这一段
+        const fragment = document.createDocumentFragment();
+        for (let i = startIdx; i < endIndex; i++) {
+            fragment.appendChild(this.cells[i].node); // 已挂载节点会被“移动”
+        }
+        this.timelineEl.appendChild(fragment);
+
+    }
+
 
     private isSameWindow(curStart: number, curEnd: number): boolean {
         if (!this.lastWindow) return false;
