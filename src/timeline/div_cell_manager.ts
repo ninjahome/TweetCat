@@ -22,6 +22,7 @@ export class TweetManager {
     private scroller: VirtualScroller | null = null;
     private cells: TweetCatCell[] = [];
     public listHeight: number = 0;
+    private maxCssHeight: number = 0;
     private heights: number[] = [];
     private offsets: number[] = [0];
     public static readonly EST_HEIGHT = 500;
@@ -67,6 +68,7 @@ export class TweetManager {
         this.heights.length = 0;
         this.offsets = [0];
         this.listHeight = 0;
+        this.maxCssHeight = 0;
 
         await resetTweetPager();
 
@@ -401,15 +403,21 @@ export class TweetManager {
     }
 
     private finalizeListHeight(offset: number) {
+        // 1. 记录逻辑高度
         this.offsets[this.cells.length] = offset;
         this.listHeight = offset;
 
+        // 2. 计算本次「安全高度」
         const minRequiredHeight = offset + window.innerHeight + this.bufferPx;
         const safeHeight = Math.max(minRequiredHeight, TweetManager.TWEET_LIME_HEIGHT);
-        this.timelineEl.style.minHeight = `${safeHeight}px`;
 
-        logTweetMgn(`[finalizeListHeight] offset=${offset}, applied height=${safeHeight}`);
+        // 3. 只取历史最大值
+        this.maxCssHeight = Math.max(this.maxCssHeight, safeHeight);
+        this.timelineEl.style.minHeight = `${this.maxCssHeight}px`;
+
+        logTweetMgn(`[finalizeListHeight] offset=${offset}, applied height=${this.maxCssHeight}`);
     }
+
 }
 
 
