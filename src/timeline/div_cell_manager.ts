@@ -13,7 +13,6 @@ import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../debug_flags";
 import {TweetResizeObserverManager} from "./tweet_resize_observer";
 import {findCellFromNode} from "./div_node_pool";
-import {action} from "webextension-polyfill";
 
 export interface MountResult {
     needScroll: boolean;
@@ -37,6 +36,7 @@ export class TweetManager {
     private static readonly EXTRA_BUFFER_COUNT = 4;
     private static readonly MIN_TWEETS_COUNT = 6;
     private static readonly TWEET_LIME_HEIGHT = 20400;
+    private static readonly MAX_LOOK_BACK = 6;
 
     constructor(
         public readonly timelineEl: HTMLElement,
@@ -90,7 +90,7 @@ export class TweetManager {
     public updateHeightAt = (idx: number, newH: number): void => {
         const oldH = this.heights[idx] ?? TweetManager.EST_HEIGHT;
         const delta = newH - oldH;
-        if (Math.abs(delta) < 1) return;
+        if (Math.abs(delta) < 20) return;
 
         this.heights[idx] = newH;
 
@@ -125,7 +125,7 @@ export class TweetManager {
         const t0 = performance.now();
         const oldListHeight = this.listHeight;
 
-        let result = {needScroll: false};
+        let result: { needScroll: boolean };
         if (fastMode) result = await this.fastMountBatch(viewStart, viewportHeight);
         else result = await this.normalMountBatch(viewStart, viewportHeight);
 
@@ -263,11 +263,9 @@ export class TweetManager {
         return this.offsets[index] !== undefined && this.heights[index] !== undefined;
     }
 
-
     private resolveMountStartIdx(startIdx: number): number {
         if (this.hasUsableOffset(startIdx)) return startIdx;
-        const MAX_LOOKBACK = 4;
-        for (let i = startIdx - 1; i >= 0 && i >= startIdx - MAX_LOOKBACK; i--) {
+        for (let i = startIdx - 1; i >= 0 && i >= startIdx - TweetManager.MAX_LOOK_BACK; i--) {
             if (this.hasUsableOffset(i)) {
                 logTweetMgn(`[resolveMountStartIdx] fixed start index to:[${i}]`);
                 return i;
@@ -275,7 +273,6 @@ export class TweetManager {
         }
         return startIdx;
     }
-
 
     private async normalMountBatch(viewStart: number, viewportHeight: number): Promise<MountResult> {
         const estH = TweetManager.EST_HEIGHT;
@@ -309,8 +306,6 @@ export class TweetManager {
 
         this.lastWindow = {s: startIdx, e: endIndex};
         logTweetMgn(`[normalMountBatch] mounting cells index: [${startIdx}, ${endIndex})`);
-
-
 
         const mountedNodes: HTMLElement[] = [];
         for (let i = startIdx; i < endIndex; i++) {
