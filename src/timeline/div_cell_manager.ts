@@ -310,6 +310,9 @@ export class TweetManager {
             }
             mountedNodes.push(cell.node);
         }
+
+        if (this.cells[startIdx].node.previousSibling) this.reorderMountedNodes(startIdx, endIndex)
+
         await waitStableAll(mountedNodes);
         logTweetMgn(`[normalMountBatch]  node number to mount [${mountedNodes.length}] `);
 
@@ -330,8 +333,6 @@ export class TweetManager {
         // 卸载窗口外的节点
         this.unmountCellsBefore(startIdx);
         this.unmountCellsAfter(endIndex);
-
-        if (this.cells[startIdx].node.previousSibling) this.reorderMountedNodes(startIdx, endIndex)
 
         // 更新容器高度
         this.finalizeListHeight(offset);
