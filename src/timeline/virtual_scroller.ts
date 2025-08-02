@@ -9,7 +9,6 @@ export class VirtualScroller {
 
     private onScrollBound?: () => void;
     private pendingMountTimer: number | null = null;
-    private static readonly FAST_RATIO = 3;
     private static readonly STABILIZE_DELAY = 80;  // ms
     private static readonly BACKOFF_STEP = 20;      // 每次重试额外增加的延时
     private unstableTries = 0;
@@ -39,7 +38,7 @@ export class VirtualScroller {
 
     public async initFirstPage() {
         this.isRendering = true;
-        await this.manager.mountBatch(0, TweetManager.EST_HEIGHT * VirtualScroller.FAST_RATIO, true);
+        await this.manager.mountBatch(0, TweetManager.EST_HEIGHT * 3);
         this.isRendering = false;
         window.scrollTo(0, 0);
         this.lastTop = 0;
@@ -51,10 +50,10 @@ export class VirtualScroller {
             return;
         }
 
-        const {needUpdate, curTop, isFastMode} = this.scrollStatusCheck();
+        const {needUpdate, curTop} = this.scrollStatusCheck();
         if (!needUpdate) return;
 
-        logVS(`[onScroll]need to update curTop=${curTop}, lastTop=${this.lastTop}, maxDelta=${this.lastTop - curTop}, fast=${isFastMode}`);
+        logVS(`[onScroll]need to update curTop=${curTop}, lastTop=${this.lastTop}, maxDelta=${this.lastTop - curTop}`);
 
         this.isRendering = true;
         this.lastTop = curTop;
@@ -79,13 +78,12 @@ export class VirtualScroller {
         this.lastTop = 0;
     }
 
-    private scrollStatusCheck(): { needUpdate: boolean; curTop: number; isFastMode: boolean; } {
+    private scrollStatusCheck(): { needUpdate: boolean; curTop: number} {
         const curTop = window.scrollY || document.documentElement.scrollTop;
         const delta = Math.abs(curTop - this.lastTop) //Math.max(...this.scrollPositions.map(t => ));
         const threshold = TweetManager.EST_HEIGHT;
-        const isFastMode = delta >= VirtualScroller.FAST_RATIO * threshold;
         const needUpdate = delta >= threshold;
-        return {needUpdate, curTop, isFastMode};
+        return {needUpdate, curTop};
     }
 
     private scheduleMountAtStablePosition(startTop: number) {
@@ -106,8 +104,7 @@ export class VirtualScroller {
 
             if (delta <= TweetManager.EST_HEIGHT) {
                 this.unstableTries = 0;
-                const isFastMode = Math.abs(latestTop - this.lastTop) >= VirtualScroller.FAST_RATIO * TweetManager.EST_HEIGHT;
-                const res = await this.manager.mountBatch(this.lastDetectedTop, window.innerHeight, isFastMode);
+                const res = await this.manager.mountBatch(this.lastDetectedTop, window.innerHeight);
                 this.scrollToTop(res)
             } else if (tries < VirtualScroller.MAX_TRIES) {
                 logVS(`[scheduleMountAtStablePosition] unstable(delta=${delta}) retry #${tries}  latestTop=${latestTop}, lastDetectedTop=${this.lastDetectedTop}`);

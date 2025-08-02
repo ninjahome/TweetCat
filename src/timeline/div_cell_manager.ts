@@ -117,37 +117,45 @@ export class TweetManager {
         logTweetMgn(`[updateHeightAt] cell[${idx}] height updated: ${oldH} -> ${newH}, delta=${delta}`);
     };
 
-    async mountBatch(viewStart: number, viewportHeight: number, fastMode: boolean = false): Promise<MountResult> {
-        logTweetMgn(`[mountBatch] batch mount: viewStart=${viewStart}  viewportHeight=${viewportHeight} fastMode=${fastMode}`);
+    async mountBatch(viewStart: number, viewportHeight: number): Promise<MountResult> {
+        logTweetMgn(`[mountBatch] batch mount: viewStart=${viewStart}  viewportHeight=${viewportHeight} `);
 
         const t0 = performance.now();
         const oldListHeight = this.listHeight;
 
         let result: { needScroll: boolean };
-        if (fastMode) result = await this.fastMountBatch(viewStart, viewportHeight);
-        else result = await this.normalMountBatch(viewStart, viewportHeight);
+        let startIdx, endIndex;
+        let fastMode: boolean = false
+        const derived = this.deriveWindowFromMountedNodes();
+        if (!derived) {
+            fastMode = true;
+            [startIdx, endIndex] = this.estimateWindow(viewStart, viewportHeight);
+        } else {
+            [startIdx, endIndex] = derived;
+        }
+
+        if (this.isSameWindow(startIdx, endIndex)) {
+            logTweetMgn(`[mountBatch] skip same window window=(${startIdx},${endIndex})`);
+            return {needScroll: false};
+        }
+
+        logTweetMgn(`[fastMountBatch] startIdx=${startIdx}, endIndex=${endIndex}, cells.length=${this.cells.length}  fastMode=${fastMode}`);
+
+        if (fastMode) result = await this.fastMountBatch(startIdx, endIndex);
+        else result = await this.normalMountBatch(startIdx, endIndex);
 
         logTweetMgn(`[mountBatch] cost=${(performance.now() - t0).toFixed(1)}ms `
             + `  height: ${oldListHeight} -> ${this.listHeight}, cssHeight=${this.timelineEl.style.minHeight}`);
         return result;
     }
 
-    private async fastMountBatch(viewStart: number, viewportHeight: number): Promise<MountResult> {
-
-        let [startIdx, endIndex] = this.estimateWindow(viewStart, viewportHeight);
-
-        logTweetMgn(`[fastMountBatch] startIdx=${startIdx}, endIndex=${endIndex}, cells.length=${this.cells.length}`); // <-- 这里！
+    private async fastMountBatch(startIdx: number, endIndex: number): Promise<MountResult> {
 
         if (endIndex > this.cells.length) {
             const needCount = endIndex - this.cells.length;
             logTweetMgn(`[fastMountBatch] need to load ${needCount} more tweets`);
             await this.loadAndRenderTweetCell(needCount);
             endIndex = Math.min(endIndex, this.cells.length);
-        }
-
-        if (this.isSameWindow(startIdx, endIndex)) {
-            logTweetMgn(`[fastMountBatch] skip same window window=(${startIdx},${endIndex})`);
-            return {needScroll: false};
         }
 
         this.lastWindow = {s: startIdx, e: endIndex};
@@ -261,35 +269,24 @@ export class TweetManager {
     }
 
     private resolveMountStartIdx(startIdx: number): number {
-        if (this.hasUsableOffset(startIdx)) return startIdx;
-        for (let i = startIdx - 1; i >= 0 && i >= startIdx - TweetManager.MAX_LOOK_BACK; i--) {
+        if (this.hasUsableOffset(startIdx)) {
+            logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ✅ anchor OK`);
+            return startIdx;
+        }
+        for (let i = startIdx - 1;
+             i >= 0 && i >= startIdx - TweetManager.MAX_LOOK_BACK;
+             i--) {
             if (this.hasUsableOffset(i)) {
-                logTweetMgn(`[resolveMountStartIdx] fixed start index to:[${i}]`);
+                logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ➡️ fallback→${i}`);
                 return i;
             }
         }
+        logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ❌ NO anchor`);
         return startIdx;
     }
 
-    private async normalMountBatch(viewStart: number, viewportHeight: number): Promise<MountResult> {
+    private async normalMountBatch(startIdx: number, endIndex: number): Promise<MountResult> {
         const estH = TweetManager.EST_HEIGHT;
-        const derived = this.deriveWindowFromMountedNodes();
-        let startIdx: number, endIndex: number;
-
-        if (derived) {
-            [startIdx, endIndex] = derived;
-            logTweetMgn(`[normalMountBatch] derived window: [${startIdx}, ${endIndex})`);
-        } else {
-            [startIdx, endIndex] = this.estimateWindow(viewStart, viewportHeight);
-            logTweetMgn(`[normalMountBatch] fallback estimate window: [${startIdx}, ${endIndex})`);
-        }
-
-        const sameWindow = this.isSameWindow(startIdx, endIndex);
-        if (sameWindow) {
-            logTweetMgn(`[normalMountBatch] skip same window: current=[${startIdx},${endIndex})`
-                + ` within lastWindow=[${this.lastWindow!.s},${this.lastWindow!.e})`);
-            return {needScroll: false};
-        }
 
         const cellLen = this.cells.length;
         if (endIndex > cellLen) {
@@ -324,9 +321,8 @@ export class TweetManager {
             cell.height = realH;
             this.heights[i] = realH;
             this.offsets[i] = offset;
+            logTweetMgn(`[normalMountBatch] cell[${i}] prevTransform=${cell.node.style.transform} -> applying offset=${offset} , height=${realH}`);
             cell.node.style.transform = `translateY(${offset}px)`;
-
-            logTweetMgn(`[normalMountBatch] mounted cell[${i}] at offset=${offset}, height=${realH}`);
             offset += realH;
             this.resizeLogger.observe(cell.node, i, this.updateHeightAt);
         }
