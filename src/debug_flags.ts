@@ -1,18 +1,20 @@
 /** dbg.ts ---------------------------------------------------------- */
+const __DEV__ = process.env.NODE_ENV !== 'production'
+
 export const DBG = {
     MOUNT: false,
-    VIS: false,
+    VIS: true,
     PAGER: false,
-    TWEET_MANAGER: false,
+    TWEET_MANAGER: true,
     NODE_POOL: false,
-    ROUTE: true,    // ← 新增：路由相关
-    GUARD: true,    // ← 新增：guard 相关
+    ROUTE: false,    // ← 新增：路由相关
+    GUARD: false,    // ← 新增：guard 相关
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
 function makeLogger(flagKey: keyof typeof DBG, label: string) {
     return (...args: any[]) => {
-        if (DBG[flagKey]) console.log(`[${label}]`, ...args);
+        if (DBG[flagKey] && __DEV__) console.log(`[${label}]`, ...args);
     };
 }
 
