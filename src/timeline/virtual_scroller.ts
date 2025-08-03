@@ -38,7 +38,7 @@ export class VirtualScroller {
 
     public async initFirstPage() {
         this.isRendering = true;
-        await this.manager.mountBatch(0, TweetManager.EST_HEIGHT * 3);
+        await this.manager.mountBatch(0);
         this.isRendering = false;
         window.scrollTo(0, 0);
         this.lastTop = 0;
@@ -104,7 +104,7 @@ export class VirtualScroller {
 
             if (delta <= TweetManager.EST_HEIGHT) {
                 this.unstableTries = 0;
-                const res = await this.manager.mountBatch(this.lastDetectedTop, window.innerHeight);
+                const res = await this.manager.mountBatch(this.lastDetectedTop);
                 this.scrollToTop(res)
             } else if (tries < VirtualScroller.MAX_TRIES) {
                 logVS(`[scheduleMountAtStablePosition] unstable(delta=${delta}) retry #${tries}  latestTop=${latestTop}, lastDetectedTop=${this.lastDetectedTop}`);
