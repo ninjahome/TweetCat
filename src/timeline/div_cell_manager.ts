@@ -73,7 +73,6 @@ export class TweetManager {
 
         this.cells.forEach(c => c.unmount());
 
-        // 清空数据结构
         this.cells.length = 0;
         this.heights.length = 0;
         this.offsets = [0];
@@ -338,10 +337,6 @@ export class TweetManager {
         logTweetMgn(`[normalMountBatch] done, listHeight=${this.listHeight}, scrollTop=${window.scrollY} anchorDelta=${anchorDelta}`);
         const needScroll = Math.abs(anchorDelta) >= 10
         return {needScroll: needScroll, targetTop: window.scrollY + anchorDelta};
-        // if (needScroll){
-        //     window.scrollTo(0, window.scrollY + anchorDelta);
-        // }
-        // return {needScroll:false}
     }
 
     private reorderMountedNodes(startIdx: number, endIndex: number) {
@@ -415,23 +410,15 @@ export class TweetManager {
         if (!matchedCell) return null;
 
         return matchedCell.index;
-
-        // const centerIdx = matchedCell.index;
-        // const startIdx = Math.max(0, centerIdx - EXPAND);
-        // logTweetMgn(`[deriveWindowFromMountedNodes], centerIdx=${centerIdx}, startIdx=${startIdx}`);
-        // return [startIdx, startIdx + MIN_COUNT];
     }
 
     private finalizeListHeight(offset: number) {
-        // 1. 记录逻辑高度
         this.offsets[this.cells.length] = offset;
         this.listHeight = offset;
 
-        // 2. 计算本次「安全高度」
         const minRequiredHeight = offset + window.innerHeight + this.bufferPx;
         const safeHeight = Math.max(minRequiredHeight, TweetManager.TWEET_LIME_HEIGHT);
 
-        // 3. 只取历史最大值
         this.maxCssHeight = Math.max(this.maxCssHeight, safeHeight);
         this.timelineEl.style.minHeight = `${this.maxCssHeight}px`;
 
