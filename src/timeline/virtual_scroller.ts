@@ -18,10 +18,10 @@ export class VirtualScroller {
         if (res.needScroll && typeof res.targetTop === 'number') {
             const pos = res.targetTop
             deferByFrames(() => {
-                logVS(`[scrollToTop] start to scroll to ${pos}`);
                 window.scrollTo(0, pos);
                 this.lastTop = pos;
                 this.isRendering = false;
+                logVS(`[scrollToTop] start to scroll to ${pos} current scrollY=${window.scrollY}`);
             }, 2);
             logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
         } else {
