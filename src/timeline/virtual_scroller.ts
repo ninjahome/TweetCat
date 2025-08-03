@@ -17,12 +17,12 @@ export class VirtualScroller {
     public scrollToTop(res: MountResult) {
         if (res.needScroll && typeof res.targetTop === 'number') {
             const pos = res.targetTop
-            deferByFrames(() => {
-                window.scrollTo(0, pos);
-                this.lastTop = pos;
-                this.isRendering = false;
-                logVS(`[scrollToTop] start to scroll to ${pos} current scrollY=${window.scrollY}`);
-            }, 2);
+            window.scrollTo(0, pos);
+            this.lastTop = pos;
+            this.isRendering = false;
+            logVS(`[scrollToTop] start to scroll to ${pos} current scrollY=${window.scrollY}`);
+            // deferByFrames(() => {
+            // }, 2);
             logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
         } else {
             this.lastTop = window.scrollY || document.documentElement.scrollTop;

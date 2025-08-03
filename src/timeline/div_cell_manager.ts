@@ -252,26 +252,6 @@ export class TweetManager {
         return this.offsets[index] !== undefined && this.heights[index] !== undefined;
     }
 
-    private resolveMountStartIdx(startIdx: number): [number, number] {
-        if (this.hasUsableOffset(startIdx)) {
-            const offset = this.offsets[startIdx]!;
-            logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ✅ anchor OK offset=${offset}`);
-            return [startIdx, offset];
-        }
-
-        for (let i = startIdx - 1; i >= 0 && i >= startIdx - TweetManager.MAX_LOOK_BACK; i--) {
-            if (this.hasUsableOffset(i)) {
-                const offset = this.offsets[i]!;
-                logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ➡️ fallback→${i} offset=${offset}`);
-                return [i, offset];
-            }
-        }
-
-        logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ❌ NO anchor`);
-        return [startIdx, -1];
-    }
-
-
     private async normalMountBatch(centerIdx: number): Promise<MountResult> {
 
         const EXPAND = TweetManager.EXTRA_BUFFER_COUNT / 2;
@@ -332,7 +312,6 @@ export class TweetManager {
             const cell = this.cells[i];
             const realH = cell.node.offsetHeight || estH;
 
-            // 检查是否真的需要更新
             const prevOffset = this.offsets[i];
             const prevHeight = this.heights[i];
             const needsUpdate = offset !== prevOffset || realH !== prevHeight;
@@ -342,7 +321,7 @@ export class TweetManager {
                 this.heights[i] = realH;
                 this.offsets[i] = offset;
                 cell.node.style.transform = `translateY(${offset}px)`;
-                logTweetMgn(`[normalMountBatch] adjust offset and height: cell[${i}] prevOffset=${prevOffset}, prevHeight=${prevHeight} -> offset=${offset}, height=${realH}`);
+                logTweetMgn(`[normalMountBatch] cell[${i}] previous={o:${prevOffset},h:${prevHeight}} -> {0:${offset}, h:${realH}}`);
             }
 
             offset += realH;
@@ -357,7 +336,12 @@ export class TweetManager {
 
         const anchorDelta = this.offsets[centerIdx] - anchorOffset;
         logTweetMgn(`[normalMountBatch] done, listHeight=${this.listHeight}, scrollTop=${window.scrollY} anchorDelta=${anchorDelta}`);
-        return {needScroll: false};
+        const needScroll = Math.abs(anchorDelta) >= 10
+        return {needScroll: needScroll, targetTop: window.scrollY + anchorDelta};
+        // if (needScroll){
+        //     window.scrollTo(0, window.scrollY + anchorDelta);
+        // }
+        // return {needScroll:false}
     }
 
     private reorderMountedNodes(startIdx: number, endIndex: number) {
