@@ -33,7 +33,7 @@ export class TweetManager {
     private static readonly EXTRA_BUFFER_COUNT = 4;
     private static readonly MIN_TWEETS_COUNT = 6;
     private static readonly TWEET_LIME_HEIGHT = 20400;
-    private static readonly MAX_LOOK_BACK = 6;
+    private static readonly MAX_LOOK_BACK = 4;
 
     constructor(
         public readonly timelineEl: HTMLElement,
@@ -268,22 +268,25 @@ export class TweetManager {
         return this.offsets[index] !== undefined && this.heights[index] !== undefined;
     }
 
-    private resolveMountStartIdx(startIdx: number): number {
+    private resolveMountStartIdx(startIdx: number): [number, number] {
         if (this.hasUsableOffset(startIdx)) {
-            logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ✅ anchor OK`);
-            return startIdx;
+            const offset = this.offsets[startIdx]!;
+            logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ✅ anchor OK offset=${offset}`);
+            return [startIdx, offset];
         }
-        for (let i = startIdx - 1;
-             i >= 0 && i >= startIdx - TweetManager.MAX_LOOK_BACK;
-             i--) {
+
+        for (let i = startIdx - 1; i >= 0 && i >= startIdx - TweetManager.MAX_LOOK_BACK; i--) {
             if (this.hasUsableOffset(i)) {
-                logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ➡️ fallback→${i}`);
-                return i;
+                const offset = this.offsets[i]!;
+                logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ➡️ fallback→${i} offset=${offset}`);
+                return [i, offset];
             }
         }
+
         logTweetMgn(`[ANALYZE] resolveMountStartIdx: idx=${startIdx} ❌ NO anchor`);
-        return startIdx;
+        return [startIdx, -1];
     }
+
 
     private async normalMountBatch(startIdx: number, endIndex: number): Promise<MountResult> {
         const estH = TweetManager.EST_HEIGHT;
@@ -296,7 +299,8 @@ export class TweetManager {
             endIndex = Math.min(endIndex, cellLen);
         }
 
-        startIdx = this.resolveMountStartIdx(startIdx);
+        const [resolvedStartIdx, knownOffset] = this.resolveMountStartIdx(startIdx);
+        startIdx = resolvedStartIdx;
 
         this.lastWindow = {s: startIdx, e: endIndex};
         logTweetMgn(`[normalMountBatch] mounting cells index: [${startIdx}, ${endIndex})`);
@@ -316,7 +320,13 @@ export class TweetManager {
         await waitStableAll(mountedNodes);
         logTweetMgn(`[normalMountBatch]  node number to mount [${mountedNodes.length}] `);
 
-        let offset = this.offsets[startIdx] ?? startIdx * estH;
+        let offset: number;
+        if (knownOffset >= 0) {
+            offset = knownOffset;
+        } else {
+            offset = startIdx * estH;
+        }
+
         logTweetMgn(`[normalMountBatch]   start offset=${offset}`);
         for (let i = startIdx; i < endIndex; i++) {
             const cell = this.cells[i];
@@ -349,9 +359,7 @@ export class TweetManager {
             fragment.appendChild(this.cells[i].node); // 已挂载节点会被“移动”
         }
         this.timelineEl.appendChild(fragment);
-
     }
-
 
     private isSameWindow(curStart: number, curEnd: number): boolean {
         if (!this.lastWindow) return false;
