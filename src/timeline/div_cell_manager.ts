@@ -36,14 +36,12 @@ export class TweetManager {
     private heights: number[] = [];
     private offsets: number[] = [0];
     public static readonly EST_HEIGHT = 500;
-    private static readonly PAGE_SIZE = 30;
     private static readonly MaxTweetOnce = 30;
     public readonly bufferPx = TweetManager.EST_HEIGHT * 4;
     private lastWindow?: { s: number; e: number };
     private static readonly EXTRA_BUFFER_COUNT = 4;
     private static readonly MIN_TWEETS_COUNT = 6;
     private static readonly TWEET_LIME_HEIGHT = 20400;
-    private static readonly MAX_LOOK_BACK = 4;
 
     constructor(
         public readonly timelineEl: HTMLElement,
@@ -204,7 +202,7 @@ export class TweetManager {
             : {needScroll: false};
     }
 
-    private async loadAndRenderTweetCell(pageSize: number = TweetManager.PAGE_SIZE) {
+    private async loadAndRenderTweetCell(pageSize: number = TweetManager.MaxTweetOnce) {
         if (this.isRendering) return;
         this.isRendering = true;
 
