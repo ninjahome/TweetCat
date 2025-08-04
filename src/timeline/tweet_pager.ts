@@ -6,7 +6,7 @@ import {logPager} from "../debug_flags";
 import {fetchTweets} from "./twitter_api";
 import {sendMsgToService} from "../utils";
 import {MsgType} from "../consts";
-import {loadCachedTweetsByUserId, WrapEntryObj} from "./db_raw_tweet";
+import {WrapEntryObj} from "./db_raw_tweet";
 
 /* ------------------------------------------------------------------ *
  * 内部状态
@@ -122,15 +122,15 @@ async function fetchBatch(batchSize: number): Promise<number> {
         let end = false;
 
         try {
-            // const r = await fetchTweets(userID, batchSize, nextCursor ?? undefined);
-            // tweets = r.tweets ?? [];
-            // nc = r.nextCursor ?? null;
-            // end = tweets.length === 0 || nextCursor === null;
-            // sendMsgToService(r.wrapDbEntry, MsgType.CacheRawTweetData).then();
+            const r = await fetchTweets(userID, batchSize, nextCursor ?? undefined);
+            tweets = r.tweets ?? [];
+            nc = r.nextCursor ?? null;
+            end = tweets.length === 0 || nextCursor === null;
+            sendMsgToService(r.wrapDbEntry, MsgType.CacheRawTweetData).then();
 
-            tweets = await loadByKolId(userID, batchSize);
-            nc = null;
-            end = true;
+            // tweets = await loadByKolId(userID, batchSize);
+            // nc = null;
+            // end = true;
 
         } catch (err) {
             logPager('[Pager] fetchBatch ERROR %o', err);
@@ -209,4 +209,9 @@ async function loadByKolId(kolId: string, limit: number = 10): Promise<EntryObj[
     }
     const rawData = rsp.data as WrapEntryObj[];
     return rawData.map(row => WrapEntryObj.fromDbRow(row).toEntryObj());
+}
+
+async function loadCachedTweetsByCategory(categoryId: string, limit = 20): Promise<EntryObj[]> {
+    const data: EntryObj[] = []
+    return data;
 }
