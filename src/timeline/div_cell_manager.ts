@@ -149,38 +149,38 @@ export class TweetManager {
 
         this.lastWindow = {s: startIdx, e: endIndex};
 
-        logTweetMgn(`[fastMountBatch] rendering cells index: [${startIdx}, ${endIndex})`);
-
         const estH = TweetManager.EST_HEIGHT;
         let offset = this.offsets[startIdx] ?? (startIdx * estH);
-        logTweetMgn(`[fastMountBatch] init offset: ${offset} for startIndex=${startIdx}`);
-
-        const firstOffset = this.offsets[startIdx] ?? -1;
-        const firstHeight = this.heights[startIdx] ?? -1;
-        logTweetMgn(`[fastMountBatch] before mount: startIdx=${startIdx}, offset=${firstOffset}, 
-        height=${firstHeight}, current scrollTop=${window.scrollY}`);
+        logTweetMgn(`[fastMountBatch] prepare mounting range[${startIdx}, ${endIndex}) startOffset=${offset}, current scrollTop=${window.scrollY}`);
 
         const mountPromises: Promise<HTMLElement>[] = [];
         for (let i = startIdx; i < endIndex; i++) {
             const cell = this.cells[i];
             if (!cell.node?.isConnected) {
                 mountPromises.push(cell.mount(this.timelineEl, true).then(() => cell.node));
-            } else {
-                mountPromises.push(Promise.resolve(cell.node));
             }
         }
 
         const nodesToStable = await Promise.all(mountPromises);
         await waitStableAll(nodesToStable);
 
+
         for (let i = startIdx; i < endIndex; i++) {
             const cell = this.cells[i];
             const realH = cell.node.offsetHeight || estH;
-            cell.height = realH;
-            this.heights[i] = realH;
-            this.offsets[i] = offset;
-            cell.node.style.transform = `translateY(${offset}px)`;
-            logTweetMgn(`[fastMountBatch] cell[${i}] mounted at offset=${offset}, height=${realH}`);
+
+            const prevOffset = this.offsets[i];
+            const prevHeight = this.heights[i];
+            const needsUpdate = offset !== prevOffset || realH !== prevHeight;
+
+            if (needsUpdate) {
+                cell.height = realH;
+                this.heights[i] = realH;
+                this.offsets[i] = offset;
+                cell.node.style.transform = `translateY(${offset}px)`;
+                logTweetMgn(`[fastMountBatch] cell[${i}] mounted at offset=${offset}, height=${realH}`);
+            }
+
             offset += realH;
             this.resizeLogger.observe(cell.node, i, this.updateHeightAt);
         }
@@ -198,6 +198,7 @@ export class TweetManager {
         const realScrollTop = window.scrollY || document.documentElement.scrollTop;
         const needScroll = realScrollTop > maxScrollTop;
         logTweetMgn(`[fastMountBatch] completed: middleIndex=${middleIndex}, listHeight=${this.listHeight},maxScrollTop=${maxScrollTop} scrollTop=${window.scrollY}`);
+
         return needScroll
             ? {needScroll: true, targetTop: maxScrollTop}
             : {needScroll: false};
@@ -340,7 +341,6 @@ export class TweetManager {
     }
 
     private reorderMountedNodes(startIdx: number, endIndex: number) {
-        // 在 normal/fastMountBatch 完成高度计算后，加这一段
         const fragment = document.createDocumentFragment();
         for (let i = startIdx; i < endIndex; i++) {
             fragment.appendChild(this.cells[i].node); // 已挂载节点会被“移动”
@@ -379,18 +379,63 @@ export class TweetManager {
     }
 
 
+    // private estimateWindow(viewStart: number, viewportHeight: number): [number, number] {
+    //     let endIndex = Math.floor((viewStart + viewportHeight) / TweetManager.EST_HEIGHT) + TweetManager.EXTRA_BUFFER_COUNT / 2;
+    //     if (endIndex < TweetManager.MIN_TWEETS_COUNT) {
+    //         return [0, TweetManager.MIN_TWEETS_COUNT];
+    //     }
+    //
+    //     const maxEndIndex = this.cells.length + TweetManager.MaxTweetOnce;
+    //     if (endIndex > maxEndIndex) {
+    //         endIndex = maxEndIndex;
+    //     }
+    //
+    //     const startIdx = Math.max(0, endIndex - TweetManager.MIN_TWEETS_COUNT);
+    //     return [startIdx, endIndex];
+    // }
+
     private estimateWindow(viewStart: number, viewportHeight: number): [number, number] {
-        let endIndex = Math.floor((viewStart + viewportHeight) / TweetManager.EST_HEIGHT) + TweetManager.EXTRA_BUFFER_COUNT / 2;
-        if (endIndex < TweetManager.MIN_TWEETS_COUNT) {
-            return [0, TweetManager.MIN_TWEETS_COUNT];
+        const estH = TweetManager.EST_HEIGHT;
+        const offsets = this.offsets;
+        const count = this.cells.length;
+
+        const maxOffset = offsets[count] ?? 0;
+
+        if (viewStart >= maxOffset) {
+            // viewStart 超出了已加载推文，无法 anchor，只能 fallback
+            let endIndex = Math.floor((viewStart + viewportHeight) / estH) + TweetManager.EXTRA_BUFFER_COUNT / 2;
+            if (endIndex < TweetManager.MIN_TWEETS_COUNT) {
+                return [0, TweetManager.MIN_TWEETS_COUNT];
+            }
+            const maxEndIndex = count + TweetManager.MaxTweetOnce;
+            endIndex = Math.min(endIndex, maxEndIndex);
+            const startIdx = Math.max(0, endIndex - TweetManager.MIN_TWEETS_COUNT);
+            logTweetMgn(`[estimateWindow] no anchor found estimate[${startIdx},${endIndex})`);
+            return [startIdx, endIndex];
         }
 
-        const maxEndIndex = this.cells.length + TweetManager.MaxTweetOnce;
-        if (endIndex > maxEndIndex) {
-            endIndex = maxEndIndex;
+        // viewStart 落在已知 offset 范围内，用二分法查找 anchorIdx
+        let low = 0, high = count - 1;
+        let anchorIdx = 0;
+        while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            const midOffset = offsets[mid] ?? (mid * estH);
+            if (midOffset === viewStart) {
+                anchorIdx = mid;
+                break;
+            } else if (midOffset < viewStart) {
+                anchorIdx = mid; // 记录最接近但小于 viewStart 的位置
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
         }
 
+        // 向后扩展 buffer，构建挂载窗口
+        const buffer = TweetManager.EXTRA_BUFFER_COUNT / 2;
+        let endIndex = Math.min(anchorIdx + buffer, count);
         const startIdx = Math.max(0, endIndex - TweetManager.MIN_TWEETS_COUNT);
+        logTweetMgn(`[estimateWindow] found anchor[${anchorIdx}] found range is[${startIdx},${endIndex})`);
         return [startIdx, endIndex];
     }
 
