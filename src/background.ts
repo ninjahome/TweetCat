@@ -78,8 +78,12 @@ browser.runtime.onStartup.addListener(() => {
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
     (async () => {
         await checkAndInitDatabase();
-        const result = await bgMsgDispatch(request, _sender);
-        sendResponse(result);
+        try {
+            const result = await bgMsgDispatch(request, _sender);
+            sendResponse(result);
+        } catch (e) {
+            sendResponse({success: false, data: e});
+        }
     })();
     return true;
 });

@@ -31,7 +31,9 @@ export enum MsgType {
     UpdateKolCat = 'UpdateKolCat',
     QueryCatByID = 'QueryCatByID',
     RemoveKol = 'RemoveKol',
-    AdsBlockChanged = 'AdsBlockChanged'
+    AdsBlockChanged = 'AdsBlockChanged',
+    CacheRawTweetData = 'CacheRawTweetData',
+    ReadTweetByKolIdFromDBCache = 'ReadTweetByKolIdFromDBCache'
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

@@ -1,8 +1,9 @@
 import {defaultCategoryName, defaultUserName} from "./consts";
+import {logDB} from "./debug_flags";
 
 let __databaseObj: IDBDatabase | null = null;
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 1;
+export const __currentDatabaseVersion = 3;
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
 export const __tableSystemSetting = '__table_system_setting__';
@@ -30,15 +31,18 @@ function initDatabase(): Promise<IDBDatabase> {
 
         request.onsuccess = function (event: Event) {
             __databaseObj = (event.target as IDBOpenDBRequest).result;
-            console.log("------>>>[Database]Database open success, version=", __databaseObj.version);
+            logDB("------>>>[Database]Database open success, version=", __databaseObj.version);
             resolve(__databaseObj);
         };
 
         request.onupgradeneeded = function (event: IDBVersionChangeEvent) {
+            __databaseObj = (event.target as IDBOpenDBRequest).result;
+            logDB("------>>>[Database]Database need to update:", __databaseObj.version);
             const request = (event.target as IDBOpenDBRequest);
             initCategory(request);
             initKolsInCategory(request);
             initSystemSetting(request);
+            initCachedTweetsTable(request);
         };
     });
 }
@@ -56,10 +60,10 @@ function initCategory(request: IDBOpenDBRequest) {
         initialCategories.forEach(category => {
             categoryStore.add(category);
         });
-        console.log("------>>>[Database]Inserted initial categories.", initialCategories);
+        logDB("------>>>[Database]Inserted initial categories.", initialCategories);
     }
 
-    console.log("------>>>[Database]Created category successfully.", __tableCategory);
+    logDB("------>>>[Database]Created category successfully.", __tableCategory);
 }
 
 function initKolsInCategory(request: IDBOpenDBRequest) {
@@ -75,23 +79,41 @@ function initKolsInCategory(request: IDBOpenDBRequest) {
         initialKols.forEach(kol => {
             categoryStore.add(kol);
         });
-        console.log("------>>>[Database]Inserted initial categories.", initialKols);
+        logDB("------>>>[Database]Inserted initial categories.", initialKols);
     }
-    console.log("------>>>[Database]Create kols in category successfully.", __tableKolsInCategory);
+    logDB("------>>>[Database]Create kols in category successfully.", __tableKolsInCategory);
 }
 
 function initSystemSetting(request: IDBOpenDBRequest) {
     const db = request.result;
     if (!db.objectStoreNames.contains(__tableSystemSetting)) {
         const objectStore = db.createObjectStore(__tableSystemSetting, {keyPath: 'id', autoIncrement: true});
-        console.log("------>>>[Database]Create system setting table successfully.", objectStore);
+        logDB("------>>>[Database]Create system setting table successfully.", objectStore);
     }
 }
+
+function initCachedTweetsTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+
+    if (db.objectStoreNames.contains(__tableCachedTweets)) {
+        logDB("------>>>[Database] Tweets table already exists.");
+        return;
+    }
+
+    const tweetStore = db.createObjectStore(__tableCachedTweets, {keyPath: 'tweetId'});
+
+    tweetStore.createIndex('timestamp_idx', 'timestamp', {unique: false});
+
+    tweetStore.createIndex('userId_timestamp_idx', ['userId', 'timestamp'], {unique: false});
+
+    logDB("------>>>[Database] Created cached tweets table with indexes successfully.", __tableCachedTweets);
+}
+
 
 export function closeDatabase() {
     if (__databaseObj) {
         __databaseObj.close();
-        console.log("------>>>Database connection closed.");
+        logDB("------>>>Database connection closed.");
         __databaseObj = null;
     }
 }
@@ -177,16 +199,13 @@ export function databaseGet(storeName: string, keyPath: any): Promise<any> {
     });
 }
 
-export function databaseUpdate(storeName: string, keyName: string, keyVal:any, newData: any): Promise<string> {
+export function databaseUpdate(storeName: string, keyName: string, keyVal: any, newData: any): Promise<string> {
     return new Promise((resolve, reject) => {
-        if (!__databaseObj) {
-            reject('Database is not initialized');
-            return;
-        }
+        if (!__databaseObj) return reject('Database is not initialized');
+
         const transaction = __databaseObj.transaction([storeName], 'readwrite');
         const objectStore = transaction.objectStore(storeName);
-
-        const request = objectStore.put({...newData, [keyName]:keyVal});
+        const request = objectStore.put({...newData, [keyName]: keyVal});
 
         request.onsuccess = () => {
             resolve(`Data updated in ${storeName} successfully`);
@@ -197,6 +216,23 @@ export function databaseUpdate(storeName: string, keyName: string, keyVal:any, n
         };
     });
 }
+
+export function databasePutItem(storeName: string, data: any): Promise<IDBValidKey> {
+    return new Promise((resolve, reject) => {
+        if (!__databaseObj) {
+            return reject('Database is not initialized');
+        }
+        const transaction = __databaseObj.transaction([storeName], 'readwrite');
+        const objectStore = transaction.objectStore(storeName);
+        const request = objectStore.put(data);
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = event => {
+            reject(`Error putting data to ${storeName}: ${(event.target as IDBRequest).error}`);
+        };
+    });
+}
+
 
 export function databaseDelete(storeName: string, keyPath: any): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -326,4 +362,45 @@ export async function checkAndInitDatabase(): Promise<void> {
     if (!__databaseObj) {
         await initDatabase();
     }
+}
+
+/**
+ * 通过复合索引（如 userId + timestamp）进行范围查询
+ * 按 timestamp 降序排列，最多返回 limit 条数据
+ */
+export function databaseQueryByIndexRange(
+    storeName: string,
+    indexName: string,
+    rangeValue: any[],
+    limit: number
+): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+        if (!__databaseObj) return reject('Database is not initialized');
+
+        const transaction = __databaseObj.transaction([storeName], 'readonly');
+        const objectStore = transaction.objectStore(storeName);
+        const index = objectStore.index(indexName);
+
+        // 匹配第一个键（userId），timestamp 是范围查询
+        const lowerBound = [rangeValue[0], -Infinity];
+        const upperBound = [rangeValue[0], Infinity];
+        const keyRange = IDBKeyRange.bound(lowerBound, upperBound);
+
+        const request = index.openCursor(keyRange, 'prev'); // timestamp 降序排列
+        const results: any[] = [];
+
+        request.onsuccess = event => {
+            const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+            if (cursor && results.length < limit) {
+                results.push(cursor.value);
+                cursor.continue();
+            } else {
+                resolve(results);
+            }
+        };
+
+        request.onerror = event => {
+            reject(`Error querying by index range from ${storeName}: ${(event.target as IDBRequest).error}`);
+        };
+    });
 }

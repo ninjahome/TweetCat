@@ -2,6 +2,8 @@
 
 // --- 基础类 ---
 
+import {WrapEntryObj} from "./db_raw_tweet";
+
 export class TweetCardImage {
     url: string;
     width: number;
@@ -387,17 +389,22 @@ export class EntryObj {
 // 批量解析 entries 的函数
 export function extractEntryObjs(entries: any[]): {
     tweets: EntryObj[];
+    wrapDbEntry: WrapEntryObj[];
     nextCursor: string | null;
     topCursor: string | null;
 } {
     const tweetEntries: EntryObj[] = [];
+    const tweetRawEntries: WrapEntryObj[] = [];
     let bottomCursor: string | null = null;
     let topCursor = null;
 
     for (const entry of entries) {
         if (entry?.content?.entryType === 'TimelineTimelineItem') {
             try {
-                tweetEntries.push(new EntryObj(entry));
+                const obj = new EntryObj(entry)
+                tweetEntries.push(obj);
+                const wrapObj = WrapEntryObj.fromEntryObj(obj, entry);
+                tweetRawEntries.push(wrapObj);
             } catch (e) {
                 console.warn("parse entry failed :", e, " data:", entry)
             }
@@ -410,11 +417,15 @@ export function extractEntryObjs(entries: any[]): {
         }
     }
 
-    return {tweets: tweetEntries, nextCursor: bottomCursor, topCursor};
+    return {tweets: tweetEntries, wrapDbEntry: tweetRawEntries, nextCursor: bottomCursor, topCursor};
 }
 
-
-export function parseTimelineFromGraphQL(result: any): { tweets: EntryObj[]; nextCursor: string | null } {
+export function parseTimelineFromGraphQL(result: any): {
+    tweets: EntryObj[];
+    wrapDbEntry: WrapEntryObj[];
+    nextCursor: string | null;
+    topCursor: string | null;
+} {
     const instructions = result.data?.user?.result?.timeline?.timeline?.instructions || [];
     const allEntries: any[] = [];
 
@@ -430,7 +441,6 @@ export function parseTimelineFromGraphQL(result: any): { tweets: EntryObj[]; nex
                     allEntries.push(instruction.entry);
                 }
                 break;
-            // 其他情况忽略
         }
     }
     return extractEntryObjs(allEntries);

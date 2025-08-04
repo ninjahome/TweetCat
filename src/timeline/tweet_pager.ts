@@ -3,7 +3,10 @@
  * ------------------------------------------------------------------ */
 import {EntryObj} from "./tweet_entry";
 import {logPager} from "../debug_flags";
-import {fetchTweets, getUserIdByUsername} from "./twitter_api";
+import {fetchTweets} from "./twitter_api";
+import {sendMsgToService} from "../utils";
+import {MsgType} from "../consts";
+import {loadCachedTweetsByUserId, WrapEntryObj} from "./db_raw_tweet";
 
 /* ------------------------------------------------------------------ *
  * 内部状态
@@ -33,7 +36,7 @@ export async function initTweetPagerCache(initialPageSize: number = DEFAULT_INIT
     }
     await ensureCacheSize(initialPageSize);
     currentIdx = 0;
-    logPager('[Pager] init done tweets=%d nextCursor=%s isEnd=%s', tweetData.length, nextCursor, isEnd);
+    logPager(`[Pager] init done tweets=${tweetData.length} nextCursor=${nextCursor} isEnd=${isEnd}`);
 }
 
 
@@ -65,9 +68,8 @@ export async function getNextTweets(pageSize: number): Promise<EntryObj[]> {
     const page = tweetData.slice(currentIdx, endIdx);
     currentIdx = endIdx; // 前进
 
-    logPager('[Pager] getNextTweets -> %d items (req=%d) cur=%d/%d isEnd=%s first=%s last=%s',
-        page.length, pageSize, currentIdx, tweetData.length, isEnd,
-        page[0]?.entryId, page[page.length - 1]?.entryId);
+    logPager(`[Pager] getNextTweets -> ${page.length} items (req=${pageSize}) cur=${currentIdx}/${tweetData.length} isEnd=${isEnd} first=${page[0]?.entryId} last=${page[page.length - 1]?.entryId}`);
+
     return page;
 }
 
@@ -113,17 +115,23 @@ async function fetchBatch(batchSize: number): Promise<number> {
     }
 
     inFlight = (async () => {
-        logPager('[Pager] fetchBatch size=%d cursor=%s', batchSize, nextCursor);
+        logPager(`[Pager] fetchBatch size=${batchSize} cursor=${nextCursor}`);
 
         let tweets: EntryObj[] = [];
         let nc: string | null | undefined = null;
         let end = false;
 
         try {
-            const r = await fetchTweets(userID, batchSize, nextCursor ?? undefined);
-            tweets = r.tweets ?? [];
-            nc = r.nextCursor ?? null;
-            end = r.isEnd;
+            // const r = await fetchTweets(userID, batchSize, nextCursor ?? undefined);
+            // tweets = r.tweets ?? [];
+            // nc = r.nextCursor ?? null;
+            // end = tweets.length === 0 || nextCursor === null;
+            // sendMsgToService(r.wrapDbEntry, MsgType.CacheRawTweetData).then();
+
+            tweets = await loadByKolId(userID, batchSize);
+            nc = null;
+            end = true;
+
         } catch (err) {
             logPager('[Pager] fetchBatch ERROR %o', err);
             // 出错时，不推进 cursor；added=0
@@ -150,8 +158,7 @@ async function fetchBatch(batchSize: number): Promise<number> {
         nextCursor = nc ?? null;
         isEnd = end;
 
-        logPager('[Pager] fetched raw=%d added=%d dup=%d -> total=%d nextCursor=%s isEnd=%s',
-            tweets.length, added, dup, tweetData.length, nextCursor, isEnd);
+        logPager(`[Pager] fetched raw=${tweets.length} added=${added} dup=${dup} -> total=${tweetData.length} nextCursor=${nextCursor} isEnd=${isEnd}`);
 
         return added;
     })();
@@ -192,4 +199,14 @@ export async function resetTweetPager(): Promise<void> {
     inFlight = null;
 
     logPager('[Pager] HARD RESET completed. tweets=0 cur=0 nextCursor=null isEnd=false');
+}
+
+async function loadByKolId(kolId: string, limit: number = 10): Promise<EntryObj[]> {
+    const rsp = await sendMsgToService({kolId, limit}, MsgType.ReadTweetByKolIdFromDBCache).then();
+    if (!rsp.success) {
+        logPager(`load cached tweet for[${kolId}] form database failed`);
+        return []
+    }
+    const rawData = rsp.data as WrapEntryObj[];
+    return rawData.map(row => WrapEntryObj.fromDbRow(row).toEntryObj());
 }

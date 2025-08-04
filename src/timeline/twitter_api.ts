@@ -2,6 +2,7 @@ import {getBearerToken} from "../utils";
 import {localGet} from "../local_storage";
 import {__DBK_query_id_map, UserByScreenName, UserTweets} from "../consts";
 import {EntryObj, parseTimelineFromGraphQL} from "./tweet_entry";
+import {WrapEntryObj} from "./db_raw_tweet";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(key: string): Promise<string | null> {
@@ -17,10 +18,10 @@ async function getUrlWithQueryID(key: string): Promise<string | null> {
 interface TweetRequestParams {
     userId: string;
     count: number;
-    cursor?: string; // 可选 cursor
+    nextCursor?: string; // 可选 cursor
 }
 
-async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): Promise<string> {
+async function buildTweetQueryURL({userId, count, nextCursor}: TweetRequestParams): Promise<string> {
     const variablesObj: any = {
         userId,
         count,
@@ -30,8 +31,8 @@ async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): 
     };
 
     // 添加 cursor 参数（如果存在）
-    if (cursor) {
-        variablesObj.cursor = cursor;
+    if (nextCursor) {
+        variablesObj.cursor = nextCursor;
     }
 
     const variables = encodeURIComponent(JSON.stringify(variablesObj));
@@ -182,28 +183,13 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
     return userId ?? null;
 }
 
-export async function testTweetApi(userName: string) {
-    try {
-        const userID = await getUserIdByUsername(userName);//'elonmusk'
-        if (!userID) {
-            console.log("------->>> failed found user id for user name:", userName)
-            return;
-        }
-        console.log("------>>> user id:", userID);
-        const validTweets = await fetchTweets('1263365191929978880', 25, "DAAHCgABGpDB7uK__-wLAAIAAAATMTkxMTczMjQ1ODIyMTA4ODc5MQgAAwAAAAIAAA");
-        console.log("======>>>", validTweets);
-
-    } catch (e) {
-        console.log("--------------tmp test", e)
-    }
-}
-
-export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string): Promise<{
+export async function fetchTweets(userId: string, maxCount: number = 20, nextCursor?: string, topCursor?: string): Promise<{
     tweets: EntryObj[],
-    nextCursor: string | null,
-    isEnd: boolean
+    wrapDbEntry: WrapEntryObj[];
+    nextCursor: string | null;
+    topCursor: string | null;
 }> {
-    const url = await buildTweetQueryURL({userId, count: maxCount, cursor});
+    const url = await buildTweetQueryURL({userId, count: maxCount, nextCursor});
     const headers = await generateHeaders();
     const response = await fetch(url, {
         method: 'GET',
@@ -215,14 +201,6 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
         const errorText = await response.text();
         throw new Error(`HTTP error ${response.status}: ${errorText}`);
     }
-
     const result = await response.json();
-    // console.log("--------------tmp=========>>>api result:\n", result);
-    const {tweets, nextCursor} = parseTimelineFromGraphQL(result);
-    const isEnd = tweets.length === 0 || nextCursor === null;
-    return {
-        tweets,
-        nextCursor,
-        isEnd,
-    };
+    return parseTimelineFromGraphQL(result);
 }

@@ -3,12 +3,14 @@ const __DEV__ = process.env.NODE_ENV !== 'production'
 
 export const DBG = {
     MOUNT: false,
-    VIS: true,
-    PAGER: false,
+    VIS: false,
+    PAGER: true,
     TWEET_MANAGER: true,
     NODE_POOL: false,
-    ROUTE: false,    // ← 新增：路由相关
-    GUARD: false,    // ← 新增：guard 相关
+    ROUTE: false,
+    GUARD: false,
+    Database: true,
+    TweetCache: true,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -26,3 +28,5 @@ export const logTweetMgn = makeLogger('TWEET_MANAGER', 'TweetMgr');
 export const logPool = makeLogger('NODE_POOL', 'TweetNodePool');
 export const logRoute = makeLogger('ROUTE', 'Route');
 export const logGuard = makeLogger('GUARD', 'Guard');
+export const logDB = makeLogger('Database', 'Database');
+export const logTC = makeLogger('TweetCache', 'TweetCache');
