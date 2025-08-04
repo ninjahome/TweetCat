@@ -1,6 +1,14 @@
 import {EntryObj} from "./tweet_entry";
-import {__tableCachedTweets, databasePutItem, databaseQueryByIndexRange} from "../database";
+import {
+    __tableCachedTweets, __tableCategory,
+    __tableKolsInCategory,
+    countTable,
+    databasePutItem, databaseQueryAll, databaseQueryByFilter,
+    databaseQueryByIndexRange
+} from "../database";
 import {logTC} from "../debug_flags";
+import {kolsForCategory} from "../category";
+import {defaultCatID, defaultUserName} from "../consts";
 
 export class WrapEntryObj {
     tweetId: string;
@@ -47,4 +55,24 @@ export async function cacheRawTweets(rawTweets: WrapEntryObj[]) {
 
 export async function loadCachedTweetsByUserId(userId: string, limit = 10): Promise<WrapEntryObj[]> {
     return await databaseQueryByIndexRange(__tableCachedTweets, 'userId_timestamp_idx', [userId], limit) as WrapEntryObj[];
+}
+
+export async function initTweetsCheck(): Promise<{ bootStrap: boolean, data: any }> {
+    const count = await countTable(__tableCachedTweets);
+    if (count > 0) return {bootStrap: false, data: null};
+
+    const categories = await databaseQueryByFilter(__tableCategory, (item) => {
+        return item.forUser === defaultUserName;
+    });
+
+    let catID = defaultCatID;
+    if (categories.length > 0) {
+        catID = categories[0].id;
+    }
+
+    const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => {
+        return item.catID === catID;
+    });
+
+    return {bootStrap: true, data: kols};
 }

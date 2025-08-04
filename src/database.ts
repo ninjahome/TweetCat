@@ -1,9 +1,9 @@
-import {defaultCategoryName, defaultUserName} from "./consts";
+import {defaultCategoryName, defaultCatID, defaultUserName} from "./consts";
 import {logDB} from "./debug_flags";
 
 let __databaseObj: IDBDatabase | null = null;
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 3;
+export const __currentDatabaseVersion = 4;
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
 export const __tableSystemSetting = '__table_system_setting__';
@@ -14,10 +14,10 @@ const initialCategories = [
 ];
 
 const initialKols = [
-    {kolName: 'TweetCatOrg', catID: 1, displayName: 'TweetCat'},
-    {kolName: 'elonmusk', catID: 1, displayName: 'Elon Musk'},
-    {kolName: 'BillGates', catID: 1, displayName: 'Bill Gates'},
-    {kolName: 'realDonaldTrump', catID: 1, displayName: 'Donald J. Trump'}
+    {kolName: 'TweetCatOrg', catID: defaultCatID, displayName: 'TweetCat', kolUserId: "1899045104146644992"},
+    {kolName: 'elonmusk', catID: defaultCatID, displayName: 'Elon Musk', kolUserId: "44196397"},
+    {kolName: 'BillGates', catID: defaultCatID, displayName: 'Bill Gates', kolUserId: "50393960"},
+    {kolName: 'realDonaldTrump', catID: defaultCatID, displayName: 'Donald J. Trump', kolUserId: "25073877"}
 ];
 
 function initDatabase(): Promise<IDBDatabase> {
@@ -404,3 +404,24 @@ export function databaseQueryByIndexRange(
         };
     });
 }
+
+export function countTable(storeName: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+        if (!__databaseObj) {
+            reject("Database is not initialized");
+            return;
+        }
+        const transaction = __databaseObj.transaction([storeName], "readonly");
+        const objectStore = transaction.objectStore(storeName);
+        const request = objectStore.count();
+
+        request.onsuccess = () => {
+            resolve(request.result);
+        };
+
+        request.onerror = (event) => {
+            reject(`Error counting records in ${storeName}: ${(event.target as IDBRequest).error}`);
+        };
+    });
+}
+

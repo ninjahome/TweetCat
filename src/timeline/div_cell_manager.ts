@@ -1,8 +1,6 @@
 import {TweetCatCell} from "./tweet_div_cell";
 import {
-    getNextTweets,
-    initTweetPagerCache,
-    resetTweetPager
+    tweetPager
 } from "./tweet_pager";
 
 import {VirtualScroller} from "./virtual_scroller";
@@ -50,7 +48,7 @@ export class TweetManager {
         this.timelineEl.style.overscrollBehavior = "none";
         document.documentElement.style.overscrollBehavior = "none";
         this.resizeLogger = new TweetResizeObserverManager();
-        initTweetPagerCache().then()
+        tweetPager.switchCategory(1).then()
         this.scroller = new VirtualScroller(this);
         this.scroller.initFirstPage().then();
         logTweetMgn("------>>> tweet manager init success");
@@ -77,7 +75,7 @@ export class TweetManager {
         this.listHeight = 0;
         this.maxCssHeight = 0;
 
-        await resetTweetPager();
+        await tweetPager.resetPager();
 
         this.isRendering = false;
 
@@ -207,7 +205,7 @@ export class TweetManager {
         this.isRendering = true;
 
         try {
-            const tweets = await getNextTweets(pageSize);
+            const tweets = await tweetPager.getNextTweets(pageSize);
             if (!tweets.length) return;//TODO:: no more tweet data!!
             logTweetMgn('------>>> prepare render ' + tweets.length + ' tweets to tweetCat cell')
             for (const tw of tweets) {
