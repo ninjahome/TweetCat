@@ -14,22 +14,35 @@ const initialCategories = [
     {catName: defaultCategoryName, forUser: defaultUserName},
 ];
 
+
 const initialKols = [
     {
-        kolName: 'TweetCatOrg',
+        kolName: 'tweetCatOrg',
         catID: defaultCatID,
         displayName: 'TweetCat',
-        kolUserId: "1899045104146644992",
-        avatarUrl: ""
+        kolUserId: '1899045104146644992',
+        avatarUrl: 'https://pbs.twimg.com/profile_images/1904033834632376320/p20N1O1s_200x200.jpg'
     },
-    {kolName: 'elonmusk', catID: defaultCatID, displayName: 'Elon Musk', kolUserId: "44196397", avatarUrl: ""},
-    {kolName: 'BillGates', catID: defaultCatID, displayName: 'Bill Gates', kolUserId: "50393960", avatarUrl: ""},
+    {
+        kolName: 'elonmusk',
+        catID: defaultCatID,
+        displayName: 'Elon Musk',
+        kolUserId: '44196397',
+        avatarUrl: 'https://pbs.twimg.com/profile_images/1936002956333080576/kqqe2iWO_200x200.jpg'
+    },
     {
         kolName: 'realDonaldTrump',
         catID: defaultCatID,
         displayName: 'Donald J. Trump',
-        kolUserId: "25073877",
-        avatarUrl: ""
+        kolUserId: '25073877',
+        avatarUrl: 'https://pbs.twimg.com/profile_images/874276197357596672/kUuht00m_200x200.jpg'
+    },
+    {
+        kolName: 'BillGates',
+        catID: defaultCatID,
+        displayName: 'Bill Gates',
+        kolUserId: '50393960',
+        avatarUrl: 'https://pbs.twimg.com/profile_images/1879013694367252480/Gxa-Pspq_200x200.jpg'
     }
 ];
 

@@ -7,7 +7,7 @@ export const defaultCatID = 1;
 export const defaultAllCategoryID = -1;
 export const maxMissedTweetOnce = 180;
 export const itemColorGroup = ['#f6cd01', '#866afb', '#fe466c', '#06cbad', '#4592ef']
-export const MaxCategorySize = 4;
+export const MaxCategorySize = 12;
 
 function addOpacityToHex(hex: string, opacity: number): string {
     const clampedOpacity = Math.min(1, Math.max(0, opacity));

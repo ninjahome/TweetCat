@@ -96,12 +96,6 @@ async function fetchMultipleUsersTweets(userIds: string[], count: number) {
     return Promise.all(requests);
 }
 
-// // 用法：
-// const kolIds = ["791197", "123456", "654321"];
-// fetchMultipleUsersTweets(kolIds, 2).then(allTweets => {
-//     console.log(allTweets); // 每个用户的推文数组
-// });
-//
 
 // 提取 csrf token
 function getCsrfToken(): string {
@@ -149,7 +143,8 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
         subscriptions_feature_can_gift_premium: true,
         creator_subscriptions_tweet_preview_api_enabled: true,
         responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        responsive_web_graphql_timeline_navigation_enabled: true
+        responsive_web_graphql_timeline_navigation_enabled: true,
+        rweb_xchat_enabled: false,
     };
 
     const fieldToggles = {
@@ -172,10 +167,9 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
         credentials: 'include',
     });
 
-    console.log(JSON.stringify(response));
-
     if (!response.ok) {
-        console.error(`Failed to get userId for ${username}:`, response.status);
+        const errorText = await response.text();  // 打印原始 body
+        console.error(`❌ Failed to get userId for ${username}: ${response.status}\n${errorText}`);
         return null;
     }
 

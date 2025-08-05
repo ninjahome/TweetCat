@@ -50,7 +50,7 @@ export class TweetManager {
         document.documentElement.style.overscrollBehavior = "none";
         this.resizeLogger = new TweetResizeObserverManager();
         tweetPager.init().then(async () => {
-            tweetPager.switchCategory(1);
+            tweetPager.switchCategory(null);
             this.scroller = new VirtualScroller(this);
             await this.scroller!.initFirstPage()
         });
