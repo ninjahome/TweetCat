@@ -34,8 +34,10 @@ export enum MsgType {
     RemoveKol = 'RemoveKol',
     AdsBlockChanged = 'AdsBlockChanged',
     CacheRawTweetData = 'CacheRawTweetData',
-    ReadTweetByKolIdFromDBCache = 'ReadTweetByKolIdFromDBCache',
-    TweetsBootStrap = 'TweetsBootStrap'
+    DBReadTweetByKolId = 'DBReadTweetByKolId',
+    TweetsBootStrap = 'TweetsBootStrap',
+    DBReadTweetByCategoryId = 'DBReadTweetByCategoryId',
+
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

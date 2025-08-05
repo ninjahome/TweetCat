@@ -9,7 +9,13 @@ import {
     updateKolsCategory
 } from "./category";
 import {TweetKol} from "./object_TweetKol";
-import {cacheRawTweets, initTweetsCheck, loadCachedTweetsByUserId, WrapEntryObj} from "./timeline/db_raw_tweet";
+import {
+    cacheRawTweets,
+    initTweetsCheck,
+    loadCachedTweetsByUserId,
+    loadLatestTweets,
+    WrapEntryObj
+} from "./timeline/db_raw_tweet";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
     // console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)
@@ -56,15 +62,19 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
-        case MsgType.ReadTweetByKolIdFromDBCache: {
+        case MsgType.DBReadTweetByKolId: {
             const reqData = request.data;
             const data = await loadCachedTweetsByUserId(reqData.kolId, reqData.limit)
             return {success: true, data: data};
         }
 
         case MsgType.TweetsBootStrap:
-            const data = await initTweetsCheck()
-            return {success: true, data: data};
+            return {success: true, data: await initTweetsCheck()};
+
+        case MsgType.DBReadTweetByCategoryId: {
+            const reqData = request.data;
+            return {success: true, data: await loadLatestTweets(reqData.limit, reqData.category)};
+        }
 
         default:
             return {success: false, data: "unsupportable message type"};

@@ -233,3 +233,7 @@ export function deferByFrames(callback: () => void, frameCount: number = 3): voi
     };
     step(frameCount);
 }
+
+export function sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}

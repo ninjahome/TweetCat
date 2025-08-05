@@ -7,6 +7,7 @@ import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../debug_flags";
 import {TweetResizeObserverManager} from "./tweet_resize_observer";
 import {findCellFromNode} from "./div_node_pool";
+import {cacheRawTweets} from "./db_raw_tweet";
 
 export interface MountResult {
     needScroll: boolean;
@@ -48,9 +49,11 @@ export class TweetManager {
         this.timelineEl.style.overscrollBehavior = "none";
         document.documentElement.style.overscrollBehavior = "none";
         this.resizeLogger = new TweetResizeObserverManager();
-        tweetPager.switchCategory(1).then()
-        this.scroller = new VirtualScroller(this);
-        this.scroller.initFirstPage().then();
+        tweetPager.init().then(async () => {
+            await tweetPager.switchCategory(1);
+            this.scroller = new VirtualScroller(this);
+            await this.scroller!.initFirstPage()
+        });
         logTweetMgn("------>>> tweet manager init success");
     }
 

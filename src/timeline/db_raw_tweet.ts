@@ -3,11 +3,10 @@ import {
     __tableCachedTweets, __tableCategory,
     __tableKolsInCategory,
     countTable,
-    databasePutItem, databaseQueryAll, databaseQueryByFilter,
+    databasePutItem, databaseQueryAll, databaseQueryByFilter, databaseQueryByIndex,
     databaseQueryByIndexRange
 } from "../database";
 import {logTC} from "../debug_flags";
-import {kolsForCategory} from "../category";
 import {defaultCatID, defaultUserName} from "../consts";
 
 export class WrapEntryObj {
@@ -70,9 +69,31 @@ export async function initTweetsCheck(): Promise<{ bootStrap: boolean, data: any
         catID = categories[0].id;
     }
 
+    let counter = 0
     const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => {
-        return item.catID === catID;
+        counter++;
+        return item.catID === catID && counter <= 2;
     });
 
     return {bootStrap: true, data: kols};
+}
+
+export async function loadLatestTweets(limit: number = 20, category: number | null = null) {
+    let filterFn: ((row: any) => boolean) | undefined = undefined;
+
+    if (category !== null) {
+        const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => item.catID === category);
+        const categoryUserIds = new Set<string>(kols.map(k => k.kolUserId));
+        filterFn = (row) => categoryUserIds.has(row.userId);
+    }
+
+    const tweets = await databaseQueryByIndex(
+        __tableCachedTweets,
+        'timestamp_idx',
+        limit,
+        true,
+        filterFn // 可以是函数或 null
+    );
+
+    return tweets;
 }

@@ -8,6 +8,7 @@ export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
 export const __tableSystemSetting = '__table_system_setting__';
 export const __tableCachedTweets = '__table_cached_tweets__'
+export const BossOfTheWholeWorld = '44196397';
 
 const initialCategories = [
     {catName: defaultCategoryName, forUser: defaultUserName},
@@ -407,10 +408,8 @@ export function databaseQueryByIndexRange(
 
 export function countTable(storeName: string): Promise<number> {
     return new Promise((resolve, reject) => {
-        if (!__databaseObj) {
-            reject("Database is not initialized");
-            return;
-        }
+        if (!__databaseObj) return reject("Database is not initialized");
+
         const transaction = __databaseObj.transaction([storeName], "readonly");
         const objectStore = transaction.objectStore(storeName);
         const request = objectStore.count();
@@ -425,3 +424,40 @@ export function countTable(storeName: string): Promise<number> {
     });
 }
 
+export async function databaseQueryByIndex(
+    table: string,
+    index: string,
+    limit: number = Infinity,
+    desc: boolean = true,
+    filter?: (row: any) => boolean
+): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+        if (!__databaseObj) return reject("Database is not initialized");
+
+        const results: any[] = [];
+        const tx = __databaseObj.transaction([table], 'readonly');
+        const store = tx.objectStore(table);
+        const idx = store.index(index);
+        const direction = desc ? 'prev' : 'next';
+        const request = idx.openCursor(null, direction);
+
+        request.onsuccess = (event) => {
+            const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+            if (!cursor) {
+                return resolve(results);
+            }
+
+            const value = cursor.value;
+            if (!filter || filter(value)) {
+                results.push(value);
+                if (results.length >= limit) {
+                    return resolve(results);
+                }
+            }
+
+            cursor.continue();
+        };
+
+        request.onerror = reject;
+    });
+}
