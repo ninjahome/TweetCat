@@ -5,12 +5,13 @@ export const DBG = {
     MOUNT: false,
     VIS: false,
     PAGER: true,
-    TWEET_MANAGER: true,
+    TWEET_MANAGER: false,
     NODE_POOL: false,
     ROUTE: false,
     GUARD: false,
     Database: true,
     TweetCache: true,
+    TweetFetcher: true,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -30,3 +31,4 @@ export const logRoute = makeLogger('ROUTE', 'Route');
 export const logGuard = makeLogger('GUARD', 'Guard');
 export const logDB = makeLogger('Database', 'Database');
 export const logTC = makeLogger('TweetCache', 'TweetCache');
+export const logFT = makeLogger('TweetFetcher', 'TweetFetcher');

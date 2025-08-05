@@ -1,10 +1,9 @@
-import {observeForElement, sendMsgToService} from "./utils";
-import {choseColorByID, defaultAllCategoryID, MsgType} from "./consts";
+import {observeForElement, sendMsgToService} from "./common/utils";
+import {choseColorByID, defaultAllCategoryID, MsgType} from "./common/consts";
 import {parseContentHtml, parseNameFromTweetCell} from "./content";
-import {queryCategoriesFromBG, queryCategoryById} from "./category";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
-import {TweetKol} from "./object_TweetKol";
-import {Category} from "./object_Category";
+import {queryFilterFromBG, TweetKol} from "./object/tweet_kol";
+import {Category, queryCategoriesFromBG, queryCategoryById} from "./object/category";
 import {getUserIdByUsername} from "./timeline/twitter_api";
 
 export let _curKolFilter = new Map<string, TweetKol>();
@@ -156,14 +155,6 @@ export function resetCategories() {
     window.location.reload();
 }
 
-async function queryFilterFromBG(catID: number): Promise<Map<string, TweetKol>> {
-    const rsp = await sendMsgToService(catID, MsgType.QueryKolByCatID)
-    if (!rsp.success) {
-        console.log("------>>> load filter error:", rsp.data);
-        return new Map<string, TweetKol>();
-    }
-    return new Map(rsp.data);
-}
 
 // export async function reloadCategoryContainer(categories: Category[]) {
 //     const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;

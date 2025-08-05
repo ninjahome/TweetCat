@@ -23,7 +23,7 @@ module.exports = (env, argv) => {
         mode: mode,
         devtool: mode === 'development' ? 'inline-source-map' : false, // 生产模式下不生成 Source Map
         entry: {
-            background: path.resolve(__dirname, './src/background.ts'),
+            background: path.resolve(__dirname, './src/service_work/background.ts'),
             welcome: path.resolve(__dirname, './src/welcome.ts'),
             injection: path.resolve(__dirname, './src/injection.ts'),
             dashboard: path.resolve(__dirname, './src/dashboard.ts'),

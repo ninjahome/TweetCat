@@ -3,11 +3,11 @@ import {
     __tableCachedTweets, __tableCategory,
     __tableKolsInCategory,
     countTable,
-    databasePutItem, databaseQueryAll, databaseQueryByFilter, databaseQueryByIndex,
+    databasePutItem, databaseQueryByFilter, databaseQueryByIndex,
     databaseQueryByIndexRange
-} from "../database";
-import {logTC} from "../debug_flags";
-import {defaultCatID, defaultUserName} from "../consts";
+} from "../common/database";
+import {logTC} from "../common/debug_flags";
+import {defaultCatID, defaultUserName} from "../common/consts";
 
 export class WrapEntryObj {
     tweetId: string;
@@ -78,7 +78,9 @@ export async function initTweetsCheck(): Promise<{ bootStrap: boolean, data: any
     return {bootStrap: true, data: kols};
 }
 
-export async function loadLatestTweets(limit: number = 20, category: number | null = null) {
+export async function loadLatestTweets(limit: number = 20,
+                                       category: number | undefined = undefined,
+                                       timeStamp: number | undefined = undefined) {
     let filterFn: ((row: any) => boolean) | undefined = undefined;
 
     if (category !== null) {
@@ -92,7 +94,8 @@ export async function loadLatestTweets(limit: number = 20, category: number | nu
         'timestamp_idx',
         limit,
         true,
-        filterFn // 可以是函数或 null
+        filterFn, // 可以是函数或 null
+        timeStamp
     );
 
     return tweets;

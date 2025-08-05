@@ -1,4 +1,4 @@
-import {deferByFrames, observeSimple} from "../utils";
+import {deferByFrames, observeSimple} from "../common/utils";
 import {parseContentHtml} from "../content";
 import {TweetManager} from "./div_cell_manager";
 import {
@@ -8,7 +8,7 @@ import {
     swapSvgToNormal,
     swapSvgToSelected
 } from "./route_helper";
-import {logGuard} from "../debug_flags";
+import {logGuard} from "../common/debug_flags";
 
 let manager: TweetManager | null = null;
 

@@ -1,11 +1,10 @@
 import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
 import {_curKolFilter, resetCategories} from "./content_filter";
-import {queryCategoriesFromBG, queryCategoryById} from "./category";
-import {__DBK_AD_Block_Key, choseColorByID, maxMissedTweetOnce, MsgType} from "./consts";
-import {isAdTweetNode, sendMsgToService} from "./utils";
-import {localGet} from "./local_storage";
-import {TweetKol} from "./object_TweetKol";
-import {Category} from "./object_Category";
+import {__DBK_AD_Block_Key, choseColorByID, maxMissedTweetOnce, MsgType} from "./common/consts";
+import {isAdTweetNode, sendMsgToService} from "./common/utils";
+import {localGet} from "./common/local_storage";
+import {TweetKol} from "./object/tweet_kol";
+import {Category, queryCategoriesFromBG, queryCategoryById} from "./object/category";
 import {getUserIdByUsername} from "./timeline/twitter_api";
 
 let __menuBtnDiv: HTMLElement;

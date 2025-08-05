@@ -4,7 +4,7 @@ import {
 } from "./tweet_pager";
 
 import {VirtualScroller} from "./virtual_scroller";
-import {logTweetMgn} from "../debug_flags";
+import {logTweetMgn} from "../common/debug_flags";
 import {TweetResizeObserverManager} from "./tweet_resize_observer";
 import {findCellFromNode} from "./div_node_pool";
 import {cacheRawTweets} from "./db_raw_tweet";
@@ -50,7 +50,7 @@ export class TweetManager {
         document.documentElement.style.overscrollBehavior = "none";
         this.resizeLogger = new TweetResizeObserverManager();
         tweetPager.init().then(async () => {
-            await tweetPager.switchCategory(1);
+            tweetPager.switchCategory(1);
             this.scroller = new VirtualScroller(this);
             await this.scroller!.initFirstPage()
         });
@@ -61,7 +61,7 @@ export class TweetManager {
         this.scroller?.scrollToTop({needScroll: true, targetTop: 0})
     }
 
-    async dispose() {
+    dispose() {
         logTweetMgn("------>>> tweet manager disposed!");
         this.timelineEl.innerHTML = "";
         this.timelineEl.style.removeProperty("height");
@@ -78,7 +78,7 @@ export class TweetManager {
         this.listHeight = 0;
         this.maxCssHeight = 0;
 
-        await tweetPager.resetPager();
+        tweetPager.resetPager();
 
         this.isRendering = false;
 

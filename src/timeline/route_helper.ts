@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import {logGuard, logRoute} from "../debug_flags";
+import {logGuard, logRoute} from "../common/debug_flags";
 
 let inited = false;
 let currentInTC: boolean | null = null;      // 记录上一次状态

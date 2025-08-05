@@ -8,10 +8,10 @@ import {
     defaultQueryKeyMap,
     MsgType,
     watchedOps
-} from "./consts";
-import {checkAndInitDatabase} from "./database";
-import {localGet, localSet} from "./local_storage";
-import {getBearerToken} from "./utils";
+} from "../common/consts";
+import {checkAndInitDatabase} from "../common/database";
+import {localGet, localSet} from "../common/local_storage";
+import {getBearerToken} from "../common/utils";
 
 self.addEventListener('activate', (event) => {
     console.log('------>>> Service Worker activating......');

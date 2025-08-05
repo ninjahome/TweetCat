@@ -429,7 +429,8 @@ export async function databaseQueryByIndex(
     index: string,
     limit: number = Infinity,
     desc: boolean = true,
-    filter?: (row: any) => boolean
+    filter?: (row: any) => boolean,
+    boundValue?: number // 可选的边界值，例如 timestamp；若 desc=true 则为 upperBound，asc=true 则为 lowerBound
 ): Promise<any[]> {
     return new Promise((resolve, reject) => {
         if (!__databaseObj) return reject("Database is not initialized");
@@ -438,8 +439,18 @@ export async function databaseQueryByIndex(
         const tx = __databaseObj.transaction([table], 'readonly');
         const store = tx.objectStore(table);
         const idx = store.index(index);
+
         const direction = desc ? 'prev' : 'next';
-        const request = idx.openCursor(null, direction);
+
+        // 构造 KeyRange 约束：只取小于或大于 boundValue 的数据
+        let keyRange: IDBKeyRange | null = null;
+        if (boundValue !== undefined) {
+            keyRange = desc
+                ? IDBKeyRange.upperBound(boundValue, true)   // timestamp < boundValue
+                : IDBKeyRange.lowerBound(boundValue, true);  // timestamp > boundValue
+        }
+
+        const request = idx.openCursor(keyRange, direction);
 
         request.onsuccess = (event) => {
             const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
@@ -458,6 +469,6 @@ export async function databaseQueryByIndex(
             cursor.continue();
         };
 
-        request.onerror = reject;
+        request.onerror = (e) => reject((e.target as IDBRequest).error);
     });
 }

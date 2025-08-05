@@ -26,6 +26,7 @@ export enum MsgType {
     OpenPlugin = 'OpenPlugin',
     NaviUrlChanged = 'NaviUrlChanged',
     QueryKolByCatID = 'QueryKolByCatID',
+    QueryAllKol = 'QueryAllKol',
     QueryCatsByUser = 'QueryCatsByUser',
     CategoryChanged = 'CategoryChanged',
     QueryKolCat = 'QueryKolCat',

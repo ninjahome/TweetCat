@@ -5,7 +5,7 @@
 import {EntryObj} from "./tweet_entry";
 import {renderTweetHTML} from "./tweet_render";
 import {globalNodePool} from "./div_node_pool";
-import {logMount} from "../debug_flags";
+import {logMount} from "../common/debug_flags";
 
 async function waitStable(node: HTMLElement, tries = 3, interval = 20) {
     let last = node.offsetHeight;

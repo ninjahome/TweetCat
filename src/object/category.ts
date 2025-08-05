@@ -1,14 +1,34 @@
-import {defaultUserName, MsgType} from "./consts";
+import {sendMsgToService} from "../common/utils";
+import {defaultUserName, MsgType} from "../common/consts";
 import {
     __tableCategory,
     __tableKolsInCategory,
-    databaseDelete, databaseDeleteByFilter, databaseGet,
+    databaseDelete,
+    databaseDeleteByFilter,
+    databaseGet,
     databaseQueryByFilter,
     databaseUpdate
-} from "./database";
-import {sendMsgToService} from "./utils";
-import {Category} from "./object_Category";
-import {TweetKol} from "./object_TweetKol";
+} from "../common/database";
+import {TweetKol} from "./tweet_kol";
+
+export class Category {
+    id?: number;
+    catName: string;
+    forUser: string;
+
+    constructor(n: string, u: string, i?: number) {
+        this.catName = n;
+        this.forUser = u;
+        this.id = i;
+    }
+}
+
+
+/**************************************************
+ *
+ *             service work api
+ *
+ * *************************************************/
 
 export async function loadCategories(forUser: string): Promise<Category[]> {
     try {
@@ -38,19 +58,6 @@ export async function CategoryForId(catID: number): Promise<Category | null> {
         console.log("------>>> load categories failed:", e)
         return null;
     }
-}
-
-export async function kolsForCategory(catID: number): Promise<Map<string, TweetKol>> {
-    const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => {
-        return item.catID === catID;
-    });
-
-    const kolInOneCategory = new Map<string, TweetKol>();
-    for (const k of kols) {
-        kolInOneCategory.set(k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID, k.kolUserId));
-    }
-
-    return kolInOneCategory;
 }
 
 export async function updateKolsCategory(kol: TweetKol) {
@@ -101,7 +108,7 @@ export async function removeCategory(catID: number) {
 
 /**************************************************
  *
- *              service work api
+ *               content script api
  *
  * *************************************************/
 export async function queryCategoriesFromBG(): Promise<Category[]> {

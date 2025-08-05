@@ -1,5 +1,5 @@
 import {MountResult, TweetManager} from "./div_cell_manager";
-import {logVS} from "../debug_flags";
+import {logVS} from "../common/debug_flags";
 
 export class VirtualScroller {
     private isRendering = false;

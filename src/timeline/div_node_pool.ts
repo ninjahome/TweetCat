@@ -1,4 +1,4 @@
-import {logPool} from "../debug_flags";
+import {logPool} from "../common/debug_flags";
 import {TweetCatCell} from "./tweet_div_cell";
 
 export class NodePool {

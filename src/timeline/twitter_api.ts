@@ -1,6 +1,6 @@
-import {getBearerToken} from "../utils";
-import {localGet} from "../local_storage";
-import {__DBK_query_id_map, UserByScreenName, UserTweets} from "../consts";
+import {getBearerToken} from "../common/utils";
+import {localGet} from "../common/local_storage";
+import {__DBK_query_id_map, UserByScreenName, UserTweets} from "../common/consts";
 import {EntryObj, parseTimelineFromGraphQL} from "./tweet_entry";
 import {WrapEntryObj} from "./db_raw_tweet";
 

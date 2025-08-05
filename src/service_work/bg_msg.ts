@@ -1,21 +1,20 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {MsgType} from "./consts";
+import {MsgType} from "../common/consts";
 import {
     CategoryForId,
-    kolsForCategory,
     loadCategories,
     queryKolByName,
     removeKolsCategory,
     updateKolsCategory
-} from "./category";
-import {TweetKol} from "./object_TweetKol";
+} from "../object/category";
+import {kolsForCategory, loadAllKols, TweetKol} from "../object/tweet_kol";
 import {
     cacheRawTweets,
     initTweetsCheck,
     loadCachedTweetsByUserId,
     loadLatestTweets,
     WrapEntryObj
-} from "./timeline/db_raw_tweet";
+} from "../timeline/db_raw_tweet";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
     // console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)
@@ -73,7 +72,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.DBReadTweetByCategoryId: {
             const reqData = request.data;
-            return {success: true, data: await loadLatestTweets(reqData.limit, reqData.category)};
+            return {success: true, data: await loadLatestTweets(reqData.limit, reqData.category,reqData.timeStamp)};
+        }
+
+        case MsgType.QueryAllKol:{
+            return {success: true, data: await loadAllKols()};
         }
 
         default:
