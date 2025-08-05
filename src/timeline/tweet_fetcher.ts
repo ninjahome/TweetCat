@@ -14,8 +14,8 @@ class KolCursor {
     nextEligibleFetchTime: number = 0;
     failureCount: number = 0;
 
-    private readonly FETCH_COOL_DOWN = 10 * 60 * 1000; // 10分钟
-    private readonly MIN_KOL_FETCH_INTERVAL = 10 * 60 * 1000; // 每个 KOL 最小间隔 10 分钟
+    private readonly FETCH_COOL_DOWN = 20 * 60 * 1000; // 20分钟
+    private readonly MIN_KOL_FETCH_INTERVAL = 15 * 60 * 1000; // 每个 KOL 最小间隔 15 分钟
 
     constructor(userId: string) {
         this.userId = userId;
@@ -99,11 +99,12 @@ export class TweetFetcher {
 
     private lastKolLoadTime = 0;
     private readonly KOL_REFRESH_INTERVAL = 10 * 60 * 1000;
+    private readonly MIN_FETCH_GAP = 5000;
 
     constructor() {
         const EXECUTION_OVERHEAD = 500;
         const overhead = this.MAX_KOL_PER_ROUND * EXECUTION_OVERHEAD;
-        this.fetchGap = Math.max(0, Math.floor((this.FETCH_INTERVAL_MS - overhead) / this.MAX_KOL_PER_ROUND));
+        this.fetchGap = Math.max(this.MIN_FETCH_GAP, Math.floor((this.FETCH_INTERVAL_MS - overhead) / this.MAX_KOL_PER_ROUND));
 
         logFT(`[TweetFetcher] Initialized with:
   FETCH_INTERVAL_MS = ${this.FETCH_INTERVAL_MS}ms
