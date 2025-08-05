@@ -4,7 +4,6 @@ import {logFT} from "../common/debug_flags";
 import {MsgType} from "../common/consts";
 import {dbObjectToKol, TweetKol} from "../object/tweet_kol";
 
-
 class KolCursor {
     userId: string;
     bottomCursor: string | null = null;
@@ -12,8 +11,9 @@ class KolCursor {
     isEnd: boolean = false;
     latestFetchedAt: number | null = null;
     nextEligibleFetchTime: number = 0;
-    failureCount: number = 0; // 新增字段：记录连续失败次数
-    private readonly FETCH_COOL_DOWN = 10 * 60 * 1000;//10分钟
+    failureCount: number = 0;
+
+    private readonly FETCH_COOL_DOWN = 10 * 60 * 1000; // 10分钟
 
     constructor(userId: string) {
         this.userId = userId;
@@ -40,12 +40,9 @@ class KolCursor {
         this.topCursor = cursor;
     }
 
-    markCooldown(delayMs: number) {
-    }
-
     markFailure() {
         this.failureCount++;
-        const backoff = this.failureCount * this.FETCH_COOL_DOWN; // 最多 60 秒
+        const backoff = this.failureCount * this.FETCH_COOL_DOWN;
         this.nextEligibleFetchTime = Date.now() + backoff;
     }
 
@@ -58,27 +55,32 @@ class KolCursor {
     }
 }
 
-
 export class TweetFetcher {
     private intervalId: number | null = null;
-    private readonly FETCH_INTERVAL_MS = 120_000; // 每 60 秒轮询一次
+    private readonly FETCH_INTERVAL_MS = 120_000;
     private readonly FETCH_LIMIT = 20;
-    private readonly FETCH_GAP = 5000;
+    private readonly MAX_KOL_PER_ROUND = 5;
+
+    private readonly fetchGap: number;
     private kolCursors: Map<string, KolCursor> = new Map();
     private kolIds: Map<string, TweetKol> = new Map();
     private currentGroupIndex = 0;
-    private readonly MAX_KOL_PER_ROUND = 5;
 
     private lastKolLoadTime = 0;
-    private KOL_REFRESH_INTERVAL = 10 * 60 * 1000;
-    private readonly fetchGap: number;
+    private readonly KOL_REFRESH_INTERVAL = 10 * 60 * 1000;
 
     constructor() {
         const EXECUTION_OVERHEAD = 500;
         const overhead = this.MAX_KOL_PER_ROUND * EXECUTION_OVERHEAD;
         this.fetchGap = Math.max(0, Math.floor((this.FETCH_INTERVAL_MS - overhead) / this.MAX_KOL_PER_ROUND));
-    }
 
+        console.info(`[TweetFetcher] Initialized with:
+  FETCH_INTERVAL_MS = ${this.FETCH_INTERVAL_MS}ms
+  MAX_KOL_PER_ROUND = ${this.MAX_KOL_PER_ROUND}
+  FETCH_LIMIT = ${this.FETCH_LIMIT}
+  computed fetchGap = ${this.fetchGap}ms
+`);
+    }
 
     private getKolCursor(kolId: string): KolCursor {
         let cursor = this.kolCursors.get(kolId);
@@ -92,6 +94,7 @@ export class TweetFetcher {
     start() {
         if (this.intervalId !== null) return;
 
+        console.info("[TweetFetcher] Started.");
         this.intervalId = window.setInterval(async () => {
             await this.fetchAllKols();
         }, this.FETCH_INTERVAL_MS);
@@ -101,6 +104,7 @@ export class TweetFetcher {
         if (this.intervalId !== null) {
             clearInterval(this.intervalId);
             this.intervalId = null;
+            console.info("[TweetFetcher] Stopped.");
         }
     }
 
@@ -109,13 +113,13 @@ export class TweetFetcher {
 
         const rsp = await sendMsgToService({}, MsgType.QueryAllKol);
         if (!rsp.success || !rsp.data) {
-            console.warn("failed to load kols from service work");
-            return
+            console.warn("[TweetFetcher] Failed to load KOLs from service worker.");
+            return;
         }
 
-        this.kolIds = dbObjectToKol(rsp.data as any[])
-
+        this.kolIds = dbObjectToKol(rsp.data as any[]);
         this.lastKolLoadTime = Date.now();
+        console.info(`[TweetFetcher] Loaded ${this.kolIds.size} KOLs.`);
     }
 
     private getNextKolGroup(): string[] {
@@ -135,9 +139,10 @@ export class TweetFetcher {
         return groupKolIds;
     }
 
-
     private async fetchOneKolBatch(userId: string, cursor: KolCursor): Promise<boolean> {
         try {
+            console.info(`[TweetFetcher] ▶️ Fetching tweets for ${userId}`);
+
             const result = await fetchTweets(userId, this.FETCH_LIMIT, cursor.bottomCursor ?? undefined);
             const tweets = result.tweets ?? [];
 
@@ -145,48 +150,54 @@ export class TweetFetcher {
                 await sendMsgToService(result.wrapDbEntry, MsgType.CacheRawTweetData);
                 cursor.updateBottom(result.nextCursor ?? null);
                 cursor.latestFetchedAt = Date.now();
+                cursor.resetFailureCount();
             }
 
             if (tweets.length === 0 || !result.nextCursor) {
                 cursor.markEnd();
             }
 
-            logFT(`${userId} fetched ${tweets.length} tweets`);
+            logFT(`[TweetFetcher] ✅ ${userId} fetched ${tweets.length} tweets`);
             return true;
         } catch (err) {
             const msg = typeof err === 'object' && err && 'message' in err ? String((err as any).message) : '';
 
             if (msg.includes('429')) {
-                console.warn(`[Fetcher] 429 for ${userId}, cooldown`);
+                console.warn(`[TweetFetcher] ❌ 429 for ${userId}, applying cooldown`);
                 cursor.markFailure();
                 return false;
             }
 
-            console.warn(`[Fetcher] fetch error for ${userId}`, err);
+            console.warn(`[TweetFetcher] ❌ Fetch error for ${userId}`, err);
             return false;
         }
     }
 
     private async fetchAllKols() {
-
+        console.info(`[TweetFetcher] ⏱ Starting round ${this.currentGroupIndex} at ${new Date().toISOString()}`);
         await this.maybeLoadKol();
 
         const groupKolIds = this.getNextKolGroup();
 
         for (const userId of groupKolIds) {
             const cursor = this.getKolCursor(userId);
-            if (!cursor.canFetch()) continue;
+
+            if (!cursor.canFetch()) {
+                console.info(`[TweetFetcher] ⏸ Skipped ${userId} (cooldown or ended)`);
+                continue;
+            }
 
             const ok = await this.fetchOneKolBatch(userId, cursor);
-            if (!ok) break; // 可选：遇到 429 就终止本轮，等待下一轮再试
+            if (!ok) break; // 遇到 429 等异常中止本轮
 
-            await sleep(this.fetchGap); // 控制请求速率
+            await sleep(this.fetchGap);
         }
+
+        console.info(`[TweetFetcher] ✅ Round ${this.currentGroupIndex} complete.\n`);
     }
 
-
     private findNewestTweet() {
-
+        // reserved for future logic
     }
 }
 
