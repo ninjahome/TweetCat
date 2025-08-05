@@ -24,11 +24,11 @@ module.exports = (env, argv) => {
         devtool: mode === 'development' ? 'inline-source-map' : false, // 生产模式下不生成 Source Map
         entry: {
             background: path.resolve(__dirname, './src/service_work/background.ts'),
-            welcome: path.resolve(__dirname, './src/welcome.ts'),
+            welcome: path.resolve(__dirname, './src/popup/welcome.ts'),
             injection: path.resolve(__dirname, './src/injection.ts'),
-            dashboard: path.resolve(__dirname, './src/dashboard.ts'),
-            content: path.resolve(__dirname, './src/content.ts'),
-            kol_mg: path.resolve(__dirname, './src/kol_mg.ts'),
+            dashboard: path.resolve(__dirname, './src/popup/dashboard.ts'),
+            content: path.resolve(__dirname, './src/content/content.ts'),
+            kol_mg: path.resolve(__dirname, './src/popup/kol_mg.ts'),
         },
         output: {
             filename: 'js/[name].js',

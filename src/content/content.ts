@@ -3,10 +3,10 @@ import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./content_oberv
 import {
     appendFilterOnKolProfileHome,
 } from "./content_filter";
-import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "./common/consts";
-import {addCustomStyles, isTwitterUserProfile} from "./common/utils";
-import {TweetKol} from "./object/tweet_kol";
-import {appendTweetCatMenuItem} from "./timeline/timeline_ui";
+import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "../common/consts";
+import {addCustomStyles, isTwitterUserProfile} from "../common/utils";
+import {TweetKol} from "../object/tweet_kol";
+import {appendTweetCatMenuItem} from "../timeline/timeline_ui";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;

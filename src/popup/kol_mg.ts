@@ -1,8 +1,8 @@
-import {loadCategories, removeKolsCategory, updateKolsCategory} from "./object/category";
-import {defaultUserName} from "./common/consts";
-import {checkAndInitDatabase} from "./common/database";
-import {Category} from "./object/category";
-import {kolsForCategory, TweetKol} from "./object/tweet_kol";
+import {loadCategories, removeKolsCategory, updateKolsCategory} from "../object/category";
+import {defaultUserName} from "../common/consts";
+import {checkAndInitDatabase} from "../common/database";
+import {Category} from "../object/category";
+import {kolsForCategory, TweetKol} from "../object/tweet_kol";
 
 const queryUrl = new URL(window.location.href);
 document.addEventListener("DOMContentLoaded", initKolManager as EventListener);

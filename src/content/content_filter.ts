@@ -1,10 +1,10 @@
-import {observeForElement, sendMsgToService} from "./common/utils";
-import {choseColorByID, defaultAllCategoryID, MsgType} from "./common/consts";
+import {observeForElement, sendMsgToService} from "../common/utils";
+import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
 import {parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
-import {queryFilterFromBG, TweetKol} from "./object/tweet_kol";
-import {Category, queryCategoriesFromBG, queryCategoryById} from "./object/category";
-import {getUserIdByUsername} from "./timeline/twitter_api";
+import {queryFilterFromBG, TweetKol} from "../object/tweet_kol";
+import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
+import {getUserIdByUsername} from "../timeline/twitter_api";
 
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
