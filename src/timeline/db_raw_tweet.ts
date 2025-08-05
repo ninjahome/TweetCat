@@ -44,14 +44,14 @@ export class WrapEntryObj {
 
 const MAX_TWEETS_PER_KOL = 100;
 
-export async function cacheRawTweets(userId: string, rawTweets: WrapEntryObj[]) {
+export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]) {
     const limit = pLimit(5);
     try {
         await Promise.all(
             rawTweets.map(obj => limit(() => databasePutItem(__tableCachedTweets, obj)))
         );
-        const dataLen = await pruneOldDataIfNeeded(userId, idx_userid_time, __tableCachedTweets, MAX_TWEETS_PER_KOL);
-        logTC(`[cacheRawTweets] ✅ ${rawTweets.length} tweets cached. ${dataLen} old tweets deleted`);
+        const dataLen = await pruneOldDataIfNeeded(kolId, idx_userid_time, __tableCachedTweets, MAX_TWEETS_PER_KOL);
+        logTC(`[cacheRawTweets] ✅ ${rawTweets.length} tweets cached. ${dataLen} old tweets deleted for kol[${kolId}]`);
     } catch (error) {
         logTC(`[cacheRawTweets] Error caching original tweet: ${error}`);
     }
@@ -99,7 +99,7 @@ export async function loadLatestTweets(limit: number = 20,
         'timestamp_idx',
         limit,
         true,
-        filterFn, // 可以是函数或 null
+        filterFn,
         timeStamp
     );
 
