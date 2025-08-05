@@ -15,6 +15,7 @@ class KolCursor {
     failureCount: number = 0;
 
     private readonly FETCH_COOL_DOWN = 10 * 60 * 1000; // 10分钟
+    private readonly MIN_KOL_FETCH_INTERVAL = 10 * 60 * 1000; // 每个 KOL 最小间隔 10 分钟
 
     constructor(userId: string) {
         this.userId = userId;
@@ -26,6 +27,7 @@ class KolCursor {
         this.isEnd = false;
         this.latestFetchedAt = null;
         this.failureCount = 0;
+        this.setNextFetchAfter(this.MIN_KOL_FETCH_INTERVAL);
     }
 
     markEnd() {
@@ -44,17 +46,45 @@ class KolCursor {
     markFailure() {
         this.failureCount++;
         const backoff = this.failureCount * this.FETCH_COOL_DOWN;
-        this.nextEligibleFetchTime = Date.now() + backoff;
+        this.setNextFetchAfter(backoff);
     }
 
     resetFailureCount() {
         this.failureCount = 0;
+        this.setNextFetchAfter(this.MIN_KOL_FETCH_INTERVAL);
+    }
+
+    setNextFetchAfter(ms: number) {
+        this.nextEligibleFetchTime = Date.now() + ms;
     }
 
     canFetch(): boolean {
         return Date.now() >= this.nextEligibleFetchTime && !this.isEnd;
     }
+
+    getDebugInfo(): string {
+        const now = Date.now();
+        const status = this.isEnd ? "🔚 ended"
+            : now < this.nextEligibleFetchTime ? "⏸ cooling down"
+                : "✅ ready";
+
+        const nextIn = Math.max(0, this.nextEligibleFetchTime - now);
+        const nextSec = Math.round(nextIn / 1000);
+
+        const lastFetched = this.latestFetchedAt
+            ? new Date(this.latestFetchedAt).toISOString()
+            : "never";
+
+        return `[KolCursor] ${this.userId}
+  status: ${status}
+  failureCount: ${this.failureCount}
+  nextFetchIn: ${nextSec}s
+  latestFetchedAt: ${lastFetched}
+  bottomCursor: ${this.bottomCursor ?? "null"}`;
+    }
+
 }
+
 
 export class TweetFetcher {
     private intervalId: number | null = null;
@@ -148,7 +178,7 @@ export class TweetFetcher {
 
     private async fetchOneKolBatch(userId: string, cursor: KolCursor): Promise<boolean> {
         try {
-            logFT(`[TweetFetcher] ▶️ Fetching tweets for ${userId}`);
+            logFT(`[TweetFetcher] ▶️ Fetching tweets for ${userId} cursor info:${cursor.getDebugInfo()}`);
 
             const result = await fetchTweets(userId, this.FETCH_LIMIT, cursor.bottomCursor ?? undefined);
             const tweets = result.tweets ?? [];
@@ -203,7 +233,7 @@ export class TweetFetcher {
         logFT(`[TweetFetcher] ✅ Round ${this.currentGroupIndex} complete.\n`);
     }
 
-    async findNewestTweet() :Promise<EntryObj[]>{
+    async findNewestTweet(): Promise<EntryObj[]> {
         return []
     }
 }
