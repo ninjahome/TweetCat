@@ -3,6 +3,7 @@ import {sendMsgToService, sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
 import {MsgType} from "../common/consts";
 import {dbObjectToKol, TweetKol} from "../object/tweet_kol";
+import {EntryObj} from "./tweet_entry";
 
 class KolCursor {
     userId: string;
@@ -74,7 +75,7 @@ export class TweetFetcher {
         const overhead = this.MAX_KOL_PER_ROUND * EXECUTION_OVERHEAD;
         this.fetchGap = Math.max(0, Math.floor((this.FETCH_INTERVAL_MS - overhead) / this.MAX_KOL_PER_ROUND));
 
-        console.info(`[TweetFetcher] Initialized with:
+        logFT(`[TweetFetcher] Initialized with:
   FETCH_INTERVAL_MS = ${this.FETCH_INTERVAL_MS}ms
   MAX_KOL_PER_ROUND = ${this.MAX_KOL_PER_ROUND}
   FETCH_LIMIT = ${this.FETCH_LIMIT}
@@ -94,7 +95,13 @@ export class TweetFetcher {
     start() {
         if (this.intervalId !== null) return;
 
-        console.info("[TweetFetcher] Started.");
+        logFT("[TweetFetcher] Started (immediate fire).");
+
+        // // 🔥 立即执行一次
+        // this.fetchAllKols().catch(err => {
+        //     console.error("[TweetFetcher] Immediate fetchAllKols failed:", err);
+        // });
+
         this.intervalId = window.setInterval(async () => {
             await this.fetchAllKols();
         }, this.FETCH_INTERVAL_MS);
@@ -104,7 +111,7 @@ export class TweetFetcher {
         if (this.intervalId !== null) {
             clearInterval(this.intervalId);
             this.intervalId = null;
-            console.info("[TweetFetcher] Stopped.");
+            logFT("[TweetFetcher] Stopped.");
         }
     }
 
@@ -119,11 +126,11 @@ export class TweetFetcher {
 
         this.kolIds = dbObjectToKol(rsp.data as any[]);
         this.lastKolLoadTime = Date.now();
-        console.info(`[TweetFetcher] Loaded ${this.kolIds.size} KOLs.`);
+        logFT(`[TweetFetcher] Loaded ${this.kolIds.size} KOLs.`);
     }
 
     private getNextKolGroup(): string[] {
-        const allKolIds = Array.from(this.kolIds.keys());
+        const allKolIds = Array.from(this.kolIds.values()).map(kol => kol.kolUserId) as string[];
         if (allKolIds.length === 0) return [];
 
         const total = allKolIds.length;
@@ -141,7 +148,7 @@ export class TweetFetcher {
 
     private async fetchOneKolBatch(userId: string, cursor: KolCursor): Promise<boolean> {
         try {
-            console.info(`[TweetFetcher] ▶️ Fetching tweets for ${userId}`);
+            logFT(`[TweetFetcher] ▶️ Fetching tweets for ${userId}`);
 
             const result = await fetchTweets(userId, this.FETCH_LIMIT, cursor.bottomCursor ?? undefined);
             const tweets = result.tweets ?? [];
@@ -174,16 +181,16 @@ export class TweetFetcher {
     }
 
     private async fetchAllKols() {
-        console.info(`[TweetFetcher] ⏱ Starting round ${this.currentGroupIndex} at ${new Date().toISOString()}`);
         await this.maybeLoadKol();
 
         const groupKolIds = this.getNextKolGroup();
+        logFT(`[TweetFetcher] ⏱ Starting round ${this.currentGroupIndex} groupKolIds【${groupKolIds}】at ${new Date().toISOString()}`);
 
         for (const userId of groupKolIds) {
             const cursor = this.getKolCursor(userId);
 
             if (!cursor.canFetch()) {
-                console.info(`[TweetFetcher] ⏸ Skipped ${userId} (cooldown or ended)`);
+                logFT(`[TweetFetcher] ⏸ Skipped ${userId} (cooldown or ended)`);
                 continue;
             }
 
@@ -193,12 +200,22 @@ export class TweetFetcher {
             await sleep(this.fetchGap);
         }
 
-        console.info(`[TweetFetcher] ✅ Round ${this.currentGroupIndex} complete.\n`);
+        logFT(`[TweetFetcher] ✅ Round ${this.currentGroupIndex} complete.\n`);
     }
 
-    private findNewestTweet() {
-        // reserved for future logic
+    async findNewestTweet() :Promise<EntryObj[]>{
+        return []
     }
 }
 
 export const tweetFetcher = new TweetFetcher();
+document.addEventListener('DOMContentLoaded', function onLoadOnce() {
+    tweetFetcher.start();
+    logFT('[TweetFetcher] 🚀 DOMContentLoaded: starting fetcher...');
+    document.removeEventListener('DOMContentLoaded', onLoadOnce);
+});
+
+window.addEventListener('beforeunload', () => {
+    logFT('[TweetFetcher] 🛑 beforeunload: stopping fetcher...');
+    tweetFetcher.stop();
+});

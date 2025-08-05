@@ -38,6 +38,7 @@ async function buildTweetQueryURL({userId, count, nextCursor}: TweetRequestParam
     const variables = encodeURIComponent(JSON.stringify(variablesObj));
 
     const features = encodeURIComponent(JSON.stringify({
+        "rweb_xchat_enabled": false, // ✅ 加上这个
         "rweb_video_screen_enabled": false,
         "profile_label_improvements_pcf_label_in_post_enabled": true,
         "rweb_tipjar_consumption_enabled": true,

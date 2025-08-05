@@ -8,6 +8,7 @@ import {sendMsgToService, sleep} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {BossOfTheWholeWorld} from "../common/database";
 import {WrapEntryObj} from "./db_raw_tweet";
+import {tweetFetcher} from "./tweet_fetcher";
 
 
 export class TweetPager {
@@ -32,7 +33,7 @@ export class TweetPager {
             category: this.currentCategoryId,
             timeStamp: this.timeStamp
         }, MsgType.DBReadTweetByCategoryId);
-        if (!rsp.success) {
+        if (!rsp.success || !rsp.data) {
             console.warn("------>>> failed to switchCategory!");
             return [];
         }
@@ -40,14 +41,14 @@ export class TweetPager {
         const rawData = rsp.data as WrapEntryObj[];
         if (rawData.length === 0) {
             console.warn("------>>> no data when switchCategory!");//TOOD::fetcher
-            return [];
+            return tweetFetcher.findNewestTweet();
         }
 
         const tweets = unwrapEntryObj(rawData);
         const lastOne = rawData[rawData.length - 1];
         this.timeStamp = lastOne.timestamp;
 
-        if(tweets.length < pageSize){
+        if (tweets.length < pageSize) {
             logPager(`[getNextTweets] not enough data to show!`)//TODO::
             this.isEnd = true;
         }
