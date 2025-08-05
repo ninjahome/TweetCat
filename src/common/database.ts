@@ -15,10 +15,22 @@ const initialCategories = [
 ];
 
 const initialKols = [
-    {kolName: 'TweetCatOrg', catID: defaultCatID, displayName: 'TweetCat', kolUserId: "1899045104146644992"},
-    {kolName: 'elonmusk', catID: defaultCatID, displayName: 'Elon Musk', kolUserId: "44196397"},
-    {kolName: 'BillGates', catID: defaultCatID, displayName: 'Bill Gates', kolUserId: "50393960"},
-    {kolName: 'realDonaldTrump', catID: defaultCatID, displayName: 'Donald J. Trump', kolUserId: "25073877"}
+    {
+        kolName: 'TweetCatOrg',
+        catID: defaultCatID,
+        displayName: 'TweetCat',
+        kolUserId: "1899045104146644992",
+        avatarUrl: ""
+    },
+    {kolName: 'elonmusk', catID: defaultCatID, displayName: 'Elon Musk', kolUserId: "44196397", avatarUrl: ""},
+    {kolName: 'BillGates', catID: defaultCatID, displayName: 'Bill Gates', kolUserId: "50393960", avatarUrl: ""},
+    {
+        kolName: 'realDonaldTrump',
+        catID: defaultCatID,
+        displayName: 'Donald J. Trump',
+        kolUserId: "25073877",
+        avatarUrl: ""
+    }
 ];
 
 function initDatabase(): Promise<IDBDatabase> {

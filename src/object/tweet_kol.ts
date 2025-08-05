@@ -1,6 +1,6 @@
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {__tableKolsInCategory, databaseQueryByFilter} from "../common/database";
+import {__tableKolsInCategory, databaseQueryAll, databaseQueryByFilter} from "../common/database";
 
 export class TweetKol {
     kolName: string;
@@ -42,10 +42,9 @@ export async function queryFilterFromBG(catID: number): Promise<Map<string, Twee
  *               service work api
  *
  * *************************************************/
-export async function loadAllKols():Promise<TweetKol[]>{
-    return []
+export async function loadAllKols(): Promise<any[]> {
+    return await databaseQueryAll(__tableKolsInCategory);
 }
-
 
 
 export async function kolsForCategory(catID: number): Promise<Map<string, TweetKol>> {
@@ -53,10 +52,15 @@ export async function kolsForCategory(catID: number): Promise<Map<string, TweetK
         return item.catID === catID;
     });
 
-    const kolInOneCategory = new Map<string, TweetKol>();
-    for (const k of kols) {
-        kolInOneCategory.set(k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID, k.kolUserId));
-    }
+    // const kolInOneCategory = new Map<string, TweetKol>();
+    // for (const k of kols) {
+    //     kolInOneCategory.set(k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID, k.kolUserId));
+    // }
 
-    return kolInOneCategory;
+    return dbObjectToKol(kols);
 }
+
+export function dbObjectToKol(obj: any[]): Map<string, TweetKol> {
+    return new Map(obj.map(k => [k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID, k.kolUserId)]));
+}
+
