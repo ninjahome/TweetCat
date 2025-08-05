@@ -118,6 +118,9 @@ function initSystemSetting(request: IDBOpenDBRequest) {
     }
 }
 
+export const idx_userid_time = 'userId_timestamp_idx'
+export const idx_time = 'timestamp_idx'
+
 function initCachedTweetsTable(request: IDBOpenDBRequest) {
     const db = request.result;
 
@@ -128,9 +131,9 @@ function initCachedTweetsTable(request: IDBOpenDBRequest) {
 
     const tweetStore = db.createObjectStore(__tableCachedTweets, {keyPath: 'tweetId'});
 
-    tweetStore.createIndex('timestamp_idx', 'timestamp', {unique: false});
+    tweetStore.createIndex(idx_time, 'timestamp', {unique: false});
 
-    tweetStore.createIndex('userId_timestamp_idx', ['userId', 'timestamp'], {unique: false});
+    tweetStore.createIndex(idx_userid_time, ['userId', 'timestamp'], {unique: false});
 
     logDB("------>>>[Database] Created cached tweets table with indexes successfully.", __tableCachedTweets);
 }
@@ -495,5 +498,68 @@ export async function databaseQueryByIndex(
         };
 
         request.onerror = (e) => reject((e.target as IDBRequest).error);
+    });
+}
+
+export async function pruneOldDataIfNeeded(
+    key: string,
+    indexName: string,
+    storeName: string,
+    maxKeep: number
+): Promise<number> {
+    return new Promise((resolve, reject) => {
+        if (!__databaseObj) return reject("Database is not initialized");
+        const tx = __databaseObj.transaction([storeName], 'readwrite');
+        const store = tx.objectStore(storeName);
+        const index = store.index(indexName);
+
+        // Step 1: 先统计数量
+        const lowerBound = [key, -Infinity];
+        const upperBound = [key, Infinity];
+        const keyRange = IDBKeyRange.bound(lowerBound, upperBound);
+
+        const countRequest = index.count(keyRange);
+
+        countRequest.onsuccess = () => {
+            const total = countRequest.result;
+            if (total <= maxKeep) {
+                console.log(`[pruneOldDataIfNeeded] ✅ no need to Pruned total[${total}]`);
+                return resolve(0);
+            }
+
+            // Step 2: 需要清理的才继续 openCursor
+            const cursorRequest = index.openCursor(keyRange, 'prev');
+            let count = 0;
+            let deleted = 0;
+
+            cursorRequest.onsuccess = (event) => {
+                const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
+                if (!cursor) return;
+
+                count++;
+                if (count > maxKeep) {
+                    cursor.delete();
+                    deleted++;
+                }
+
+                cursor.continue();
+            };
+
+            cursorRequest.onerror = (event) => {
+                console.error('[pruneOldDataIfNeeded] ❌ Cursor error:', (event.target as IDBRequest).error);
+                reject((event.target as IDBRequest).error);
+            };
+
+            tx.oncomplete = () => {
+                if (deleted > 0) {
+                    console.log(`[pruneOldDataIfNeeded] ✅ Pruned ${deleted} old data for key=${key}`);
+                }
+                resolve(deleted);
+            };
+        };
+
+        countRequest.onerror = (event) => {
+            reject(`Failed to count records: ${(event.target as IDBRequest).error}`);
+        };
     });
 }

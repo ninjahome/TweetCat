@@ -7,7 +7,6 @@ import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../common/debug_flags";
 import {TweetResizeObserverManager} from "./tweet_resize_observer";
 import {findCellFromNode} from "./div_node_pool";
-import {cacheRawTweets} from "./db_raw_tweet";
 
 export interface MountResult {
     needScroll: boolean;

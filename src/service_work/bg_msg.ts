@@ -57,7 +57,8 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.CacheRawTweetData: {
-            await cacheRawTweets(request.data as WrapEntryObj[]);
+            const rd = request.data;
+            await cacheRawTweets(rd.kolId, rd.data as WrapEntryObj[]);
             return {success: true};
         }
 
@@ -72,10 +73,10 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.DBReadTweetByCategoryId: {
             const reqData = request.data;
-            return {success: true, data: await loadLatestTweets(reqData.limit, reqData.category,reqData.timeStamp)};
+            return {success: true, data: await loadLatestTweets(reqData.limit, reqData.category, reqData.timeStamp)};
         }
 
-        case MsgType.QueryAllKol:{
+        case MsgType.QueryAllKol: {
             return {success: true, data: await loadAllKols()};
         }
 

@@ -185,7 +185,7 @@ export class TweetFetcher {
             const tweets = result.tweets ?? [];
 
             if (tweets.length > 0) {
-                await sendMsgToService(result.wrapDbEntry, MsgType.CacheRawTweetData);
+                await sendMsgToService({kolId:userId,data:result.wrapDbEntry}, MsgType.CacheRawTweetData);
                 cursor.updateBottom(result.nextCursor ?? null);
                 cursor.latestFetchedAt = Date.now();
                 cursor.resetFailureCount();
