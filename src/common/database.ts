@@ -71,8 +71,8 @@ function initDatabase(): Promise<IDBDatabase> {
             __databaseObj = (event.target as IDBOpenDBRequest).result;
             logDB("------>>>[Database]Database need to update:", __databaseObj.version);
             const request = (event.target as IDBOpenDBRequest);
-            initCategory(request);
-            initKolsInCategory(request);
+            initCategory(request).then();
+            initKolsInCategory(request).then();
             initSystemSetting(request);
             initCachedTweetsTable(request);
             initKolCursorTable(request);
@@ -80,41 +80,47 @@ function initDatabase(): Promise<IDBDatabase> {
     });
 }
 
-function initCategory(request: IDBOpenDBRequest) {
+async function initCategory(request: IDBOpenDBRequest) {
     const db = request.result;
+
+    if (!db.objectStoreNames.contains(__tableCategory)) {
+        db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
+    }
+
+    const counter = await countTable(__tableCategory);
+    if (counter > 0) return;
+
     const transaction = request.transaction;
-
-    if (db.objectStoreNames.contains(__tableCategory)) {
-        return;
+    if (!transaction) {
+        console.warn("------>>>[Database]Inserted database transaction failed");
+        return
     }
-    db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
-    if (transaction) {
-        const categoryStore = transaction.objectStore(__tableCategory);
-        initialCategories.forEach(category => {
-            categoryStore.add(category);
-        });
-        logDB("------>>>[Database]Inserted initial categories.", initialCategories);
-    }
-
-    logDB("------>>>[Database]Created category successfully.", __tableCategory);
+    const categoryStore = transaction.objectStore(__tableCategory);
+    initialCategories.forEach(category => {
+        categoryStore.add(category);
+    });
+    logDB("------>>>[Database]Created category successfully.", __tableCategory, "Inserted initial categories.", initialCategories);
 }
 
-function initKolsInCategory(request: IDBOpenDBRequest) {
+async function initKolsInCategory(request: IDBOpenDBRequest) {
     const db = request.result;
-    const transaction = request.transaction;
 
-    if (db.objectStoreNames.contains(__tableKolsInCategory)) {
-        return;
+    if (!db.objectStoreNames.contains(__tableKolsInCategory)) {
+        db.createObjectStore(__tableKolsInCategory, {keyPath: 'kolName'});
     }
-    db.createObjectStore(__tableKolsInCategory, {keyPath: 'kolName'});
-    if (transaction) {
-        const categoryStore = transaction.objectStore(__tableKolsInCategory);
-        initialKols.forEach(kol => {
-            categoryStore.add(kol);
-        });
-        logDB("------>>>[Database]Inserted initial categories.", initialKols);
+    const transaction = request.transaction;
+    if (!transaction) {
+        console.warn("------>>>[Database]Inserted database transaction failed");
+        return
     }
-    logDB("------>>>[Database]Create kols in category successfully.", __tableKolsInCategory);
+    const counter = await countTable(__tableKolsInCategory);
+    if (counter > 0) return;
+
+    const categoryStore = transaction.objectStore(__tableKolsInCategory);
+    initialKols.forEach(kol => {
+        categoryStore.add(kol);
+    });
+    logDB("------>>>[Database]Create kols in category successfully.", __tableKolsInCategory, "Inserted initial categories.", initialKols);
 }
 
 function initSystemSetting(request: IDBOpenDBRequest) {

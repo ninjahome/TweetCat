@@ -1,97 +1,80 @@
 import {__tableKolCursor, databasePutItem, databaseQueryAll} from "../common/database";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
+import {logFT, logKC} from "../common/debug_flags";
 
 export class KolCursor {
     userId: string;
-    bottomCursor: string | null = null;
     topCursor: string | null = null;
-    nextNewestFetchTime: number = 0
-    nextHistoryFetchTime: number = 0
-    cacheEnough: boolean = false;
-    coolDownTime: number = 0;
-    failureCount: number = 0;
+    bottomCursor: string | null = null;
+    private cacheEnough: boolean = false;
+    private nextNewestFetchTime: number = 0
+    private nextHistoryFetchTime: number = 0
+    private failureCount: number = 0;
 
     private readonly LONG_WAIT_FOR_NEWEST = 20 * 60 * 1000; // 20分钟
     private readonly SHORT_WAIT_FOR_NEWEST = 1 * 60 * 1000; // 1分钟
     private readonly WAIT_FOR_HISTORY = 5 * 60 * 1000; // 5分钟
-    private readonly FETCH_COOL_DOWN = 2 * 60 * 1000; // 2分钟
+    private readonly MaxFailureTimes = 5; // 5分钟
 
-    constructor(userId: string) {
+    constructor(userId: string, topCursor: string | null = null) {
         this.userId = userId;
+        this.topCursor = topCursor;
+        logKC(`new cursor create userid=${userId} topCursor=${topCursor}`)
     }
 
-    waitForNextNewestRound(topCursor: string | null = null, bottomCursor: string | null = null, cacheEnough: boolean = false) {
-        this.topCursor = topCursor;
-        this.bottomCursor = bottomCursor;
+    waitForNextNewestRound(topCursor: string | null, bottomCursor: string | null) {
+        logKC(`[newest]⚠️ cursor before changed: top:[${this.topCursor}] bottom:[${this.bottomCursor}] failureCount:[${this.failureCount}] nextFetchTime:[${this.nextNewestFetchTime}]`)
         this.failureCount = 0;
-        this.cacheEnough = cacheEnough;
+        if (!this.bottomCursor) {
+            this.bottomCursor = bottomCursor;
+        }
+        this.topCursor = topCursor;
         if (!topCursor) {
             this.nextNewestFetchTime = Date.now() + this.LONG_WAIT_FOR_NEWEST;
         } else {
             this.nextNewestFetchTime = Date.now() + this.SHORT_WAIT_FOR_NEWEST;
         }
-        this.coolDownTime = Date.now() + this.FETCH_COOL_DOWN;
+        logKC(`[newest] ✅ cursor before changed: top:[${this.topCursor}] bottom:[${this.bottomCursor}] failureCount:[${this.failureCount}] nextFetchTime:[${this.nextNewestFetchTime}]`)
     }
 
     canFetchNew(): boolean {
         const now = Date.now();
-        return now >= this.coolDownTime && now > this.nextNewestFetchTime;
+        return now > this.nextNewestFetchTime && this.networkValid;
     }
 
-    updateBottom(nextCursor: string | null = null) {
+    get networkValid(): boolean {
+        return this.failureCount < this.MaxFailureTimes
+    }
+
+    updateBottom(nextCursor: string | null) {
+        logKC(`[history]🌧️ cursor before changed:bottom:[${this.bottomCursor}] failureCount:[${this.failureCount}] nextFetchTime:[${this.nextHistoryFetchTime}]`)
         this.bottomCursor = nextCursor;
         this.failureCount = 0;
-        if (!nextCursor) return;
-        this.nextHistoryFetchTime = Date.now() + this.WAIT_FOR_HISTORY;
-        this.coolDownTime = Date.now() + this.FETCH_COOL_DOWN;
+        if (nextCursor) {
+            this.nextHistoryFetchTime = Date.now() + this.WAIT_FOR_HISTORY;
+        }
+        logKC(`[history] ☀️ cursor before changed:  bottom:[${this.bottomCursor}] failureCount:[${this.failureCount}] nextFetchTime:[${this.nextHistoryFetchTime}]`)
     }
 
     updateCacheStatus(cacheEnough: boolean) {
         this.cacheEnough = cacheEnough;
+        logKC(`[cacheStatus] 🐼 cursor changed  cacheEnough:[${this.cacheEnough}] `)
     }
 
     needFetchOld(): boolean {
         const now = Date.now();
-        return now >= this.coolDownTime && !this.cacheEnough && !this.bottomCursor
+        return now >= this.nextHistoryFetchTime && !this.cacheEnough && null != this.bottomCursor && this.networkValid
     }
 
     markFailure() {
         this.failureCount++;
-        this.coolDownTime = Date.now() + this.failureCount * this.FETCH_COOL_DOWN;
+        logKC(`[failure]🐲 cursor changed failureCount:[${this.failureCount}] `)
     }
 
     static fromJSON(obj: any): KolCursor {
-        const cursor = new KolCursor(obj.userId);
-        cursor.bottomCursor = obj.bottomCursor ?? null;
-        cursor.topCursor = obj.topCursor ?? null;
-        cursor.nextNewestFetchTime = obj.nextNewestFetchTime ?? 0;
-        cursor.nextHistoryFetchTime = obj.nextHistoryFetchTime ?? 0;
-        cursor.cacheEnough = obj.cacheEnough ?? false;
-        cursor.coolDownTime = obj.coolDownTime ?? 0;
-        cursor.failureCount = obj.failureCount ?? 0;
-        return cursor;
+        return new KolCursor(obj.userId, obj.topCursor ?? null);
     }
-}
-
-export function debugKolCursor(cursor: KolCursor): string {
-    const now = Date.now();
-
-    function formatMs(ms: number) {
-        const delta = ms - now;
-        return delta <= 0 ? "ready" : `${Math.round(delta / 1000)}s`;
-    }
-
-    return `[KolCursor] ${cursor.userId}
-  topCursor: ${cursor.topCursor ?? "null"}
-  bottomCursor: ${cursor.bottomCursor ?? "null"}
-  canFetchNew: ${cursor.canFetchNew()}
-  needFetchOld: ${cursor.needFetchOld()}
-  cacheEnough: ${cursor.cacheEnough}
-  failureCount: ${cursor.failureCount}
-  cooldown: ${formatMs(cursor.coolDownTime)}
-  nextNewestFetchIn: ${formatMs(cursor.nextNewestFetchTime)}
-  nextHistoryFetchIn: ${formatMs(cursor.nextHistoryFetchTime)}`;
 }
 
 /**************************************************
@@ -131,5 +114,5 @@ export async function loadAllCursorFromSW(): Promise<Map<string, KolCursor>> {
 }
 
 export async function saveKolCursorToSW(data: Map<string, KolCursor>) {
-    await sendMsgToService(Array.from(data.values()), MsgType.KolCursorLoadAll);
+    await sendMsgToService(Array.from(data.values()), MsgType.KolCursorSaveAll);
 }

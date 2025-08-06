@@ -42,7 +42,7 @@ export enum MsgType {
     TweetsBootStrap = 'TweetsBootStrap',
     TweetReadByCategoryId = 'TweetReadByCategoryId',
     KolCursorLoadAll = 'KolCursorLoadAll',
-    KolCursorWriteBack = 'KolCursorWriteBack',
+    KolCursorSaveAll = 'KolCursorSaveAll',
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

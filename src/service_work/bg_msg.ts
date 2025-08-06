@@ -83,7 +83,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true, data: await loadAllKolCursors()};
         }
 
-        case MsgType.KolCursorWriteBack: {
+        case MsgType.KolCursorSaveAll: {
             await writeKolsCursors(request.data);
             return {success: true};
         }
