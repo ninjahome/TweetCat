@@ -2,11 +2,16 @@ import {EntryObj} from "./tweet_entry";
 import pLimit from 'p-limit';
 
 import {
-    __tableCachedTweets, __tableCategory,
+    __tableCachedTweets,
+    __tableCategory,
     __tableKolsInCategory,
-    countTable, databaseDelete,
-    databasePutItem, databaseQueryByFilter, databaseQueryByIndex,
-    databaseQueryByIndexRange, idx_userid_time, pruneOldDataIfNeeded
+    countTable,
+    databasePutItem,
+    databaseQueryByFilter,
+    databaseQueryByIndex,
+    databaseQueryByIndexRange,
+    idx_userid_time,
+    pruneOldDataIfNeeded
 } from "../common/database";
 import {logTC} from "../common/debug_flags";
 import {defaultCatID, defaultUserName} from "../common/consts";
@@ -96,7 +101,7 @@ export async function loadLatestTweets(limit: number = 20,
         filterFn = (row) => categoryUserIds.has(row.userId);
     }
 
-    const tweets = await databaseQueryByIndex(
+    return await databaseQueryByIndex(
         __tableCachedTweets,
         'timestamp_idx',
         limit,
@@ -104,6 +109,4 @@ export async function loadLatestTweets(limit: number = 20,
         filterFn,
         timeStamp
     );
-
-    return tweets;
 }
