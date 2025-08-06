@@ -62,7 +62,7 @@ export class TweetPager {
     async init() {
         const bootStrap = await needBootStrap();
         if (!bootStrap) {
-            logPager("Initial tweet cache already populated, skipping bootstrap");
+            logPager("✅Initial tweet cache already populated, skipping bootstrap");
             return;
         }
         await initBootstrapData();

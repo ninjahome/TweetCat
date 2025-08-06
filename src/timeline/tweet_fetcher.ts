@@ -111,7 +111,7 @@ export class TweetFetcher {
 
     private async fetchNewestOneKolBatch(userId: string, cursor: KolCursor): Promise<boolean> {
         try {
-            logFT(`[TweetFetcher] ▶️ Fetching newest tweets for ${userId} cursor info:${debugKolCursor(cursor)}`);
+            logFT(`\n\n[TweetFetcher] ▶️ Fetching newest tweets for ${userId} cursor info:${debugKolCursor(cursor)}`);
 
             const result = await fetchTweets(userId, this.FETCH_LIMIT, cursor.topCursor ?? undefined);
             const tweets = result.tweets ?? [];
@@ -124,7 +124,7 @@ export class TweetFetcher {
 
             const dataDeleted = await cacheTweetsToSW(userId, result.wrapDbEntry)
             cursor.waitForNextNewestRound(result.topCursor, dataDeleted > 0);
-            logFT(`[TweetFetcher] ✅ ${userId} fetched ${tweets.length} newest tweets cursor info:${debugKolCursor(cursor)} from server ${result.nextCursor, result.topCursor}`);
+            logFT(`\n\n[TweetFetcher] ✅ ${userId} fetched ${tweets.length} newest tweets cursor info:${debugKolCursor(cursor)} from server [b:${result.nextCursor,",", result.topCursor}]`);
             return true;
 
         } catch (err) {
