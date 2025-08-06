@@ -1,3 +1,5 @@
+import {logTweetMgn} from "../common/debug_flags";
+
 type ResizeLogInfo = {
     index: number;
     lastHeight: number;
@@ -100,7 +102,7 @@ export class TweetResizeObserverManager {
             if (!info) continue;
 
             const {onUpdate} = info;
-            console.log(`[ResizeObserver] cell[${index}] height changed (debounced):${info.lastHeight} -> ${newHeight}`);
+            logTweetMgn(`[ResizeObserver] cell[${index}] height changed (debounced):${info.lastHeight} -> ${newHeight}`);
             info.lastHeight = newHeight;
             onUpdate(index, newHeight);
         }

@@ -11,6 +11,9 @@ import {
 import {logTC} from "../common/debug_flags";
 import {defaultCatID, defaultUserName} from "../common/consts";
 
+const MAX_TWEETS_PER_KOL = 1000;
+
+
 export class WrapEntryObj {
     tweetId: string;
     userId: string;
@@ -42,7 +45,6 @@ export class WrapEntryObj {
     }
 }
 
-const MAX_TWEETS_PER_KOL = 100;
 
 export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]) {
     const limit = pLimit(5);
@@ -51,7 +53,7 @@ export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]) {
             rawTweets.map(obj => limit(() => databasePutItem(__tableCachedTweets, obj)))
         );
         const dataLen = await pruneOldDataIfNeeded(kolId, idx_userid_time, __tableCachedTweets, MAX_TWEETS_PER_KOL);
-        logTC(`[cacheRawTweets] ✅ ${rawTweets.length} tweets cached. ${dataLen} old tweets deleted for kol[${kolId}]`);
+        logTC(`[cacheRawTweets] ✅ [${rawTweets.length}] tweets cached, [${dataLen}] old tweets deleted for kol[${kolId}]`);
     } catch (error) {
         logTC(`[cacheRawTweets] Error caching original tweet: ${error}`);
     }

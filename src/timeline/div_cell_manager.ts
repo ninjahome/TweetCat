@@ -33,7 +33,7 @@ export class TweetManager {
     private maxCssHeight: number = 0;
     private heights: number[] = [];
     private offsets: number[] = [0];
-    public static readonly EST_HEIGHT = 500;
+    public static readonly EST_HEIGHT = 300;
     private static readonly MaxTweetOnce = 30;
     public readonly bufferPx = TweetManager.EST_HEIGHT * 4;
     private lastWindow?: { s: number; e: number };
