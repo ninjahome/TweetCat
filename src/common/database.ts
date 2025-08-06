@@ -3,12 +3,15 @@ import {logDB} from "./debug_flags";
 
 let __databaseObj: IDBDatabase | null = null;
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 4;
+export const __currentDatabaseVersion = 5;
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
 export const __tableSystemSetting = '__table_system_setting__';
 export const __tableCachedTweets = '__table_cached_tweets__'
 export const BossOfTheWholeWorld = '44196397';
+export const __tableKolCursor = '__table_kol_cursor__';
+export const idx_userid_time = 'userId_timestamp_idx'
+export const idx_time = 'timestamp_idx'
 
 const initialCategories = [
     {catName: defaultCategoryName, forUser: defaultUserName},
@@ -69,6 +72,7 @@ function initDatabase(): Promise<IDBDatabase> {
             initKolsInCategory(request);
             initSystemSetting(request);
             initCachedTweetsTable(request);
+            initKolCursorTable(request);
         };
     });
 }
@@ -118,9 +122,6 @@ function initSystemSetting(request: IDBOpenDBRequest) {
     }
 }
 
-export const idx_userid_time = 'userId_timestamp_idx'
-export const idx_time = 'timestamp_idx'
-
 function initCachedTweetsTable(request: IDBOpenDBRequest) {
     const db = request.result;
 
@@ -136,6 +137,21 @@ function initCachedTweetsTable(request: IDBOpenDBRequest) {
     tweetStore.createIndex(idx_userid_time, ['userId', 'timestamp'], {unique: false});
 
     logDB("------>>>[Database] Created cached tweets table with indexes successfully.", __tableCachedTweets);
+}
+
+function initKolCursorTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+
+    if (db.objectStoreNames.contains(__tableKolCursor)) {
+        return;
+    }
+
+    const store = db.createObjectStore(__tableKolCursor, { keyPath: 'userId' });
+
+    // 可选索引：根据 isEnd 快速过滤已结束的 KOL
+    store.createIndex('isEnd_idx', 'isEnd', { unique: false });
+
+    logDB("------>>>[Database]Created KolCursor table successfully.", __tableKolCursor);
 }
 
 

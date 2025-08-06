@@ -38,7 +38,8 @@ export enum MsgType {
     DBReadTweetByKolId = 'DBReadTweetByKolId',
     TweetsBootStrap = 'TweetsBootStrap',
     DBReadTweetByCategoryId = 'DBReadTweetByCategoryId',
-
+    DBReadTAllKolCursor = 'DBReadTAllKolCursor',
+    DBWriteKolCursor = 'DBWriteKolCursor',
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

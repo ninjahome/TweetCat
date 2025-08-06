@@ -4,87 +4,7 @@ import {logFT} from "../common/debug_flags";
 import {MsgType} from "../common/consts";
 import {dbObjectToKol, TweetKol} from "../object/tweet_kol";
 import {EntryObj} from "./tweet_entry";
-
-class KolCursor {
-    userId: string;
-    bottomCursor: string | null = null;
-    topCursor: string | null = null;
-    isEnd: boolean = false;
-    latestFetchedAt: number | null = null;
-    nextEligibleFetchTime: number = 0;
-    failureCount: number = 0;
-
-    private readonly FETCH_COOL_DOWN = 20 * 60 * 1000; // 20分钟
-    private readonly MIN_KOL_FETCH_INTERVAL = 15 * 60 * 1000; // 每个 KOL 最小间隔 15 分钟
-
-    constructor(userId: string) {
-        this.userId = userId;
-    }
-
-    reset() {
-        this.bottomCursor = null;
-        this.topCursor = null;
-        this.isEnd = false;
-        this.latestFetchedAt = null;
-        this.failureCount = 0;
-        this.setNextFetchAfter(this.MIN_KOL_FETCH_INTERVAL);
-    }
-
-    markEnd() {
-        this.isEnd = true;
-    }
-
-    updateBottom(cursor: string | null) {
-        this.bottomCursor = cursor;
-        if (!cursor) this.isEnd = true;
-    }
-
-    updateTop(cursor: string | null) {
-        this.topCursor = cursor;
-    }
-
-    markFailure() {
-        this.failureCount++;
-        const backoff = this.failureCount * this.FETCH_COOL_DOWN;
-        this.setNextFetchAfter(backoff);
-    }
-
-    resetFailureCount() {
-        this.failureCount = 0;
-        this.setNextFetchAfter(this.MIN_KOL_FETCH_INTERVAL);
-    }
-
-    setNextFetchAfter(ms: number) {
-        this.nextEligibleFetchTime = Date.now() + ms;
-    }
-
-    canFetch(): boolean {
-        return Date.now() >= this.nextEligibleFetchTime && !this.isEnd;
-    }
-
-    getDebugInfo(): string {
-        const now = Date.now();
-        const status = this.isEnd ? "🔚 ended"
-            : now < this.nextEligibleFetchTime ? "⏸ cooling down"
-                : "✅ ready";
-
-        const nextIn = Math.max(0, this.nextEligibleFetchTime - now);
-        const nextSec = Math.round(nextIn / 1000);
-
-        const lastFetched = this.latestFetchedAt
-            ? new Date(this.latestFetchedAt).toISOString()
-            : "never";
-
-        return `[KolCursor] ${this.userId}
-  status: ${status}
-  failureCount: ${this.failureCount}
-  nextFetchIn: ${nextSec}s
-  latestFetchedAt: ${lastFetched}
-  bottomCursor: ${this.bottomCursor ?? "null"}`;
-    }
-
-}
-
+import {KolCursor, loadAllKolFromSW, saveKolCursorToSW} from "../object/kol_cursor";
 
 export class TweetFetcher {
     private intervalId: number | null = null;
@@ -132,6 +52,11 @@ export class TweetFetcher {
         // this.fetchAllKols().catch(err => {
         //     console.error("[TweetFetcher] Immediate fetchAllKols failed:", err);
         // });
+
+        loadAllKolFromSW().then(map => {
+            this.kolCursors = map;
+            logFT(`[TweetFetcher] Loaded ${this.kolCursors.size} KolCursors from IDB.`);
+        });
 
         this.intervalId = window.setInterval(async () => {
             await this.fetchAllKols();
@@ -232,6 +157,8 @@ export class TweetFetcher {
         }
 
         logFT(`[TweetFetcher] ✅ Round ${this.currentGroupIndex} complete.\n`);
+
+        await saveKolCursorToSW(Array.from(this.kolCursors.values()));
     }
 
     async findNewestTweet(): Promise<EntryObj[]> {
