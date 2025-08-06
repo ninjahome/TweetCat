@@ -118,7 +118,7 @@ export async function cacheTweetsToSW(kolId: string, rawTweets: WrapEntryObj[]):
 
 export async function needBootStrap(): Promise<boolean> {
     const rsp = await sendMsgToService({}, MsgType.TweetsBootStrap);
-    if (!rsp.success || !rsp.data) {
+    if (!rsp.success) {
         console.warn("------>>> failed to check tweet bootstrap status!");
         return true;
     }

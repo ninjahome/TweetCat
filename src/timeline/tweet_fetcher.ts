@@ -124,7 +124,7 @@ export class TweetFetcher {
 
             const dataDeleted = await cacheTweetsToSW(userId, result.wrapDbEntry)
             cursor.waitForNextNewestRound(result.topCursor, dataDeleted > 0);
-            logFT(`[TweetFetcher] ✅ ${userId} fetched ${tweets.length} newest tweets cursor info:${debugKolCursor(cursor)}`);
+            logFT(`[TweetFetcher] ✅ ${userId} fetched ${tweets.length} newest tweets cursor info:${debugKolCursor(cursor)} from server ${result.nextCursor, result.topCursor}`);
             return true;
 
         } catch (err) {
