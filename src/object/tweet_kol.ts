@@ -24,21 +24,6 @@ export class TweetKol {
 
 /**************************************************
  *
- *               content script api
- *
- * *************************************************/
-export async function queryFilterFromBG(catID: number): Promise<Map<string, TweetKol>> {
-    const rsp = await sendMsgToService(catID, MsgType.KolQueryByCategoryId)
-    if (!rsp.success) {
-        console.log("------>>> load filter error:", rsp.data);
-        return new Map<string, TweetKol>();
-    }
-    return new Map(rsp.data);
-}
-
-
-/**************************************************
- *
  *               service work api
  *
  * *************************************************/
@@ -52,15 +37,50 @@ export async function kolsForCategory(catID: number): Promise<Map<string, TweetK
         return item.catID === catID;
     });
 
-    // const kolInOneCategory = new Map<string, TweetKol>();
-    // for (const k of kols) {
-    //     kolInOneCategory.set(k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID, k.kolUserId));
-    // }
-
     return dbObjectToKol(kols);
 }
 
-export function dbObjectToKol(obj: any[]): Map<string, TweetKol> {
+function dbObjectToKol(obj: any[]): Map<string, TweetKol> {
     return new Map(obj.map(k => [k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID, k.kolUserId)]));
+}
+
+function dbObjectToKolArray(obj: any[]): TweetKol[] {
+    return obj.map(k => new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID, k.kolUserId));
+}
+
+function extractKolUserIds(obj: any[]): string[] {
+    return obj.map(k => k.kolUserId);
+}
+
+/**************************************************
+ *
+ *               content script api
+ *
+ * *************************************************/
+export async function queryFilterFromBG(catID: number): Promise<Map<string, TweetKol>> {
+    const rsp = await sendMsgToService(catID, MsgType.KolQueryByCategoryId)
+    if (!rsp.success) {
+        console.log("------>>> load filter error:", rsp.data);
+        return new Map<string, TweetKol>();
+    }
+    return new Map(rsp.data);
+}
+
+export async function queryKolFromBG(): Promise<Map<string, TweetKol>> {
+    const rsp = await sendMsgToService({}, MsgType.KolQueryAll);
+    if (!rsp.success || !rsp.data) {
+        console.warn("[TweetFetcher] Failed to load KOLs from service worker.");
+        return new Map();
+    }
+    return dbObjectToKol(rsp.data as any[]);
+}
+
+export async function queryKolIdsFromSW(): Promise<string[]> {
+    const rsp = await sendMsgToService({}, MsgType.KolQueryAll);
+    if (!rsp.success || !rsp.data) {
+        console.warn("[TweetFetcher] Failed to load KOLs from service worker.");
+        return [];
+    }
+    return extractKolUserIds(rsp.data as any[])
 }
 

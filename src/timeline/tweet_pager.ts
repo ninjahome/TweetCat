@@ -6,8 +6,8 @@ import {logPager} from "../common/debug_flags";
 import {fetchTweets} from "./twitter_api";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {BossOfTheWholeWorld} from "../common/database";
-import {WrapEntryObj} from "./db_raw_tweet";
+import {BossOfTheTwitter} from "../common/database";
+import {initBootstrapData, needBootStrap, WrapEntryObj} from "./db_raw_tweet";
 import {tweetFetcher} from "./tweet_fetcher";
 
 
@@ -38,7 +38,7 @@ export class TweetPager {
         const rawData = rsp.data as WrapEntryObj[];
         if (rawData.length === 0) {
             console.warn("------>>> no data when switchCategory!");//TOOD::fetcher
-            return tweetFetcher.findHistoryTweets();
+            return tweetFetcher.findNewestTweetsOfSomeBody();
         }
 
         const tweets = unwrapEntryObj(rawData);
@@ -59,32 +59,13 @@ export class TweetPager {
         logPager('[Pager] HARD RESET completed.');
     }
 
-    private async bootstrap() {
-        const rsp = await sendMsgToService({}, MsgType.TweetsBootStrap);
-        if (!rsp.success) {
-            console.warn("------>>> failed to check tweet bootstrap status!");
-            return;
-        }
-
-        const bootStrap = rsp.data as boolean;
-
+    async init() {
+        const bootStrap = await needBootStrap();
         if (!bootStrap) {
             logPager("Initial tweet cache already populated, skipping bootstrap");
             return;
         }
-
-        try {
-            const r = await fetchTweets(BossOfTheWholeWorld, 20, undefined); // 首次获取 20 条
-            const wrapList = r.wrapDbEntry;
-            await sendMsgToService({kolId: BossOfTheWholeWorld, data: r.wrapDbEntry}, MsgType.TweetCacheToDB);
-            logPager(`Bootstrap cached ${wrapList.length} tweets for boss`);
-        } catch (err) {
-            logPager(`Bootstrap failed for boss`, err);
-        }
-    }
-
-    async init() {
-        await this.bootstrap();
+        await initBootstrapData();
     }
 }
 

@@ -3,85 +3,69 @@ import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 
 export class KolCursor {
+
     userId: string;
     bottomCursor: string | null = null;
     topCursor: string | null = null;
-    latestFetchedAt: number | null = null;
-    nextEligibleFetchTime: number = 0;
+    nextNewestFetchTime: number = 0
+    nextHistoryFetchTime: number = 0
+    cacheEnough: boolean = false;
+    coolDownTime: number = 0;
     failureCount: number = 0;
-    hasReachedTopEnd: boolean = false;
-    hasReachedBottomEnd: boolean = false;
-
-    private readonly FETCH_COOL_DOWN = 20 * 60 * 1000; // 20分钟
-    private readonly MIN_KOL_FETCH_INTERVAL = 15 * 60 * 1000; // 每个 KOL 最小间隔 15 分钟
+    private readonly LONG_WAIT_FOR_NEWEST = 20 * 60 * 1000; // 20分钟
+    private readonly SHORT_WAIT_FOR_NEWEST = 1 * 60 * 1000; // 1分钟
+    private readonly WAIT_FOR_HISTORY = 5 * 60 * 1000; // 5分钟
+    private readonly FETCH_COOL_DOWN = 2 * 60 * 1000; // 2分钟
 
     constructor(userId: string) {
         this.userId = userId;
     }
 
-    reset() {
-        this.bottomCursor = null;
-        this.topCursor = null;
-        this.latestFetchedAt = null;
+    waitForNextNewestRound(topCursor: string | null = null, cacheEnough: boolean = false) {
+        if (!topCursor) {
+            this.nextNewestFetchTime = Date.now() + this.LONG_WAIT_FOR_NEWEST;
+            return;
+        }
+        this.topCursor = topCursor;
         this.failureCount = 0;
-        this.hasReachedTopEnd = false;
-        this.hasReachedBottomEnd = false;
-        this.setNextFetchAfter(this.MIN_KOL_FETCH_INTERVAL);
+        this.nextNewestFetchTime = Date.now() + this.SHORT_WAIT_FOR_NEWEST;
+        this.cacheEnough = cacheEnough
+        this.coolDownTime = Date.now() + this.FETCH_COOL_DOWN;
     }
 
-    markTopEnd() {
-        this.hasReachedTopEnd = true;
+    canFetchNew(): boolean {
+        const now = Date.now();
+        return now >= this.coolDownTime && now > this.nextNewestFetchTime;
     }
 
-    markBottomEnd() {
-        this.hasReachedBottomEnd = true;
+    updateBottom(nextCursor: string | null = null, cacheEnough: boolean = false) {
+        if (cacheEnough || !nextCursor) {
+            this.cacheEnough = true;
+            return;
+        }
+        this.bottomCursor = nextCursor;
+        this.nextHistoryFetchTime = Date.now() + this.WAIT_FOR_HISTORY;
+        this.coolDownTime = Date.now() + this.FETCH_COOL_DOWN;
     }
 
-    get isTotallyExhausted(): boolean {
-        return this.hasReachedTopEnd && this.hasReachedBottomEnd;
-    }
-
-    updateBottom(cursor: string | null) {
-        this.bottomCursor = cursor;
-        if (!cursor) this.markBottomEnd();
-    }
-
-    updateTop(cursor: string | null) {
-        this.topCursor = cursor;
-        if (!cursor) this.markTopEnd();
+    needFetchOld(): boolean {
+        const now = Date.now();
+        return now >= this.coolDownTime && !this.cacheEnough && !this.bottomCursor
     }
 
     markFailure() {
         this.failureCount++;
-        const backoff = this.failureCount * this.FETCH_COOL_DOWN;
-        this.setNextFetchAfter(backoff);
-    }
-
-    resetFailureCount() {
-        this.failureCount = 0;
-        this.setNextFetchAfter(this.MIN_KOL_FETCH_INTERVAL);
-    }
-
-    setNextFetchAfter(ms: number) {
-        this.nextEligibleFetchTime = Date.now() + ms;
-    }
-
-    canFetchTop(): boolean {
-        return Date.now() >= this.nextEligibleFetchTime && !this.hasReachedTopEnd;
-    }
-
-    canFetchBottom(): boolean {
-        return Date.now() >= this.nextEligibleFetchTime && !this.hasReachedBottomEnd;
+        this.coolDownTime = Date.now() + this.failureCount * this.FETCH_COOL_DOWN;
     }
 
     static fromJSON(obj: any): KolCursor {
         const cursor = new KolCursor(obj.userId);
         cursor.bottomCursor = obj.bottomCursor ?? null;
         cursor.topCursor = obj.topCursor ?? null;
-        cursor.hasReachedTopEnd = obj.hasReachedTopEnd ?? false;
-        cursor.hasReachedBottomEnd = obj.hasReachedBottomEnd ?? false;
-        cursor.latestFetchedAt = obj.latestFetchedAt ?? null;
-        cursor.nextEligibleFetchTime = obj.nextEligibleFetchTime ?? 0;
+        cursor.nextNewestFetchTime = obj.nextNewestFetchTime ?? 0;
+        cursor.nextHistoryFetchTime = obj.nextHistoryFetchTime ?? 0;
+        cursor.cacheEnough = obj.cacheEnough ?? false;
+        cursor.coolDownTime = obj.coolDownTime ?? 0;
         cursor.failureCount = obj.failureCount ?? 0;
         return cursor;
     }
@@ -90,24 +74,21 @@ export class KolCursor {
 export function debugKolCursor(cursor: KolCursor): string {
     const now = Date.now();
 
-    const topStatus = cursor.hasReachedTopEnd ? "🔚 TopEnd" : "⬆️ FetchTop";
-    const bottomStatus = cursor.hasReachedBottomEnd ? "🔚 BottomEnd" : "⬇️ FetchBottom";
-
-    const nextIn = Math.max(0, cursor.nextEligibleFetchTime - now);
-    const nextSec = Math.round(nextIn / 1000);
-
-    const lastFetched = cursor.latestFetchedAt
-        ? new Date(cursor.latestFetchedAt).toISOString()
-        : "never";
+    function formatMs(ms: number) {
+        const delta = ms - now;
+        return delta <= 0 ? "ready" : `${Math.round(delta / 1000)}s`;
+    }
 
     return `[KolCursor] ${cursor.userId}
-  Top: ${cursor.topCursor ?? "null"}
-  Bottom: ${cursor.bottomCursor ?? "null"}
-  TopStatus: ${topStatus}
-  BottomStatus: ${bottomStatus}
-  FailureCount: ${cursor.failureCount}
-  NextFetchIn: ${nextSec}s
-  LatestFetchedAt: ${lastFetched}`;
+  topCursor: ${cursor.topCursor ?? "null"}
+  bottomCursor: ${cursor.bottomCursor ?? "null"}
+  canFetchNew: ${cursor.canFetchNew()}
+  needFetchOld: ${cursor.needFetchOld()}
+  cacheEnough: ${cursor.cacheEnough}
+  failureCount: ${cursor.failureCount}
+  cooldown: ${formatMs(cursor.coolDownTime)}
+  nextNewestFetchIn: ${formatMs(cursor.nextNewestFetchTime)}
+  nextHistoryFetchIn: ${formatMs(cursor.nextHistoryFetchTime)}`;
 }
 
 /**************************************************
@@ -132,7 +113,7 @@ export async function writeKolsCursors(data: KolCursor[]) {
  *
  * *************************************************/
 
-export async function loadAllKolFromSW(): Promise<Map<string, KolCursor>> {
+export async function loadAllCursorFromSW(): Promise<Map<string, KolCursor>> {
     const result = new Map();
     const rsp = await sendMsgToService({}, MsgType.KolCursorLoadAll);
     if (!rsp.success || !rsp.data) {
@@ -146,6 +127,6 @@ export async function loadAllKolFromSW(): Promise<Map<string, KolCursor>> {
     return result
 }
 
-export async function saveKolCursorToSW(data: KolCursor[]) {
-    await sendMsgToService(data, MsgType.KolCursorLoadAll);
+export async function saveKolCursorToSW(data: Map<string, KolCursor>) {
+    await sendMsgToService(Array.from(data.values()), MsgType.KolCursorLoadAll);
 }

@@ -1,25 +1,29 @@
 import {fetchTweets} from "./twitter_api";
-import {sendMsgToService, sleep} from "../common/utils";
+import {sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
-import {MsgType} from "../common/consts";
-import {dbObjectToKol, TweetKol} from "../object/tweet_kol";
+import {queryKolIdsFromSW} from "../object/tweet_kol";
 import {EntryObj} from "./tweet_entry";
-import {debugKolCursor, KolCursor, loadAllKolFromSW, saveKolCursorToSW} from "../object/kol_cursor";
+import {debugKolCursor, KolCursor, loadAllCursorFromSW, saveKolCursorToSW} from "../object/kol_cursor";
+import {cacheTweetsToSW} from "./db_raw_tweet";
+import {BossOfTheTwitter} from "../common/database";
 
 export class TweetFetcher {
     private intervalId: number | null = null;
     private readonly FETCH_INTERVAL_MS = 120_000;
     private readonly FETCH_LIMIT = 20;
     private readonly MAX_KOL_PER_ROUND = 5;
+    private readonly KOL_REFRESH_INTERVAL = 10 * 60 * 1000;
+    private readonly MIN_FETCH_GAP = 5000;
+    private readonly KOL_SCAN_LIMIT = this.MAX_KOL_PER_ROUND * 3;
 
     private readonly fetchGap: number;
     private kolCursors: Map<string, KolCursor> = new Map();
-    private kolIds: Map<string, TweetKol> = new Map();
-    private currentGroupIndex = 0;
+    private kolIds: string[] = [];
+
+    private currentNewGroupIndex = 0;
+    private currentOldGroupIndex = 0;
 
     private lastKolLoadTime = 0;
-    private readonly KOL_REFRESH_INTERVAL = 10 * 60 * 1000;
-    private readonly MIN_FETCH_GAP = 5000;
 
     constructor() {
         const EXECUTION_OVERHEAD = 500;
@@ -48,18 +52,13 @@ export class TweetFetcher {
 
         logFT("[TweetFetcher] Started (immediate fire).");
 
-        // // 🔥 立即执行一次
-        // this.fetchAllKols().catch(err => {
-        //     console.error("[TweetFetcher] Immediate fetchAllKols failed:", err);
-        // });
-
-        loadAllKolFromSW().then(map => {
+        loadAllCursorFromSW().then(map => {
             this.kolCursors = map;
             logFT(`[TweetFetcher] Loaded ${this.kolCursors.size} KolCursors from IDB.`);
         });
 
         this.intervalId = window.setInterval(async () => {
-            await this.fetchAllKols();
+            await this.fetchTweetsPeriodic();
         }, this.FETCH_INTERVAL_MS);
     }
 
@@ -73,100 +72,145 @@ export class TweetFetcher {
 
     private async maybeLoadKol() {
         if (Date.now() - this.lastKolLoadTime <= this.KOL_REFRESH_INTERVAL) return;
-
-        const rsp = await sendMsgToService({}, MsgType.QueryAllKol);
-        if (!rsp.success || !rsp.data) {
-            console.warn("[TweetFetcher] Failed to load KOLs from service worker.");
-            return;
-        }
-
-        this.kolIds = dbObjectToKol(rsp.data as any[]);
+        this.kolIds = await queryKolIdsFromSW();
         this.lastKolLoadTime = Date.now();
-        logFT(`[TweetFetcher] Loaded ${this.kolIds.size} KOLs.`);
+        logFT(`[TweetFetcher] Loaded ${this.kolIds.length} KOLs.`);
     }
 
-    private getNextKolGroup(): string[] {
-        const allKolIds = Array.from(this.kolIds.values()).map(kol => kol.kolUserId) as string[];
-        if (allKolIds.length === 0) return [];
+    private getNextKolGroup(newest: boolean = true): string[] {
+        const total = this.kolIds.length;
+        if (total === 0) return [];
 
-        const total = allKolIds.length;
-        const startIdx = (this.currentGroupIndex * this.MAX_KOL_PER_ROUND) % total;
-        const groupKolIds = [];
+        const result: string[] = [];
+        const maxScan = Math.min(this.KOL_SCAN_LIMIT, total);
+        let scanCount = 0;
+        let found = 0;
 
-        for (let i = 0; i < this.MAX_KOL_PER_ROUND && i < total; i++) {
-            const idx = (startIdx + i) % total;
-            groupKolIds.push(allKolIds[idx]);
+        let idx = newest ? this.currentNewGroupIndex : this.currentOldGroupIndex;
+
+        while (scanCount < maxScan && found < this.MAX_KOL_PER_ROUND) {
+            const userId = this.kolIds[idx];
+            const cursor = this.getKolCursor(userId);
+            const canUse = newest ? cursor.canFetchNew() : cursor.needFetchOld();
+            if (canUse) {
+                result.push(userId);
+                found++;
+            }
+            scanCount++;
+            idx++;
         }
 
-        this.currentGroupIndex++;
-        return groupKolIds;
+        if (newest) {
+            this.currentNewGroupIndex = idx % total;
+        } else {
+            this.currentOldGroupIndex = idx % total;
+        }
+
+        return result;
     }
 
-    private async fetchOneKolBatch(userId: string, cursor: KolCursor): Promise<boolean> {
+    private async fetchNewestOneKolBatch(userId: string, cursor: KolCursor): Promise<boolean> {
         try {
-            logFT(`[TweetFetcher] ▶️ Fetching tweets for ${userId} cursor info:${debugKolCursor(cursor)}`);
+            logFT(`[TweetFetcher] ▶️ Fetching newest tweets for ${userId} cursor info:${debugKolCursor(cursor)}`);
 
-            const result = await fetchTweets(userId, this.FETCH_LIMIT, cursor.bottomCursor ?? undefined);
+            const result = await fetchTweets(userId, this.FETCH_LIMIT, cursor.topCursor ?? undefined);
             const tweets = result.tweets ?? [];
 
-            if (tweets.length > 0) {
-                await sendMsgToService({kolId:userId,data:result.wrapDbEntry}, MsgType.CacheRawTweetData);
-                cursor.updateBottom(result.nextCursor ?? null);
-                cursor.latestFetchedAt = Date.now();
-                cursor.resetFailureCount();
+            if (tweets.length === 0 || !result.topCursor) {
+                logFT(`[NewestFetch] ✅ ${userId} no more new tweets cursor info:${debugKolCursor(cursor)}`);
+                cursor.waitForNextNewestRound();
+                return true;
             }
 
-            if (tweets.length === 0 || !result.nextCursor) {
-                cursor.markEnd();
-            }
-
-            logFT(`[TweetFetcher] ✅ ${userId} fetched ${tweets.length} tweets cursor info:${debugKolCursor(cursor)}`);
+            const dataDeleted = await cacheTweetsToSW(userId, result.wrapDbEntry)
+            cursor.waitForNextNewestRound(result.topCursor, dataDeleted > 0);
+            logFT(`[TweetFetcher] ✅ ${userId} fetched ${tweets.length} newest tweets cursor info:${debugKolCursor(cursor)}`);
             return true;
-        } catch (err) {
-            const msg = typeof err === 'object' && err && 'message' in err ? String((err as any).message) : '';
 
-            if (msg.includes('429')) {
-                console.warn(`[TweetFetcher] ❌ 429 for ${userId}, applying cooldown`);
-                cursor.markFailure();
+        } catch (err) {
+            this.process429Error(err, cursor, userId)
+            return false
+        }
+    }
+
+
+    private async fetchHistoryOneKolBatch(userId: string, cursor: KolCursor): Promise<boolean> {
+        try {
+            logFT(`[TweetFetcher] ▶️ Fetching history tweets for ${userId} cursor info:${debugKolCursor(cursor)}`);
+            const bottomCursor = cursor.bottomCursor
+            if (!bottomCursor) {
+                console.warn("------->>> should not load history data without bottom cursor")
                 return false;
             }
 
-            console.warn(`[TweetFetcher] ❌ Fetch error for ${userId}`, err);
-            return false;
+            const result = await fetchTweets(userId, this.FETCH_LIMIT, bottomCursor);
+            const tweets = result.tweets ?? [];
+
+            if (tweets.length === 0 || !result.nextCursor) {
+                logFT(`[NewestFetch] ✅ ${userId} no more history tweets cursor info:${debugKolCursor(cursor)}`);
+                cursor.updateBottom();
+                return true;
+            }
+
+            const dataDeleted = await cacheTweetsToSW(userId, result.wrapDbEntry)
+            cursor.updateBottom(result.nextCursor, dataDeleted > 0);
+            logFT(`[TweetFetcher] ✅ ${userId} fetched ${tweets.length} history tweets cursor info:${debugKolCursor(cursor)}`);
+            return true;
+
+        } catch (err) {
+            this.process429Error(err, cursor, userId)
+            return false
         }
     }
 
-    private async fetchAllKols() {
+
+    private process429Error(err: any, cursor: KolCursor, userId: string) {
+        const msg = typeof err === 'object' && err && 'message' in err ? String((err as any).message) : '';
+
+        if (!msg.includes('429')) {
+            console.warn(`[TweetFetcher] ❌ Fetch error for ${userId}`, err);
+            return;
+        }
+
+        console.warn(`[TweetFetcher] ❌ 429 for ${userId}, applying cooldown`);
+        cursor.markFailure();
+    }
+
+    private async fetchTweetsPeriodic(newest: boolean = true) {
         await this.maybeLoadKol();
 
-        const groupKolIds = this.getNextKolGroup();
-        logFT(`[TweetFetcher] ⏱ Starting round ${this.currentGroupIndex} groupKolIds【${groupKolIds}】at ${new Date().toISOString()}`);
+        const groupKolIds = this.getNextKolGroup(newest);
+        if (groupKolIds.length === 0) {
+            logFT(`[fetchAllKols] 😅  ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex} no kol ids at ${new Date().toISOString()}`);
+            return;
+        }
+
+        logFT(`[fetchAllKols] ⏱ Starting ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex} groupKolIds【${groupKolIds}】at ${new Date().toISOString()}`);
 
         for (const userId of groupKolIds) {
             const cursor = this.getKolCursor(userId);
 
-            if (!cursor.canFetch()) {
-                logFT(`[TweetFetcher] ⏸ Skipped ${userId} (cooldown or ended)`);
-                continue;
-            }
-
-            const ok = await this.fetchOneKolBatch(userId, cursor);
-            if (!ok) break; // 遇到 429 等异常中止本轮
+            let ok = false;
+            if (newest) ok = await this.fetchNewestOneKolBatch(userId, cursor);
+            else ok = await this.fetchHistoryOneKolBatch(userId, cursor);
+            if (!ok) break;
 
             await sleep(this.fetchGap);
         }
 
-        logFT(`[TweetFetcher] ✅ Round ${this.currentGroupIndex} complete.\n`);
-
-        await saveKolCursorToSW(Array.from(this.kolCursors.values()));
+        logFT(`[fetchAllKols] ✅  ${newest ? "[Newest]" : "[History]"}  Round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex} complete.\n`);
+        await saveKolCursorToSW(this.kolCursors);
     }
 
-    async findHistoryTweets(): Promise<EntryObj[]> {
-        return []
+    async findNewestTweetsOfSomeBody(): Promise<EntryObj[]> {
+        const result = await fetchTweets(BossOfTheTwitter, this.FETCH_LIMIT);
+        const tweets = result.tweets ?? [];
+        return tweets
     }
 }
 
 export const tweetFetcher = new TweetFetcher();
+
 document.addEventListener('DOMContentLoaded', function onLoadOnce() {
     tweetFetcher.start();
     logFT('[TweetFetcher] 🚀 DOMContentLoaded: starting fetcher...');

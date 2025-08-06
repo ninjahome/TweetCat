@@ -18,10 +18,10 @@ async function getUrlWithQueryID(key: string): Promise<string | null> {
 interface TweetRequestParams {
     userId: string;
     count: number;
-    nextCursor?: string; // 可选 cursor
+    cursor?: string; // 可选 cursor
 }
 
-async function buildTweetQueryURL({userId, count, nextCursor}: TweetRequestParams): Promise<string> {
+async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): Promise<string> {
     const variablesObj: any = {
         userId,
         count,
@@ -31,8 +31,8 @@ async function buildTweetQueryURL({userId, count, nextCursor}: TweetRequestParam
     };
 
     // 添加 cursor 参数（如果存在）
-    if (nextCursor) {
-        variablesObj.cursor = nextCursor;
+    if (cursor) {
+        variablesObj.cursor = cursor;
     }
 
     const variables = encodeURIComponent(JSON.stringify(variablesObj));
@@ -179,13 +179,13 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
     return userId ?? null;
 }
 
-export async function fetchTweets(userId: string, maxCount: number = 20, nextCursor?: string, topCursor?: string): Promise<{
+export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string): Promise<{
     tweets: EntryObj[],
     wrapDbEntry: WrapEntryObj[];
     nextCursor: string | null;
     topCursor: string | null;
 }> {
-    const url = await buildTweetQueryURL({userId, count: maxCount, nextCursor});
+    const url = await buildTweetQueryURL({userId, count: maxCount, cursor: cursor});
     const headers = await generateHeaders();
     const response = await fetch(url, {
         method: 'GET',

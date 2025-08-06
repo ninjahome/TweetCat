@@ -8,7 +8,7 @@ export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
 export const __tableSystemSetting = '__table_system_setting__';
 export const __tableCachedTweets = '__table_cached_tweets__'
-export const BossOfTheWholeWorld = '44196397';
+export const BossOfTheTwitter = '44196397';
 export const __tableKolCursor = '__table_kol_cursor__';
 export const idx_userid_time = 'userId_timestamp_idx'
 export const idx_time = 'timestamp_idx'
@@ -146,10 +146,10 @@ function initKolCursorTable(request: IDBOpenDBRequest) {
         return;
     }
 
-    const store = db.createObjectStore(__tableKolCursor, { keyPath: 'userId' });
+    const store = db.createObjectStore(__tableKolCursor, {keyPath: 'userId'});
 
     // 可选索引：根据 isEnd 快速过滤已结束的 KOL
-    store.createIndex('isEnd_idx', 'isEnd', { unique: false });
+    store.createIndex('isEnd_idx', 'isEnd', {unique: false});
 
     logDB("------>>>[Database]Created KolCursor table successfully.", __tableKolCursor);
 }

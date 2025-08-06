@@ -3,7 +3,7 @@ import pLimit from 'p-limit';
 
 import {
     __tableCachedTweets,
-    __tableKolsInCategory,
+    __tableKolsInCategory, BossOfTheTwitter,
     countTable,
     databasePutItem,
     databaseQueryByFilter,
@@ -13,6 +13,9 @@ import {
     pruneOldDataIfNeeded
 } from "../common/database";
 import {logTC} from "../common/debug_flags";
+import {sendMsgToService} from "../common/utils";
+import {MsgType} from "../common/consts";
+import {fetchTweets} from "./twitter_api";
 
 const MAX_TWEETS_PER_KOL = 1000;
 
@@ -47,12 +50,13 @@ export class WrapEntryObj {
         return new WrapEntryObj(row.tweetId, row.userId, row.timestamp, row.rawJson);
     }
 }
+
 /**************************************************
  *
  *               service work api
  *
  * *************************************************/
-export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]):Promise<number> {
+export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]): Promise<number> {
     const limit = pLimit(5);
     try {
         await Promise.all(
@@ -73,7 +77,7 @@ export async function loadCachedTweetsByUserId(userId: string, limit = 10): Prom
 
 export async function initTweetsCheck(): Promise<boolean> {
     const count = await countTable(__tableCachedTweets);
-    return count===0
+    return count === 0
 }
 
 export async function loadLatestTweets(limit: number = 20,
@@ -95,4 +99,40 @@ export async function loadLatestTweets(limit: number = 20,
         filterFn,
         timeStamp
     );
+}
+
+
+/**************************************************
+ *
+ *               content script api
+ *
+ * *************************************************/
+export async function cacheTweetsToSW(kolId: string, rawTweets: WrapEntryObj[]): Promise<number> {
+    const rsp = await sendMsgToService({
+        kolId: kolId,
+        data: rawTweets
+    }, MsgType.TweetCacheToDB);
+    if (!rsp.success || !rsp.data) return 0;
+    return rsp.data as number
+}
+
+export async function needBootStrap(): Promise<boolean> {
+    const rsp = await sendMsgToService({}, MsgType.TweetsBootStrap);
+    if (!rsp.success || !rsp.data) {
+        console.warn("------>>> failed to check tweet bootstrap status!");
+        return true;
+    }
+
+    return rsp.data as boolean;
+}
+
+export async function initBootstrapData() {
+    try {
+        const r = await fetchTweets(BossOfTheTwitter, 20, undefined); // 首次获取 20 条
+        const wrapList = r.wrapDbEntry;
+        await sendMsgToService({kolId: BossOfTheTwitter, data: r.wrapDbEntry}, MsgType.TweetCacheToDB);
+        logTC(`Bootstrap cached ${wrapList.length} tweets for boss`);
+    } catch (err) {
+        logTC(`Bootstrap failed for boss`, err);
+    }
 }
