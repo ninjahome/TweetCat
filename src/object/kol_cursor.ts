@@ -26,6 +26,7 @@ export class KolCursor {
             this.nextNewestFetchTime = Date.now() + this.LONG_WAIT_FOR_NEWEST;
             return;
         }
+
         this.topCursor = topCursor;
         this.bottomCursor = bottomCursor;
         this.failureCount = 0;
