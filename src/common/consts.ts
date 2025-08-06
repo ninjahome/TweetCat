@@ -1,8 +1,7 @@
 export const __targetUrlToFilter = 'https://x.com/home';
 
-export const defaultCategoryName = "Priority Follow"
+export const defaultCategoryName = "Main"
 export const maxElmFindTryTimes = 5;
-export const defaultUserName = 'default_v1';//TODO::for version 2,syncing data by user's tweet name
 export const defaultCatID = 1;
 export const defaultAllCategoryID = -1;
 export const maxMissedTweetOnce = 180;
@@ -37,7 +36,7 @@ export enum MsgType {
     KolRemove = 'KolRemove',
 
     AdsBlockChanged = 'AdsBlockChanged',
-    
+
     TweetCacheToDB = 'TweetCacheToDB',
     TweetReadByKolId = 'TweetReadByKolId',
     TweetsBootStrap = 'TweetsBootStrap',

@@ -33,7 +33,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.CategoryQueryAll: {
-            const catData = await loadCategories(request.data);
+            const catData = await loadCategories();
             // console.log("------------------------->>>catData is: ", catData)
             return {success: true, data: catData};
         }

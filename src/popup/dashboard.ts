@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import {__DBK_AD_Block_Key, choseColorByID, defaultUserName, MaxCategorySize, MsgType} from "../common/consts";
+import {__DBK_AD_Block_Key, choseColorByID, MaxCategorySize, MsgType} from "../common/consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/database";
 import {showView} from "../common/utils";
 import {loadCategories, removeCategory, updateCategoryDetail} from "../object/category";
@@ -39,7 +39,7 @@ function dashRouter(path: string): void {
 function initNewCatBtn() {
     const newCategoryBtn = document.getElementById("btn-add-category") as HTMLElement;
     newCategoryBtn.onclick = async () => {
-        const categories = await loadCategories(defaultUserName);
+        const categories = await loadCategories();
         if (categories.length >= MaxCategorySize) {
             showAlert("Tips", "You can create up to 4 categories for now. We'll support more soon!");
             return;
@@ -69,7 +69,7 @@ async function addNewCategory() {
     }
 
     showLoading()
-    const item = new Category(newCatStr, defaultUserName);
+    const item = new Category(newCatStr);
     delete item.id;
     const newID = await databaseAddItem(__tableCategory, item);
     if (!newID) {
@@ -83,7 +83,7 @@ async function addNewCategory() {
     modalDialog.style.display = 'none'
     newCatInput.value = '';
 
-    const changedCat = await loadCategories(item.forUser);
+    const changedCat = await loadCategories();
     broadcastToContent(MsgType.CategoryChanged, changedCat);
     hideLoading();
     showAlert("Tips", "Save Success");
@@ -92,7 +92,7 @@ async function addNewCategory() {
 async function setHomeStatus() {
     const listDiv = document.getElementById("categories-list") as HTMLElement;
     const catItem = document.getElementById("category-item-template") as HTMLElement;
-    const categories = await loadCategories(defaultUserName);
+    const categories = await loadCategories();
 
     listDiv.innerHTML = '';
 
@@ -167,7 +167,7 @@ async function editCateName(cat: Category, parent: HTMLElement) {
     cat.catName = inputArea.value;
     showLoading();
     await updateCategoryDetail(cat);
-    broadcastToContent(MsgType.CategoryChanged, await loadCategories(defaultUserName));
+    broadcastToContent(MsgType.CategoryChanged, await loadCategories());
     hideLoading();
     showAlert("Tips", "Update Success");
 }
@@ -176,7 +176,7 @@ function removeCatById(catId: number) {
     showConfirmPopup("Delete this Category?", async () => {
         showLoading();
         await removeCategory(catId);
-        broadcastToContent(MsgType.CategoryChanged, await loadCategories(defaultUserName));
+        broadcastToContent(MsgType.CategoryChanged, await loadCategories());
         hideLoading();
         showView('#onboarding/main-home', dashRouter);
     });

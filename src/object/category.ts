@@ -1,12 +1,11 @@
 import {sendMsgToService} from "../common/utils";
-import {defaultUserName, MsgType} from "../common/consts";
+import {MsgType} from "../common/consts";
 import {
     __tableCategory,
     __tableKolsInCategory,
     databaseDelete,
     databaseDeleteByFilter,
-    databaseGet,
-    databaseQueryByFilter,
+    databaseGet, databaseQueryAll,
     databaseUpdate
 } from "../common/database";
 import {TweetKol} from "./tweet_kol";
@@ -14,11 +13,9 @@ import {TweetKol} from "./tweet_kol";
 export class Category {
     id?: number;
     catName: string;
-    forUser: string;
 
-    constructor(n: string, u: string, i?: number) {
+    constructor(n: string, i?: number) {
         this.catName = n;
-        this.forUser = u;
         this.id = i;
     }
 }
@@ -30,15 +27,13 @@ export class Category {
  *
  * *************************************************/
 
-export async function loadCategories(forUser: string): Promise<Category[]> {
+export async function loadCategories(): Promise<Category[]> {
     try {
-        const categories = await databaseQueryByFilter(__tableCategory, (item) => {
-            return item.forUser === forUser;
-        })
+        const categories = await databaseQueryAll(__tableCategory)
         let tmpCatArr: Category[] = []
         for (let i = 0; i < categories.length; i++) {
             const item = categories[i];
-            const cat = new Category(item.catName, item.forUser, item.id);
+            const cat = new Category(item.catName, item.id);
             tmpCatArr.push(cat);
         }
 
@@ -112,7 +107,7 @@ export async function removeCategory(catID: number) {
  *
  * *************************************************/
 export async function queryCategoriesFromBG(): Promise<Category[]> {
-    const rsp = await sendMsgToService(defaultUserName, MsgType.CategoryQueryAll)
+    const rsp = await sendMsgToService({}, MsgType.CategoryQueryAll)
     if (!rsp.success) {
         console.log("------>>> load categories error:", rsp.data);
         return [];

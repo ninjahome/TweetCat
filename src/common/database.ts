@@ -1,22 +1,25 @@
-import {defaultCategoryName, defaultCatID, defaultUserName} from "./consts";
+import {defaultCategoryName, defaultCatID} from "./consts";
 import {logDB} from "./debug_flags";
 
 let __databaseObj: IDBDatabase | null = null;
+
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 5;
+export const __currentDatabaseVersion = 6;
+
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
 export const __tableSystemSetting = '__table_system_setting__';
 export const __tableCachedTweets = '__table_cached_tweets__'
-export const BossOfTheTwitter = '44196397';
 export const __tableKolCursor = '__table_kol_cursor__';
+
+export const BossOfTheTwitter = '44196397';
 export const idx_userid_time = 'userId_timestamp_idx'
 export const idx_time = 'timestamp_idx'
 
-const initialCategories = [
-    {catName: defaultCategoryName, forUser: defaultUserName},
-];
 
+const initialCategories = [
+    {catName: defaultCategoryName},
+];
 
 const initialKols = [
     {

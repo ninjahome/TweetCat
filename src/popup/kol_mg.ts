@@ -1,5 +1,4 @@
 import {loadCategories, removeKolsCategory, updateKolsCategory} from "../object/category";
-import {defaultUserName} from "../common/consts";
 import {checkAndInitDatabase} from "../common/database";
 import {Category} from "../object/category";
 import {kolsForCategory, TweetKol} from "../object/tweet_kol";
@@ -26,7 +25,7 @@ async function initKolManager() {
 
     _curCatID = Number(catID);
 
-    _categories = await loadCategories(defaultUserName);
+    _categories = await loadCategories();
     populateCategoryList();
 
     _kolMap = await kolsForCategory(Number(catID));
