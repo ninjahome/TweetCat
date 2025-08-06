@@ -3,8 +3,8 @@
  * ------------------------------------------------------------------ */
 import {EntryObj} from "./tweet_entry";
 import {logPager} from "../common/debug_flags";
-import {fetchTweets, getUserIdByUsername} from "./twitter_api";
-import {sendMsgToService, sleep} from "../common/utils";
+import {fetchTweets} from "./twitter_api";
+import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {BossOfTheWholeWorld} from "../common/database";
 import {WrapEntryObj} from "./db_raw_tweet";
@@ -12,10 +12,7 @@ import {tweetFetcher} from "./tweet_fetcher";
 
 
 export class TweetPager {
-    private currentIdx = 0;
     private timeStamp?: number;
-    private isEnd = false;
-    private seenIds: Set<string> = new Set();
     private currentCategoryId: number | null = null;
 
     constructor() {
@@ -50,7 +47,6 @@ export class TweetPager {
 
         if (tweets.length < pageSize) {
             logPager(`[getNextTweets] not enough data to show!`)//TODO::
-            this.isEnd = true;
         }
 
         logPager(`[getNextTweets] category:[${this.currentCategoryId}], timeStamp[${this.timeStamp}] load tweets=${tweets.length}`);
@@ -59,10 +55,7 @@ export class TweetPager {
 
     /** 强制重置所有状态，恢复初始 */
     resetPager() {
-        this.seenIds = new Set();
-        this.currentIdx = 0;
         this.timeStamp = undefined;
-        this.isEnd = false;
         logPager('[Pager] HARD RESET completed.');
     }
 
