@@ -112,7 +112,7 @@ export async function removeCategory(catID: number) {
  *
  * *************************************************/
 export async function queryCategoriesFromBG(): Promise<Category[]> {
-    const rsp = await sendMsgToService(defaultUserName, MsgType.QueryCatsByUser)
+    const rsp = await sendMsgToService(defaultUserName, MsgType.CategoryQueryAll)
     if (!rsp.success) {
         console.log("------>>> load categories error:", rsp.data);
         return [];
@@ -122,7 +122,7 @@ export async function queryCategoriesFromBG(): Promise<Category[]> {
 }
 
 export async function queryCategoryById(catID: number): Promise<Category | null> {
-    const rsp = await sendMsgToService(catID, MsgType.QueryCatByID)
+    const rsp = await sendMsgToService(catID, MsgType.CategoryQueryById)
     if (!rsp.success) {
         console.log("------>>> load categories error:", rsp.data);
         return null;

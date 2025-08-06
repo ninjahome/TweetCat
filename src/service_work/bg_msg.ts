@@ -27,43 +27,42 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
-        case MsgType.QueryKolByCatID: {
+        case MsgType.KolQueryByCategoryId: {
             const data = await kolsForCategory(request.data);
             return {success: true, data: Array.from(data.entries())};
         }
 
-        case MsgType.QueryCatsByUser: {
+        case MsgType.CategoryQueryAll: {
             const catData = await loadCategories(request.data);
             // console.log("------------------------->>>catData is: ", catData)
             return {success: true, data: catData};
         }
 
-        case MsgType.QueryCatByID: {
+        case MsgType.CategoryQueryById: {
             const catData = await CategoryForId(request.data);
             return {success: true, data: catData};
         }
 
-        case MsgType.UpdateKolCat: {
+        case MsgType.KolUpdate: {
             await updateKolsCategory(request.data as TweetKol);
             return {success: true};
         }
 
-        case MsgType.RemoveKol:
+        case MsgType.KolRemove:
             await removeKolsCategory(request.data);
             return {success: true};
 
-        case MsgType.QueryKolCat: {
+        case MsgType.KolQueryByName: {
             const kolCat = await queryKolByName(request.data)
             return {success: true, data: kolCat};
         }
 
-        case MsgType.CacheRawTweetData: {
+        case MsgType.TweetCacheToDB: {
             const rd = request.data;
-            await cacheRawTweets(rd.kolId, rd.data as WrapEntryObj[]);
-            return {success: true};
+            return {success: true, data: await cacheRawTweets(rd.kolId, rd.data as WrapEntryObj[])};
         }
 
-        case MsgType.DBReadTweetByKolId: {
+        case MsgType.TweetReadByKolId: {
             const reqData = request.data;
             const data = await loadCachedTweetsByUserId(reqData.kolId, reqData.limit)
             return {success: true, data: data};
@@ -72,19 +71,19 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.TweetsBootStrap:
             return {success: true, data: await initTweetsCheck()};
 
-        case MsgType.DBReadTweetByCategoryId: {
+        case MsgType.TweetReadByCategoryId: {
             const reqData = request.data;
             return {success: true, data: await loadLatestTweets(reqData.limit, reqData.category, reqData.timeStamp)};
         }
 
-        case MsgType.QueryAllKol: {
+        case MsgType.KolQueryAll: {
             return {success: true, data: await loadAllKols()};
         }
-        case MsgType.DBReadTAllKolCursor:{
+        case MsgType.KolCursorLoadAll: {
             return {success: true, data: await loadAllKolCursors()};
         }
 
-        case MsgType.DBWriteKolCursor:{
+        case MsgType.KolCursorWriteBack: {
             await writeKolsCursors(request.data);
             return {success: true};
         }

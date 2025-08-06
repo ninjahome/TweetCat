@@ -28,7 +28,7 @@ export class TweetKol {
  *
  * *************************************************/
 export async function queryFilterFromBG(catID: number): Promise<Map<string, TweetKol>> {
-    const rsp = await sendMsgToService(catID, MsgType.QueryKolByCatID)
+    const rsp = await sendMsgToService(catID, MsgType.KolQueryByCategoryId)
     if (!rsp.success) {
         console.log("------>>> load filter error:", rsp.data);
         return new Map<string, TweetKol>();

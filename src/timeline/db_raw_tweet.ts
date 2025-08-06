@@ -3,7 +3,6 @@ import pLimit from 'p-limit';
 
 import {
     __tableCachedTweets,
-    __tableCategory,
     __tableKolsInCategory,
     countTable,
     databasePutItem,
@@ -14,7 +13,6 @@ import {
     pruneOldDataIfNeeded
 } from "../common/database";
 import {logTC} from "../common/debug_flags";
-import {defaultCatID, defaultUserName} from "../common/consts";
 
 const MAX_TWEETS_PER_KOL = 1000;
 
@@ -49,9 +47,12 @@ export class WrapEntryObj {
         return new WrapEntryObj(row.tweetId, row.userId, row.timestamp, row.rawJson);
     }
 }
-
-
-export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]) {
+/**************************************************
+ *
+ *               service work api
+ *
+ * *************************************************/
+export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]):Promise<number> {
     const limit = pLimit(5);
     try {
         await Promise.all(
@@ -59,9 +60,11 @@ export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]) {
         );
         const dataLen = await pruneOldDataIfNeeded(kolId, idx_userid_time, __tableCachedTweets, MAX_TWEETS_PER_KOL);
         logTC(`[cacheRawTweets] ✅ [${rawTweets.length}] tweets cached, [${dataLen}] old tweets deleted for kol[${kolId}]`);
+        return dataLen;
     } catch (error) {
         logTC(`[cacheRawTweets] Error caching original tweet: ${error}`);
     }
+    return 0;
 }
 
 export async function loadCachedTweetsByUserId(userId: string, limit = 10): Promise<WrapEntryObj[]> {

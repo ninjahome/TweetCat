@@ -25,21 +25,25 @@ export const __DBK_AD_Block_Key = "__DBK_AD_Block_Key";
 export enum MsgType {
     OpenPlugin = 'OpenPlugin',
     NaviUrlChanged = 'NaviUrlChanged',
-    QueryKolByCatID = 'QueryKolByCatID',
-    QueryAllKol = 'QueryAllKol',
-    QueryCatsByUser = 'QueryCatsByUser',
+
+    CategoryQueryAll = 'CategoryQueryAll',
     CategoryChanged = 'CategoryChanged',
-    QueryKolCat = 'QueryKolCat',
-    UpdateKolCat = 'UpdateKolCat',
-    QueryCatByID = 'QueryCatByID',
-    RemoveKol = 'RemoveKol',
+    CategoryQueryById = 'CategoryQueryById',
+
+    KolQueryAll = 'KolQueryAll',
+    KolQueryByCategoryId = 'KolQueryByCategoryId',
+    KolQueryByName = 'KolQueryByName',
+    KolUpdate = 'KolUpdate',
+    KolRemove = 'KolRemove',
+
     AdsBlockChanged = 'AdsBlockChanged',
-    CacheRawTweetData = 'CacheRawTweetData',
-    DBReadTweetByKolId = 'DBReadTweetByKolId',
+    
+    TweetCacheToDB = 'TweetCacheToDB',
+    TweetReadByKolId = 'TweetReadByKolId',
     TweetsBootStrap = 'TweetsBootStrap',
-    DBReadTweetByCategoryId = 'DBReadTweetByCategoryId',
-    DBReadTAllKolCursor = 'DBReadTAllKolCursor',
-    DBWriteKolCursor = 'DBWriteKolCursor',
+    TweetReadByCategoryId = 'TweetReadByCategoryId',
+    KolCursorLoadAll = 'KolCursorLoadAll',
+    KolCursorWriteBack = 'KolCursorWriteBack',
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

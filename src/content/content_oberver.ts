@@ -180,7 +180,7 @@ async function _kolCompletion(kol: TweetKol, tweetCellDiv: HTMLElement) {
     if (!needUpDateKolData) {
         return;
     }
-    await sendMsgToService(kol, MsgType.UpdateKolCat);
+    await sendMsgToService(kol, MsgType.KolUpdate);
     console.log("------>>> update kol data success", kol)
 }
 
@@ -211,7 +211,7 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
     const removeBtn = __categoryPopupMenu.querySelector(".menu-item-remove") as HTMLElement;
     removeBtn.style.display = !!kol.catID ? 'block' : 'none';
     removeBtn.onclick = () => {
-        sendMsgToService(kol.kolName, MsgType.RemoveKol).then(async () => {
+        sendMsgToService(kol.kolName, MsgType.KolRemove).then(async () => {
             __categoryPopupMenu.style.display = 'none';
             if (callback) {
                 await callback(kol.kolName, buttonElement);
@@ -266,11 +266,11 @@ async function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: Tw
     _setItemActive(menuItem, cat.id!);
 
     kol.catID = cat.id;
-    await sendMsgToService(kol, MsgType.UpdateKolCat);
+    await sendMsgToService(kol, MsgType.KolUpdate);
 }
 
 export async function queryKolDetailByName(kolName: string): Promise<TweetKol | null> {
-    const rsp = await sendMsgToService(kolName, MsgType.QueryKolCat);
+    const rsp = await sendMsgToService(kolName, MsgType.KolQueryByName);
 
     if (!rsp) {
         return null;

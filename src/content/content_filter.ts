@@ -231,7 +231,7 @@ async function _kolCompletion(kol: TweetKol) {
         return;
     }
 
-    await sendMsgToService(kol, MsgType.UpdateKolCat);
+    await sendMsgToService(kol, MsgType.KolUpdate);
     console.log("------>>> update kol data success", kol)
 }
 

@@ -29,7 +29,7 @@ export class TweetPager {
             limit: pageSize,
             category: this.currentCategoryId,
             timeStamp: this.timeStamp
-        }, MsgType.DBReadTweetByCategoryId);
+        }, MsgType.TweetReadByCategoryId);
         if (!rsp.success || !rsp.data) {
             console.warn("------>>> failed to switchCategory!");
             return [];
@@ -76,7 +76,7 @@ export class TweetPager {
         try {
             const r = await fetchTweets(BossOfTheWholeWorld, 20, undefined); // 首次获取 20 条
             const wrapList = r.wrapDbEntry;
-            await sendMsgToService({kolId: BossOfTheWholeWorld, data: r.wrapDbEntry}, MsgType.CacheRawTweetData);
+            await sendMsgToService({kolId: BossOfTheWholeWorld, data: r.wrapDbEntry}, MsgType.TweetCacheToDB);
             logPager(`Bootstrap cached ${wrapList.length} tweets for boss`);
         } catch (err) {
             logPager(`Bootstrap failed for boss`, err);
