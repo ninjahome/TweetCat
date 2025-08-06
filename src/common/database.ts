@@ -80,25 +80,33 @@ function initDatabase(): Promise<IDBDatabase> {
     });
 }
 
+function requestToPromise<T>(req: IDBRequest<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
 async function initCategory(request: IDBOpenDBRequest) {
     const db = request.result;
-
     if (!db.objectStoreNames.contains(__tableCategory)) {
         db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
     }
-
-    const counter = await countTable(__tableCategory);
-    if (counter > 0) return;
 
     const transaction = request.transaction;
     if (!transaction) {
         console.warn("------>>>[Database]Inserted database transaction failed");
         return
     }
-    const categoryStore = transaction.objectStore(__tableCategory);
+
+    const store = transaction.objectStore(__tableCategory);
+    const count = await requestToPromise(store.count());
+    if (count > 0) return;
+
     initialCategories.forEach(category => {
-        categoryStore.add(category);
+        store.add(category);
     });
+
     logDB("------>>>[Database]Created category successfully.", __tableCategory, "Inserted initial categories.", initialCategories);
 }
 
@@ -113,12 +121,13 @@ async function initKolsInCategory(request: IDBOpenDBRequest) {
         console.warn("------>>>[Database]Inserted database transaction failed");
         return
     }
-    const counter = await countTable(__tableKolsInCategory);
-    if (counter > 0) return;
 
-    const categoryStore = transaction.objectStore(__tableKolsInCategory);
+    const store = transaction.objectStore(__tableKolsInCategory);
+    const count = await requestToPromise(store.count());
+    if (count > 0) return;
+
     initialKols.forEach(kol => {
-        categoryStore.add(kol);
+        store.add(kol);
     });
     logDB("------>>>[Database]Create kols in category successfully.", __tableKolsInCategory, "Inserted initial categories.", initialKols);
 }
