@@ -66,7 +66,7 @@ export class TweetPager {
             return;
         }
 
-        const {bootStrap, data} = rsp.data;
+        const bootStrap = rsp.data as boolean;
 
         if (!bootStrap) {
             logPager("Initial tweet cache already populated, skipping bootstrap");

@@ -68,26 +68,9 @@ export async function loadCachedTweetsByUserId(userId: string, limit = 10): Prom
     return await databaseQueryByIndexRange(__tableCachedTweets, 'userId_timestamp_idx', [userId], limit) as WrapEntryObj[];
 }
 
-export async function initTweetsCheck(): Promise<{ bootStrap: boolean, data: any }> {
+export async function initTweetsCheck(): Promise<boolean> {
     const count = await countTable(__tableCachedTweets);
-    if (count > 0) return {bootStrap: false, data: null};
-
-    const categories = await databaseQueryByFilter(__tableCategory, (item) => {
-        return item.forUser === defaultUserName;
-    });
-
-    let catID = defaultCatID;
-    if (categories.length > 0) {
-        catID = categories[0].id;
-    }
-
-    let counter = 0
-    const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => {
-        counter++;
-        return item.catID === catID && counter <= 2;
-    });
-
-    return {bootStrap: true, data: kols};
+    return count===0
 }
 
 export async function loadLatestTweets(limit: number = 20,
