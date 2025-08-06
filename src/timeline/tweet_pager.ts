@@ -41,7 +41,7 @@ export class TweetPager {
         const rawData = rsp.data as WrapEntryObj[];
         if (rawData.length === 0) {
             console.warn("------>>> no data when switchCategory!");//TOOD::fetcher
-            return tweetFetcher.findNewestTweet();
+            return tweetFetcher.findHistoryTweets();
         }
 
         const tweets = unwrapEntryObj(rawData);

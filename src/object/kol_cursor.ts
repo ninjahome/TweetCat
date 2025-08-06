@@ -69,31 +69,34 @@ export class KolCursor {
         cursor.failureCount = obj.failureCount ?? 0;
         return cursor;
     }
-
-    getDebugInfo(): string {
-        const now = Date.now();
-        const status = this.isEnd ? "🔚 ended"
-            : now < this.nextEligibleFetchTime ? "⏸ cooling down"
-                : "✅ ready";
-
-        const nextIn = Math.max(0, this.nextEligibleFetchTime - now);
-        const nextSec = Math.round(nextIn / 1000);
-
-        const lastFetched = this.latestFetchedAt
-            ? new Date(this.latestFetchedAt).toISOString()
-            : "never";
-
-        return `[KolCursor] ${this.userId}
-  status: ${status}
-  failureCount: ${this.failureCount}
-  nextFetchIn: ${nextSec}s
-  latestFetchedAt: ${lastFetched}
-  bottomCursor: ${this.bottomCursor ?? "null"}`;
-    }
 }
 
+export function debugKolCursor(cursor: KolCursor): string {
+    const now = Date.now();
+    const status = cursor.isEnd
+        ? "🔚 ended"
+        : now < cursor.nextEligibleFetchTime
+            ? "⏸ cooling down"
+            : "✅ ready";
 
+    const nextIn = Math.max(0, cursor.nextEligibleFetchTime - now);
+    const nextSec = Math.round(nextIn / 1000);
 
+    const lastFetchedStr = cursor.latestFetchedAt
+        ? new Date(cursor.latestFetchedAt).toISOString()
+        : "never";
+
+    const nextEligibleStr = new Date(cursor.nextEligibleFetchTime).toISOString();
+
+    return `[KolCursor] ${cursor.userId}
+  status: ${status}
+  failureCount: ${cursor.failureCount}
+  nextFetchIn: ${nextSec}s (${nextEligibleStr})
+  latestFetchedAt: ${lastFetchedStr}
+  bottomCursor: ${cursor.bottomCursor ?? "null"}
+  topCursor: ${cursor.topCursor ?? "null"}
+  isEnd: ${cursor.isEnd}`;
+}
 
 /**************************************************
  *
@@ -102,7 +105,7 @@ export class KolCursor {
  * *************************************************/
 
 export async function loadAllKolCursors() {
-    return  await databaseQueryAll(__tableKolCursor);
+    return await databaseQueryAll(__tableKolCursor);
 }
 
 export async function writeKolsCursors(data: KolCursor[]) {
@@ -110,16 +113,17 @@ export async function writeKolsCursors(data: KolCursor[]) {
         await databasePutItem(__tableKolCursor, cursor);
     }
 }
+
 /**************************************************
  *
  *               content script api
  *
  * *************************************************/
 
-export async function loadAllKolFromSW():Promise<Map<string, KolCursor> >{
+export async function loadAllKolFromSW(): Promise<Map<string, KolCursor>> {
     const result = new Map();
-    const rsp = await sendMsgToService({},MsgType.DBReadTAllKolCursor);
-    if (!rsp.success||!rsp.data){
+    const rsp = await sendMsgToService({}, MsgType.DBReadTAllKolCursor);
+    if (!rsp.success || !rsp.data) {
         return result
     }
     const data = rsp.data as any[];
@@ -130,6 +134,6 @@ export async function loadAllKolFromSW():Promise<Map<string, KolCursor> >{
     return result
 }
 
-export async function saveKolCursorToSW(data: KolCursor[]){
-    await sendMsgToService(data,MsgType.DBReadTAllKolCursor);
+export async function saveKolCursorToSW(data: KolCursor[]) {
+    await sendMsgToService(data, MsgType.DBReadTAllKolCursor);
 }

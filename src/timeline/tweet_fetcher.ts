@@ -4,7 +4,7 @@ import {logFT} from "../common/debug_flags";
 import {MsgType} from "../common/consts";
 import {dbObjectToKol, TweetKol} from "../object/tweet_kol";
 import {EntryObj} from "./tweet_entry";
-import {KolCursor, loadAllKolFromSW, saveKolCursorToSW} from "../object/kol_cursor";
+import {debugKolCursor, KolCursor, loadAllKolFromSW, saveKolCursorToSW} from "../object/kol_cursor";
 
 export class TweetFetcher {
     private intervalId: number | null = null;
@@ -104,7 +104,7 @@ export class TweetFetcher {
 
     private async fetchOneKolBatch(userId: string, cursor: KolCursor): Promise<boolean> {
         try {
-            logFT(`[TweetFetcher] ▶️ Fetching tweets for ${userId} cursor info:${cursor.getDebugInfo()}`);
+            logFT(`[TweetFetcher] ▶️ Fetching tweets for ${userId} cursor info:${debugKolCursor(cursor)}`);
 
             const result = await fetchTweets(userId, this.FETCH_LIMIT, cursor.bottomCursor ?? undefined);
             const tweets = result.tweets ?? [];
@@ -120,7 +120,7 @@ export class TweetFetcher {
                 cursor.markEnd();
             }
 
-            logFT(`[TweetFetcher] ✅ ${userId} fetched ${tweets.length} tweets`);
+            logFT(`[TweetFetcher] ✅ ${userId} fetched ${tweets.length} tweets cursor info:${debugKolCursor(cursor)}`);
             return true;
         } catch (err) {
             const msg = typeof err === 'object' && err && 'message' in err ? String((err as any).message) : '';
@@ -161,7 +161,7 @@ export class TweetFetcher {
         await saveKolCursorToSW(Array.from(this.kolCursors.values()));
     }
 
-    async findNewestTweet(): Promise<EntryObj[]> {
+    async findHistoryTweets(): Promise<EntryObj[]> {
         return []
     }
 }
