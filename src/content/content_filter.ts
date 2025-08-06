@@ -5,6 +5,7 @@ import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 import {queryFilterFromBG, TweetKol} from "../object/tweet_kol";
 import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
+import {isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
 
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
@@ -179,9 +180,33 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
         const oldFilterBtn = profileToolBarDiv.querySelectorAll(".filter-btn-on-profile");
         oldFilterBtn.forEach(item => item.remove());
         await _appendFilterBtn(profileToolBarDiv, kolName)
+        hijackBackButton();
         observing = false;
     }, false);
 }
+
+function hijackBackButton(): void {
+    const backButton = document.querySelector('[data-testid="app-bar-back"]');
+    if (!backButton) return;
+
+    if ((backButton as any).__tc_back_hooked) return;
+    (backButton as any).__tc_back_hooked = true;
+
+    backButton.addEventListener('click', (e) => {
+        const state = history.state;
+
+        const shouldReturnToTweetCat = !!state?.fromTweetCat;
+        const notInTweetCat = !isInTweetCatRoute();
+
+        if (!(shouldReturnToTweetCat && notInTweetCat)) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        console.debug('[TC] 拦截返回按钮，跳转回 TweetCat');
+        navigateToTweetCat();
+    }, true); // 使用 capture 模式，优先于 React/Twitter 默认处理
+}
+
 
 async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
     const contentTemplate = await parseContentHtml('html/content.html');

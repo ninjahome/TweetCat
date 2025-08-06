@@ -3,10 +3,8 @@
  * ------------------------------------------------------------------ */
 import {EntryObj} from "./tweet_entry";
 import {logPager} from "../common/debug_flags";
-import {fetchTweets} from "./twitter_api";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {BossOfTheTwitter} from "../common/database";
 import {initBootstrapData, needBootStrap, WrapEntryObj} from "./db_raw_tweet";
 import {tweetFetcher} from "./tweet_fetcher";
 

@@ -54,6 +54,10 @@ export function initRouteGuard() {
     }
 
     handleLocationChange();
+
+    window.addEventListener('popstate', () => {
+        handleLocationChange();
+    });
 }
 
 // Guard 去抖

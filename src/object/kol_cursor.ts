@@ -21,15 +21,16 @@ export class KolCursor {
         this.userId = userId;
     }
 
-    waitForNextNewestRound(topCursor: string | null = null, cacheEnough: boolean = false) {
+    waitForNextNewestRound(topCursor: string | null = null, bottomCursor: string | null = null, cacheEnough: boolean = false) {
         if (!topCursor) {
             this.nextNewestFetchTime = Date.now() + this.LONG_WAIT_FOR_NEWEST;
             return;
         }
         this.topCursor = topCursor;
+        this.bottomCursor = bottomCursor;
         this.failureCount = 0;
         this.nextNewestFetchTime = Date.now() + this.SHORT_WAIT_FOR_NEWEST;
-        this.cacheEnough = cacheEnough
+        this.cacheEnough = !bottomCursor || cacheEnough;
         this.coolDownTime = Date.now() + this.FETCH_COOL_DOWN;
     }
 

@@ -1,7 +1,7 @@
 import {getBearerToken} from "../common/utils";
 import {localGet} from "../common/local_storage";
 import {__DBK_query_id_map, UserByScreenName, UserTweets} from "../common/consts";
-import {EntryObj, parseTimelineFromGraphQL} from "./tweet_entry";
+import {EntryObj, parseTimelineFromGraphQL, TweetResult} from "./tweet_entry";
 import {WrapEntryObj} from "./db_raw_tweet";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
@@ -179,12 +179,7 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
     return userId ?? null;
 }
 
-export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string): Promise<{
-    tweets: EntryObj[],
-    wrapDbEntry: WrapEntryObj[];
-    nextCursor: string | null;
-    topCursor: string | null;
-}> {
+export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string): Promise<TweetResult> {
     const url = await buildTweetQueryURL({userId, count: maxCount, cursor: cursor});
     const headers = await generateHeaders();
     const response = await fetch(url, {
@@ -198,6 +193,6 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
         throw new Error(`HTTP error ${response.status}: ${errorText}`);
     }
     const result = await response.json();
-    console.log("---------------->>>\n", result);
+    // console.log("---------------->>>\n", result);
     return parseTimelineFromGraphQL(result);
 }

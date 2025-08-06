@@ -57,30 +57,31 @@ export function updateTweetAvatar(avatarArea: Element, author: TweetAuthor): voi
     }
 }
 
-
-// 渲染顶部昵称、用户名、发布时间区域
 export function updateTweetTopButtonArea(headerMeta: Element, author: TweetAuthor, createdAt: string, tweetId: string): void {
 
-    // 更新昵称（大号）区域
+    const screenNamePath = `/${author.screenName}`;
+    const tweetPath = `/${author.screenName}/status/${tweetId}`;
+
+    // 昵称（大号）区域
     const screenNameLink = headerMeta.querySelector('.display-name-link') as HTMLAnchorElement;
     if (screenNameLink) {
-        screenNameLink.href = `/${author.screenName}`;
+        bindTwitterInternalLink(screenNameLink, screenNamePath);
         const nameSpan = screenNameLink.querySelector('.tweet-author');
         if (nameSpan) nameSpan.textContent = author.displayName;
     }
 
-    // 更新小号 (@xxx)
+    // 小号 (@xxx)
     const userNameLink = headerMeta.querySelector('.user-name-link') as HTMLAnchorElement;
     if (userNameLink) {
-        userNameLink.href = `/${author.screenName}`;
+        bindTwitterInternalLink(userNameLink, screenNamePath);
         const screenNameSpan = userNameLink.querySelector('.tweet-username');
         if (screenNameSpan) screenNameSpan.textContent = `@${author.screenName}`;
     }
 
-    // 更新时间
+    // 时间链接
     const timeLink = headerMeta.querySelector('.tweet-time-link') as HTMLAnchorElement;
     if (timeLink) {
-        timeLink.href = `/${author.screenName}/status/${tweetId}`;
+        bindTwitterInternalLink(timeLink, tweetPath);
         const date = new Date(createdAt);
         const timeElement = timeLink.querySelector('.tweet-time');
         if (timeElement) {
@@ -89,12 +90,13 @@ export function updateTweetTopButtonArea(headerMeta: Element, author: TweetAutho
         }
     }
 
-    // 动态处理认证图标是否显示
+    // 认证图标隐藏
     const verifiedIcon = headerMeta.querySelector('.verified-box') as HTMLElement;
     if (verifiedIcon && !author.is_blue_verified) {
         verifiedIcon.style.display = 'none';
     }
 }
+
 
 export function updateTweetContentArea(
     container: HTMLElement,
@@ -335,4 +337,23 @@ function updateTweetBottomButtons(
     if (viewsLink) {
         viewsLink.href = `/${screenName}/status/${tweetContent.id_str}/analytics`;
     }
+}
+
+
+function bindTwitterInternalLink(element: HTMLAnchorElement, path: string) {
+    if (!path.startsWith('/')) return;
+
+    element.href = path;
+    element.addEventListener('click', (e) => {
+        // 避免修饰键（如 Ctrl+Click / Cmd+Click）破坏行为
+        if (
+            e.defaultPrevented ||
+            e.button !== 0 || // 非左键点击
+            e.metaKey || e.ctrlKey || e.shiftKey || e.altKey
+        ) return;
+
+        e.preventDefault();
+        history.pushState({fromTweetCat: true}, '', path);
+        dispatchEvent(new PopStateEvent('popstate'));
+    }, {once: true}); // 添加 once 以避免多次重复绑定
 }

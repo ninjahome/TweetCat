@@ -387,12 +387,7 @@ export class EntryObj {
 }
 
 // 批量解析 entries 的函数
-export function extractEntryObjs(entries: any[]): {
-    tweets: EntryObj[];
-    wrapDbEntry: WrapEntryObj[];
-    nextCursor: string | null;
-    topCursor: string | null;
-} {
+export function extractEntryObjs(entries: any[]): TweetResult {
     const tweetEntries: EntryObj[] = [];
     const tweetRawEntries: WrapEntryObj[] = [];
     let bottomCursor: string | null = null;
@@ -417,15 +412,25 @@ export function extractEntryObjs(entries: any[]): {
         }
     }
 
-    return {tweets: tweetEntries, wrapDbEntry: tweetRawEntries, nextCursor: bottomCursor, topCursor};
+    // console.log("---------->>>next:", bottomCursor, "top:", topCursor)
+    return new TweetResult(tweetEntries, tweetRawEntries, bottomCursor, topCursor);
 }
 
-export function parseTimelineFromGraphQL(result: any): {
+export class TweetResult {
     tweets: EntryObj[];
     wrapDbEntry: WrapEntryObj[];
     nextCursor: string | null;
     topCursor: string | null;
-} {
+
+    constructor(tweets: EntryObj[], wrapDbEntry: WrapEntryObj[], next: string | null, top: string | null) {
+        this.tweets = tweets;
+        this.wrapDbEntry = wrapDbEntry;
+        this.nextCursor = next;
+        this.topCursor = top
+    }
+}
+
+export function parseTimelineFromGraphQL(result: any): TweetResult {
     const instructions = result.data?.user?.result?.timeline?.timeline?.instructions || [];
     const allEntries: any[] = [];
 
