@@ -148,12 +148,13 @@ export class TweetFetcher {
 
             if (tweets.length === 0 || !result.nextCursor) {
                 logFT(`[fetchHistoryOneKolBatch] ✅ ${userId} no more history tweets cursor info:${debugKolCursor(cursor)}`);
-                cursor.updateBottom();
+                cursor.updateBottom(result.nextCursor);
                 return true;
             }
 
             const dataDeleted = await cacheTweetsToSW(userId, result.wrapDbEntry)
-            cursor.updateBottom(result.nextCursor, dataDeleted > 0);
+            cursor.updateBottom(result.nextCursor);
+            cursor.updateCacheStatus(dataDeleted > 0)
             logFT(`[fetchHistoryOneKolBatch] ✅ ${userId} fetched ${tweets.length} history tweets cursor info:${debugKolCursor(cursor)}`);
             return true;
 

@@ -3,7 +3,6 @@ import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 
 export class KolCursor {
-
     userId: string;
     bottomCursor: string | null = null;
     topCursor: string | null = null;
@@ -12,6 +11,7 @@ export class KolCursor {
     cacheEnough: boolean = false;
     coolDownTime: number = 0;
     failureCount: number = 0;
+
     private readonly LONG_WAIT_FOR_NEWEST = 20 * 60 * 1000; // 20分钟
     private readonly SHORT_WAIT_FOR_NEWEST = 1 * 60 * 1000; // 1分钟
     private readonly WAIT_FOR_HISTORY = 5 * 60 * 1000; // 5分钟
@@ -22,16 +22,15 @@ export class KolCursor {
     }
 
     waitForNextNewestRound(topCursor: string | null = null, bottomCursor: string | null = null, cacheEnough: boolean = false) {
-        if (!topCursor) {
-            this.nextNewestFetchTime = Date.now() + this.LONG_WAIT_FOR_NEWEST;
-            return;
-        }
-
         this.topCursor = topCursor;
         this.bottomCursor = bottomCursor;
         this.failureCount = 0;
-        this.nextNewestFetchTime = Date.now() + this.SHORT_WAIT_FOR_NEWEST;
-        this.cacheEnough = !bottomCursor || cacheEnough;
+        this.cacheEnough = cacheEnough;
+        if (!topCursor) {
+            this.nextNewestFetchTime = Date.now() + this.LONG_WAIT_FOR_NEWEST;
+        } else {
+            this.nextNewestFetchTime = Date.now() + this.SHORT_WAIT_FOR_NEWEST;
+        }
         this.coolDownTime = Date.now() + this.FETCH_COOL_DOWN;
     }
 
@@ -40,14 +39,16 @@ export class KolCursor {
         return now >= this.coolDownTime && now > this.nextNewestFetchTime;
     }
 
-    updateBottom(nextCursor: string | null = null, cacheEnough: boolean = false) {
-        if (cacheEnough || !nextCursor) {
-            this.cacheEnough = true;
-            return;
-        }
+    updateBottom(nextCursor: string | null = null) {
         this.bottomCursor = nextCursor;
+        this.failureCount = 0;
+        if (!nextCursor) return;
         this.nextHistoryFetchTime = Date.now() + this.WAIT_FOR_HISTORY;
         this.coolDownTime = Date.now() + this.FETCH_COOL_DOWN;
+    }
+
+    updateCacheStatus(cacheEnough: boolean) {
+        this.cacheEnough = cacheEnough;
     }
 
     needFetchOld(): boolean {
