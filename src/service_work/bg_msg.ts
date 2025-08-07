@@ -16,7 +16,6 @@ import {
     WrapEntryObj
 } from "../timeline/db_raw_tweet";
 import {loadAllKolCursors, writeKolsCursors} from "../object/kol_cursor";
-import {logBGT} from "../common/debug_flags";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
     // console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)

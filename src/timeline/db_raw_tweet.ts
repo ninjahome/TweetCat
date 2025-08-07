@@ -3,8 +3,7 @@ import pLimit from 'p-limit';
 
 import {
     __tableCachedTweets,
-    __tableKolsInCategory, BossOfTheTwitter,
-    countTable,
+    __tableKolsInCategory, countTable,
     databasePutItem,
     databaseQueryByFilter,
     databaseQueryByIndex,

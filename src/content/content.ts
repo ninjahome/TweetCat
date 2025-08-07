@@ -57,6 +57,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
         case MsgType.StartTweetsFetch:{
             startToFetchTweets(request.data as tweetFetchParam)
             sendResponse({success: true});
+            break;
         }
 
         default:

@@ -1,8 +1,7 @@
-import browser, {action} from "webextension-polyfill";
+import browser from "webextension-polyfill";
 import {logBGT} from "../common/debug_flags";
 import {loadAllKolIds, loadAllKols} from "../object/tweet_kol";
 import {KolCursor, loadAllKolCursors} from "../object/kol_cursor";
-import {__tableKolCursor, databasePutItem} from "../common/database";
 import {sendMessageToX} from "./bg_msg";
 import {MsgType} from "../common/consts";
 
