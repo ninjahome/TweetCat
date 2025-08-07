@@ -17,11 +17,9 @@ export class KolCursor {
     private static readonly WAIT_FOR_HISTORY = 5 * 60 * 1000; //
     private static readonly MaxFailureTimes = 5; // 5次
 
-    constructor(userId: string, topCursor: string | null = null, updateTime: number = 0) {
+    constructor(userId: string) {
         this.userId = userId;
-        this.topCursor = topCursor;
-        this.nextNewestFetchTime = updateTime;
-        logKC(`new cursor create userid=${userId} topCursor=${topCursor}`)
+        logKC(`new cursor create userid=${userId}`)
     }
 
     waitForNextNewestRound(topCursor: string | null, bottomCursor: string | null) {
@@ -74,7 +72,14 @@ export class KolCursor {
     }
 
     static fromJSON(obj: any): KolCursor {
-        return new KolCursor(obj.userId, obj.topCursor ?? null, obj.nextNewestFetchTime ?? 0);
+        const instance = new KolCursor(obj.userId);
+        instance.topCursor =  obj.topCursor ?? null;
+        instance.bottomCursor =  obj.bottomCursor ?? null;
+        instance.nextNewestFetchTime =  obj.nextNewestFetchTime ?? 0;
+        instance.cacheEnough =  obj.nextNewestFetchTime ?? false;
+        instance.nextHistoryFetchTime =  obj.nextHistoryFetchTime ?? 0;
+        instance.failureCount =  obj.failureCount ?? 0;
+        return instance;
     }
 
     markAsBootstrap() {

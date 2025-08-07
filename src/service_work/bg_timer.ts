@@ -9,17 +9,24 @@ const tweetFM = new TweetFetcherManager();
 alarms.onAlarm.addListener(timerTaskWork);
 
 export async function createAlarm(): Promise<void> {
-    await checkAndInitDatabase();
     const alarm = await alarms.get(__alarm_tweets_fetch__);
     if (!alarm) {
         alarms.create(__alarm_tweets_fetch__, {
-            periodInMinutes: 1
+            periodInMinutes: 2
         });
         console.log("------>>> alarm create success")
     }
 }
 
-export async function setTweetBootStrap(){
+export async function updateAlarm(): Promise<void> {
+    await browser.alarms.clear(__alarm_tweets_fetch__);
+    alarms.create(__alarm_tweets_fetch__, {
+        periodInMinutes: 2
+    });
+    console.log("------>>> alarm recreate success")
+}
+
+export async function setTweetBootStrap() {
     await tweetFM.resetState();
 }
 
@@ -35,6 +42,7 @@ async function timerTaskWork(alarm: any): Promise<void> {
 }
 
 async function alarmTweetsProc() {
+    await checkAndInitDatabase();
     try {
         const hasOpenXCom = await checkIfXIsOpen();
         if (!hasOpenXCom) {

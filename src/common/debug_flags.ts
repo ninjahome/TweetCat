@@ -35,4 +35,4 @@ export const logDB = makeLogger('Database', 'Database');
 export const logTC = makeLogger('TweetCache', 'TweetCache');
 export const logFT = makeLogger('TweetFetcher', 'TweetFetcher');
 export const logKC = makeLogger('TweetCursor', 'TweetCursor');
-export const logBGT = makeLogger('TweetBGTimer', 'TweetBackGroundTimer');
+export const logBGT = makeLogger('TweetBGTimer', 'TweetBGTimer');

@@ -44,7 +44,7 @@ export class TweetFetcherManager {
         this.newestFetch = state.newestFetch ?? false;
         this.bootStrap = state.bootStrap ?? true;
 
-        console.log("[TweetFetcher]✅ State has been loaded:", JSON.stringify(state));
+        logBGT("[TweetFetcher]✅ State has been loaded:", JSON.stringify(state));
     }
 
     async saveRuntimeStateToStorage() {
@@ -58,7 +58,7 @@ export class TweetFetcherManager {
         await browser.storage.local.set({
             [this.STORAGE_KEY]: state
         });
-        console.log("[TweetFetcher]⚠️ State has been saved:", JSON.stringify(state));
+        logBGT("[TweetFetcher]⚠️ State has been saved:", JSON.stringify(state));
     }
 
     async resetState(): Promise<void> {
@@ -68,7 +68,7 @@ export class TweetFetcherManager {
         this.bootStrap = true;
 
         await this.saveRuntimeStateToStorage();
-        console.log("[TweetFetcher]🔴 State has been reset on browser startup");
+        logBGT("[TweetFetcher]🔴 State has been reset on browser startup");
     }
 
 
@@ -122,7 +122,7 @@ export class TweetFetcherManager {
     async fetchTweetsPeriodic() {
         if (this.bootStrap) {
             this.newestFetch = true;
-            this.bootStrap = false;//TODO::
+            this.bootStrap = false;
         } else {
             this.newestFetch = !this.newestFetch;
         }
@@ -141,7 +141,7 @@ export class TweetFetcherManager {
             logBGT(`[fetchTweetsPeriodic] 😭 send fetch message failed   ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex}`);
             return
         }
-        logBGT(`[fetchTweetsPeriodic] ⏱ Starting ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex} at ${new Date().toISOString()}`);
+        logBGT(`[fetchTweetsPeriodic] ♻️ Starting ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex} at ${new Date().toISOString()}`);
     }
 }
 
