@@ -7,6 +7,8 @@ import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "../common/consts
 import {addCustomStyles, isTwitterUserProfile} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
 import {appendTweetCatMenuItem} from "../timeline/timeline_ui";
+import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
+import {startToFetchTweets} from "../timeline/tweet_fetcher";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
@@ -50,6 +52,11 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             changeAdsBlockStatus(request.data as boolean);
             sendResponse({success: true});
             break;
+        }
+
+        case MsgType.StartTweetsFetch:{
+            startToFetchTweets(request.data as tweetFetchParam)
+            sendResponse({success: true});
         }
 
         default:

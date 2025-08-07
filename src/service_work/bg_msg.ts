@@ -16,6 +16,7 @@ import {
     WrapEntryObj
 } from "../timeline/db_raw_tweet";
 import {loadAllKolCursors, writeKolsCursors} from "../object/kol_cursor";
+import {logBGT} from "../common/debug_flags";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
     // console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)
@@ -97,18 +98,24 @@ async function openPlugin() {
     await browser.action.openPopup();
 }
 
-export function broadcastToContent(action: string, data: any) {
-    browser.tabs.query({}).then((tabs) => {
-        for (const tab of tabs) {
-            if (tab.id !== undefined) {  // 确保 tab.id 存在
-                browser.tabs.sendMessage(tab.id, {
-                    action: action,
-                    data: data
-                }).catch(err => {
-                    // 捕获某些tab没有注入content script时的错误
-                    console.log(`------>>>Tab ${tab.id} 无法接收消息:`, err);
-                });
-            }
-        }
+export async function sendMessageToX(action: string, data: any): Promise<boolean> {
+    const tabs = await browser.tabs.query({
+        url: "*://x.com/*"
     });
+
+    if (tabs.length === 0) {
+        console.log(`------>>> x is not open!`);
+        return false;
+    }
+
+    try {
+        await browser.tabs.sendMessage(tabs[0].id!, {
+            action: action,
+            data: data
+        });
+        return true;
+    } catch (err) {
+        console.warn("------>>> 发送消息失败", err);
+        return false;
+    }
 }

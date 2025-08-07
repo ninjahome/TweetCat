@@ -9,11 +9,11 @@ import {
     databaseQueryByFilter,
     databaseQueryByIndex,
     databaseQueryByIndexRange,
-    idx_userid_time,
+    idx_userid_time, initialKols,
     pruneOldDataIfNeeded
 } from "../common/database";
 import {logTC} from "../common/debug_flags";
-import {sendMsgToService} from "../common/utils";
+import {sendMsgToService, sleep} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {fetchTweets} from "./twitter_api";
 
@@ -127,12 +127,19 @@ export async function needBootStrap(): Promise<boolean> {
 }
 
 export async function initBootstrapData() {
-    try {
-        const r = await fetchTweets(BossOfTheTwitter, 20, undefined); // 首次获取 20 条
-        const wrapList = r.wrapDbEntry;
-        await sendMsgToService({kolId: BossOfTheTwitter, data: r.wrapDbEntry}, MsgType.TweetCacheToDB);
-        logTC(`Bootstrap cached ${wrapList.length} tweets for boss`);
-    } catch (err) {
-        logTC(`Bootstrap failed for boss`, err);
+
+    for (let i = 0; i < initialKols.length; i++) {
+        const kol = initialKols[i];
+        const kolId = kol.kolUserId
+        try {
+            const r = await fetchTweets(kolId); // 首次获取 20 条
+            const wrapList = r.wrapDbEntry;
+            await sendMsgToService({kolId: kolId, data: r.wrapDbEntry}, MsgType.TweetCacheToDB);
+            logTC(`Bootstrap cached ${wrapList.length} tweets for ${kolId}`);
+            await sleep(3000);
+        } catch (err) {
+            logTC(`Bootstrap failed for  ${kolId}`, err);
+        }
     }
+
 }

@@ -11,7 +11,7 @@ import {
 import {checkAndInitDatabase} from "../common/database";
 import {localGet, localSet} from "../common/local_storage";
 import {getBearerToken, updateBearerToken} from "../common/utils";
-import {createAlarm} from "./bg_timer";
+import {createAlarm, setTweetBootStrap} from "./bg_timer";
 
 /****************************************************************************************
  ┌────────────┐
@@ -46,6 +46,7 @@ self.addEventListener('install', (event) => {
     console.log('------>>> Service Worker installing......');
     const evt = event as ExtendableEvent;
     evt.waitUntil(createAlarm());
+    evt.waitUntil(checkAndInitDatabase());
 });
 
 browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType) => {
@@ -96,6 +97,7 @@ browser.runtime.onStartup.addListener(() => {
         console.log('------>>> onStartup......');
         await checkAndInitDatabase();
         await createAlarm();
+        await setTweetBootStrap();
     })();
 });
 

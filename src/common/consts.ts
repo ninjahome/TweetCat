@@ -24,6 +24,7 @@ export const __DBK_AD_Block_Key = "__DBK_AD_Block_Key";
 export enum MsgType {
     OpenPlugin = 'OpenPlugin',
     NaviUrlChanged = 'NaviUrlChanged',
+    StartTweetsFetch = 'StartTweetsFetch',
 
     CategoryQueryAll = 'CategoryQueryAll',
     CategoryChanged = 'CategoryChanged',

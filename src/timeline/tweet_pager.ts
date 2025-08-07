@@ -2,11 +2,12 @@
  * Tweet Pager State
  * ------------------------------------------------------------------ */
 import {EntryObj} from "./tweet_entry";
-import {logPager} from "../common/debug_flags";
+import {logFT, logPager} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {initBootstrapData, needBootStrap, WrapEntryObj} from "./db_raw_tweet";
-import {tweetFetcher} from "../service_work/tweet_fetcher";
+import {fetchTweets} from "./twitter_api";
+import {BossOfTheTwitter} from "../common/database";
 
 
 export class TweetPager {
@@ -36,7 +37,7 @@ export class TweetPager {
         const rawData = rsp.data as WrapEntryObj[];
         if (rawData.length === 0) {
             console.warn("------>>> no data when switchCategory!");//TOOD::fetcher
-            return tweetFetcher.findNewestTweetsOfSomeBody();
+            return this.findNewestTweetsOfSomeBody();
         }
 
         const tweets = unwrapEntryObj(rawData);
@@ -65,6 +66,11 @@ export class TweetPager {
         }
         await initBootstrapData();
     }
+
+    async findNewestTweetsOfSomeBody(): Promise<EntryObj[]> {
+        const result = await fetchTweets(BossOfTheTwitter);
+        return result.tweets ?? []
+    }
 }
 
 function unwrapEntryObj(rawData: WrapEntryObj[]): EntryObj[] {
@@ -72,4 +78,9 @@ function unwrapEntryObj(rawData: WrapEntryObj[]): EntryObj[] {
 }
 
 export const tweetPager = new TweetPager();
-
+document.addEventListener('DOMContentLoaded', function onLoadOnce() {
+    tweetPager.init().then(() => {
+        logFT('[TweetPager] 🚀 DOMContentLoaded: init checking for first tweet loading');
+    });
+    document.removeEventListener('DOMContentLoaded', onLoadOnce);
+});

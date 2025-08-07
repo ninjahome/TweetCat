@@ -1,11 +1,12 @@
-import {fetchTweets} from "../timeline/twitter_api";
+import {fetchTweets} from "./twitter_api";
 import {sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
 import {queryKolIdsFromSW} from "../object/tweet_kol";
-import {EntryObj} from "../timeline/tweet_entry";
+import {EntryObj} from "./tweet_entry";
 import {KolCursor, loadAllCursorFromSW, saveKolCursorToSW} from "../object/kol_cursor";
-import {cacheTweetsToSW} from "../timeline/db_raw_tweet";
 import {BossOfTheTwitter} from "../common/database";
+import {cacheTweetsToSW} from "./db_raw_tweet";
+import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 
 export class TweetFetcher {
     private intervalId: number | null = null;
@@ -219,14 +220,6 @@ export class TweetFetcher {
 }
 
 export const tweetFetcher = new TweetFetcher();
-
-document.addEventListener('DOMContentLoaded', function onLoadOnce() {
-    tweetFetcher.start();
-    logFT('[TweetFetcher] 🚀 DOMContentLoaded: starting fetcher...');
-    document.removeEventListener('DOMContentLoaded', onLoadOnce);
-});
-
-window.addEventListener('beforeunload', () => {
-    logFT('[TweetFetcher] 🛑 beforeunload: stopping fetcher...');
-    tweetFetcher.stop();
-});
+export function startToFetchTweets(data: tweetFetchParam) {
+    logFT("------>>> time to fetch tweets:", data.cursors, data.newest);
+}

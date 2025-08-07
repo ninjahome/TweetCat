@@ -4,7 +4,7 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 7;
+export const __currentDatabaseVersion = 12;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -21,7 +21,7 @@ const initialCategories = [
     {catName: defaultCategoryName},
 ];
 
-const initialKols = [
+export const initialKols = [
     {
         kolName: 'tweetCatOrg',
         catID: defaultCatID,
@@ -89,25 +89,45 @@ function requestToPromise<T>(req: IDBRequest<T>): Promise<T> {
 
 async function initCategory(request: IDBOpenDBRequest) {
     const db = request.result;
+
     if (!db.objectStoreNames.contains(__tableCategory)) {
-        db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
+        // 表不存在，直接创建并初始化
+        const store = db.createObjectStore(__tableCategory, { keyPath: 'id', autoIncrement: true });
+        for (const category of initialCategories) {
+            store.add(category);
+        }
+        logDB("------>>>[Database]Created category store and inserted initial categories.", initialCategories);
+        return;
     }
 
-    const transaction = request.transaction;
-    if (!transaction) {
-        console.warn("------>>>[Database]Inserted database transaction failed");
-        return
+    // ✅ 使用升级事务中的 transaction
+    const txn = request.transaction;
+    if (!txn) {
+        console.warn("------>>>[Database] Transaction is null");
+        return;
     }
 
-    const store = transaction.objectStore(__tableCategory);
+    // 🟡 先 count 看是否为空
+    const store = txn.objectStore(__tableCategory);
     const count = await requestToPromise(store.count());
-    if (count > 0) return;
 
-    initialCategories.forEach(category => {
-        store.add(category);
+    if (count > 0) {
+        logDB("------>>>[Database]Category store already has data, skip initialization.");
+        return;
+    }
+
+    queueMicrotask(() => {
+        try {
+            db.deleteObjectStore(__tableCategory);
+            const newStore = db.createObjectStore(__tableCategory, { keyPath: 'id', autoIncrement: true });
+            for (const category of initialCategories) {
+                newStore.add(category);
+            }
+            logDB("------>>>[Database]Recreated category store and re-initialized data.", initialCategories);
+        } catch (err) {
+            console.error("------>>>[Database]Error recreating store:", err);
+        }
     });
-
-    logDB("------>>>[Database]Created category successfully.", __tableCategory, "Inserted initial categories.", initialCategories);
 }
 
 async function initKolsInCategory(request: IDBOpenDBRequest) {
@@ -557,7 +577,7 @@ export async function pruneOldDataIfNeeded(
         countRequest.onsuccess = () => {
             const total = countRequest.result;
             if (total <= maxKeep) {
-                console.log(`[pruneOldDataIfNeeded] ✅ no need to Pruned total[${total}]`);
+                logDB(`[pruneOldDataIfNeeded] ✅ no need to Pruned total[${total}]`);
                 return resolve(0);
             }
 
@@ -586,7 +606,7 @@ export async function pruneOldDataIfNeeded(
 
             tx.oncomplete = () => {
                 if (deleted > 0) {
-                    console.log(`[pruneOldDataIfNeeded] ✅ Pruned ${deleted} old data for key=${key}`);
+                    logDB(`[pruneOldDataIfNeeded] ✅ Pruned ${deleted} old data for key=${key}`);
                 }
                 resolve(deleted);
             };

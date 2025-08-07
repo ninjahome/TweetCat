@@ -13,6 +13,7 @@ export const DBG = {
     TweetCache: true,
     TweetFetcher: true,
     TweetCursor: true,
+    TweetBGTimer: true,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -34,3 +35,4 @@ export const logDB = makeLogger('Database', 'Database');
 export const logTC = makeLogger('TweetCache', 'TweetCache');
 export const logFT = makeLogger('TweetFetcher', 'TweetFetcher');
 export const logKC = makeLogger('TweetCursor', 'TweetCursor');
+export const logBGT = makeLogger('TweetBGTimer', 'TweetBackGroundTimer');

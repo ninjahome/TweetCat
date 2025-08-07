@@ -4,7 +4,7 @@ import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/
 import {showView} from "../common/utils";
 import {loadCategories, removeCategory, updateCategoryDetail} from "../object/category";
 import {hideLoading, showAlert, showConfirmPopup, showLoading} from "./dash_common";
-import {broadcastToContent} from "../service_work/bg_msg";
+import {sendMessageToX} from "../service_work/bg_msg";
 import {localGet, localSet} from "../common/local_storage";
 import {Category} from "../object/category";
 import {kolsForCategory} from "../object/tweet_kol";
@@ -84,7 +84,7 @@ async function addNewCategory() {
     newCatInput.value = '';
 
     const changedCat = await loadCategories();
-    broadcastToContent(MsgType.CategoryChanged, changedCat);
+    await sendMessageToX(MsgType.CategoryChanged, changedCat);
     hideLoading();
     showAlert("Tips", "Save Success");
 }
@@ -167,7 +167,7 @@ async function editCateName(cat: Category, parent: HTMLElement) {
     cat.catName = inputArea.value;
     showLoading();
     await updateCategoryDetail(cat);
-    broadcastToContent(MsgType.CategoryChanged, await loadCategories());
+    await sendMessageToX(MsgType.CategoryChanged, await loadCategories());
     hideLoading();
     showAlert("Tips", "Update Success");
 }
@@ -176,7 +176,7 @@ function removeCatById(catId: number) {
     showConfirmPopup("Delete this Category?", async () => {
         showLoading();
         await removeCategory(catId);
-        broadcastToContent(MsgType.CategoryChanged, await loadCategories());
+        await sendMessageToX(MsgType.CategoryChanged, await loadCategories());
         hideLoading();
         showView('#onboarding/main-home', dashRouter);
     });
@@ -189,6 +189,6 @@ function initSettings() {
         const isEnabled = blockAdsToggle.checked;
         await localSet(__DBK_AD_Block_Key, isEnabled);
         console.log("------>>>Ad blocking is now", isEnabled ? "enabled" : "disabled");
-        broadcastToContent(MsgType.AdsBlockChanged, isEnabled);
+        await sendMessageToX(MsgType.AdsBlockChanged, isEnabled);
     };
 }

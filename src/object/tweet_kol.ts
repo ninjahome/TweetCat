@@ -31,6 +31,10 @@ export async function loadAllKols(): Promise<any[]> {
     return await databaseQueryAll(__tableKolsInCategory);
 }
 
+export async function loadAllKolIds(): Promise<string[]> {
+    const data = await databaseQueryAll(__tableKolsInCategory);
+    return extractKolUserIds(data as any[])
+}
 
 export async function kolsForCategory(catID: number): Promise<Map<string, TweetKol>> {
     const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => {
