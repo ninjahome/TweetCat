@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import {localGet} from "./local_storage";
+import {localGet, localSet} from "./local_storage";
 import {__DBK_Bearer_Token, DEFAULT_BEARER} from "./consts";
 
 export async function sendMsgToService(data: any, actTyp: string): Promise<any> {
@@ -108,10 +108,18 @@ export function observeForElementDirect(target: HTMLElement, idleThreshold: numb
 }
 
 
+let memoryTokenCache: string | null = null;
+
 export async function getBearerToken(): Promise<string> {
+    if (memoryTokenCache) return memoryTokenCache;
     const cached = await localGet(__DBK_Bearer_Token);
     if (cached) return cached;
     return DEFAULT_BEARER;
+}
+
+export async function updateBearerToken(token: string) {
+    memoryTokenCache = token;
+    await localSet(__DBK_Bearer_Token, token);
 }
 
 export function isAdTweetNode(node: HTMLElement): boolean {

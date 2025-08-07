@@ -7,8 +7,8 @@ export class KolCursor {
     userId: string;
     topCursor: string | null = null;
     bottomCursor: string | null = null;
+    nextNewestFetchTime: number = 0
     private cacheEnough: boolean = false;
-    private nextNewestFetchTime: number = 0
     private nextHistoryFetchTime: number = 0
     private failureCount: number = 0;
 
@@ -17,9 +17,10 @@ export class KolCursor {
     private readonly WAIT_FOR_HISTORY = 5 * 60 * 1000; // 5分钟
     private readonly MaxFailureTimes = 5; // 5分钟
 
-    constructor(userId: string, topCursor: string | null = null) {
+    constructor(userId: string, topCursor: string | null = null, updateTime: number = 0) {
         this.userId = userId;
         this.topCursor = topCursor;
+        this.nextNewestFetchTime = updateTime;
         logKC(`new cursor create userid=${userId} topCursor=${topCursor}`)
     }
 
@@ -73,8 +74,9 @@ export class KolCursor {
     }
 
     static fromJSON(obj: any): KolCursor {
-        return new KolCursor(obj.userId, obj.topCursor ?? null);
+        return new KolCursor(obj.userId, obj.topCursor ?? null, obj.nextNewestFetchTime ?? 0);
     }
+
 }
 
 /**************************************************

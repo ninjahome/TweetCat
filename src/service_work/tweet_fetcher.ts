@@ -1,10 +1,10 @@
-import {fetchTweets} from "./twitter_api";
+import {fetchTweets} from "../timeline/twitter_api";
 import {sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
 import {queryKolIdsFromSW} from "../object/tweet_kol";
-import {EntryObj} from "./tweet_entry";
+import {EntryObj} from "../timeline/tweet_entry";
 import {KolCursor, loadAllCursorFromSW, saveKolCursorToSW} from "../object/kol_cursor";
-import {cacheTweetsToSW} from "./db_raw_tweet";
+import {cacheTweetsToSW} from "../timeline/db_raw_tweet";
 import {BossOfTheTwitter} from "../common/database";
 
 export class TweetFetcher {
@@ -71,10 +71,14 @@ export class TweetFetcher {
         this.kolIds = await queryKolIdsFromSW();
 
         for (const userId of this.kolIds) {
-            const cursor = this.getKolCursor(userId);
-            const ok = await this.fetchNewestOneKolBatch(userId, cursor);
-            if (!ok) break;
-            await sleep(this.TIME_INTERVAL_AT_START_FETCH);
+            try {
+                const cursor = this.getKolCursor(userId);
+                const ok = await this.fetchNewestOneKolBatch(userId, cursor);
+                if (!ok) break;
+                await sleep(this.TIME_INTERVAL_AT_START_FETCH);
+            } catch (e) {
+                logFT("StartupSync", userId, "failed:", e);
+            }
         }
 
         logFT(`[syncNewestAtStartup]🚄 fast sync at start up complete.\n`);
@@ -182,7 +186,7 @@ export class TweetFetcher {
         console.warn(`[process429Error] ❌ 429 for ${userId}, applying cooldown`);
     }
 
-    private async fetchTweetsPeriodic(newest: boolean = true) {
+    async fetchTweetsPeriodic(newest: boolean = true) {
         this.kolIds = await queryKolIdsFromSW();
 
         const groupKolIds = this.getNextKolGroup(newest);

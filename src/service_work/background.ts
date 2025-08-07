@@ -11,19 +11,42 @@ import {
 } from "../common/consts";
 import {checkAndInitDatabase} from "../common/database";
 import {localGet, localSet} from "../common/local_storage";
-import {getBearerToken} from "../common/utils";
+import {getBearerToken, updateBearerToken} from "../common/utils";
+import {createAlarm} from "./bg_timer";
+
+/****************************************************************************************
+ ┌────────────┐
+ │ install    │─────────────┐
+ └────────────┘             ▼
+ ┌────────────┐
+ │ activate   │──► claim() + createAlarm()
+ └────────────┘
+ ▼
+ ┌────────────┐
+ │ onInstalled│──► 初始化配置、DB、alarm
+ └────────────┘
+ ▼
+ ┌────────────┐
+ │ onStartup  │──► 检查 DB、alarm
+ └────────────┘
+ ▼
+ ┌────────────┐
+ │ onMessage  │──► 动态调度 + alarm fallback
+ └────────────┘
+
+ ***************************************************************************************/
 
 self.addEventListener('activate', (event) => {
     console.log('------>>> Service Worker activating......');
     const extendableEvent = event as ExtendableEvent;
     extendableEvent.waitUntil((self as unknown as ServiceWorkerGlobalScope).clients.claim());
-    // extendableEvent.waitUntil(createAlarm());
+    extendableEvent.waitUntil(createAlarm());
 });
 
-self.addEventListener('install', () => {
+self.addEventListener('install', (event) => {
     console.log('------>>> Service Worker installing......');
-    // const evt = event as ExtendableEvent;
-    // evt.waitUntil(createAlarm());
+    const evt = event as ExtendableEvent;
+    evt.waitUntil(createAlarm());
 });
 
 browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType) => {
@@ -36,6 +59,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
     (async () => {
         await checkAndInitDatabase();
         await initDefaultQueryKey();
+        await createAlarm();
     })();
 });
 
@@ -72,12 +96,14 @@ browser.runtime.onStartup.addListener(() => {
     (async () => {
         console.log('------>>> onStartup......');
         await checkAndInitDatabase();
+        await createAlarm();
     })();
 });
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
     (async () => {
         await checkAndInitDatabase();
+        await createAlarm(); // 保底恢复定时器
         try {
             const result = await bgMsgDispatch(request, _sender);
             sendResponse(result);
@@ -109,9 +135,8 @@ browser.webRequest.onBeforeSendHeaders.addListener(
         const origToken = await getBearerToken();
         if (authHeader && authHeader.value?.startsWith('Bearer ')) {
             const token = authHeader.value;
-            // console.log("------>>>Update Bearer Token:", token);
             if (origToken !== token) {
-                await localSet(__DBK_Bearer_Token, token);
+                await updateBearerToken(token);
                 console.log("------>>>Update Bearer Token:", token);
             }
         }

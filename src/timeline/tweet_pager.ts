@@ -6,7 +6,7 @@ import {logPager} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {initBootstrapData, needBootStrap, WrapEntryObj} from "./db_raw_tweet";
-import {tweetFetcher} from "./tweet_fetcher";
+import {tweetFetcher} from "../service_work/tweet_fetcher";
 
 
 export class TweetPager {
