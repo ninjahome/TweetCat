@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 import {logBGT} from "../common/debug_flags";
-import {loadAllKolIds, loadAllKols} from "../object/tweet_kol";
+import {loadAllKolIds} from "../object/tweet_kol";
 import {KolCursor, loadAllKolCursors} from "../object/kol_cursor";
 import {sendMessageToX} from "./bg_msg";
 import {MsgType} from "../common/consts";
@@ -79,6 +79,9 @@ export class TweetFetcherManager {
         const data = await loadAllKolCursors();
         for (const item of data) {
             const cursor = KolCursor.fromJSON(item); // 或你定义的反序列化方法
+            if (this.bootStrap) {
+                cursor.markAsBootstrap();
+            }
             kolCursorMap.set(cursor.userId, cursor);
         }
 

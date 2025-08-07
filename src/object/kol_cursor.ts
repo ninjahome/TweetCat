@@ -8,14 +8,14 @@ export class KolCursor {
     topCursor: string | null = null;
     bottomCursor: string | null = null;
     nextNewestFetchTime: number = 0
-    private cacheEnough: boolean = false;
-    private nextHistoryFetchTime: number = 0
-    private failureCount: number = 0;
+    cacheEnough: boolean = false;
+    nextHistoryFetchTime: number = 0
+    failureCount: number = 0;
 
-    private readonly LONG_WAIT_FOR_NEWEST = 20 * 60 * 1000; // 20分钟
-    private readonly SHORT_WAIT_FOR_NEWEST = 1 * 60 * 1000; // 1分钟
-    private readonly WAIT_FOR_HISTORY = 5 * 60 * 1000; // 5分钟
-    private readonly MaxFailureTimes = 5; // 5次
+    private static readonly LONG_WAIT_FOR_NEWEST = 20 * 60 * 1000; //
+    private static readonly SHORT_WAIT_FOR_NEWEST = 40 * 1000; //
+    private static readonly WAIT_FOR_HISTORY = 5 * 60 * 1000; //
+    private static readonly MaxFailureTimes = 5; // 5次
 
     constructor(userId: string, topCursor: string | null = null, updateTime: number = 0) {
         this.userId = userId;
@@ -32,9 +32,9 @@ export class KolCursor {
         }
         this.topCursor = topCursor;
         if (!topCursor) {
-            this.nextNewestFetchTime = Date.now() + this.LONG_WAIT_FOR_NEWEST;
+            this.nextNewestFetchTime = Date.now() + KolCursor.LONG_WAIT_FOR_NEWEST;
         } else {
-            this.nextNewestFetchTime = Date.now() + this.SHORT_WAIT_FOR_NEWEST;
+            this.nextNewestFetchTime = Date.now() + KolCursor.SHORT_WAIT_FOR_NEWEST;
         }
         logKC(`[newest] ✅ cursor before changed: top:[${this.topCursor}] bottom:[${this.bottomCursor}] failureCount:[${this.failureCount}] nextFetchTime:[${this.nextNewestFetchTime}]`)
     }
@@ -45,7 +45,7 @@ export class KolCursor {
     }
 
     get networkValid(): boolean {
-        return this.failureCount < this.MaxFailureTimes
+        return this.failureCount < KolCursor.MaxFailureTimes
     }
 
     updateBottom(nextCursor: string | null) {
@@ -53,7 +53,7 @@ export class KolCursor {
         this.bottomCursor = nextCursor;
         this.failureCount = 0;
         if (nextCursor) {
-            this.nextHistoryFetchTime = Date.now() + this.WAIT_FOR_HISTORY;
+            this.nextHistoryFetchTime = Date.now() + KolCursor.WAIT_FOR_HISTORY;
         }
         logKC(`[history] ☀️ cursor before changed:  bottom:[${this.bottomCursor}] failureCount:[${this.failureCount}] nextFetchTime:[${this.nextHistoryFetchTime}]`)
     }
@@ -77,6 +77,12 @@ export class KolCursor {
         return new KolCursor(obj.userId, obj.topCursor ?? null, obj.nextNewestFetchTime ?? 0);
     }
 
+    markAsBootstrap() {
+        this.failureCount = 0;
+        this.bottomCursor = null;
+        this.cacheEnough = false;
+        this.nextHistoryFetchTime = 0;
+    }
 }
 
 /**************************************************
