@@ -1,6 +1,5 @@
 import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
-import {_curKolFilter} from "./content_filter";
-import {__DBK_AD_Block_Key, choseColorByID, maxMissedTweetOnce, MsgType} from "../common/consts";
+import {__DBK_AD_Block_Key, choseColorByID, MsgType} from "../common/consts";
 import {isAdTweetNode, sendMsgToService} from "../common/utils";
 import {localGet} from "../common/local_storage";
 import {TweetKol} from "../object/tweet_kol";
@@ -10,10 +9,9 @@ import {getUserIdByUsername} from "../timeline/twitter_api";
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
 let __blockAdStatus: boolean = false;
-
+new Map<string, TweetKol>();
 export function changeAdsBlockStatus(status: boolean) {
     console.log("------>>> change block ads settings:", status);
-    // window.location.reload();
 
     __blockAdStatus = status;
     if (status) {
@@ -51,7 +49,6 @@ export async function initObserver() {
     document.body.appendChild(__categoryPopupMenu);
 }
 
-let missCounter = 0;
 
 function filterTweets(nodes: NodeList) {
     nodes.forEach((divNode) => {
@@ -79,24 +76,6 @@ function filterTweets(nodes: NodeList) {
         }
 
         appendCategoryMenuOnTweet(divNode, user).then();
-
-        if (_curKolFilter.size === 0) {
-            return;
-        }
-
-        if (_curKolFilter.has(user.kolName)) {
-            console.log('------>>> hint:', user.displayString());
-            missCounter = 0;
-            return;
-        }
-
-        console.log('------>>> miss:', user.displayString());
-        divNode.style.display = "none";
-        missCounter++;
-        if (missCounter > maxMissedTweetOnce) {
-            alert("Too few tweets for this category.");
-            missCounter = 0;
-        }
     });
 }
 

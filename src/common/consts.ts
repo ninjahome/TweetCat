@@ -4,7 +4,6 @@ export const defaultCategoryName = "Main"
 export const maxElmFindTryTimes = 5;
 export const defaultCatID = 1;
 export const defaultAllCategoryID = -1;
-export const maxMissedTweetOnce = 180;
 export const itemColorGroup = ['#f6cd01', '#866afb', '#fe466c', '#06cbad', '#4592ef']
 export const MaxCategorySize = 12;
 

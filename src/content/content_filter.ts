@@ -2,44 +2,11 @@ import {observeForElement, sendMsgToService} from "../common/utils";
 import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
 import {parseContentHtml, parseNameFromTweetCell} from "./content";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
-import {queryFilterFromBG, TweetKol} from "../object/tweet_kol";
-import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
+import {TweetKol} from "../object/tweet_kol";
+import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
 import {switchCategory} from "../timeline/timeline_ui";
-
-export let _curKolFilter = new Map<string, TweetKol>();
-let _curFilterID = -1;
-
-async function filterTweetsByCategory() {
-    if (_curKolFilter.size === 0) {
-        console.log("------>>> no active category selected");
-        return;
-    }
-
-    const tweetsContainer = document.querySelector('section[aria-labelledby^="accessible-list-"] .css-175oi2r') as HTMLElement;
-    if (!tweetsContainer) {
-        console.warn("------>>> failed to find tweet container when starting to filter")
-        return;
-    }
-
-    tweetsContainer.querySelectorAll('div[data-testid="cellInnerDiv"]').forEach(node => {
-        const tweetNode = node as HTMLElement;
-        const user = parseNameFromTweetCell(tweetNode);
-        if (!user) {
-            console.log("------>>> failed parse user name:", node);
-            return
-        }
-
-        if (_curKolFilter.has(user.kolName)) {
-            console.log('------>>> tweet hint:', user.displayString());
-        } else {
-            console.log('------>>> tweet missed:', user.displayString());
-            tweetNode.style.display = "none";
-        }
-    })
-}
-
 
 export function setSelectedCategory(catID: number = -1) {
     document.querySelectorAll(".category-filter-item").forEach(elm => {

@@ -1,5 +1,4 @@
-import {deferByFrames, observeSimple} from "../common/utils";
-import {parseContentHtml} from "../content/content";
+import {deferByFrames} from "../common/utils";
 import {TweetManager} from "./div_cell_manager";
 import {
     handleGrokMenuClick,
