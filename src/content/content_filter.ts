@@ -6,47 +6,10 @@ import {queryFilterFromBG, TweetKol} from "../object/tweet_kol";
 import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
+import {switchCategory} from "../timeline/timeline_ui";
 
 export let _curKolFilter = new Map<string, TweetKol>();
 let _curFilterID = -1;
-let isCheckingContainer = false;
-//
-// async function appendFilterBtnToHomePage(navElement: HTMLElement, categories: Category[]) {
-//     const contentTemplate = await parseContentHtml('html/content.html');
-//     const filterContainerDiv = contentTemplate.content.getElementById("category-filter-container");
-//     const filterBtn = contentTemplate.content.getElementById("category-filter-item");
-//     const moreBtn = contentTemplate.content.getElementById("category-filter-more");
-//     const allCatBtn = contentTemplate.content.getElementById("category-filter-clear");
-//
-//     if (!filterContainerDiv || !filterBtn || !moreBtn || !allCatBtn) {
-//         console.error(`------>>> failed to filter buttons container is ${filterContainerDiv}
-//          category button is ${filterBtn} clear button is ${allCatBtn}`);
-//         return;
-//     }
-//
-//     navElement.parentElement!.appendChild(filterContainerDiv);
-//
-//     allCatBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
-//     allCatBtn.dataset.categoryID = '' + defaultAllCategoryID;
-//     filterContainerDiv.appendChild(allCatBtn);
-//
-//     categories.forEach((category) => {
-//         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
-//         cloneItem.id = "category-filter-item-" + category.id;
-//         cloneItem.dataset.categoryID = '' + category.id
-//         const btn = cloneItem.querySelector(".category-filter-btn") as HTMLElement
-//         btn.innerText = category.catName;
-//         btn.addEventListener('click', async () => {
-//             await changeFilterType(category);
-//         });
-//         filterContainerDiv.appendChild(cloneItem);
-//     });
-//
-//     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
-//     filterContainerDiv.appendChild(moreBtn);
-//     console.log("------>>> add filter container success")
-//     setSelectedCategory();
-// }
 
 async function filterTweetsByCategory() {
     if (_curKolFilter.size === 0) {
@@ -77,94 +40,18 @@ async function filterTweetsByCategory() {
     })
 }
 
-async function changeFilterType(category: Category) {
 
-    const filter = await queryFilterFromBG(category.id!);
-    if (filter.size === 0) {
-        alert("no kols to apply this category");//TODO::
-        return;
-    }
-
-    _curKolFilter = filter;
-    _curFilterID = category.id!;
-
-    setSelectedCategory();
-    await filterTweetsByCategory();
-}
-
-export function setSelectedCategory() {
+export function setSelectedCategory(catID: number = -1) {
     document.querySelectorAll(".category-filter-item").forEach(elm => {
             elm.classList.remove("active");
             const emlCatID = Number((elm as HTMLElement).dataset.categoryID);
-            if (emlCatID === _curFilterID) {
+            if (emlCatID === catID) {
                 elm.classList.add("active");
             }
         }
     );
 }
 
-async function addMoreCategory() {
-    await sendMsgToService("#onboarding/main-home", MsgType.OpenPlugin);
-}
-
-// export async function appendCategoryContainerAtTop() {
-//     if (isCheckingContainer || !isHomePage()) {
-//         console.log('------>>> checkFilterBtn is already running or no need ');
-//         return;
-//     }
-//
-//     isCheckingContainer = true;
-//     try {
-//         const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
-//         if (!navElement) {
-//             observeForElement(document.body, 300, () => {
-//                 return document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
-//             }, async () => {
-//                 await appendCategoryContainerAtTop();
-//             }, false);
-//             return;
-//         }
-//
-//         let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container") as HTMLElement;
-//         if (filterContainerDiv) {
-//             console.log("------>>> no need to append filter container again");
-//             return;
-//         }
-//
-//         const categories = await queryCategoriesFromBG();
-//         if (categories.length == 0) {
-//             console.log("------>>> no categories loaded now");
-//             return;
-//         }
-//
-//         await appendFilterBtnToHomePage(navElement, categories);
-//     } finally {
-//         isCheckingContainer = false;  // 确保执行完成后恢复标记
-//     }
-// }
-
-export function resetCategories() {
-    if (_curFilterID <= 0) {
-        return;
-    }
-
-    _curFilterID = defaultAllCategoryID;
-    _curKolFilter = new Map<string, TweetKol>();
-    setSelectedCategory();
-    // const homeBtn =  document.querySelector('a[data-testid="AppTabBar_Home_Link"]') as HTMLElement
-    // homeBtn.click();
-    window.location.reload();
-}
-
-
-// export async function reloadCategoryContainer(categories: Category[]) {
-//     const navElement = document.querySelector('div[aria-label="Home timeline"] nav[role="navigation"]') as HTMLElement;
-//     let filterContainerDiv = navElement.parentElement!.querySelector(".category-filter-container") as HTMLElement;
-//     if (filterContainerDiv) {
-//         filterContainerDiv.remove();
-//     }
-//     await appendFilterBtnToHomePage(navElement, categories);
-// }
 
 let observing = false;
 
@@ -199,7 +86,7 @@ function hijackBackButton(): void {
         const notInTweetCat = !isInTweetCatRoute();
 
         if (!(shouldReturnToTweetCat && notInTweetCat)) return;
-        
+
         e.preventDefault();
         e.stopPropagation();
         console.debug('[TC] 拦截返回按钮，跳转回 TweetCat');
@@ -276,4 +163,60 @@ async function setCategoryStatusOnProfileHome(kolName: string, clone: HTMLElemen
             nameDiv.querySelector(".category-name")!.textContent = cat.catName;
         }
     }
+}
+
+
+export async function appendFilterBtn(tpl: HTMLTemplateElement, main: HTMLElement) {
+    const filterContainerDiv = tpl.content.getElementById("category-filter-container");
+    const filterBtn = tpl.content.getElementById("category-filter-item");
+    const moreBtn = tpl.content.getElementById("category-filter-more");
+    const allCatBtn = tpl.content.getElementById("category-filter-clear");
+
+    if (!filterContainerDiv || !filterBtn || !moreBtn || !allCatBtn) {
+        console.error(`------>>> failed to filter buttons container is ${filterContainerDiv}
+         category button is ${filterBtn} clear button is ${allCatBtn}`);
+        return;
+    }
+    const container = main.querySelector(".tweet-main .tweet-cat-filter-area") as HTMLElement
+    if (!container) {
+        console.warn("🚨------>>> failed to find tweet cat filter area");
+        return
+    }
+    container.parentElement!.appendChild(filterContainerDiv);
+
+    allCatBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
+    allCatBtn.dataset.categoryID = '' + defaultAllCategoryID;
+    filterContainerDiv.appendChild(allCatBtn);
+
+    const categories = await queryCategoriesFromBG();
+    categories.forEach((category) => {
+        const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
+        cloneItem.id = "category-filter-item-" + category.id;
+        cloneItem.dataset.categoryID = '' + category.id
+        const btn = cloneItem.querySelector(".category-filter-btn") as HTMLElement
+        btn.innerText = category.catName;
+        btn.addEventListener('click', async () => {
+            await changeFilterType(category.id ?? null);
+        });
+        filterContainerDiv.appendChild(cloneItem);
+    });
+
+    moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
+    filterContainerDiv.appendChild(moreBtn);
+    console.log("✅ ------>>> add filter container success")
+    setSelectedCategory();
+}
+
+async function addMoreCategory() {
+    await sendMsgToService("#onboarding/main-home", MsgType.OpenPlugin);
+}
+
+ async function resetCategories() {
+    await switchCategory(null);
+    setSelectedCategory(-1);
+}
+
+async function changeFilterType(catId: number | null) {
+    await switchCategory(catId);
+    setSelectedCategory(catId ?? -1);
 }

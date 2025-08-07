@@ -1,12 +1,13 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./content_oberver";
 import {
+    appendFilterBtn,
     appendFilterOnKolProfileHome,
 } from "./content_filter";
 import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "../common/consts";
-import {addCustomStyles, isTwitterUserProfile} from "../common/utils";
+import {addCustomStyles, isTwitterUserProfile, observeSimple} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
-import {appendTweetCatMenuItem} from "../timeline/timeline_ui";
+import {setupTweetCatUI} from "../timeline/timeline_ui";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {startToFetchTweets} from "../timeline/tweet_fetcher";
 
@@ -24,6 +25,22 @@ async function onDocumentLoaded() {
     });
     appendTweetCatMenuItem();
     console.log('------>>>TweetCat content script success ✨');
+}
+
+export function appendTweetCatMenuItem() {
+    observeSimple(
+        document.body,
+        () => document.querySelector("header nav[role='navigation']") as HTMLElement,
+        (nav) => {
+            if (nav.querySelector(".tweetCatMenuItem")) return true;
+            parseContentHtml("html/content.html").then(async (tpl) => {
+                const main = document.querySelector("main[role='main']") as HTMLElement;
+                setupTweetCatUI(nav, tpl, main);
+                await appendFilterBtn(tpl, main)
+            });
+            return true;
+        }
+    );
 }
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
@@ -54,8 +71,8 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             break;
         }
 
-        case MsgType.StartTweetsFetch:{
-            startToFetchTweets(request.data as tweetFetchParam)
+        case MsgType.StartTweetsFetch: {
+            startToFetchTweets(request.data as tweetFetchParam).then()
             sendResponse({success: true});
             break;
         }

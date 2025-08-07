@@ -60,6 +60,15 @@ export class TweetManager {
         this.scroller?.scrollToTop({needScroll: true, targetTop: 0})
     }
 
+
+    public async switchCategory(cat: number | null) {
+        logTweetMgn("------>>> tweet category switch to:", cat);
+        this.resizeLogger = new TweetResizeObserverManager();
+        tweetPager.switchCategory(cat);
+        this.scroller = new VirtualScroller(this);
+        await this.scroller.initFirstPage()
+    }
+
     dispose() {
         logTweetMgn("------>>> tweet manager disposed!");
         this.timelineEl.innerHTML = "";

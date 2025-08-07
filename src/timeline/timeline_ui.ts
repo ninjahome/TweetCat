@@ -9,6 +9,7 @@ import {
     swapSvgToSelected
 } from "./route_helper";
 import {logGuard} from "../common/debug_flags";
+import {setSelectedCategory} from "../content/content_filter";
 
 let manager: TweetManager | null = null;
 
@@ -27,12 +28,11 @@ function bindTweetCatMenu(menuItem: HTMLElement) {
 
 let mounted = false;
 
-function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement) {
+export function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement, main: HTMLElement) {
     const menuItem = tpl.content.getElementById('tweetCatMenuItem')!.cloneNode(true) as HTMLElement;
     const area = tpl.content.getElementById('tweetCatArea')!.cloneNode(true) as HTMLElement;
     area.style.display = 'none';
 
-    const main = document.querySelector("main[role='main']") as HTMLElement;
     const originalArea = main.firstChild as HTMLElement;
 
     bindTweetCatMenu(menuItem);
@@ -83,6 +83,12 @@ function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplate
 
     manager?.dispose();
     manager = new TweetManager(timelineEl, tpl);
+    setSelectedCategory(-1)
+}
+
+export async function switchCategory(catID:number|null){
+    manager?.dispose();
+    manager?.switchCategory(catID);
 }
 
 function tcUnmount(area: HTMLElement, originalArea: HTMLElement) {
@@ -110,17 +116,6 @@ function tcUnmount(area: HTMLElement, originalArea: HTMLElement) {
     manager = null;
 }
 
-export function appendTweetCatMenuItem() {
-    observeSimple(
-        document.body,
-        () => document.querySelector("header nav[role='navigation']") as HTMLElement,
-        (nav) => {
-            if (nav.querySelector(".tweetCatMenuItem")) return true;
-            parseContentHtml("html/content.html").then((tpl) => setupTweetCatUI(nav, tpl));
-            return true;
-        }
-    );
-}
 
 /* ------------------------------------------------------------------
  * DOM utils – 隐藏 / 显示原生 TimeLine

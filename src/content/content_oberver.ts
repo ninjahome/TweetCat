@@ -1,5 +1,5 @@
 import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
-import {_curKolFilter, resetCategories} from "./content_filter";
+import {_curKolFilter} from "./content_filter";
 import {__DBK_AD_Block_Key, choseColorByID, maxMissedTweetOnce, MsgType} from "../common/consts";
 import {isAdTweetNode, sendMsgToService} from "../common/utils";
 import {localGet} from "../common/local_storage";
@@ -95,7 +95,6 @@ function filterTweets(nodes: NodeList) {
         missCounter++;
         if (missCounter > maxMissedTweetOnce) {
             alert("Too few tweets for this category.");
-            resetCategories();
             missCounter = 0;
         }
     });
