@@ -2,7 +2,6 @@
 import browser, {Runtime, WebNavigation} from "webextension-polyfill";
 import {bgMsgDispatch} from "./bg_msg";
 import {
-    __DBK_Bearer_Token,
     __DBK_query_id_map,
     __targetUrlToFilter,
     defaultQueryKeyMap,

@@ -1,7 +1,7 @@
 import {__tableKolCursor, databasePutItem, databaseQueryAll} from "../common/database";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {logFT, logKC} from "../common/debug_flags";
+import {logKC} from "../common/debug_flags";
 
 export class KolCursor {
     userId: string;

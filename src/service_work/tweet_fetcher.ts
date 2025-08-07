@@ -214,8 +214,7 @@ export class TweetFetcher {
 
     async findNewestTweetsOfSomeBody(): Promise<EntryObj[]> {
         const result = await fetchTweets(BossOfTheTwitter, this.FETCH_LIMIT);
-        const tweets = result.tweets ?? [];
-        return tweets
+        return result.tweets ?? []
     }
 }
 
