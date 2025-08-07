@@ -28,6 +28,7 @@ export async function updateAlarm(): Promise<void> {
 
 export async function setTweetBootStrap() {
     await tweetFM.resetState();
+    await alarmTweetsProc();
 }
 
 async function timerTaskWork(alarm: any): Promise<void> {
@@ -49,6 +50,7 @@ async function alarmTweetsProc() {
             console.log("------>>> alarm triggered , x is not open");
             return;
         }
+
         await tweetFM.loadRuntimeStateFromStorage();
         console.log("------>>> alarm triggered, start to notify content script");
         await tweetFM.fetchTweetsPeriodic();

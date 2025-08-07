@@ -73,12 +73,12 @@ export class KolCursor {
 
     static fromJSON(obj: any): KolCursor {
         const instance = new KolCursor(obj.userId);
-        instance.topCursor =  obj.topCursor ?? null;
-        instance.bottomCursor =  obj.bottomCursor ?? null;
-        instance.nextNewestFetchTime =  obj.nextNewestFetchTime ?? 0;
-        instance.cacheEnough =  obj.nextNewestFetchTime ?? false;
-        instance.nextHistoryFetchTime =  obj.nextHistoryFetchTime ?? 0;
-        instance.failureCount =  obj.failureCount ?? 0;
+        instance.topCursor = obj.topCursor ?? null;
+        instance.bottomCursor = obj.bottomCursor ?? null;
+        instance.nextNewestFetchTime = obj.nextNewestFetchTime ?? 0;
+        instance.cacheEnough = obj.nextNewestFetchTime ?? false;
+        instance.nextHistoryFetchTime = obj.nextHistoryFetchTime ?? 0;
+        instance.failureCount = obj.failureCount ?? 0;
         return instance;
     }
 
@@ -106,6 +106,10 @@ export async function writeKolsCursors(data: KolCursor[]) {
     }
 }
 
+export async function writeOneCursor(cursor: KolCursor) {
+    await databasePutItem(__tableKolCursor, cursor);
+}
+
 /**************************************************
  *
  *               content script api
@@ -126,6 +130,10 @@ export async function loadAllCursorFromSW(): Promise<Map<string, KolCursor>> {
     return result
 }
 
-export async function saveKolCursorToSW(data: Map<string, KolCursor>) {
-    await sendMsgToService(Array.from(data.values()), MsgType.KolCursorSaveAll);
+export async function saveKolCursorToSW(data: KolCursor[]) {
+    await sendMsgToService(data, MsgType.KolCursorSaveAll);
+}
+
+export async function saveOneKolCursorToSW(data: KolCursor) {
+    await sendMsgToService(data, MsgType.KolCursorSaveOne);
 }

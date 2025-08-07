@@ -15,7 +15,7 @@ import {
     loadLatestTweets,
     WrapEntryObj
 } from "../timeline/db_raw_tweet";
-import {loadAllKolCursors, writeKolsCursors} from "../object/kol_cursor";
+import {loadAllKolCursors, writeKolsCursors, writeOneCursor} from "../object/kol_cursor";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
     // console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)
@@ -85,6 +85,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.KolCursorSaveAll: {
             await writeKolsCursors(request.data);
+            return {success: true};
+        }
+
+        case MsgType.KolCursorSaveOne: {
+            await writeOneCursor(request.data);
             return {success: true};
         }
 

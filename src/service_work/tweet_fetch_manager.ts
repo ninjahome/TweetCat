@@ -44,7 +44,7 @@ export class TweetFetcherManager {
         this.newestFetch = state.newestFetch ?? false;
         this.bootStrap = state.bootStrap ?? true;
 
-        logBGT("[TweetFetcher]✅ State has been loaded:", JSON.stringify(state));
+        logBGT("[loadRuntimeStateFromStorage]✅ State has been loaded:", JSON.stringify(state));
     }
 
     async saveRuntimeStateToStorage() {
@@ -58,7 +58,7 @@ export class TweetFetcherManager {
         await browser.storage.local.set({
             [this.STORAGE_KEY]: state
         });
-        logBGT("[TweetFetcher]⚠️ State has been saved:", JSON.stringify(state));
+        logBGT("[saveRuntimeStateToStorage]⚠️ State has been saved:", JSON.stringify(state));
     }
 
     async resetState(): Promise<void> {
@@ -68,7 +68,7 @@ export class TweetFetcherManager {
         this.bootStrap = true;
 
         await this.saveRuntimeStateToStorage();
-        logBGT("[TweetFetcher]🔴 State has been reset on browser startup");
+        logBGT("[resetState]🔴 State has been reset on browser startup");
     }
 
 
