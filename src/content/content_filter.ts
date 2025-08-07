@@ -1,6 +1,6 @@
 import {observeForElement, sendMsgToService} from "../common/utils";
 import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
-import {parseContentHtml, parseNameFromTweetCell} from "./content";
+import {parseContentHtml} from "./content";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 import {TweetKol} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
