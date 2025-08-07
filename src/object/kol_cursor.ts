@@ -15,7 +15,7 @@ export class KolCursor {
     private readonly LONG_WAIT_FOR_NEWEST = 20 * 60 * 1000; // 20分钟
     private readonly SHORT_WAIT_FOR_NEWEST = 1 * 60 * 1000; // 1分钟
     private readonly WAIT_FOR_HISTORY = 5 * 60 * 1000; // 5分钟
-    private readonly MaxFailureTimes = 5; // 5分钟
+    private readonly MaxFailureTimes = 5; // 5次
 
     constructor(userId: string, topCursor: string | null = null, updateTime: number = 0) {
         this.userId = userId;

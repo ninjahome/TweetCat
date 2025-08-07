@@ -4,7 +4,7 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 12;
+export const __currentDatabaseVersion = 13;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -186,8 +186,7 @@ function initKolCursorTable(request: IDBOpenDBRequest) {
 
     const store = db.createObjectStore(__tableKolCursor, {keyPath: 'userId'});
 
-    // 可选索引：根据 isEnd 快速过滤已结束的 KOL
-    store.createIndex('isEnd_idx', 'isEnd', {unique: false});
+    store.createIndex('newest_fetch_idx', 'nextNewestFetchTime', {unique: false});
 
     logDB("------>>>[Database]Created KolCursor table successfully.", __tableKolCursor);
 }
