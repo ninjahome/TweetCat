@@ -1,4 +1,4 @@
-import {__tableKolCursor, databasePutItem, databaseQueryAll} from "../common/database";
+import {__tableKolCursor, databaseGet, databasePutItem, databaseQueryAll} from "../common/database";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {logKC} from "../common/debug_flags";
@@ -110,6 +110,9 @@ export async function writeOneCursor(cursor: KolCursor) {
     await databasePutItem(__tableKolCursor, cursor);
 }
 
+export async function  loadCursorById(id:string): Promise<KolCursor>{
+    return await databaseGet(__tableKolCursor, id);
+}
 /**************************************************
  *
  *               content script api
@@ -136,4 +139,13 @@ export async function saveKolCursorToSW(data: KolCursor[]) {
 
 export async function saveOneKolCursorToSW(data: KolCursor) {
     await sendMsgToService(data, MsgType.KolCursorSaveOne);
+}
+
+export async function queryCursorByKolID(kolID: string): Promise<KolCursor> {
+    const rsp = await sendMsgToService(kolID, MsgType.KolCursorQueryOne);
+    if (rsp.success || !rsp.data) {
+        return new KolCursor(kolID);
+    }
+
+    return KolCursor.fromJSON(rsp.data);
 }

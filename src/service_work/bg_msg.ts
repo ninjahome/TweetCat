@@ -15,7 +15,7 @@ import {
     loadLatestTweets, removeTweetsByKolID,
     WrapEntryObj
 } from "../timeline/db_raw_tweet";
-import {loadAllKolCursors, writeKolsCursors, writeOneCursor} from "../object/kol_cursor";
+import {loadAllKolCursors, loadCursorById, writeKolsCursors, writeOneCursor} from "../object/kol_cursor";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
     // console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)
@@ -76,8 +76,8 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true, data: await loadLatestTweets(reqData.limit, reqData.category, reqData.timeStamp)};
         }
 
-        case MsgType.TweetRemoveByKolID:{
-            await  removeTweetsByKolID(request.data as string)
+        case MsgType.TweetRemoveByKolID: {
+            await removeTweetsByKolID(request.data as string)
             return {success: true};
         }
 
@@ -96,6 +96,10 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.KolCursorSaveOne: {
             await writeOneCursor(request.data);
             return {success: true};
+        }
+
+        case MsgType.KolCursorQueryOne: {
+            return {success: true, data: await loadCursorById(request.data as string)};
         }
 
         default:

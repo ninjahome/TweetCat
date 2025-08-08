@@ -1,19 +1,20 @@
 import {fetchTweets, getUserIdByUsername} from "./twitter_api";
-import {sleep} from "../common/utils";
+import {isTwitterUserProfile, sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
-import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
+import {KolCursor, queryCursorByKolID, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW} from "./db_raw_tweet";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {TweetKol} from "../object/tweet_kol";
+import {isHomePage} from "../content/content";
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
-    private readonly MIN_FETCH_GAP = 5000;
+    private readonly MIN_FETCH_GAP = 10_000;
 
     constructor() {
     }
 
-    async fetchNewestOneKolBatch(cursor: KolCursor): Promise<boolean> {
+    private async fetchNewestOneKolBatch(cursor: KolCursor): Promise<boolean> {
         try {
 
             logFT(`\n\n[fetchNewestOneKolBatch] ▶️ Fetching newest tweets for ${cursor.userId} top cursor=${cursor.topCursor}`);
@@ -98,7 +99,26 @@ export class TweetFetcher {
 
             await sleep(this.MIN_FETCH_GAP);
         }
+    }
 
+    async fetchNewKolImmediate(kolName: string, kolID?: string) {
+        if (!kolID) {
+            kolID = await getUserIdByUsername(kolName) ?? undefined
+            if (!kolID) {
+                logFT("------>>> should have a kolID before fetching tweets")
+                return
+            }
+        }
+
+        const cursor = await queryCursorByKolID(kolID);
+        if (!cursor.canFetchNew()) {
+            logFT("------>>> no need to fetch new tweets right now for user:", kolID);
+            return;
+        }
+
+        await tweetFetcher.fetchNewestOneKolBatch(cursor);
+
+        await saveOneKolCursorToSW(cursor);
     }
 }
 
@@ -119,22 +139,13 @@ export async function startToFetchTweets(data: tweetFetchParam) {
     logFT(`[startToFetchTweets]🚄 tweet syncing complete.\n`);
 }
 
-export async function fetchNewKolImmediate(kol: TweetKol) {
-    logFT("[startToFetchTweets]🌳 Started fetching tweets for new kol:", kol.displayString());
-    let kolID = kol.kolUserId
-    if (!kolID){
-        kolID = await getUserIdByUsername(kol.kolName) ?? undefined
-        if (!kolID){
-            console.log("------>>> should have a kolID before fetching tweets")
-            return
-        }
+export async function fetchNewKolImmediate(kolName: string, kolUserId?: string) {
+    if (!isTwitterUserProfile()) {
+        logFT("🔒 current is kol home profile page , no need to fetch tweets for kol:", kolName);
+        return;
     }
-
-    const cursor = new KolCursor(kolID);
-    await tweetFetcher.fetchNewestOneKolBatch(cursor);
-    await saveOneKolCursorToSW(cursor);
-
-    logFT("[startToFetchTweets]✅ fetching  success tweets for new kol:", kol.kolName);
+    dedupePush({kolName, kolUserId});
+    startLoopIfNeeded();
 }
 
 function printStatus(tag: string, cursor: KolCursor) {
@@ -148,3 +159,57 @@ function printStatus(tag: string, cursor: KolCursor) {
     console.log(`           ❌ Failure Count: ${cursor.failureCount}`);
     console.log(`           🌐 Network Valid: ${cursor.networkValid}`);
 }
+
+
+type QueueItem = { kolName: string; kolUserId?: string };
+
+const TICK_MS = 15_000;
+const queue: QueueItem[] = [];
+let timerId: number | null = null;
+
+// 简单去重：同 userId 或（无 id 时）同 name 不重复入队
+function dedupePush(item: QueueItem) {
+    const exists = queue.some(q =>
+        (item.kolUserId && q.kolUserId === item.kolUserId) ||
+        (!item.kolUserId && q.kolName === item.kolName)
+    );
+    if (!exists) queue.push(item);
+    logFT("[dedupePush]🧪 queued kol newest tweets request :", item.kolName);
+}
+
+function startLoopIfNeeded() {
+    if (timerId !== null) return;
+    const tick = async () => {
+
+        try {
+            if (queue.length === 0) {
+                stopLoop();
+                return;
+            }
+
+            const item = queue.shift()!;
+            try {
+                logFT("[startLoopIfNeeded]🔁 timer starting fetching new tweets for kol:", item.kolName);
+                await tweetFetcher.fetchNewKolImmediate(item.kolName, item.kolUserId);
+                logFT("[startLoopIfNeeded]♻️ fetch  finished tweets for new kol:", item.kolName);
+
+            } catch (e) {
+                // 失败就丢弃；如果你想重试，可在这里 queue.push(item)
+                console.warn("[immediate-queue] fetch failed:", item, e);
+            }
+        } finally {
+            timerId = window.setTimeout(tick, TICK_MS);
+        }
+    };
+
+    timerId = window.setTimeout(tick, 0);
+}
+
+function stopLoop() {
+    if (timerId !== null) {
+        clearTimeout(timerId);
+        timerId = null;
+    }
+}
+
+window.addEventListener("beforeunload", stopLoop);

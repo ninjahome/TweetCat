@@ -46,6 +46,7 @@ export enum MsgType {
     KolCursorLoadAll = 'KolCursorLoadAll',
     KolCursorSaveAll = 'KolCursorSaveAll',
     KolCursorSaveOne = 'KolCursorSaveOne',
+    KolCursorQueryOne = 'KolCursorQueryOne',
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

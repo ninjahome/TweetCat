@@ -248,7 +248,7 @@ async function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: Tw
 
     kol.catID = cat.id;
     await sendMsgToService(kol, MsgType.KolUpdate);
-    fetchNewKolImmediate(kol).then();
+    fetchNewKolImmediate(kol.kolName, kol.kolUserId).then();
 }
 
 export async function queryKolDetailByName(kolName: string): Promise<TweetKol | null> {
