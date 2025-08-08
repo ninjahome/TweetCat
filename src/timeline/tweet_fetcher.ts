@@ -4,8 +4,6 @@ import {logFT} from "../common/debug_flags";
 import {KolCursor, queryCursorByKolID, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW} from "./db_raw_tweet";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
-import {TweetKol} from "../object/tweet_kol";
-import {isHomePage} from "../content/content";
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
@@ -140,11 +138,12 @@ export async function startToFetchTweets(data: tweetFetchParam) {
 }
 
 export async function fetchNewKolImmediate(kolName: string, kolUserId?: string) {
-    if (!isTwitterUserProfile()) {
-        logFT("🔒 current is kol home profile page , no need to fetch tweets for kol:", kolName);
-        return;
+    const retry = isTwitterUserProfile() === kolName;
+    if (retry) {
+        logFT("🔒 current page is kol home, try to fetch tweets later for kol:", kolName);
     }
-    dedupePush({kolName, kolUserId});
+
+    dedupePush({kolName, kolUserId, retry});
     startLoopIfNeeded();
 }
 
@@ -161,7 +160,7 @@ function printStatus(tag: string, cursor: KolCursor) {
 }
 
 
-type QueueItem = { kolName: string; kolUserId?: string };
+type QueueItem = { kolName: string; kolUserId?: string, retry: boolean; };
 
 const TICK_MS = 15_000;
 const queue: QueueItem[] = [];
@@ -213,3 +212,4 @@ function stopLoop() {
 }
 
 window.addEventListener("beforeunload", stopLoop);
+

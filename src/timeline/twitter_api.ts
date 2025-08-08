@@ -1,4 +1,4 @@
-import {getBearerToken} from "../common/utils";
+import {extractMissingFeature, getBearerToken} from "../common/utils";
 import {localGet} from "../common/local_storage";
 import {__DBK_query_id_map, UserByScreenName, UserTweets} from "../common/consts";
 import {EntryObj, parseTimelineFromGraphQL, TweetResult} from "./tweet_entry";
@@ -38,6 +38,7 @@ async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): 
     const variables = encodeURIComponent(JSON.stringify(variablesObj));
 
     const features = encodeURIComponent(JSON.stringify({
+        "responsive_web_grok_imagine_annotation_enabled": true,
         "rweb_xchat_enabled": false, // ✅ 加上这个
         "rweb_video_screen_enabled": false,
         "profile_label_improvements_pcf_label_in_post_enabled": true,
@@ -190,6 +191,8 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
 
     if (!response.ok) {
         const errorText = await response.text();
+        const missing_param = extractMissingFeature(errorText);
+        console.log("------>>> missing param:", missing_param)
         throw new Error(`HTTP error ${response.status}: ${errorText}`);
     }
     const result = await response.json();
