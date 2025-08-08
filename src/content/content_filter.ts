@@ -5,7 +5,7 @@ import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 import {TweetKol} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
-import {getTweetCatFlag, isInTweetCatRoute, navigateToTweetCat, setTweetCatFlag} from "../timeline/route_helper";
+import {getTweetCatFlag, isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
 import {switchCategory} from "../timeline/timeline_ui";
 
 export function setSelectedCategory(catID: number = -1) {
@@ -57,11 +57,8 @@ function hijackBackButton(): void {
     (backButton as any).__tc_back_hooked = true;
 
     backButton.addEventListener('click', (e) => {
-        const state = history.state;
-
         const shouldReturnToTweetCat = getTweetCatFlag();
         const notInTweetCat = !isInTweetCatRoute();
-
         if (!(shouldReturnToTweetCat && notInTweetCat)) return;
 
         e.preventDefault();
