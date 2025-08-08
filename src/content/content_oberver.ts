@@ -1,7 +1,7 @@
 import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
 import {__DBK_AD_Block_Key, choseColorByID, MsgType} from "../common/consts";
 import {isAdTweetNode, sendMsgToService} from "../common/utils";
-import {localGet} from "../common/local_storage";
+import {localGet, localSet} from "../common/local_storage";
 import {TweetKol} from "../object/tweet_kol";
 import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
@@ -23,6 +23,7 @@ export function changeAdsBlockStatus(status: boolean) {
             }
         })
     }
+    localSet(__DBK_AD_Block_Key, status ?? false).then();
 }
 
 const observer = new MutationObserver((mutations) => {
@@ -59,7 +60,7 @@ function filterTweets(nodes: NodeList) {
             // console.log("------>>> is home page:", window.location.href);
             return;
         }
-        // console.log("------>>> new tweet div found:");
+        // console.log("------>>> new tweet div found:", divNode);
 
         if (__blockAdStatus && isAdTweetNode(divNode)) {
             // console.log("------->>> need to block Ads");

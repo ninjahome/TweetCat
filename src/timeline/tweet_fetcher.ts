@@ -143,7 +143,7 @@ export async function fetchNewKolImmediate(kolName: string, kolUserId?: string) 
         logFT("🔒 current page is kol home, try to fetch tweets later for kol:", kolName);
     }
 
-    dedupePush({kolName, kolUserId, retry});
+    dedupePush({kolName, kolUserId, tryLater: retry});
     startLoopIfNeeded();
 }
 
@@ -160,7 +160,7 @@ function printStatus(tag: string, cursor: KolCursor) {
 }
 
 
-type QueueItem = { kolName: string; kolUserId?: string, retry: boolean; };
+type QueueItem = { kolName: string; kolUserId?: string, tryLater: boolean; };
 
 const TICK_MS = 15_000;
 const queue: QueueItem[] = [];
@@ -172,7 +172,8 @@ function dedupePush(item: QueueItem) {
         (item.kolUserId && q.kolUserId === item.kolUserId) ||
         (!item.kolUserId && q.kolName === item.kolName)
     );
-    if (!exists) queue.push(item);
+    if (exists) return;
+    queue.push(item);
     logFT("[dedupePush]🧪 queued kol newest tweets request :", item.kolName);
 }
 
@@ -187,6 +188,13 @@ function startLoopIfNeeded() {
             }
 
             const item = queue.shift()!;
+            if (item.tryLater) {
+                logFT("[startLoopIfNeeded]🚨 need to load this kol next round:", item.kolName);
+                item.tryLater = false;
+                queue.push(item);
+                return;
+            }
+
             try {
                 logFT("[startLoopIfNeeded]🔁 timer starting fetching new tweets for kol:", item.kolName);
                 await tweetFetcher.fetchNewKolImmediate(item.kolName, item.kolUserId);
