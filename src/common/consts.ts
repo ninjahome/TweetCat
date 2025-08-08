@@ -41,6 +41,8 @@ export enum MsgType {
     TweetReadByKolId = 'TweetReadByKolId',
     TweetsBootStrap = 'TweetsBootStrap',
     TweetReadByCategoryId = 'TweetReadByCategoryId',
+    TweetRemoveByKolID = 'TweetRemoveByKolID',
+
     KolCursorLoadAll = 'KolCursorLoadAll',
     KolCursorSaveAll = 'KolCursorSaveAll',
     KolCursorSaveOne = 'KolCursorSaveOne',

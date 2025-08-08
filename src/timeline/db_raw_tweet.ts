@@ -3,11 +3,11 @@ import pLimit from 'p-limit';
 
 import {
     __tableCachedTweets,
-    __tableKolsInCategory, countTable,
+    __tableKolsInCategory, countTable, databaseDeleteByIndexValue,
     databasePutItem,
     databaseQueryByFilter,
     databaseQueryByIndex,
-    databaseQueryByIndexRange,
+    databaseQueryByIndexRange, idx_userid,
     idx_userid_time, initialKols,
     pruneOldDataIfNeeded
 } from "../common/database";
@@ -98,6 +98,11 @@ export async function loadLatestTweets(limit: number = 20,
         filterFn,
         timeStamp
     );
+}
+
+export async function removeTweetsByKolID(kolID: string) {
+    const deletedNo = await databaseDeleteByIndexValue(__tableCachedTweets, idx_userid, kolID);
+    logTC(`[removeTweetsByKolID] remove ${deletedNo} tweets for kol: ${kolID}`);
 }
 
 

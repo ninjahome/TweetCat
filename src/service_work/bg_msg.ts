@@ -12,7 +12,7 @@ import {
     cacheRawTweets,
     initTweetsCheck,
     loadCachedTweetsByUserId,
-    loadLatestTweets,
+    loadLatestTweets, removeTweetsByKolID,
     WrapEntryObj
 } from "../timeline/db_raw_tweet";
 import {loadAllKolCursors, writeKolsCursors, writeOneCursor} from "../object/kol_cursor";
@@ -74,6 +74,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.TweetReadByCategoryId: {
             const reqData = request.data;
             return {success: true, data: await loadLatestTweets(reqData.limit, reqData.category, reqData.timeStamp)};
+        }
+
+        case MsgType.TweetRemoveByKolID:{
+            await  removeTweetsByKolID(request.data as string)
+            return {success: true};
         }
 
         case MsgType.KolQueryAll: {

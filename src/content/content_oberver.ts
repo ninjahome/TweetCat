@@ -11,6 +11,7 @@ let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
 let __blockAdStatus: boolean = false;
 new Map<string, TweetKol>();
+
 export function changeAdsBlockStatus(status: boolean) {
     console.log("------>>> change block ads settings:", status);
 
@@ -195,6 +196,7 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
             if (callback) {
                 await callback(kol.kolName, buttonElement);
             }
+            if (kol.kolUserId) sendMsgToService(kol.kolUserId, MsgType.TweetRemoveByKolID).then()
         });
     }
 
@@ -246,7 +248,7 @@ async function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: Tw
 
     kol.catID = cat.id;
     await sendMsgToService(kol, MsgType.KolUpdate);
-    await fetchNewKolImmediate(kol);
+    fetchNewKolImmediate(kol).then();
 }
 
 export async function queryKolDetailByName(kolName: string): Promise<TweetKol | null> {

@@ -4,7 +4,7 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 13;
+export const __currentDatabaseVersion = 14;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -14,6 +14,7 @@ export const __tableKolCursor = '__table_kol_cursor__';
 
 export const BossOfTheTwitter = '44196397';
 export const idx_userid_time = 'userId_timestamp_idx'
+export const idx_userid = 'userId_idx'
 export const idx_time = 'timestamp_idx'
 
 
@@ -92,7 +93,7 @@ async function initCategory(request: IDBOpenDBRequest) {
 
     if (!db.objectStoreNames.contains(__tableCategory)) {
         // 表不存在，直接创建并初始化
-        const store = db.createObjectStore(__tableCategory, { keyPath: 'id', autoIncrement: true });
+        const store = db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
         for (const category of initialCategories) {
             store.add(category);
         }
@@ -119,7 +120,7 @@ async function initCategory(request: IDBOpenDBRequest) {
     queueMicrotask(() => {
         try {
             db.deleteObjectStore(__tableCategory);
-            const newStore = db.createObjectStore(__tableCategory, { keyPath: 'id', autoIncrement: true });
+            const newStore = db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
             for (const category of initialCategories) {
                 newStore.add(category);
             }
@@ -165,14 +166,24 @@ function initCachedTweetsTable(request: IDBOpenDBRequest) {
 
     if (db.objectStoreNames.contains(__tableCachedTweets)) {
         logDB("------>>>[Database] Tweets table already exists.");
+        const tx = request.transaction!;
+        const store = tx.objectStore(__tableCachedTweets);
+
+        // 只有不存在时才创建，避免报错
+        if (!store.indexNames.contains(idx_userid)) {
+            store.createIndex(idx_userid, 'userId', {unique: false});
+            logDB("------>>>[Database] Added index userId_idx on existing cached tweets store.");
+        } else {
+            logDB("------>>>[Database] userId_idx already exists.");
+        }
+
         return;
     }
 
     const tweetStore = db.createObjectStore(__tableCachedTweets, {keyPath: 'tweetId'});
-
     tweetStore.createIndex(idx_time, 'timestamp', {unique: false});
-
     tweetStore.createIndex(idx_userid_time, ['userId', 'timestamp'], {unique: false});
+    tweetStore.createIndex(idx_userid, 'userId', {unique: false});
 
     logDB("------>>>[Database] Created cached tweets table with indexes successfully.", __tableCachedTweets);
 }
@@ -614,5 +625,38 @@ export async function pruneOldDataIfNeeded(
         countRequest.onerror = (event) => {
             reject(`Failed to count records: ${(event.target as IDBRequest).error}`);
         };
+    });
+}
+
+
+export function databaseDeleteByIndexValue(
+    storeName: string,
+    indexName: string,
+    indexValue: IDBValidKey
+): Promise<number> {
+    return new Promise((resolve, reject) => {
+        if (!__databaseObj) return reject("Database is not initialized");
+
+        const tx = __databaseObj.transaction([storeName], "readwrite");
+        const store = tx.objectStore(storeName);
+        const idx = store.index(indexName);
+
+        const range = IDBKeyRange.only(indexValue);
+        const req = idx.openCursor(range); // next/prev 都可
+
+        let deleted = 0;
+
+        req.onsuccess = (e) => {
+            const cursor = (e.target as IDBRequest<IDBCursorWithValue>).result;
+            if (!cursor) return;       // 扫完
+            cursor.delete();           // 直接删当前命中记录
+            deleted++;
+            cursor.continue();
+        };
+
+        req.onerror = (e) => reject(`Error deleting by index ${indexName}: ${(e.target as IDBRequest).error}`);
+
+        tx.oncomplete = () => resolve(deleted);
+        tx.onerror = (e) => reject(`Tx error: ${(e.target as IDBRequest).error}`);
     });
 }
