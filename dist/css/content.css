@@ -1,9 +1,7 @@
 img, video {
     border-radius: 16px;
 }
-.tweetPhotoBackImg{
-    border-radius: 16px;
-}
+
 .tweetCatMenuItem-contain:hover{
     background-color: #e7e7e8;
     border-radius: 9999px;
