@@ -1,9 +1,10 @@
-import {fetchTweets} from "./twitter_api";
+import {fetchTweets, getUserIdByUsername} from "./twitter_api";
 import {sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
-import {KolCursor, saveKolCursorToSW, saveOneKolCursorToSW} from "../object/kol_cursor";
+import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW} from "./db_raw_tweet";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
+import {TweetKol} from "../object/tweet_kol";
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
@@ -12,7 +13,7 @@ export class TweetFetcher {
     constructor() {
     }
 
-    private async fetchNewestOneKolBatch(cursor: KolCursor): Promise<boolean> {
+    async fetchNewestOneKolBatch(cursor: KolCursor): Promise<boolean> {
         try {
 
             logFT(`\n\n[fetchNewestOneKolBatch] ▶️ Fetching newest tweets for ${cursor.userId} top cursor=${cursor.topCursor}`);
@@ -116,6 +117,24 @@ export async function startToFetchTweets(data: tweetFetchParam) {
     await tweetFetcher.startFetchLogic(cursors, data.newest);
 
     logFT(`[startToFetchTweets]🚄 tweet syncing complete.\n`);
+}
+
+export async function fetchNewKolImmediate(kol: TweetKol) {
+    logFT("[startToFetchTweets]🌳 Started fetching tweets for new kol:", kol.displayString());
+    let kolID = kol.kolUserId
+    if (!kolID){
+        kolID = await getUserIdByUsername(kol.kolName) ?? undefined
+        if (!kolID){
+            console.log("------>>> should have a kolID before fetching tweets")
+            return
+        }
+    }
+
+    const cursor = new KolCursor(kolID);
+    await tweetFetcher.fetchNewestOneKolBatch(cursor);
+    await saveOneKolCursorToSW(cursor);
+
+    logFT("[startToFetchTweets]✅ fetching  success tweets for new kol:", kol.kolName);
 }
 
 function printStatus(tag: string, cursor: KolCursor) {
