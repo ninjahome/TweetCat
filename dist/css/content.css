@@ -189,9 +189,7 @@ img, video {
 .tweet-rightBox {
     flex: 0 0 350px;        /* 明确声明：固定列宽，不伸缩 */
     width: 350px;
-    position: fixed;
-    top: 0;
-    right: 70px;
+    margin-right: 70px;
     padding: 12px 0 16px;
 }
 
@@ -311,8 +309,24 @@ img, video {
 .tweet-header-meta{
     display: flex;
     align-items: center;
+    min-width: 0; /* 关键，让子元素可收缩 */
+}
+.display-name-link,
+.user-name-link {
+    flex: 0 1 auto; /* 允许收缩 */
+    min-width: 0;
 }
 
+
+.tweet-author,
+.tweet-username {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 100%;
+}
 .tweet-author {
     color: rgb(15, 20, 25);
     font-size: 15px;
@@ -525,14 +539,16 @@ span.duration-badge {
     height: 18px;
     fill: currentColor;
 }
-
+.each-tweet-rightBox {
+    border-radius: 12px;
+    border: 1px solid rgb(239, 243, 244);
+    margin-bottom: 16px;
+}
 .trending-tweet {
     padding: 12px 16px;
     gap: 12px;
     display: flex;
     align-items: flex-start;
-    border-radius: 12px;
-    border: 1px solid rgb(239, 243, 244);
 }
 
 .tweet-title {
@@ -563,8 +579,8 @@ span.duration-badge {
 
 
 /* ---------- TweetCat 被选中时的统一类 ---------- */
-a.tweetCatMenuItem.tc-selected,
-a.tweetCatMenuItem.tc-selected:hover {
+.tweetCatMenuItem-contain,
+.tweetCatMenuItem-contain:hover {
     background-color: rgba(29, 155, 240, .1);   /* 背景淡蓝 */
     border-radius: 9999px;                      /* 和官方一样的全圆角 */
 }
