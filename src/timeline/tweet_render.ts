@@ -302,6 +302,7 @@ function replacePhotoItem(item: HTMLElement, media: TweetMediaEntity) {
     const link = item.querySelector('a') as HTMLAnchorElement;
     if (link && media.expanded_url) {
         link.href = media.expanded_url;
+        bindTwitterInternalLink(link, media.expanded_url)
     }
 }
 
@@ -341,7 +342,7 @@ function updateTweetBottomButtons(
 
 
 function bindTwitterInternalLink(element: HTMLAnchorElement, path: string) {
-    if (!path.startsWith('/')) return;
+    // if (!path.startsWith('/')) return;
 
     element.href = path;
     element.addEventListener('click', (e) => {
@@ -352,6 +353,7 @@ function bindTwitterInternalLink(element: HTMLAnchorElement, path: string) {
             e.metaKey || e.ctrlKey || e.shiftKey || e.altKey
         ) return;
 
+        // console.log("-------------->>>>>>", element, path)
         e.preventDefault();
         history.pushState({fromTweetCat: true}, '', path);
         dispatchEvent(new PopStateEvent('popstate'));
