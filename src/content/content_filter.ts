@@ -5,7 +5,7 @@ import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
 import {TweetKol} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
-import {isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
+import {getTweetCatFlag, isInTweetCatRoute, navigateToTweetCat, setTweetCatFlag} from "../timeline/route_helper";
 import {switchCategory} from "../timeline/timeline_ui";
 
 export function setSelectedCategory(catID: number = -1) {
@@ -39,6 +39,16 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
     }, false);
 }
 
+export async function appendFilterOnTweetPage(kolName?: string) {
+    if (!kolName) return;
+
+    observeForElement(document.body, 1000, () => {
+        return document.querySelector('[data-testid="app-bar-back"]') as HTMLElement
+    }, async () => {
+        hijackBackButton();
+    }, false);
+}
+
 function hijackBackButton(): void {
     const backButton = document.querySelector('[data-testid="app-bar-back"]');
     if (!backButton) return;
@@ -49,7 +59,7 @@ function hijackBackButton(): void {
     backButton.addEventListener('click', (e) => {
         const state = history.state;
 
-        const shouldReturnToTweetCat = !!state?.fromTweetCat;
+        const shouldReturnToTweetCat = getTweetCatFlag();
         const notInTweetCat = !isInTweetCatRoute();
 
         if (!(shouldReturnToTweetCat && notInTweetCat)) return;
@@ -178,7 +188,7 @@ async function addMoreCategory() {
     await sendMsgToService("#onboarding/main-home", MsgType.OpenPlugin);
 }
 
- async function resetCategories() {
+async function resetCategories() {
     await switchCategory(null);
     setSelectedCategory(-1);
 }

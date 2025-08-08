@@ -17,7 +17,7 @@ export function changeAdsBlockStatus(status: boolean) {
 
     __blockAdStatus = status;
     if (status) {
-        (document.querySelectorAll('div[data-testid="cellInnerDiv" ]') as NodeListOf<HTMLElement>).forEach(elm => {
+        (document.querySelectorAll('div[data-testid="cellInnerDiv"]') as NodeListOf<HTMLElement>).forEach(elm => {
             if (isAdTweetNode(elm)) {
                 elm.style.display = 'none';
             }

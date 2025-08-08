@@ -2,6 +2,7 @@ import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./tweet_ent
 import {formatCount, formatTweetTime} from "../common/utils";
 
 import {videoRender} from "./video_render";
+import {setTweetCatFlag} from "./route_helper";
 
 export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;
@@ -202,7 +203,6 @@ function escapeRegExp(s: string): string {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-
 export function insertRepostedBanner(
     banner: HTMLElement,
     author: TweetAuthor,
@@ -210,7 +210,9 @@ export function insertRepostedBanner(
     const container = banner.querySelector(".tweet-topmargin-container") as HTMLElement;
     container.style.display = 'block';
     const a = banner.querySelector('a.retweet-link') as HTMLAnchorElement | null;
-    if (a) a.href = `/${author.screenName}`;
+    if (a) {
+        bindTwitterInternalLink(a,`/${author.screenName}`)
+    }
     const disp = banner.querySelector('.retweeter-name');
     if (disp) disp.textContent = author.displayName;
 }
@@ -342,7 +344,7 @@ function updateTweetBottomButtons(
 
 
 function bindTwitterInternalLink(element: HTMLAnchorElement, path: string) {
-    // if (!path.startsWith('/')) return;
+    if (element.dataset.hasProtected === 'true') return;
 
     element.href = path;
     element.addEventListener('click', (e) => {
@@ -355,7 +357,9 @@ function bindTwitterInternalLink(element: HTMLAnchorElement, path: string) {
 
         // console.log("-------------->>>>>>", element, path)
         e.preventDefault();
+        setTweetCatFlag(true);
         history.pushState({fromTweetCat: true}, '', path);
         dispatchEvent(new PopStateEvent('popstate'));
-    }, {once: true}); // 添加 once 以避免多次重复绑定
+    });
+    element.dataset.hasProtected = 'true';
 }

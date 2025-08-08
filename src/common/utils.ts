@@ -39,37 +39,6 @@ export function addCustomStyles(cssFilePath: string): void {
     document.head.appendChild(link);
 }
 
-export function isTwitterUserProfile(): string | null {
-    const path = window.location.pathname;
-    const excludedPaths = [
-        'home', 'explore', 'notifications', 'messages',
-        'settings', 'login', 'signup'
-    ];
-
-    // 允许匹配这些后缀路径
-    const allowedSuffixes = ['', 'affiliates', 'with_replies', 'highlights', 'media', 'superfollows'];
-
-    const pathParts = path.split('/').filter(Boolean); // 去掉空串
-
-    // 只处理 /username 或 /username/xxx（最多两段）
-    if (pathParts.length === 0 || pathParts.length > 2) {
-        return null;
-    }
-
-    const [username, subPath] = pathParts;
-
-    // 排除保留路径
-    if (excludedPaths.includes(username)) {
-        return null;
-    }
-
-    // 如果是带子路径的，只允许特定后缀
-    if (subPath && !allowedSuffixes.includes(subPath)) {
-        return null;
-    }
-
-    return username;
-}
 
 
 function observeAction(target: HTMLElement, idleThreshold: number,
@@ -242,4 +211,77 @@ export function extractMissingFeature(body: string): string | null {
     // e.g. "The following features cannot be null: responsive_web_grok_imagine_annotation_enabled"
     const m = body.match(/cannot be null:\s*([a-zA-Z0-9_]+)/);
     return m ? m[1] : null;
+}
+
+
+export type ParsedTwitterLink =
+    | { kind: "tweet"; url: URL; tweetId: string; username?: string }
+    | { kind: "profile"; url: URL; username: string }
+    | { kind: "other"; url: URL };
+
+const RESERVED = new Set([
+    // 系统保留路径（不能当作用户名）
+    "home","explore","notifications","messages","compose","settings",
+    "login","signup","i","hashtag","search","share","about","download",
+    "privacy","tos","intent"
+]);
+
+// 允许的用户主页子路由
+const PROFILE_SUFFIXES = new Set([
+    "", "affiliates", "with_replies", "highlights", "media", "superfollows"
+]);
+
+const USERNAME_RE = /^[A-Za-z0-9_]{1,15}$/;       // Twitter 用户名规则
+const TWEET_ID_RE = /^\d{6,25}$/;                  // 宽松覆盖 19 位 ID 及可能的变化
+
+export function parseTwitterPath(href?: string | URL): ParsedTwitterLink {
+    let u: URL;
+    try {
+        u = href
+            ? (href instanceof URL ? href : new URL(href, location.origin))
+            : new URL(location.href);
+    } catch {
+        // 无法解析就兜底为 other
+        return { kind: "other", url: new URL(location.href) };
+    }
+
+    const path = u.pathname;                   // 不含 query/hash
+    const parts = path.split("/").filter(Boolean); // 去空段
+
+    // —— 优先判断“推文链接” —— //
+    // 1) /<username>/status|statuses/<id>(/...)?
+    if (parts.length >= 3) {
+        const [maybeUser, statusWord, id] = parts;
+        if (
+            USERNAME_RE.test(maybeUser) &&
+            !RESERVED.has(maybeUser.toLowerCase()) &&
+            (statusWord === "status" || statusWord === "statuses") &&
+            TWEET_ID_RE.test(id)
+        ) {
+            return { kind: "tweet", url: u, username: maybeUser, tweetId: id };
+        }
+    }
+    // 2) /i/web/status/<id>(/...)?
+    if (parts.length >= 4) {
+        const [p0, p1, p2, id] = parts;
+        if (p0 === "i" && p1 === "web" && p2 === "status" && TWEET_ID_RE.test(id)) {
+            return { kind: "tweet", url: u, tweetId: id };
+        }
+    }
+
+    // —— 再判断“用户主页” —— //
+    // 允许 /<username> 或 /<username>/<suffix>
+    if (parts.length >= 1 && parts.length <= 2) {
+        const [maybeUser, suffix = ""] = parts;
+        if (
+            USERNAME_RE.test(maybeUser) &&
+            !RESERVED.has(maybeUser.toLowerCase()) &&
+            PROFILE_SUFFIXES.has(suffix)
+        ) {
+            return { kind: "profile", url: u, username: maybeUser };
+        }
+    }
+
+    // 其它情况
+    return { kind: "other", url: u };
 }

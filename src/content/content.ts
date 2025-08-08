@@ -2,14 +2,15 @@ import browser, {Runtime} from "webextension-polyfill";
 import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./content_oberver";
 import {
     appendFilterBtn,
-    appendFilterOnKolProfileHome,
+    appendFilterOnKolProfileHome, appendFilterOnTweetPage,
 } from "./content_filter";
 import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "../common/consts";
-import {addCustomStyles, isTwitterUserProfile, observeSimple} from "../common/utils";
+import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatUI} from "../timeline/timeline_ui";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {startToFetchTweets} from "../timeline/tweet_fetcher";
+import {setTweetCatFlag} from "../timeline/route_helper";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
@@ -51,16 +52,22 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     switch (request.action) {
         case MsgType.NaviUrlChanged: {
-            const kolName = isTwitterUserProfile()
-            if (!!kolName) {
-                appendFilterOnKolProfileHome(kolName).then();
+
+            const linkInfo = parseTwitterPath(window.location.href)
+            // console.log("------>>> link info:", linkInfo)
+            if (linkInfo.kind === "profile") {
+                appendFilterOnKolProfileHome(linkInfo.username).then();
+            } else if (linkInfo.kind === "tweet") {
+                appendFilterOnTweetPage(linkInfo.username).then();
+            } else {
+                setTweetCatFlag(false);
             }
             checkFilterStatusAfterUrlChanged();
             sendResponse({success: true});
             break;
         }
         case MsgType.CategoryChanged: {
-            console.log("------>>> category changed.....")
+            // console.log("------>>> category changed.....")
             // reloadCategoryContainer(request.data as Category[]).then();
             sendResponse({success: true});
             break;

@@ -1,5 +1,5 @@
 import {fetchTweets, getUserIdByUsername} from "./twitter_api";
-import {isTwitterUserProfile, sleep} from "../common/utils";
+import {parseTwitterPath, sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
 import {KolCursor, queryCursorByKolID, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW} from "./db_raw_tweet";
@@ -138,7 +138,8 @@ export async function startToFetchTweets(data: tweetFetchParam) {
 }
 
 export async function fetchNewKolImmediate(kolName: string, kolUserId?: string) {
-    const retry = isTwitterUserProfile() === kolName;
+    const linkInfo = parseTwitterPath(window.location.href);
+    const retry = linkInfo.kind === "profile" && linkInfo.username === kolName;
     if (retry) {
         logFT("🔒 current page is kol home, try to fetch tweets later for kol:", kolName);
     }

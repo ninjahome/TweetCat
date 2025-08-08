@@ -6,8 +6,17 @@ let currentInTC: boolean | null = null;      // 记录上一次状态
 const PATH = '/i/grok';
 const HASH = '#/tweetCatTimeLine';
 const FULL = `${PATH}${HASH}`;
-
 initRouteGuard();
+
+let __tc_fromTweetCat = false;
+export function setTweetCatFlag(flag: boolean) {
+    logRoute('set tweet  flag to →', flag);
+    __tc_fromTweetCat = flag;
+}
+
+export function getTweetCatFlag():boolean{
+    return __tc_fromTweetCat;
+}
 
 export function isInTweetCatRoute(): boolean {
     return location.pathname === PATH && location.hash.startsWith(HASH);
