@@ -1,8 +1,7 @@
 import {extractMissingFeature, getBearerToken} from "../common/utils";
 import {localGet} from "../common/local_storage";
 import {__DBK_query_id_map, UserByScreenName, UserTweets} from "../common/consts";
-import {EntryObj, parseTimelineFromGraphQL, TweetResult} from "./tweet_entry";
-import {WrapEntryObj} from "./db_raw_tweet";
+import {parseTimelineFromGraphQL, TweetResult} from "./tweet_entry";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(key: string): Promise<string | null> {
