@@ -191,6 +191,9 @@ img, video {
     width: 350px;
     margin-right: 70px;
     padding: 12px 0 16px;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
 }
 
 .tweetTimeline {
@@ -579,7 +582,6 @@ span.duration-badge {
 
 
 /* ---------- TweetCat 被选中时的统一类 ---------- */
-.tweetCatMenuItem-contain,
 .tweetCatMenuItem-contain:hover {
     background-color: rgba(29, 155, 240, .1);   /* 背景淡蓝 */
     border-radius: 9999px;                      /* 和官方一样的全圆角 */
