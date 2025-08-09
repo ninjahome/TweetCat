@@ -469,6 +469,9 @@ span.duration-badge {
     display: block;
 }
 
+.tweet-image.four-images > div .tweetPhotoBackImg {
+    height: 100% !important;
+}
 /* Round corners */
 .tweet-image.single-image img {
     border-radius: 16px;
