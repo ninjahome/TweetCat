@@ -398,8 +398,8 @@ span.duration-badge {
     height: 50%;
 }
 
-.tweet-image.two-images img {
-    max-height: 290.25px;
+.two-images img {
+    height: 290.25px;
 }
 
 /* 单图逻辑 */
