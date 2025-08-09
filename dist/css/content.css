@@ -412,6 +412,7 @@ span.duration-badge {
 
 .tweet-image.single-image > div {
     max-width: 100%;
+
 }
 
 .tweet-image.single-image img {
@@ -419,7 +420,9 @@ span.duration-badge {
     height: auto;
     max-height: 590px;
     object-fit: contain;
-    border-radius: 16px;
+}
+.tweet-image.single-image > div .tweetPhotoBackImg {
+    border-radius: 16px !important;
 }
 
 /* Three image layout: 1 left, 2 stacked right */
