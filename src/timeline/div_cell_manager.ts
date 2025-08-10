@@ -7,6 +7,8 @@ import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../common/debug_flags";
 import {TweetResizeObserverManager} from "./tweet_resize_observer";
 import {findCellFromNode} from "./div_node_pool";
+import {EntryObj} from "./tweet_entry";
+import {tweetFetcher} from "./tweet_fetcher";
 
 export interface MountResult {
     needScroll: boolean;
@@ -60,6 +62,9 @@ export class TweetManager {
         this.scroller?.scrollToTop({needScroll: true, targetTop: 0})
     }
 
+    async showNewestTweets(tweets: EntryObj[]) {
+        tweetPager.showFetchedNewTweets(tweets);
+    }
 
     public async switchCategory(cat: number | null) {
         logTweetMgn("------>>> tweet category switch to:", cat);
@@ -87,6 +92,8 @@ export class TweetManager {
         this.maxCssHeight = 0;
 
         tweetPager.resetPager();
+
+        tweetFetcher.resetNotifications();
 
         this.isRendering = false;
 

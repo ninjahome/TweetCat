@@ -5,15 +5,19 @@ import {KolCursor, queryCursorByKolID, saveOneKolCursorToSW} from "../object/kol
 import {cacheTweetsToSW} from "./db_raw_tweet";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {MsgType} from "../common/consts";
+import {showNewestTweets} from "./timeline_ui";
+import {EntryObj} from "./tweet_entry";
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
     private readonly MIN_FETCH_GAP = 5_000;
+    private notificationContainer: HTMLElement | null = null;
+    private latestNewTweets: EntryObj[] = [];
 
     constructor() {
     }
 
-    private async fetchNewestOneKolBatch(cursor: KolCursor): Promise<boolean> {
+    private async fetchNewestOneKolBatch(cursor: KolCursor): Promise<EntryObj[]> {
         try {
 
             logFT(`\n\n[fetchNewestOneKolBatch] ▶️ Fetching newest tweets for ${cursor.userId} top cursor=${cursor.topCursor}`);
@@ -23,7 +27,7 @@ export class TweetFetcher {
             if (tweets.length === 0 || !result.topCursor) {
                 logFT(`[fetchNewestOneKolBatch] ✅ ${cursor.userId} no more new tweets `);
                 cursor.waitForNextNewestRound(null, result.nextCursor);
-                return true;
+                return [];
             }
 
             const dataDeleted = await cacheTweetsToSW(cursor.userId, result.wrapDbEntry)
@@ -31,11 +35,11 @@ export class TweetFetcher {
             cursor.updateCacheStatus(dataDeleted > 0);
 
             logFT(`\n\n[fetchNewestOneKolBatch] ✅ ${cursor.userId} fetched ${tweets.length} newest tweets`);
-            return true;
+            return result.tweets;
 
         } catch (err) {
             this.process429Error(err, cursor)
-            return false
+            return []
         }
     }
 
@@ -81,20 +85,46 @@ export class TweetFetcher {
     }
 
     async startFetchLogic(cursors: any[], newest: boolean) {
-
         for (let i = 0; i < cursors.length; i++) {
             const cursorData = cursors[i];
             const cursor = KolCursor.fromJSON(cursorData);
             printStatus("------>>>🧪before process:", cursor)
 
-            if (newest) await this.fetchNewestOneKolBatch(cursor);
-            else await this.fetchHistoryOneKolBatch(cursor);
+            if (newest) {
+                const newItems = await this.fetchNewestOneKolBatch(cursor);
+                this.latestNewTweets.push(...newItems);
+            } else await this.fetchHistoryOneKolBatch(cursor);
 
             printStatus("------>>>✅after process:", cursor)
             await saveOneKolCursorToSW(cursor);
 
             await sleep(this.MIN_FETCH_GAP);
         }
+
+        if (newest && this.latestNewTweets.length > 0) {
+            this.showNewTweetsNotification()
+        }
+    }
+
+    resetNotifications() {
+        if (!this.notificationContainer) return;
+        this.notificationContainer!.style.display = "none";
+        this.latestNewTweets = [];
+    }
+
+    private showNewTweetsNotification() {
+        if (!this.notificationContainer) {
+            this.notificationContainer = document.querySelector(".new-tweet-notification") as HTMLElement;
+            this.notificationContainer.addEventListener('click', e => {
+                this.notificationContainer!.style.display = "none";
+                showNewestTweets(this.latestNewTweets).then();
+                this.latestNewTweets = [];
+            })
+        }
+
+        this.notificationContainer.style.display = "block";
+        const numberDiv = this.notificationContainer.querySelector(".tweet-no") as HTMLElement;
+        numberDiv.innerText = '' + this.latestNewTweets.length;
     }
 
     async fetchNewKolImmediate(kolName: string, kolID?: string) {
@@ -134,6 +164,7 @@ export async function startToFetchTweets(data: tweetFetchParam) {
 
     logFT(`[startToFetchTweets]🚄 tweet syncing complete.\n`);
 }
+
 
 export async function fetchImmediateInNextRound(kolName: string, kolUserId?: string) {
     const linkInfo = parseTwitterPath(window.location.href);

@@ -9,6 +9,7 @@ import {
 } from "./route_helper";
 import {logGuard} from "../common/debug_flags";
 import {setSelectedCategory} from "../content/content_filter";
+import {EntryObj} from "./tweet_entry";
 
 let manager: TweetManager | null = null;
 
@@ -89,6 +90,12 @@ export async function switchCategory(catID:number|null){
     manager?.dispose();
     manager?.switchCategory(catID);
 }
+
+
+export async function showNewestTweets(tweets:EntryObj[]){
+    await manager?.showNewestTweets(tweets);
+}
+
 
 function tcUnmount(area: HTMLElement, originalArea: HTMLElement) {
     if (!mounted) return;          // 未挂载则忽略
