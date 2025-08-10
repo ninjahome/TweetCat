@@ -164,7 +164,6 @@ const TICK_MS = 15_000;
 const queue: QueueItem[] = [];
 let timerId: number | null = null;
 
-// 简单去重：同 userId 或（无 id 时）同 name 不重复入队
 function dedupePush(item: QueueItem) {
     const exists = queue.some(q =>
         (item.kolUserId && q.kolUserId === item.kolUserId) ||
