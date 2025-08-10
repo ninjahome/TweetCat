@@ -398,8 +398,8 @@ span.duration-badge {
     height: 50%;
 }
 
-.tweet-image.two-images img {
-    max-height: 290.25px;
+.two-images img {
+    height: 290.25px;
 }
 
 /* 单图逻辑 */
@@ -412,6 +412,7 @@ span.duration-badge {
 
 .tweet-image.single-image > div {
     max-width: 100%;
+
 }
 
 .tweet-image.single-image img {
@@ -419,7 +420,9 @@ span.duration-badge {
     height: auto;
     max-height: 590px;
     object-fit: contain;
-    border-radius: 16px;
+}
+.tweet-image.single-image > div .tweetPhotoBackImg {
+    border-radius: 16px !important;
 }
 
 /* Three image layout: 1 left, 2 stacked right */
@@ -466,6 +469,9 @@ span.duration-badge {
     display: block;
 }
 
+.tweet-image.four-images > div .tweetPhotoBackImg {
+    height: 100% !important;
+}
 /* Round corners */
 .tweet-image.single-image img {
     border-radius: 16px;
