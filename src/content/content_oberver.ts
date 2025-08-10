@@ -5,7 +5,7 @@ import {localGet, localSet} from "../common/local_storage";
 import {TweetKol} from "../object/tweet_kol";
 import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
-import {fetchNewKolImmediate} from "../timeline/tweet_fetcher";
+import {fetchImmediateInNextRound} from "../timeline/tweet_fetcher";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -249,7 +249,7 @@ async function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: Tw
 
     kol.catID = cat.id;
     await sendMsgToService(kol, MsgType.KolUpdate);
-    fetchNewKolImmediate(kol.kolName, kol.kolUserId).then();
+    fetchImmediateInNextRound(kol.kolName, kol.kolUserId).then();
 }
 
 export async function queryKolDetailByName(kolName: string): Promise<TweetKol | null> {

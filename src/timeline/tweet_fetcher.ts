@@ -1,9 +1,10 @@
 import {fetchTweets, getUserIdByUsername} from "./twitter_api";
-import {parseTwitterPath, sleep} from "../common/utils";
+import {parseTwitterPath, sendMsgToService, sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
 import {KolCursor, queryCursorByKolID, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW} from "./db_raw_tweet";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
+import {MsgType} from "../common/consts";
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
@@ -134,15 +135,27 @@ export async function startToFetchTweets(data: tweetFetchParam) {
     logFT(`[startToFetchTweets]🚄 tweet syncing complete.\n`);
 }
 
-export async function fetchNewKolImmediate(kolName: string, kolUserId?: string) {
+export async function fetchImmediateInNextRound(kolName: string, kolUserId?: string) {
     const linkInfo = parseTwitterPath(window.location.href);
-    const retry = linkInfo.kind === "profile" && linkInfo.username === kolName;
-    if (retry) {
+    const isViewKolProfile = linkInfo.kind === "profile" && linkInfo.username === kolName;
+    if (isViewKolProfile) {
         logFT("🔒 current page is kol home, try to fetch tweets later for kol:", kolName);
+        return;
     }
 
-    dedupePush({kolName, kolUserId, tryLater: retry});
-    startLoopIfNeeded();
+    let kolID = kolUserId
+    if (!kolID) {
+        kolID = await getUserIdByUsername(kolName) ?? undefined
+        if (!kolID) {
+            logFT("------>>> should have a kolID before fetching tweets")
+            return
+        }
+    }
+
+    await sendMsgToService(kolID, MsgType.TimerKolInQueueAtOnce);
+
+    // dedupePush({kolName, kolUserId, tryLater: isViewKolProfile});
+    // startLoopIfNeeded();
 }
 
 function printStatus(tag: string, cursor: KolCursor) {

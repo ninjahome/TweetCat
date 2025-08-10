@@ -43,6 +43,10 @@ async function timerTaskWork(alarm: any): Promise<void> {
     }
 }
 
+export async function timerKolInQueueImmediate(kolID: string): Promise<void> {
+    await tweetFM.queuePush(kolID);
+}
+
 async function alarmTweetsProc() {
     await checkAndInitDatabase();
     try {

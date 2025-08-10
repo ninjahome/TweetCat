@@ -76,9 +76,10 @@ export class KolCursor {
         instance.topCursor = obj.topCursor ?? null;
         instance.bottomCursor = obj.bottomCursor ?? null;
         instance.nextNewestFetchTime = obj.nextNewestFetchTime ?? 0;
-        instance.cacheEnough = obj.nextNewestFetchTime ?? false;
+        instance.cacheEnough = obj.cacheEnough ?? false;
         instance.nextHistoryFetchTime = obj.nextHistoryFetchTime ?? 0;
         instance.failureCount = obj.failureCount ?? 0;
+        logKC(`[fromJSON] cursor from obj:[${JSON.stringify(obj)}] `)
         return instance;
     }
 

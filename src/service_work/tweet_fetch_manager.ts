@@ -20,6 +20,7 @@ interface TweetFetcherRuntimeState {
     currentOldGroupIndex: number;
     newestFetch: boolean;
     bootStrap: boolean;
+    immediateQueue: string[];
 }
 
 export class TweetFetcherManager {
@@ -27,6 +28,7 @@ export class TweetFetcherManager {
     private currentOldGroupIndex = 0;
     private newestFetch = false;
     private bootStrap = true;
+    private immediateQueue: string[] = [];
 
     private readonly MAX_KOL_PER_ROUND = 5;
     private readonly KOL_SCAN_LIMIT = this.MAX_KOL_PER_ROUND * 3;
@@ -43,6 +45,7 @@ export class TweetFetcherManager {
         this.currentOldGroupIndex = state.currentOldGroupIndex ?? 0;
         this.newestFetch = state.newestFetch ?? false;
         this.bootStrap = state.bootStrap ?? true;
+        this.immediateQueue = state.immediateQueue ?? [];
 
         logBGT("[loadRuntimeStateFromStorage]✅ State has been loaded:", JSON.stringify(state));
     }
@@ -52,7 +55,8 @@ export class TweetFetcherManager {
             currentNewGroupIndex: this.currentNewGroupIndex,
             currentOldGroupIndex: this.currentOldGroupIndex,
             newestFetch: this.newestFetch,
-            bootStrap: this.bootStrap
+            bootStrap: this.bootStrap,
+            immediateQueue: this.immediateQueue,
         };
 
         await browser.storage.local.set({
@@ -66,15 +70,13 @@ export class TweetFetcherManager {
         this.currentOldGroupIndex = 0;
         this.newestFetch = true;
         this.bootStrap = true;
+        this.immediateQueue = [];
 
         await this.saveRuntimeStateToStorage();
         logBGT("[resetState]🔴 State has been reset on browser startup");
     }
 
-
-    private async getNextKolGroup(newest: boolean = true): Promise<KolCursor[]> {
-
-        const kolIds = await loadAllKolIds();
+    private async loadKolCursors(): Promise<Map<string, KolCursor>> {
         const kolCursorMap = new Map<string, KolCursor>();
         const data = await loadAllKolCursors();
         for (const item of data) {
@@ -84,6 +86,13 @@ export class TweetFetcherManager {
             }
             kolCursorMap.set(cursor.userId, cursor);
         }
+        return kolCursorMap;
+    }
+
+    private async getNextKolGroup(newest: boolean = true): Promise<KolCursor[]> {
+
+        const kolIds = await loadAllKolIds();
+        const kolCursorMap = await this.loadKolCursors();
 
         const total = kolIds.length;
         if (total === 0) return [];
@@ -102,6 +111,8 @@ export class TweetFetcherManager {
             if (canUse) {
                 result.push(cursor);
                 found++;
+            }else{
+                logBGT("[getNextKolGroup]🔴Kol can't used:", JSON.stringify(cursor));
             }
             scanCount++;
             idx++;
@@ -119,7 +130,7 @@ export class TweetFetcherManager {
         return result;
     }
 
-    async fetchTweetsPeriodic() {
+    async getNormalCursors(): Promise<KolCursor[]> {
         if (this.bootStrap) {
             this.newestFetch = true;
             this.bootStrap = false;
@@ -129,19 +140,54 @@ export class TweetFetcherManager {
 
         let newest = this.newestFetch;
 
-        const groupKolCursors = await this.getNextKolGroup(newest);
+        let groupKolCursors = await this.getNextKolGroup(newest);
         if (groupKolCursors.length === 0) {
             logBGT(`[fetchTweetsPeriodic] 😅  ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex} no kol ids`);
-            return;
+            return [];
+        }
+        return groupKolCursors;
+    }
+
+    async getImmediateCursors(): Promise<KolCursor[]> {
+        const immediateCursors: KolCursor[] = [];
+        const kolCursorMap = await this.loadKolCursors();
+
+        for await (const userId of this.immediateQueue) {
+            const cursor = kolCursorMap.get(userId) ?? new KolCursor(userId);
+            immediateCursors.push(cursor);
         }
 
-        const param = new tweetFetchParam(groupKolCursors, newest);
+        return immediateCursors;
+    }
+
+    async fetchTweetsPeriodic() {
+        let cursorToFetch: KolCursor[] = [];
+        let newest: boolean;
+        if (this.immediateQueue.length > 0) {
+            logBGT(`[fetchTweetsPeriodic]Need to fetch immediate queue[${this.immediateQueue.length}] first`);
+            cursorToFetch = await this.getImmediateCursors();
+            this.immediateQueue = [];
+            newest = true;
+        }
+        else {
+            cursorToFetch = await this.getNormalCursors();
+            newest = this.newestFetch;
+        }
+
+        const param = new tweetFetchParam(cursorToFetch, newest);
         const sendSuccess = await sendMessageToX(MsgType.StartTweetsFetch, param)
         if (!sendSuccess) {
             logBGT(`[fetchTweetsPeriodic] 😭 send fetch message failed   ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex}`);
             return
         }
         logBGT(`[fetchTweetsPeriodic] ♻️ Starting ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex} at ${new Date().toISOString()}`);
+    }
+
+    async queuePush(kolID: string) {
+        logBGT(`[queuePush] ♻️ New kol ${kolID} need to push in immediate queue`);
+        await this.loadRuntimeStateFromStorage()
+        this.immediateQueue.push(kolID);
+        await this.saveRuntimeStateToStorage();
     }
 }
 
