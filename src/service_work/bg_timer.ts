@@ -4,6 +4,7 @@ import {checkIfXIsOpen, TweetFetcherManager} from "./tweet_fetch_manager";
 
 const alarms = browser.alarms;
 const __alarm_tweets_fetch__: string = '__tweet__fetcher__timer__';
+const __interval_tweets_fetch__: number = 2;
 const tweetFM = new TweetFetcherManager();
 
 alarms.onAlarm.addListener(timerTaskWork);
@@ -12,18 +13,18 @@ export async function createAlarm(): Promise<void> {
     const alarm = await alarms.get(__alarm_tweets_fetch__);
     if (!alarm) {
         alarms.create(__alarm_tweets_fetch__, {
-            periodInMinutes: 2
+            periodInMinutes: __interval_tweets_fetch__
         });
-        console.log("------>>> alarm create success")
+        console.log("------>>> alarm create success", __interval_tweets_fetch__)
     }
 }
 
 export async function updateAlarm(): Promise<void> {
     await browser.alarms.clear(__alarm_tweets_fetch__);
     alarms.create(__alarm_tweets_fetch__, {
-        periodInMinutes: 2
+        periodInMinutes: __interval_tweets_fetch__
     });
-    console.log("------>>> alarm recreate success")
+    console.log("------>>> alarm recreate success,timer:", __interval_tweets_fetch__);
 }
 
 export async function setTweetBootStrap() {

@@ -28,7 +28,7 @@ export class TweetFetcherManager {
     private newestFetch = false;
     private bootStrap = true;
 
-    private readonly MAX_KOL_PER_ROUND = 10;
+    private readonly MAX_KOL_PER_ROUND = 5;
     private readonly KOL_SCAN_LIMIT = this.MAX_KOL_PER_ROUND * 3;
     private readonly STORAGE_KEY = '__tweet_fetcher_runtime_state__';
 

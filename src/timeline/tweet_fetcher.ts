@@ -7,7 +7,7 @@ import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
-    private readonly MIN_FETCH_GAP = 10_000;
+    private readonly MIN_FETCH_GAP = 5_000;
 
     constructor() {
     }
@@ -85,15 +85,12 @@ export class TweetFetcher {
             const cursorData = cursors[i];
             const cursor = KolCursor.fromJSON(cursorData);
             printStatus("------>>>🧪before process:", cursor)
-            let ok = false;
 
-            if (newest) ok = await this.fetchNewestOneKolBatch(cursor);
-            else ok = await this.fetchHistoryOneKolBatch(cursor);
+            if (newest) await this.fetchNewestOneKolBatch(cursor);
+            else await this.fetchHistoryOneKolBatch(cursor);
 
             printStatus("------>>>✅after process:", cursor)
             await saveOneKolCursorToSW(cursor);
-
-            if (!ok) break;
 
             await sleep(this.MIN_FETCH_GAP);
         }
