@@ -157,7 +157,7 @@ export async function appendFilterBtn(tpl: HTMLTemplateElement, main: HTMLElemen
         console.warn("🚨------>>> failed to find tweet cat filter area");
         return
     }
-    container.parentElement!.appendChild(filterContainerDiv);
+    container.appendChild(filterContainerDiv);
 
     allCatBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
     allCatBtn.dataset.categoryID = '' + defaultAllCategoryID;
