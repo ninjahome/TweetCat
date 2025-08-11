@@ -115,7 +115,7 @@ export class TweetFetcher {
     private showNewTweetsNotification() {
         if (!this.notificationContainer) {
             this.notificationContainer = document.querySelector(".new-tweet-notification") as HTMLElement;
-            this.notificationContainer.addEventListener('click', e => {
+            this.notificationContainer.addEventListener('click', () => {
                 this.notificationContainer!.style.display = "none";
                 showNewestTweets(this.latestNewTweets).then();
                 this.latestNewTweets = [];

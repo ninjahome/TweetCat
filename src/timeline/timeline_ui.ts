@@ -9,7 +9,6 @@ import {
 } from "./route_helper";
 import {logGuard} from "../common/debug_flags";
 import {setSelectedCategory} from "../content/content_filter";
-import {EntryObj} from "./tweet_entry";
 
 let manager: TweetManager | null = null;
 
