@@ -7,6 +7,7 @@ import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {getTweetCatFlag, isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
 import {switchCategory} from "../timeline/timeline_ui";
+import {EntryObj} from "../timeline/tweet_entry";
 
 export function setSelectedCategory(catID: number = -1) {
     document.querySelectorAll(".category-filter-item").forEach(elm => {
@@ -194,3 +195,9 @@ async function changeFilterType(catId: number | null) {
     await switchCategory(catId);
     setSelectedCategory(catId ?? -1);
 }
+
+export async function showNewestTweets(tweets:EntryObj[]){
+    await switchCategory(null);
+    setSelectedCategory(-1);
+}
+

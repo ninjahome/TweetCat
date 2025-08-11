@@ -5,8 +5,8 @@ import {KolCursor, queryCursorByKolID, saveOneKolCursorToSW} from "../object/kol
 import {cacheTweetsToSW} from "./db_raw_tweet";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {MsgType} from "../common/consts";
-import {showNewestTweets} from "./timeline_ui";
 import {EntryObj} from "./tweet_entry";
+import {showNewestTweets} from "../content/content_filter";
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;

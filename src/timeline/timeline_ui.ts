@@ -91,12 +91,6 @@ export async function switchCategory(catID:number|null){
     manager?.switchCategory(catID);
 }
 
-
-export async function showNewestTweets(tweets:EntryObj[]){
-    await manager?.showNewestTweets(tweets);
-}
-
-
 function tcUnmount(area: HTMLElement, originalArea: HTMLElement) {
     if (!mounted) return;          // 未挂载则忽略
     mounted = false;

@@ -17,9 +17,6 @@ export class TweetPager {
     constructor() {
     }
 
-    showFetchedNewTweets(tweets:EntryObj[]){
-    }
-
     switchCategory(newCategoryId: number | null = null) {
         this.resetPager();
         this.currentCategoryId = newCategoryId;
