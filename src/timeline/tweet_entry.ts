@@ -337,7 +337,7 @@ export class TweetObj {
     tweetContent: TweetContent;
     card: TweetCard | null;
     retweetedStatus?: TweetObj;
-    quotedTweet?: TweetObj;
+    quotedStatus?: TweetObj;
 
     constructor(raw: any, opts?: { isQuoted?: boolean }) {
         const data = raw?.tweet ?? raw;
@@ -358,9 +358,10 @@ export class TweetObj {
         }
 
         if (!opts?.isQuoted) {
-            const quotedResult = raw?.legacy?.quoted_status_result?.result;
-            if (quotedResult && quotedResult.__typename === "Tweet") {
-                this.quotedTweet = new TweetObj(quotedResult, {isQuoted: true});
+            const q = data?.quoted_status_result?.result
+                ?? data?.legacy?.quoted_status_result?.result; // 保险兼容
+            if (q) {
+                this.quotedStatus = new TweetObj(q);
             }
         }
     }

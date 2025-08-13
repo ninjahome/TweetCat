@@ -1,4 +1,4 @@
-import {EntryObj, TweetAuthor, TweetCard, TweetContent, TweetMediaEntity} from "./tweet_entry";
+import {EntryObj, TweetAuthor, TweetCard, TweetContent, TweetMediaEntity, TweetObj} from "./tweet_entry";
 import {formatCount, formatTweetTime} from "../common/utils";
 
 import {videoRender} from "./video_render";
@@ -28,7 +28,8 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     if (outer.retweetedStatus) {
         insertRepostedBanner(article.querySelector(".tweet-topmargin") as HTMLElement, outer.author); // 你自己的函数
     }
-    console.log("-----------------------》》》》引用推文对象：", target.quotedTweet);
+    console.log("-----------------------》》》》引用推文对象：", target.quotedStatus);
+
     // ✅ 新增：收集“需要隐藏的短链”——当前只需要卡片短链
     const extraHiddenShortUrls = collectCardShortUrls(target);
 
@@ -45,6 +46,14 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     if (target.card) {
         updateTweetCardArea(article.querySelector(".tweet-card-area") as HTMLElement,
             target.card);
+    }
+
+    const quoteArea = article.querySelector(".tweet-quote-area") as HTMLElement | null;
+    if (quoteArea) {
+        quoteArea.innerHTML = '';
+        if (target.quotedStatus) {
+            updateTweetQuoteArea(quoteArea, target.quotedStatus);
+        }
     }
 
     updateTweetBottomButtons(article.querySelector(".tweet-actions") as HTMLElement,
@@ -110,91 +119,6 @@ export function updateTweetTopButtonArea(headerMeta: Element, author: TweetAutho
         verifiedIcon.style.display = 'none';
     }
 }
-
-// export function updateTweetContentArea(
-//     container: HTMLElement,
-//     tweet: TweetContent,
-// ): string | undefined {
-//
-//     const tweetContent = container.querySelector(".tweet-content") as HTMLElement;
-//     if (!tweetContent) {
-//         console.log("------>>> tweet content not found:", container);
-//         return;
-//     }
-//
-//     /* ---------- 1. 判断是否为 Retweet ---------- */
-//     let repostAuthorHandle: string | undefined;
-//     let visible = tweet.full_text;
-//     const m = /^RT\s+@(\w+):\s+/u.exec(visible);
-//     if (m) {
-//         repostAuthorHandle = m[1];
-//         visible = visible.slice(m[0].length);
-//     }
-//
-//     /* ---------- 2. 使用 display_text_range 裁剪 ---------- */
-//     const cps = [...visible];
-//     const [start, end] = tweet.display_text_range;
-//     visible = cps.slice(start, end).join('');
-//
-//     /* ---------- 3. 收集 media 占位短链 ---------- */
-//     const mediaTco = new Set<string>();
-//     tweet.extended_entities?.media?.forEach(m => mediaTco.add(m.url));
-//
-//     /* ---------- 4. 移除正文中的 media t.co 占位 ---------- */
-//     if (mediaTco.size) {
-//         mediaTco.forEach(u => {
-//             const re = new RegExp(`\\s*${escapeRegExp(u)}\\s*`, 'g');
-//             visible = visible.replace(re, '');
-//         });
-//     }
-//
-//     /* ---------- 5. 构建实体映射 ---------- */
-//     type Piece = { start: number; end: number; html: string };
-//     const pieces: Piece[] = [];
-//
-//     tweet.entities.user_mentions.forEach(u =>
-//         pieces.push({
-//             start: u.indices[0],
-//             end: u.indices[1],
-//             html: `<a href="/${u.screen_name}" class="mention">@${u.screen_name}</a>`
-//         }),
-//     );
-//     tweet.entities.hashtags.forEach(h =>
-//         pieces.push({
-//             start: h.indices[0],
-//             end: h.indices[1],
-//             html: `<a href="/hashtag/${h.text}" class="hashtag">#${h.text}</a>`
-//         }),
-//     );
-//
-//     // URL – 过滤 media 及裸短链
-//     tweet.entities.urls.forEach(u => {
-//         if (mediaTco.has(u.url)) return; // media 占位
-//         const isBareTco = /^https?:\/\/t\.co\/[A-Za-z0-9]+$/u.test(u.expanded_url ?? u.url);
-//         if (isBareTco) return;
-//
-//         pieces.push({
-//             start: u.indices[0],
-//             end: u.indices[1],
-//             html: `<a href="${u.expanded_url}" class="url" target="_blank" rel="noopener noreferrer">${escapeHTML(u.display_url)}</a>`,
-//         });
-//     });
-//
-//     /* ---------- 6. 拼装 HTML ---------- */
-//     pieces.sort((a, b) => a.start - b.start);
-//     const out: string[] = [];
-//     let last = 0;
-//     for (const p of pieces) {
-//         if (last < p.start) out.push(plain(visible.slice(last, p.start)));
-//         out.push(p.html);
-//         last = p.end;
-//     }
-//     if (last < visible.length) out.push(plain(visible.slice(last)));
-//
-//     tweetContent.innerHTML = out.join('');
-//
-//     return repostAuthorHandle;
-// }
 
 export function insertRepostedBanner(
     banner: HTMLElement,
@@ -385,7 +309,7 @@ function updateTweetCardArea(
     const expanded = normalizeUrl(card.vanityUrl) || undefined; // 作为 data-expanded-url
 
     const title = card.title || card.domain || card.vanityUrl || "";
-    const desc  = card.description || "";
+    const desc = card.description || "";
     const thumb = card.mainImageUrl;
     const domainText = card.domain?.replace(/^https?:\/\//, "");
 
@@ -431,5 +355,83 @@ function updateTweetCardArea(
     }
 
     a.appendChild(meta);
+    container.appendChild(a);
+}
+
+
+// —— 辅助：识别 twitter/x 的 status 链接（expanded_url）
+function isTwitterStatusUrl(href: string | undefined): boolean {
+    if (!href) return false;
+    try {
+        const u = new URL(href);
+        const host = u.hostname.toLowerCase();
+        if (host !== 'twitter.com' && host !== 'www.twitter.com' &&
+            host !== 'x.com' && host !== 'www.x.com') return false;
+        return /\/[^/]+\/status\/\d+/.test(u.pathname);
+    } catch {
+        return false;
+    }
+}
+
+// —— 从当前“主推文”的 entities 里找出“引用短链”的 t.co（用于隐藏）
+//    思路：当存在 quotedStatus 时，正文末尾通常有一条指向 /status/ 的 url；
+//    我们把这条 url 的短链（u.url）加入隐藏集合即可。
+function collectQuoteShortUrlsForMain(tweet: TweetContent, hasQuoted: boolean): string[] {
+    if (!hasQuoted) return [];
+    const arr = tweet.entities?.urls ?? [];
+    const hit = arr.filter(u => isTwitterStatusUrl(u.expanded_url));
+    return hit.map(u => u.url).filter(Boolean);
+}
+
+// —— 渲染“简版引用卡”（只作者+文本，不渲染媒体/卡片）
+function updateTweetQuoteArea(container: HTMLElement, quoted: TweetObj) {
+    // 清空容器
+    container.innerHTML = '';
+
+    // 外层卡片（整块可点击）
+    const a = document.createElement('a');
+    a.className = 'quote-card';
+    a.href = `/${quoted.author.screenName}/status/${quoted.tweetContent.id_str}`;
+    // 走你现有的内部路由
+    try {
+        bindTwitterInternalLink(a, a.href);
+    } catch {
+    }
+
+    // 头部：头像 + 昵称 + @handle
+    const header = document.createElement('div');
+    header.className = 'quote-header';
+
+    const av = document.createElement('img');
+    av.className = 'avatar small';
+    av.src = quoted.author.avatarImgUrl;
+    av.alt = quoted.author.displayName;
+
+    const meta = document.createElement('div');
+    meta.className = 'quote-author';
+    const dn = document.createElement('span');
+    dn.className = 'display-name';
+    dn.textContent = quoted.author.displayName;
+    const hd = document.createElement('span');
+    hd.className = 'handle';
+    hd.textContent = `@${quoted.author.screenName}`;
+    meta.appendChild(dn);
+    meta.appendChild(hd);
+
+    header.appendChild(av);
+    header.appendChild(meta);
+
+    // 正文：只文本（含实体高亮），不渲染媒体/卡片（下一步再加）
+    const body = document.createElement('div');
+    body.className = 'quote-body';
+    const inner = document.createElement('div');
+    inner.className = 'tweet-content';
+    body.appendChild(inner);
+
+    // 这里复用你已有的内容渲染逻辑（不传隐藏集合，引用内容不用吞“引用短链”）
+    updateTweetContentArea(body as unknown as HTMLElement, quoted.tweetContent);
+
+    a.appendChild(header);
+    a.appendChild(body);
     container.appendChild(a);
 }
