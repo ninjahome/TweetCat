@@ -702,3 +702,18 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tweet-content .hashtag { /* #测试    */ }
 
 .tweet-card-area { margin-top: 8px; }
+
+
+.tweet-quote-area { margin-top: 8px; }
+.tweet-quote-area .quote-card {
+    display: block;
+    border: 1px solid rgba(239,243,244,1);
+    border-radius: 12px;
+    padding: 8px;
+    text-decoration: none;
+    color: inherit;
+}
+.tweet-quote-area .quote-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.tweet-quote-area .avatar.small { width: 24px; height: 24px; border-radius: 50%; }
+.tweet-quote-area .quote-author .display-name { font-weight: 600; margin-right: 6px; }
+.tweet-quote-area .quote-author .handle { color: rgb(83,100,113); font-size: 12px; }

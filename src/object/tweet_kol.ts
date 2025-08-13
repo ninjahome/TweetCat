@@ -1,7 +1,6 @@
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {__tableKolsInCategory, databaseQueryAll, databaseQueryByFilter} from "../common/database";
-import {an} from "vitest/dist/chunks/reporters.d.BFLkQcL6";
 
 export class TweetKol {
     kolName: string;
