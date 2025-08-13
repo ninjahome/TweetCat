@@ -62,7 +62,8 @@ function assembleVisibleHtml(full: string, visibleS: number, visibleE: number, p
 }
 
 // ===== integrate =====
-export function updateTweetContentArea(container: HTMLElement, tweet: TweetContent) {
+export function updateTweetContentArea(container: HTMLElement, tweet: TweetContent,
+                                       opts?: { hiddenShortUrls?: Iterable<string> }) {
     const tweetContent = container.querySelector(".tweet-content") as HTMLElement | null;
     if (!tweetContent) {
         console.log("------>>> tweet content not found:", container);
@@ -72,7 +73,10 @@ export function updateTweetContentArea(container: HTMLElement, tweet: TweetConte
     tweetContent.setAttribute('dir', 'auto');
     if (tweet.lang) tweetContent.setAttribute('lang', tweet.lang);
 
-    tweetContent.innerHTML = buildVisibleWithEntitiesHTML(tweet);
+    tweetContent.innerHTML = buildVisibleWithEntitiesHTML(
+        tweet,
+        opts?.hiddenShortUrls ?? []   // ← 新增
+    );
 }
 
 
@@ -118,17 +122,16 @@ function collectUrlPiecesWithHiddenSet(
         let e = clamp(u.indices?.[1] ?? 0, 0, full.length);
         if (e <= visibleS || s >= visibleE) return [];
 
-        // ✅ 如果是“需要隐藏”的短链（媒体占位），连同两侧空白一起吞掉
         if (u?.url && hiddenShortUrls.has(u.url)) {
             // 向左吃掉前导空白
             while (s > visibleS && isWS(full[s - 1])) s--;
             // 向右吃掉后缀空白
             while (e < visibleE && isWS(full[e])) e++;
-            return [{ start: s, end: e, html: '' }];
+            return [{start: s, end: e, html: ''}];
         }
 
         // ✅ 正常链接：href 用 t.co，label 用 display_url，title 用 expanded_url
-        const href  = u.url ?? u.expanded_url ?? '';
+        const href = u.url ?? u.expanded_url ?? '';
         const label = u.display_url ?? href;
         const title = u.expanded_url ?? href;
 
@@ -144,18 +147,22 @@ function collectUrlPiecesWithHiddenSet(
     });
 }
 
-export function buildVisibleWithEntitiesHTML(tweet: TweetContent): string {
+export function buildVisibleWithEntitiesHTML(tweet: TweetContent,
+                                             extraHiddenShortUrls: Iterable<string> = []): string {
     const full = tweet.full_text ?? '';
     const [start, end] = getVisibleRange(tweet, full);
 
     // 新增：媒体短链隐藏集合
     const hiddenMedia = getHiddenMediaShortUrls(tweet);
 
+    // ✅ 新增：合并“外部隐藏项”
+    const hidden = new Set<string>(hiddenMedia);
+    for (const u of extraHiddenShortUrls) hidden.add(u);
+
     const pieces: Piece[] = [];
     pieces.push(...collectMentionPieces(tweet, full, start, end));
     pieces.push(...collectHashtagPieces(tweet, full, start, end));
-    // 改为带隐藏集合的 URL 收集器
-    pieces.push(...collectUrlPiecesWithHiddenSet(tweet, full, start, end, hiddenMedia));
+    pieces.push(...collectUrlPiecesWithHiddenSet(tweet, full, start, end, hidden));
 
     return assembleVisibleHtml(full, start, end, pieces);
 }

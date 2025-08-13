@@ -1,4 +1,4 @@
-import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./tweet_entry";
+import {EntryObj, TweetAuthor, TweetCard, TweetContent, TweetMediaEntity} from "./tweet_entry";
 import {formatCount, formatTweetTime} from "../common/utils";
 
 import {videoRender} from "./video_render";
@@ -29,11 +29,23 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
         insertRepostedBanner(article.querySelector(".tweet-topmargin") as HTMLElement, outer.author); // 你自己的函数
     }
 
-    // 4. 正文文本 = target.tweetContent.full_text  (注意 entity 等都用 target)
-    updateTweetContentArea(article.querySelector(".tweet-body") as HTMLElement, target.tweetContent);
+    // ✅ 新增：收集“需要隐藏的短链”——当前只需要卡片短链
+    const extraHiddenShortUrls = collectCardShortUrls(target);
+
+    // ✅ 传入隐藏集合
+    updateTweetContentArea(
+        article.querySelector(".tweet-body") as HTMLElement,
+        target.tweetContent,
+        {hiddenShortUrls: extraHiddenShortUrls}
+    );
 
     updateTweetMediaArea(article.querySelector(".tweet-media-area") as HTMLElement,
         target.tweetContent, tpl);
+
+    if (target.card) {
+        updateTweetCardArea(article.querySelector(".tweet-card-area") as HTMLElement,
+            target.card);
+    }
 
     updateTweetBottomButtons(article.querySelector(".tweet-actions") as HTMLElement,
         target.tweetContent, target.author.screenName, target.views_count);
@@ -343,4 +355,81 @@ function bindTwitterInternalLink(element: HTMLAnchorElement, path: string) {
         dispatchEvent(new PopStateEvent('popstate'));
     });
     element.dataset.hasProtected = 'true';
+}
+
+function collectCardShortUrls(target: { card: { url?: string } | null }): string[] {
+    const list: string[] = [];
+    const tco = target.card?.url;     // 来自 TweetCard.binding_values.card_url
+    if (tco) list.push(tco);
+    return list;
+}
+
+
+function normalizeUrl(u?: string): string | undefined {
+    if (!u) return;
+    // 已经有协议
+    if (/^https?:\/\//i.test(u)) return u;
+    return `https://${u}`;
+}
+
+function updateTweetCardArea(
+    container: HTMLElement,
+    card: TweetCard | null,
+    _tpl?: HTMLTemplateElement,
+): void {
+    if (!container) return;
+    container.innerHTML = "";
+    if (!card) return;
+
+    const hrefTco = card.url || card.vanityUrl || "#";          // 点击走 t.co（与官方一致）
+    const expanded = normalizeUrl(card.vanityUrl) || undefined; // 作为 data-expanded-url
+
+    const title = card.title || card.domain || card.vanityUrl || "";
+    const desc  = card.description || "";
+    const thumb = card.mainImageUrl;
+    const domainText = card.domain?.replace(/^https?:\/\//, "");
+
+    const a = document.createElement("a");
+    a.className = "inline-link inline-link-card";
+    a.href = hrefTco;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    if (title) a.title = title;
+    if (expanded) a.dataset.expandedUrl = expanded;
+
+    if (thumb) {
+        const thumbWrap = document.createElement("div");
+        thumbWrap.className = "thumb";
+        const img = document.createElement("img");
+        img.src = thumb;
+        img.loading = "lazy";
+        img.alt = title || domainText || "link";
+        thumbWrap.appendChild(img);
+        a.appendChild(thumbWrap);
+    }
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+
+    const titleDiv = document.createElement("div");
+    titleDiv.className = "title";
+    titleDiv.textContent = title || (card.vanityUrl ?? "");
+    meta.appendChild(titleDiv);
+
+    if (desc) {
+        const descDiv = document.createElement("div");
+        descDiv.className = "desc";
+        descDiv.textContent = desc;
+        meta.appendChild(descDiv);
+    }
+
+    if (domainText) {
+        const domainDiv = document.createElement("div");
+        domainDiv.className = "desc";
+        domainDiv.textContent = domainText;
+        meta.appendChild(domainDiv);
+    }
+
+    a.appendChild(meta);
+    container.appendChild(a);
 }

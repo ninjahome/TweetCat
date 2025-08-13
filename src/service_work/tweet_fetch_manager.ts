@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 import {logBGT} from "../common/debug_flags";
 import {loadAllKolIds} from "../object/tweet_kol";
-import {KolCursor, loadAllKolCursors, loadCursorById, loadCursorsForKols} from "../object/kol_cursor";
+import {KolCursor, loadCursorById} from "../object/kol_cursor";
 import {sendMessageToX} from "./bg_msg";
 import {MsgType} from "../common/consts";
 
@@ -92,7 +92,13 @@ export class TweetFetcherManager {
 
         while (scanCount < maxScan && found < this.MAX_KOL_PER_ROUND) {
             const userId = kolIds[idx % total];
-            const cursor = await loadCursorById(userId) ?? new KolCursor(userId);
+            const cursorData = await loadCursorById(userId);
+            let cursor: KolCursor | null = null;
+            if (!cursorData) {
+                cursor = new KolCursor(userId);
+            } else {
+                cursor = KolCursor.fromJSON(cursorData);
+            }
             const canUse = newest ? cursor.canFetchNew() : cursor.needFetchOld();
             if (canUse) {
                 result.push(cursor);
