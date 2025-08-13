@@ -188,9 +188,15 @@ export class TweetFetcherManager {
 
     async queuePush(kolID: string) {
         logBGT(`[queuePush] ♻️ New kol ${kolID} need to push in immediate queue`);
-        await this.loadRuntimeStateFromStorage()
-        this.immediateQueue.push(kolID);
-        await this.saveRuntimeStateToStorage();
+        await this.loadRuntimeStateFromStorage();
+
+        // 去重：如果已存在则不重复加入
+        if (!this.immediateQueue.includes(kolID)) {
+            this.immediateQueue.push(kolID);
+            await this.saveRuntimeStateToStorage();
+        } else {
+            logBGT(`[queuePush] 🚫 kol ${kolID} already in immediate queue, skip`);
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 import {fetchTweets, getUserIdByUsername} from "./twitter_api";
-import {parseTwitterPath, sendMsgToService, sleep} from "../common/utils";
+import {sendMsgToService, sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
 import {KolCursor, queryCursorByKolID, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW} from "./db_raw_tweet";
@@ -167,13 +167,6 @@ export async function startToFetchTweets(data: tweetFetchParam) {
 
 
 export async function fetchImmediateInNextRound(kolName: string, kolUserId?: string) {
-    // const linkInfo = parseTwitterPath(window.location.href);
-    // const isViewKolProfile = linkInfo.kind === "profile" && linkInfo.username === kolName;
-    // if (isViewKolProfile) {
-    //     logFT("🔒 current page is kol home, try to fetch tweets later for kol:", kolName);
-    //     return;
-    // }
-
     let kolID = kolUserId
     if (!kolID) {
         kolID = await getUserIdByUsername(kolName) ?? undefined
@@ -184,9 +177,6 @@ export async function fetchImmediateInNextRound(kolName: string, kolUserId?: str
     }
 
     await sendMsgToService(kolID, MsgType.TimerKolInQueueAtOnce);
-
-    // dedupePush({kolName, kolUserId, tryLater: isViewKolProfile});
-    // startLoopIfNeeded();
 }
 
 function printStatus(tag: string, cursor: KolCursor) {
@@ -200,65 +190,3 @@ function printStatus(tag: string, cursor: KolCursor) {
     console.log(`           ❌ Failure Count: ${cursor.failureCount}`);
     console.log(`           🌐 Network Valid: ${cursor.networkValid}`);
 }
-
-
-type QueueItem = { kolName: string; kolUserId?: string, tryLater: boolean; };
-
-const TICK_MS = 15_000;
-const queue: QueueItem[] = [];
-let timerId: number | null = null;
-
-function dedupePush(item: QueueItem) {
-    const exists = queue.some(q =>
-        (item.kolUserId && q.kolUserId === item.kolUserId) ||
-        (!item.kolUserId && q.kolName === item.kolName)
-    );
-    if (exists) return;
-    queue.push(item);
-    logFT("[dedupePush]🧪 queued kol newest tweets request :", item.kolName);
-}
-
-function startLoopIfNeeded() {
-    if (timerId !== null) return;
-    const tick = async () => {
-
-        try {
-            if (queue.length === 0) {
-                stopLoop();
-                return;
-            }
-
-            const item = queue.shift()!;
-            if (item.tryLater) {
-                logFT("[startLoopIfNeeded]🚨 need to load this kol next round:", item.kolName);
-                item.tryLater = false;
-                queue.push(item);
-                return;
-            }
-
-            try {
-                logFT("[startLoopIfNeeded]🔁 timer starting fetching new tweets for kol:", item.kolName);
-                await tweetFetcher.fetchNewKolImmediate(item.kolName, item.kolUserId);
-                logFT("[startLoopIfNeeded]♻️ fetch  finished tweets for new kol:", item.kolName);
-
-            } catch (e) {
-                // 失败就丢弃；如果你想重试，可在这里 queue.push(item)
-                console.warn("[immediate-queue] fetch failed:", item, e);
-            }
-        } finally {
-            timerId = window.setTimeout(tick, TICK_MS);
-        }
-    };
-
-    timerId = window.setTimeout(tick, 0);
-}
-
-function stopLoop() {
-    if (timerId !== null) {
-        clearTimeout(timerId);
-        timerId = null;
-    }
-}
-
-window.addEventListener("beforeunload", stopLoop);
-

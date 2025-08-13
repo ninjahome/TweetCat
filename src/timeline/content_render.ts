@@ -44,22 +44,6 @@ function collectHashtagPieces(tweet: TweetContent, full: string, visibleS: numbe
     });
 }
 
-// urls（Step 2 不做隐藏判断）
-function collectUrlPieces(tweet: TweetContent, full: string, visibleS: number, visibleE: number): Piece[] {
-    const arr = tweet.entities?.urls ?? [];
-    return arr.flatMap(u => {
-        const s = clamp(u.indices?.[0] ?? 0, 0, full.length);
-        const e = clamp(u.indices?.[1] ?? 0, 0, full.length);
-        if (e <= visibleS || s >= visibleE) return [];
-        const href = u.expanded_url ?? u.url;
-        const label = u.display_url ?? href;
-        return [{
-            start: s, end: e,
-            html: `<a class="url" href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(label)}</a>`
-        }];
-    });
-}
-
 // 把 pieces 填回可见区，其他文本用 plain()
 function assembleVisibleHtml(full: string, visibleS: number, visibleE: number, pieces: Piece[]): string {
     const sorted = pieces.slice().sort((a, b) => a.start - b.start);
@@ -84,6 +68,10 @@ export function updateTweetContentArea(container: HTMLElement, tweet: TweetConte
         console.log("------>>> tweet content not found:", container);
         return;
     }
+
+    tweetContent.setAttribute('dir', 'auto');
+    if (tweet.lang) tweetContent.setAttribute('lang', tweet.lang);
+
     tweetContent.innerHTML = buildVisibleWithEntitiesHTML(tweet);
 }
 
@@ -112,6 +100,7 @@ function getHiddenMediaShortUrls(tweet: TweetContent): Set<string> {
     return set;
 }
 
+
 function collectUrlPiecesWithHiddenSet(
     tweet: TweetContent,
     full: string,
@@ -120,26 +109,40 @@ function collectUrlPiecesWithHiddenSet(
     hiddenShortUrls: Set<string>
 ): Piece[] {
     const arr = tweet.entities?.urls ?? [];
+
+    // 小工具：判断“空白”（空格/制表/换行）
+    const isWS = (ch: string) => ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r' || ch === '\f';
+
     return arr.flatMap(u => {
-        const s = clamp(u.indices?.[0] ?? 0, 0, full.length);
-        const e = clamp(u.indices?.[1] ?? 0, 0, full.length);
+        let s = clamp(u.indices?.[0] ?? 0, 0, full.length);
+        let e = clamp(u.indices?.[1] ?? 0, 0, full.length);
         if (e <= visibleS || s >= visibleE) return [];
 
-        // 命中“需要隐藏”的短链：用空片段覆盖该区间（不输出）
+        // ✅ 如果是“需要隐藏”的短链（媒体占位），连同两侧空白一起吞掉
         if (u?.url && hiddenShortUrls.has(u.url)) {
+            // 向左吃掉前导空白
+            while (s > visibleS && isWS(full[s - 1])) s--;
+            // 向右吃掉后缀空白
+            while (e < visibleE && isWS(full[e])) e++;
             return [{ start: s, end: e, html: '' }];
         }
 
-        // 正常可点击链接（仍然是 Step 2 的简单策略）
-        const href = u.expanded_url ?? u.url;
+        // ✅ 正常链接：href 用 t.co，label 用 display_url，title 用 expanded_url
+        const href  = u.url ?? u.expanded_url ?? '';
         const label = u.display_url ?? href;
+        const title = u.expanded_url ?? href;
+
         return [{
-            start: s, end: e,
-            html: `<a class="url" href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(label)}</a>`
+            start: s,
+            end: e,
+            html:
+                `<a class="url" href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer" ` +
+                `title="${escapeHTML(title)}" data-expanded-url="${escapeHTML(title)}">` +
+                `${escapeHTML(label)}` +
+                `</a>`
         }];
     });
 }
-
 
 export function buildVisibleWithEntitiesHTML(tweet: TweetContent): string {
     const full = tweet.full_text ?? '';
@@ -156,3 +159,5 @@ export function buildVisibleWithEntitiesHTML(tweet: TweetContent): string {
 
     return assembleVisibleHtml(full, start, end, pieces);
 }
+
+

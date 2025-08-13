@@ -602,3 +602,101 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     color: rgb(29, 155, 240);
     font-weight: 700;
 }
+
+
+/* 推文正文中的 inline media（图片/视频） */
+.tweet-content .inline-media {
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 100%;
+    border-radius: 16px; /* 和 img, video 保持一致 */
+    overflow: hidden;
+}
+
+/* 推文正文中的链接卡片（step3） */
+.tweet-content .inline-link {
+    display: inline-block;
+    max-width: 100%;
+    text-decoration: none;
+    border: 1px solid rgb(239, 243, 244);
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #fff;
+    color: inherit;
+    vertical-align: middle;
+}
+
+.tweet-content .inline-link:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.inline-link-card {
+    display: flex;
+    align-items: stretch;
+}
+
+.inline-link-card .thumb {
+    flex: 0 0 72px;
+    height: 72px;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+
+.inline-link-card .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.inline-link-card .meta {
+    flex: 1;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.inline-link-card .title {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgb(15, 20, 25);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inline-link-card .desc {
+    font-size: 12px;
+    color: rgb(83, 100, 113);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* 正文排版基础（如果你已有类似规则可忽略） */
+.tweet-content {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+/* 统一链接外观（与 X 接近） */
+.tweet-content a {
+    text-decoration: none;
+    color: rgb(29, 155, 240); /* 主题可抽成变量 */
+}
+.tweet-content a:hover {
+    text-decoration: underline;
+}
+
+/* 实体稍微强调一下字重 */
+.tweet-content .mention,
+.tweet-content .hashtag,
+.tweet-content .cashtag {
+    font-weight: 500;
+}
+
+/* 如果你想分别定制，也可以加： */
+.tweet-content .url     { /* 普通链接 */ }
+.tweet-content .mention { /* @alice   */ }
+.tweet-content .hashtag { /* #测试    */ }
