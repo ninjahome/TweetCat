@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "node",
     "strict": true,
@@ -9,7 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "./extension/js",
     "baseUrl": ".",
-    "lib": ["dom", "es2015"],
+    "lib": ["DOM", "ES2022"],
     "paths": {
       "*": ["node_modules/*"]
     }
