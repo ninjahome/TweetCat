@@ -339,7 +339,7 @@ export class TweetObj {
     retweetedStatus?: TweetObj;
     quotedStatus?: TweetObj;
 
-    constructor(raw: any, opts?: { isQuoted?: boolean }) {
+    constructor(raw: any,  isQuoted = false) {
         const data = raw?.tweet ?? raw;
         this.rest_id = data.rest_id;
         this.unmention_data = data.unmention_data;
@@ -356,13 +356,18 @@ export class TweetObj {
                 data.legacy.retweeted_status_result.result
             );
         }
-
-        if (!opts?.isQuoted) {
-            const q = data?.quoted_status_result?.result
-                ?? data?.legacy?.quoted_status_result?.result; // 保险兼容
-            if (q) {
-                this.quotedStatus = new TweetObj(q);
+        if (!isQuoted) {
+            const q = data?.quoted_status_result?.result ?? data?.legacy?.quoted_status_result?.result;
+            if (q?.__typename === 'Tweet') {
+                this.quotedStatus = new TweetObj(q, /*isQuoted*/ true);
             }
+            // 如果是 tombstone，先记个标记（后面 step6-5 再渲染墓碑）
+            // else if (q?.__typename === 'TextTombstone') { this.quotedTombstone = extractTombstoneText(q); }
+        }
+
+        const r = data?.legacy?.retweeted_status_result?.result ?? data?.retweeted_status_result?.result;
+        if (r?.__typename === 'Tweet' && r?.core?.user_results?.result) {
+            this.retweetedStatus = new TweetObj(r, /*isQuoted*/ false);
         }
     }
 
