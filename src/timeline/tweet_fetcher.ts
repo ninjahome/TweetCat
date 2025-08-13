@@ -7,10 +7,12 @@ import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {MsgType} from "../common/consts";
 import {EntryObj} from "./tweet_entry";
 import {showNewestTweets} from "../content/content_filter";
+import {updateKolIdToSw} from "../object/tweet_kol";
+
+const MIN_FETCH_GAP = 5_000;
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
-    private readonly MIN_FETCH_GAP = 5_000;
     private notificationContainer: HTMLElement | null = null;
     private latestNewTweets: EntryObj[] = [];
 
@@ -98,7 +100,7 @@ export class TweetFetcher {
             printStatus("------>>>✅after process:", cursor)
             await saveOneKolCursorToSW(cursor);
 
-            await sleep(this.MIN_FETCH_GAP);
+            await sleep(MIN_FETCH_GAP);
         }
 
         if (newest && this.latestNewTweets.length > 0) {
@@ -189,4 +191,26 @@ function printStatus(tag: string, cursor: KolCursor) {
     console.log(`           💾 Cache Enough: ${cursor.cacheEnough}`);
     console.log(`           ❌ Failure Count: ${cursor.failureCount}`);
     console.log(`           🌐 Network Valid: ${cursor.networkValid}`);
+}
+
+
+export async function startToCheckKolId(ids: any[]) {
+
+    for (let i = 0; i < ids.length; i++) {
+        const kolInfo = ids[i];
+        logFT("------>>>🌐start to fetch id for:", JSON.stringify(kolInfo))
+
+        const kolId = await getUserIdByUsername(kolInfo.kolName);
+        if (!kolId) {
+            console.log("------>>> failed find kol id for:", kolInfo.kolName);
+            continue;
+        }
+
+        kolInfo.kolUserId = kolId;
+        await updateKolIdToSw(kolInfo);
+        logFT("------>>>✅after to fetch id for:", JSON.stringify(kolInfo))
+
+        await sleep(MIN_FETCH_GAP);
+    }
+
 }

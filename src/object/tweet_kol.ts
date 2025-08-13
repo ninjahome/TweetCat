@@ -1,6 +1,7 @@
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {__tableKolsInCategory, databaseQueryAll, databaseQueryByFilter} from "../common/database";
+import {an} from "vitest/dist/chunks/reporters.d.BFLkQcL6";
 
 export class TweetKol {
     kolName: string;
@@ -53,7 +54,9 @@ function dbObjectToKolArray(obj: any[]): TweetKol[] {
 }
 
 function extractKolUserIds(obj: any[]): string[] {
-    return obj.map(k => k.kolUserId);
+    return obj
+        .map(k => k.kolUserId)
+        .filter((id): id is string => typeof id === 'string' && id.trim().length > 0);
 }
 
 /**************************************************
@@ -88,3 +91,6 @@ export async function queryKolIdsFromSW(): Promise<string[]> {
     return extractKolUserIds(rsp.data as any[])
 }
 
+export async function updateKolIdToSw(kol:any){
+    await sendMsgToService(kol, MsgType.KolUpdate);
+}

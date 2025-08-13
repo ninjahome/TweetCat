@@ -2,7 +2,7 @@ import {observeForElement, sendMsgToService} from "../common/utils";
 import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
 import {parseContentHtml} from "./content";
 import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
-import {TweetKol} from "../object/tweet_kol";
+import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {getTweetCatFlag, isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
@@ -118,7 +118,7 @@ async function _kolCompletion(kol: TweetKol) {
         return;
     }
 
-    await sendMsgToService(kol, MsgType.KolUpdate);
+    await updateKolIdToSw(kol);
     console.log("------>>> update kol data success", kol)
 }
 

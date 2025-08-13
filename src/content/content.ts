@@ -9,7 +9,7 @@ import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils"
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatUI} from "../timeline/timeline_ui";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
-import {startToFetchTweets} from "../timeline/tweet_fetcher";
+import {startToCheckKolId, startToFetchTweets} from "../timeline/tweet_fetcher";
 import {setTweetCatFlag} from "../timeline/route_helper";
 
 export function isHomePage(): boolean {
@@ -80,6 +80,12 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
         case MsgType.StartTweetsFetch: {
             startToFetchTweets(request.data as tweetFetchParam).then()
+            sendResponse({success: true});
+            break;
+        }
+
+        case MsgType.StartKolIdCheck:{
+            startToCheckKolId(request.data).then()
             sendResponse({success: true});
             break;
         }

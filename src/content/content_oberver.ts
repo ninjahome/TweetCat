@@ -2,7 +2,7 @@ import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
 import {__DBK_AD_Block_Key, choseColorByID, MsgType} from "../common/consts";
 import {isAdTweetNode, sendMsgToService} from "../common/utils";
 import {localGet, localSet} from "../common/local_storage";
-import {TweetKol} from "../object/tweet_kol";
+import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {fetchImmediateInNextRound} from "../timeline/tweet_fetcher";
@@ -161,7 +161,7 @@ async function _kolCompletion(kol: TweetKol, tweetCellDiv: HTMLElement) {
     if (!needUpDateKolData) {
         return;
     }
-    await sendMsgToService(kol, MsgType.KolUpdate);
+    await updateKolIdToSw(kol);
     console.log("------>>> update kol data success", kol)
 }
 
@@ -248,7 +248,7 @@ async function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: Tw
     _setItemActive(menuItem, cat.id!);
 
     kol.catID = cat.id;
-    await sendMsgToService(kol, MsgType.KolUpdate);
+    await updateKolIdToSw(kol);
     fetchImmediateInNextRound(kol.kolName, kol.kolUserId).then();
 }
 

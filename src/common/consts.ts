@@ -24,6 +24,7 @@ export enum MsgType {
     OpenPlugin = 'OpenPlugin',
     NaviUrlChanged = 'NaviUrlChanged',
     StartTweetsFetch = 'StartTweetsFetch',
+    StartKolIdCheck = 'StartKolIdCheck',
 
     CategoryQueryAll = 'CategoryQueryAll',
     CategoryChanged = 'CategoryChanged',
