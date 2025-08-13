@@ -167,12 +167,12 @@ export async function startToFetchTweets(data: tweetFetchParam) {
 
 
 export async function fetchImmediateInNextRound(kolName: string, kolUserId?: string) {
-    const linkInfo = parseTwitterPath(window.location.href);
-    const isViewKolProfile = linkInfo.kind === "profile" && linkInfo.username === kolName;
-    if (isViewKolProfile) {
-        logFT("🔒 current page is kol home, try to fetch tweets later for kol:", kolName);
-        return;
-    }
+    // const linkInfo = parseTwitterPath(window.location.href);
+    // const isViewKolProfile = linkInfo.kind === "profile" && linkInfo.username === kolName;
+    // if (isViewKolProfile) {
+    //     logFT("🔒 current page is kol home, try to fetch tweets later for kol:", kolName);
+    //     return;
+    // }
 
     let kolID = kolUserId
     if (!kolID) {

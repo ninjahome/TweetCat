@@ -3,6 +3,7 @@ import {formatCount, formatTweetTime} from "../common/utils";
 
 import {videoRender} from "./video_render";
 import {setTweetCatFlag} from "./route_helper";
+import {updateTweetContentArea} from "./content_render";
 
 export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;
@@ -98,106 +99,90 @@ export function updateTweetTopButtonArea(headerMeta: Element, author: TweetAutho
     }
 }
 
-
-export function updateTweetContentArea(
-    container: HTMLElement,
-    tweet: TweetContent,
-): string | undefined {
-
-    const tweetContent = container.querySelector(".tweet-content") as HTMLElement;
-    if (!tweetContent) {
-        console.log("------>>> tweet content not found:", container);
-        return;
-    }
-
-    /* ---------- 1. 判断是否为 Retweet ---------- */
-    let repostAuthorHandle: string | undefined;
-    let visible = tweet.full_text;
-    const m = /^RT\s+@(\w+):\s+/u.exec(visible);
-    if (m) {
-        repostAuthorHandle = m[1];
-        visible = visible.slice(m[0].length);
-    }
-
-    /* ---------- 2. 使用 display_text_range 裁剪 ---------- */
-    const cps = [...visible];
-    const [start, end] = tweet.display_text_range;
-    visible = cps.slice(start, end).join('');
-
-    /* ---------- 3. 收集 media 占位短链 ---------- */
-    const mediaTco = new Set<string>();
-    tweet.extended_entities?.media?.forEach(m => mediaTco.add(m.url));
-
-    /* ---------- 4. 移除正文中的 media t.co 占位 ---------- */
-    if (mediaTco.size) {
-        mediaTco.forEach(u => {
-            const re = new RegExp(`\\s*${escapeRegExp(u)}\\s*`, 'g');
-            visible = visible.replace(re, '');
-        });
-    }
-
-    /* ---------- 5. 构建实体映射 ---------- */
-    type Piece = { start: number; end: number; html: string };
-    const pieces: Piece[] = [];
-
-    tweet.entities.user_mentions.forEach(u =>
-        pieces.push({
-            start: u.indices[0],
-            end: u.indices[1],
-            html: `<a href="/${u.screen_name}" class="mention">@${u.screen_name}</a>`
-        }),
-    );
-    tweet.entities.hashtags.forEach(h =>
-        pieces.push({
-            start: h.indices[0],
-            end: h.indices[1],
-            html: `<a href="/hashtag/${h.text}" class="hashtag">#${h.text}</a>`
-        }),
-    );
-
-    // URL – 过滤 media 及裸短链
-    tweet.entities.urls.forEach(u => {
-        if (mediaTco.has(u.url)) return; // media 占位
-        const isBareTco = /^https?:\/\/t\.co\/[A-Za-z0-9]+$/u.test(u.expanded_url ?? u.url);
-        if (isBareTco) return;
-
-        pieces.push({
-            start: u.indices[0],
-            end: u.indices[1],
-            html: `<a href="${u.expanded_url}" class="url" target="_blank" rel="noopener noreferrer">${escapeHTML(u.display_url)}</a>`,
-        });
-    });
-
-    /* ---------- 6. 拼装 HTML ---------- */
-    pieces.sort((a, b) => a.start - b.start);
-    const out: string[] = [];
-    let last = 0;
-    for (const p of pieces) {
-        if (last < p.start) out.push(plain(visible.slice(last, p.start)));
-        out.push(p.html);
-        last = p.end;
-    }
-    if (last < visible.length) out.push(plain(visible.slice(last)));
-
-    tweetContent.innerHTML = out.join('');
-
-    return repostAuthorHandle;
-}
-
-/* ---------- helpers ---------- */
-function plain(txt: string): string {
-    return escapeHTML(txt).replace(/\n/g, '<br>');
-}
-
-/* ---------- tiny utils ---------- */
-function escapeHTML(str: string): string {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
+// export function updateTweetContentArea(
+//     container: HTMLElement,
+//     tweet: TweetContent,
+// ): string | undefined {
+//
+//     const tweetContent = container.querySelector(".tweet-content") as HTMLElement;
+//     if (!tweetContent) {
+//         console.log("------>>> tweet content not found:", container);
+//         return;
+//     }
+//
+//     /* ---------- 1. 判断是否为 Retweet ---------- */
+//     let repostAuthorHandle: string | undefined;
+//     let visible = tweet.full_text;
+//     const m = /^RT\s+@(\w+):\s+/u.exec(visible);
+//     if (m) {
+//         repostAuthorHandle = m[1];
+//         visible = visible.slice(m[0].length);
+//     }
+//
+//     /* ---------- 2. 使用 display_text_range 裁剪 ---------- */
+//     const cps = [...visible];
+//     const [start, end] = tweet.display_text_range;
+//     visible = cps.slice(start, end).join('');
+//
+//     /* ---------- 3. 收集 media 占位短链 ---------- */
+//     const mediaTco = new Set<string>();
+//     tweet.extended_entities?.media?.forEach(m => mediaTco.add(m.url));
+//
+//     /* ---------- 4. 移除正文中的 media t.co 占位 ---------- */
+//     if (mediaTco.size) {
+//         mediaTco.forEach(u => {
+//             const re = new RegExp(`\\s*${escapeRegExp(u)}\\s*`, 'g');
+//             visible = visible.replace(re, '');
+//         });
+//     }
+//
+//     /* ---------- 5. 构建实体映射 ---------- */
+//     type Piece = { start: number; end: number; html: string };
+//     const pieces: Piece[] = [];
+//
+//     tweet.entities.user_mentions.forEach(u =>
+//         pieces.push({
+//             start: u.indices[0],
+//             end: u.indices[1],
+//             html: `<a href="/${u.screen_name}" class="mention">@${u.screen_name}</a>`
+//         }),
+//     );
+//     tweet.entities.hashtags.forEach(h =>
+//         pieces.push({
+//             start: h.indices[0],
+//             end: h.indices[1],
+//             html: `<a href="/hashtag/${h.text}" class="hashtag">#${h.text}</a>`
+//         }),
+//     );
+//
+//     // URL – 过滤 media 及裸短链
+//     tweet.entities.urls.forEach(u => {
+//         if (mediaTco.has(u.url)) return; // media 占位
+//         const isBareTco = /^https?:\/\/t\.co\/[A-Za-z0-9]+$/u.test(u.expanded_url ?? u.url);
+//         if (isBareTco) return;
+//
+//         pieces.push({
+//             start: u.indices[0],
+//             end: u.indices[1],
+//             html: `<a href="${u.expanded_url}" class="url" target="_blank" rel="noopener noreferrer">${escapeHTML(u.display_url)}</a>`,
+//         });
+//     });
+//
+//     /* ---------- 6. 拼装 HTML ---------- */
+//     pieces.sort((a, b) => a.start - b.start);
+//     const out: string[] = [];
+//     let last = 0;
+//     for (const p of pieces) {
+//         if (last < p.start) out.push(plain(visible.slice(last, p.start)));
+//         out.push(p.html);
+//         last = p.end;
+//     }
+//     if (last < visible.length) out.push(plain(visible.slice(last)));
+//
+//     tweetContent.innerHTML = out.join('');
+//
+//     return repostAuthorHandle;
+// }
 
 function escapeRegExp(s: string): string {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -211,7 +196,7 @@ export function insertRepostedBanner(
     container.style.display = 'block';
     const a = banner.querySelector('a.retweet-link') as HTMLAnchorElement | null;
     if (a) {
-        bindTwitterInternalLink(a,`/${author.screenName}`)
+        bindTwitterInternalLink(a, `/${author.screenName}`)
     }
     const disp = banner.querySelector('.retweeter-name');
     if (disp) disp.textContent = author.displayName;
