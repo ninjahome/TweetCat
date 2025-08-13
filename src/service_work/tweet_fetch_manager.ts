@@ -76,21 +76,6 @@ export class TweetFetcherManager {
         logBGT("[resetState]🔴 State has been reset on browser startup");
     }
 
-    private async loadKolCursors(ids: string[] = []): Promise<Map<string, KolCursor>> {
-        const kolCursorMap = new Map<string, KolCursor>();
-        let data: any[]
-        if (ids.length === 0) data = await loadAllKolCursors();
-        else data = await loadCursorsForKols(ids);
-        for (const item of data) {
-            const cursor = KolCursor.fromJSON(item); // 或你定义的反序列化方法
-            if (this.bootStrap) {
-                cursor.markAsBootstrap();
-            }
-            kolCursorMap.set(cursor.userId, cursor);
-        }
-        return kolCursorMap;
-    }
-
     private async getNextKolGroup(newest: boolean = true): Promise<KolCursor[]> {
 
         const kolIds = await loadAllKolIds();
@@ -157,7 +142,13 @@ export class TweetFetcherManager {
 
         for (let i = 0; i < limit; i++) {
             const userId = this.immediateQueue.shift()!; // 从队列头取出并移除
-            const cursor = await loadCursorById(userId) ?? new KolCursor(userId);
+            const cursorData = await loadCursorById(userId);
+            let cursor: KolCursor | null = null;
+            if (!cursorData) {
+                cursor = new KolCursor(userId);
+            } else {
+                cursor = KolCursor.fromJSON(cursorData);
+            }
             immediateCursors.push(cursor);
         }
 

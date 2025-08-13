@@ -184,10 +184,6 @@ export function updateTweetTopButtonArea(headerMeta: Element, author: TweetAutho
 //     return repostAuthorHandle;
 // }
 
-function escapeRegExp(s: string): string {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 export function insertRepostedBanner(
     banner: HTMLElement,
     author: TweetAuthor,

@@ -87,16 +87,6 @@ async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): 
     return `${baseUrl}?variables=${variables}&features=${features}&fieldToggles=${fieldToggles}`;
 }
 
-async function fetchMultipleUsersTweets(userIds: string[], count: number) {
-    const requests = userIds.map(async userId => {
-            const url = await buildTweetQueryURL({userId, count});
-            fetch(url, {headers: { /* headers */}}).then(res => res.json())
-        }
-    );
-    return Promise.all(requests);
-}
-
-
 // 提取 csrf token
 function getCsrfToken(): string {
     const cookieMatch = document.cookie.match(/ct0=([^;]+)/);
