@@ -1,4 +1,10 @@
-import {__tableKolCursor, databaseGet, databasePutItem, databaseQueryAll} from "../common/database";
+import {
+    __tableKolCursor,
+    databaseGet,
+    databasePutItem,
+    databaseQueryAll,
+    databaseQueryByFilter
+} from "../common/database";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {logKC} from "../common/debug_flags";
@@ -100,6 +106,12 @@ export class KolCursor {
 export async function loadAllKolCursors() {
     return await databaseQueryAll(__tableKolCursor);
 }
+
+export async function loadCursorsForKols(ids: string[]) {
+    const idSet = new Set(ids);
+    return databaseQueryByFilter(__tableKolCursor, (item) => idSet.has(item.userId));
+}
+
 
 export async function writeKolsCursors(data: KolCursor[]) {
     for (const cursor of data) {

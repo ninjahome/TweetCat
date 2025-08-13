@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 import {logBGT} from "../common/debug_flags";
 import {loadAllKolIds} from "../object/tweet_kol";
-import {KolCursor, loadAllKolCursors} from "../object/kol_cursor";
+import {KolCursor, loadAllKolCursors, loadCursorById, loadCursorsForKols} from "../object/kol_cursor";
 import {sendMessageToX} from "./bg_msg";
 import {MsgType} from "../common/consts";
 
@@ -76,9 +76,11 @@ export class TweetFetcherManager {
         logBGT("[resetState]🔴 State has been reset on browser startup");
     }
 
-    private async loadKolCursors(): Promise<Map<string, KolCursor>> {
+    private async loadKolCursors(ids: string[] = []): Promise<Map<string, KolCursor>> {
         const kolCursorMap = new Map<string, KolCursor>();
-        const data = await loadAllKolCursors();
+        let data: any[]
+        if (ids.length === 0) data = await loadAllKolCursors();
+        else data = await loadCursorsForKols(ids);
         for (const item of data) {
             const cursor = KolCursor.fromJSON(item); // 或你定义的反序列化方法
             if (this.bootStrap) {
@@ -92,7 +94,6 @@ export class TweetFetcherManager {
     private async getNextKolGroup(newest: boolean = true): Promise<KolCursor[]> {
 
         const kolIds = await loadAllKolIds();
-        const kolCursorMap = await this.loadKolCursors();
 
         const total = kolIds.length;
         if (total === 0) return [];
@@ -106,12 +107,12 @@ export class TweetFetcherManager {
 
         while (scanCount < maxScan && found < this.MAX_KOL_PER_ROUND) {
             const userId = kolIds[idx % total];
-            const cursor = kolCursorMap.get(userId) ?? new KolCursor(userId);
+            const cursor = await loadCursorById(userId) ?? new KolCursor(userId);
             const canUse = newest ? cursor.canFetchNew() : cursor.needFetchOld();
             if (canUse) {
                 result.push(cursor);
                 found++;
-            }else{
+            } else {
                 logBGT("[getNextKolGroup]🔴Kol can't used:", JSON.stringify(cursor));
             }
             scanCount++;
@@ -150,14 +151,13 @@ export class TweetFetcherManager {
 
     async getImmediateCursors(): Promise<KolCursor[]> {
         const immediateCursors: KolCursor[] = [];
-        const kolCursorMap = await this.loadKolCursors();
 
         // 限制数量
         const limit = Math.min(this.immediateQueue.length, this.MAX_KOL_PER_ROUND);
 
         for (let i = 0; i < limit; i++) {
             const userId = this.immediateQueue.shift()!; // 从队列头取出并移除
-            const cursor = kolCursorMap.get(userId) ?? new KolCursor(userId);
+            const cursor = await loadCursorById(userId) ?? new KolCursor(userId);
             immediateCursors.push(cursor);
         }
 
@@ -172,8 +172,7 @@ export class TweetFetcherManager {
             logBGT(`[fetchTweetsPeriodic]Need to fetch immediate queue[${this.immediateQueue.length}] first`);
             cursorToFetch = await this.getImmediateCursors();
             newest = true;
-        }
-        else {
+        } else {
             cursorToFetch = await this.getNormalCursors();
             newest = this.newestFetch;
         }
