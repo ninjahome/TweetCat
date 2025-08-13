@@ -152,7 +152,11 @@ export class TweetFetcherManager {
         const immediateCursors: KolCursor[] = [];
         const kolCursorMap = await this.loadKolCursors();
 
-        for await (const userId of this.immediateQueue) {
+        // 限制数量
+        const limit = Math.min(this.immediateQueue.length, this.MAX_KOL_PER_ROUND);
+
+        for (let i = 0; i < limit; i++) {
+            const userId = this.immediateQueue.shift()!; // 从队列头取出并移除
             const cursor = kolCursorMap.get(userId) ?? new KolCursor(userId);
             immediateCursors.push(cursor);
         }
@@ -160,13 +164,13 @@ export class TweetFetcherManager {
         return immediateCursors;
     }
 
+
     async fetchTweetsPeriodic() {
         let cursorToFetch: KolCursor[];
         let newest: boolean;
         if (this.immediateQueue.length > 0) {
             logBGT(`[fetchTweetsPeriodic]Need to fetch immediate queue[${this.immediateQueue.length}] first`);
             cursorToFetch = await this.getImmediateCursors();
-            this.immediateQueue = [];
             newest = true;
         }
         else {
