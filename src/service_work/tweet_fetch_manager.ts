@@ -92,6 +92,7 @@ export class TweetFetcherManager {
 
         while (scanCount < maxScan && found < this.MAX_KOL_PER_ROUND) {
             const userId = kolIds[idx % total];
+            console.log('--------------------->>> kol id to query:', userId);
             const cursorData = await loadCursorById(userId);
             let cursor: KolCursor | null = null;
             if (!cursorData) {

@@ -123,7 +123,7 @@ export async function writeOneCursor(cursor: KolCursor) {
     await databasePutItem(__tableKolCursor, cursor);
 }
 
-export async function  loadCursorById(id:string): Promise<KolCursor>{
+export async function  loadCursorById(id:string): Promise<any>{
     return await databaseGet(__tableKolCursor, id);
 }
 /**************************************************

@@ -28,7 +28,7 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     if (outer.retweetedStatus) {
         insertRepostedBanner(article.querySelector(".tweet-topmargin") as HTMLElement, outer.author); // 你自己的函数
     }
-
+    console.log("-----------------------》》》》引用推文对象：", target.quotedTweet);
     // ✅ 新增：收集“需要隐藏的短链”——当前只需要卡片短链
     const extraHiddenShortUrls = collectCardShortUrls(target);
 

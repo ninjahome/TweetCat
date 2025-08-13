@@ -185,6 +185,6 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
         throw new Error(`HTTP error ${response.status}: ${errorText}`);
     }
     const result = await response.json();
-    // console.log("---------------->>>\n", result);
+    console.log("---------------->>>\n", result);
     return parseTimelineFromGraphQL(result);
 }
