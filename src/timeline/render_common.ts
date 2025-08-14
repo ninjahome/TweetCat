@@ -9,7 +9,7 @@ export const clamp = (n: number, min: number, max: number) => Math.max(min, Math
 export function isLargeCard(card: TweetCard): boolean {
     const first = card.images?.[0];
     const wide = first?.width && first?.height ? first.width / first.height >= 1.5 : false;
-    return /\bsummary_large_image\b/i.test(card.name || "") || !!wide;
+    return /\bsummary_large_image\b/i.test(card.name || "") || wide;
 }
 
 export function extractDomain(vanity?: string, fallback?: string): string {
