@@ -1,8 +1,5 @@
 import {TweetContent} from "./tweet_entry";
-// ==== types & tiny utils ====
-type Piece = { start: number; end: number; html: string };
-
-const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
+import {clamp, collectUrlPiecesWithHiddenSet, escapeHTML, getHiddenMediaShortUrls, Piece, plain} from "./render_common";
 
 // 可见区 [start,end)（暂按 code units，后续 Step 11 再统一索引体系）
 function getVisibleRange(tweet: TweetContent, full: string): [number, number] {
@@ -77,74 +74,6 @@ export function updateTweetContentArea(container: HTMLElement, tweet: TweetConte
         tweet,
         opts?.hiddenShortUrls ?? []   // ← 新增
     );
-}
-
-
-/* ---------- helpers ---------- */
-function plain(txt: string): string {
-    return escapeHTML(txt).replace(/\n/g, '<br>');
-}
-
-/* ---------- tiny utils ---------- */
-function escapeHTML(str: string): string {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-function getHiddenMediaShortUrls(tweet: TweetContent): Set<string> {
-    const set = new Set<string>();
-    const mediaArr = tweet.extended_entities?.media ?? [];
-    for (const m of mediaArr) {
-        if (m?.url) set.add(m.url);
-    }
-    return set;
-}
-
-
-function collectUrlPiecesWithHiddenSet(
-    tweet: TweetContent,
-    full: string,
-    visibleS: number,
-    visibleE: number,
-    hiddenShortUrls: Set<string>
-): Piece[] {
-    const arr = tweet.entities?.urls ?? [];
-
-    // 小工具：判断“空白”（空格/制表/换行）
-    const isWS = (ch: string) => ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r' || ch === '\f';
-
-    return arr.flatMap(u => {
-        let s = clamp(u.indices?.[0] ?? 0, 0, full.length);
-        let e = clamp(u.indices?.[1] ?? 0, 0, full.length);
-        if (e <= visibleS || s >= visibleE) return [];
-
-        if (u?.url && hiddenShortUrls.has(u.url)) {
-            // 向左吃掉前导空白
-            while (s > visibleS && isWS(full[s - 1])) s--;
-            // 向右吃掉后缀空白
-            while (e < visibleE && isWS(full[e])) e++;
-            return [{start: s, end: e, html: ''}];
-        }
-
-        // ✅ 正常链接：href 用 t.co，label 用 display_url，title 用 expanded_url
-        const href = u.url ?? u.expanded_url ?? '';
-        const label = u.display_url ?? href;
-        const title = u.expanded_url ?? href;
-
-        return [{
-            start: s,
-            end: e,
-            html:
-                `<a class="url" href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer" ` +
-                `title="${escapeHTML(title)}" data-expanded-url="${escapeHTML(title)}">` +
-                `${escapeHTML(label)}` +
-                `</a>`
-        }];
-    });
 }
 
 export function buildVisibleWithEntitiesHTML(tweet: TweetContent,

@@ -3,7 +3,7 @@
  * ------------------------------------------------------------------*/
 
 import {EntryObj} from "./tweet_entry";
-import {renderTweetHTML} from "./tweet_render";
+import {renderTweetHTML} from "./render_tweet";
 import {globalNodePool} from "./div_node_pool";
 import {logMount} from "../common/debug_flags";
 

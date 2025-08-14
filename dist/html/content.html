@@ -307,3 +307,19 @@
     </article>
     <div class="tweet-bottomline"></div>
 </div>
+
+<!-- 外链卡模板：small/large 共用，通过类名切换 -->
+<div id="tpl-inline-link-card">
+    <a class="inline-link inline-link-card" href="">
+        <div class="thumb">
+            <img class="card-img" alt="">
+            <!-- 可选播放浮层，先保留 DOM，样式在后续步骤启用 -->
+            <div class="card-play-icon" style="display:none;">▶</div>
+        </div>
+        <div class="meta">
+            <div class="title"></div>
+            <div class="desc js-card-desc"></div>
+            <div class="desc js-card-domain"></div>
+        </div>
+    </a>
+</div>

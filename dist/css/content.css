@@ -717,3 +717,24 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tweet-quote-area .avatar.small { width: 24px; height: 24px; border-radius: 50%; }
 .tweet-quote-area .quote-author .display-name { font-weight: 600; margin-right: 6px; }
 .tweet-quote-area .quote-author .handle { color: rgb(83,100,113); font-size: 12px; }
+
+
+/* 大图卡：图在上、文在下；与 small 共用结构，仅通过类名切换 */
+.inline-link-card--large { display: block; }
+.inline-link-card--large .thumb { width: 100%; position: relative; overflow: hidden; aspect-ratio: 16/9; }
+.inline-link-card--large .thumb .card-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.inline-link-card--large .meta { padding: 8px 12px 12px; }
+
+/* 播放浮层（命名沿用现有风格：icon 后缀） */
+.inline-link-card .thumb { position: relative; }
+.inline-link-card .card-play-icon {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,.5);
+    color: #fff;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 18px;
+    line-height: 1;
+}
