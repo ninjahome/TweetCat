@@ -42,7 +42,11 @@ export class TweetCard {
     mainImageUrl?: string;
     thumbnailColorPalette: TweetCardColor[] = [];
 
+    expandedUrl?: string;   // 完整 expanded（含 path/query）
+    entityUrl?: string;     // 对应卡片的 t.co 链接
+
     constructor(data: any) {
+        // === 原始字段 ===
         this.restId = data.rest_id || '';
         this.name = data.legacy?.name || '';
         this.url = data.legacy?.url || '';
@@ -69,6 +73,13 @@ export class TweetCard {
                 case 'vanity_url':
                     this.vanityUrl = v?.string_value;
                     break;
+
+                // === 新增：直接取 player_url 作为 expandedUrl ===
+                case 'player_url':
+                    this.expandedUrl = v?.string_value || this.expandedUrl;
+                    break;
+
+                // === 原有图片处理 ===
                 case 'thumbnail_image':
                 case 'thumbnail_image_small':
                 case 'thumbnail_image_large':
@@ -84,6 +95,13 @@ export class TweetCard {
                 case 'summary_photo_image_large':
                 case 'summary_photo_image_x_large':
                 case 'summary_photo_image_original':
+
+                // === 新增：player_image 系列也直接加入 images ===
+                case 'player_image':
+                case 'player_image_small':
+                case 'player_image_large':
+                case 'player_image_original':
+                case 'player_image_x_large':
                     const img = v?.image_value;
                     if (img) {
                         this.images.push(new TweetCardImage(img));
@@ -92,19 +110,40 @@ export class TweetCard {
                         }
                     }
                     break;
+
                 case 'thumbnail_image_color':
                 case 'photo_image_full_size_color':
                 case 'summary_photo_image_color':
+                case 'player_image_color':
                     const colorPalette = v?.image_color_value?.palette || [];
                     for (const palette of colorPalette) {
-                        this.thumbnailColorPalette.push(new TweetCardColor(palette.rgb, palette.percentage));
+                        this.thumbnailColorPalette.push(
+                            new TweetCardColor(palette.rgb, palette.percentage)
+                        );
                     }
                     break;
             }
         }
+
+        // entityUrl：优先 t.co
+        this.entityUrl = data.legacy?.url || this.url || '';
+
+        // 如果 expandedUrl 还没设置，且 vanity_url 看起来不是裸域名，就用 vanityUrl
+        if (!this.expandedUrl && this.vanityUrl) {
+            try {
+                const u = new URL(this.vanityUrl, 'https://_');
+                const hasPathOrQuery = u.pathname !== '/' || !!u.search;
+                if (hasPathOrQuery) this.expandedUrl = this.vanityUrl;
+            } catch { /* ignore */ }
+        }
+
+        // mainImageUrl 兜底：images[] 第一个有 url 的
+        if (!this.mainImageUrl && this.images.length) {
+            const firstWithUrl = this.images.find(it => !!it.url);
+            if (firstWithUrl) this.mainImageUrl = firstWithUrl.url;
+        }
     }
 }
-
 
 export interface VideoVariant {
     bitrate?: number;              // 有的变体（m3u8）没有 bitrate
