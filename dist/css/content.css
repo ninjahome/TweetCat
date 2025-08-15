@@ -719,22 +719,190 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tweet-quote-area .quote-author .handle { color: rgb(83,100,113); font-size: 12px; }
 
 
-/* 大图卡：图在上、文在下；与 small 共用结构，仅通过类名切换 */
-.inline-link-card--large { display: block; }
-.inline-link-card--large .thumb { width: 100%; position: relative; overflow: hidden; aspect-ratio: 16/9; }
-.inline-link-card--large .thumb .card-img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.inline-link-card--large .meta { padding: 8px 12px 12px; }
 
-/* 播放浮层（命名沿用现有风格：icon 后缀） */
-.inline-link-card .thumb { position: relative; }
-.inline-link-card .card-play-icon {
+/* =========================
+  TweetCard 专用样式（仅限 .tweet-card-area）
+  small：summary
+  large：summary_large_image
+  ========================= */
+
+/* 卡片外框（与官方相近） */
+.tweet-card-area .inline-link {
+    display: inline-block;
+    max-width: 100%;
+    text-decoration: none;
+    color: inherit;
+    background-color: #fff;
+    border: 1px solid rgb(239, 243, 244);
+    border-radius: 12px;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+.tweet-card-area .inline-link:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* 基础：small 为左右结构，large 为上下结构 */
+.tweet-card-area .inline-link-card {
+    display: flex;
+    align-items: stretch;
+}
+
+/* 避免图片双重圆角由外层容器负责 */
+.tweet-card-area .inline-link-card .thumb .card-img {
+    border-radius: 5px;
+}
+
+/* 覆盖旧有 72px 规则（若存在），统一交给 small/large 自己设置 */
+.tweet-card-area .inline-link-card .thumb {
+    flex: none !important;
+    height: auto !important;
+    overflow: hidden;
+    background-color: #f0f0f0;
+    position: relative; /* 给播放浮层定位 */
+}
+
+/* 播放浮层（仅存在该元素时显示） */
+.tweet-card-area .inline-link-card .card-play-icon {
     position: absolute;
     left: 50%; top: 50%;
     transform: translate(-50%, -50%);
+    z-index: 1;
     background: rgba(0,0,0,.5);
     color: #fff;
     border-radius: 999px;
     padding: 6px 10px;
     font-size: 18px;
     line-height: 1;
+    pointer-events: none; /* 不挡点击 */
+}
+
+/* ============= Small（summary） ============= */
+/* 左图右文：缩略图为 130x130 正方形 */
+.tweet-card-area .inline-link-card--small  {
+    display: flex;
+    min-height: 120px; /* 原无：建议 76–82 之间微调；我先给 80px */
+}
+
+.tweet-card-area .inline-link-card--small .thumb {
+    width: 130px;
+    flex: 0 0 130px;
+    height: 80px;           /* 原 68px → 提高 */
+    position: relative;     /* 很重要：承托下面 img 的 absolute */
+}
+
+.tweet-card-area .inline-link-card--small .thumb img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.tweet-card-area .inline-link-card--small .meta {
+    flex: 1;
+    padding: 8px 10px;
+    min-width: 0;           /* 允许省略号 */
+    box-sizing: border-box;
+}
+
+/* 行1：域名（灰） */
+.tweet-card-area .inline-link-card--small .meta .js-card-domain {
+    font-size: 12px;
+    color: rgb(83, 100, 113);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 行2：标题（黑、加粗） */
+.tweet-card-area .inline-link-card--small .meta .title {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgb(15, 20, 25);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 行3：描述（灰，最多两行） */
+.tweet-card-area .inline-link-card--small .meta .js-card-desc {
+    color: rgb(83, 100, 113);
+    font-size: 12px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;     /* 两行裁切 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ============= Large（summary_large_image） ============= */
+/* 大图：图上文下，16:9 */
+.tweet-card-area .inline-link-card--large { display: block; }
+
+.tweet-card-area .inline-link-card--large .thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+/* 兼容不支持 aspect-ratio 的环境 */
+@supports not (aspect-ratio: 16/9) {
+    .tweet-card-area .inline-link-card--large .thumb::before {
+        content: "";
+        display: block;
+        padding-bottom: 56.25%; /* 16:9 */
+    }
+    .tweet-card-area .inline-link-card--large .thumb .card-img {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+}
+
+.tweet-card-area .inline-link-card--large .thumb .card-img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+}
+
+.tweet-card-area .inline-link-card--large .meta {
+    padding: 8px 12px 12px;
+    box-sizing: border-box;
+}
+
+/* 域名（灰，单行）放在标题上方 */
+.tweet-card-area .inline-link-card--large .meta .js-card-domain {
+    font-size: 12px;
+    color: rgb(83, 100, 113);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 标题（两行裁切，稍大以提高整体高度感） */
+.tweet-card-area .inline-link-card--large .meta .title {
+    font-size: 15px;
+    font-weight: 700;
+    color: rgb(15, 20, 25);
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;      /* 两行 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 2px;
+}
+
+/* 描述（两行裁切） */
+.tweet-card-area .inline-link-card--large .meta .js-card-desc {
+    color: rgb(83, 100, 113);
+    font-size: 13px;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;      /* 两行 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-top: 4px;
 }

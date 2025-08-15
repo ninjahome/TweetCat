@@ -308,18 +308,32 @@
     <div class="tweet-bottomline"></div>
 </div>
 
-<!-- 外链卡模板：small/large 共用，通过类名切换 -->
-<div id="tpl-inline-link-card">
+
+<!-- 小图：summary 专用 -->
+<div id="tpl-inline-link-card--small" class="inline-link-card--small">
     <a class="inline-link inline-link-card" href="">
         <div class="thumb">
             <img class="card-img" alt="">
-            <!-- 可选播放浮层，先保留 DOM，样式在后续步骤启用 -->
-            <div class="card-play-icon" style="display:none;">▶</div>
+            <div class="card-play-icon" style="display:none;">▶</div>  <!-- 新增 -->
         </div>
         <div class="meta">
+            <div class="desc js-card-domain"></div>
             <div class="title"></div>
             <div class="desc js-card-desc"></div>
+        </div>
+    </a>
+</div>
+
+<!-- 大图/播放器：summary_large_image & player -->
+<div id="tpl-inline-link-card--large" class="inline-link-card--large">
+    <a class="inline-link inline-link-card inline-link-card--large" href="">
+        <div class="thumb">
+            <img class="card-img" alt="">
+        </div>
+        <div class="meta">
             <div class="desc js-card-domain"></div>
+            <div class="title"></div>
+            <div class="desc js-card-desc"></div>
         </div>
     </a>
 </div>
