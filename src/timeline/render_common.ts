@@ -1,4 +1,4 @@
-import {TweetCard, TweetContent} from "./tweet_entry";
+import {TweetContent} from "./tweet_entry";
 import {setTweetCatFlag} from "./route_helper";
 
 
