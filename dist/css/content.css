@@ -838,71 +838,88 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     overflow: hidden;
 }
 
-/* ============= Large（summary_large_image） ============= */
-/* 大图：图上文下，16:9 */
-.tweet-card-area .inline-link-card--large { display: block; }
+/* ============= Large（官方结构版） ============= */
+.tweet-card-area .tc-card-large { /* 外层容器，仅用于分组，不做样式限制 */ }
 
-.tweet-card-area .inline-link-card--large .thumb {
+/* 点击区域：整张大图 */
+.tweet-card-area .tc-card-large__media {
+    position: relative;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* 维持高宽比（官方此例约 52.356%） */
+.tweet-card-area .tc-card-large__ratio {
+    padding-bottom: 52.356%;
+}
+
+/* 图层容器 */
+.tweet-card-area .tc-card-large__imgwrap {
+    position: absolute;
+    inset: 0;
+}
+
+/* 兼容“先背景再 img”两套：低网速也先有模糊底 */
+.tweet-card-area .tc-card-large__bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center center;
+    filter: none;
+}
+
+/* 主图 */
+.tweet-card-area .tc-card-large__img {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
-/* 兼容不支持 aspect-ratio 的环境 */
-@supports not (aspect-ratio: 16/9) {
-    .tweet-card-area .inline-link-card--large .thumb::before {
-        content: "";
-        display: block;
-        padding-bottom: 56.25%; /* 16:9 */
-    }
-    .tweet-card-area .inline-link-card--large .thumb .card-img {
-        position: absolute; inset: 0;
-        width: 100%; height: 100%;
-        object-fit: cover;
-        display: block;
-    }
+/* 下部遮罩（让标题读得清楚） */
+.tweet-card-area .tc-card-large__shade {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 100%);
 }
 
-.tweet-card-area .inline-link-card--large .thumb .card-img {
-    width: 100%; height: 100%;
-    object-fit: cover; display: block;
-}
-
-.tweet-card-area .inline-link-card--large .meta {
-    padding: 8px 12px 12px;
-    box-sizing: border-box;
-}
-
-/* 域名（灰，单行）放在标题上方 */
-.tweet-card-area .inline-link-card--large .meta .js-card-domain {
-    font-size: 12px;
-    color: rgb(83, 100, 113);
-    line-height: 1.4;
-    white-space: nowrap;
+/* 标题浮层（白字） */
+.tweet-card-area .tc-card-large__title {
+    position: absolute;
+    left: 12px; right: 12px; bottom: 10px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.25;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-/* 标题（两行裁切，稍大以提高整体高度感） */
-.tweet-card-area .inline-link-card--large .meta .title {
-    font-size: 15px;
-    font-weight: 700;
-    color: rgb(15, 20, 25);
-    line-height: 1.35;
     display: -webkit-box;
-    -webkit-line-clamp: 2;      /* 两行 */
+    -webkit-line-clamp: 2;          /* 最多两行 */
     -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-top: 2px;
+    z-index: 1; /* 显示在遮罩之上 */
 }
 
-/* 描述（两行裁切） */
-.tweet-card-area .inline-link-card--large .meta .js-card-desc {
+/* 底部“来自 domain” */
+.tweet-card-area .tc-card-large__source {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
     color: rgb(83, 100, 113);
-    font-size: 13px;
-    line-height: 1.45;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;      /* 两行 */
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-top: 4px;
+    text-decoration: none;
+}
+
+.tweet-card-area .tc-card-large__source:hover {
+    text-decoration: underline;
+}
+
+/* 可选：统一圆角（与小卡保持一致感） */
+.tweet-card-area .tc-card-large__media,
+.tweet-card-area .tc-card-large__img {
+    border-radius: 12px;
 }

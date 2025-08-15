@@ -19,37 +19,20 @@ export function updateTweetCardArea(
     const node = cloneTemplate(tpl, tplId);
     if (!node) return;
 
-    const root = node.querySelector("a.inline-link-card") as HTMLAnchorElement | null;
-    if (!root) return;
+    // ⬇️ large 结构与 small 不同，这里分支
+    if (tplId === "tpl-card-large") {
+        renderLargeCard(node, card);   // 新增：见③
+    } else {
+        const root = node.querySelector("a.inline-link-card") as HTMLAnchorElement | null;
+        if (!root) return;
 
-    configureAnchor(root, card);
-
-    fillTexts(node, card);
-
-    applyImage(node, card);
-
-    togglePlayerOverlay(node, card);
-
-    container.appendChild(node);
-}
-
-/** 选择模板：player 一律 small；summary_large_image 有图才 large；其它非 summary/非 player 且有图 → large */
-function pickTemplateId(card: TweetCard): string {
-    const isSummary = card.name === "summary";
-    const isPlayer = card.name === "player";
-    const isSli = card.name === "summary_large_image";
-
-    const first = card.images?.[0];
-    const hasImage = !!(card.mainImageUrl || first?.url);
-
-    let preferLarge = false;
-    if (isSli && hasImage) {
-        preferLarge = true;
-    } else if (!isSummary && !isPlayer && hasImage) {
-        preferLarge = true;
+        configureAnchor(root, card);   // 仍然只给 small 用
+        fillTexts(node, card);         // small 用
+        applyImage(node, card);        // small 用
+        togglePlayerOverlay(node, card);
     }
 
-    return preferLarge ? "tpl-inline-link-card--large" : "tpl-inline-link-card--small";
+    container.appendChild(node);
 }
 
 /** 从模板克隆节点（带空值保护） */
@@ -142,6 +125,23 @@ function applyImage(node: HTMLElement, card: TweetCard): void {
     imgWrap.style.display = "";
 }
 
+function pickTemplateId(card: TweetCard): string {
+    const isSummary = card.name === "summary";
+    const isPlayer  = card.name === "player";
+    const isSli     = card.name === "summary_large_image";
+
+    const first = card.images?.[0];
+    const hasImage = !!(card.mainImageUrl || first?.url);
+
+    const preferLarge =
+        (isSli && hasImage) ||
+        (!isSummary && !isPlayer && hasImage);
+
+    // ⬇️ large 用新模板 ID
+    return preferLarge ? "tpl-card-large" : "tpl-inline-link-card--small";
+}
+
+
 /** 播放浮层（模板里存在就按需显示） */
 function togglePlayerOverlay(node: HTMLElement, card: TweetCard): void {
     const playIcon = node.querySelector(".card-play-icon") as HTMLElement | null;
@@ -149,4 +149,62 @@ function togglePlayerOverlay(node: HTMLElement, card: TweetCard): void {
 
     const shouldShow = card.name === "player";
     playIcon.style.display = shouldShow ? "" : "none";
+}
+
+function renderLargeCard(node: HTMLElement, card: TweetCard): void {
+    const hrefTco  = card.url || card.vanityUrl || "#";
+    const expanded = card.expandedUrl || card.vanityUrl || "";
+    const title    = card.title || card.domain || card.vanityUrl || "";
+    const domain   = extractDomain(card.vanityUrl, card.domain);
+    const first    = card.images?.[0];
+    const imageUrl = card.mainImageUrl || first?.url || "";
+
+    // anchor：大图点击区
+    const aMedia  = node.querySelector(".tc-card-large__media")  as HTMLAnchorElement | null;
+    // anchor：底部“来自 domain”
+    const aSource = node.querySelector(".tc-card-large__source") as HTMLAnchorElement | null;
+
+    if (aMedia) {
+        aMedia.href = hrefTco;
+        aMedia.target = "_blank";
+        aMedia.rel = "noopener noreferrer";
+        if (expanded) (aMedia as any).dataset.expandedUrl = expanded;
+
+        // 仅对 status 链接走内部路由
+        if (expanded && isTwitterStatusUrl(expanded)) {
+            try {
+                bindTwitterInternalLink(aMedia, expanded);
+                aMedia.removeAttribute("target");
+                aMedia.removeAttribute("rel");
+            } catch { /* ignore */ }
+        }
+    }
+
+    if (aSource) {
+        aSource.href = hrefTco;
+        aSource.target = "_blank";
+        aSource.rel = "noopener noreferrer";
+        if (expanded) (aSource as any).dataset.expandedUrl = expanded;
+    }
+
+    // 文本：标题（覆盖在图上） & 底部域名
+    const titleEl = node.querySelector(".tc-card-large__title") as HTMLElement | null;
+    if (titleEl) titleEl.textContent = title;
+
+    const srcText = node.querySelector(".tc-card-large__source-text") as HTMLElement | null;
+    if (srcText)  srcText.textContent = domain || "";
+
+    // 图片：img + 背景（占位/模糊底）
+    const imgEl = node.querySelector(".tc-card-large__img") as HTMLImageElement | null;
+    const bgEl  = node.querySelector(".tc-card-large__bg")  as HTMLElement | null;
+
+    if (imgEl && imageUrl) {
+        imgEl.src = imageUrl;
+        imgEl.alt = title || domain || "link preview";
+        imgEl.loading  = "lazy";
+        imgEl.decoding = "async";
+    }
+    if (bgEl && imageUrl) {
+        bgEl.style.backgroundImage = `url("${imageUrl}")`;
+    }
 }

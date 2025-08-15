@@ -324,16 +324,22 @@
     </a>
 </div>
 
-<!-- 大图/播放器：summary_large_image & player -->
-<div id="tpl-inline-link-card--large" class="inline-link-card--large">
-    <a class="inline-link inline-link-card inline-link-card--large" href="">
-        <div class="thumb">
-            <img class="card-img" alt="">
-        </div>
-        <div class="meta">
-            <div class="desc js-card-domain"></div>
-            <div class="title"></div>
-            <div class="desc js-card-desc"></div>
+<!-- 大图卡（官方结构版）：图上/标题浮层 + 底部“来自 domain” -->
+<div id="tpl-card-large" class="tc-card-large">
+    <!-- 大图可点击区域 -->
+    <a class="tc-card-large__media" href="" target="_blank" rel="noopener noreferrer">
+        <div class="tc-card-large__ratio"></div>
+        <div class="tc-card-large__imgwrap">
+            <div class="tc-card-large__bg"></div>
+            <img class="tc-card-large__img" alt="">
+            <div class="tc-card-large__shade"></div>
+            <div class="tc-card-large__title"></div>
         </div>
     </a>
+
+    <!-- 底部“来自 domain”链接（文本由 JS 注入） -->
+    <a class="tc-card-large__source" href="" target="_blank" rel="noopener noreferrer">
+        <span >来自 </span><span class="tc-card-large__source-text"></span>
+    </a>
 </div>
+
