@@ -3,6 +3,7 @@
 // --- 基础类 ---
 
 import {WrapEntryObj} from "./db_raw_tweet";
+import {logTOP} from "../common/debug_flags";
 
 export class TweetCardImage {
     url: string;
@@ -134,7 +135,8 @@ export class TweetCard {
                 const u = new URL(this.vanityUrl, 'https://_');
                 const hasPathOrQuery = u.pathname !== '/' || !!u.search;
                 if (hasPathOrQuery) this.expandedUrl = this.vanityUrl;
-            } catch { /* ignore */ }
+            } catch { /* ignore */
+            }
         }
 
         // mainImageUrl 兜底：images[] 第一个有 url 的
@@ -378,7 +380,7 @@ export class TweetObj {
     retweetedStatus?: TweetObj;
     quotedStatus?: TweetObj;
 
-    constructor(raw: any,  isQuoted = false) {
+    constructor(raw: any, isQuoted = false) {
         const data = raw?.tweet ?? raw;
         this.rest_id = data.rest_id;
         this.unmention_data = data.unmention_data;
@@ -426,6 +428,7 @@ export class EntryObj {
     tweet: TweetObj;
 
     constructor(entry: any) {
+        logTOP("------->>>>>entry obj raw data:\n", entry);
         this.entryId = entry.entryId;
         this.sortIndex = entry.sortIndex;
         const content = entry.content;
@@ -461,11 +464,11 @@ export function extractEntryObjs(entries: any[]): TweetResult {
             else if (entry.content.cursorType === 'Top') topCursor = entry.content.value;
         } else if (entry.content.entryType === 'TimelineTimelineModule') continue;
         else {
-            console.log("unknown entry type", entry);
+            console.warn("unknown entry type", entry);
         }
     }
 
-    // console.log("---------->>>next:", bottomCursor, "top:", topCursor)
+    logTOP("---------->>>next:", bottomCursor, "top:", topCursor)
     return new TweetResult(tweetEntries, tweetRawEntries, bottomCursor, topCursor);
 }
 
