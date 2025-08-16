@@ -1,7 +1,7 @@
 import {fetchTweets, getUserIdByUsername} from "./twitter_api";
 import {sendMsgToService, sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
-import {KolCursor, queryCursorByKolID, saveOneKolCursorToSW} from "../object/kol_cursor";
+import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW} from "./db_raw_tweet";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {MsgType} from "../common/consts";
@@ -128,26 +128,6 @@ export class TweetFetcher {
         const numberDiv = this.notificationContainer.querySelector(".tweet-no") as HTMLElement;
         numberDiv.innerText = '' + this.latestNewTweets.length;
     }
-
-    async fetchNewKolImmediate(kolName: string, kolID?: string) {
-        if (!kolID) {
-            kolID = await getUserIdByUsername(kolName) ?? undefined
-            if (!kolID) {
-                logFT("------>>> should have a kolID before fetching tweets")
-                return
-            }
-        }
-
-        const cursor = await queryCursorByKolID(kolID);
-        if (!cursor.canFetchNew()) {
-            logFT("------>>> no need to fetch new tweets right now for user:", kolID);
-            return;
-        }
-
-        await tweetFetcher.fetchNewestOneKolBatch(cursor);
-
-        await saveOneKolCursorToSW(cursor);
-    }
 }
 
 export const tweetFetcher = new TweetFetcher();
@@ -183,14 +163,14 @@ export async function fetchImmediateInNextRound(kolName: string, kolUserId?: str
 
 function printStatus(tag: string, cursor: KolCursor) {
     const now = Date.now();
-    console.log(`[${tag}  KolCursor] 🧾UserId: ${cursor.userId}`);
-    console.log(`           🔝 TopCursor: ${cursor.topCursor ?? "null"}`);
-    console.log(`           🔚 BottomCursor: ${cursor.bottomCursor ?? "null"}`);
-    console.log(`           ⏱️ Next Newest Fetch In: ${cursor.nextNewestFetchTime > now ? ((cursor.nextNewestFetchTime - now) / 1000).toFixed(1) + "s" : "ready"}`);
-    console.log(`           🕰️ Next History Fetch In: ${cursor.nextHistoryFetchTime > now ? ((cursor.nextHistoryFetchTime - now) / 1000).toFixed(1) + "s" : "ready"}`);
-    console.log(`           💾 Cache Enough: ${cursor.cacheEnough}`);
-    console.log(`           ❌ Failure Count: ${cursor.failureCount}`);
-    console.log(`           🌐 Network Valid: ${cursor.networkValid}`);
+    logFT(`[${tag}  KolCursor] 🧾UserId: ${cursor.userId}`);
+    logFT(`           🔝 TopCursor: ${cursor.topCursor ?? "null"}`);
+    logFT(`           🔚 BottomCursor: ${cursor.bottomCursor ?? "null"}`);
+    logFT(`           ⏱️ Next Newest Fetch In: ${cursor.nextNewestFetchTime > now ? ((cursor.nextNewestFetchTime - now) / 1000).toFixed(1) + "s" : "ready"}`);
+    logFT(`           🕰️ Next History Fetch In: ${cursor.nextHistoryFetchTime > now ? ((cursor.nextHistoryFetchTime - now) / 1000).toFixed(1) + "s" : "ready"}`);
+    logFT(`           💾 Cache Enough: ${cursor.cacheEnough}`);
+    logFT(`           ❌ Failure Count: ${cursor.failureCount}`);
+    logFT(`           🌐 Network Valid: ${cursor.networkValid}`);
 }
 
 
@@ -202,7 +182,7 @@ export async function startToCheckKolId(ids: any[]) {
 
         const kolId = await getUserIdByUsername(kolInfo.kolName);
         if (!kolId) {
-            console.log("------>>> failed find kol id for:", kolInfo.kolName);
+            logFT("------>>> failed find kol id for:", kolInfo.kolName);
             continue;
         }
 
