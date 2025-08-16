@@ -43,6 +43,9 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     updateTweetMediaArea(article.querySelector(".tweet-media-area") as HTMLElement,
         target.tweetContent, tpl);
 
+    wireMediaAnchors(article, target.author, target.rest_id, target.tweetContent?.extended_entities?.media ?? []);
+
+
     if (target.card) {
         updateTweetCardArea(article.querySelector(".tweet-card-area") as HTMLElement,
             target.card, tpl);
@@ -137,6 +140,35 @@ export function insertRepostedBanner(
     if (disp) disp.textContent = author.displayName;
 }
 
+function wireMediaAnchors(
+    article: Element,
+    author: { screenName: string },
+    tweetId: string,
+    mediaList: Array<{ type: string }> = []
+): void {
+    const area = article.querySelector('.tweet-media-area'); // 只改本条 tweet 的媒体区
+    if (!area) return;
+
+    const links = Array.from(area.querySelectorAll<HTMLAnchorElement>('a'));
+    links.forEach((a, i) => {
+        const m = mediaList[i];
+        const seg = m?.type === 'photo' ? 'photo' : 'video';
+        const idx = seg === 'photo' ? (i + 1) : 1;
+        const path = `/${author.screenName}/status/${tweetId}/${seg}/${idx}`;
+
+        a.href = path;
+        a.removeAttribute('target');
+        a.dataset.noDetail = '1';
+        a.dataset.mediaIndex = String(idx);
+        a.dataset.mediaType = seg;
+
+        // 绑定内部路由（如有）
+        // @ts-ignore
+        if (typeof bindTwitterInternalLink === 'function') bindTwitterInternalLink(a, path);
+    });
+}
+
+
 export function updateTweetMediaArea(
     container: HTMLElement,
     tweetContent: TweetContent,
@@ -224,7 +256,7 @@ function replacePhotoItem(item: HTMLElement, media: TweetMediaEntity) {
     const link = item.querySelector('a') as HTMLAnchorElement;
     if (link && media.expanded_url) {
         link.href = media.expanded_url;
-        bindTwitterInternalLink(link, media.expanded_url)
+        // bindTwitterInternalLink(link, media.expanded_url)
     }
 }
 
