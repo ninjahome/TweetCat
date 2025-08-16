@@ -7,14 +7,15 @@ export const DBG = {
     PAGER: false,
     TWEET_MANAGER: false,
     NODE_POOL: false,
-    ROUTE: true,
+    ROUTE: false,
     GUARD: false,
-    Database: true,
-    TweetCache: true,
-    TweetFetcher: true,
-    TweetCursor: true,
-    TweetBGTimer: true,
-    TweetObjParse:true,
+    Database: false,
+    TweetCache: false,
+    TweetFetcher: false,
+    TweetCursor: false,
+    TweetBGTimer: false,
+    TweetObjParse:false,
+    TweetRender:false,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -38,3 +39,4 @@ export const logFT = makeLogger('TweetFetcher', 'TweetFetcher');
 export const logKC = makeLogger('TweetCursor', 'TweetCursor');
 export const logBGT = makeLogger('TweetBGTimer', 'TweetBGTimer');
 export const logTOP = makeLogger('TweetObjParse', 'TweetObjParse');
+export const logRender = makeLogger('TweetRender', 'TweetRender');

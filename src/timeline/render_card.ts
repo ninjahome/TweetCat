@@ -1,9 +1,20 @@
 import {TweetCard} from "./tweet_entry";
 import {
     bindTwitterInternalLink,
-    extractDomain,
     isTwitterStatusUrl
 } from "./render_common";
+import {logRender} from "../common/debug_flags";
+
+ function extractDomain(vanity?: string, fallback?: string): string {
+    if (!vanity && !fallback) return '';
+    try {
+        const u = vanity && /^https?:\/\//i.test(vanity) ? new URL(vanity) : (vanity ? new URL(`https://${vanity}`) : null);
+        const host = u?.hostname || '';
+        return (host || fallback || '').replace(/^www\./, '').replace(/^https?:\/\//, '');
+    } catch {
+        return (fallback || '').replace(/^https?:\/\//, '');
+    }
+}
 
 /** 入口：渲染卡片区域 */
 export function updateTweetCardArea(
@@ -11,7 +22,7 @@ export function updateTweetCardArea(
     card: TweetCard | null,
     tpl: HTMLTemplateElement,
 ): void {
-    console.log("[TweetCard DEBUG]", card);
+    logRender("[TweetCard DEBUG]", card);
     if (!container) return;
     container.innerHTML = "";
     if (!card) return;
@@ -24,9 +35,9 @@ export function updateTweetCardArea(
     if (tplId === "tpl-card-large") {
         renderLargeCard(node, card);   // 新增：见③
     } else if (tplId === "tpl-inline-link-card--restricted") {
-        console.log("------>>> baned content：", card)
+        logRender("------>>> baned content：", card)
     } else if (tplId === "tpl-inline-link-card--poll") {
-        console.log("------>>> poll card ::TO DO:：", card)
+        logRender("------>>> poll card ::TO DO:：", card)
     } else {
         const root = node.querySelector("a.inline-link-card") as HTMLAnchorElement | null;
         if (!root) return;
