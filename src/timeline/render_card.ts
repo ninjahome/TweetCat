@@ -11,6 +11,7 @@ export function updateTweetCardArea(
     card: TweetCard | null,
     tpl: HTMLTemplateElement,
 ): void {
+    console.log("[TweetCard DEBUG]", card);
     if (!container) return;
     container.innerHTML = "";
     if (!card) return;
@@ -22,6 +23,10 @@ export function updateTweetCardArea(
     // ⬇️ large 结构与 small 不同，这里分支
     if (tplId === "tpl-card-large") {
         renderLargeCard(node, card);   // 新增：见③
+    } else if (tplId === "tpl-inline-link-card--restricted") {
+        console.log("------>>> baned content：", card)
+    } else if (tplId === "tpl-inline-link-card--poll") {
+        console.log("------>>> poll card ::TO DO:：", card)
     } else {
         const root = node.querySelector("a.inline-link-card") as HTMLAnchorElement | null;
         if (!root) return;
@@ -126,9 +131,24 @@ function applyImage(node: HTMLElement, card: TweetCard): void {
 }
 
 function pickTemplateId(card: TweetCard): string {
+
+    const noContent =
+        !card.title &&
+        !card.description &&
+        !card.domain &&
+        !(card.images?.length);
+
+    if (card.name === "unified_card" && noContent) {
+        return "tpl-inline-link-card--restricted";
+    }
+
+    if (card.name && card.name.startsWith("poll")) {
+        return "tpl-inline-link-card--poll";
+    }
+
     const isSummary = card.name === "summary";
-    const isPlayer  = card.name === "player";
-    const isSli     = card.name === "summary_large_image";
+    const isPlayer = card.name === "player";
+    const isSli = card.name === "summary_large_image";
 
     const first = card.images?.[0];
     const hasImage = !!(card.mainImageUrl || first?.url);
@@ -152,15 +172,15 @@ function togglePlayerOverlay(node: HTMLElement, card: TweetCard): void {
 }
 
 function renderLargeCard(node: HTMLElement, card: TweetCard): void {
-    const hrefTco  = card.url || card.vanityUrl || "#";
+    const hrefTco = card.url || card.vanityUrl || "#";
     const expanded = card.expandedUrl || card.vanityUrl || "";
-    const title    = card.title || card.domain || card.vanityUrl || "";
-    const domain   = extractDomain(card.vanityUrl, card.domain);
-    const first    = card.images?.[0];
+    const title = card.title || card.domain || card.vanityUrl || "";
+    const domain = extractDomain(card.vanityUrl, card.domain);
+    const first = card.images?.[0];
     const imageUrl = card.mainImageUrl || first?.url || "";
 
     // anchor：大图点击区
-    const aMedia  = node.querySelector(".tc-card-large__media")  as HTMLAnchorElement | null;
+    const aMedia = node.querySelector(".tc-card-large__media") as HTMLAnchorElement | null;
     // anchor：底部“来自 domain”
     const aSource = node.querySelector(".tc-card-large__source") as HTMLAnchorElement | null;
 
@@ -176,7 +196,8 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
                 bindTwitterInternalLink(aMedia, expanded);
                 aMedia.removeAttribute("target");
                 aMedia.removeAttribute("rel");
-            } catch { /* ignore */ }
+            } catch { /* ignore */
+            }
         }
     }
 
@@ -192,16 +213,16 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
     if (titleEl) titleEl.textContent = title;
 
     const srcText = node.querySelector(".tc-card-large__source-text") as HTMLElement | null;
-    if (srcText)  srcText.textContent = domain || "";
+    if (srcText) srcText.textContent = domain || "";
 
     // 图片：img + 背景（占位/模糊底）
     const imgEl = node.querySelector(".tc-card-large__img") as HTMLImageElement | null;
-    const bgEl  = node.querySelector(".tc-card-large__bg")  as HTMLElement | null;
+    const bgEl = node.querySelector(".tc-card-large__bg") as HTMLElement | null;
 
     if (imgEl && imageUrl) {
         imgEl.src = imageUrl;
         imgEl.alt = title || domain || "link preview";
-        imgEl.loading  = "lazy";
+        imgEl.loading = "lazy";
         imgEl.decoding = "async";
     }
     if (bgEl && imageUrl) {
