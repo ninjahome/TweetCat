@@ -5,6 +5,8 @@
  * 3. watchdog 每 200 ms 检查；只有被覆盖时才打印 ⚠️ re-hook
  * ------------------------------------------------------------ */
 
+import {logRoute} from "./common/debug_flags";
+
 /** 向 content-script 广播路由变化 */
 function post(): void {
     window.postMessage({ tcLocationChange: true }, '*');
@@ -15,7 +17,7 @@ function wrap(fn: 'pushState' | 'replaceState') {
     const raw = (history as any)[fn];
     if ((raw as any).__tc_hooked) return;        // 仍是我们包的
 
-    console.debug('[TC-Patch] ⚠️ re-hook', fn);
+    logRoute('[TC-Patch] ⚠️ re-hook', fn);
 
     function wrapped(this: History, ...args: any[]) {
         const ret = raw.apply(this, args);
@@ -28,8 +30,8 @@ function wrap(fn: 'pushState' | 'replaceState') {
 
 /** 确保 pushState / replaceState 均被 hook */
 function ensureHooks() {
-    wrap('pushState');
-    wrap('replaceState');
+    logRoute('pushState');
+    logRoute('replaceState');
 }
 
 /** 初始化 —— 只执行一次 */

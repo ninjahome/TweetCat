@@ -8,6 +8,7 @@ import {getUserIdByUsername} from "../timeline/twitter_api";
 import {getTweetCatFlag, isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
 import {switchCategory} from "../timeline/timeline_ui";
 import {EntryObj} from "../timeline/tweet_entry";
+import {logRender} from "../common/debug_flags";
 
 export function setSelectedCategory(catID: number = -1) {
     document.querySelectorAll(".category-filter-item").forEach(elm => {
@@ -104,14 +105,14 @@ async function _kolCompletion(kol: TweetKol) {
     let needUpDateKolData = false;
     if (!kol.avatarUrl) {
         kol.avatarUrl = document.querySelector('div[data-testid="primaryColumn"] div[data-testid^="UserAvatar-Container-"] img')?.getAttribute('src') ?? "";
-        console.log("------>>> avatar url found:[", kol.avatarUrl, "]for kol:", kol.kolName);
+        logRender("------>>> avatar url found:[", kol.avatarUrl, "]for kol:", kol.kolName);
         needUpDateKolData = !!kol.avatarUrl
     }
 
     if (!kol.kolUserId) {
         kol.kolUserId = await getUserIdByUsername(kol.kolName) ?? "";
         needUpDateKolData = !!kol.kolUserId
-        console.log("------>>> need to load kol user id by tweet api:", kol.kolName, "found user id:", kol.kolUserId);
+        logRender("------>>> need to load kol user id by tweet api:", kol.kolName, "found user id:", kol.kolUserId);
     }
 
     if (!needUpDateKolData) {
@@ -119,7 +120,7 @@ async function _kolCompletion(kol: TweetKol) {
     }
 
     await updateKolIdToSw(kol);
-    console.log("------>>> update kol data success", kol)
+    logRender("------>>> update kol data success", kol)
 }
 
 async function setCategoryStatusOnProfileHome(kolName: string, clone: HTMLElement) {
@@ -178,7 +179,7 @@ export async function appendFilterBtn(tpl: HTMLTemplateElement, main: HTMLElemen
 
     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
     filterContainerDiv.appendChild(moreBtn);
-    console.log("✅ ------>>> add filter container success")
+    logRender("✅ ------>>> add filter container success")
     setSelectedCategory();
 }
 

@@ -1005,3 +1005,8 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     text-align: center;
     font-style: italic;
 }
+
+.tweet-body.is-permalink { cursor: pointer; }
+.tweet-body.is-permalink a,
+.tweet-body.is-permalink button,
+.tweet-body.is-permalink [role=button] { cursor: auto; }

@@ -60,6 +60,8 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     updateTweetBottomButtons(article.querySelector(".tweet-actions") as HTMLElement,
         target.tweetContent, target.author.screenName, target.views_count);
 
+    attachBodyPermalink(article, target.author, target.rest_id);
+
     return tweetCellDiv;
 }
 
@@ -268,3 +270,61 @@ function collectCardShortUrls(target: { card: { url?: string } | null }): string
     return list;
 }
 
+// 新增：正文区域点击 -> 进入详情（贴近官方）
+function attachBodyPermalink(article: Element, author: TweetAuthor, tweetId: string): void {
+    const body = article.querySelector('.tweet-body') as HTMLElement | null;
+    if (!body) return;
+
+    // 你的时间链接已经由 updateTweetTopButtonArea 设好了，优先复用它
+    const timeLink = article.querySelector('.tweet-time-link') as HTMLAnchorElement | null;
+
+    // 备用路径（与你上面的一致：/screenName/status/id）
+    const tweetPath = `/${author.screenName}/status/${tweetId}`;
+
+    // 给主体区加“可点击”的视觉提示（可选）
+    body.classList.add('is-permalink');
+
+    body.addEventListener('click', (ev) => {
+        const e = ev as MouseEvent;
+        if (e.button !== 0) return; // 只响应左键
+
+        // 正在选中文本时不跳转（贴近官方体验）
+        const sel = window.getSelection();
+        if (sel && !sel.isCollapsed) return;
+
+        const t = ev.target as HTMLElement | null;
+        if (!t) return;
+
+        // 排除所有已有交互元素：a/button/媒体/卡片/投票/引用/操作区/头像/用户名/转推条/时间等
+        const exclude = [
+            'a', 'button', '[role=button]',
+            '.tweet-actions', '.tweet-media-area',
+            '.tc-card', '.tc-card-large', '.summary-card',
+            '.poll', '.poll-container', '.quoted-tweet', '.quote-tweet',
+            '.avatar', '.display-name-link', '.user-name-link',
+            '.retweet-link', '.tweet-time-link',
+            '[data-no-detail]'
+        ].join(',');
+        if (t.closest(exclude)) return;
+
+        // 走你现有的内部路由：优先触发时间链接；否则用你自己的相对路径
+        if (timeLink) {
+            timeLink.click();
+        } else {
+            // 如果你项目里有 bindTwitterInternalLink 的“内部跳转”工具，也可以创建个临时 <a> 用它绑定后 .click()
+            window.open(tweetPath, '_blank', 'noopener,noreferrer');
+        }
+    });
+
+    // 无障碍：让主体可通过 Enter/Space 进入详情（可选，但推荐）
+    body.setAttribute('role', 'link');
+    body.setAttribute('tabindex', '0');
+    body.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const active = e.target as HTMLElement;
+            if (active.closest('a,button,[role=button]')) return;
+            if (timeLink) timeLink.click(); else window.open(tweetPath, '_blank', 'noopener,noreferrer');
+            e.preventDefault();
+        }
+    });
+}

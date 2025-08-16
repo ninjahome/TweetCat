@@ -1,4 +1,5 @@
 import {TweetContent} from "./tweet_entry";
+import {logRender} from "../common/debug_flags";
 
 type Piece = { start: number; end: number; html: string };
 
@@ -126,7 +127,7 @@ export function updateTweetContentArea(container: HTMLElement, tweet: TweetConte
                                        opts?: { hiddenShortUrls?: Iterable<string> }) {
     const tweetContent = container.querySelector(".tweet-content") as HTMLElement | null;
     if (!tweetContent) {
-        console.log("------>>> tweet content not found:", container);
+        logRender("------>>> tweet content not found:", container);
         return;
     }
 
@@ -156,7 +157,7 @@ export function buildVisibleWithEntitiesHTML(
     pieces.push(...collectHashtagPieces(tweet, full, start, end, cpToCu));
     pieces.push(...collectUrlPiecesWithHiddenSet(tweet, full, start, end, hidden, cpToCu));
 
-    console.log('[dbg] cpLen=%d, cuLen=%d, visibleCP=%o, visibleCU=%o',
+    logRender('[dbg] cpLen=%d, cuLen=%d, visibleCP=%o, visibleCU=%o',
         cpToCu.length - 1,
         full.length,
         tweet.display_text_range,
