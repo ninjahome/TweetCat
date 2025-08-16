@@ -30,8 +30,8 @@ function wrap(fn: 'pushState' | 'replaceState') {
 
 /** 确保 pushState / replaceState 均被 hook */
 function ensureHooks() {
-    logRoute('pushState');
-    logRoute('replaceState');
+    wrap('pushState');
+    wrap('replaceState');
 }
 
 /** 初始化 —— 只执行一次 */
