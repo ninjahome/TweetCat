@@ -1,5 +1,5 @@
 import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./tweet_entry";
-import {formatCount, formatTweetTime} from "../common/utils";
+import {formatCount, formatTweetTime, isXArticle} from "../common/utils";
 import {videoRender} from "./render_video";
 import {updateTweetContentArea} from "./render_content";
 import {updateTweetQuoteArea} from "./render_quoted";
@@ -47,11 +47,11 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
 
     wireMediaAnchors(article, target.author, target.rest_id, target.tweetContent?.extended_entities?.media ?? []);
 
-
     if (target.card) {
         updateTweetCardArea(article.querySelector(".tweet-card-area") as HTMLElement,
             target.card, tpl);
     }
+    wireCardAnchor(article, target.author, target.rest_id);
 
     const quoteArea = article.querySelector(".tweet-quote-area") as HTMLElement | null;
     if (quoteArea) {
@@ -68,7 +68,6 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
 
     return tweetCellDiv;
 }
-
 
 // 渲染头像模块
 export function updateTweetAvatar(avatarArea: Element, author: TweetAuthor): void {
@@ -169,6 +168,46 @@ function wireMediaAnchors(
     });
 }
 
+function wireCardAnchor(
+    article: Element,
+    author: { screenName: string },
+    tweetId: string
+): void {
+    const a = article.querySelector<HTMLAnchorElement>('.tweet-card-area .tc-card-large__media');
+    if (!a) return;
+
+    // renderLargeCard 已写入 data-expanded-url
+    const expanded = (a as any).dataset?.expandedUrl || a.getAttribute('href') || '';
+    const isInternal = isXArticle(expanded);
+
+    if (isInternal) {
+        // 站内（/i/article/...）：点击进入该推文详情（无刷新内部路由）
+        const path = `/${author.screenName}/status/${tweetId}`;
+        a.href = path;
+        a.removeAttribute('target');
+        a.dataset.noDetail = '1';
+        // @ts-ignore
+        if (typeof bindTwitterInternalLink === 'function') bindTwitterInternalLink(a, path);
+    } else {
+        // 外部链接：保持新开标签到外站（优先用 expanded，退回 a.href/t.co）
+        if (expanded) a.href = expanded;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.removeAttribute('data-no-detail');
+    }
+
+    // 图下文字区域点击 => 转发到锚点
+    const forward = (sel: string) => {
+        const el = article.querySelector(sel);
+        if (!el) return;
+        el.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+        });
+    };
+    forward('.tc-card-large__caption');
+    forward('.tc-card-large__meta');
+}
 
 export function updateTweetMediaArea(
     container: HTMLElement,

@@ -195,9 +195,9 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
     // 规则：x 站内 /i/article 走“文本块模式”，其余外站走“覆盖标题模式”
     const isXArticleCard = isXArticle(expanded || card.vanityUrl || "");
     const root = node as HTMLElement;
-    root.classList.toggle("tc-card-large--text",  !!isXArticleCard);
+    root.classList.toggle("tc-card-large--text",  isXArticleCard);
     root.classList.toggle("tc-card-large--overlay", !isXArticleCard);
-    root.classList.toggle("tc-card-large--hide-source", !!isXArticleCard);
+    root.classList.toggle("tc-card-large--hide-source", isXArticleCard);
 
     // ===== ② anchor：大图点击区 =====
     const aMedia = node.querySelector(".tc-card-large__media") as HTMLAnchorElement | null;
@@ -205,19 +205,11 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
 
     if (aMedia) {
         aMedia.href = hrefTco;
-        aMedia.target = "_blank";
+        aMedia.removeAttribute("target");    // 不新开标签，交给 wireCardAnchor 接管
         aMedia.rel = "noopener noreferrer";
         if (expanded) (aMedia as any).dataset.expandedUrl = expanded;
-
-        // 仅对 status 链接走内部路由
-        if (expanded && isTwitterStatusUrl(expanded)) {
-            try {
-                bindTwitterInternalLink(aMedia, expanded);
-                aMedia.removeAttribute("target");
-                aMedia.removeAttribute("rel");
-            } catch { /* ignore */ }
-        }
     }
+
 
     if (aSource) {
         aSource.href = hrefTco;

@@ -1011,6 +1011,8 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tweet-body.is-permalink button,
 .tweet-body.is-permalink [role=button] { cursor: auto; }
 
+
+
 /* 图片下方的标题+摘要容器 */
 .tc-card-large__caption {
     padding: 12px 14px 0;
