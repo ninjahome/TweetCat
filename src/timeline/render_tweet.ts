@@ -30,10 +30,12 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
         insertRepostedBanner(article.querySelector(".tweet-topmargin") as HTMLElement, outer.author); // 你自己的函数
     }
 
-    // ✅ 新增：收集“需要隐藏的短链”——当前只需要卡片短链
-    const extraHiddenShortUrls = collectCardShortUrls(target);
+    // console.log("tweet contents", JSON.stringify(target.tweetContent));
+    const extraHiddenShortUrls = collectExtraHiddenShortUrls(
+        target.tweetContent,
+        target.card
+    );
 
-    // ✅ 传入隐藏集合
     updateTweetContentArea(
         article.querySelector(".tweet-body") as HTMLElement,
         target.tweetContent,
@@ -51,7 +53,6 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
             target.card, tpl);
     }
 
-    // console.log("-----------------------》》》》引用推文对象：", target.quotedStatus);
     const quoteArea = article.querySelector(".tweet-quote-area") as HTMLElement | null;
     if (quoteArea) {
         quoteArea.innerHTML = '';
@@ -294,13 +295,17 @@ function updateTweetBottomButtons(
     }
 }
 
-
-function collectCardShortUrls(target: { card: { url?: string } | null }): string[] {
-    const list: string[] = [];
-    const tco = target.card?.url;
-    if (tco) list.push(tco);
-    return list;
+function collectExtraHiddenShortUrls(
+    _tweet: TweetContent,
+    card?: { url?: string; entityUrl?: string } | null
+): string[] {
+    const set = new Set<string>();
+    for (const u of [card?.url, (card as any)?.entityUrl]) {
+        if (u && /^https?:\/\/t\.co\//i.test(u)) set.add(u);
+    }
+    return [...set];
 }
+
 
 // 新增：正文区域点击 -> 进入详情（贴近官方）
 function attachBodyPermalink(article: Element, author: TweetAuthor, tweetId: string): void {
