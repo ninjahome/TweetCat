@@ -366,6 +366,127 @@ export class TweetAuthor {
     }
 }
 
+function isXArticle(u?: string|null): boolean {
+    if (!u) return false;
+    try {
+        const url = new URL(u);
+        const host = url.hostname.replace(/^www\./, '').toLowerCase();
+        return (host === 'x.com' || host.endsWith('.x.com')) && url.pathname.startsWith('/i/article/');
+    } catch { return false; }
+}
+//
+// export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
+//     const u = raw.entities?.urls?.find(e => isXArticle(e.expanded_url));
+//     if (!u) return null;
+//
+//     const meta = (u as any).unwound ?? {};
+//     const img  = meta.thumbnail_url || meta.image_url || null;
+//
+//     // 直接返回“标准” TweetCard 结构
+//     return {
+//         name: 'summary_large_image',
+//         url: u.url,                              // t.co 短链
+//         expandedUrl: u.expanded_url || undefined,
+//         vanityUrl: u.expanded_url || undefined,
+//         domain: 'x.com',
+//         title: meta.title || undefined,
+//         description: meta.description || undefined,
+//         mainImageUrl: img,
+//         images: img ? [{ url: img }] : []
+//     } as unknown as TweetCard;   // 若 TweetCard 是 class，可在其构造器支持该扁平结构
+// }
+
+
+// 兜底：从 entities.urls 里挑出 x.com/i/article，组装 TweetCard（仅此处打印）
+export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
+    try {
+        // 1) 入口：把与本逻辑相关的最小必要原始数据打出来
+        logTOP("------->>>>>buildFallbackTweetCard :\n", {
+            text: raw.full_text,
+            urls: raw.entities?.urls?.map(u => ({
+                url: u.url,
+                expanded: u.expanded_url,
+                display: u.display_url,
+                hasUnwound: !!(u as any).unwound
+            }))
+        });
+
+        // 2) 选择目标 url（x.com/i/article/...）
+        const u = raw.entities?.urls?.find(e => isXArticle(e.expanded_url));
+        if (!u) {
+            logTOP("------->>>>>fallback: no x.com/i/article in entities.urls");
+            return null;
+        }
+
+        // 3) 解出可能随 payload 一起下发的 meta
+        const unwound = (u as any).unwound ?? null;
+        logTOP("------->>>>>fallback: picked url", {
+            tco: u.url,
+            expanded: u.expanded_url,
+            hasUnwound: !!unwound,
+            unwoundKeys: unwound ? Object.keys(unwound) : [],
+            title: unwound?.title,
+            description: unwound?.description,
+            thumb: unwound?.thumbnail_url,
+            image: unwound?.image_url
+        });
+
+        // 4) 组装 TweetCard（只在这里构造；不改渲染层）
+        const img = unwound?.thumbnail_url || unwound?.image_url || undefined;
+        const entry = {
+            name: img ? "summary_large_image" : "summary",
+            url: u.url,                          // t.co，用于隐藏正文短链
+            expandedUrl: u.expanded_url,         // 展开的 x 链接
+            vanityUrl: u.expanded_url,
+            domain: "x.com",
+            title: unwound?.title || "x.com",
+            description: unwound?.description || "",
+            mainImageUrl: img,
+            images: img ? [{ url: img }] : []
+        } as unknown as TweetCard;
+
+        logTOP("------->>>>>fallback: built card entry", {
+            name: (entry as any).name,
+            expandedUrl: (entry as any).expandedUrl,
+            mainImageUrl: (entry as any).mainImageUrl,
+            images: (entry as any).images?.map((i: any) => i?.url)
+        });
+
+        return entry;
+    } catch (err) {
+        logTOP("------->>>>>fallback: error", String(err));
+        return null;
+    }
+}
+
+function buildArticleTweetCard(raw: any): TweetCard | null {
+    const art = raw?.article?.article_results?.result;
+    if (!art) return null;
+
+    const legacy = raw?.legacy;
+    const u = legacy?.entities?.urls?.find((e: any) => isXArticle(e?.expanded_url));
+    const tco = u?.url;
+    const expanded = u?.expanded_url || (art?.rest_id ? `https://x.com/i/article/${art.rest_id}` : "");
+
+    const img = art?.cover_media?.media_info?.original_img_url as string | undefined;
+    const title = art?.title as string | undefined;
+    const desc  = art?.preview_text as string | undefined;
+
+    return {
+        name: img ? "summary_large_image" : "summary",
+        title,
+        description: desc,
+        domain: "x.com",
+        // 下面三个字段是你渲染用到的链接优先级
+        url: tco || expanded || "#",
+        expandedUrl: expanded || "",
+        vanityUrl: expanded || "x.com",
+        mainImageUrl: img,
+        images: img ? [{ url: img }] : [],
+    } as TweetCard;
+}
+
+
 export class TweetObj {
     rest_id: string;
     unmention_data: any;
@@ -391,7 +512,21 @@ export class TweetObj {
         this.source = data.source;
         this.quick_promote_eligibility = data.quick_promote_eligibility;
         this.tweetContent = new TweetContent(data.legacy);
+
         this.card = data.card ? new TweetCard(data.card) : null;
+
+        if (!this.card) {
+            // 先试图用 article 构建（有标题/图）
+            const fromArticle = buildArticleTweetCard(data);
+            if (fromArticle) this.card = fromArticle as any;
+        }
+
+        if (!this.card) {
+            // 再退回你现有的兜底（只看 entities.urls）
+            const fallback = buildFallbackTweetCard(this.tweetContent);
+            if (fallback) this.card = fallback as any;
+        }
+
         if (data?.legacy?.retweeted_status_result?.result) {
             this.retweetedStatus = new TweetObj(
                 data.legacy.retweeted_status_result.result
@@ -428,7 +563,7 @@ export class EntryObj {
     tweet: TweetObj;
 
     constructor(entry: any) {
-        logTOP("------->>>>>entry obj raw data:\n", entry);
+        // logTOP("------->>>>>entry obj raw data:\n", JSON.stringify(entry));
         this.entryId = entry.entryId;
         this.sortIndex = entry.sortIndex;
         const content = entry.content;
