@@ -4,6 +4,7 @@ import {
     isTwitterStatusUrl
 } from "./render_common";
 import {logRender} from "../common/debug_flags";
+import {isXArticle} from "../common/utils";
 
  function extractDomain(vanity?: string, fallback?: string): string {
     if (!vanity && !fallback) return '';
@@ -190,9 +191,16 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
     const first = card.images?.[0];
     const imageUrl = card.mainImageUrl || first?.url || "";
 
-    // anchor：大图点击区
+    // ===== ① 选择显示模式 =====
+    // 规则：x 站内 /i/article 走“文本块模式”，其余外站走“覆盖标题模式”
+    const isXArticleCard = isXArticle(expanded || card.vanityUrl || "");
+    const root = node as HTMLElement;
+    root.classList.toggle("tc-card-large--text",  !!isXArticleCard);
+    root.classList.toggle("tc-card-large--overlay", !isXArticleCard);
+    root.classList.toggle("tc-card-large--hide-source", !!isXArticleCard);
+
+    // ===== ② anchor：大图点击区 =====
     const aMedia = node.querySelector(".tc-card-large__media") as HTMLAnchorElement | null;
-    // anchor：底部“来自 domain”
     const aSource = node.querySelector(".tc-card-large__source") as HTMLAnchorElement | null;
 
     if (aMedia) {
@@ -207,8 +215,7 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
                 bindTwitterInternalLink(aMedia, expanded);
                 aMedia.removeAttribute("target");
                 aMedia.removeAttribute("rel");
-            } catch { /* ignore */
-            }
+            } catch { /* ignore */ }
         }
     }
 
@@ -219,16 +226,40 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
         if (expanded) (aSource as any).dataset.expandedUrl = expanded;
     }
 
-    // 文本：标题（覆盖在图上） & 底部域名
-    const titleEl = node.querySelector(".tc-card-large__title") as HTMLElement | null;
-    if (titleEl) titleEl.textContent = title;
+    // ===== ③ 文本：覆盖在图上的标题 与 底部域名 =====
+    const titleOverlay = node.querySelector(".tc-card-large__media .tc-card-large__title") as HTMLElement | null;
+    if (titleOverlay) titleOverlay.textContent = title;
 
     const srcText = node.querySelector(".tc-card-large__source-text") as HTMLElement | null;
     if (srcText) srcText.textContent = domain || "";
 
-    // 图片：img + 背景（占位/模糊底）
+    // ===== ④ 文本块模式下的标题/描述（图下方） =====
+    if (isXArticleCard) {
+        const titleBelow = node.querySelector(".tc-card-large__title-text") as HTMLElement | null;
+        if (titleBelow) titleBelow.textContent = title;
+    }
+
+    const descSelector = isXArticleCard
+        ? ".tc-card-large__meta .tc-card-large__desc"      // 站内：用 meta 的描述
+        : ".tc-card-large__caption .tc-card-large__desc";   // 站外：用 caption 的描述
+
+    const descEl = node.querySelector(descSelector) as HTMLElement | null;
+    if (descEl) {
+        const desc = card.description || "";
+        if (isXArticleCard && desc) {
+            // 站内：有描述就显示
+            descEl.textContent = desc;
+            descEl.style.display = "";
+        } else {
+            // 站外或无描述：不显示
+            descEl.textContent = "";
+            descEl.style.display = "none";
+        }
+    }
+
+    // ===== ⑤ 图片：img + 背景（占位/模糊底） =====
     const imgEl = node.querySelector(".tc-card-large__img") as HTMLImageElement | null;
-    const bgEl = node.querySelector(".tc-card-large__bg") as HTMLElement | null;
+    const bgEl  = node.querySelector(".tc-card-large__bg") as HTMLElement | null;
 
     if (imgEl && imageUrl) {
         imgEl.src = imageUrl;

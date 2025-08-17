@@ -4,6 +4,7 @@
 
 import {WrapEntryObj} from "./db_raw_tweet";
 import {logTOP} from "../common/debug_flags";
+import {isXArticle, toHttps} from "../common/utils";
 
 export class TweetCardImage {
     url: string;
@@ -366,19 +367,8 @@ export class TweetAuthor {
     }
 }
 
-function isXArticle(u?: string|null): boolean {
-    if (!u) return false;
-    try {
-        const url = new URL(u);
-        const host = url.hostname.replace(/^www\./, '').toLowerCase();
-        return (host === 'x.com' || host.endsWith('.x.com')) && url.pathname.startsWith('/i/article/');
-    } catch { return false; }
-}
-
-// 兜底：从 entities.urls 里挑出 x.com/i/article，组装 TweetCard（仅此处打印）
 export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
     try {
-        // 1) 入口：把与本逻辑相关的最小必要原始数据打出来
         logTOP("------->>>>>buildFallbackTweetCard :\n", {
             text: raw.full_text,
             urls: raw.entities?.urls?.map(u => ({
@@ -389,18 +379,17 @@ export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
             }))
         });
 
-        // 2) 选择目标 url（x.com/i/article/...）
         const u = raw.entities?.urls?.find(e => isXArticle(e.expanded_url));
         if (!u) {
             logTOP("------->>>>>fallback: no x.com/i/article in entities.urls");
             return null;
         }
 
-        // 3) 解出可能随 payload 一起下发的 meta
         const unwound = (u as any).unwound ?? null;
+        const expanded = toHttps(u.expanded_url || "");
         logTOP("------->>>>>fallback: picked url", {
             tco: u.url,
-            expanded: u.expanded_url,
+            expanded,
             hasUnwound: !!unwound,
             unwoundKeys: unwound ? Object.keys(unwound) : [],
             title: unwound?.title,
@@ -409,14 +398,18 @@ export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
             image: unwound?.image_url
         });
 
-        // 4) 组装 TweetCard（只在这里构造；不改渲染层）
         const img = unwound?.thumbnail_url || unwound?.image_url || undefined;
+
         const entry = {
-            name: img ? "summary_large_image" : "summary",
-            url: u.url,                          // t.co，用于隐藏正文短链
-            expandedUrl: u.expanded_url,         // 展开的 x 链接
-            vanityUrl: u.expanded_url,
+            // 统一为大图模板，避免 “x.com 小卡片” 的退化
+            name: "summary_large_image",
             domain: "x.com",
+            // 链接字段
+            url: u.url,                 // t.co
+            entityUrl: u.url,           // ★ 新增：也放到 entityUrl，便于隐藏
+            expandedUrl: expanded,
+            vanityUrl: expanded,
+            // 文本 + 图片
             title: unwound?.title || "x.com",
             description: unwound?.description || "",
             mainImageUrl: img,
@@ -444,26 +437,32 @@ function buildArticleTweetCard(raw: any): TweetCard | null {
     const legacy = raw?.legacy;
     const u = legacy?.entities?.urls?.find((e: any) => isXArticle(e?.expanded_url));
     const tco = u?.url;
-    const expanded = u?.expanded_url || (art?.rest_id ? `https://x.com/i/article/${art.rest_id}` : "");
+    const expanded0 = u?.expanded_url || (art?.rest_id ? `https://x.com/i/article/${art.rest_id}` : "");
+    const expanded = toHttps(expanded0);
 
     const img = art?.cover_media?.media_info?.original_img_url as string | undefined;
     const title = art?.title as string | undefined;
     const desc  = art?.preview_text as string | undefined;
 
     return {
-        name: img ? "summary_large_image" : "summary",
+        // 统一用大图卡，保持与官方一致
+        name: "summary_large_image",
+        // 文本
         title,
-        description: desc,
+        description: desc || "",
         domain: "x.com",
-        // 下面三个字段是你渲染用到的链接优先级
+        // 链接（t.co 用于隐藏，expanded 用于渲染/内部路由）
         url: tco || expanded || "#",
+        entityUrl: tco || "",          // ★ 新增：便于隐藏短链
         expandedUrl: expanded || "",
-        vanityUrl: expanded || "x.com",
+        vanityUrl: expanded || "https://x.com",
+        // 图片
         mainImageUrl: img,
         images: img ? [{ url: img }] : [],
+        // 可选：补 restId（不是必须，但有用）
+        restId: art?.rest_id || ""
     } as TweetCard;
 }
-
 
 export class TweetObj {
     rest_id: string;
@@ -494,15 +493,19 @@ export class TweetObj {
         this.card = data.card ? new TweetCard(data.card) : null;
 
         if (!this.card) {
-            // 先试图用 article 构建（有标题/图）
             const fromArticle = buildArticleTweetCard(data);
-            if (fromArticle) this.card = fromArticle as any;
+            if (fromArticle) {
+                logTOP("fallback-source: article node used");
+                this.card = fromArticle as any;
+            }
         }
 
         if (!this.card) {
-            // 再退回你现有的兜底（只看 entities.urls）
             const fallback = buildFallbackTweetCard(this.tweetContent);
-            if (fallback) this.card = fallback as any;
+            if (fallback) {
+                logTOP("fallback-source: entities.urls used");
+                this.card = fallback as any;
+            }
         }
 
         if (data?.legacy?.retweeted_status_result?.result) {

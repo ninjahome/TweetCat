@@ -285,3 +285,20 @@ export function parseTwitterPath(href?: string | URL): ParsedTwitterLink {
     // 其它情况
     return { kind: "other", url: u };
 }
+
+
+
+export function isXArticle(u?: string|null): boolean {
+    if (!u) return false;
+    try {
+        const url = new URL(u);
+        const host = url.hostname.replace(/^www\./, '').toLowerCase();
+        return (host === 'x.com' || host.endsWith('.x.com')) && url.pathname.startsWith('/i/article/');
+    } catch { return false; }
+}
+// 新增：把 http 规范成 https，避免 http://x.com/... 造成识别/样式问题
+export function toHttps(u?: string): string {
+    if (!u) return "";
+    try { const x = new URL(u); x.protocol = "https:"; return x.toString(); }
+    catch { return u; }
+}
