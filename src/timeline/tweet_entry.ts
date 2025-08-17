@@ -374,28 +374,6 @@ function isXArticle(u?: string|null): boolean {
         return (host === 'x.com' || host.endsWith('.x.com')) && url.pathname.startsWith('/i/article/');
     } catch { return false; }
 }
-//
-// export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
-//     const u = raw.entities?.urls?.find(e => isXArticle(e.expanded_url));
-//     if (!u) return null;
-//
-//     const meta = (u as any).unwound ?? {};
-//     const img  = meta.thumbnail_url || meta.image_url || null;
-//
-//     // 直接返回“标准” TweetCard 结构
-//     return {
-//         name: 'summary_large_image',
-//         url: u.url,                              // t.co 短链
-//         expandedUrl: u.expanded_url || undefined,
-//         vanityUrl: u.expanded_url || undefined,
-//         domain: 'x.com',
-//         title: meta.title || undefined,
-//         description: meta.description || undefined,
-//         mainImageUrl: img,
-//         images: img ? [{ url: img }] : []
-//     } as unknown as TweetCard;   // 若 TweetCard 是 class，可在其构造器支持该扁平结构
-// }
-
 
 // 兜底：从 entities.urls 里挑出 x.com/i/article，组装 TweetCard（仅此处打印）
 export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
