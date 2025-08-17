@@ -49,10 +49,12 @@ function pushOrReplace(path: string) {
 }
 
 export function routeToTweetCat() {
+    if (location.hash === HASH) return; // 已在 TweetCat，不再 push/replace
     pushOrReplace(FULL);          // ← 统一入口
     handleLocationChange();
 }
 export function navigateToTweetCat(): void {
+    if (location.hash === HASH) return; // 已在 TweetCat，不再 push/replace
     pushOrReplace(FULL);          // ← 统一入口
     window.dispatchEvent(new PopStateEvent('popstate'));
     handleLocationChange();

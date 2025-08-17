@@ -11,6 +11,7 @@ import {setupTweetCatUI} from "../timeline/timeline_ui";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {startToCheckKolId, startToFetchTweets} from "../timeline/tweet_fetcher";
 import {setTweetCatFlag} from "../timeline/route_helper";
+import {logRender} from "../common/debug_flags";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
@@ -22,10 +23,10 @@ async function onDocumentLoaded() {
     addCustomStyles('css/content.css');
     await initObserver();
     await parseUserInfo(async (userName) => {
-        console.log("------->>>>tweet user name:", userName);
+        logRender("------->>>>tweet user name:", userName);
     });
     appendTweetCatMenuItem();
-    console.log('------>>>TweetCat content script success ✨');
+    logRender('------>>>TweetCat content script success ✨');
 }
 
 export function appendTweetCatMenuItem() {
@@ -54,7 +55,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
         case MsgType.NaviUrlChanged: {
 
             const linkInfo = parseTwitterPath(window.location.href)
-            // console.log("------>>> link info:", linkInfo)
+            logRender("------>>> link info:", linkInfo)
             if (linkInfo.kind === "profile") {
                 appendFilterOnKolProfileHome(linkInfo.username).then();
             } else if (linkInfo.kind === "tweet") {
@@ -67,7 +68,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             break;
         }
         case MsgType.CategoryChanged: {
-            // console.log("------>>> category changed.....")
+            logRender("------>>> category changed.....")
             // reloadCategoryContainer(request.data as Category[]).then();
             sendResponse({success: true});
             break;
@@ -103,7 +104,7 @@ async function parseUserInfo(callback: (userProfile: string) => Promise<void>) {
 
     const profileBtn = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]') as HTMLLinkElement;
     if (!profileBtn) {
-        console.log("------>>> need load user profile later");
+        logRender("------>>> need load user profile later");
 
         userInfoTryTime += 1;
         if (userInfoTryTime > maxElmFindTryTimes) {
@@ -144,7 +145,7 @@ export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null 
     const nameSpan = userNameDiv.querySelector(".css-1jxf684.r-bcqeeo.r-1ttztb7.r-qvutc0.r-poiln3") as HTMLElement
     const displayName = nameSpan?.textContent || 'imageName';
     if (!username || !displayName) {
-        console.log("==============================>>>", username, displayName);
+        logRender("==============================>>>", username, displayName);
         return null;
     }
 
