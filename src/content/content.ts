@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
 async function onDocumentLoaded() {
     addCustomStyles('css/content.css');
+    addCustomStyles('css/tweet_render.css');
     await initObserver();
     await parseUserInfo(async (userName) => {
         logRender("------->>>>tweet user name:", userName);
