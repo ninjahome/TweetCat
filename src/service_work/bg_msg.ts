@@ -103,8 +103,8 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true, data: await loadCursorById(request.data as string)};
         }
 
-        case MsgType.KolCursorRandomForFirstOpen:{
-            alarmTweetsProc().then();
+        case MsgType.KolCursorRandomForFirstOpen: {
+            alarmTweetsProc(true).then();
             return {success: true};
         }
 

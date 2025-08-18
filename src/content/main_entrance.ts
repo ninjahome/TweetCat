@@ -1,17 +1,17 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./content_oberver";
+import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./twitter_observer";
 import {
-    appendFilterBtn,
     appendFilterOnKolProfileHome, appendFilterOnTweetPage,
-} from "./content_filter";
+} from "./twitter_ui";
 import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "../common/consts";
 import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
-import {setupTweetCatUI} from "../timeline/timeline_ui";
+import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {startToCheckKolId, startToFetchTweets} from "../timeline/tweet_fetcher";
 import {setTweetCatFlag} from "../timeline/route_helper";
 import {logRender} from "../common/debug_flags";
+import {setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
@@ -30,7 +30,7 @@ async function onDocumentLoaded() {
     logRender('------>>>TweetCat content script success ✨');
 }
 
-export function appendTweetCatMenuItem() {
+function appendTweetCatMenuItem() {
     observeSimple(
         document.body,
         () => document.querySelector("header nav[role='navigation']") as HTMLElement,
@@ -38,8 +38,8 @@ export function appendTweetCatMenuItem() {
             if (nav.querySelector(".tweetCatMenuItem")) return true;
             parseContentHtml("html/content.html").then(async (tpl) => {
                 const main = document.querySelector("main[role='main']") as HTMLElement;
-                setupTweetCatUI(nav, tpl, main);
-                await appendFilterBtn(tpl, main)
+                setupTweetCatMenuAndTimeline(nav, tpl, main);
+                await setupFilterItemsOnWeb3Area(tpl, main)
             });
             return true;
         }
@@ -86,7 +86,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             break;
         }
 
-        case MsgType.StartKolIdCheck:{
+        case MsgType.StartKolIdCheck: {
             startToCheckKolId(request.data).then()
             sendResponse({success: true});
             break;

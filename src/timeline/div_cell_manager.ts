@@ -50,7 +50,7 @@ export class TweetManager {
         document.documentElement.style.overscrollBehavior = "none";
         this.resizeLogger = new TweetResizeObserverManager();
         tweetPager.init().then(async () => {
-            tweetPager.switchCategory(null);
+            tweetPager.switchCategory();
             this.scroller = new VirtualScroller(this);
             await this.scroller!.initFirstPage()
         });
@@ -61,7 +61,7 @@ export class TweetManager {
         this.scroller?.scrollToTop({needScroll: true, targetTop: 0})
     }
 
-    public async switchCategory(cat: number | null) {
+    public async switchCategory(cat: number) {
         logTweetMgn("------>>> tweet category switch to:", cat);
         this.resizeLogger = new TweetResizeObserverManager();
         tweetPager.switchCategory(cat);

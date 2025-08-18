@@ -45,11 +45,6 @@ export async function updateAlarm(): Promise<void> {
     console.log("------>>> alarm for user id check recreate success,timer:", __interval_userID_check__);
 }
 
-export async function setTweetBootStrap() {
-    await tweetFM.resetState();
-    await alarmTweetsProc();
-}
-
 async function timerTaskWork(alarm: any): Promise<void> {
     switch (alarm.name) {
         case __alarm_tweets_fetch__: {
@@ -69,7 +64,7 @@ export async function timerKolInQueueImmediate(kolID: string): Promise<void> {
     await tweetFM.queuePush(kolID);
 }
 
-export async function alarmTweetsProc() {
+export async function alarmTweetsProc(isFirstOpen: boolean = false) {
     await checkAndInitDatabase();
     try {
         const hasOpenXCom = await checkIfXIsOpen();
@@ -79,7 +74,8 @@ export async function alarmTweetsProc() {
         }
 
         await tweetFM.loadRuntimeStateFromStorage();
-        console.log("------>>> alarm triggered, start to notify content script");
+        if (isFirstOpen) tweetFM.setAsFirstOpen();
+        console.log("------>>> alarm triggered, start to notify content script, isFirstOpen:",isFirstOpen);
         await tweetFM.fetchTweetsPeriodic();
         await tweetFM.saveRuntimeStateToStorage();
     } catch (e) {

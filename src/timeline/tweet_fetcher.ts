@@ -6,14 +6,13 @@ import {cacheTweetsToSW} from "./db_raw_tweet";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {MsgType} from "../common/consts";
 import {EntryObj} from "./tweet_entry";
-import {showNewestTweets} from "../content/content_filter";
 import {updateKolIdToSw} from "../object/tweet_kol";
+import {showNewestTweets} from "../content/tweetcat_web3_area";
 
 const MIN_FETCH_GAP = 5_000;
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
-    private notificationContainer: HTMLElement | null = null;
     private latestNewTweets: EntryObj[] = [];
 
     constructor() {
@@ -100,33 +99,18 @@ export class TweetFetcher {
             printStatus("------>>>✅after process:", cursor)
             await saveOneKolCursorToSW(cursor);
 
-           await sleep(MIN_FETCH_GAP);
+            await sleep(MIN_FETCH_GAP);
         }
 
         if (newest && this.latestNewTweets.length > 0) {
-            this.showNewTweetsNotification()
+            showNewestTweets(this.latestNewTweets).finally(() => {
+                this.latestNewTweets = [];
+            });
         }
     }
 
     resetNotifications() {
-        if (!this.notificationContainer) return;
-        this.notificationContainer!.style.display = "none";
         this.latestNewTweets = [];
-    }
-
-    private showNewTweetsNotification() {
-        if (!this.notificationContainer) {
-            this.notificationContainer = document.querySelector(".new-tweet-notification") as HTMLElement;
-            this.notificationContainer.addEventListener('click', () => {
-                this.notificationContainer!.style.display = "none";
-                showNewestTweets(this.latestNewTweets).then();
-                this.latestNewTweets = [];
-            })
-        }
-
-        this.notificationContainer.style.display = "block";
-        const numberDiv = this.notificationContainer.querySelector(".tweet-no") as HTMLElement;
-        numberDiv.innerText = '' + this.latestNewTweets.length;
     }
 }
 

@@ -19,7 +19,6 @@ interface TweetFetcherRuntimeState {
     currentNewGroupIndex: number;
     currentOldGroupIndex: number;
     newestFetch: boolean;
-    bootStrap: boolean;
     immediateQueue: string[];
 }
 
@@ -27,7 +26,6 @@ export class TweetFetcherManager {
     private currentNewGroupIndex = 0;
     private currentOldGroupIndex = 0;
     private newestFetch = false;
-    private bootStrap = true;
     private immediateQueue: string[] = [];
 
     private readonly MAX_KOL_PER_ROUND = 5;
@@ -44,7 +42,6 @@ export class TweetFetcherManager {
         this.currentNewGroupIndex = state.currentNewGroupIndex ?? 0;
         this.currentOldGroupIndex = state.currentOldGroupIndex ?? 0;
         this.newestFetch = state.newestFetch ?? false;
-        this.bootStrap = state.bootStrap ?? true;
         this.immediateQueue = state.immediateQueue ?? [];
 
         logBGT("[loadRuntimeStateFromStorage]✅ State has been loaded:", JSON.stringify(state));
@@ -55,7 +52,6 @@ export class TweetFetcherManager {
             currentNewGroupIndex: this.currentNewGroupIndex,
             currentOldGroupIndex: this.currentOldGroupIndex,
             newestFetch: this.newestFetch,
-            bootStrap: this.bootStrap,
             immediateQueue: this.immediateQueue,
         };
 
@@ -65,16 +61,16 @@ export class TweetFetcherManager {
         logBGT("[saveRuntimeStateToStorage]⚠️ State has been saved:", JSON.stringify(state));
     }
 
-    async resetState(): Promise<void> {
-        this.currentNewGroupIndex = 0;
-        this.currentOldGroupIndex = 0;
-        this.newestFetch = true;
-        this.bootStrap = true;
-        this.immediateQueue = [];
-
-        await this.saveRuntimeStateToStorage();
-        logBGT("[resetState]🔴 State has been reset on browser startup");
-    }
+    //
+    // async resetState(): Promise<void> {
+    //     this.currentNewGroupIndex = 0;
+    //     this.currentOldGroupIndex = 0;
+    //     this.newestFetch = true;
+    //     this.immediateQueue = [];
+    //
+    //     await this.saveRuntimeStateToStorage();
+    //     logBGT("[resetState]🔴 State has been reset on browser startup");
+    // }
 
     private async getNextKolGroup(newest: boolean = true): Promise<KolCursor[]> {
 
@@ -109,9 +105,6 @@ export class TweetFetcherManager {
             }
             scanCount++;
             idx++;
-            if (idx % total === 0 && this.bootStrap) {
-                this.bootStrap = false;
-            }
         }
 
         if (newest) {
@@ -121,24 +114,6 @@ export class TweetFetcherManager {
         }
 
         return result;
-    }
-
-    async getNormalCursors(): Promise<KolCursor[]> {
-        if (this.bootStrap) {
-            this.newestFetch = true;
-            this.bootStrap = false;
-        } else {
-            this.newestFetch = !this.newestFetch;
-        }
-
-        let newest = this.newestFetch;
-
-        let groupKolCursors = await this.getNextKolGroup(newest);
-        if (groupKolCursors.length === 0) {
-            logBGT(`[fetchTweetsPeriodic] 😅  ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex} no kol ids`);
-            return [];
-        }
-        return groupKolCursors;
     }
 
     async getImmediateCursors(): Promise<KolCursor[]> {
@@ -162,17 +137,26 @@ export class TweetFetcherManager {
         return immediateCursors;
     }
 
+    setAsFirstOpen() {
+        this.newestFetch = true;
+    }
 
     async fetchTweetsPeriodic() {
+        let newest = false;
         let cursorToFetch: KolCursor[];
-        let newest: boolean;
         if (this.immediateQueue.length > 0) {
             logBGT(`[fetchTweetsPeriodic]Need to fetch immediate queue[${this.immediateQueue.length}] first`);
             cursorToFetch = await this.getImmediateCursors();
             newest = true;
         } else {
-            cursorToFetch = await this.getNormalCursors();
+            cursorToFetch = await this.getNextKolGroup(this.newestFetch);
             newest = this.newestFetch;
+            this.newestFetch = !this.newestFetch;
+        }
+
+        if (cursorToFetch.length === 0) {
+            logBGT(`[fetchTweetsPeriodic] 😅  ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex} no kol ids`);
+            return;
         }
 
         const param = new tweetFetchParam(cursorToFetch, newest);

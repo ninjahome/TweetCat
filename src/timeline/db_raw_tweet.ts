@@ -80,11 +80,11 @@ export async function initTweetsCheck(): Promise<boolean> {
 }
 
 export async function loadLatestTweets(limit: number = 20,
-                                       category: number | undefined = undefined,
+                                       category: number,
                                        timeStamp: number | undefined = undefined) {
     let filterFn: ((row: any) => boolean) | undefined = undefined;
 
-    if (category !== null) {
+    if (category >= 0) {
         const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => item.catID === category);
         const categoryUserIds = new Set<string>(kols.map(k => k.kolUserId));
         filterFn = (row) => categoryUserIds.has(row.userId);

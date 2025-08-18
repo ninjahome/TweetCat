@@ -1,29 +1,14 @@
-import {observeForElement, sendMsgToService} from "../common/utils";
-import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
-import {parseContentHtml} from "./content";
-import {queryKolDetailByName, showPopupMenu} from "./content_oberver";
+import {observeForElement} from "../common/utils";
+import {choseColorByID} from "../common/consts";
+import {parseContentHtml} from "./main_entrance";
+import {queryKolDetailByName, showPopupMenu} from "./twitter_observer";
 import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {getTweetCatFlag, isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
-import {switchCategory} from "../timeline/timeline_ui";
-import {EntryObj} from "../timeline/tweet_entry";
 import {logRender} from "../common/debug_flags";
 
-export function setSelectedCategory(catID: number = -1) {
-    document.querySelectorAll(".category-filter-item").forEach(elm => {
-            elm.classList.remove("active");
-            const emlCatID = Number((elm as HTMLElement).dataset.categoryID);
-            if (emlCatID === catID) {
-                elm.classList.add("active");
-            }
-        }
-    );
-}
-
-
 let observing = false;
-
 export async function appendFilterOnKolProfileHome(kolName: string) {
     if (observing) {
         return;
@@ -65,7 +50,7 @@ function hijackBackButton(): void {
 
         e.preventDefault();
         e.stopPropagation();
-        console.debug('[TC] 拦截返回按钮，跳转回 TweetCat');
+        logRender('[TC] 拦截返回按钮，跳转回 TweetCat');
         navigateToTweetCat();
     }, true); // 使用 capture 模式，优先于 React/Twitter 默认处理
 }
@@ -139,66 +124,5 @@ async function setCategoryStatusOnProfileHome(kolName: string, clone: HTMLElemen
             nameDiv.querySelector(".category-name")!.textContent = cat.catName;
         }
     }
-}
-
-
-export async function appendFilterBtn(tpl: HTMLTemplateElement, main: HTMLElement) {
-    const filterContainerDiv = tpl.content.getElementById("category-filter-container");
-    const filterBtn = tpl.content.getElementById("category-filter-item");
-    const moreBtn = tpl.content.getElementById("category-filter-more");
-    const allCatBtn = tpl.content.getElementById("category-filter-clear");
-
-    if (!filterContainerDiv || !filterBtn || !moreBtn || !allCatBtn) {
-        console.error(`------>>> failed to filter buttons container is ${filterContainerDiv}
-         category button is ${filterBtn} clear button is ${allCatBtn}`);
-        return;
-    }
-    const container = main.querySelector(".tweet-main .tweet-cat-filter-area") as HTMLElement
-    if (!container) {
-        console.warn("🚨------>>> failed to find tweet cat filter area");
-        return
-    }
-    container.appendChild(filterContainerDiv);
-
-    allCatBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
-    allCatBtn.dataset.categoryID = '' + defaultAllCategoryID;
-    filterContainerDiv.appendChild(allCatBtn);
-
-    const categories = await queryCategoriesFromBG();
-    categories.forEach((category) => {
-        const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
-        cloneItem.id = "category-filter-item-" + category.id;
-        cloneItem.dataset.categoryID = '' + category.id
-        const btn = cloneItem.querySelector(".category-filter-btn") as HTMLElement
-        btn.innerText = category.catName;
-        btn.addEventListener('click', async () => {
-            await changeFilterType(category.id ?? null);
-        });
-        filterContainerDiv.appendChild(cloneItem);
-    });
-
-    moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
-    filterContainerDiv.appendChild(moreBtn);
-    logRender("✅ ------>>> add filter container success")
-    setSelectedCategory();
-}
-
-async function addMoreCategory() {
-    await sendMsgToService("#onboarding/main-home", MsgType.OpenPlugin);
-}
-
-async function resetCategories() {
-    await switchCategory(null);
-    setSelectedCategory(-1);
-}
-
-async function changeFilterType(catId: number | null) {
-    await switchCategory(catId);
-    setSelectedCategory(catId ?? -1);
-}
-
-export async function showNewestTweets(tweets:EntryObj[]){
-    await switchCategory(null);
-    setSelectedCategory(-1);
 }
 

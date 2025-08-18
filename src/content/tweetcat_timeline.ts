@@ -1,14 +1,15 @@
 import {deferByFrames} from "../common/utils";
-import {TweetManager} from "./div_cell_manager";
+import {TweetManager} from "../timeline/div_cell_manager";
 import {
     handleGrokMenuClick,
     isInTweetCatRoute,
     navigateToTweetCat,
     swapSvgToNormal,
     swapSvgToSelected
-} from "./route_helper";
+} from "../timeline/route_helper";
 import {logGuard} from "../common/debug_flags";
-import {setSelectedCategory} from "../content/content_filter";
+
+import {setSelectedCategory} from "./tweetcat_web3_area";
 
 let manager: TweetManager | null = null;
 
@@ -27,7 +28,7 @@ function bindTweetCatMenu(menuItem: HTMLElement) {
 
 let mounted = false;
 
-export function setupTweetCatUI(menuList: HTMLElement, tpl: HTMLTemplateElement, main: HTMLElement) {
+export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTemplateElement, main: HTMLElement) {
     const menuItem = tpl.content.getElementById('tweetCatMenuItem')!.cloneNode(true) as HTMLElement;
     const area = tpl.content.getElementById('tweetCatArea')!.cloneNode(true) as HTMLElement;
     area.style.display = 'none';
@@ -85,7 +86,7 @@ function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplate
     setSelectedCategory(-1)
 }
 
-export async function switchCategory(catID:number|null){
+export async function switchCategory(catID:number){
     manager?.dispose();
     manager?.switchCategory(catID);
 }

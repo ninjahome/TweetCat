@@ -4,7 +4,7 @@
 import {EntryObj} from "./tweet_entry";
 import {logFT, logPager} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
-import {MsgType} from "../common/consts";
+import {defaultAllCategoryID, MsgType} from "../common/consts";
 import {initBootstrapData, needBootStrap, WrapEntryObj} from "./db_raw_tweet";
 import {fetchTweets} from "./twitter_api";
 import {BossOfTheTwitter} from "../common/database";
@@ -12,13 +12,12 @@ import {BossOfTheTwitter} from "../common/database";
 
 export class TweetPager {
     private timeStamp?: number;
-    private currentCategoryId: number | null = null;
-    private isFetchingForFirstOpen: boolean = false;
+    private currentCategoryId: number = defaultAllCategoryID;
 
     constructor() {
     }
 
-    switchCategory(newCategoryId: number | null = null) {
+    switchCategory(newCategoryId: number = defaultAllCategoryID) {
         this.resetPager();
         this.currentCategoryId = newCategoryId;
         logPager(`[switchCategory] category changed -> ${newCategoryId}, timeStamp=${this.timeStamp}`);
@@ -56,6 +55,7 @@ export class TweetPager {
     /** 强制重置所有状态，恢复初始 */
     resetPager() {
         this.timeStamp = undefined;
+        this.currentCategoryId = defaultAllCategoryID;
         logPager('[Pager] HARD RESET completed.');
     }
 
@@ -73,8 +73,6 @@ export class TweetPager {
         logPager("⚠️Need load data form server for first open of twitter");
         setFirstFetchAt(Date.now());
         await sendMsgToService({}, MsgType.KolCursorRandomForFirstOpen);
-
-        this.isFetchingForFirstOpen = true;
     }
 
     async findNewestTweetsOfSomeBody(): Promise<EntryObj[]> {

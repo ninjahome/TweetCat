@@ -11,7 +11,7 @@ import {
 import {checkAndInitDatabase} from "../common/database";
 import {localGet, localSet} from "../common/local_storage";
 import {getBearerToken, updateBearerToken} from "../common/utils";
-import {createAlarm, setTweetBootStrap, updateAlarm} from "./bg_timer";
+import {createAlarm, updateAlarm} from "./bg_timer";
 
 /****************************************************************************************
  ┌────────────┐
@@ -95,7 +95,6 @@ browser.runtime.onStartup.addListener(() => {
         console.log('------>>> onStartup......');
         await checkAndInitDatabase();
         await createAlarm();
-        await setTweetBootStrap();
     })();
 });
 

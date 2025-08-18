@@ -27,7 +27,7 @@ module.exports = (env, argv) => {
             welcome: path.resolve(__dirname, './src/popup/welcome.ts'),
             injection: path.resolve(__dirname, './src/injection.ts'),
             dashboard: path.resolve(__dirname, './src/popup/dashboard.ts'),
-            content: path.resolve(__dirname, './src/content/content.ts'),
+            content: path.resolve(__dirname, './src/content/main_entrance.ts'),
             kol_mg: path.resolve(__dirname, './src/popup/kol_mg.ts'),
         },
         output: {
