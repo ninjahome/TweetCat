@@ -145,5 +145,4 @@ export async function initBootstrapData() {
             logTC(`Bootstrap failed for  ${kolId}`, err);
         }
     }
-
 }

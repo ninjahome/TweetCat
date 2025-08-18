@@ -16,7 +16,7 @@ import {
     WrapEntryObj
 } from "../timeline/db_raw_tweet";
 import {loadAllKolCursors, loadCursorById, writeKolsCursors, writeOneCursor} from "../object/kol_cursor";
-import {timerKolInQueueImmediate} from "./bg_timer";
+import {alarmTweetsProc, timerKolInQueueImmediate} from "./bg_timer";
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
     // console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)
@@ -101,6 +101,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.KolCursorQueryOne: {
             return {success: true, data: await loadCursorById(request.data as string)};
+        }
+
+        case MsgType.KolCursorRandomForFirstOpen:{
+            alarmTweetsProc().then();
+            return {success: true};
         }
 
         case MsgType.TimerKolInQueueAtOnce: {

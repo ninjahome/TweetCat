@@ -48,6 +48,7 @@ export enum MsgType {
     KolCursorSaveAll = 'KolCursorSaveAll',
     KolCursorSaveOne = 'KolCursorSaveOne',
     KolCursorQueryOne = 'KolCursorQueryOne',
+    KolCursorRandomForFirstOpen = 'KolCursorRandomForFirstOpen',
 
     TimerKolInQueueAtOnce = 'TimerKolInQueueAtOnce',
 }

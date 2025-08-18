@@ -13,6 +13,7 @@ import {BossOfTheTwitter} from "../common/database";
 export class TweetPager {
     private timeStamp?: number;
     private currentCategoryId: number | null = null;
+    private isFetchingForFirstOpen: boolean = false;
 
     constructor() {
     }
@@ -60,11 +61,20 @@ export class TweetPager {
 
     async init() {
         const bootStrap = await needBootStrap();
-        if (!bootStrap) {
+        if (bootStrap) {
+            await initBootstrapData();
             logPager("✅Initial tweet cache already populated, skipping bootstrap");
             return;
         }
-        await initBootstrapData();
+
+        const needSrvData = needServerDataForFirstOpen();
+        if (!needSrvData) return;
+
+        logPager("⚠️Need load data form server for first open of twitter");
+        setFirstFetchAt(Date.now());
+        await sendMsgToService({}, MsgType.KolCursorRandomForFirstOpen);
+
+        this.isFetchingForFirstOpen = true;
     }
 
     async findNewestTweetsOfSomeBody(): Promise<EntryObj[]> {
@@ -84,3 +94,35 @@ document.addEventListener('DOMContentLoaded', function onLoadOnce() {
     });
     document.removeEventListener('DOMContentLoaded', onLoadOnce);
 });
+
+
+const FIRST_FETCH_TS_KEY = 'tc:firstFetchAt';
+const FIRST_FETCH_TTL_MS = 30 * 60 * 1000;
+
+function getFirstFetchAt(): number | null {
+    const raw = localStorage.getItem(FIRST_FETCH_TS_KEY);
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) ? n : null;
+}
+
+function setFirstFetchAt(ts: number) {
+    localStorage.setItem(FIRST_FETCH_TS_KEY, String(ts));
+}
+
+function needServerDataForFirstOpen(ttlMs: number = FIRST_FETCH_TTL_MS): boolean {
+    const now = Date.now();
+    const firstAt = getFirstFetchAt();
+    if (firstAt === null) return true;
+    return (now - firstAt) >= ttlMs;
+}
+
+function fmt(ts: number) {
+    try {
+        return new Date(ts).toISOString();
+    } catch {
+        return String(ts);
+    }
+}
+
+(window as any).tcResetFirstFetch = () => localStorage.removeItem(FIRST_FETCH_TS_KEY);

@@ -100,7 +100,7 @@ export class TweetFetcher {
             printStatus("------>>>✅after process:", cursor)
             await saveOneKolCursorToSW(cursor);
 
-            await sleep(MIN_FETCH_GAP);
+           await sleep(MIN_FETCH_GAP);
         }
 
         if (newest && this.latestNewTweets.length > 0) {
@@ -192,5 +192,4 @@ export async function startToCheckKolId(ids: any[]) {
 
         await sleep(MIN_FETCH_GAP);
     }
-
 }

@@ -69,7 +69,7 @@ export async function timerKolInQueueImmediate(kolID: string): Promise<void> {
     await tweetFM.queuePush(kolID);
 }
 
-async function alarmTweetsProc() {
+export async function alarmTweetsProc() {
     await checkAndInitDatabase();
     try {
         const hasOpenXCom = await checkIfXIsOpen();
