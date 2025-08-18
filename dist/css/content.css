@@ -621,7 +621,9 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     color: rgb(29, 155, 240);
     font-weight: 700;
 }
-
+.tweettabname {
+    color: #1d9bf0 !important; /* Twitter 品牌蓝 */
+}
 
 /* 推文正文中的 inline media（图片/视频） */
 .tweet-content .inline-media {

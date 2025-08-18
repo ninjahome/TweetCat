@@ -55,10 +55,12 @@
     .tweet-cardfloat:hover {
         background-color: transparent !important;
     }
-    .tweet-quote-area .quote-card:hover{
+    .tweet-quote-area :hover{
         background-color: #16181c !important;
     }
-
+    .category-popup-menu {
+        background-color: #16181c !important;
+    }
 }
 
 /* Optional manual override via data-theme on <html> */
