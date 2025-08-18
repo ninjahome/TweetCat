@@ -350,7 +350,7 @@ img, video {
 }
 
 .tweet-content {
-    color: rgb(15, 20, 25);
+    color: var(--text-primary) !important;
     font-size: 15px;
     margin: 0px;
     padding: 0px;
@@ -377,6 +377,7 @@ img, video {
     margin-top: 12px;
     position: relative;
     border-radius: 16px;
+    border: 1px solid var(--border-subtle);
 }
 
 span.duration-badge {
@@ -413,10 +414,11 @@ span.duration-badge {
 
 /* 单图逻辑 */
 .tweet-image.single-image {
-    display: flex;
+    display: inline-flex;
     flex-direction: column;
     align-content: flex-start;
     max-height: 590px;
+    width: auto;
 }
 
 .tweet-image.single-image > div {
@@ -735,11 +737,15 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 .tweet-quote-area .quote-card {
     display: block;
-    border: 1px solid rgba(239, 243, 244, 1);
+    border: 1px solid var(--border-subtle);
     border-radius: 12px;
     padding: 8px;
     text-decoration: none;
     color: inherit;
+}
+.tweet-quote-area:hover {
+    background-color: #EFEFEF;
+    border-radius: 12px;
 }
 
 .tweet-quote-area .quote-header {
@@ -761,8 +767,8 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 .tweet-quote-area .quote-author .handle {
-    color: rgb(83, 100, 113);
-    font-size: 12px;
+    color: #71767b;
+    font-size: 15px;
 }
 
 
@@ -1076,3 +1082,4 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tweet-card-area .tc-card-large__meta {
     cursor: pointer;
 }
+

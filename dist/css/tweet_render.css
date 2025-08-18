@@ -1,0 +1,221 @@
+
+/* ===== Twitter-like Auto Dark Mode (drop-in) =====
+   How to use:
+   1) Link this AFTER your existing content.css
+      <meta name="color-scheme" content="light dark">
+      <link rel="stylesheet" href="content.css">
+      <link rel="stylesheet" href="theme-dark.css">
+   2) Optional manual override (keeps auto by default):
+      <html data-theme="auto|light|dark">
+*/
+
+/* ---------- Design Tokens ---------- */
+:root {
+    /* Light */
+    --bg-primary: #ffffff;
+    --bg-elevated: #ffffff;
+    --bg-hover: rgba(15,20,25,0.03);
+    --bg-subtle: #f7f9f9;
+
+    --text-primary: rgb(15,20,25);
+    --text-secondary: rgb(83,100,113);
+    --text-muted: #6b7280;
+
+    --accent: rgb(29,155,240);
+    --accent-subtle: rgba(29,155,240,.1);
+
+    --border-subtle: rgb(239,243,244);
+    --border-strong: rgba(15,20,25,0.1);
+
+    --card-radius: 12px;
+    --media-radius: 16px;
+
+    --shadow-pop: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Prefer the user's OS setting */
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Dark */
+        --bg-primary: #000000;
+        --bg-elevated: transparent;
+        --bg-hover: rgba(231,233,234,0.08);
+        --bg-subtle: #0a0a0a;
+
+        --text-primary: rgb(231,233,234);
+        --text-secondary: rgb(139,152,165);
+        --text-muted: #9ca3af;
+
+        --accent: rgb(29,155,240);
+        --accent-subtle: rgba(29,155,240,.15);
+
+        --border-subtle: #2f3336;
+        --border-strong: rgba(231,233,234,0.15);
+    }
+    .tweet-cardfloat:hover {
+        background-color: transparent !important;
+    }
+    .tweet-quote-area .quote-card:hover{
+        background-color: #16181c !important;
+    }
+
+}
+
+/* Optional manual override via data-theme on <html> */
+html[data-theme="dark"] {
+    --bg-primary: #000000;
+    --bg-elevated: #16181c;
+    --bg-hover: rgba(231,233,234,0.08);
+    --bg-subtle: #0a0a0a;
+
+    --text-primary: rgb(231,233,234);
+    --text-secondary: rgb(139,152,165);
+    --text-muted: #9ca3af;
+
+    --accent: rgb(29,155,240);
+    --accent-subtle: rgba(29,155,240,.15);
+
+    --border-subtle: #2f3336;
+    --border-strong: rgba(231,233,234,0.15);
+}
+html[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-elevated: #ffffff;
+    --bg-hover: rgba(15,20,25,0.03);
+    --bg-subtle: #f7f9f9;
+
+    --text-primary: rgb(15,20,25);
+    --text-secondary: rgb(83,100,113);
+    --text-muted: #6b7280;
+
+    --accent: rgb(29,155,240);
+    --accent-subtle: rgba(29,155,240,.1);
+
+    --border-subtle: rgb(239,243,244);
+    --border-strong: rgba(15,20,25,0.1);
+}
+
+/* Smooth transition */
+*,
+*:before,
+*:after {
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+/* ---------- Global ---------- */
+html, body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+a { color: var(--accent); }
+a:hover { text-decoration: underline; }
+
+/* ---------- Timeline / Layout ---------- */
+.tweetTimeline {
+    background-color: var(--bg-elevated) !important;
+    border-left-color: var(--border-subtle) !important;
+    border-right-color: var(--border-subtle) !important;
+}
+
+.tweet-bottomline { background-color: var(--border-subtle) !important; }
+
+.each-tweet-rightBox {
+    background-color: var(--bg-elevated);
+    border-color: var(--border-subtle) !important;
+    border-radius: var(--card-radius);
+}
+
+.tweet-card { background: transparent; }
+
+/* ---------- Text ---------- */
+.tweet-title,
+.tweet-author { color: var(--text-primary) !important; }
+
+.tweet-username,
+.tweet-time,
+.retweet-container,
+.inline-link-card .desc,
+.tweet-card-area .inline-link-card--small .meta .js-card-domain,
+.tweet-card-area .inline-link-card--small .meta .js-card-desc,
+.tc-card-large__source { color: var(--text-secondary) !important; }
+
+/* ---------- Category Filter ---------- */
+.category-filter-container {
+    background: var(--bg-elevated);
+    border-bottom-color: var(--border-subtle) !important;
+}
+.category-filter-item {
+    color: var(--text-primary);
+    border-color: var(--border-strong) !important;
+}
+.category-filter-item:hover {
+    background-color: var(--bg-hover) !important;
+    border-color: var(--border-strong) !important;
+}
+.category-filter-item.active {
+    background-color: var(--accent) !important;
+    color: #fff !important;
+}
+
+/* ---------- Menus / Popovers ---------- */
+.category-popup-menu {
+    background-color: var(--bg-elevated);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-pop);
+}
+.category-popup-menu .menu-item:hover {
+    background-color: var(--bg-hover);
+}
+
+/* ---------- Media ---------- */
+img, video { border-radius: var(--media-radius); }
+.video-wrapper { background-color: #000; }
+
+/* ---------- Cards & Links ---------- */
+.tweet-content .inline-link,
+.tweet-card-area .inline-link {
+    background-color: var(--bg-elevated);
+    border-color: var(--border-subtle);
+    color: inherit;
+}
+.tweet-content .inline-link:hover,
+.tweet-card-area .inline-link:hover {
+    background-color: var(--bg-hover);
+}
+.tweet-card-area .inline-link-card .thumb { background-color: #222; }
+
+/* Large card overlay title remains readable in both modes */
+.tweet-card-area .tc-card-large__shade {
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 100%);
+}
+.tweet-card-area .tc-card-large__title { color: #fff; }
+
+/* ---------- Actions ---------- */
+.action-button {
+    color: var(--text-secondary);
+}
+.action-button:hover {
+    background: var(--bg-hover);
+    border-radius: 9999px;
+}
+
+/* ---------- Accents (hover chips, labels, tabs) ---------- */
+.hover-chat:hover,
+.tweet-category-label {
+    background-color: var(--accent-subtle) !important;
+}
+.tweet-category-label:hover { background-color: transparent !important; }
+
+/* Selected tab like Twitter */
+a.tweetCatMenuItem.tc-selected svg path { fill: var(--accent) !important; }
+a.tweetCatMenuItem.tc-selected .tweettabname {
+    color: var(--accent) !important;
+    font-weight: 700;
+}
+
+/* ---------- Misc ---------- */
+.tweetch-logo:hover,
+.hasCategoryfile:hover,
+.hasCategorylabel:hover {
+    background-color: var(--bg-hover) !important;
+}
