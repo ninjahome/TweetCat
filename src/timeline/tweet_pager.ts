@@ -45,7 +45,7 @@ export class TweetPager {
         this.timeStamp = lastOne.timestamp;
 
         if (tweets.length < pageSize) {
-            logPager(`[getNextTweets] not enough data to show!`)//TODO::
+            console.warn(`[getNextTweets] not enough data to show!`)//TODO::
         }
 
         logPager(`[getNextTweets] category:[${this.currentCategoryId}], timeStamp[${this.timeStamp}] load tweets=${tweets.length}`);
@@ -71,7 +71,7 @@ export class TweetPager {
         if (!needSrvData) return;
 
         logPager("⚠️Need load data form server for first open of twitter");
-        setFirstFetchAt(Date.now());
+        setLatestFetchAt(Date.now());
         await sendMsgToService({}, MsgType.KolCursorRandomForFirstOpen);
     }
 
@@ -101,10 +101,11 @@ function getFirstFetchAt(): number | null {
     const raw = localStorage.getItem(FIRST_FETCH_TS_KEY);
     if (!raw) return null;
     const n = Number(raw);
+    logFT('[getFirstFetchAt] 🚀 last time to fetch data:', fmt(n));
     return Number.isFinite(n) ? n : null;
 }
 
-function setFirstFetchAt(ts: number) {
+export function setLatestFetchAt(ts: number) {
     localStorage.setItem(FIRST_FETCH_TS_KEY, String(ts));
 }
 

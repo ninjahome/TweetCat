@@ -142,7 +142,7 @@ export class TweetFetcherManager {
     }
 
     async fetchTweetsPeriodic() {
-        let newest = false;
+        let newest: boolean;
         let cursorToFetch: KolCursor[];
         if (this.immediateQueue.length > 0) {
             logBGT(`[fetchTweetsPeriodic]Need to fetch immediate queue[${this.immediateQueue.length}] first`);

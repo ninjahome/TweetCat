@@ -8,6 +8,7 @@ import {MsgType} from "../common/consts";
 import {EntryObj} from "./tweet_entry";
 import {updateKolIdToSw} from "../object/tweet_kol";
 import {showNewestTweets} from "../content/tweetcat_web3_area";
+import {setLatestFetchAt} from "./tweet_pager";
 
 const MIN_FETCH_GAP = 5_000;
 
@@ -127,6 +128,8 @@ export async function startToFetchTweets(data: tweetFetchParam) {
     }
 
     await tweetFetcher.startFetchLogic(cursors, data.newest);
+
+    if (data.newest) setLatestFetchAt(Date.now());
 
     logFT(`[startToFetchTweets]🚄 tweet syncing complete.\n`);
 }
