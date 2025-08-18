@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "hls.js": "^1.6.2",
+    "hls.js": "^1.6.10",
     "webextension-polyfill": "^0.12.0"
   },
   "description": "catch your favorite tweets",
