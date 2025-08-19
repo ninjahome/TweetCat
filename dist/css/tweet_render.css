@@ -187,7 +187,7 @@ img, video { border-radius: var(--media-radius); }
 .tweet-card-area .inline-link:hover {
     background-color: var(--bg-hover);
 }
-.tweet-card-area .inline-link-card .thumb { background-color: #222; }
+
 
 /* Large card overlay title remains readable in both modes */
 .tweet-card-area .tc-card-large__shade {
