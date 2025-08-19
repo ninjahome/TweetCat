@@ -174,7 +174,6 @@ window.addEventListener('message', (e) => {
             default: {
                 console.warn("⚠️content message unknown message:", msg);
                 return;
-                ;
             }
         }
         return;
