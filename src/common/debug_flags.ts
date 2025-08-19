@@ -7,7 +7,7 @@ export const DBG = {
     PAGER: true,
     TWEET_MANAGER: false,
     NODE_POOL: false,
-    ROUTE: false,
+    ROUTE: true,
     GUARD: false,
     Database: false,
     TweetCache: false,

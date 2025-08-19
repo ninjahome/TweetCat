@@ -1,6 +1,12 @@
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {__tableKolsInCategory, databaseQueryAll, databaseQueryByFilter} from "../common/database";
+import {
+    __tableKolsInCategory,
+    databaseQueryAll,
+    databaseQueryByFilter,
+    idx_kol_id,
+    databaseGetByIndex
+} from "../common/database";
 
 export class TweetKol {
     kolName: string;
@@ -43,6 +49,18 @@ export async function kolsForCategory(catID: number): Promise<Map<string, TweetK
 
     return dbObjectToKol(kols);
 }
+
+export async function kolById(kid: string): Promise<TweetKol | null> {
+    if (!kid) return null;
+
+    const rec = await databaseGetByIndex<TweetKol>(
+        __tableKolsInCategory,
+        idx_kol_id,
+        kid
+    );
+    return rec ?? null;
+}
+
 
 function dbObjectToKol(obj: any[]): Map<string, TweetKol> {
     return new Map(obj.map(k => [k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID, k.kolUserId)]));
@@ -90,6 +108,17 @@ export async function queryKolIdsFromSW(): Promise<string[]> {
     return extractKolUserIds(rsp.data as any[])
 }
 
-export async function updateKolIdToSw(kol:any){
+export async function updateKolIdToSw(kol: any) {
     await sendMsgToService(kol, MsgType.KolUpdate);
+}
+
+export async function queryKolById(kid: string): Promise<TweetKol | null> {
+
+    const rsp = await sendMsgToService(kid, MsgType.KolQueryByID);
+    if (!rsp.success || !rsp.data) {
+        return null;
+    }
+
+    const k = rsp.data;
+    return new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID, k.kolUserId)
 }

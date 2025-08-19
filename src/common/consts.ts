@@ -31,6 +31,7 @@ export enum MsgType {
     CategoryQueryById = 'CategoryQueryById',
 
     KolQueryAll = 'KolQueryAll',
+    KolQueryByID = 'KolQueryByID',
     KolQueryByCategoryId = 'KolQueryByCategoryId',
     KolQueryByName = 'KolQueryByName',
     KolUpdate = 'KolUpdate',
@@ -51,6 +52,9 @@ export enum MsgType {
     KolCursorRandomForFirstOpen = 'KolCursorRandomForFirstOpen',
 
     TimerKolInQueueAtOnce = 'TimerKolInQueueAtOnce',
+
+    IJUserTweetsCaptured = 'UserTweetsCaptured',
+    IJLocationChange = 'IJLocationChange',
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

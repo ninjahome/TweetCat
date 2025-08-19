@@ -8,10 +8,11 @@ import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils"
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
-import {startToCheckKolId, startToFetchTweets} from "../timeline/tweet_fetcher";
-import {setTweetCatFlag} from "../timeline/route_helper";
+import {processCapturedTweets, startToCheckKolId, startToFetchTweets} from "../timeline/tweet_fetcher";
+import {handleLocationChange, setTweetCatFlag} from "../timeline/route_helper";
 import {logRender} from "../common/debug_flags";
 import {setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
+import {isTcMessage, TcMessage} from "../common/injection_msg";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;
@@ -156,3 +157,23 @@ export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null 
 function checkFilterStatusAfterUrlChanged() {
     hidePopupMenu();
 }
+
+window.addEventListener('message', (e) => {
+    const msg = e.data as TcMessage;
+    if (isTcMessage(msg)) {
+        switch (msg.action) {
+            case MsgType.IJLocationChange:
+                handleLocationChange();
+                break;
+            case MsgType.IJUserTweetsCaptured:
+                const d = msg.data;
+                processCapturedTweets(d.tweets as any, d.kolID as string).then();
+                break;
+            default:
+                console.warn("⚠️content message unknown message:", d);
+                break;
+        }
+        return;
+    }
+});
+

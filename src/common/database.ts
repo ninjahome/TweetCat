@@ -4,7 +4,7 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 14;
+export const __currentDatabaseVersion = 15;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -16,6 +16,7 @@ export const BossOfTheTwitter = '44196397';
 export const idx_userid_time = 'userId_timestamp_idx'
 export const idx_userid = 'userId_idx'
 export const idx_time = 'timestamp_idx'
+export const idx_kol_id = 'idx_kolUserId'
 
 
 const initialCategories = [
@@ -134,24 +135,53 @@ async function initCategory(request: IDBOpenDBRequest) {
 async function initKolsInCategory(request: IDBOpenDBRequest) {
     const db = request.result;
 
-    if (!db.objectStoreNames.contains(__tableKolsInCategory)) {
-        db.createObjectStore(__tableKolsInCategory, {keyPath: 'kolName'});
-    }
+    // versionchange 事务（只会在 onupgradeneeded 里有值）
     const transaction = request.transaction;
     if (!transaction) {
         console.warn("------>>>[Database]Inserted database transaction failed");
-        return
+        return;
     }
 
-    const store = transaction.objectStore(__tableKolsInCategory);
+    // 1) 创建或获取对象仓库
+    let store: IDBObjectStore;
+    if (!db.objectStoreNames.contains(__tableKolsInCategory)) {
+        store = db.createObjectStore(__tableKolsInCategory, {keyPath: 'kolName'});
+    } else {
+        store = transaction.objectStore(__tableKolsInCategory);
+    }
+
+    // 2) 确保索引存在（缺失字段将不会进入该索引 => 稀疏索引）
+    const ensureIndex = (name: string, keyPath: string | string[], options?: IDBIndexParameters) => {
+        // DOMStringList.contains 在多数浏览器可用；做个兜底
+        const has = (store.indexNames as any).contains
+            ? (store.indexNames as any).contains(name)
+            : Array.from(store.indexNames as unknown as string[]).includes(name);
+
+        if (!has) {
+            store.createIndex(name, keyPath as any, options);
+            // 可选日志
+            // logDB("------>>>[Database]Created index", name, "on", __tableKolsInCategory, "keyPath:", keyPath);
+        }
+    };
+
+    // 单字段索引：按 kolUserId 查找
+    ensureIndex('idx_kolUserId', 'kolUserId', {unique: false});
+
+    // （可选）复合索引：按 catID + kolUserId 联合查询
+    // ensureIndex('idx_cat_kol', ['catID', 'kolUserId'], { unique: false });
+
+    // 3) 若表为空，写入初始数据
     const count = await requestToPromise(store.count());
     if (count > 0) return;
 
     initialKols.forEach(kol => {
+        // 注意：当 kol.kolUserId 缺失/undefined 时不会进入 idx_kolUserId（稀疏）
         store.add(kol);
     });
+
     logDB("------>>>[Database]Create kols in category successfully.", __tableKolsInCategory, "Inserted initial categories.", initialKols);
 }
+
 
 function initSystemSetting(request: IDBOpenDBRequest) {
     const db = request.result;
@@ -236,35 +266,40 @@ export function databaseAddItem(storeName: string, data: any): Promise<IDBValidK
     });
 }
 
-export function databaseGetByIndex(storeName: string, idx: string, idxVal: any): Promise<any> {
+
+export function databaseGetByIndex<T = any>(
+    storeName: string,
+    idx: string,
+    idxVal: IDBValidKey | IDBKeyRange
+): Promise<T | null> {
     return new Promise((resolve, reject) => {
         try {
             if (!__databaseObj) {
                 reject('Database is not initialized');
                 return;
             }
-            const transaction = __databaseObj.transaction([storeName], 'readonly');
-            const objectStore = transaction.objectStore(storeName);
-            const index = objectStore.index(idx);
+            const tx = __databaseObj.transaction([storeName], 'readonly');
+            const store = tx.objectStore(storeName);
 
-            const queryRequest = index.get(idxVal);
+            let index: IDBIndex;
+            try {
+                index = store.index(idx); // 若索引不存在会抛 NotFoundError
+            } catch (e) {
+                reject(`Index not found: ${idx}`);
+                return;
+            }
 
-            queryRequest.onsuccess = function () {
-                if (queryRequest.result) {
-                    resolve(queryRequest.result);
-                } else {
-                    resolve(null);
-                }
-            };
+            const req = index.get(idxVal);
+            req.onsuccess = () => resolve(req.result ?? null);
+            req.onerror = () =>
+                reject('Error in query by key: ' + (req.error ? req.error.message : 'unknown'));
 
-            queryRequest.onerror = function (event) {
-                reject('Error in query by key: ' + (event.target as IDBRequest).error);
-            };
         } catch (error) {
             reject('Transaction failed: ' + (error as Error).message);
         }
     });
 }
+
 
 export function databaseGet(storeName: string, keyPath: any): Promise<any> {
     return new Promise((resolve, reject) => {

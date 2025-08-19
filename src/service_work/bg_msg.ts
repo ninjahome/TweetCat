@@ -7,7 +7,7 @@ import {
     removeKolsCategory,
     updateKolsCategory
 } from "../object/category";
-import {kolsForCategory, loadAllKols, TweetKol} from "../object/tweet_kol";
+import {kolById, kolsForCategory, loadAllKols, TweetKol} from "../object/tweet_kol";
 import {
     cacheRawTweets,
     initTweetsCheck,
@@ -85,6 +85,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.KolQueryAll: {
             return {success: true, data: await loadAllKols()};
         }
+
+        case MsgType.KolQueryByID: {
+            return {success: true, data: await kolById(request.data as string)};
+        }
+
         case MsgType.KolCursorLoadAll: {
             return {success: true, data: await loadAllKolCursors()};
         }

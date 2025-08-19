@@ -113,18 +113,12 @@ export function initRouteGuard() {
 }
 
 // Guard 去抖
-function handleLocationChange() {
+export function handleLocationChange() {
     const inTC = isInTweetCatRoute();
     if (inTC === currentInTC) return;
     currentInTC = inTC;
     window.dispatchEvent(new CustomEvent(inTC ? 'tc-mount' : 'tc-unmount'));
 }
-
-window.addEventListener('message', (e) => {
-    if ((e.data as any)?.tcLocationChange) handleLocationChange();
-});
-
-
 
 export function handleGrokMenuClick(ev: MouseEvent): void {
     if (!location.hash.startsWith(HASH)) return;  // 不在 TweetCat → 让 Twitter 处理

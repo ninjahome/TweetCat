@@ -1,12 +1,12 @@
 import {fetchTweets, getUserIdByUsername} from "./twitter_api";
 import {sendMsgToService, sleep} from "../common/utils";
-import {logFT} from "../common/debug_flags";
+import {logFT, logTC} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW} from "./db_raw_tweet";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {MsgType} from "../common/consts";
-import {EntryObj} from "./tweet_entry";
-import {updateKolIdToSw} from "../object/tweet_kol";
+import {EntryObj, parseTimelineFromGraphQL} from "./tweet_entry";
+import {queryKolById, updateKolIdToSw} from "../object/tweet_kol";
 import {showNewestTweets} from "../content/tweetcat_web3_area";
 import {setLatestFetchAt} from "./tweet_pager";
 
@@ -179,4 +179,17 @@ export async function startToCheckKolId(ids: any[]) {
 
         await sleep(MIN_FETCH_GAP);
     }
+}
+
+export async function processCapturedTweets(result: any, kolId: string) {
+    const kol =  await queryKolById(kolId);
+    if(!kol){
+        logFT(`no need to cache for ${kolId}`);
+        return;
+    }
+
+    const r = await parseTimelineFromGraphQL(result);
+    const wrapList = r.wrapDbEntry;
+    await sendMsgToService({kolId: kolId, data: r.wrapDbEntry}, MsgType.TweetCacheToDB);
+    logFT(`captured tweets cached ${wrapList.length} tweets for ${kolId}`);
 }
