@@ -171,9 +171,10 @@ window.addEventListener('message', (e) => {
                 processCapturedTweets(d.tweets as any, d.kolID as string).then();
                 break;
             }
-            default:{
-                console.warn("⚠️content message unknown message:", d);
-                return;;
+            default: {
+                console.warn("⚠️content message unknown message:", msg);
+                return;
+                ;
             }
         }
         return;
