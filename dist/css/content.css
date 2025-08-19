@@ -735,17 +735,17 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 .tweet-quote-area {
     margin-top: 8px;
+    border: 1px solid #CFD9DE;
+    border-radius: 12px;
 }
 
 .tweet-quote-area .quote-card {
     display: block;
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
     padding: 8px;
     text-decoration: none;
     color: inherit;
 }
-.tweet-quote-area:hover {
+.tweet-quote-area :hover {
     background-color: #EFEFEF;
     border-radius: 12px;
 }

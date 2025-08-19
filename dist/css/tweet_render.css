@@ -61,6 +61,9 @@
     .category-popup-menu {
         background-color: #16181c !important;
     }
+    .tweet-quote-area {
+        border: 1px solid #2F3336;
+    }
 }
 
 /* Optional manual override via data-theme on <html> */
@@ -220,4 +223,16 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .hasCategoryfile:hover,
 .hasCategorylabel:hover {
     background-color: var(--bg-hover) !important;
+}
+
+.tweet-no-wrapper {
+    font-size: 15px;
+    color: #1D9BF0;
+}
+.tweet-no-wrapper .tweet-no {
+    font-weight: 700;
+}
+
+.new-tweet-notification {
+   padding: 16px;
 }
