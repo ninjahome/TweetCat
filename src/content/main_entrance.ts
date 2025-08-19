@@ -162,16 +162,19 @@ window.addEventListener('message', (e) => {
     const msg = e.data as TcMessage;
     if (isTcMessage(msg)) {
         switch (msg.action) {
-            case MsgType.IJLocationChange:
+            case MsgType.IJLocationChange: {
                 handleLocationChange();
                 break;
-            case MsgType.IJUserTweetsCaptured:
+            }
+            case MsgType.IJUserTweetsCaptured: {
                 const d = msg.data;
                 processCapturedTweets(d.tweets as any, d.kolID as string).then();
                 break;
-            default:
+            }
+            default:{
                 console.warn("⚠️content message unknown message:", d);
-                break;
+                return;;
+            }
         }
         return;
     }

@@ -1,6 +1,6 @@
 import {fetchTweets, getUserIdByUsername} from "./twitter_api";
 import {sendMsgToService, sleep} from "../common/utils";
-import {logFT, logTC} from "../common/debug_flags";
+import {logFT} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW} from "./db_raw_tweet";
 import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
