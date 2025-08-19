@@ -864,9 +864,9 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     box-sizing: border-box;
     padding: 12px;
     border-left: 1px solid #cfd9de;
-
     display: flex;
     flex-direction: column;
+    justify-content: center;
     row-gap: 2px;                 /* 文字块之间 2px 间隙 */
 }
 
