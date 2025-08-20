@@ -10,7 +10,7 @@ import {resetNewestTweet, showNewestTweets} from "../content/tweetcat_web3_area"
 import {setLatestFetchAt} from "./tweet_pager";
 import {tweetFetchParam} from "../common/msg_obj";
 
-const MIN_FETCH_GAP = 10_000;
+const MIN_FETCH_GAP = 5_000;
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
