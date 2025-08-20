@@ -13,6 +13,7 @@ function collectQuoteShortUrlsForMain(tweet: TweetContent, hasQuoted: boolean): 
 export function updateTweetQuoteArea(container: HTMLElement, quoted: TweetObj) {
     // 清空容器
     container.innerHTML = '';
+    container.style.display = 'block';
 
     // 外层卡片（整块可点击）
     const a = document.createElement('a');

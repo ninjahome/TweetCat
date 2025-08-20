@@ -368,7 +368,7 @@ img, video {
 }
 
 .tweet-image {
-    display: flex;
+    display: none;
     flex-wrap: wrap;
     gap: 2px;
     overflow: hidden;
@@ -736,6 +736,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 
 .tweet-quote-area {
+    display: none;
     margin-top: 8px;
     border: 1px solid #CFD9DE;
     border-radius: 12px;

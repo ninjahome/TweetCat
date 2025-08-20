@@ -202,7 +202,7 @@ function wireCardAnchor(
         if (!el) return;
         el.addEventListener('click', (ev) => {
             ev.preventDefault();
-            a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+            a.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, view: window}));
         });
     };
     forward('.tc-card-large__caption');
@@ -222,6 +222,7 @@ export function updateTweetMediaArea(
 
     if (!mediaList.length) return; // 无媒体
 
+    container.style.display = 'flex';
     container.classList.add(`count-${mediaList.length}`)
 
     const photos = mediaList.filter(m => m.type === 'photo');
