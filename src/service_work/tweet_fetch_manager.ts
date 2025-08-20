@@ -72,7 +72,7 @@ export class TweetFetcherManager {
     //     logBGT("[resetState]🔴 State has been reset on browser startup");
     // }
 
-    private async getNextKolGroup(newest: boolean = true): Promise<KolCursor[]> {
+    public async getNextKolGroup(newest: boolean = true): Promise<KolCursor[]> {
 
         const kolIds = await loadAllKolIds();
 
@@ -135,10 +135,6 @@ export class TweetFetcherManager {
         }
 
         return immediateCursors;
-    }
-
-    setAsFirstOpen() {
-        this.newestFetch = true;
     }
 
     async fetchTweetsPeriodic() {

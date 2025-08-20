@@ -9,7 +9,7 @@ const __alarm_tweets_fetch__: string = '__tweet__fetcher__timer__';
 const __alarm_userid_check__: string = '__alarm_userid_check__';
 const __interval_tweets_fetch__: number = 2;
 const __interval_userID_check__: number = 5;
-const tweetFM = new TweetFetcherManager();
+export const tweetFM = new TweetFetcherManager();
 
 alarms.onAlarm.addListener(timerTaskWork);
 
@@ -64,7 +64,7 @@ export async function timerKolInQueueImmediate(kolID: string): Promise<void> {
     await tweetFM.queuePush(kolID);
 }
 
-export async function alarmTweetsProc(isFirstOpen: boolean = false) {
+async function alarmTweetsProc() {
     await checkAndInitDatabase();
     try {
         const hasOpenXCom = await checkIfXIsOpen();
@@ -74,8 +74,7 @@ export async function alarmTweetsProc(isFirstOpen: boolean = false) {
         }
 
         await tweetFM.loadRuntimeStateFromStorage();
-        if (isFirstOpen) tweetFM.setAsFirstOpen();
-        console.log("------>>> alarm triggered, start to notify content script, isFirstOpen:",isFirstOpen);
+        console.log("------>>> alarm triggered, start to notify content script");
         await tweetFM.fetchTweetsPeriodic();
         await tweetFM.saveRuntimeStateToStorage();
     } catch (e) {

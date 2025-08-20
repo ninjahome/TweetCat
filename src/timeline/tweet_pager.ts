@@ -8,6 +8,9 @@ import {defaultAllCategoryID, MsgType} from "../common/consts";
 import {initBootstrapData, needBootStrap, WrapEntryObj} from "./db_raw_tweet";
 import {fetchTweets} from "./twitter_api";
 import {BossOfTheTwitter} from "../common/database";
+import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
+import {KolCursor} from "../object/kol_cursor";
+import {startToFetchTweets} from "./tweet_fetcher";
 
 
 export class TweetPager {
@@ -69,12 +72,10 @@ export class TweetPager {
 
         const needSrvData = needServerDataForFirstOpen();
         if (!needSrvData) return;
-
-        logPager("⚠️Need load data form server for first open of twitter");
-        setLatestFetchAt(Date.now());
-        await sendMsgToService({}, MsgType.KolCursorRandomForFirstOpen);
+        fetchNewestAtFirstOpen().then();
     }
 
+    //TODO::
     async findNewestTweetsOfSomeBody(): Promise<EntryObj[]> {
         const result = await fetchTweets(BossOfTheTwitter);
         return result.tweets ?? []
@@ -122,6 +123,20 @@ function fmt(ts: number) {
     } catch {
         return String(ts);
     }
+}
+
+async function fetchNewestAtFirstOpen() {
+
+    logPager("⚠️Need load data form server for first open of twitter");
+    const rsp = await sendMsgToService({}, MsgType.KolCursorRandomForFirstOpen);
+    if (!rsp.success || !rsp.data) {
+        console.warn("------>>>⚠️failed to low newest kol cursor ");
+        return
+    }
+
+    const param = new tweetFetchParam(rsp.data as KolCursor[], true);
+    await startToFetchTweets(param);
+    logPager("✅ finish tweets fetching at first open twitter page");
 }
 
 (window as any).tcResetFirstFetch = () => localStorage.removeItem(FIRST_FETCH_TS_KEY);

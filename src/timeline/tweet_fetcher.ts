@@ -182,13 +182,13 @@ export async function startToCheckKolId(ids: any[]) {
 }
 
 export async function processCapturedTweets(result: any, kolId: string) {
-    const kol =  await queryKolById(kolId);
-    if(!kol){
+    const kol = await queryKolById(kolId);
+    if (!kol) {
         logFT(`no need to cache for ${kolId}`);
         return;
     }
 
-    const r = await parseTimelineFromGraphQL(result);
+    const r = parseTimelineFromGraphQL(result);
     const wrapList = r.wrapDbEntry;
     await sendMsgToService({kolId: kolId, data: r.wrapDbEntry}, MsgType.TweetCacheToDB);
     logFT(`captured tweets cached ${wrapList.length} tweets for ${kolId}`);
