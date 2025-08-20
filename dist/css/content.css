@@ -811,7 +811,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     height: auto !important;
     position: relative;          /* 为绝对定位的 img / 播放浮层提供定位上下文 */
     overflow: hidden;            /* 不让图片溢出 */
-    background-color: #16181c;   /* 图未加载时的底色 */
+    background-color: #f7f9f9;   /* 图未加载时的底色 */
 }
 
 /* 统一图片铺满策略 + 左侧 12px 圆角 / 右侧直角 */
@@ -856,6 +856,9 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     width: 130px;
     height: 130px;
     flex: 0 0 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* 右侧 meta 文字区：纵向堆叠 + 2px 行间距 */
