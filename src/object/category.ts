@@ -50,7 +50,7 @@ export async function CategoryForId(catID: number): Promise<Category | null> {
     try {
         return await databaseGet(__tableCategory, catID) as Category;
     } catch (e) {
-        console.log("------>>> load categories failed:", e)
+        console.warn(`------>>> load categories by catID=[${catID}] failed:`, e)
         return null;
     }
 }

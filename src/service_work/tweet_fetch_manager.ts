@@ -167,6 +167,12 @@ export class TweetFetcherManager {
             logBGT(`[queuePush] 🚫 kol ${kolID} already in immediate queue, skip`);
         }
     }
+
+    async removeFromImmediateQueue(kid: string) {
+        await this.loadRuntimeStateFromStorage();
+        this.immediateQueue = this.immediateQueue.filter(id => id !== kid);
+        await this.saveRuntimeStateToStorage();
+    }
 }
 
 export const tweetFM = new TweetFetcherManager();

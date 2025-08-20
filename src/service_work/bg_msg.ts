@@ -88,7 +88,9 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.TweetRemoveByKolID: {
-            await removeTweetsByKolID(request.data as string)
+            const kid = request.data as string;
+            await removeTweetsByKolID(kid);
+            await tweetFM.removeFromImmediateQueue(kid);
             return {success: true};
         }
 
