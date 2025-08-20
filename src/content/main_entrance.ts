@@ -7,12 +7,11 @@ import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "../common/consts
 import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
-import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {processCapturedTweets, startToCheckKolId, startToFetchTweets} from "../timeline/tweet_fetcher";
 import {handleLocationChange, setTweetCatFlag} from "../timeline/route_helper";
 import {logRender} from "../common/debug_flags";
 import {setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
-import {isTcMessage, TcMessage} from "../common/injection_msg";
+import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 
 export function isHomePage(): boolean {
     return window.location.href === __targetUrlToFilter;

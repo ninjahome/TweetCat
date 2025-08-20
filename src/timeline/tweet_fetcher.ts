@@ -3,12 +3,12 @@ import {sendMsgToService, sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW} from "./db_raw_tweet";
-import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {MsgType} from "../common/consts";
 import {EntryObj, parseTimelineFromGraphQL} from "./tweet_entry";
 import {queryKolById, updateKolIdToSw} from "../object/tweet_kol";
 import {showNewestTweets} from "../content/tweetcat_web3_area";
 import {setLatestFetchAt} from "./tweet_pager";
+import {tweetFetchParam} from "../common/msg_obj";
 
 const MIN_FETCH_GAP = 5_000;
 

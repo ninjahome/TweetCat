@@ -1,3 +1,5 @@
+import {KolCursor} from "../object/kol_cursor";
+
 export class TcMessage {
     __tc: boolean = true;
     from: boolean = true;
@@ -14,4 +16,14 @@ export class TcMessage {
 // （可选）工具：判定是否我们的消息
 export function isTcMessage(x: any): x is TcMessage {
     return !!x && x.__tc && typeof x.action === 'string';
+}
+
+export class tweetFetchParam {
+    cursors: KolCursor[];
+    newest: boolean
+
+    constructor(cursors: KolCursor[], newest: boolean = true) {
+        this.cursors = cursors;
+        this.newest = newest;
+    }
 }

@@ -8,9 +8,9 @@ import {defaultAllCategoryID, MsgType} from "../common/consts";
 import {initBootstrapData, needBootStrap, WrapEntryObj} from "./db_raw_tweet";
 import {fetchTweets} from "./twitter_api";
 import {BossOfTheTwitter} from "../common/database";
-import {tweetFetchParam} from "../service_work/tweet_fetch_manager";
 import {KolCursor} from "../object/kol_cursor";
 import {startToFetchTweets} from "./tweet_fetcher";
+import {tweetFetchParam} from "../common/msg_obj";
 
 
 export class TweetPager {

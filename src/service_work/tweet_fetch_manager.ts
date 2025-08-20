@@ -4,16 +4,7 @@ import {loadAllKolIds} from "../object/tweet_kol";
 import {KolCursor, loadCursorById} from "../object/kol_cursor";
 import {sendMessageToX} from "./bg_msg";
 import {MsgType} from "../common/consts";
-
-export class tweetFetchParam {
-    cursors: KolCursor[];
-    newest: boolean
-
-    constructor(cursors: KolCursor[], newest: boolean = true) {
-        this.cursors = cursors;
-        this.newest = newest;
-    }
-}
+import {tweetFetchParam} from "../common/msg_obj";
 
 interface TweetFetcherRuntimeState {
     currentNewGroupIndex: number;
@@ -178,11 +169,4 @@ export class TweetFetcherManager {
     }
 }
 
-
-export async function checkIfXIsOpen(): Promise<boolean> {
-    const tabs = await browser.tabs.query({
-        url: "*://x.com/*"
-    });
-
-    return tabs.length > 0;
-}
+export const tweetFM = new TweetFetcherManager();

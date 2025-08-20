@@ -16,7 +16,17 @@ import {
     WrapEntryObj
 } from "../timeline/db_raw_tweet";
 import {loadAllKolCursors, loadCursorById, writeKolsCursors, writeOneCursor} from "../object/kol_cursor";
-import {timerKolInQueueImmediate, tweetFM} from "./bg_timer";
+import {timerKolInQueueImmediate} from "./bg_timer";
+import {tweetFM} from "./tweet_fetch_manager";
+
+
+export async function checkIfXIsOpen(): Promise<boolean> {
+    const tabs = await browser.tabs.query({
+        url: "*://x.com/*"
+    });
+
+    return tabs.length > 0;
+}
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
     // console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)
