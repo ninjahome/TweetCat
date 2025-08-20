@@ -6,7 +6,7 @@ import {cacheTweetsToSW} from "./db_raw_tweet";
 import {MsgType} from "../common/consts";
 import {EntryObj, parseTimelineFromGraphQL, TweetResult} from "./tweet_entry";
 import {queryKolById, updateKolIdToSw} from "../object/tweet_kol";
-import {showNewestTweets} from "../content/tweetcat_web3_area";
+import {resetNewestTweet, showNewestTweets} from "../content/tweetcat_web3_area";
 import {setLatestFetchAt} from "./tweet_pager";
 import {tweetFetchParam} from "../common/msg_obj";
 
@@ -92,15 +92,15 @@ export class TweetFetcher {
     }
 
     async startFetchLogic(cursors: any[], newest: boolean) {
-        let maxFail = 10;
+        let retriesLeft = 10;
         for (let i = 0; i < cursors.length; i++) {
             const delta = Date.now() - this.lastCaptureTIme;
             if (delta < MIN_FETCH_GAP) {
                 await sleep(delta);
                 i--;
-                maxFail--;
-                logFT(`------>>>⏱️need to fetch after about[${delta}(ms)] , try chance remains[${maxFail}]`)
-                if (maxFail <= 0) {
+                retriesLeft--;
+                logFT(`------>>>⏱️need to fetch after about[${delta}(ms)] , try chance remains[${retriesLeft}]`)
+                if (retriesLeft <= 0) {
                     logFT("❌ tweets fetch failed for this round:");
                     return;
                 }
@@ -131,6 +131,7 @@ export class TweetFetcher {
 
     resetNotifications() {
         this.latestNewTweets = [];
+        resetNewestTweet();
     }
 }
 

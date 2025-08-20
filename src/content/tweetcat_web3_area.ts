@@ -42,6 +42,17 @@ export async function showNewestTweets(tweets: EntryObj[]) {
     numberDiv.innerText = '' + tweets.length;
 }
 
+export function resetNewestTweet() {
+    const notificationContainer = document.querySelector(".new-tweet-notification") as HTMLElement;
+    if (!notificationContainer) {
+        console.warn("notificationContainer not found");
+        return;
+    }
+    const numberDiv = notificationContainer.querySelector(".tweet-no") as HTMLElement;
+    numberDiv.innerText = '';
+    notificationContainer.style.display = "none";
+}
+
 export async function resetCategories() {
     await switchCategory(defaultAllCategoryID);
     setSelectedCategory();
