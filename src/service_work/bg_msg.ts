@@ -118,7 +118,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true, data: await loadCursorById(request.data as string)};
         }
 
-        case MsgType.KolCursorRandomForFirstOpen: {
+        case MsgType.KolCursorForFirstOpen: {
             return {success: true, data: await tweetFM.getNextKolGroup(true)};
         }
 

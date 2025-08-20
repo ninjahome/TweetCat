@@ -128,7 +128,7 @@ function fmt(ts: number) {
 async function fetchNewestAtFirstOpen() {
 
     logPager("⚠️Need load data form server for first open of twitter");
-    const rsp = await sendMsgToService({}, MsgType.KolCursorRandomForFirstOpen);
+    const rsp = await sendMsgToService({}, MsgType.KolCursorForFirstOpen);
     if (!rsp.success || !rsp.data) {
         console.warn("------>>>⚠️failed to low newest kol cursor ");
         return
