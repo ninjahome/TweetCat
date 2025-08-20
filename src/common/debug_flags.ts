@@ -10,7 +10,7 @@ export const DBG = {
     ROUTE: true,
     GUARD: false,
     Database: false,
-    TweetCache: false,
+    TweetCache: true,
     TweetFetcher: true,
     TweetCursor: false,
     TweetBGTimer: true,
