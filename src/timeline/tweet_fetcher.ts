@@ -15,8 +15,13 @@ const MIN_FETCH_GAP = 5_000;
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
     private latestNewTweets: EntryObj[] = [];
+    private lastCaptureTIme: number = 0;
 
     constructor() {
+    }
+
+    updateCaptureTime() {
+        this.lastCaptureTIme = Date.now();
     }
 
     private async fetchNewestOneKolBatch(cursor: KolCursor): Promise<EntryObj[]> {
@@ -87,7 +92,21 @@ export class TweetFetcher {
     }
 
     async startFetchLogic(cursors: any[], newest: boolean) {
+        let maxFail = 10;
         for (let i = 0; i < cursors.length; i++) {
+            const delta = Date.now() - this.lastCaptureTIme;
+            if (delta < MIN_FETCH_GAP) {
+                await sleep(delta);
+                i--;
+                maxFail--;
+                logFT(`------>>>⏱️need to fetch after about[${delta}(ms)] , try chance remains[${maxFail}]`)
+                if (maxFail <= 0) {
+                    logFT("❌ tweets fetch failed for this round:");
+                    return;
+                }
+                continue;
+            }
+
             const cursorData = cursors[i];
             const cursor = KolCursor.fromJSON(cursorData);
             printStatus("------>>>🧪before process:", cursor)
@@ -192,13 +211,17 @@ export async function startToCheckKolId(ids: any[]) {
 const tempCacheForTweetOfKolProfilePage = new Map<string, TweetResult>();
 
 export async function processCapturedTweets(result: any, kolId: string) {
+
+    tweetFetcher.updateCaptureTime();
     const r = parseTimelineFromGraphQL(result);
+
     const kol = await queryKolById(kolId);
     if (!kol) {
         logFT(`no need to send tweets data to service for : ${kolId}`);
         tempCacheForTweetOfKolProfilePage.set(kolId, r);
         return;
     }
+
     const wrapList = r.wrapDbEntry;
     await sendMsgToService({kolId: kolId, data: wrapList}, MsgType.TweetCacheToDB);
     logFT(`captured tweets cached ${wrapList.length} tweets for ${kolId}`);
