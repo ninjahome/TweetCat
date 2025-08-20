@@ -139,4 +139,4 @@ async function fetchNewestAtFirstOpen() {
     logPager("✅ finish tweets fetching at first open twitter page");
 }
 
-(window as any).tcResetFirstFetch = () => localStorage.removeItem(FIRST_FETCH_TS_KEY);
+// localStorage.removeItem('tc:firstFetchAt');
