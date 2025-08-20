@@ -40,7 +40,6 @@ export function addCustomStyles(cssFilePath: string): void {
 }
 
 
-
 function observeAction(target: HTMLElement, idleThreshold: number,
                        foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
                        options: MutationObserverInit, continueMonitor?: boolean) {
@@ -92,7 +91,7 @@ export async function updateBearerToken(token: string) {
 }
 
 export function isAdTweetNode(node: HTMLElement): boolean {
-    return node.querySelector('[data-testid="placementTracking"]') !== null ;
+    return node.querySelector('[data-testid="placementTracking"]') !== null;
 }
 
 
@@ -221,9 +220,9 @@ export type ParsedTwitterLink =
 
 const RESERVED = new Set([
     // 系统保留路径（不能当作用户名）
-    "home","explore","notifications","messages","compose","settings",
-    "login","signup","i","hashtag","search","share","about","download",
-    "privacy","tos","intent"
+    "home", "explore", "notifications", "messages", "compose", "settings",
+    "login", "signup", "i", "hashtag", "search", "share", "about", "download",
+    "privacy", "tos", "intent"
 ]);
 
 // 允许的用户主页子路由
@@ -242,7 +241,7 @@ export function parseTwitterPath(href?: string | URL): ParsedTwitterLink {
             : new URL(location.href);
     } catch {
         // 无法解析就兜底为 other
-        return { kind: "other", url: new URL(location.href) };
+        return {kind: "other", url: new URL(location.href)};
     }
 
     const path = u.pathname;                   // 不含 query/hash
@@ -258,14 +257,14 @@ export function parseTwitterPath(href?: string | URL): ParsedTwitterLink {
             (statusWord === "status" || statusWord === "statuses") &&
             TWEET_ID_RE.test(id)
         ) {
-            return { kind: "tweet", url: u, username: maybeUser, tweetId: id };
+            return {kind: "tweet", url: u, username: maybeUser, tweetId: id};
         }
     }
     // 2) /i/web/status/<id>(/...)?
     if (parts.length >= 4) {
         const [p0, p1, p2, id] = parts;
         if (p0 === "i" && p1 === "web" && p2 === "status" && TWEET_ID_RE.test(id)) {
-            return { kind: "tweet", url: u, tweetId: id };
+            return {kind: "tweet", url: u, tweetId: id};
         }
     }
 
@@ -278,27 +277,34 @@ export function parseTwitterPath(href?: string | URL): ParsedTwitterLink {
             !RESERVED.has(maybeUser.toLowerCase()) &&
             PROFILE_SUFFIXES.has(suffix)
         ) {
-            return { kind: "profile", url: u, username: maybeUser };
+            return {kind: "profile", url: u, username: maybeUser};
         }
     }
 
     // 其它情况
-    return { kind: "other", url: u };
+    return {kind: "other", url: u};
 }
 
 
-
-export function isXArticle(u?: string|null): boolean {
+export function isXArticle(u?: string | null): boolean {
     if (!u) return false;
     try {
         const url = new URL(u);
         const host = url.hostname.replace(/^www\./, '').toLowerCase();
         return (host === 'x.com' || host.endsWith('.x.com')) && url.pathname.startsWith('/i/article/');
-    } catch { return false; }
+    } catch {
+        return false;
+    }
 }
+
 // 新增：把 http 规范成 https，避免 http://x.com/... 造成识别/样式问题
 export function toHttps(u?: string): string {
     if (!u) return "";
-    try { const x = new URL(u); x.protocol = "https:"; return x.toString(); }
-    catch { return u; }
+    try {
+        const x = new URL(u);
+        x.protocol = "https:";
+        return x.toString();
+    } catch {
+        return u;
+    }
 }

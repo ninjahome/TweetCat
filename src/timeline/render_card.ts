@@ -124,7 +124,7 @@ function applyImage(node: HTMLElement, card: TweetCard): void {
     const imageUrl = card.mainImageUrl || first?.url || "";
 
     if (!imageUrl) {
-        imgWrap.style.display = "none";
+        imgEl.style.display = "none";
         return;
     }
 

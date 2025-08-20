@@ -54,6 +54,7 @@ export class TweetManager {
             this.scroller = new VirtualScroller(this);
             await this.scroller!.initFirstPage()
         });
+        tweetFetcher.resetNotifications();
         logTweetMgn("------>>> tweet manager init success");
     }
 
@@ -63,36 +64,40 @@ export class TweetManager {
 
     public async switchCategory(cat: number) {
         logTweetMgn("------>>> tweet category switch to:", cat);
-        this.resizeLogger = new TweetResizeObserverManager();
+
+        this.cleanTimeLineContent();
         tweetPager.switchCategory(cat);
-        this.scroller = new VirtualScroller(this);
-        await this.scroller.initFirstPage()
+        tweetFetcher.resetNotifications();
+        await this.scroller!.initFirstPage()
     }
 
-    dispose() {
-        logTweetMgn("------>>> tweet manager disposed!");
+    cleanTimeLineContent(){
+
         this.timelineEl.innerHTML = "";
         this.timelineEl.style.removeProperty("height");
         this.timelineEl.style.removeProperty("min-height");
 
-        this.scroller?.dispose();
-        this.scroller = null;
 
         this.cells.forEach(c => c.unmount());
 
         this.cells.length = 0;
         this.heights.length = 0;
         this.offsets = [0];
+
         this.listHeight = 0;
         this.maxCssHeight = 0;
+        this.isRendering = false;
+        this.lastWindow = undefined;
+    }
 
+    dispose() {
+        logTweetMgn("------>>> tweet manager disposed!");
+
+        this.cleanTimeLineContent();
         tweetPager.resetPager();
 
-        tweetFetcher.resetNotifications();
-
-        this.isRendering = false;
-
-        this.lastWindow = undefined;
+        this.scroller?.dispose();
+        this.scroller = null;
         this.resizeLogger.disconnect();
     }
 
@@ -386,22 +391,6 @@ export class TweetManager {
         }
         return MountDirection.Replace;
     }
-
-
-    // private estimateWindow(viewStart: number, viewportHeight: number): [number, number] {
-    //     let endIndex = Math.floor((viewStart + viewportHeight) / TweetManager.EST_HEIGHT) + TweetManager.EXTRA_BUFFER_COUNT / 2;
-    //     if (endIndex < TweetManager.MIN_TWEETS_COUNT) {
-    //         return [0, TweetManager.MIN_TWEETS_COUNT];
-    //     }
-    //
-    //     const maxEndIndex = this.cells.length + TweetManager.MaxTweetOnce;
-    //     if (endIndex > maxEndIndex) {
-    //         endIndex = maxEndIndex;
-    //     }
-    //
-    //     const startIdx = Math.max(0, endIndex - TweetManager.MIN_TWEETS_COUNT);
-    //     return [startIdx, endIndex];
-    // }
 
     private estimateWindow(viewStart: number, viewportHeight: number): [number, number] {
         const estH = TweetManager.EST_HEIGHT;

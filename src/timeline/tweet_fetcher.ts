@@ -10,7 +10,7 @@ import {resetNewestTweet, showNewestTweets} from "../content/tweetcat_web3_area"
 import {setLatestFetchAt} from "./tweet_pager";
 import {tweetFetchParam} from "../common/msg_obj";
 
-const MIN_FETCH_GAP = 5_000;
+const MIN_FETCH_GAP = 10_000;
 
 export class TweetFetcher {
     private readonly FETCH_LIMIT = 20;
@@ -96,14 +96,15 @@ export class TweetFetcher {
         for (let i = 0; i < cursors.length; i++) {
             const delta = Date.now() - this.lastCaptureTIme;
             if (delta < MIN_FETCH_GAP) {
-                await sleep(delta);
-                i--;
                 retriesLeft--;
                 logFT(`------>>>⏱️need to fetch after about[${delta}(ms)] , try chance remains[${retriesLeft}]`)
                 if (retriesLeft <= 0) {
                     logFT("❌ tweets fetch failed for this round:");
                     return;
                 }
+
+                await sleep(MIN_FETCH_GAP);
+                i--;
                 continue;
             }
 

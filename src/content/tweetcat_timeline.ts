@@ -81,13 +81,11 @@ function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplate
     area.style.display = 'block';
     const timelineEl = area.querySelector('.tweetTimeline') as HTMLElement;
 
-    manager?.dispose();
     manager = new TweetManager(timelineEl, tpl);
     setSelectedCategory(-1)
 }
 
 export async function switchCategory(catID:number){
-    manager?.dispose();
     manager?.switchCategory(catID);
 }
 
