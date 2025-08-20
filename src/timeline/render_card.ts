@@ -6,7 +6,7 @@ import {
 import {logRender} from "../common/debug_flags";
 import {isXArticle} from "../common/utils";
 
- function extractDomain(vanity?: string, fallback?: string): string {
+function extractDomain(vanity?: string, fallback?: string): string {
     if (!vanity && !fallback) return '';
     try {
         const u = vanity && /^https?:\/\//i.test(vanity) ? new URL(vanity) : (vanity ? new URL(`https://${vanity}`) : null);
@@ -117,14 +117,16 @@ function fillTexts(node: HTMLElement, card: TweetCard): void {
 function applyImage(node: HTMLElement, card: TweetCard): void {
     const imgWrap = node.querySelector(".thumb") as HTMLElement | null;
     const imgEl = node.querySelector(".card-img") as HTMLImageElement | null;
+    const cardImgFallback = node.querySelector(".card-img-fallback") as HTMLElement | null;
 
-    if (!imgWrap || !imgEl) return;
+    if (!imgWrap || !imgEl || !cardImgFallback) return;
 
     const first = card.images?.[0];
     const imageUrl = card.mainImageUrl || first?.url || "";
 
     if (!imageUrl) {
         imgEl.style.display = "none";
+        cardImgFallback.style.display = "block";
         return;
     }
 
@@ -195,7 +197,7 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
     // 规则：x 站内 /i/article 走“文本块模式”，其余外站走“覆盖标题模式”
     const isXArticleCard = isXArticle(expanded || card.vanityUrl || "");
     const root = node as HTMLElement;
-    root.classList.toggle("tc-card-large--text",  isXArticleCard);
+    root.classList.toggle("tc-card-large--text", isXArticleCard);
     root.classList.toggle("tc-card-large--overlay", !isXArticleCard);
     root.classList.toggle("tc-card-large--hide-source", isXArticleCard);
 
@@ -251,7 +253,7 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
 
     // ===== ⑤ 图片：img + 背景（占位/模糊底） =====
     const imgEl = node.querySelector(".tc-card-large__img") as HTMLImageElement | null;
-    const bgEl  = node.querySelector(".tc-card-large__bg") as HTMLElement | null;
+    const bgEl = node.querySelector(".tc-card-large__bg") as HTMLElement | null;
 
     if (imgEl && imageUrl) {
         imgEl.src = imageUrl;
