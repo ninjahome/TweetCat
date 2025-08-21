@@ -10,6 +10,7 @@ import {
 import {logGuard} from "../common/debug_flags";
 
 import {setSelectedCategory} from "./tweetcat_web3_area";
+import {getSessCatID} from "../timeline/tweet_pager";
 
 let manager: TweetManager | null = null;
 
@@ -82,10 +83,10 @@ function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplate
     const timelineEl = area.querySelector('.tweetTimeline') as HTMLElement;
 
     manager = new TweetManager(timelineEl, tpl);
-    setSelectedCategory(-1)
+    setSelectedCategory(getSessCatID())
 }
 
-export async function switchCategory(catID:number){
+export async function switchCategory(catID: number) {
     manager?.switchCategory(catID);
 }
 

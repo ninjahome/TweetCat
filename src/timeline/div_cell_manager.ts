@@ -1,5 +1,6 @@
 import {TweetCatCell} from "./tweet_div_cell";
 import {
+    getSessCatID,
     tweetPager
 } from "./tweet_pager";
 
@@ -50,7 +51,7 @@ export class TweetManager {
         document.documentElement.style.overscrollBehavior = "none";
         this.resizeLogger = new TweetResizeObserverManager();
         tweetPager.init().then(async () => {
-            tweetPager.switchCategory();
+            tweetPager.switchCategory(getSessCatID());
             this.scroller = new VirtualScroller(this);
             await this.scroller!.initFirstPage()
         });
@@ -71,7 +72,7 @@ export class TweetManager {
         await this.scroller!.initFirstPage()
     }
 
-    cleanTimeLineContent(){
+    cleanTimeLineContent() {
 
         this.timelineEl.innerHTML = "";
         this.timelineEl.style.removeProperty("height");

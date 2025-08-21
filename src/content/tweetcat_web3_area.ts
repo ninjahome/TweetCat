@@ -4,6 +4,7 @@ import {EntryObj} from "../timeline/tweet_entry";
 import {switchCategory} from "./tweetcat_timeline";
 import {queryCategoriesFromBG} from "../object/category";
 import {logRender} from "../common/debug_flags";
+import {getSessCatID} from "../timeline/tweet_pager";
 
 export function setSelectedCategory(catID: number = defaultAllCategoryID) {
     document.querySelectorAll(".category-filter-item").forEach(elm => {
@@ -23,8 +24,8 @@ export async function addMoreCategory() {
 const onNewestNotificationClick = async (ev: Event) => {
     const notificationContainer = ev.currentTarget as HTMLElement;
     notificationContainer.style.display = "none";
-    await switchCategory(defaultAllCategoryID);//TODO::
-    setSelectedCategory();
+    await switchCategory(defaultAllCategoryID);
+    setSelectedCategory(defaultAllCategoryID);
 };
 
 export async function showNewestTweets(tweets: EntryObj[]) {
@@ -55,7 +56,7 @@ export function resetNewestTweet() {
 
 export async function resetCategories() {
     await switchCategory(defaultAllCategoryID);
-    setSelectedCategory();
+    setSelectedCategory(defaultAllCategoryID);
 }
 
 export async function changeFilterType(catId: number) {
@@ -101,5 +102,5 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
     filterContainerDiv.appendChild(moreBtn);
     logRender("✅ ------>>> add filter container success")
-    setSelectedCategory();
+    setSelectedCategory(getSessCatID());
 }

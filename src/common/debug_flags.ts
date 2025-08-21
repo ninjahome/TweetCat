@@ -5,7 +5,7 @@ export const DBG = {
     MOUNT: false,
     VIS: false,
     PAGER: true,
-    TWEET_MANAGER: false,
+    TWEET_MANAGER: true,
     NODE_POOL: false,
     ROUTE: false,
     GUARD: false,

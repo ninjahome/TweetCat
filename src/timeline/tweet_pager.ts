@@ -62,7 +62,7 @@ export class TweetPager {
     /** 强制重置所有状态，恢复初始 */
     resetPager() {
         this.timeStamp = undefined;
-        logPager('[Pager] HARD RESET completed.');
+        logPager('[Pager] reset start timeStamp to undefined');
     }
 
     async init() {
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function onLoadOnce() {
 const FIRST_FETCH_TS_KEY = 'tc:firstFetchAt';
 const FIRST_FETCH_TTL_MS = 30 * 60 * 1000;
 
-function getSessCatID(): number {
+export function getSessCatID(): number {
     const raw = sessionStorage.getItem(CURRENT_CATEGORY_ID)
     if (!raw) return defaultAllCategoryID;
     return Number(raw);
