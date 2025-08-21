@@ -29,7 +29,7 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
 export async function appendFilterOnTweetPage(kolName?: string) {
     if (!kolName) return;
 
-    observeForElement(document.body, 1000, () => {
+    observeForElement(document.body, 30, () => {
         return document.querySelector('[data-testid="app-bar-back"]') as HTMLElement
     }, async () => {
         hijackBackButton();
