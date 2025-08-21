@@ -55,6 +55,9 @@ export enum MsgType {
 
     IJUserTweetsCaptured = 'UserTweetsCaptured',
     IJLocationChange = 'IJLocationChange',
+
+    TokenUsedByUser = 'TokenUsedByUser',
+    TokenFreeze = 'TokenFreeze'
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

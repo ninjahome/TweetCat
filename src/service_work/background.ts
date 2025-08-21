@@ -12,6 +12,7 @@ import {checkAndInitDatabase} from "../common/database";
 import {localGet, localSet} from "../common/local_storage";
 import {getBearerToken, updateBearerToken} from "../common/utils";
 import {createAlarm, updateAlarm} from "./bg_timer";
+import {resetApiBucketSetting} from "./api_bucket_state";
 
 /****************************************************************************************
  ┌────────────┐
@@ -58,6 +59,9 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
     } else if (details.reason === "update") {
         updateAlarm().then();
     }
+    resetApiBucketSetting().then(() => {
+        console.log("------>>> update api bucket settings")
+    });
     initDefaultQueryKey().then();
 });
 

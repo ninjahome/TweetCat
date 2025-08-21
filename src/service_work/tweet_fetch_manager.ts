@@ -19,7 +19,7 @@ export class TweetFetcherManager {
     private newestFetch = false;
     private immediateQueue: string[] = [];
 
-    private readonly MAX_KOL_PER_ROUND = 5;
+    readonly MAX_KOL_PER_ROUND = 5;
     private readonly KOL_SCAN_LIMIT = this.MAX_KOL_PER_ROUND * 3;
     private readonly STORAGE_KEY = '__tweet_fetcher_runtime_state__';
 

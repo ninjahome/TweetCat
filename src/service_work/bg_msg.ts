@@ -18,6 +18,7 @@ import {
 import {loadAllKolCursors, loadCursorById, writeKolsCursors, writeOneCursor} from "../object/kol_cursor";
 import {timerKolInQueueImmediate} from "./bg_timer";
 import {tweetFM} from "./tweet_fetch_manager";
+import {penalize429, useTokenByUser} from "./api_bucket_state";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -129,6 +130,15 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
+        case MsgType.TokenUsedByUser: {
+            await useTokenByUser();
+            return {success: true};
+        }
+
+        case MsgType.TokenFreeze:{
+            await penalize429();
+            return {success: true};
+        }
         default:
             return {success: false, data: "unsupportable message type"};
     }
