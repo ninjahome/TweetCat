@@ -127,9 +127,21 @@ export class TweetCard {
             }
         }
 
-        // entityUrl：优先 t.co
-        this.entityUrl = data.legacy?.url || this.url || '';
+        // [ADD] 统一在入口层解析 unified_card（binding_values → 通用字段）
+        if (this.name === 'unified_card') {
+            const rawUnified = parseUnifiedBindingString(bindingValues);
+            if (rawUnified) {
+                inflateUnifiedCard(rawUnified, this);
+            }
+        }
+        // [ADD END]
 
+        const rawCardUrl = data.legacy?.url || '';
+        if (rawCardUrl?.startsWith('http://') || rawCardUrl?.startsWith('https://')) {
+            this.entityUrl = rawCardUrl;
+        } else {
+            this.entityUrl = this.url || '';
+        }
         // 如果 expandedUrl 还没设置，且 vanity_url 看起来不是裸域名，就用 vanityUrl
         if (!this.expandedUrl && this.vanityUrl) {
             try {
@@ -413,7 +425,7 @@ export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
             title: unwound?.title || "x.com",
             description: unwound?.description || "",
             mainImageUrl: img,
-            images: img ? [{ url: img }] : []
+            images: img ? [{url: img}] : []
         } as unknown as TweetCard;
 
         logTOP("------->>>>>fallback: built card entry", {
@@ -442,7 +454,7 @@ function buildArticleTweetCard(raw: any): TweetCard | null {
 
     const img = art?.cover_media?.media_info?.original_img_url as string | undefined;
     const title = art?.title as string | undefined;
-    const desc  = art?.preview_text as string | undefined;
+    const desc = art?.preview_text as string | undefined;
 
     return {
         // 统一用大图卡，保持与官方一致
@@ -458,11 +470,82 @@ function buildArticleTweetCard(raw: any): TweetCard | null {
         vanityUrl: expanded || "https://x.com",
         // 图片
         mainImageUrl: img,
-        images: img ? [{ url: img }] : [],
+        images: img ? [{url: img}] : [],
         // 可选：补 restId（不是必须，但有用）
         restId: art?.rest_id || ""
     } as TweetCard;
 }
+
+// [ADD] ------- unified_card 解析工具（最小实现） -------
+type UnifiedCardRaw = {
+    type?: string; // e.g. "image_website"
+    component_objects?: any;
+    destination_objects?: Record<string, any>;
+    media_entities?: Record<string, any>;
+};
+
+function parseUnifiedBindingString(bindingValues: any[]): UnifiedCardRaw | null {
+    const bv = bindingValues?.find?.((x: any) => x?.key === "unified_card");
+    const s = bv?.value?.string_value;
+    if (!s || typeof s !== "string") return null;
+    try {
+        return JSON.parse(s) as UnifiedCardRaw;
+    } catch {
+        return null;
+    }
+}
+
+function inflateUnifiedCard(raw: UnifiedCardRaw, card: any) {
+    if (!raw) return;
+
+    // details（标题 / 副标题 / 目的地 key）
+    const details = raw.component_objects?.details_1?.data || {};
+    const title = details?.title?.content || "";
+    const subtitle = details?.subtitle?.content || ""; // 常见为域名
+    const destKey = details?.destination || "";
+
+    if (title && !card.title) card.title = title;
+
+    // destination（expandedUrl / vanity）
+    const urlData = raw.destination_objects?.[destKey]?.data?.url_data || {};
+    const expanded = urlData?.url || "";
+    const vanity = urlData?.vanity || subtitle || "";
+
+    if (expanded && !card.expandedUrl) card.expandedUrl = toHttps(expanded);
+    if (vanity && !card.vanityUrl) card.vanityUrl =  toHttps(vanity);
+
+    // domain：从 vanity/subtitle 或 expanded 的 URL 解析
+    if (!card.domain) {
+        let d = vanity || subtitle || "";
+        if (!d && expanded) {
+            try {
+                d = new URL(expanded).host;
+            } catch {
+            }
+        }
+        card.domain = d || card.domain;
+    }
+
+    // media（主图）
+    const mediaId = raw.component_objects?.media_1?.data?.id;
+    const media = mediaId ? raw.media_entities?.[mediaId] : null;
+    const img = media?.media_url_https || media?.media_url || "";
+    if (img) {
+        const httpsImg = toHttps(img);
+        card.mainImageUrl ||= httpsImg;
+        if (!Array.isArray(card.images)) card.images = [];
+        if (!card.images.length) {
+            card.images.push({
+                url: img,
+                width: media?.original_info?.width || 0,
+                height: media?.original_info?.height || 0
+            });
+        }
+    }
+}
+
+// [ADD END] ---------------------------------------------
+
 
 export class TweetObj {
     rest_id: string;
@@ -544,7 +627,7 @@ export class EntryObj {
     tweet: TweetObj;
 
     constructor(entry: any) {
-        // logTOP("------->>>>>entry obj raw data:\n", JSON.stringify(entry));
+        logTOP("------->>>>>entry obj raw data:\n", JSON.stringify(entry));
         this.entryId = entry.entryId;
         this.sortIndex = entry.sortIndex;
         const content = entry.content;
