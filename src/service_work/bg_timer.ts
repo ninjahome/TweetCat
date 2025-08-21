@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 import {__tableKolsInCategory, checkAndInitDatabase, databaseQueryAll} from "../common/database";
-import {TweetFetcherManager, tweetFM} from "./tweet_fetch_manager";
+import {tweetFM} from "./tweet_fetch_manager";
 import {checkIfXIsOpen, sendMessageToX} from "./bg_msg";
 import {MsgType} from "../common/consts";
 import {refillApiAccessToken, useTokenByTimer} from "./api_bucket_state";
