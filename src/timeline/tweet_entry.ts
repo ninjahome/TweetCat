@@ -574,22 +574,63 @@ function inflateUnifiedCard(raw: UnifiedCardRaw, card: any) {
         card.domain = d || card.domain;
     }
 
-    // media（主图）
-    const mediaId = raw.component_objects?.media_1?.data?.id;
-    const media = mediaId ? raw.media_entities?.[mediaId] : null;
-    const img = media?.media_url_https || media?.media_url || "";
-    if (img) {
-        const httpsImg = toHttps(img);
-        card.mainImageUrl ||= httpsImg;
-        if (!Array.isArray(card.images)) card.images = [];
-        if (!card.images.length) {
-            card.images.push({
-                url: img,
-                width: media?.original_info?.width || 0,
-                height: media?.original_info?.height || 0
-            });
+    // 优先处理轮播：swipeable_media_1
+    const swipe = raw.component_objects?.swipeable_media_1?.data?.media_list;
+    // 确保 images 是数组，并做 URL 去重（避免重复 push）
+    if (!Array.isArray(card.images)) card.images = [];
+    const seen = new Set(card.images.map((i: any) => i?.url).filter(Boolean));
+
+    if (Array.isArray(swipe) && swipe.length) {
+        for (const item of swipe) {
+            const id = item?.id;
+            const m = id ? raw.media_entities?.[id] : null;
+            const src = m?.media_url_https || m?.media_url;
+            if (!src) continue;
+
+            const httpsUrl = toHttps(src);
+            if (!seen.has(httpsUrl)) {
+                card.images.push({
+                    url: httpsUrl,
+                    width: m?.original_info?.width || 0,
+                    height: m?.original_info?.height || 0
+                });
+                seen.add(httpsUrl);
+            }
+
+            if (!card.mainImageUrl) {
+                card.mainImageUrl = httpsUrl;
+                // 可选：补充调色板（取第一张）
+                const palette = m?.ext?.mediaColor?.r?.ok?.palette || [];
+                for (const c of palette) {
+                    card.thumbnailColorPalette.push(new TweetCardColor(c.rgb, c.percentage));
+                }
+            }
+        }
+    } else {
+        // 单图兜底：media_1
+        const mediaId = raw.component_objects?.media_1?.data?.id;
+        const m = mediaId ? raw.media_entities?.[mediaId] : null;
+        const src = m?.media_url_https || m?.media_url || "";
+        if (src) {
+            const httpsImg = toHttps(src);
+            if (!seen.has(httpsImg)) {
+                card.images.push({
+                    url: httpsImg,
+                    width: m?.original_info?.width || 0,
+                    height: m?.original_info?.height || 0
+                });
+                seen.add(httpsImg);
+            }
+            card.mainImageUrl ||= httpsImg;
+
+            // 可选：补充调色板
+            const palette = m?.ext?.mediaColor?.r?.ok?.palette || [];
+            for (const c of palette) {
+                card.thumbnailColorPalette.push(new TweetCardColor(c.rgb, c.percentage));
+            }
         }
     }
+    // ========= media 结束 =========
 }
 
 // [ADD END] ---------------------------------------------
@@ -675,7 +716,7 @@ export class EntryObj {
     tweet: TweetObj;
 
     constructor(entry: any) {
-        // logTOP("------->>>>>entry obj raw data:\n", JSON.stringify(entry));
+        logTOP("------->>>>>entry obj raw data:\n", JSON.stringify(entry));
         this.entryId = entry.entryId;
         this.sortIndex = entry.sortIndex;
         const content = entry.content;
