@@ -6,6 +6,30 @@ import {
 import {logRender} from "../common/debug_flags";
 import {isXArticle} from "../common/utils";
 
+// 补协议
+function absHttp(u?: string): string {
+    if (!u) return '';
+    return /^https?:\/\//i.test(u) ? u : `https://${u}`;
+}
+
+// 仅当 expanded 是“可信可绕过 t.co”时返回 true：
+// 规则：站内(x.com/twitter.com)一律允许；外站必须带 path 或 query
+function canBypassTco(expandedAbs: string, cardName?: string): boolean {
+    if (!expandedAbs) return false;
+    try {
+        const u = new URL(expandedAbs);
+        const host = u.hostname.toLowerCase();
+        const isInternal = host.endsWith('x.com') || host.endsWith('twitter.com');
+        const hasPathOrQuery = (u.pathname && u.pathname !== '/') || !!u.search;
+
+        if (isInternal) return true;
+        if (cardName === 'player') return true; // 播放器类通常有完整 URL，可直达
+        return hasPathOrQuery;                  // 外站必须带具体路径/参数才绕过
+    } catch {
+        return false;
+    }
+}
+
 function extractDomain(vanity?: string, fallback?: string): string {
     if (!vanity && !fallback) return '';
     try {
@@ -61,26 +85,45 @@ function cloneTemplate(tpl: HTMLTemplateElement, id: string): HTMLElement | null
     return node;
 }
 
-/** 配置链接与内部路由 */
 function configureAnchor(root: HTMLAnchorElement, card: TweetCard): void {
-    const hrefTco = card.url || card.vanityUrl || "#";
-    const expanded = card.expandedUrl || card.vanityUrl || "";
+    // 先用 t.co，其次 expandedUrl，最后 vanityUrl；都补成绝对 URL
+    const expandedRaw = card.expandedUrl || "";
+    const href =
+        (/^https?:\/\/t\.co\//i.test(card.url) ? card.url : "") ||
+        absHttp(expandedRaw) ||
+        absHttp(card.vanityUrl) ||
+        "#";
 
-    root.href = hrefTco;
+    root.href = href;
     root.target = "_blank";
     root.rel = "noopener noreferrer";
 
-    if (expanded) root.dataset.expandedUrl = expanded;
+    // 只看 expandedUrl 本身是否“可信”；不要再用 vanityUrl 兜底去写 dataset
+    const expandedAbs = absHttp(expandedRaw);
+    if (canBypassTco(expandedAbs, card.name)) {
+        root.dataset.expandedUrl = expandedAbs;
+    } else {
+        // 确保没有残留（防止复用节点造成误跳）
+        delete (root as any).dataset.expandedUrl;
+    }
 
-    if (expanded && isTwitterStatusUrl(expanded)) {
+    if (expandedAbs && isTwitterStatusUrl(expandedAbs)) {
         try {
-            bindTwitterInternalLink(root, expanded);
+            bindTwitterInternalLink(root, expandedAbs);
             root.removeAttribute("target");
             root.removeAttribute("rel");
-        } catch {
-            /* ignore */
+        } catch { /* ignore */
         }
     }
+
+    logRender('[card.href.pick]', {
+        name: card.name,
+        url: card.url,
+        expandedUrl: card.expandedUrl,
+        vanityUrl: card.vanityUrl,
+        finalHref: href,
+        datasetExpanded: canBypassTco(absHttp(card.expandedUrl || ""), card.name) ? absHttp(card.expandedUrl || "") : ''
+    });
 }
 
 /** 写入标题 / 描述 / 域名 */
@@ -186,38 +229,52 @@ function togglePlayerOverlay(node: HTMLElement, card: TweetCard): void {
 }
 
 function renderLargeCard(node: HTMLElement, card: TweetCard): void {
-    const hrefTco = card.url || card.vanityUrl || "#";
-    const expanded = card.expandedUrl || card.vanityUrl || "";
+    const expandedRaw = card.expandedUrl || "";
     const title = card.title || card.domain || card.vanityUrl || "";
     const domain = extractDomain(card.vanityUrl, card.domain);
     const first = card.images?.[0];
     const imageUrl = card.mainImageUrl || first?.url || "";
 
-    // ===== ① 选择显示模式 =====
-    // 规则：x 站内 /i/article 走“文本块模式”，其余外站走“覆盖标题模式”
-    const isXArticleCard = isXArticle(expanded || card.vanityUrl || "");
+    // ① 保持你的模式切换逻辑
+    const expandedAbsForMode = absHttp(expandedRaw);
+    const isXArticleCard = isXArticle(expandedAbsForMode || "");
+
     const root = node as HTMLElement;
     root.classList.toggle("tc-card-large--text", isXArticleCard);
     root.classList.toggle("tc-card-large--overlay", !isXArticleCard);
     root.classList.toggle("tc-card-large--hide-source", isXArticleCard);
 
     // ===== ② anchor：大图点击区 =====
+    const href =
+        (/^https?:\/\/t\.co\//i.test(card.url) ? card.url : "") ||
+        absHttp(expandedRaw) ||
+        absHttp(card.vanityUrl) ||
+        "#";
+    const expandedAbs = absHttp(expandedRaw);
+
     const aMedia = node.querySelector(".tc-card-large__media") as HTMLAnchorElement | null;
     const aSource = node.querySelector(".tc-card-large__source") as HTMLAnchorElement | null;
 
     if (aMedia) {
-        aMedia.href = hrefTco;
-        aMedia.removeAttribute("target");    // 不新开标签，交给 wireCardAnchor 接管
+        aMedia.href = href;
+        aMedia.removeAttribute("target");        // 交给 wireCardAnchor/浏览器
         aMedia.rel = "noopener noreferrer";
-        if (expanded) (aMedia as any).dataset.expandedUrl = expanded;
+        if (canBypassTco(expandedAbs, card.name)) {
+            (aMedia as any).dataset.expandedUrl = expandedAbs;
+        } else {
+            delete (aMedia as any).dataset.expandedUrl;
+        }
     }
 
-
     if (aSource) {
-        aSource.href = hrefTco;
+        aSource.href = href;
         aSource.target = "_blank";
         aSource.rel = "noopener noreferrer";
-        if (expanded) (aSource as any).dataset.expandedUrl = expanded;
+        if (canBypassTco(expandedAbs, card.name)) {
+            (aSource as any).dataset.expandedUrl = expandedAbs;
+        } else {
+            delete (aSource as any).dataset.expandedUrl;
+        }
     }
 
     // ===== ③ 文本：覆盖在图上的标题 与 底部域名 =====
@@ -264,4 +321,13 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
     if (bgEl && imageUrl) {
         bgEl.style.backgroundImage = `url("${imageUrl}")`;
     }
+
+
+    logRender('[card.href.pick]', {
+        name: card.name,
+        url: card.url,
+        expandedUrl: card.expandedUrl,
+        vanityUrl: card.vanityUrl,
+        finalHref: href
+    });
 }
