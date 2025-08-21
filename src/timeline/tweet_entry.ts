@@ -124,6 +124,54 @@ export class TweetCard {
                         );
                     }
                     break;
+
+                // [ADD] ====== broadcast 系列：标题 / 链接 ======
+                case 'broadcast_title':
+                    this.title = v?.string_value || this.title;
+                    break;
+                case 'broadcast_url': {
+                    const u = toHttps(v?.string_value || '');
+                    if (u) {
+                        // expandedUrl / vanityUrl 优先只在未设置时填充，避免覆盖别的卡已有值
+                        if (!this.expandedUrl) this.expandedUrl = u;
+                        if (!this.vanityUrl) this.vanityUrl = u;
+                        // 尝试补 domain（broadcast 常无 domain/vanity）
+                        if (!this.domain) {
+                            try {
+                                this.domain = new URL(u).host;
+                            } catch {
+                            }
+                        }
+                    }
+                    break;
+                }
+
+// [ADD] ====== broadcast 系列：缩略图（加入 images 并设置 mainImageUrl）======
+                case 'broadcast_thumbnail':
+                case 'broadcast_thumbnail_small':
+                case 'broadcast_thumbnail_large':
+                case 'broadcast_thumbnail_x_large':
+                case 'broadcast_thumbnail_original': {
+                    const img = v?.image_value;
+                    if (img?.url) {
+                        const httpsUrl = toHttps(img.url);
+                        this.images.push(new TweetCardImage({url: httpsUrl, width: img.width, height: img.height}));
+                        if (!this.mainImageUrl) this.mainImageUrl = httpsUrl;
+                    }
+                    break;
+                }
+
+// [ADD] ====== broadcast 系列：缩略图调色板 ======
+                case 'broadcast_thumbnail_color': {
+                    const colorPalette = v?.image_color_value?.palette || [];
+                    for (const palette of colorPalette) {
+                        this.thumbnailColorPalette.push(
+                            new TweetCardColor(palette.rgb, palette.percentage)
+                        );
+                    }
+                    break;
+                }
+
             }
         }
 
@@ -512,7 +560,7 @@ function inflateUnifiedCard(raw: UnifiedCardRaw, card: any) {
     const vanity = urlData?.vanity || subtitle || "";
 
     if (expanded && !card.expandedUrl) card.expandedUrl = toHttps(expanded);
-    if (vanity && !card.vanityUrl) card.vanityUrl =  toHttps(vanity);
+    if (vanity && !card.vanityUrl) card.vanityUrl = toHttps(vanity);
 
     // domain：从 vanity/subtitle 或 expanded 的 URL 解析
     if (!card.domain) {
