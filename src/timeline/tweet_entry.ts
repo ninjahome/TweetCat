@@ -675,7 +675,7 @@ export class EntryObj {
     tweet: TweetObj;
 
     constructor(entry: any) {
-        logTOP("------->>>>>entry obj raw data:\n", JSON.stringify(entry));
+        // logTOP("------->>>>>entry obj raw data:\n", JSON.stringify(entry));
         this.entryId = entry.entryId;
         this.sortIndex = entry.sortIndex;
         const content = entry.content;
