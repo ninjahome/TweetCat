@@ -16,7 +16,7 @@ import {sendMsgToService, sleep} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {fetchTweets} from "./twitter_api";
 
-const MAX_TWEETS_PER_KOL = 1000;
+const MAX_TWEETS_PER_KOL = 200;
 
 
 export class WrapEntryObj {
