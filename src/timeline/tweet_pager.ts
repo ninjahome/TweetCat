@@ -2,7 +2,7 @@
  * Tweet Pager State
  * ------------------------------------------------------------------ */
 import {EntryObj} from "./tweet_entry";
-import {logFT, logPager} from "../common/debug_flags";
+import {logPager} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {defaultAllCategoryID, MsgType} from "../common/consts";
 import {initBootstrapData, needBootStrap, WrapEntryObj} from "./db_raw_tweet";
@@ -12,17 +12,21 @@ import {KolCursor} from "../object/kol_cursor";
 import {startToFetchTweets} from "./tweet_fetcher";
 import {tweetFetchParam} from "../common/msg_obj";
 
+const CURRENT_CATEGORY_ID = 'tc:currentCategoryId'
 
 export class TweetPager {
     private timeStamp?: number;
     private currentCategoryId: number = defaultAllCategoryID;
 
     constructor() {
+        this.currentCategoryId = getSessCatID();
+        logPager(`[TweetPager] get cat id=${this.currentCategoryId} from session storage`);
     }
 
     switchCategory(newCategoryId: number = defaultAllCategoryID) {
-        this.resetPager();
+        this.timeStamp = undefined;
         this.currentCategoryId = newCategoryId;
+        setSessCatID(this.currentCategoryId);
         logPager(`[switchCategory] category changed -> ${newCategoryId}, timeStamp=${this.timeStamp}`);
     }
 
@@ -58,7 +62,6 @@ export class TweetPager {
     /** 强制重置所有状态，恢复初始 */
     resetPager() {
         this.timeStamp = undefined;
-        this.currentCategoryId = defaultAllCategoryID;
         logPager('[Pager] HARD RESET completed.');
     }
 
@@ -89,7 +92,7 @@ function unwrapEntryObj(rawData: WrapEntryObj[]): EntryObj[] {
 export const tweetPager = new TweetPager();
 document.addEventListener('DOMContentLoaded', function onLoadOnce() {
     tweetPager.init().then(() => {
-        logFT('[TweetPager] 🚀 DOMContentLoaded: init checking for first tweet loading');
+        logPager('[TweetPager] 🚀 DOMContentLoaded: init checking for first tweet loading');
     });
     document.removeEventListener('DOMContentLoaded', onLoadOnce);
 });
@@ -98,11 +101,21 @@ document.addEventListener('DOMContentLoaded', function onLoadOnce() {
 const FIRST_FETCH_TS_KEY = 'tc:firstFetchAt';
 const FIRST_FETCH_TTL_MS = 30 * 60 * 1000;
 
+function getSessCatID(): number {
+    const raw = sessionStorage.getItem(CURRENT_CATEGORY_ID)
+    if (!raw) return defaultAllCategoryID;
+    return Number(raw);
+}
+
+function setSessCatID(cid: number) {
+    sessionStorage.setItem(CURRENT_CATEGORY_ID, String(cid));
+}
+
 function getFirstFetchAt(): number | null {
     const raw = localStorage.getItem(FIRST_FETCH_TS_KEY);
     if (!raw) return null;
     const n = Number(raw);
-    logFT('[getFirstFetchAt] 🚀 last time to fetch data:', fmt(n));
+    logPager('[getFirstFetchAt] 🚀 last time to fetch data:', fmt(n));
     return Number.isFinite(n) ? n : null;
 }
 
