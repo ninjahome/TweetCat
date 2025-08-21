@@ -414,7 +414,7 @@ span.duration-badge {
 
 /* 单图逻辑 */
 .tweet-image.single-image {
-    display: inline-flex;
+    display: inline-flex !important;
     flex-direction: column;
     align-content: flex-start;
     max-height: 590px;
