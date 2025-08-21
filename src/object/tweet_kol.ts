@@ -4,7 +4,7 @@ import {
     __tableKolsInCategory,
     databaseQueryAll,
     databaseQueryByFilter,
-    idx_kol_id,
+    idx_kol_usr_id,
     databaseGetByIndex
 } from "../common/database";
 
@@ -55,7 +55,7 @@ export async function kolById(kid: string): Promise<TweetKol | null> {
 
     const rec = await databaseGetByIndex<TweetKol>(
         __tableKolsInCategory,
-        idx_kol_id,
+        idx_kol_usr_id,
         kid
     );
     return rec ?? null;

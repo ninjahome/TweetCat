@@ -4,7 +4,7 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 15;
+export const __currentDatabaseVersion = 16;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -13,10 +13,11 @@ export const __tableCachedTweets = '__table_cached_tweets__'
 export const __tableKolCursor = '__table_kol_cursor__';
 
 export const BossOfTheTwitter = '44196397';
-export const idx_userid_time = 'userId_timestamp_idx'
-export const idx_userid = 'userId_idx'
-export const idx_time = 'timestamp_idx'
-export const idx_kol_id = 'idx_kolUserId'
+export const idx_tweets_user_time = 'userId_timestamp_idx'
+export const idx_tweets_time_user = 'timestamp_userId_idx';
+export const idx_tweets_userid = 'userId_idx'
+export const idx_tweets_time = 'timestamp_idx'
+export const idx_kol_usr_id = 'idx_kolUserId'
 
 
 const initialCategories = [
@@ -200,20 +201,22 @@ function initCachedTweetsTable(request: IDBOpenDBRequest) {
         const store = tx.objectStore(__tableCachedTweets);
 
         // 只有不存在时才创建，避免报错
-        if (!store.indexNames.contains(idx_userid)) {
-            store.createIndex(idx_userid, 'userId', {unique: false});
+        if (!store.indexNames.contains(idx_tweets_userid)) {
+            store.createIndex(idx_tweets_userid, 'userId', {unique: false});
             logDB("------>>>[Database] Added index userId_idx on existing cached tweets store.");
-        } else {
-            logDB("------>>>[Database] userId_idx already exists.");
         }
-
+        if (!store.indexNames.contains(idx_tweets_time_user)) {
+            store.createIndex(idx_tweets_time_user, ['timestamp', 'userId'], {unique: false});
+        }
+        logDB("------>>>[Database] ensured indexes on cached tweets.");
         return;
     }
 
     const tweetStore = db.createObjectStore(__tableCachedTweets, {keyPath: 'tweetId'});
-    tweetStore.createIndex(idx_time, 'timestamp', {unique: false});
-    tweetStore.createIndex(idx_userid_time, ['userId', 'timestamp'], {unique: false});
-    tweetStore.createIndex(idx_userid, 'userId', {unique: false});
+    tweetStore.createIndex(idx_tweets_time, 'timestamp', {unique: false});
+    tweetStore.createIndex(idx_tweets_user_time, ['userId', 'timestamp'], {unique: false});
+    tweetStore.createIndex(idx_tweets_userid, 'userId', {unique: false});
+    tweetStore.createIndex(idx_tweets_time_user, ['timestamp', 'userId'], {unique: false});
 
     logDB("------>>>[Database] Created cached tweets table with indexes successfully.", __tableCachedTweets);
 }
@@ -693,5 +696,58 @@ export function databaseDeleteByIndexValue(
 
         tx.oncomplete = () => resolve(deleted);
         tx.onerror = (e) => reject(`Tx error: ${(e.target as IDBRequest).error}`);
+    });
+}
+
+export function databaseQueryByTimeAndUserKeyFiltered(
+    table: string,
+    limit: number,
+    categoryUserIds: Set<string>,
+    boundValue?: number, // 上一页最小 timestamp；若提供，则取 timestamp < boundValue
+): Promise<any[]> {
+    return new Promise((resolve, reject) => {
+        if (!__databaseObj) return reject("Database is not initialized");
+        if (!categoryUserIds || categoryUserIds.size === 0) return resolve([]);
+
+        const results: any[] = [];
+        const tx = __databaseObj.transaction([table], 'readonly');
+        const store = tx.objectStore(table);
+        const idx = store.index(idx_tweets_time_user); // 确保与建索引名称一致
+        const dir = 'prev';
+
+        // 严格小于 boundValue
+        const range = (boundValue !== undefined)
+            ? IDBKeyRange.upperBound([boundValue], /*open=*/true)
+            : null;
+
+        const req = idx.openKeyCursor(range, dir);
+
+        req.onsuccess = (ev) => {
+            const cursor = (ev.target as IDBRequest).result as IDBCursor | null;
+            if (!cursor) return resolve(results);
+
+            const [, uid] = cursor.key as [number, string | number]; // [timestamp, userId]
+            const userId = String(uid);
+
+            if (categoryUserIds.has(userId)) {
+                const pk = cursor.primaryKey; // tweetId
+                const getReq = store.get(pk);
+                getReq.onsuccess = () => {
+                    const val = (getReq as IDBRequest).result;
+                    if (val) {
+                        results.push(val);
+                        if (results.length >= limit) {
+                            return resolve(results);
+                        }
+                    }
+                    cursor.continue();
+                };
+                getReq.onerror = () => cursor.continue();
+            } else {
+                cursor.continue();
+            }
+        };
+
+        req.onerror = (e) => reject((e.target as IDBRequest).error);
     });
 }

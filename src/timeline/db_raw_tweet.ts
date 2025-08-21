@@ -7,9 +7,9 @@ import {
     databasePutItem,
     databaseQueryByFilter,
     databaseQueryByIndex,
-    databaseQueryByIndexRange, idx_userid,
-    idx_userid_time, initialKols,
-    pruneOldDataIfNeeded
+    databaseQueryByIndexRange, idx_tweets_userid,
+    idx_tweets_user_time, initialKols,
+    pruneOldDataIfNeeded, databaseQueryByTimeAndUserKeyFiltered, idx_tweets_time
 } from "../common/database";
 import {logTC} from "../common/debug_flags";
 import {sendMsgToService, sleep} from "../common/utils";
@@ -61,7 +61,7 @@ export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]): 
         await Promise.all(
             rawTweets.map(obj => limit(() => databasePutItem(__tableCachedTweets, obj)))
         );
-        const dataLen = await pruneOldDataIfNeeded(kolId, idx_userid_time, __tableCachedTweets, MAX_TWEETS_PER_KOL);
+        const dataLen = await pruneOldDataIfNeeded(kolId, idx_tweets_user_time, __tableCachedTweets, MAX_TWEETS_PER_KOL);
         logTC(`[cacheRawTweets] ✅ [${rawTweets.length}] tweets cached, [${dataLen}] old tweets deleted for kol[${kolId}]`);
         return dataLen;
     } catch (error) {
@@ -79,29 +79,60 @@ export async function initTweetsCheck(): Promise<boolean> {
     return count === 0
 }
 
-export async function loadLatestTweets(limit: number = 20,
-                                       category: number,
-                                       timeStamp: number | undefined = undefined) {
-    let filterFn: ((row: any) => boolean) | undefined = undefined;
 
+export async function loadLatestTweets(
+    limit: number = 20,
+    category: number,
+    timeStamp?: number
+) {
     if (category >= 0) {
         const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => item.catID === category);
-        const categoryUserIds = new Set<string>(kols.map(k => k.kolUserId));
-        filterFn = (row) => categoryUserIds.has(row.userId);
+        const categoryUserIds = new Set<string>(kols.map(k => String(k.kolUserId)));
+
+        // ✅ 用“键层过滤”的高效查询（仍是全局时间线，绝不重复）
+        return databaseQueryByTimeAndUserKeyFiltered(
+            __tableCachedTweets,
+            limit,
+            categoryUserIds,
+            timeStamp
+        );
     }
 
-    return await databaseQueryByIndex(
+    // 非分类：沿用原来的索引
+    return databaseQueryByIndex(
         __tableCachedTweets,
-        'timestamp_idx',
+        idx_tweets_time,
         limit,
         true,
-        filterFn,
+        undefined,
         timeStamp
     );
 }
 
+
+// export async function loadLatestTweets(limit: number = 20,
+//                                        category: number,
+//                                        timeStamp: number | undefined = undefined) {
+//     let filterFn: ((row: any) => boolean) | undefined = undefined;
+//
+//     if (category >= 0) {
+//         const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => item.catID === category);
+//         const categoryUserIds = new Set<string>(kols.map(k => k.kolUserId));
+//         filterFn = (row) => categoryUserIds.has(row.userId);
+//     }
+//
+//     return await databaseQueryByIndex(
+//         __tableCachedTweets,
+//         'timestamp_idx',
+//         limit,
+//         true,
+//         filterFn,
+//         timeStamp
+//     );
+// }
+
 export async function removeTweetsByKolID(kolID: string) {
-    const deletedNo = await databaseDeleteByIndexValue(__tableCachedTweets, idx_userid, kolID);
+    const deletedNo = await databaseDeleteByIndexValue(__tableCachedTweets, idx_tweets_userid, kolID);
     logTC(`[removeTweetsByKolID] remove ${deletedNo} tweets for kol: ${kolID}`);
 }
 
