@@ -4,18 +4,18 @@ const __DEV__ = process.env.NODE_ENV !== 'production'
 export const DBG = {
     MOUNT: false,
     VIS: false,
-    PAGER: true,
-    TWEET_MANAGER: true,
+    PAGER: false,
+    TWEET_MANAGER: false,
     NODE_POOL: false,
     ROUTE: false,
     GUARD: false,
     Database: false,
-    TweetCache: true,
-    TweetFetcher: true,
+    TweetCache: false,
+    TweetFetcher: false,
     TweetCursor: false,
-    TweetBGTimer: true,
-    TweetObjParse:false,
-    TweetRender:false,
+    TweetBGTimer: false,
+    TweetObjParse: false,
+    TweetRender: true,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
