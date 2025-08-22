@@ -1,4 +1,3 @@
-
 /* ===== Twitter-like Auto Dark Mode (drop-in) =====
    How to use:
    1) Link this AFTER your existing content.css
@@ -14,23 +13,23 @@
     /* Light */
     --bg-primary: #ffffff;
     --bg-elevated: #ffffff;
-    --bg-hover: rgba(15,20,25,0.03);
+    --bg-hover: rgba(15, 20, 25, 0.03);
     --bg-subtle: #f7f9f9;
 
-    --text-primary: rgb(15,20,25);
-    --text-secondary: rgb(83,100,113);
+    --text-primary: rgb(15, 20, 25);
+    --text-secondary: rgb(83, 100, 113);
     --text-muted: #6b7280;
 
-    --accent: rgb(29,155,240);
-    --accent-subtle: rgba(29,155,240,.1);
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .1);
 
-    --border-subtle: rgb(239,243,244);
-    --border-strong: rgba(15,20,25,0.1);
+    --border-subtle: rgb(239, 243, 244);
+    --border-strong: rgba(15, 20, 25, 0.1);
 
     --card-radius: 12px;
     --media-radius: 16px;
 
-    --shadow-pop: 0 4px 8px rgba(0,0,0,0.15);
+    --shadow-pop: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Prefer the user's OS setting */
@@ -39,25 +38,28 @@
         /* Dark */
         --bg-primary: #000000;
         --bg-elevated: transparent;
-        --bg-hover: rgba(231,233,234,0.08);
+        --bg-hover: rgba(231, 233, 234, 0.08);
         --bg-subtle: #0a0a0a;
 
-        --text-primary: rgb(231,233,234);
-        --text-secondary: rgb(139,152,165);
+        --text-primary: rgb(231, 233, 234);
+        --text-secondary: rgb(139, 152, 165);
         --text-muted: #9ca3af;
 
-        --accent: rgb(29,155,240);
-        --accent-subtle: rgba(29,155,240,.15);
+        --accent: rgb(29, 155, 240);
+        --accent-subtle: rgba(29, 155, 240, .15);
 
         --border-subtle: #2f3336;
-        --border-strong: rgba(231,233,234,0.15);
+        --border-strong: rgba(231, 233, 234, 0.15);
     }
+
     .tweet-cardfloat:hover {
         background-color: transparent !important;
     }
+
     .category-popup-menu {
         background-color: #16181c !important;
     }
+
     .tweet-card-area a.tc-card-large__media {
         border: 1px solid #2F3336;
     }
@@ -67,34 +69,35 @@
 html[data-theme="dark"] {
     --bg-primary: #000000;
     --bg-elevated: #16181c;
-    --bg-hover: rgba(231,233,234,0.08);
+    --bg-hover: rgba(231, 233, 234, 0.08);
     --bg-subtle: #0a0a0a;
 
-    --text-primary: rgb(231,233,234);
-    --text-secondary: rgb(139,152,165);
+    --text-primary: rgb(231, 233, 234);
+    --text-secondary: rgb(139, 152, 165);
     --text-muted: #9ca3af;
 
-    --accent: rgb(29,155,240);
-    --accent-subtle: rgba(29,155,240,.15);
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .15);
 
     --border-subtle: #2f3336;
-    --border-strong: rgba(231,233,234,0.15);
+    --border-strong: rgba(231, 233, 234, 0.15);
 }
+
 html[data-theme="light"] {
     --bg-primary: #ffffff;
     --bg-elevated: #ffffff;
-    --bg-hover: rgba(15,20,25,0.03);
+    --bg-hover: rgba(15, 20, 25, 0.03);
     --bg-subtle: #f7f9f9;
 
-    --text-primary: rgb(15,20,25);
-    --text-secondary: rgb(83,100,113);
+    --text-primary: rgb(15, 20, 25);
+    --text-secondary: rgb(83, 100, 113);
     --text-muted: #6b7280;
 
-    --accent: rgb(29,155,240);
-    --accent-subtle: rgba(29,155,240,.1);
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .1);
 
-    --border-subtle: rgb(239,243,244);
-    --border-strong: rgba(15,20,25,0.1);
+    --border-subtle: rgb(239, 243, 244);
+    --border-strong: rgba(15, 20, 25, 0.1);
 }
 
 /* Smooth transition */
@@ -109,8 +112,14 @@ html, body {
     background: var(--bg-primary);
     color: var(--text-primary);
 }
-a { color: var(--accent); }
-a:hover { text-decoration: underline; }
+
+a {
+    color: var(--accent);
+}
+
+a:hover {
+    text-decoration: underline;
+}
 
 /* ---------- Timeline / Layout ---------- */
 .tweetTimeline {
@@ -119,7 +128,9 @@ a:hover { text-decoration: underline; }
     border-right-color: var(--border-subtle) !important;
 }
 
-.tweet-bottomline { background-color: var(--border-subtle) !important; }
+.tweet-bottomline {
+    background-color: var(--border-subtle) !important;
+}
 
 .each-tweet-rightBox {
     background-color: var(--bg-elevated);
@@ -127,11 +138,15 @@ a:hover { text-decoration: underline; }
     border-radius: var(--card-radius);
 }
 
-.tweet-card { background: transparent; }
+.tweet-card {
+    background: transparent;
+}
 
 /* ---------- Text ---------- */
 .tweet-title,
-.tweet-author { color: var(--text-primary) !important; }
+.tweet-author {
+    color: var(--text-primary) !important;
+}
 
 .tweet-username,
 .tweet-time,
@@ -139,21 +154,26 @@ a:hover { text-decoration: underline; }
 .inline-link-card .desc,
 .tweet-card-area .inline-link-card--small .meta .js-card-domain,
 .tweet-card-area .inline-link-card--small .meta .js-card-desc,
-.tc-card-large__source { color: var(--text-secondary) !important; }
+.tc-card-large__source {
+    color: var(--text-secondary) !important;
+}
 
 /* ---------- Category Filter ---------- */
 .category-filter-container {
     background: var(--bg-elevated);
     border-bottom-color: var(--border-subtle) !important;
 }
+
 .category-filter-item {
     color: var(--text-primary);
     border-color: var(--border-strong) !important;
 }
+
 .category-filter-item:hover {
     background-color: var(--bg-hover) !important;
     border-color: var(--border-strong) !important;
 }
+
 .category-filter-item.active {
     background-color: var(--accent) !important;
     color: #fff !important;
@@ -165,13 +185,19 @@ a:hover { text-decoration: underline; }
     border-color: var(--border-strong);
     box-shadow: var(--shadow-pop);
 }
+
 .category-popup-menu .menu-item:hover {
     background-color: var(--bg-hover);
 }
 
 /* ---------- Media ---------- */
-img, video { border-radius: var(--media-radius); }
-.video-wrapper { background-color: #000; }
+img, video {
+    border-radius: var(--media-radius);
+}
+
+.video-wrapper {
+    background-color: #000;
+}
 
 /* ---------- Cards & Links ---------- */
 .tweet-content .inline-link,
@@ -180,6 +206,7 @@ img, video { border-radius: var(--media-radius); }
     border-color: var(--border-subtle);
     color: inherit;
 }
+
 .tweet-content .inline-link:hover,
 .tweet-card-area .inline-link:hover {
     background-color: var(--bg-hover);
@@ -188,14 +215,18 @@ img, video { border-radius: var(--media-radius); }
 
 /* Large card overlay title remains readable in both modes */
 .tweet-card-area .tc-card-large__shade {
-    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.55) 100%);
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .55) 100%);
 }
-.tweet-card-area .tc-card-large__title { color: #fff; }
+
+.tweet-card-area .tc-card-large__title {
+    color: #fff;
+}
 
 /* ---------- Actions ---------- */
 .action-button {
     color: var(--text-secondary);
 }
+
 .action-button:hover {
     background: var(--bg-hover);
     border-radius: 9999px;
@@ -206,10 +237,16 @@ img, video { border-radius: var(--media-radius); }
 .tweet-category-label {
     background-color: var(--accent-subtle) !important;
 }
-.tweet-category-label:hover { background-color: transparent !important; }
+
+.tweet-category-label:hover {
+    background-color: transparent !important;
+}
 
 /* Selected tab like Twitter */
-a.tweetCatMenuItem.tc-selected svg path { fill: var(--accent) !important; }
+a.tweetCatMenuItem.tc-selected svg path {
+    fill: var(--accent) !important;
+}
+
 a.tweetCatMenuItem.tc-selected .tweettabname {
     color: var(--accent) !important;
     font-weight: 700;
@@ -226,19 +263,20 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     font-size: 15px;
     color: #1D9BF0;
 }
+
 .tweet-no-wrapper .tweet-no {
     font-weight: 700;
 }
 
 .new-tweet-notification {
-   padding: 16px;
+    padding: 16px;
 }
 
 /* ===== TweetCat Quoted (tcq-) 基础骨架：阶段0 ===== */
 .tcq-quoted-root {
     display: block;
     position: relative; /* 合并：原来单独的声明 */
-    border: 1px solid var(--border-subtle, rgba(0,0,0,.08));
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, .08));
     border-radius: 12px;
     padding: 8px 10px;
     background: var(--bg-elevated, transparent);
@@ -251,55 +289,112 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tcq-quoted-root .tcq-quoted-card {
     margin-top: 6px;
 }
-.tcq-quoted-root .tcq-quoted-header { margin-top: 0; }
+
+.tcq-quoted-root .tcq-quoted-header {
+    margin-top: 0;
+}
 
 /* Header 行内布局 */
-.tcq-qh-row { display: flex; align-items: center; gap: 8px; }
-.tcq-qh-avatar img { border-radius: 999px; display: block; }
-.tcq-qh-meta { display: inline-flex; align-items: center; gap: 6px; }
-.tcq-qh-sep { opacity: .6; }
+.tcq-qh-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tcq-qh-avatar img {
+    border-radius: 999px;
+    display: block;
+}
+
+.tcq-qh-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tcq-qh-sep {
+    opacity: .6;
+}
 
 /* 媒体容器占位 */
-.tcq-qmedia { position: relative; display: block; overflow: hidden; border-radius: 8px; }
-.tcq-qmedia + .tcq-qmedia { margin-top: 6px; }
-.tcq-qmedia .tcq-qmedia-aspect { display: block; width: 100%; padding-top: 56.25%; } /* 16:9 */
-.tcq-qmedia img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tcq-qmedia {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.tcq-qmedia + .tcq-qmedia {
+    margin-top: 6px;
+}
+
+.tcq-qmedia .tcq-qmedia-aspect {
+    display: block;
+    width: 100%;
+    padding-top: 56.25%;
+}
+
+/* 16:9 */
+.tcq-qmedia img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 
 /* 不可用占位 */
-.tcq-quoted-unavailable { padding: 10px; border-radius: 8px; background: rgba(0,0,0,.03); }
+.tcq-quoted-unavailable {
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, .03);
+}
 
 @media (prefers-color-scheme: dark) {
-    .tcq-quoted-root { border-color: var(--border-subtle, rgba(255,255,255,.12)); }
-    .tcq-quoted-unavailable { background: rgba(255,255,255,.06); }
+    .tcq-quoted-root {
+        border-color: var(--border-subtle, rgba(255, 255, 255, .12));
+    }
+
+    .tcq-quoted-unavailable {
+        background: rgba(255, 255, 255, .06);
+    }
 }
 
 /* ===== tcq- 正文（embedded/compact） ===== */
 .tcq-quoted-root .tcq-quoted-content .tweet-content {
-    font-size: 14px;          /* 比主推略小 */
-    line-height: 1.45;        /* 更紧凑 */
+    font-size: 14px; /* 比主推略小 */
+    line-height: 1.45; /* 更紧凑 */
 }
 
 /* 引用区内超链接、mention 的高亮略收敛，避免过强 */
-.tcq-quoted-root .tcq-quoted-content .tweet-content a { text-decoration: none; }
-.tcq-quoted-root .tcq-quoted-content .tweet-content a:hover { text-decoration: underline; }
+.tcq-quoted-root .tcq-quoted-content .tweet-content a {
+    text-decoration: none;
+}
+
+.tcq-quoted-root .tcq-quoted-content .tweet-content a:hover {
+    text-decoration: underline;
+}
 
 /* 隐形锚点（供程序化触发 SPA 路由） */
 .tcq-quoted-rootlink {
     position: absolute;
-    width: 0; height: 0;
+    width: 0;
+    height: 0;
     overflow: hidden;
     pointer-events: none;
 }
 
 /* 可达性：键盘焦点与悬停反馈（轻量，可按需保留） */
 .tcq-quoted-root:focus-visible {
-    outline: 2px solid rgba(29,155,240,.6);
+    outline: 2px solid rgba(29, 155, 240, .6);
     outline-offset: 2px;
-    border-color: rgba(29,155,240,.35);
+    border-color: rgba(29, 155, 240, .35);
 }
+
 .tcq-quoted-root:hover {
     background: color-mix(in srgb, var(--bg-elevated, transparent) 92%, #000 8%);
 }
+
 @media (prefers-color-scheme: dark) {
     .tcq-quoted-root:hover {
         background: color-mix(in srgb, var(--bg-elevated, transparent) 94%, #fff 6%);
@@ -309,7 +404,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 /* —— 引用正文：折叠/更多（A1+B1） —— */
 .tcq-qcontent-wrap {
-    position: static;              /* 不再用 absolute 叠加 */
+    position: static; /* 不再用 absolute 叠加 */
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -325,22 +420,134 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 /* “显示更多”按钮 */
 .tcq-qcontent-more {
-    position: static;              /* 取消绝对定位 */
+    position: static; /* 取消绝对定位 */
     display: inline-block;
-    margin-top: 4px;               /* 与正文留出一点间距 */
-    padding: 0;                    /* 官方是纯文本链接，无额外内边距 */
+    margin-top: 4px; /* 与正文留出一点间距 */
+    padding: 0; /* 官方是纯文本链接，无额外内边距 */
     font-size: 14px;
     line-height: 1.45;
-    color: rgb(29,155,240);
-    background: none;              /* 去掉渐变背景 */
+    color: rgb(29, 155, 240);
+    background: none; /* 去掉渐变背景 */
     text-decoration: none;
 }
-.tcq-qcontent-more:hover { text-decoration: underline; }
+
+.tcq-qcontent-more:hover {
+    text-decoration: underline;
+}
 
 /* 暗色适配（渐隐背景） */
 @media (prefers-color-scheme: dark) {
     .tcq-qcontent-more {
-        color: rgb(142,205,248);
+        color: rgb(142, 205, 248);
         background: none;
     }
+}
+
+
+/* === Quoted photo grids (A2/A3/A4) === */
+.tcq-quoted-root .tcq-quoted-media {
+    border-radius: 12px;
+    overflow: hidden;
+    gap: 2px;
+}
+
+/* 1 张：保持单列（模板内 .tcq-qmedia-aspect 提供比例） */
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--grid-1 {
+    display: block;
+}
+
+/* 2/4 张：2 列网格 */
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--grid-2,
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--grid-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* 3 张：左 1 张通栏、右侧上下两张 */
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--grid-3 .tcq-qphoto:nth-child(1) {
+    grid-row: span 2;
+}
+
+
+/* 16:9 */
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--condensed .tcq-qmedia-aspect {
+    padding-top: 45%;
+}
+
+/* 更紧凑 */
+
+/* === tcq- 轻量图片查看覆盖层 === */
+.tcq-photo-lightbox[hidden] {
+    display: none;
+}
+
+.tcq-photo-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999; /* 盖住后面的推文内容 */
+    background: rgba(0, 0, 0, .9); /* 与官方接近的暗幕 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tcq-plb-img {
+    max-width: 95vw;
+    max-height: 95vh;
+    border-radius: var(--media-radius, 12px);
+    display: block;
+}
+
+.tcq-plb-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 24px;
+    line-height: 1;
+    background: transparent;
+    color: #fff;
+    border: 0;
+    cursor: pointer;
+}
+
+
+/* === B2 单图：缩略图模式（与官方一致为小方图） === */
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--thumb {
+    display: inline-block; /* 不再占满整行 */
+    width: 88px; /* 约等于官方的小缩略图宽度 */
+    vertical-align: top;
+    gap: 0;
+}
+
+@media (min-width: 480px) {
+    .tcq-quoted-root .tcq-quoted-media.tcq-qphoto--thumb {
+        width: 96px;
+    }
+}
+
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--thumb .tcq-qphoto {
+    display: block;
+}
+
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--thumb .tcq-qmedia-aspect {
+    padding-top: 100%; /* 正方形缩略图 */
+}
+
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--thumb img {
+    object-fit: cover; /* 居中裁切，避免变形 */
+}
+
+/* 任何 grid-n 布局下，都禁用兄弟 margin 顶距，只用 gap 控距 */
+.tcq-quoted-root .tcq-quoted-media[class*="tcq-qphoto--grid-"] .tcq-qmedia {
+    margin-top: 0;
+}
+
+/* 仅在引用媒体里把图片圆角归零，由容器裁切外轮廓 */
+.tcq-quoted-root .tcq-qmedia img {
+    border-radius: 0;
 }

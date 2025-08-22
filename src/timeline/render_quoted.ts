@@ -91,7 +91,7 @@ function fillQuotedContent(
 
     const shouldShowMore = !condensed && !!quoted.hasNoteExpandable;
     // 调试
-    console.log('[Quoted][fill] decision', {
+    logRQ('[Quoted][fill] decision', {
         condensed,
         hasNoteExpandable: quoted.hasNoteExpandable,
         shouldShowMore
@@ -115,7 +115,7 @@ function fillQuotedContent(
     const href = (sn && id) ? `/${sn}/status/${id}` : '';
     bindTwitterInternalLink(moreEl, href);
     // 调试日志（可保留，便于核对）
-    console.log('[Quoted][A1+B1] force-show more', {href, condensed});
+    logRQ('[Quoted][A1+B1] force-show more', {href, condensed});
 }
 
 
@@ -167,26 +167,102 @@ function wireQuotedRootInteractions(root: HTMLElement, quoted: TweetObj): void {
     }
 }
 
-// render_quoted.ts —— 阶段 3 框架（空实现）
+
+function getPhotoLightbox(): { root: HTMLElement, img: HTMLImageElement, close: HTMLButtonElement } {
+    let root = document.getElementById('tcqTplPhotoLightbox') as HTMLElement | null;
+    if (!root) {
+        // 兜底：如果模板不在文档中（理论上已插入），创建一次
+        root = document.createElement('div');
+        root.id = 'tcqTplPhotoLightbox';
+        root.className = 'tcq-photo-lightbox';
+        root.hidden = true;
+        root.innerHTML = `<button class="tcq-plb-close" aria-label="关闭查看">×</button><img class="tcq-plb-img" alt="">`;
+        document.body.appendChild(root);
+    }
+    const img = root.querySelector('.tcq-plb-img') as HTMLImageElement;
+    const close = root.querySelector('.tcq-plb-close') as HTMLButtonElement;
+
+    // 关闭交互（点击遮罩或按钮）
+    if (!root.dataset.wired) {
+        root.addEventListener('click', (e) => {
+            if (e.target === root) root.hidden = true;
+        });
+        close.addEventListener('click', () => (root.hidden = true));
+        document.addEventListener('keydown', (e) => {
+            if (!root.hidden && (e.key === 'Escape' || e.key === 'Esc')) root.hidden = true;
+        });
+        root.dataset.wired = '1';
+    }
+    return {root, img, close};
+}
+
+
+// —— 阶段 3：Photo 渲染 —— //
 function fillQuotedMedia(
     root: HTMLElement,
     quoted: TweetObj,
     tpl: HTMLTemplateElement,
     condensed: boolean
 ): void {
-    // 取媒体数组（没有就直接清空 slot 并返回）
-    const medias = quoted?.tweetContent?.extended_entities?.media ?? [];
     const mediaSlot = root.querySelector<HTMLElement>('[data-tcq-slot="media"]');
     if (!mediaSlot) return;
-
-    // 先清空
     mediaSlot.innerHTML = '';
 
-    // 暂不渲染任何媒体（空实现）
-    // 后续我们会在这里根据 medias[].type 与 condensed 分别渲染：
-    // - photo: regular vs condensed
-    // - animated_gif / video: 封面卡（阶段4）
-    // - 无媒体：保持空
+    // media 列表（优先 extended_entities）
+    const all =
+        quoted?.tweetContent?.extended_entities?.media?.length
+            ? quoted.tweetContent.extended_entities.media
+            : (quoted?.tweetContent?.entities?.media || []);
+
+    const photos = all.filter(m => m?.type === 'photo');
+    if (!photos.length) {
+        // 阶段4再处理 GIF/Video；此处仅渲染 photo
+        return;
+    }
+
+    // B1/B2：高度差异由容器 class 控制（CSS 中调整 aspect）
+    const count = Math.min(4, photos.length);
+    mediaSlot.classList.add(`tcq-qphoto--grid-${count}`);
+    mediaSlot.classList.toggle('tcq-qphoto--regular', !condensed);
+    mediaSlot.classList.toggle('tcq-qphoto--condensed', condensed);
+
+    if (condensed && count === 1) {
+        mediaSlot.classList.add('tcq-qphoto--thumb');
+    } else {
+        mediaSlot.classList.remove('tcq-qphoto--thumb');
+    }
+
+    const {root: lbRoot, img: lbImg} = getPhotoLightbox();
+
+    photos.slice(0, 4).forEach((m, i) => {
+        const anchor = cloneFromTpl(tpl, 'tcqTplQuotedPhoto') as HTMLAnchorElement | null;
+        if (!anchor) return;
+        anchor.removeAttribute('id');
+
+        // 填图
+        const img = anchor.querySelector('img') as HTMLImageElement | null;
+        const src = m.media_url_https || m.url || '';
+        if (img) {
+            img.src = m.media_url_https || m.url || '';
+            img.alt = m.display_url || '';
+            img.decoding = 'async';
+            img.loading = 'lazy';
+        }
+
+        anchor.href = '#';
+        anchor.addEventListener('click', (e) => {
+            e.preventDefault();           // 不走详情
+            e.stopPropagation();
+            lbImg.src = src;
+            lbImg.alt = img?.alt || '';
+            lbRoot.hidden = false;        // 显示覆盖层
+        });
+
+        // index 标记（可供 viewer 使用）
+        anchor.dataset.photoIndex = String(i);
+
+        mediaSlot.appendChild(anchor);
+    });
 }
 
 export function updateTweetQuoteArea(
