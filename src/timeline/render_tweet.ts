@@ -57,7 +57,7 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     if (quoteArea) {
         quoteArea.innerHTML = '';
         if (target.quotedStatus) {
-            updateTweetQuoteArea(quoteArea, target.quotedStatus, tpl, {condensed: hasMainMediaOrCard(target)});
+            updateTweetQuoteArea(quoteArea, target.quotedStatus, tpl, hasMainMediaOrCard(target));
         }
     }
 

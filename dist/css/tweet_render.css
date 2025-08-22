@@ -30,6 +30,8 @@
     --media-radius: 16px;
 
     --shadow-pop: 0 4px 8px rgba(0, 0, 0, 0.15);
+
+    --tcq-thumb: 96px;
 }
 
 /* Prefer the user's OS setting */
@@ -469,18 +471,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     grid-template-columns: 1fr 1fr;
 }
 
-.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--grid-3 .tcq-qphoto:nth-child(1) {
-    grid-row: span 2;
-}
-
-
-/* 16:9 */
-.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--condensed .tcq-qmedia-aspect {
-    padding-top: 45%;
-}
-
-/* 更紧凑 */
-
 /* === tcq- 轻量图片查看覆盖层 === */
 .tcq-photo-lightbox[hidden] {
     display: none;
@@ -552,24 +542,9 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     border-radius: 0;
 }
 
-/* === B2 单图：横排缩略图布局（媒体在左，header+content 在右） === */
-.tcq-quoted-root.tcq--thumb-row {
-    display: grid;
-    grid-template-columns: 96px 1fr;
-    column-gap: 8px;
-    row-gap: 2px;
-    align-items: start;
-}
-
-/* 三个插槽的摆位与间距归零（用网格的 gap 控距） */
-.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="media"]   { grid-column: 1; grid-row: 1 / span 2; margin-top: 0; }
-.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="header"]  { grid-column: 2; grid-row: 1;          margin-top: 0; }
-.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="content"] { grid-column: 2; grid-row: 2;          margin-top: 0; }
-
 /* 缩略图容器在网格下需要 block，并固定宽度 */
 .tcq-quoted-root.tcq--thumb-row .tcq-quoted-media.tcq-qphoto--thumb {
-    display: block;
-    width: 96px;   /* 与上方列宽一致 */
+    width: var(--tcq-thumb);
 }
 
 /* 文本两行截断（官方 B2 更紧凑） */
@@ -581,4 +556,103 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 /* 可选：让缩略图只由外层裁切，内部图片不再重复圆角（视觉更利落） */
-.tcq-quoted-root.tcq--thumb-row .tcq-qmedia img { border-radius: 0; }
+.tcq-quoted-root.tcq--thumb-row .tcq-qmedia img {
+    border-radius: 0;
+}
+
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-1 .tcq-qmedia-aspect {
+    padding-top: 100%;
+}
+
+/* === v2：B1（主推无媒体）多图比例 === */
+/* 2 图：略偏竖，接近官方视觉；如需更“方”，把 112% 调成 100% */
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-2 .tcq-qmedia-aspect {
+    padding-top: 112%;
+}
+
+/* 3 图 / 4 图：方形单元；3 图时第 1 张已由你的规则跨两行，形成左侧长图 */
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-3 .tcq-qmedia-aspect,
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-4 .tcq-qmedia-aspect {
+    padding-top: 100%;
+}
+
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-3 > *:first-child {
+    grid-row: span 2;
+}
+
+/* 2) v2：B1 三图——让第 1 个格子的“占位”变成两格高（≈2:1） */
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-3 > *:first-child .tcq-qmedia-aspect {
+    padding-top: 200%;
+}
+
+
+/* === B2（主推含媒体） === */
+
+/* 媒体与正文更紧 */
+.tcq-v2.tcq--b2 .tcq-quoted-media {
+    margin-top: 4px;
+}
+
+/* 多图「缩略簇」：整体就是 1 个方形缩略 */
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2,
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3,
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-4 {
+    display: inline-grid;
+    width: var(--tcq-thumb);
+    height: var(--tcq-thumb);
+    grid-template-columns: 1fr 1fr;  /* 两列 */
+    grid-template-rows: 1fr 1fr;     /* 两行（比 auto-rows 更明确） */
+    gap: 2px;
+    vertical-align: top;
+}
+
+/* 默认：小格按正方形占位（后面会对“跨两行”的格子改为用高度撑满） */
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 .tcq-qmedia-aspect,
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 .tcq-qmedia-aspect,
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-4 .tcq-qmedia-aspect {
+    padding-top: 100%;
+}
+
+/* —— B2 + 2 图：左右各半（两张都纵向跨满两行） —— */
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 > .tcq-qphoto {
+    grid-row: 1 / -1;   /* 纵向跨两行 */
+    height: 100%;       /* 🔑 给内部 100% 提供参照，否则会塌 */
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 > .tcq-qphoto .tcq-qmedia-aspect {
+    height: 100%;       /* 用高度撑满跨行区域 */
+    padding-top: 0;     /* 覆盖默认方格占位 */
+}
+
+/* —— B2 + 3 图：左 1 张跨两行，右侧上下各一张 —— */
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-qphoto:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / -1;   /* 跨两行 */
+    height: 100%;       /* 🔑 同理，给内部 100% 参照 */
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-qphoto:nth-child(1) .tcq-qmedia-aspect {
+    height: 100%;
+    padding-top: 0;
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-qphoto:nth-child(2) {
+    grid-column: 2; grid-row: 1;
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-qphoto:nth-child(3) {
+    grid-column: 2; grid-row: 2;
+}
+
+/* —— B2 + 4 图：默认 2×2 方格（用上面的默认占位即可） —— */
+
+/* —— B2 单图：横排骨架（你已在 TS 里加 .tcq--thumb-row） —— */
+.tcq-quoted-root.tcq--thumb-row {
+    display: grid;
+    grid-template-columns: var(--tcq-thumb) 1fr; /* 左缩略 + 右文本 */
+    grid-template-rows: auto auto;               /* 第1行 Header，第2行 媒体+正文 */
+    column-gap: 8px;
+    row-gap: 2px;
+    align-items: start;
+}
+.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="header"]  { grid-column: 1 / -1; grid-row: 1; margin-top: 0; }
+.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="media"]   { grid-column: 1;      grid-row: 2; margin-top: 0; }
+.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="content"] { grid-column: 2;      grid-row: 2; margin-top: 0; }
+.tcq-quoted-root.tcq--thumb-row .tcq-quoted-media         { width: var(--tcq-thumb); }
+.tcq-quoted-root.tcq--thumb-row .tcq-quoted-media.tcq-qphoto--thumb { width: var(--tcq-thumb); }

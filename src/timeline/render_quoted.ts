@@ -135,12 +135,12 @@ function wireQuotedRootInteractions(root: HTMLElement, quoted: TweetObj): void {
         }
     }
 
-    const shouldOpenStatus = (target: Element) => {
-        if (target.closest('.tcq-qmedia a')) return false;               // 媒体子链接（阶段3）
-        if (target.closest('.tcq-quoted-content a')) return false;       // 正文里的任何链接
-        if (target.closest('.tcq-quoted-card a')) return false;          // 卡片里的链接（阶段5）
+    function shouldOpenStatus(target: Element) {
+        if (target.closest('.tcq-qmedia')) return false;            // ✅ 媒体容器自身/祖先命中
+        if (target.closest('.tcq-quoted-content a')) return false;  // 正文链接
+        if (target.closest('.tcq-quoted-card a')) return false;     // 卡片链接
         return true;
-    };
+    }
 
     const onRootClick = (ev: MouseEvent) => {
         const t = ev.target as Element | null;
@@ -153,12 +153,17 @@ function wireQuotedRootInteractions(root: HTMLElement, quoted: TweetObj): void {
 
     const onRootKey = (ev: KeyboardEvent) => {
         if (!rootLink) return;
-        if (ev.key === 'Enter' || ev.key === ' ') {
-            ev.preventDefault();
-            ev.stopPropagation();
-            rootLink.click();
-        }
+        if (ev.key !== 'Enter' && ev.key !== ' ') return;
+
+        const t = (document.activeElement as Element) || (ev.target as Element);
+        // 与 click 一致的豁免判断
+        if (!shouldOpenStatus(t)) return;
+
+        ev.preventDefault();
+        ev.stopPropagation();
+        rootLink.click();
     };
+
 
     if (!(root as any)._tcq_wired) {
         root.addEventListener('click', onRootClick);
@@ -201,33 +206,6 @@ function ensurePhotoLightbox(tpl: HTMLTemplateElement) {
     return {root, img, close};
 }
 
-// 单图 + B1 时，按原图尺寸动态设定纵横比（夹在 16:9 ~ 3:4）
-function applyDynamicAspect(
-    aspectEl: HTMLElement,
-    media: any
-) {
-    // 取原始尺寸（优先 original_info，退到 sizes）
-    const w =
-        media?.original_info?.width ??
-        media?.sizes?.large?.w ??
-        media?.sizes?.medium?.w ??
-        media?.sizes?.small?.w ?? 0;
-
-    const h =
-        media?.original_info?.height ??
-        media?.sizes?.large?.h ??
-        media?.sizes?.medium?.h ??
-        media?.sizes?.small?.h ?? 0;
-
-    if (w > 0 && h > 0) {
-        // 百分比 padding-top；在 56.25%(16:9) ~ 133.34%(≈3:4) 之间夹取
-        const pct = Math.max(56.25, Math.min(133.34, (h / w) * 100));
-        aspectEl.style.paddingTop = pct + '%';
-    }
-}
-
-
-// —— 阶段 3：Photo 渲染 —— //
 function fillQuotedMedia(
     root: HTMLElement,
     quoted: TweetObj,
@@ -236,69 +214,57 @@ function fillQuotedMedia(
 ): void {
     const mediaSlot = root.querySelector<HTMLElement>('[data-tcq-slot="media"]');
     if (!mediaSlot) return;
-    mediaSlot.innerHTML = '';
 
-    // media 列表（优先 extended_entities）
+    // 清空旧内容 & 清理旧类
+    mediaSlot.innerHTML = '';
+    ['tcq-qphoto--grid-1', 'tcq-qphoto--grid-2', 'tcq-qphoto--grid-3', 'tcq-qphoto--grid-4', 'tcq-qphoto--thumb']
+        .forEach(c => mediaSlot.classList.remove(c));
+    root.classList.remove('tcq--thumb-row');
+
+    // 取媒体（优先 extended_entities）
     const all =
         quoted?.tweetContent?.extended_entities?.media?.length
             ? quoted.tweetContent.extended_entities.media
             : (quoted?.tweetContent?.entities?.media || []);
 
-    const photos = all.filter(m => m?.type === 'photo');
-    if (!photos.length) {
-        // 阶段4再处理 GIF/Video；此处仅渲染 photo
-        return;
-    }
+    const photos = all.filter((m: any) => m?.type === 'photo');
+    if (!photos.length) return;
 
-    // B1/B2：高度差异由容器 class 控制（CSS 中调整 aspect）
     const count = Math.min(4, photos.length);
+
+    // 媒体容器挂张数类
     mediaSlot.classList.add(`tcq-qphoto--grid-${count}`);
-    mediaSlot.classList.toggle('tcq-qphoto--regular', !condensed);
-    mediaSlot.classList.toggle('tcq-qphoto--condensed', condensed);
 
-    // B2 + 单图：启用“横排缩略图”布局
-    root.classList.toggle('tcq--thumb-row', condensed && count === 1);
+    const isB2Single = condensed && count === 1;
+    mediaSlot.classList.toggle('tcq-qphoto--thumb', isB2Single);
+    root.classList.toggle('tcq--thumb-row', condensed);        // 所有 B2 都用行内布局（Header 顶部）
 
-    if (condensed && count === 1) {
-        mediaSlot.classList.add('tcq-qphoto--thumb');
-    } else {
-        mediaSlot.classList.remove('tcq-qphoto--thumb');
-    }
-
-
-    photos.slice(0, 4).forEach((m, i) => {
+    // —— 渲染图片（不做 TS 动态纵横比；交互仅 Lightbox） —— //
+    photos.slice(0, count).forEach((m: any, i: number) => {
         const anchor = cloneFromTpl(tpl, 'tcqTplQuotedPhoto') as HTMLAnchorElement | null;
         if (!anchor) return;
         anchor.removeAttribute('id');
 
-        // 填图
         const img = anchor.querySelector('img') as HTMLImageElement | null;
         const src = m.media_url_https || m.url || '';
         if (img) {
-            img.src = m.media_url_https || m.url || '';
+            img.src = src;
             img.alt = m.display_url || '';
             img.decoding = 'async';
             img.loading = 'lazy';
         }
 
-        // ★ 仅在 B1（!condensed）且单图时，放开纵横比为更“竖”的高度
-        const aspect = anchor.querySelector('.tcq-qmedia-aspect') as HTMLElement | null;
-        if (aspect && !condensed && count === 1) {
-            applyDynamicAspect(aspect, m);
-        }
-
+        // 仅打开轻量 Lightbox（不跳转详情）
         anchor.href = '#';
+        anchor.dataset.photoIndex = String(i);
         anchor.addEventListener('click', (e) => {
-            e.preventDefault();           // 不走详情
+            e.preventDefault();
             e.stopPropagation();
             const {root: lbRoot, img: lbImg} = ensurePhotoLightbox(tpl);
             lbImg.src = src;
             lbImg.alt = img?.alt || '';
-            lbRoot.hidden = false;        // 显示覆盖层
+            lbRoot.hidden = false;
         });
-
-        // index 标记（可供 viewer 使用）
-        anchor.dataset.photoIndex = String(i);
 
         mediaSlot.appendChild(anchor);
     });
@@ -308,7 +274,7 @@ export function updateTweetQuoteArea(
     container: HTMLElement,
     quoted: TweetObj | null | undefined,
     tpl: HTMLTemplateElement,
-    opts?: { condensed?: boolean }
+    condensed: boolean
 ): void {
     logRQ("------>>> quoted data to render:", JSON.stringify(quoted));
     container.innerHTML = '';
@@ -325,9 +291,13 @@ export function updateTweetQuoteArea(
         return;
     }
 
+    // 克隆 #tcqTplQuotedTweet 得到 root 后：
+    root.classList.add('tcq-v2', condensed ? 'tcq--b2' : 'tcq--b1');
+
+
     fillQuotedHeader(root, quoted, tpl);   // 阶段 1
-    fillQuotedContent(root, quoted, tpl, !!opts?.condensed);
-    fillQuotedMedia(root, quoted, tpl, !!opts?.condensed);  // ← 调用空实现
+    fillQuotedContent(root, quoted, tpl, condensed);
+    fillQuotedMedia(root, quoted, tpl, condensed);  // ← 调用空实现
 
     wireQuotedRootInteractions(root, quoted); // 整卡可点（关键差异）
 
