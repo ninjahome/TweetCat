@@ -68,13 +68,6 @@ function fillQuotedHeader(root: HTMLElement, quoted: TweetObj, tpl: HTMLTemplate
         headerSlot.appendChild(headerEl);
     }
 }
-
-function buildQuotedStatusHref(quoted: TweetObj): string {
-    const sn = quoted?.author?.screenName ?? '';
-    const id = quoted?.tweetContent?.id_str ?? '';
-    return (sn && id) ? `/${sn}/status/${id}` : '#';
-}
-
 // —— 阶段 2：正文 —— //
 function fillQuotedContent(
     root: HTMLElement,
