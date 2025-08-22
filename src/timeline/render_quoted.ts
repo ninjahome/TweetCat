@@ -68,6 +68,7 @@ function fillQuotedHeader(root: HTMLElement, quoted: TweetObj, tpl: HTMLTemplate
         headerSlot.appendChild(headerEl);
     }
 }
+
 // —— 阶段 2：正文 —— //
 function fillQuotedContent(
     root: HTMLElement,
@@ -75,56 +76,68 @@ function fillQuotedContent(
     tpl: HTMLTemplateElement,
     condensed: boolean
 ): void {
-    // 1) 克隆正文子模板并先挂到 slot，确保样式就绪
-    const wrap = cloneFromTpl(tpl, 'tcqTplQuotedContent')!;
+    // 1) 克隆并挂载容器
+    const wrap = cloneFromTpl(tpl, 'tcqTplQuotedContent') as HTMLElement;
     const slot = root.querySelector<HTMLElement>('[data-tcq-slot="content"]')!;
     slot.innerHTML = '';
     slot.appendChild(wrap);
 
-    // 2) 用“wrap 作为容器”渲染正文（符合你项目惯例）
+    // 2) 按你们的惯例：把“wrap 当容器”渲染正文（这一步会生成 .tweet-content）
     updateTweetContentArea(wrap as unknown as HTMLElement, quoted.tweetContent);
 
-    // 3) 取实际渲染节点
-    const textEl = wrap.querySelector('.tweet-content') as HTMLElement;
+    // 3) 渲染完再抓真实节点
+    const textEl = wrap.querySelector<HTMLElement>('.tweet-content')!;
     const moreEl = wrap.querySelector<HTMLAnchorElement>('.tcq-qcontent-more')!;
 
-    // 4) B2（主推有媒体，condensed=true）：官方不显示“更多”
+    // 调试：看一下关键节点是否拿到了
+    console.log('[Quoted][fill] nodes', {
+        hasText: !!textEl, hasMore: !!moreEl, condensed
+    });
+
+    // B2（主推有媒体）：官方不显示“更多”
     if (condensed) {
         moreEl.hidden = true;
         return;
     }
 
-    // 5) B1（主推无媒体）：先测“未折叠高度”，再折叠，再对比
-    //    注意：如果先加 line-clamp 再测量，scrollHeight 会被 clamp，无法判断溢出
-    const naturalHeight = textEl.scrollHeight;
-
-    // 折叠 5 行
+    // B1：开启折叠样式
     textEl.classList.add('tcq-qcontent--clamp-regular');
 
-    // 统一生成详情页链接（优先用 root 隐形锚点）
+    // 详情跳转（优先根隐形锚点）
     const statusHref = (() => {
-        const rootLink = root.querySelector<HTMLAnchorElement>('#tcqTplQuotedRootLink');
-        if (rootLink?.href) return rootLink.href;
+        const rk = root.querySelector<HTMLAnchorElement>('#tcqTplQuotedRootLink');
+        if (rk?.href) return rk.href;
         const sn = quoted?.author?.screenName ?? '';
         const id = quoted?.tweetContent?.id_str ?? (quoted as any)?.rest_id ?? '';
         return (sn && id) ? `/${sn}/status/${id}` : '#';
     })();
 
-    // 6) 下一帧再量折叠高度并对比，决定是否展示“显示更多”
+    // 4) 用“移除折叠→测自然高→恢复折叠”的办法判断是否需要“显示更多”
     requestAnimationFrame(() => {
-        const clampedHeight = textEl.clientHeight;
-        const needMore = naturalHeight > clampedHeight + 1; // 容差 1px，避免字体/子像素抖动
-        if (needMore) {
-            moreEl.hidden = false;
-            moreEl.href = statusHref;
-            try {
-                bindTwitterInternalLink(moreEl, statusHref);
-            } catch {
+        const hClamped = textEl.getBoundingClientRect().height;
+
+        // 可能有异步富文本替换；双 rAF 更稳
+        textEl.classList.remove('tcq-qcontent--clamp-regular');
+        requestAnimationFrame(() => {
+            const hNatural = textEl.getBoundingClientRect().height;
+            textEl.classList.add('tcq-qcontent--clamp-regular');
+
+            const willShow = hNatural > hClamped + 0.5;
+            console.log('[Quoted][A1+B1] measure', {hClamped, hNatural, willShow});
+
+            if (willShow) {
+                moreEl.hidden = false;
+                moreEl.href = statusHref;
+                try {
+                    bindTwitterInternalLink(moreEl, statusHref);
+                } catch {
+                }
+                // 避免“更多”点击触发整卡 click
+                moreEl.addEventListener('click', ev => ev.stopPropagation());
+            } else {
+                moreEl.hidden = true;
             }
-            // 防止点击“更多”触发整卡点击（root 上有整卡可点）
-        } else {
-            moreEl.hidden = true;
-        }
+        });
     });
 }
 
