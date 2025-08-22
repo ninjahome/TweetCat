@@ -909,9 +909,14 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     object-fit: cover;
     display: block;
 }
+.tweet-card-area a.tc-card-large__media {
+     border: 1px solid rgb(207, 217, 222);
+ }
+
 
 /* 下部遮罩（让标题读得清楚） */
 .tweet-card-area .tc-card-large__shade {
+    display: none;
     position: absolute;
     left: 0;
     right: 0;

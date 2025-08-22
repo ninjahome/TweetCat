@@ -58,6 +58,9 @@
     .category-popup-menu {
         background-color: #16181c !important;
     }
+    .tweet-card-area a.tc-card-large__media {
+        border: 1px solid #2F3336;
+    }
 }
 
 /* Optional manual override via data-theme on <html> */
