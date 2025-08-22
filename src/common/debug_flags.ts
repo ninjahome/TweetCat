@@ -15,7 +15,10 @@ export const DBG = {
     TweetCursor: false,
     TweetBGTimer: false,
     TweetObjParse: true,
-    TweetRender: true,
+    TweetRenderCard: false,
+    TweetRenderContent: false,
+    TweetRenderQuote: true,
+    TwitterPageRender: false,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -39,4 +42,7 @@ export const logFT = makeLogger('TweetFetcher', 'TweetFetcher');
 export const logKC = makeLogger('TweetCursor', 'TweetCursor');
 export const logBGT = makeLogger('TweetBGTimer', 'TweetBGTimer');
 export const logTOP = makeLogger('TweetObjParse', 'TweetObjParse');
-export const logRender = makeLogger('TweetRender', 'TweetRender');
+export const logRC = makeLogger('TweetRenderCard', 'TweetRenderCard');
+export const logRCT = makeLogger('TweetRenderContent', 'TweetRenderContent');
+export const logRQ = makeLogger('TweetRenderQuote', 'TweetRenderQuote');
+export const logTPR = makeLogger('TwitterPageRender', 'TwitterPageRender');

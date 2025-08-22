@@ -3,7 +3,7 @@ import {defaultAllCategoryID, MsgType} from "../common/consts";
 import {EntryObj} from "../timeline/tweet_entry";
 import {switchCategory} from "./tweetcat_timeline";
 import {queryCategoriesFromBG} from "../object/category";
-import {logRender} from "../common/debug_flags";
+import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 
 export function setSelectedCategory(catID: number = defaultAllCategoryID) {
@@ -101,6 +101,6 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
 
     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
     filterContainerDiv.appendChild(moreBtn);
-    logRender("✅ ------>>> add filter container success")
+    logTPR("✅ ------>>> add filter container success")
     setSelectedCategory(getSessCatID());
 }

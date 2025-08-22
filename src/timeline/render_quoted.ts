@@ -1,6 +1,7 @@
 import {TweetContent, TweetObj} from "./tweet_entry";
 import {bindTwitterInternalLink, isTwitterStatusUrl} from "./render_common";
 import {updateTweetContentArea} from "./render_content";
+import {logRQ} from "../common/debug_flags";
 
 function collectQuoteShortUrlsForMain(tweet: TweetContent, hasQuoted: boolean): string[] {
     if (!hasQuoted) return [];
@@ -11,6 +12,7 @@ function collectQuoteShortUrlsForMain(tweet: TweetContent, hasQuoted: boolean): 
 
 // —— 渲染“简版引用卡”（只作者+文本，不渲染媒体/卡片）
 export function updateTweetQuoteArea(container: HTMLElement, quoted: TweetObj) {
+    logRQ("------>>>quoted tweet obj:", JSON.stringify(quoted));
     // 清空容器
     container.innerHTML = '';
     container.style.display = 'block';

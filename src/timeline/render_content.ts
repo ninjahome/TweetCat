@@ -1,5 +1,6 @@
 // render_content.ts
 import { TweetContent } from "./tweet_entry";
+import {logRCT} from "../common/debug_flags";
 
 type Piece = { start: number; end: number; html: string };
 
@@ -38,7 +39,7 @@ export function updateTweetContentArea(
 ) {
     const tweetContent = container.querySelector(".tweet-content") as HTMLElement | null;
     if (!tweetContent) {
-        console.log("------>>> tweet content not found:", container);
+        logRCT("------>>> tweet content not found:", container);
         return;
     }
 

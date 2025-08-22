@@ -6,7 +6,7 @@ import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {getTweetCatFlag, isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
-import {logRender} from "../common/debug_flags";
+import {logTPR} from "../common/debug_flags";
 
 let observing = false;
 export async function appendFilterOnKolProfileHome(kolName: string) {
@@ -50,7 +50,7 @@ function hijackBackButton(): void {
 
         e.preventDefault();
         e.stopPropagation();
-        logRender('[TC] 拦截返回按钮，跳转回 TweetCat');
+        logTPR('[TC] 拦截返回按钮，跳转回 TweetCat');
         navigateToTweetCat();
     }, true); // 使用 capture 模式，优先于 React/Twitter 默认处理
 }
@@ -90,14 +90,14 @@ async function _kolCompletion(kol: TweetKol) {
     let needUpDateKolData = false;
     if (!kol.avatarUrl) {
         kol.avatarUrl = document.querySelector('div[data-testid="primaryColumn"] div[data-testid^="UserAvatar-Container-"] img')?.getAttribute('src') ?? "";
-        logRender("------>>> avatar url found:[", kol.avatarUrl, "]for kol:", kol.kolName);
+        logTPR("------>>> avatar url found:[", kol.avatarUrl, "]for kol:", kol.kolName);
         needUpDateKolData = !!kol.avatarUrl
     }
 
     if (!kol.kolUserId) {
         kol.kolUserId = await getUserIdByUsername(kol.kolName) ?? "";
         needUpDateKolData = !!kol.kolUserId
-        logRender("------>>> need to load kol user id by tweet api:", kol.kolName, "found user id:", kol.kolUserId);
+        logTPR("------>>> need to load kol user id by tweet api:", kol.kolName, "found user id:", kol.kolUserId);
     }
 
     if (!needUpDateKolData) {
@@ -105,7 +105,7 @@ async function _kolCompletion(kol: TweetKol) {
     }
 
     await updateKolIdToSw(kol);
-    logRender("------>>> update kol data success", kol)
+    logTPR("------>>> update kol data success", kol)
 }
 
 async function setCategoryStatusOnProfileHome(kolName: string, clone: HTMLElement) {

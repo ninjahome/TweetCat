@@ -3,7 +3,7 @@ import {
     bindTwitterInternalLink,
     isTwitterStatusUrl
 } from "./render_common";
-import {logRender} from "../common/debug_flags";
+import {logRC} from "../common/debug_flags";
 import {isXArticle} from "../common/utils";
 
 // 补协议
@@ -47,7 +47,7 @@ export function updateTweetCardArea(
     card: TweetCard | null,
     tpl: HTMLTemplateElement,
 ): void {
-    logRender("[TweetCard DEBUG]", card);
+    logRC("[TweetCard DEBUG]", card);
     if (!container) return;
     container.innerHTML = "";
     if (!card) return;
@@ -60,9 +60,9 @@ export function updateTweetCardArea(
     if (tplId === "tpl-card-large") {
         renderLargeCard(node, card);   // 新增：见③
     } else if (tplId === "tpl-inline-link-card--restricted") {
-        logRender("------>>> baned content：", card)
+        logRC("------>>> baned content：", card)
     } else if (tplId === "tpl-inline-link-card--poll") {
-        logRender("------>>> poll card ::TO DO:：", card)
+        logRC("------>>> poll card ::TO DO:：", card)
     } else {
         const root = node.querySelector("a.inline-link-card") as HTMLAnchorElement | null;
         if (!root) return;
@@ -116,7 +116,7 @@ function configureAnchor(root: HTMLAnchorElement, card: TweetCard): void {
         }
     }
 
-    logRender('[card.href.pick]', {
+    logRC('[card.href.pick]', {
         name: card.name,
         url: card.url,
         expandedUrl: card.expandedUrl,
@@ -323,7 +323,7 @@ function renderLargeCard(node: HTMLElement, card: TweetCard): void {
     }
 
 
-    logRender('[card.href.pick]', {
+    logRC('[card.href.pick]', {
         name: card.name,
         url: card.url,
         expandedUrl: card.expandedUrl,
