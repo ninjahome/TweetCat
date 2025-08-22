@@ -168,32 +168,62 @@ function wireQuotedRootInteractions(root: HTMLElement, quoted: TweetObj): void {
 }
 
 
-function getPhotoLightbox(): { root: HTMLElement, img: HTMLImageElement, close: HTMLButtonElement } {
-    let root = document.getElementById('tcqTplPhotoLightbox') as HTMLElement | null;
+// 仅保留一个实例：从模板克隆并挂到 <body>，而不是 createElement
+function ensurePhotoLightbox(tpl: HTMLTemplateElement) {
+    const INSTANCE_ID = 'tcqPhotoLightbox'; // 运行时实例 id
+    let root = document.getElementById(INSTANCE_ID) as HTMLElement | null;
+
     if (!root) {
-        // 兜底：如果模板不在文档中（理论上已插入），创建一次
-        root = document.createElement('div');
-        root.id = 'tcqTplPhotoLightbox';
-        root.className = 'tcq-photo-lightbox';
-        root.hidden = true;
-        root.innerHTML = `<button class="tcq-plb-close" aria-label="关闭查看">×</button><img class="tcq-plb-img" alt="">`;
+        const cloned = cloneFromTpl(tpl, 'tcqTplPhotoLightbox') as HTMLElement | null;
+        if (!cloned) throw new Error('tpl tcqTplPhotoLightbox not found');
+        // 兼容 cloneFromTpl 可能返回外层 .tcq-tpl：取里面的真正根
+        root = cloned.matches('.tcq-photo-lightbox')
+            ? cloned
+            : (cloned.querySelector('.tcq-photo-lightbox') as HTMLElement);
+        if (!root) throw new Error('lightbox root missing');
+        root.id = INSTANCE_ID;
         document.body.appendChild(root);
     }
+
     const img = root.querySelector('.tcq-plb-img') as HTMLImageElement;
     const close = root.querySelector('.tcq-plb-close') as HTMLButtonElement;
 
-    // 关闭交互（点击遮罩或按钮）
     if (!root.dataset.wired) {
         root.addEventListener('click', (e) => {
             if (e.target === root) root.hidden = true;
         });
-        close.addEventListener('click', () => (root.hidden = true));
+        close?.addEventListener('click', () => (root.hidden = true));
         document.addEventListener('keydown', (e) => {
             if (!root.hidden && (e.key === 'Escape' || e.key === 'Esc')) root.hidden = true;
         });
         root.dataset.wired = '1';
     }
     return {root, img, close};
+}
+
+// 单图 + B1 时，按原图尺寸动态设定纵横比（夹在 16:9 ~ 3:4）
+function applyDynamicAspect(
+    aspectEl: HTMLElement,
+    media: any
+) {
+    // 取原始尺寸（优先 original_info，退到 sizes）
+    const w =
+        media?.original_info?.width ??
+        media?.sizes?.large?.w ??
+        media?.sizes?.medium?.w ??
+        media?.sizes?.small?.w ?? 0;
+
+    const h =
+        media?.original_info?.height ??
+        media?.sizes?.large?.h ??
+        media?.sizes?.medium?.h ??
+        media?.sizes?.small?.h ?? 0;
+
+    if (w > 0 && h > 0) {
+        // 百分比 padding-top；在 56.25%(16:9) ~ 133.34%(≈3:4) 之间夹取
+        const pct = Math.max(56.25, Math.min(133.34, (h / w) * 100));
+        aspectEl.style.paddingTop = pct + '%';
+    }
 }
 
 
@@ -235,7 +265,6 @@ function fillQuotedMedia(
         mediaSlot.classList.remove('tcq-qphoto--thumb');
     }
 
-    const {root: lbRoot, img: lbImg} = getPhotoLightbox();
 
     photos.slice(0, 4).forEach((m, i) => {
         const anchor = cloneFromTpl(tpl, 'tcqTplQuotedPhoto') as HTMLAnchorElement | null;
@@ -252,10 +281,17 @@ function fillQuotedMedia(
             img.loading = 'lazy';
         }
 
+        // ★ 仅在 B1（!condensed）且单图时，放开纵横比为更“竖”的高度
+        const aspect = anchor.querySelector('.tcq-qmedia-aspect') as HTMLElement | null;
+        if (aspect && !condensed && count === 1) {
+            applyDynamicAspect(aspect, m);
+        }
+
         anchor.href = '#';
         anchor.addEventListener('click', (e) => {
             e.preventDefault();           // 不走详情
             e.stopPropagation();
+            const {root: lbRoot, img: lbImg} = ensurePhotoLightbox(tpl);
             lbImg.src = src;
             lbImg.alt = img?.alt || '';
             lbRoot.hidden = false;        // 显示覆盖层
