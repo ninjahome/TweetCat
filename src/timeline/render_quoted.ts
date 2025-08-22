@@ -1,8 +1,8 @@
-// render_quoted.ts
 import {TweetObj} from './tweet_entry';
 import {bindTwitterInternalLink} from './render_common';
 import {updateTweetContentArea} from './render_content';
 import {formatTweetTime} from "../common/utils";
+import {logRQ} from "../common/debug_flags";
 
 // —— 通用 —— //
 function cloneFromTpl(tpl: HTMLTemplateElement, id: string): HTMLElement | null {
@@ -74,7 +74,7 @@ function fillQuotedContent(
     root: HTMLElement,
     quoted: TweetObj,
     tpl: HTMLTemplateElement,
-    condensed: boolean
+    condensed: boolean // B2: true（主推有媒体）; B1: false（主推无媒体）
 ): void {
     // 1) 克隆并挂载容器
     const wrap = cloneFromTpl(tpl, 'tcqTplQuotedContent') as HTMLElement;
@@ -82,64 +82,42 @@ function fillQuotedContent(
     slot.innerHTML = '';
     slot.appendChild(wrap);
 
-    // 2) 按你们的惯例：把“wrap 当容器”渲染正文（这一步会生成 .tweet-content）
+    // 2) 渲染正文到 wrap（项目惯例）
     updateTweetContentArea(wrap as unknown as HTMLElement, quoted.tweetContent);
 
-    // 3) 渲染完再抓真实节点
+    // 3) 拿到正文和“显示更多”
     const textEl = wrap.querySelector<HTMLElement>('.tweet-content')!;
     const moreEl = wrap.querySelector<HTMLAnchorElement>('.tcq-qcontent-more')!;
 
-    // 调试：看一下关键节点是否拿到了
-    console.log('[Quoted][fill] nodes', {
-        hasText: !!textEl, hasMore: !!moreEl, condensed
+    const shouldShowMore = !condensed && !!quoted.hasNoteExpandable;
+    // 调试
+    console.log('[Quoted][fill] decision', {
+        condensed,
+        hasNoteExpandable: quoted.hasNoteExpandable,
+        shouldShowMore
     });
 
-    // B2（主推有媒体）：官方不显示“更多”
-    if (condensed) {
-        moreEl.hidden = true;
+    // 4) A1+B2：主推有媒体 → 不显示“更多”
+    if (!shouldShowMore) {
+        moreEl.hidden = true;                 // 保险：display 由 hidden 控制
+        moreEl.setAttribute('hidden', '');    // 模板可能自带 hidden，重复设定无害
         return;
     }
 
-    // B1：开启折叠样式
-    textEl.classList.add('tcq-qcontent--clamp-regular');
+    // 5) A1+B1：主推无媒体 → 一定显示“更多”
+    textEl.classList.add('tcq-qcontent--clamp-regular'); // 始终折叠 5 行
+    moreEl.hidden = false;
+    moreEl.removeAttribute('hidden');                    // 确保可见
 
-    // 详情跳转（优先根隐形锚点）
-    const statusHref = (() => {
-        const rk = root.querySelector<HTMLAnchorElement>('#tcqTplQuotedRootLink');
-        if (rk?.href) return rk.href;
-        const sn = quoted?.author?.screenName ?? '';
-        const id = quoted?.tweetContent?.id_str ?? (quoted as any)?.rest_id ?? '';
-        return (sn && id) ? `/${sn}/status/${id}` : '#';
-    })();
-
-    // 4) 用“移除折叠→测自然高→恢复折叠”的办法判断是否需要“显示更多”
-    requestAnimationFrame(() => {
-        const hClamped = textEl.getBoundingClientRect().height;
-
-        // 可能有异步富文本替换；双 rAF 更稳
-        textEl.classList.remove('tcq-qcontent--clamp-regular');
-        requestAnimationFrame(() => {
-            const hNatural = textEl.getBoundingClientRect().height;
-            textEl.classList.add('tcq-qcontent--clamp-regular');
-
-            const willShow = hNatural > hClamped + 0.5;
-            console.log('[Quoted][A1+B1] measure', {hClamped, hNatural, willShow});
-
-            if (willShow) {
-                moreEl.hidden = false;
-                moreEl.href = statusHref;
-                try {
-                    bindTwitterInternalLink(moreEl, statusHref);
-                } catch {
-                }
-                // 避免“更多”点击触发整卡 click
-                moreEl.addEventListener('click', ev => ev.stopPropagation());
-            } else {
-                moreEl.hidden = true;
-            }
-        });
-    });
+    // 详情页链接（优先根锚点）
+    const sn = quoted?.author?.screenName ?? '';
+    const id = quoted?.tweetContent?.id_str ?? (quoted as any)?.rest_id ?? '';
+    const href = (sn && id) ? `/${sn}/status/${id}` : '';
+    bindTwitterInternalLink(moreEl, href);
+    // 调试日志（可保留，便于核对）
+    console.log('[Quoted][A1+B1] force-show more', {href, condensed});
 }
+
 
 // —— 根容器交互：整卡可点（媒体/正文链接例外） —— //
 function wireQuotedRootInteractions(root: HTMLElement, quoted: TweetObj): void {
@@ -217,6 +195,7 @@ export function updateTweetQuoteArea(
     tpl: HTMLTemplateElement,
     opts?: { condensed?: boolean }
 ): void {
+    logRQ("------>>> quoted data to render:", JSON.stringify(quoted));
     container.innerHTML = '';
 
     if (!quoted) {

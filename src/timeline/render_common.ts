@@ -16,6 +16,11 @@ export function isTwitterStatusUrl(href: string | undefined): boolean {
 export function bindTwitterInternalLink(element: HTMLAnchorElement, path: string) {
     if (element.dataset.hasProtected === 'true') return;
 
+    // 仅允许以 “/” 开头的站内相对路径；否则直接退出
+    if (!path || path === '#' || !path.startsWith('/')) {
+        return;
+    }
+
     element.href = path;
     element.addEventListener('click', (e) => {
         // 避免修饰键（如 Ctrl+Click / Cmd+Click）破坏行为

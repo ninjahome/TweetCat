@@ -308,7 +308,12 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 
 /* —— 引用正文：折叠/更多（A1+B1） —— */
-.tcq-qcontent-wrap { position: relative; }
+.tcq-qcontent-wrap {
+    position: static;              /* 不再用 absolute 叠加 */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
 
 /* 折叠：regular 模式 5 行 */
 .tcq-quoted-root .tcq-quoted-content .tweet-content.tcq-qcontent--clamp-regular {
@@ -320,28 +325,22 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 /* “显示更多”按钮 */
 .tcq-qcontent-more {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    padding-left: 6px;
+    position: static;              /* 取消绝对定位 */
+    display: inline-block;
+    margin-top: 4px;               /* 与正文留出一点间距 */
+    padding: 0;                    /* 官方是纯文本链接，无额外内边距 */
     font-size: 14px;
     line-height: 1.45;
     color: rgb(29,155,240);
-    background: linear-gradient(
-            to right,
-            rgba(255,255,255,0) 0%,
-            var(--bg-elevated, #fff) 30%
-    );
+    background: none;              /* 去掉渐变背景 */
+    text-decoration: none;
 }
+.tcq-qcontent-more:hover { text-decoration: underline; }
 
 /* 暗色适配（渐隐背景） */
 @media (prefers-color-scheme: dark) {
     .tcq-qcontent-more {
         color: rgb(142,205,248);
-        background: linear-gradient(
-                to right,
-                rgba(0,0,0,0) 0%,
-                var(--bg-elevated, #000) 30%
-        );
+        background: none;
     }
 }

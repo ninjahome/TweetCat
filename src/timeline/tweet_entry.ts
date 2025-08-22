@@ -649,6 +649,7 @@ export class TweetObj {
     card: TweetCard | null;
     retweetedStatus?: TweetObj;
     quotedStatus?: TweetObj;
+    hasNoteExpandable?: boolean;
 
     constructor(raw: any, isQuoted = false) {
         const data = raw?.tweet ?? raw;
@@ -661,6 +662,9 @@ export class TweetObj {
         this.source = data.source;
         this.quick_promote_eligibility = data.quick_promote_eligibility;
         this.tweetContent = new TweetContent(data.legacy);
+        const nt = raw?.note_tweet;
+        const ntr = raw?.note_tweet_results?.result;
+        this.hasNoteExpandable = !!(nt?.is_expandable || ntr);
 
         this.card = data.card ? new TweetCard(data.card) : null;
 
