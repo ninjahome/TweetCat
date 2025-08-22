@@ -551,3 +551,34 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tcq-quoted-root .tcq-qmedia img {
     border-radius: 0;
 }
+
+/* === B2 单图：横排缩略图布局（媒体在左，header+content 在右） === */
+.tcq-quoted-root.tcq--thumb-row {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    column-gap: 8px;
+    row-gap: 2px;
+    align-items: start;
+}
+
+/* 三个插槽的摆位与间距归零（用网格的 gap 控距） */
+.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="media"]   { grid-column: 1; grid-row: 1 / span 2; margin-top: 0; }
+.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="header"]  { grid-column: 2; grid-row: 1;          margin-top: 0; }
+.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="content"] { grid-column: 2; grid-row: 2;          margin-top: 0; }
+
+/* 缩略图容器在网格下需要 block，并固定宽度 */
+.tcq-quoted-root.tcq--thumb-row .tcq-quoted-media.tcq-qphoto--thumb {
+    display: block;
+    width: 96px;   /* 与上方列宽一致 */
+}
+
+/* 文本两行截断（官方 B2 更紧凑） */
+.tcq-quoted-root.tcq--thumb-row .tcq-quoted-content .tweet-content {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 可选：让缩略图只由外层裁切，内部图片不再重复圆角（视觉更利落） */
+.tcq-quoted-root.tcq--thumb-row .tcq-qmedia img { border-radius: 0; }

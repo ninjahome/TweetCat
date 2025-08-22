@@ -226,6 +226,9 @@ function fillQuotedMedia(
     mediaSlot.classList.toggle('tcq-qphoto--regular', !condensed);
     mediaSlot.classList.toggle('tcq-qphoto--condensed', condensed);
 
+    // B2 + 单图：启用“横排缩略图”布局
+    root.classList.toggle('tcq--thumb-row', condensed && count === 1);
+
     if (condensed && count === 1) {
         mediaSlot.classList.add('tcq-qphoto--thumb');
     } else {
