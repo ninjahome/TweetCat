@@ -585,7 +585,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     padding-top: 200%;
 }
 
-
 /* === B2（主推含媒体） === */
 
 /* 媒体与正文更紧 */
@@ -614,29 +613,37 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 /* —— B2 + 2 图：左右各半（两张都纵向跨满两行） —— */
-.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 > .tcq-qphoto {
-    grid-row: 1 / -1;   /* 纵向跨两行 */
-    height: 100%;       /* 🔑 给内部 100% 提供参照，否则会塌 */
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 > .tcq-tpl {
+    grid-row: 1 / -1;   /* 每个 tpl 跨满两行 */
+    height: 100%;
 }
-.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 > .tcq-qphoto .tcq-qmedia-aspect {
-    height: 100%;       /* 用高度撑满跨行区域 */
-    padding-top: 0;     /* 覆盖默认方格占位 */
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 > .tcq-tpl .tcq-qphoto {
+    display: block;
+    height: 100%;      /* qphoto 撑满父容器 */
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 > .tcq-tpl .tcq-qmedia-aspect {
+    height: 100%;      /* aspect 改用高度撑满 */
+    padding-top: 0;    /* 去掉默认方格占位 */
 }
 
 /* —— B2 + 3 图：左 1 张跨两行，右侧上下各一张 —— */
-.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-qphoto:nth-child(1) {
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(1) {
     grid-column: 1;
     grid-row: 1 / -1;   /* 跨两行 */
-    height: 100%;       /* 🔑 同理，给内部 100% 参照 */
+    height: 100%;
 }
-.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-qphoto:nth-child(1) .tcq-qmedia-aspect {
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(1) .tcq-qphoto {
+    display: block;
+    height: 100%;
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(1) .tcq-qmedia-aspect {
     height: 100%;
     padding-top: 0;
 }
-.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-qphoto:nth-child(2) {
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(2) {
     grid-column: 2; grid-row: 1;
 }
-.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-qphoto:nth-child(3) {
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(3) {
     grid-column: 2; grid-row: 2;
 }
 
