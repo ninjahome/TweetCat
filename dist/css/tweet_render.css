@@ -311,7 +311,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tcq-qcontent-wrap { position: relative; }
 
 /* 折叠：regular 模式 5 行 */
-.t cq-quoted-root .tcq-quoted-content .tweet-content.tcq-qcontent--clamp-regular {
+.tcq-quoted-root .tcq-quoted-content .tweet-content.tcq-qcontent--clamp-regular {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     overflow: hidden;
