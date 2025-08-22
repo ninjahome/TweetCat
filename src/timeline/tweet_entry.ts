@@ -3,7 +3,7 @@
 // --- 基础类 ---
 
 import {WrapEntryObj} from "./db_raw_tweet";
-import {logTOP} from "../common/debug_flags";
+import {logRC, logTOP} from "../common/debug_flags";
 import {isXArticle, toHttps} from "../common/utils";
 
 export class TweetCardImage {
@@ -429,7 +429,7 @@ export class TweetAuthor {
 
 export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
     try {
-        logTOP("------->>>>>buildFallbackTweetCard :\n", {
+        logRC("------->>>>>buildFallbackTweetCard :\n", {
             text: raw.full_text,
             urls: raw.entities?.urls?.map(u => ({
                 url: u.url,
@@ -441,13 +441,13 @@ export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
 
         const u = raw.entities?.urls?.find(e => isXArticle(e.expanded_url));
         if (!u) {
-            logTOP("------->>>>>fallback: no x.com/i/article in entities.urls");
+            logRC("------->>>>>fallback: no x.com/i/article in entities.urls");
             return null;
         }
 
         const unwound = (u as any).unwound ?? null;
         const expanded = toHttps(u.expanded_url || "");
-        logTOP("------->>>>>fallback: picked url", {
+        logRC("------->>>>>fallback: picked url", {
             tco: u.url,
             expanded,
             hasUnwound: !!unwound,
@@ -476,7 +476,7 @@ export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
             images: img ? [{url: img}] : []
         } as unknown as TweetCard;
 
-        logTOP("------->>>>>fallback: built card entry", {
+        logRC("------->>>>>fallback: built card entry", {
             name: (entry as any).name,
             expandedUrl: (entry as any).expandedUrl,
             mainImageUrl: (entry as any).mainImageUrl,
@@ -485,7 +485,7 @@ export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
 
         return entry;
     } catch (err) {
-        logTOP("------->>>>>fallback: error", String(err));
+        logRC("------->>>>>fallback: error", String(err));
         return null;
     }
 }
@@ -667,7 +667,7 @@ export class TweetObj {
         if (!this.card) {
             const fromArticle = buildArticleTweetCard(data);
             if (fromArticle) {
-                logTOP("fallback-source: article node used");
+                logRC("fallback-source: article node used");
                 this.card = fromArticle as any;
             }
         }
@@ -675,7 +675,7 @@ export class TweetObj {
         if (!this.card) {
             const fallback = buildFallbackTweetCard(this.tweetContent);
             if (fallback) {
-                logTOP("fallback-source: entities.urls used");
+                logRC("fallback-source: entities.urls used");
                 this.card = fallback as any;
             }
         }

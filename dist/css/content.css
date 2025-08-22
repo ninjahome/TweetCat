@@ -735,48 +735,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 
-.tweet-quote-area {
-    display: none;
-    margin-top: 8px;
-    border: 1px solid #CFD9DE;
-    border-radius: 12px;
-}
-
-.tweet-quote-area .quote-card {
-    display: block;
-    padding: 8px;
-    text-decoration: none;
-    color: inherit;
-}
-.tweet-quote-area :hover {
-    background-color: #EFEFEF;
-    border-radius: 12px;
-}
-
-.tweet-quote-area .quote-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-}
-
-.tweet-quote-area .avatar.small {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-}
-
-.tweet-quote-area .quote-author .display-name {
-    font-weight: 600;
-    margin-right: 6px;
-}
-
-.tweet-quote-area .quote-author .handle {
-    color: #71767b;
-    font-size: 15px;
-}
-
-
 /* =========================
   TweetCard 专用样式（仅限 .tweet-card-area）
   small：summary

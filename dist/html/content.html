@@ -378,4 +378,68 @@
 </div>
 
 
+<!-- === QuotedTweet 根骨架（阶段0仅占位） === -->
+<div id="tcqTplQuotedTweet" class="tcq-quoted-root" data-tcq="root"
+     tabindex="0" role="link" aria-label="查看引用推文详情">
+    <div class="tcq-quoted-title" data-tcq="title" hidden>引用</div>
+
+    <header class="tcq-quoted-header" data-tcq-slot="header"></header>
+    <div class="tcq-quoted-content" data-tcq-slot="content"></div>
+    <div class="tcq-quoted-media" data-tcq-slot="media"></div>
+    <div class="tcq-quoted-card" data-tcq-slot="card"></div>
+
+    <!-- 隐形锚点：只用于程序化触发 SPA 路由 -->
+    <a id="tcqTplQuotedRootLink" class="tcq-quoted-rootlink" href="#" aria-hidden="true" tabindex="-1"></a>
+</div>
+
+<!-- === 子模板：Header（阶段1使用） === -->
+<div id="tcqTplQuotedHeader" class="tcq-tpl" data-tcq="tpl-header">
+    <div class="tcq-qh-row">
+        <div class="tcq-qh-avatar" data-role="avatar">
+            <img alt="" src="" width="24" height="24" loading="lazy" decoding="async" />
+        </div>
+        <div class="tcq-qh-meta">
+            <span class="tcq-qh-name"   data-role="name"></span>
+            <span class="tcq-qh-handle" data-role="handle"></span>
+            <span class="tcq-qh-sep">·</span>
+            <time class="tcq-qh-time" data-role="time" datetime=""></time>
+        </div>
+    </div>
+</div>
+
+<!-- === 子模板：Quoted 正文容器（供阶段2克隆） === -->
+<div id="tcqTplQuotedContent" class="tcq-tpl" data-tcq="tpl-content">
+    <div class="tcq-qcontent-wrap">
+        <div class="tweet-content" dir="auto"></div>
+        <!-- 显示更多（模板默认隐藏；TS 按需启用） -->
+        <a id="tcqTplQuotedMore"
+           class="tcq-qcontent-more"
+           data-role="more"
+           href="#"
+           hidden>显示更多</a>
+    </div>
+</div>
+
+
+<!-- === 子模板：Photo（阶段3使用） === -->
+<div id="tcqTplQuotedPhoto" class="tcq-tpl" data-tcq="tpl-photo">
+    <a class="tcq-qmedia tcq-qphoto" data-photo-index="" href="#">
+        <span class="tcq-qmedia-aspect"></span>
+        <img alt="" src="" loading="lazy" decoding="async" />
+    </a>
+</div>
+
+<!-- === 子模板：Video/GIF（阶段4使用） === -->
+<div id="tcqTplQuotedVideo" class="tcq-tpl" data-tcq="tpl-video">
+    <a class="tcq-qmedia tcq-qvideo" href="#">
+        <span class="tcq-qmedia-aspect"></span>
+        <img class="tcq-qvideo-poster" alt="" src="" loading="lazy" decoding="async" />
+        <span class="tcq-qvideo-play" aria-hidden="true"></span>
+    </a>
+</div>
+
+<!-- === 子模板：不可用占位（阶段6使用） === -->
+<div id="tcqTplQuoteUnavailable" class="tcq-tpl" data-tcq="tpl-unavailable">
+    <div class="tcq-quoted-unavailable">此推文不可用</div>
+</div>
 

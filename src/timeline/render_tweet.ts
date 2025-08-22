@@ -1,4 +1,4 @@
-import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./tweet_entry";
+import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity, TweetObj} from "./tweet_entry";
 import {formatCount, formatTweetTime, isXArticle} from "../common/utils";
 import {videoRender} from "./render_video";
 import {updateTweetContentArea} from "./render_content";
@@ -57,7 +57,7 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     if (quoteArea) {
         quoteArea.innerHTML = '';
         if (target.quotedStatus) {
-            updateTweetQuoteArea(quoteArea, target.quotedStatus);
+            updateTweetQuoteArea(quoteArea, target.quotedStatus, tpl, {condensed: hasMainMediaOrCard(target)});
         }
     }
 
@@ -67,6 +67,12 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     attachBodyPermalink(article, target.author, target.rest_id);
 
     return tweetCellDiv;
+}
+
+function hasMainMediaOrCard(t: TweetObj): boolean {
+    const hasMedia = !!t.tweetContent?.extended_entities?.media?.length;
+    const hasCard = !!t.card;
+    return hasMedia || hasCard;
 }
 
 // 渲染头像模块
