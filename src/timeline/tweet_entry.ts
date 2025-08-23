@@ -339,6 +339,7 @@ export class TweetContent {
     retweeted: boolean;
     id_str: string;
     user_id_str: string;
+    note_full_text?: string;
 
     constructor(data: any) {
         this.bookmark_count = data.bookmark_count;
@@ -665,6 +666,11 @@ export class TweetObj {
         const nt = raw?.note_tweet;
         const ntr = raw?.note_tweet_results?.result;
         this.hasNoteExpandable = !!(nt?.is_expandable || ntr);
+        if (ntr?.text) {
+            this.tweetContent.note_full_text = ntr.text;
+        } else if (nt?.note_tweet_results?.result?.text) {
+            this.tweetContent.note_full_text = nt.note_tweet_results.result.text;
+        }
 
         this.card = data.card ? new TweetCard(data.card) : null;
 

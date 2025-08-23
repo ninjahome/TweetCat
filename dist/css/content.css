@@ -730,6 +730,25 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tweet-content .hashtag { /* #测试    */
 }
 
+.tc-main-more {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 15px;            /* 主推正文字号 */
+    line-height: 1.5;
+    color: rgb(29, 155, 240);
+    text-decoration: none;
+}
+
+.tc-main-more:hover {
+    text-decoration: underline;
+}
+
+@media (prefers-color-scheme: dark) {
+    .tc-main-more {
+        color: rgb(142, 205, 248);
+    }
+}
+
 .tweet-card-area {
     margin-top: 8px;
 }

@@ -1,5 +1,5 @@
 // render_content.ts
-import { TweetContent } from "./tweet_entry";
+import {TweetContent} from "./tweet_entry";
 import {logRCT} from "../common/debug_flags";
 
 type Piece = { start: number; end: number; html: string };
@@ -35,22 +35,32 @@ export function cpRangeToCuClamped(
 export function updateTweetContentArea(
     container: HTMLElement,
     tweet: TweetContent,
-    opts?: { hiddenShortUrls?: Iterable<string> , isQuoted?:boolean}
+    opts?: { hiddenShortUrls?: Iterable<string>, isQuoted?: boolean, hasMore?: boolean }
 ) {
-    const tweetContent = container.querySelector(".tweet-content") as HTMLElement | null;
-    if (!tweetContent) {
-        logRCT("------>>> tweet content not found:", container);
-        return;
-    }
+    const isShowMore = opts?.hasMore ?? false;
+    const isQuoted = opts?.isQuoted ?? false;
 
+    const tweetContent = container.querySelector(".tweet-content") as HTMLElement;
     tweetContent.setAttribute("dir", "auto");
     if (tweet.lang) tweetContent.setAttribute("lang", tweet.lang);
-
     tweetContent.innerHTML = buildVisibleWithEntitiesHTML(
         tweet,
         opts?.hiddenShortUrls ?? [],
-        opts?.isQuoted ?? false
+        isQuoted
     );
+
+    if (isShowMore && !isQuoted) {
+        const moreAnchor = container.querySelector(".tc-main-more") as HTMLElement;
+        logRCT("this tweets should show more:\n", tweet.note_full_text);
+        moreAnchor.hidden = false;
+        moreAnchor.removeAttribute("hidden");
+        moreAnchor.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            tweetContent.innerHTML = tweet.note_full_text ?? "";
+            moreAnchor.hidden = true;
+        }, {once: true});
+    }
 }
 
 /* =========================
@@ -59,7 +69,7 @@ export function updateTweetContentArea(
 export function buildVisibleWithEntitiesHTML(
     tweet: TweetContent,
     extraHiddenShortUrls: Iterable<string> = [],
-    isQuoted:boolean = false
+    isQuoted: boolean = false
 ): string {
     const full = tweet.full_text ?? "";
     const cpToCu = buildCpToCuMap(full);                         // ★ 入口构建映射
@@ -70,7 +80,7 @@ export function buildVisibleWithEntitiesHTML(
     for (const u of extraHiddenShortUrls) hidden.add(u);
 
     const pieces: Piece[] = [];
-    if(!isQuoted){
+    if (!isQuoted) {
         pieces.push(...collectMentionPieces(tweet, full, start, end, cpToCu));
         pieces.push(...collectHashtagPieces(tweet, full, start, end, cpToCu));
         pieces.push(...collectUrlPiecesWithHiddenSet(tweet, full, start, end, hidden, cpToCu));
@@ -147,7 +157,7 @@ function collectUrlPiecesWithHiddenSet(
         if (u.url && hiddenShortUrls.has(u.url)) {
             while (s > visibleS && isWS(full[s - 1])) s--; // 吞前导空白
             while (e < visibleE && isWS(full[e])) e++;     // 吞尾随空白
-            return [{ start: s, end: e, html: '' }];
+            return [{start: s, end: e, html: ''}];
         }
 
         // 正常链接：label 用 display_url，href 用 expanded_url（无协议则退回 '#')
@@ -160,7 +170,7 @@ function collectUrlPiecesWithHiddenSet(
             `rel="nofollow noreferrer noopener" target="_blank">` +
             `${display}</a>`;
 
-        return [{ start: s, end: e, html }];
+        return [{start: s, end: e, html}];
     });
 }
 
@@ -230,7 +240,7 @@ function collectHiddenShortUrlPiecesBySearch(
                 // 吞掉两端空白/换行，让视觉上不遗留多余空格
                 while (s > visibleS && isWS(full[s - 1])) s--;
                 while (e < visibleE && isWS(full[e])) e++;
-                pieces.push({ start: s, end: e, html: "" });
+                pieces.push({start: s, end: e, html: ""});
             }
 
             pos = full.indexOf(short, pos + short.length);

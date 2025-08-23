@@ -31,15 +31,12 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     }
 
     // console.log("tweet contents", JSON.stringify(target.tweetContent));
-    const extraHiddenShortUrls = collectExtraHiddenShortUrls(
-        target.tweetContent,
-        target.card
-    );
+    const extraHiddenShortUrls = collectExtraHiddenShortUrls(target.card);
 
     updateTweetContentArea(
-        article.querySelector(".tweet-body") as HTMLElement,
+        article.querySelector(".tweet-content-container") as HTMLElement,
         target.tweetContent,
-        {hiddenShortUrls: extraHiddenShortUrls}
+        {hiddenShortUrls: extraHiddenShortUrls, hasMore: target.hasNoteExpandable}
     );
 
     updateTweetMediaArea(article.querySelector(".tweet-media-area") as HTMLElement,
@@ -342,7 +339,6 @@ function updateTweetBottomButtons(
 }
 
 function collectExtraHiddenShortUrls(
-    _tweet: TweetContent,
     card?: { url?: string; entityUrl?: string } | null
 ): string[] {
     const set = new Set<string>();
