@@ -5,7 +5,7 @@ import {queryKolDetailByName, showPopupMenu} from "./twitter_observer";
 import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
-import {getTweetCatFlag, isInTweetCatRoute, navigateToTweetCat} from "../timeline/route_helper";
+import {getTweetCatFlag, navigateToTweetCat} from "../timeline/route_helper";
 import {logTPR} from "../common/debug_flags";
 
 let observing = false;
