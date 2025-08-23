@@ -1,5 +1,5 @@
 // render_content.ts
-import {TweetContent} from "./tweet_entry";
+import {TweetContent, TweetEntity} from "./tweet_entry";
 import {logRCT} from "../common/debug_flags";
 
 type Piece = { start: number; end: number; html: string };
@@ -57,7 +57,12 @@ export function updateTweetContentArea(
         moreAnchor.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            tweetContent.innerHTML = tweet.note_full_text ?? "";
+            tweetContent.innerHTML = buildVisibleWithEntitiesHTML(
+                tweet,
+                opts?.hiddenShortUrls ?? [],
+                isQuoted,
+                true   // ★ 强制使用完整文本
+            );
             moreAnchor.hidden = true;
         }, {once: true});
     }
@@ -69,27 +74,35 @@ export function updateTweetContentArea(
 export function buildVisibleWithEntitiesHTML(
     tweet: TweetContent,
     extraHiddenShortUrls: Iterable<string> = [],
-    isQuoted: boolean = false
+    isQuoted: boolean = false,
+    useFullText: boolean = false
 ): string {
-    const full = tweet.full_text ?? "";
-    const cpToCu = buildCpToCuMap(full);                         // ★ 入口构建映射
-    const [start, end] = getVisibleRange(tweet, full, cpToCu);   // ★ CU 可见区
+    const full = (useFullText && tweet.note_full_text) ? tweet.note_full_text : (tweet.full_text ?? "");
+    const cpToCu = buildCpToCuMap(full);
 
-    // 需要隐藏的短链：媒体 + 调用方附加（例如卡片 t.co）
-    const hidden = new Set<string>(getHiddenMediaShortUrls(tweet));
+    // 如果是 Note 长文并且 useFullText，就换用 note_entities
+    const entities = (useFullText && tweet.note_entities) ? tweet.note_entities : tweet.entities;
+
+    // ★ 注意：当 useFullText=true 时，我们不用 display_text_range，而是全量
+    const [start, end] = useFullText
+        ? [0, full.length]
+        : getVisibleRange(tweet, full, cpToCu);
+
+    const hidden = new Set<string>(getHiddenMediaShortUrls(tweet, entities));
     for (const u of extraHiddenShortUrls) hidden.add(u);
 
     const pieces: Piece[] = [];
     if (!isQuoted) {
-        pieces.push(...collectMentionPieces(tweet, full, start, end, cpToCu));
-        pieces.push(...collectHashtagPieces(tweet, full, start, end, cpToCu));
-        pieces.push(...collectUrlPiecesWithHiddenSet(tweet, full, start, end, hidden, cpToCu));
+        pieces.push(...collectMentionPieces(entities, start, end, cpToCu));
+        pieces.push(...collectHashtagPieces(entities, start, end, cpToCu));
+        pieces.push(...collectUrlPiecesWithHiddenSet(entities, full, start, end, hidden, cpToCu));
     }
     pieces.push(...collectHiddenShortUrlPiecesBySearch(full, start, end, hidden));
 
     return assembleVisibleHtml(full, start, end, pieces);
 }
 
+``
 /* =========================
  *  4) 基线逻辑（只把索引换成 CP→CU）
  * ========================= */
@@ -104,9 +117,9 @@ function getVisibleRange(tweet: TweetContent, full: string, cpToCu: number[]): [
 }
 
 function collectMentionPieces(
-    tweet: TweetContent, full: string, visibleS: number, visibleE: number, cpToCu: number[]
+    entities: TweetEntity, visibleS: number, visibleE: number, cpToCu: number[]
 ): Piece[] {
-    const arr = tweet.entities?.user_mentions ?? [];
+    const arr = entities?.user_mentions ?? [];
     return arr.flatMap(u => {
         const [s, e] = cpRangeToCuClamped(u.indices?.[0], u.indices?.[1], cpToCu);
         if (e <= visibleS || s >= visibleE) return [];
@@ -118,9 +131,9 @@ function collectMentionPieces(
 }
 
 function collectHashtagPieces(
-    tweet: TweetContent, full: string, visibleS: number, visibleE: number, cpToCu: number[]
+    entities: TweetEntity, visibleS: number, visibleE: number, cpToCu: number[]
 ): Piece[] {
-    const arr = tweet.entities?.hashtags ?? [];
+    const arr = entities?.hashtags ?? [];
     return arr.flatMap(h => {
         const [s, e] = cpRangeToCuClamped(h.indices?.[0], h.indices?.[1], cpToCu);
         if (e <= visibleS || s >= visibleE) return [];
@@ -133,14 +146,14 @@ function collectHashtagPieces(
 }
 
 function collectUrlPiecesWithHiddenSet(
-    tweet: TweetContent,
+    entities: TweetEntity,
     full: string,
     visibleS: number,
     visibleE: number,
     hiddenShortUrls: Set<string>,
     cpToCu: number[]
 ): Piece[] {
-    const arr = tweet.entities?.urls ?? [];
+    const arr = entities?.urls ?? [];
     const isWS = (ch: string) =>
         ch === " " || ch === "\n" || ch === "\t" || ch === "\r" || ch === "\f";
 
@@ -194,14 +207,18 @@ function assembleVisibleHtml(full: string, visibleS: number, visibleE: number, p
 /* =========================
  *  5) 辅助
  * ========================= */
-
-function getHiddenMediaShortUrls(tweet: TweetContent): Set<string> {
+function getHiddenMediaShortUrls(tweet: TweetContent, entities: TweetEntity): Set<string> {
     const set = new Set<string>();
+
+    // extended_entities 优先（包含视频/GIF 等）
     const mediaArr =
         (tweet.extended_entities?.media && tweet.extended_entities.media.length
             ? tweet.extended_entities.media
-            : (tweet.entities?.media || []));
-    for (const m of mediaArr) if (m?.url) set.add(m.url);
+            : (entities?.media || []));
+
+    for (const m of mediaArr) {
+        if (m?.url) set.add(m.url);
+    }
     return set;
 }
 

@@ -340,6 +340,7 @@ export class TweetContent {
     id_str: string;
     user_id_str: string;
     note_full_text?: string;
+    note_entities?: TweetEntity;
 
     constructor(data: any) {
         this.bookmark_count = data.bookmark_count;
@@ -665,11 +666,14 @@ export class TweetObj {
         this.tweetContent = new TweetContent(data.legacy);
         const nt = raw?.note_tweet;
         const ntr = raw?.note_tweet_results?.result;
+        const note = ntr ?? nt?.note_tweet_results?.result;
         this.hasNoteExpandable = !!(nt?.is_expandable || ntr);
-        if (ntr?.text) {
-            this.tweetContent.note_full_text = ntr.text;
-        } else if (nt?.note_tweet_results?.result?.text) {
-            this.tweetContent.note_full_text = nt.note_tweet_results.result.text;
+        if (note?.text) {
+            this.tweetContent.note_full_text = note.text;
+        }
+
+        if (note?.entity_set) {
+            this.tweetContent.note_entities = new TweetEntity(note.entity_set);
         }
 
         this.card = data.card ? new TweetCard(data.card) : null;
