@@ -225,7 +225,7 @@ function renderQuotedPhotos(root: HTMLElement, tpl: HTMLTemplateElement, mediaSl
         anchor.removeAttribute('id');
 
         const img = anchor.querySelector('img') as HTMLImageElement | null;
-        const src = m.media_url_https || m.url || '';
+        const src = m.media_url_https || '';
         if (!src) return; // 优雅跳过
         if (img) {
             img.src = src;
@@ -257,14 +257,15 @@ function renderQuotedVideos(root: HTMLElement, tpl: HTMLTemplateElement, mediaSl
 
     // B2：紧凑卡仅显示海报 + 角标；点击跳详情
     if (condensed) {
-        const anchor = (document.getElementById('tcqTplQuotedVideo') as HTMLTemplateElement | null)
-            ?.content?.firstElementChild?.cloneNode(true) as HTMLAnchorElement | null;
-        if (!anchor) return;
+        const node = cloneFromTpl(tpl, 'tcqTplQuotedVideo') as HTMLElement | null;
+        if (!node) return;
+        node.removeAttribute('id');
 
-        anchor.removeAttribute('id');
-
-        const img = anchor.querySelector<HTMLImageElement>('.tcq-qvideo-poster');
-        const aspect = anchor.querySelector<HTMLElement>('.tcq-qmedia-aspect');
+// 2) 取到各占位
+        const anchor = node.querySelector<HTMLAnchorElement>('a.tcq-qvideo') as HTMLAnchorElement;
+        const img = node.querySelector<HTMLImageElement>('.tcq-qvideo-poster') as HTMLImageElement;
+        const aspect = node.querySelector<HTMLElement>('.tcq-qmedia-aspect') as HTMLElement;
+        const badge = node.querySelector<HTMLElement>('.duration-badge') as HTMLElement;
 
         const poster = first.media_url_https || '';
         if (!poster) {
@@ -278,26 +279,38 @@ function renderQuotedVideos(root: HTMLElement, tpl: HTMLTemplateElement, mediaSl
             img.decoding = 'async';
         }
 
+        // ① 优先用 video_info.aspect_ratio
         const ratio = first?.video_info?.aspect_ratio;
         if (aspect && Array.isArray(ratio) && ratio.length === 2) {
             aspect.style.aspectRatio = `${ratio[0]} / ${ratio[1]}`;
             aspect.style.paddingTop = '';
         }
 
+        // ② 回退：用 original_info 的 width/height
+        if (
+            aspect &&
+            (!Array.isArray(ratio) || ratio.length !== 2) &&
+            first.original_info?.width &&
+            first.original_info?.height
+        ) {
+            aspect.style.aspectRatio = `${first.original_info.width} / ${first.original_info.height}`;
+            aspect.style.paddingTop = '';
+        }
+
         // 角标：视频=时长，GIF=“GIF”
-        const badge = document.createElement('span');
-        badge.className = 'duration-badge';
+        badge.classList.toggle('is-gif', first.type === 'animated_gif');
         if (first.type === 'animated_gif') {
             badge.textContent = 'GIF';
+            badge.hidden = false;
         } else {
             const ms = first?.video_info?.duration_millis;
             if (typeof ms === 'number') {
                 badge.textContent = formatVideoDuration(Math.floor(ms / 1000));
+                badge.hidden = false;
             } else {
                 badge.hidden = true;
             }
         }
-        anchor.appendChild(badge);
 
         // 布局类（与 B2 图片缩略一致）
         mediaSlot.classList.add('tcq-qphoto--grid-1', 'tcq-qphoto--thumb');
@@ -413,7 +426,7 @@ export function updateTweetQuoteArea(
 
     fillQuotedHeader(root, quoted, tpl);   // 阶段 1
     fillQuotedContent(root, quoted, tpl, condensed);
-    fillQuotedMedia(root, quoted, tpl, condensed);  // ← 调用空实现
+    fillQuotedMedia(root, quoted, tpl, condensed);
 
     wireQuotedRootInteractions(root, quoted); // 整卡可点（关键差异）
 
