@@ -308,3 +308,14 @@ export function toHttps(u?: string): string {
         return u;
     }
 }
+
+// 在文件顶部现有 import 之后添加 / 或放到合适位置
+export function formatVideoDuration(totalSeconds: number): string {
+    const t = Math.max(0, Math.floor(totalSeconds));
+    const h = Math.floor(t / 3600);
+    const m = Math.floor((t % 3600) / 60);
+    const s = t % 60;
+    return h > 0
+        ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+        : `${m}:${s.toString().padStart(2, '0')}`;
+}

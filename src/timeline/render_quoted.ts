@@ -1,8 +1,9 @@
-import {TweetObj} from './tweet_entry';
+import {TweetMediaEntity, TweetObj} from './tweet_entry';
 import {bindTwitterInternalLink} from './render_common';
 import {updateTweetContentArea} from './render_content';
-import {formatTweetTime} from "../common/utils";
+import {formatTweetTime, formatVideoDuration} from "../common/utils";
 import {logRQ} from "../common/debug_flags";
+import {videoRender} from "./render_video";
 
 // —— 通用 —— //
 function cloneFromTpl(tpl: HTMLTemplateElement, id: string): HTMLElement | null {
@@ -206,32 +207,10 @@ function ensurePhotoLightbox(tpl: HTMLTemplateElement) {
     return {root, img, close};
 }
 
-function fillQuotedMedia(
-    root: HTMLElement,
-    quoted: TweetObj,
-    tpl: HTMLTemplateElement,
-    condensed: boolean
-): void {
-    const mediaSlot = root.querySelector<HTMLElement>('[data-tcq-slot="media"]');
-    if (!mediaSlot) return;
-
-    // 清空旧内容 & 清理旧类
-    mediaSlot.innerHTML = '';
-    ['tcq-qphoto--grid-1', 'tcq-qphoto--grid-2', 'tcq-qphoto--grid-3', 'tcq-qphoto--grid-4', 'tcq-qphoto--thumb']
-        .forEach(c => mediaSlot.classList.remove(c));
-    root.classList.remove('tcq--thumb-row');
-
-    // 取媒体（优先 extended_entities）
-    const all =
-        quoted?.tweetContent?.extended_entities?.media?.length
-            ? quoted.tweetContent.extended_entities.media
-            : (quoted?.tweetContent?.entities?.media || []);
-
-    const photos = all.filter((m: any) => m?.type === 'photo');
+function renderQuotedPhotos(root: HTMLElement, tpl: HTMLTemplateElement, mediaSlot: HTMLElement, photos: TweetMediaEntity[], condensed: boolean) {
     if (!photos.length) return;
 
     const count = Math.min(4, photos.length);
-
     // 媒体容器挂张数类
     mediaSlot.classList.add(`tcq-qphoto--grid-${count}`);
 
@@ -247,6 +226,7 @@ function fillQuotedMedia(
 
         const img = anchor.querySelector('img') as HTMLImageElement | null;
         const src = m.media_url_https || m.url || '';
+        if (!src) return; // 优雅跳过
         if (img) {
             img.src = src;
             img.alt = m.display_url || '';
@@ -268,6 +248,142 @@ function fillQuotedMedia(
 
         mediaSlot.appendChild(anchor);
     });
+}
+
+function renderQuotedVideos(root: HTMLElement, tpl: HTMLTemplateElement, mediaSlot: HTMLElement, videos: TweetMediaEntity[], condensed: boolean) {
+// —— 无图片且有视频/GIF —— //
+    if (!videos.length) return;
+    const first = videos[0];
+
+    // B2：紧凑卡仅显示海报 + 角标；点击跳详情
+    if (condensed) {
+        const anchor = (document.getElementById('tcqTplQuotedVideo') as HTMLTemplateElement | null)
+            ?.content?.firstElementChild?.cloneNode(true) as HTMLAnchorElement | null;
+        if (!anchor) return;
+
+        anchor.removeAttribute('id');
+
+        const img = anchor.querySelector<HTMLImageElement>('.tcq-qvideo-poster');
+        const aspect = anchor.querySelector<HTMLElement>('.tcq-qmedia-aspect');
+
+        const poster = first.media_url_https || '';
+        if (!poster) {
+            // 没有可用海报就不渲染媒体，保持区域为空（优雅降级）
+            return;
+        }
+        if (img) {
+            img.src = poster;
+            img.alt = first.display_url || '';
+            img.loading = 'lazy';
+            img.decoding = 'async';
+        }
+
+        const ratio = first?.video_info?.aspect_ratio;
+        if (aspect && Array.isArray(ratio) && ratio.length === 2) {
+            aspect.style.aspectRatio = `${ratio[0]} / ${ratio[1]}`;
+            aspect.style.paddingTop = '';
+        }
+
+        // 角标：视频=时长，GIF=“GIF”
+        const badge = document.createElement('span');
+        badge.className = 'duration-badge';
+        if (first.type === 'animated_gif') {
+            badge.textContent = 'GIF';
+        } else {
+            const ms = first?.video_info?.duration_millis;
+            if (typeof ms === 'number') {
+                badge.textContent = formatVideoDuration(Math.floor(ms / 1000));
+            } else {
+                badge.hidden = true;
+            }
+        }
+        anchor.appendChild(badge);
+
+        // 布局类（与 B2 图片缩略一致）
+        mediaSlot.classList.add('tcq-qphoto--grid-1', 'tcq-qphoto--thumb');
+        root.classList.add('tcq--thumb-row');
+
+        // 点击跳被引详情（不在卡内播放）
+        anchor.href = '#';
+        anchor.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            root.querySelector<HTMLAnchorElement>('#tcqTplQuotedRootLink')?.click();
+        });
+
+        mediaSlot.appendChild(anchor);
+        return;
+    }
+
+    // B1：普通卡内嵌播放器
+    const player = videoRender(first, tpl);
+    player.classList.add('tcq-qvideo-host', 'tcq-qmedia');
+
+    // 阻断点击/触摸事件冒泡，避免触发整卡跳转
+    ['click', 'pointerdown', 'touchstart'].forEach(evt => {
+        player.addEventListener(evt, e => {
+            e.stopPropagation();
+        }, {passive: true});
+    });
+
+// 保险：直接在 <video> 节点上也拦一次
+    const vEl = player.querySelector('video') as HTMLVideoElement | null;
+    if (vEl) {
+        ['click', 'pointerdown', 'touchstart'].forEach(evt => {
+            vEl.addEventListener(evt, e => e.stopPropagation(), {passive: true});
+        });
+    }
+
+    if (first.type === 'animated_gif') {
+        const v = player.querySelector('video') as HTMLVideoElement | null;
+        const badge = player.querySelector('.duration-badge') as HTMLElement | null;
+        if (badge) badge.style.display = 'none';
+        if (v) {
+            v.loop = true;
+            v.muted = true;
+            v.autoplay = true;
+            v.controls = false;
+            v.playsInline = true;
+        }
+    }
+
+    mediaSlot.appendChild(player);
+}
+
+function fillQuotedMedia(
+    root: HTMLElement,
+    quoted: TweetObj,
+    tpl: HTMLTemplateElement,
+    condensed: boolean
+): void {
+    const mediaSlot = root.querySelector<HTMLElement>('[data-tcq-slot="media"]');
+    if (!mediaSlot) return;
+
+    // 清空旧内容 & 清理旧类
+    mediaSlot.innerHTML = '';
+    ['tcq-qphoto--grid-1', 'tcq-qphoto--grid-2', 'tcq-qphoto--grid-3', 'tcq-qphoto--grid-4', 'tcq-qphoto--thumb']
+        .forEach(c => mediaSlot.classList.remove(c));
+    root.classList.remove('tcq--thumb-row');
+
+    // 取媒体（优先 extended_entities）
+    const all: TweetMediaEntity[] =
+        quoted?.tweetContent?.extended_entities?.media?.length
+            ? quoted.tweetContent.extended_entities.media
+            : (quoted?.tweetContent?.entities?.media || []) as TweetMediaEntity[];
+
+
+    if (!all?.length) return;
+
+    const photos = all.filter((m: any) => m?.type === 'photo');
+    if (photos.length > 0) {
+        renderQuotedPhotos(root, tpl, mediaSlot, photos, condensed);
+        return;
+    }
+
+    const videos = all.filter(m => m?.type === 'video' || m?.type === 'animated_gif');
+    if (videos.length > 0) {
+        renderQuotedVideos(root, tpl, mediaSlot, videos, condensed);
+    }
 }
 
 export function updateTweetQuoteArea(

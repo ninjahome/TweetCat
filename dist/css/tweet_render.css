@@ -663,3 +663,10 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tcq-quoted-root.tcq--thumb-row [data-tcq-slot="content"] { grid-column: 2;      grid-row: 2; margin-top: 0; }
 .tcq-quoted-root.tcq--thumb-row .tcq-quoted-media         { width: var(--tcq-thumb); }
 .tcq-quoted-root.tcq--thumb-row .tcq-quoted-media.tcq-qphoto--thumb { width: var(--tcq-thumb); }
+
+
+/* B1 内嵌播放器在引用卡的圆角与裁剪 */
+.tcq-quoted-root .tcq-qvideo-host {
+    border-radius: 12px;
+    overflow: hidden;
+}
