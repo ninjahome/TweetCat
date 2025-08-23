@@ -73,8 +73,8 @@ export function buildVisibleWithEntitiesHTML(
     if(!isQuoted){
         pieces.push(...collectMentionPieces(tweet, full, start, end, cpToCu));
         pieces.push(...collectHashtagPieces(tweet, full, start, end, cpToCu));
+        pieces.push(...collectUrlPiecesWithHiddenSet(tweet, full, start, end, hidden, cpToCu));
     }
-    pieces.push(...collectUrlPiecesWithHiddenSet(tweet, full, start, end, hidden, cpToCu));
     pieces.push(...collectHiddenShortUrlPiecesBySearch(full, start, end, hidden));
 
     return assembleVisibleHtml(full, start, end, pieces);
