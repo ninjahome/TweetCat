@@ -35,7 +35,7 @@ export function cpRangeToCuClamped(
 export function updateTweetContentArea(
     container: HTMLElement,
     tweet: TweetContent,
-    opts?: { hiddenShortUrls?: Iterable<string> }
+    opts?: { hiddenShortUrls?: Iterable<string> , isQuoted?:boolean}
 ) {
     const tweetContent = container.querySelector(".tweet-content") as HTMLElement | null;
     if (!tweetContent) {
@@ -48,7 +48,8 @@ export function updateTweetContentArea(
 
     tweetContent.innerHTML = buildVisibleWithEntitiesHTML(
         tweet,
-        opts?.hiddenShortUrls ?? []
+        opts?.hiddenShortUrls ?? [],
+        opts?.isQuoted ?? false
     );
 }
 
@@ -57,7 +58,8 @@ export function updateTweetContentArea(
  * ========================= */
 export function buildVisibleWithEntitiesHTML(
     tweet: TweetContent,
-    extraHiddenShortUrls: Iterable<string> = []
+    extraHiddenShortUrls: Iterable<string> = [],
+    isQuoted:boolean = false
 ): string {
     const full = tweet.full_text ?? "";
     const cpToCu = buildCpToCuMap(full);                         // ★ 入口构建映射
@@ -68,8 +70,10 @@ export function buildVisibleWithEntitiesHTML(
     for (const u of extraHiddenShortUrls) hidden.add(u);
 
     const pieces: Piece[] = [];
-    pieces.push(...collectMentionPieces(tweet, full, start, end, cpToCu));
-    pieces.push(...collectHashtagPieces(tweet, full, start, end, cpToCu));
+    if(!isQuoted){
+        pieces.push(...collectMentionPieces(tweet, full, start, end, cpToCu));
+        pieces.push(...collectHashtagPieces(tweet, full, start, end, cpToCu));
+    }
     pieces.push(...collectUrlPiecesWithHiddenSet(tweet, full, start, end, hidden, cpToCu));
     pieces.push(...collectHiddenShortUrlPiecesBySearch(full, start, end, hidden));
 

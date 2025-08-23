@@ -83,7 +83,7 @@ function fillQuotedContent(
     slot.appendChild(wrap);
 
     // 2) 渲染正文到 wrap（项目惯例）
-    updateTweetContentArea(wrap as unknown as HTMLElement, quoted.tweetContent);
+    updateTweetContentArea(wrap as unknown as HTMLElement, quoted.tweetContent, {isQuoted: true});
 
     // 3) 拿到正文和“显示更多”
     const textEl = wrap.querySelector<HTMLElement>('.tweet-content')!;
