@@ -420,6 +420,13 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     -webkit-line-clamp: 5;
 }
 
+.tcq-qcontent--clamp-5 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    overflow: hidden;
+}
+
 /* “显示更多”按钮 */
 .tcq-qcontent-more {
     position: static; /* 取消绝对定位 */
@@ -550,7 +557,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 /* 文本两行截断（官方 B2 更紧凑） */
 .tcq-quoted-root.tcq--thumb-row .tcq-quoted-content .tweet-content {
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 5;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }

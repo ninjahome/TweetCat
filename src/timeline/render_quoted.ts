@@ -98,25 +98,31 @@ function fillQuotedContent(
         shouldShowMore
     });
 
-    // 4) A1+B2：主推有媒体 → 不显示“更多”
-    if (!shouldShowMore) {
-        moreEl.hidden = true;                 // 保险：display 由 hidden 控制
-        moreEl.setAttribute('hidden', '');    // 模板可能自带 hidden，重复设定无害
-        return;
+    /* === 绿：新增（统一决策：B2 或 嵌套引用 → 3 行折叠 & 不显示更多） === */
+    const nested = isNestedPreview(quoted);
+    if (condensed || nested) {
+        // 统一设为 3 行折叠，不显示“更多”
+        textEl.classList.remove('tcq-qcontent--clamp-regular');
+        textEl.classList.add('tcq-qcontent--clamp-5');
+        moreEl.hidden = true;
+        moreEl.setAttribute('hidden', '');
+    } else if (shouldShowMore) {
+        // B1 且非嵌套：走 5 行折叠 + “显示更多”
+        textEl.classList.remove('tcq-qcontent--clamp-5');
+        textEl.classList.add('tcq-qcontent--clamp-regular'); // 5 行
+        moreEl.hidden = false;
+        moreEl.removeAttribute('hidden');
+        const sn = quoted?.author?.screenName ?? '';
+        const id = quoted?.tweetContent?.id_str ?? (quoted as any)?.rest_id ?? '';
+        const href = (sn && id) ? `/${sn}/status/${id}` : '';
+        bindTwitterInternalLink(moreEl, href);
+        logRQ('[Quoted][A1+B1] force-show more', {href, condensed});
+    } else {
+        // B1 且非嵌套且无需展示更多：不折叠（保持原样）
+        textEl.classList.remove('tcq-qcontent--clamp-regular', 'tcq-qcontent--clamp-5');
+        moreEl.hidden = true;
+        moreEl.setAttribute('hidden', '');
     }
-
-    // 5) A1+B1：主推无媒体 → 一定显示“更多”
-    textEl.classList.add('tcq-qcontent--clamp-regular'); // 始终折叠 5 行
-    moreEl.hidden = false;
-    moreEl.removeAttribute('hidden');                    // 确保可见
-
-    // 详情页链接（优先根锚点）
-    const sn = quoted?.author?.screenName ?? '';
-    const id = quoted?.tweetContent?.id_str ?? (quoted as any)?.rest_id ?? '';
-    const href = (sn && id) ? `/${sn}/status/${id}` : '';
-    bindTwitterInternalLink(moreEl, href);
-    // 调试日志（可保留，便于核对）
-    logRQ('[Quoted][A1+B1] force-show more', {href, condensed});
 }
 
 
@@ -397,6 +403,37 @@ function fillQuotedMedia(
         renderQuotedVideos(root, tpl, mediaSlot, videos, condensed);
     }
 }
+
+/* === 绿：新增（判定是否属于“嵌套引用预览”） === */
+function isNestedPreview(quoted: TweetObj): boolean {
+    const tc: any = quoted?.tweetContent ?? {};
+    // 内层引用：尽量兼容多种标识
+    const hasInnerQuote =
+        !!tc?.is_quote_status ||
+        !!tc?.quoted_status_id_str ||
+        !!tc?.quoted_status_result ||
+        !!tc?.quoted_status_permalink;
+
+    // 媒体
+    const mediaList =
+        (tc?.extended_entities?.media?.length
+            ? tc.extended_entities.media
+            : (tc?.entities?.media || [])) || [];
+    const hasMedia = Array.isArray(mediaList) && mediaList.some((m: any) =>
+        m?.type === 'photo' || m?.type === 'video' || m?.type === 'animated_gif'
+    );
+
+    // URL 卡片
+    const cardName = tc?.card?.legacy?.name || tc?.card?.name || '';
+    const hasCard =
+        cardName === 'summary_large_image' ||
+        cardName === 'image_website' ||
+        cardName === 'summary' ||
+        cardName === 'player';
+
+    return (hasInnerQuote || hasMedia || hasCard);
+}
+
 
 export function updateTweetQuoteArea(
     container: HTMLElement,
