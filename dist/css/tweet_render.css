@@ -366,6 +366,10 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tcq-quoted-root .tcq-quoted-content .tweet-content {
     font-size: 14px; /* 比主推略小 */
     line-height: 1.45; /* 更紧凑 */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    -webkit-line-clamp: 5;
 }
 
 /* 引用区内超链接、mention 的高亮略收敛，避免过强 */
@@ -410,21 +414,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-}
-
-/* 折叠：regular 模式 5 行 */
-.tcq-quoted-root .tcq-quoted-content .tweet-content.tcq-qcontent--clamp-regular {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    -webkit-line-clamp: 5;
-}
-
-.tcq-qcontent--clamp-5 {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 5;
-    overflow: hidden;
 }
 
 /* “显示更多”按钮 */
