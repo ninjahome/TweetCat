@@ -9,6 +9,7 @@ import {getTweetCatFlag, isInTweetCatRoute, navigateToTweetCat} from "../timelin
 import {logTPR} from "../common/debug_flags";
 
 let observing = false;
+
 export async function appendFilterOnKolProfileHome(kolName: string) {
     if (observing) {
         return;
@@ -36,23 +37,49 @@ export async function appendFilterOnTweetPage(kolName?: string) {
     }, false);
 }
 
+
 function hijackBackButton(): void {
+    const shouldReturnToTweetCat = getTweetCatFlag();
+    if (!shouldReturnToTweetCat) return;
+
     const backButton = document.querySelector('[data-testid="app-bar-back"]');
     if (!backButton) return;
 
-    if ((backButton as any).__tc_back_hooked) return;
-    (backButton as any).__tc_back_hooked = true;
+    let count = (backButton as any).__tc_click_count;
 
-    backButton.addEventListener('click', (e) => {
-        const shouldReturnToTweetCat = getTweetCatFlag();
-        const notInTweetCat = !isInTweetCatRoute();
-        if (!(shouldReturnToTweetCat && notInTweetCat)) return;
+    // 如果已经初始化过 → 自增并返回
+    if (count != null) {
+        count++;
+        (backButton as any).__tc_click_count = count;
+        logTPR(`[TC] hijackBackButton 更新，当前计数: ${count}`);
+        return;
+    }
 
-        e.preventDefault();
-        e.stopPropagation();
-        logTPR('[TC] 拦截返回按钮，跳转回 TweetCat');
-        navigateToTweetCat();
-    }, true); // 使用 capture 模式，优先于 React/Twitter 默认处理
+    // ===== 第一次初始化 =====
+    (backButton as any).__tc_click_count = 1;
+
+    backButton.addEventListener(
+        "click",
+        (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            let c = (backButton as any).__tc_click_count;
+            c--;
+            (backButton as any).__tc_click_count = c;
+
+            if (c <= 0) {
+                logTPR("[TC] 最后一次返回 → 跳转 TweetCat");
+                navigateToTweetCat();
+            } else {
+                logTPR(`[TC] 返回按钮 → history.back()，剩余计数: ${c}`);
+                window.history.back();
+            }
+        },
+        true
+    );
+
+    logTPR(`[TC] hijackBackButton 初始化，计数 = 1`);
 }
 
 
