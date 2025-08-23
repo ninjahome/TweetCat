@@ -330,24 +330,23 @@ function renderQuotedVideos(root: HTMLElement, tpl: HTMLTemplateElement, mediaSl
 
     // B1：普通卡内嵌播放器
     const player = videoRender(first, tpl);
-    player.classList.add('tcq-qvideo-host', 'tcq-qmedia');
+    const isGif = first.type === 'animated_gif';
+    player.classList.add('tcq-qvideo-host');
 
-    // 阻断点击/触摸事件冒泡，避免触发整卡跳转
-    ['click', 'pointerdown', 'touchstart'].forEach(evt => {
-        player.addEventListener(evt, e => {
-            e.stopPropagation();
-        }, {passive: true});
-    });
-
-// 保险：直接在 <video> 节点上也拦一次
-    const vEl = player.querySelector('video') as HTMLVideoElement | null;
-    if (vEl) {
+    if (!isGif) {
+        // 阻断点击/触摸事件冒泡，避免触发整卡跳转
         ['click', 'pointerdown', 'touchstart'].forEach(evt => {
-            vEl.addEventListener(evt, e => e.stopPropagation(), {passive: true});
+            player.addEventListener(evt, e => {
+                e.stopPropagation();
+            }, {passive: true});
         });
-    }
-
-    if (first.type === 'animated_gif') {
+        const vEl = player.querySelector('video') as HTMLVideoElement | null;
+        if (vEl) {
+            ['click', 'pointerdown', 'touchstart'].forEach(evt => {
+                vEl.addEventListener(evt, e => e.stopPropagation(), {passive: true});
+            });
+        }
+    }else{
         const v = player.querySelector('video') as HTMLVideoElement | null;
         const badge = player.querySelector('.duration-badge') as HTMLElement | null;
         if (badge) badge.style.display = 'none';
