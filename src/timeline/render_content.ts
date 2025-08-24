@@ -1,4 +1,3 @@
-// render_content.ts
 import {TweetContent, TweetEntity} from "./tweet_entry";
 import {logRCT} from "../common/debug_flags";
 
@@ -51,7 +50,7 @@ export function updateTweetContentArea(
 
     if (isShowMore && !isQuoted) {
         const moreAnchor = container.querySelector(".tc-main-more") as HTMLElement;
-        // logRCT("this tweets should show more:\n", tweet.note_full_text);
+        logRCT("this tweets should show more:\n", tweet.note_full_text);
         moreAnchor.hidden = false;
         moreAnchor.removeAttribute("hidden");
         moreAnchor.addEventListener("click", (e) => {

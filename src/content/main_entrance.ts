@@ -1,14 +1,14 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./twitter_observer";
 import {
-    appendFilterOnKolProfileHome, appendFilterOnTweetPage,
+    appendFilterOnKolProfileHome,
 } from "./twitter_ui";
 import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "../common/consts";
 import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
 import {processCapturedTweets, startToCheckKolId, startToFetchTweets} from "../timeline/tweet_fetcher";
-import {handleLocationChange, setTweetCatFlag} from "../timeline/route_helper";
+import {getTweetCatFlag, handleLocationChange, navigateToTweetCat} from "../timeline/route_helper";
 import {logTPR} from "../common/debug_flags";
 import {setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
@@ -59,8 +59,10 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             logTPR("------>>> link info:", linkInfo)
             if (linkInfo.kind === "profile") {
                 appendFilterOnKolProfileHome(linkInfo.username).then();
-            } else if (linkInfo.kind === "tweet") {
-                appendFilterOnTweetPage(linkInfo.username).then();
+            }else if(linkInfo.kind === "home"){
+                if(getTweetCatFlag()){
+                    navigateToTweetCat();
+                }
             }
             checkFilterStatusAfterUrlChanged();
             sendResponse({success: true});

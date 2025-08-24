@@ -216,6 +216,7 @@ export function extractMissingFeature(body: string): string | null {
 export type ParsedTwitterLink =
     | { kind: "tweet"; url: URL; tweetId: string; username?: string }
     | { kind: "profile"; url: URL; username: string }
+    | { kind: "home"; url: URL }
     | { kind: "other"; url: URL };
 
 const RESERVED = new Set([
@@ -246,6 +247,11 @@ export function parseTwitterPath(href?: string | URL): ParsedTwitterLink {
 
     const path = u.pathname;                   // 不含 query/hash
     const parts = path.split("/").filter(Boolean); // 去空段
+
+    // —— [NEW] 判断 home —— //
+    if (parts.length === 1 && parts[0].toLowerCase() === "home") {
+        return { kind: "home", url: u };
+    }
 
     // —— 优先判断“推文链接” —— //
     // 1) /<username>/status|statuses/<id>(/...)?

@@ -16,7 +16,7 @@ export const DBG = {
     TweetBGTimer: false,
     TweetObjParse: false,
     TweetRenderCard: false,
-    TweetRenderContent: true,
+    TweetRenderContent: false,
     TweetRenderQuote: false,
     TwitterPageRender: true,
 } as const;

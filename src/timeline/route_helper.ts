@@ -53,6 +53,7 @@ export function navigateToTweetCat(): void {
     pushOrReplace(FULL);          // ← 统一入口
     window.dispatchEvent(new PopStateEvent('popstate'));
     handleLocationChange();
+    setTweetCatFlag(false)
 }
 
 /* ---------- 退出 / 清理（占位，后续阶段实现具体逻辑） ------------- */

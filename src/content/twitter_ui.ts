@@ -5,7 +5,6 @@ import {queryKolDetailByName, showPopupMenu} from "./twitter_observer";
 import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
-import {getTweetCatFlag, navigateToTweetCat} from "../timeline/route_helper";
 import {logTPR} from "../common/debug_flags";
 
 let observing = false;
@@ -22,43 +21,8 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
         const oldFilterBtn = profileToolBarDiv.querySelectorAll(".filter-btn-on-profile");
         oldFilterBtn.forEach(item => item.remove());
         await _appendFilterBtn(profileToolBarDiv, kolName)
-        hijackBackButton();
         observing = false;
     }, false);
-}
-
-export async function appendFilterOnTweetPage(kolName?: string) {
-    if (!kolName) return;
-
-    observeForElement(document.body, 30, () => {
-        return document.querySelector('[data-testid="app-bar-back"]') as HTMLElement
-    }, async () => {
-        hijackBackButton();
-    }, false);
-}
-
-
-function hijackBackButton(): void {
-    const shouldReturnToTweetCat = getTweetCatFlag();
-    if (!shouldReturnToTweetCat) return;
-
-    const backButton = document.querySelector('[data-testid="app-bar-back"]');
-    if (!backButton) return;
-
-
-    if ((backButton as any).__tc_listener_attached) return;
-    (backButton as any).__tc_listener_attached = true;
-
-    backButton.addEventListener(
-        "click",
-        (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            navigateToTweetCat();
-            // window.history.back();
-        },
-        true
-    );
 }
 
 
