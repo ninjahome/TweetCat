@@ -45,41 +45,20 @@ function hijackBackButton(): void {
     const backButton = document.querySelector('[data-testid="app-bar-back"]');
     if (!backButton) return;
 
-    let count = (backButton as any).__tc_click_count;
 
-    // 如果已经初始化过 → 自增并返回
-    if (count != null) {
-        count++;
-        (backButton as any).__tc_click_count = count;
-        logTPR(`[TC] hijackBackButton 更新，当前计数: ${count}`);
-        return;
-    }
-
-    // ===== 第一次初始化 =====
-    (backButton as any).__tc_click_count = 1;
+    if ((backButton as any).__tc_listener_attached) return;
+    (backButton as any).__tc_listener_attached = true;
 
     backButton.addEventListener(
         "click",
         (e) => {
             e.preventDefault();
             e.stopPropagation();
-
-            let c = (backButton as any).__tc_click_count;
-            c--;
-            (backButton as any).__tc_click_count = c;
-
-            if (c <= 0) {
-                logTPR("[TC] 最后一次返回 → 跳转 TweetCat");
-                navigateToTweetCat();
-            } else {
-                logTPR(`[TC] 返回按钮 → history.back()，剩余计数: ${c}`);
-                window.history.back();
-            }
+            navigateToTweetCat();
+            // window.history.back();
         },
         true
     );
-
-    logTPR(`[TC] hijackBackButton 初始化，计数 = 1`);
 }
 
 

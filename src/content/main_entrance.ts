@@ -61,8 +61,6 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
                 appendFilterOnKolProfileHome(linkInfo.username).then();
             } else if (linkInfo.kind === "tweet") {
                 appendFilterOnTweetPage(linkInfo.username).then();
-            } else {
-                setTweetCatFlag(false);
             }
             checkFilterStatusAfterUrlChanged();
             sendResponse({success: true});

@@ -7,7 +7,7 @@ export const DBG = {
     PAGER: false,
     TWEET_MANAGER: false,
     NODE_POOL: false,
-    ROUTE: false,
+    ROUTE: true,
     GUARD: false,
     Database: false,
     TweetCache: false,
@@ -18,7 +18,7 @@ export const DBG = {
     TweetRenderCard: false,
     TweetRenderContent: true,
     TweetRenderQuote: false,
-    TwitterPageRender: false,
+    TwitterPageRender: true,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */

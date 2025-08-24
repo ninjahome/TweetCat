@@ -14,7 +14,7 @@ export function setTweetCatFlag(flag: boolean) {
     __tc_fromTweetCat = flag;
 }
 
-export function getTweetCatFlag():boolean{
+export function getTweetCatFlag(): boolean {
     return __tc_fromTweetCat;
 }
 
@@ -34,16 +34,10 @@ function injectHistoryPatchIntoPage() {
 }
 
 function pushOrReplace(path: string) {
-    // 是否已经为 TweetCat 写过一次历史（放到 history.state 里做标记，避免 TDZ/循环依赖）
     const hasEntry = !!(history.state && (history.state as any).__tcEntered);
-
-    // 首次进入且会话历史只有 1 条时，用 replace；否则 push
     const method: 'pushState' | 'replaceState' =
         (!hasEntry && history.length <= 1) ? 'replaceState' : 'pushState';
-
-    // 合并现有 state，写入我们的标记
-    const nextState = { ...(history.state || {}), __tcEntered: true };
-
+    const nextState = {...(history.state || {}), __tcEntered: true};
     history[method](nextState, '', path);
     logRoute(`${method} →`, path);
 }
@@ -53,6 +47,7 @@ export function routeToTweetCat() {
     pushOrReplace(FULL);          // ← 统一入口
     handleLocationChange();
 }
+
 export function navigateToTweetCat(): void {
     if (location.hash === HASH) return; // 已在 TweetCat，不再 push/replace
     pushOrReplace(FULL);          // ← 统一入口
@@ -60,36 +55,12 @@ export function navigateToTweetCat(): void {
     handleLocationChange();
 }
 
-/**
- * 进入 TweetCat 视图，确保：
- * 1. history 中压入 /i/grok#/tweetCatTimeLine
- * 2. Twitter Router 收到 popstate → 更新侧栏选中态
- * 3. 本扩展自己的 Guard 立即同步一次 handleLocationChange()
- */
-// export function navigateToTweetCat(): void {
-//     // ① 更新 URL
-//     history.pushState({}, '', FULL);
-//     logRoute('pushState →', FULL);
-//
-//     // ② 主动给 Twitter 的 SPA Router 一个 popstate 信号
-//     window.dispatchEvent(new PopStateEvent('popstate'));   // ★ 关键
-//
-//     // ③ 我们自己的挂载 / 去抖
-//     handleLocationChange();
-// }
-
-// /* ---------- 主动切换到 TweetCat 路由 ----------------------------- */
-// export function routeToTweetCat() {
-//     history.pushState({}, '', FULL);
-//     logRoute('pushState →', FULL);
-//     handleLocationChange();
-// }
-
 /* ---------- 退出 / 清理（占位，后续阶段实现具体逻辑） ------------- */
 export function unroute() {
     logRoute('unroute – cleanup placeholder');
     history.replaceState({}, '', '/');   // 首次/单栈场景避免告警
 }
+
 /* ---------- document_start 时注册全局 Guard -------------------- */
 export function initRouteGuard() {
     if (inited) return;           // ← 防重复
