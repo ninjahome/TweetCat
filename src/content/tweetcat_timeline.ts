@@ -37,7 +37,6 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     const originalArea = main.firstChild as HTMLElement;
 
     const homeBtn = menuList.children[0];
-    console.log("------------>>>>>>>home btn:", homeBtn);
     homeBtn.addEventListener('click', () => {
         setTweetCatFlag(false);
     })
