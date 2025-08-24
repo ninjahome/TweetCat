@@ -37,14 +37,8 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
         safeSetVideoSource(video, bestVariant.url, bestVariant.content_type);
     }
 
-    const dict = extractMp4DownloadInfo(m.video_info?.variants ?? []);
-    if (Object.keys(dict).length > 0) {
-        wrapper.dataset.mp4Dict = JSON.stringify(dict);
-        logTVR('[download-dataset]', wrapper.dataset.mp4Dict);
-    } else {
-        delete wrapper.dataset.mp4Dict;
-        logTVR('[download-dataset] no mp4 variants found.');
-    }
+    const array = extractMp4UrlList(m.video_info?.variants ?? []);
+    wrapper.dataset.mp4List = JSON.stringify(array);
 
     if (badge && m.video_info?.duration_millis) {
         const totalSeconds = Math.floor(m.video_info.duration_millis / 1000);
@@ -124,15 +118,11 @@ function safeSetVideoSource(video: HTMLVideoElement, url: string, type: string) 
     video.load();
 }
 
-function extractMp4DownloadInfo(
-    variants: { bitrate?: number; content_type: string; url: string; }[]
-): Record<string, string> {
-    const dict: Record<string, string> = {};
-    variants
-        .filter(v => v.content_type === 'video/mp4' && v.bitrate)
-        .sort((a, b) => (a.bitrate ?? 0) - (b.bitrate ?? 0))
-        .forEach(v => {
-            dict[String(v.bitrate!)] = v.url;
-        });
-    return dict;
+export function extractMp4UrlList(
+    variants: { bitrate?: number; content_type: string; url: string }[]
+): string[] {
+    return variants
+        .filter(v => v.content_type === "video/mp4" && typeof v.bitrate === "number")
+        .sort((a, b) => (a.bitrate! - b.bitrate!)) // 低 → 高
+        .map(v => v.url);
 }

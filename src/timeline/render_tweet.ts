@@ -60,9 +60,10 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     }
 
     const videoWrapper = mediaArea.querySelector(".video-wrapper") as HTMLElement;
-    const mp4Dict: Record<string, string> = JSON.parse(videoWrapper?.dataset.mp4Dict ?? '{}');
+    const mp4List: string[] = JSON.parse(videoWrapper?.dataset.mp4List ?? '[]');
     const tweetCatActionArea = article.querySelector(".tweet-actions") as HTMLElement;
-    updateTweetBottomButtons(tweetCatActionArea, mp4Dict);
+
+    updateTweetBottomButtons(tweetCatActionArea, target, mp4List);
 
     attachBodyPermalink(article, target.author, target.rest_id);
 

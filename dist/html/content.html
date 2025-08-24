@@ -149,6 +149,23 @@
                     </span>
             </div>
 
+            <div class="download-progress-item" style="display: none" data-filename="">
+                <div class="dpi-header">
+                    <span class="dpi-name"></span>
+                    <button class="dpi-cancel" type="button" title="取消">取消</button>
+                </div>
+
+                <div class="dpi-bar">
+                    <progress class="dpi-progress" max="100"></progress>
+                    <span class="dpi-percent">0%</span>
+                </div>
+
+                <div class="dpi-meta">
+                    <span class="dpi-size">0 / 0</span>
+                </div>
+            </div>
+            <div class="download-progress-list" aria-live="polite">
+            </div>
         </div>
     </div>
 </div>
@@ -242,19 +259,23 @@
                     <div class="tweet-quote-area"></div>
                 </div>
                 <div class="tweet-actions" role="group">
-                    <button class="action-button reward" type="button" title="打赏">
-                        <span class="count">打赏(USDT)</span>
+                    <button class="action-button reward" style="display: none" type="button" title="打赏">
+                        <span class="reward-txt">打赏(USDT)</span>
                     </button>
+
+                    <button class="action-button bookMarked" type="button" title="收藏">
+                        <span class="bookmark-txt">收藏</span>
+                    </button>
+
                     <div class="action-button download">
                         <button class="downloadVideo" type="button" title="">
-                            <span class="count">下载视频</span>
+                            <span class="download-txt">下载视频</span>
                         </button>
-                        <select class="download-option">
-                            <option value="0">品质低</option>
-                            <option value="1">品质中</option>
-                            <option value="2">品质高</option>
+                        <option class="download-option" style="display: none">品质低.360P</option>
+                        <select class="download-selection">
                         </select>
                     </div>
+
                 </div>
             </div>
         </div>
