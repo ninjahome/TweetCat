@@ -68,8 +68,8 @@ function wireDownloadOnce(
         const p = res ? resolutionToNearestP(res.w, res.h) : null;
         const filename =
             res && p
-                ? `tweet-video-${p}-${res.w}x${res.h}-${brKey}.mp4`
-                : `tweet-video-${brKey}.mp4`;
+                ? `tweet-cat-video-${p}-${res.w}x${res.h}-${brKey}.mp4`
+                : `tweet-cat-video-${brKey}.mp4`;
 
         logTCR("[wireDownloadOnce] downloading", {bitrate: brKey, url, filename});
         await downloadMp4(url, filename);
