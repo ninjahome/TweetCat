@@ -1,6 +1,6 @@
 import {TweetMediaEntity} from "./tweet_entry";
 import Hls from 'hls.js';
-import {DBG, logTVR} from "../common/debug_flags";
+import {logTVR} from "../common/debug_flags";
 
 function updateDurationBadge(video: HTMLVideoElement, badge: HTMLElement, totalSeconds: number) {
     let lastShown = -1;
