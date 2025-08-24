@@ -1,5 +1,6 @@
 import {TweetContent} from "./tweet_entry";
 import {formatCount} from "../common/utils";
+import {logTCR} from "../common/debug_flags";
 
 export function updateTweetBottomButtons(
     container: HTMLElement,
@@ -8,7 +9,7 @@ export function updateTweetBottomButtons(
     viewsCount: number | undefined,
     mp4Dict: Record<string, string>
 ): void {
-    console.log("----------------------->>>>", mp4Dict);
+    logTCR("----------------------->>>>mp4 diction:", mp4Dict);
     const reply = container.querySelector('.replyNo .count');
     const retweet = container.querySelector('.retweetNo .count');
     const like = container.querySelector('.likeNo .count');
@@ -77,12 +78,12 @@ function wireReplyDownloadOnce(replyBtn: HTMLElement | null, mp4Dict: Record<str
     replyBtn.addEventListener('click', async () => {
         const picked = pickMp4Url(mp4Dict);
         if (!picked) {
-            console.warn('[wireReplyDownloadOnce] mp4Dict 为空，跳过下载');
+            logTCR('[wireReplyDownloadOnce] mp4Dict 为空，跳过下载');
             return;
         }
         const {url, bitrate} = picked;
         const filename = `tweet-video-${bitrate}.mp4`;
-        console.info('[wireReplyDownloadOnce] downloading', {bitrate, url});
+        logTCR('[wireReplyDownloadOnce] downloading', {bitrate, url});
         await downloadMp4(url, filename);
     });
 

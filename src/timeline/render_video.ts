@@ -40,10 +40,10 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
     const dict = extractMp4DownloadInfo(m.video_info?.variants ?? []);
     if (Object.keys(dict).length > 0) {
         wrapper.dataset.mp4Dict = JSON.stringify(dict);
-        console.info('[download-dataset]', wrapper.dataset.mp4Dict);
+        logTVR('[download-dataset]', wrapper.dataset.mp4Dict);
     } else {
         delete wrapper.dataset.mp4Dict;
-        console.warn('[download-dataset] no mp4 variants found.');
+        logTVR('[download-dataset] no mp4 variants found.');
     }
 
     if (badge && m.video_info?.duration_millis) {

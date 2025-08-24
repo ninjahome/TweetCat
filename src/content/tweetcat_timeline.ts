@@ -3,7 +3,7 @@ import {TweetManager} from "../timeline/div_cell_manager";
 import {
     handleGrokMenuClick,
     isInTweetCatRoute,
-    navigateToTweetCat,
+    navigateToTweetCat, setTweetCatFlag,
     swapSvgToNormal,
     swapSvgToSelected
 } from "../timeline/route_helper";
@@ -19,7 +19,7 @@ function bindTweetCatMenu(menuItem: HTMLElement) {
         ev.preventDefault();
         if (isInTweetCatRoute()) {
             logGuard('reenter tweetCat menu');
-            manager?.scrollToTop();
+            manager?.scrollToTop();//TODO::MayBe bug
             return;
         }
         logGuard('menu click → routeToTweetCat');
@@ -35,6 +35,12 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     area.style.display = 'none';
 
     const originalArea = main.firstChild as HTMLElement;
+
+    const homeBtn = menuList.children[0];
+    console.log("------------>>>>>>>home btn:", homeBtn);
+    homeBtn.addEventListener('click', () => {
+        setTweetCatFlag(false);
+    })
 
     bindTweetCatMenu(menuItem);
     menuList.insertBefore(menuItem, menuList.children[1]);
