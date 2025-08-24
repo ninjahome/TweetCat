@@ -7,7 +7,7 @@ export const DBG = {
     PAGER: false,
     TWEET_MANAGER: false,
     NODE_POOL: false,
-    ROUTE: true,
+    ROUTE: false,
     GUARD: false,
     Database: false,
     TweetCache: false,
@@ -18,7 +18,8 @@ export const DBG = {
     TweetRenderCard: false,
     TweetRenderContent: false,
     TweetRenderQuote: false,
-    TwitterPageRender: true,
+    TwitterPageRender: false,
+    TwitterVideoRender: true,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -46,3 +47,4 @@ export const logRC = makeLogger('TweetRenderCard', 'TweetRenderCard');
 export const logRCT = makeLogger('TweetRenderContent', 'TweetRenderContent');
 export const logRQ = makeLogger('TweetRenderQuote', 'TweetRenderQuote');
 export const logTPR = makeLogger('TwitterPageRender', 'TwitterPageRender');
+export const logTVR = makeLogger('TwitterVideoRender', 'TwitterVideoRender');

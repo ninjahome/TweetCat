@@ -1,10 +1,11 @@
 import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity, TweetObj} from "./tweet_entry";
-import {formatCount, formatTweetTime, isXArticle} from "../common/utils";
+import {formatTweetTime, isXArticle} from "../common/utils";
 import {videoRender} from "./render_video";
 import {updateTweetContentArea} from "./render_content";
 import {updateTweetQuoteArea} from "./render_quoted";
 import {updateTweetCardArea} from "./render_card";
 import {bindTwitterInternalLink} from "./render_common";
+import {updateTweetBottomButtons} from "./render_action";
 
 export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;
@@ -39,8 +40,8 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
         {hiddenShortUrls: extraHiddenShortUrls, hasMore: target.hasNoteExpandable}
     );
 
-    updateTweetMediaArea(article.querySelector(".tweet-media-area") as HTMLElement,
-        target.tweetContent, tpl);
+    const mediaArea = article.querySelector(".tweet-media-area") as HTMLElement;
+    updateTweetMediaArea(mediaArea, target.tweetContent, tpl);
 
     wireMediaAnchors(article, target.author, target.rest_id, target.tweetContent?.extended_entities?.media ?? []);
 
@@ -58,8 +59,10 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
         }
     }
 
-    updateTweetBottomButtons(article.querySelector(".tweet-actions") as HTMLElement,
-        target.tweetContent, target.author.screenName, target.views_count);
+    const videoWrapper = mediaArea.querySelector(".video-wrapper") as HTMLElement;
+    const mp4Dict: Record<string, string> = JSON.parse(videoWrapper?.dataset.mp4Dict ?? '{}');
+    const tweetCatActionArea = article.querySelector(".tweet-actions") as HTMLElement;
+    updateTweetBottomButtons(tweetCatActionArea, target.tweetContent, target.author.screenName, target.views_count, mp4Dict);
 
     attachBodyPermalink(article, target.author, target.rest_id);
 
@@ -300,7 +303,6 @@ function replacePhotoItem(item: HTMLElement, media: TweetMediaEntity) {
     const link = item.querySelector('a') as HTMLAnchorElement;
     if (link && media.expanded_url) {
         link.href = media.expanded_url;
-        // bindTwitterInternalLink(link, media.expanded_url)
     }
 }
 
@@ -313,28 +315,6 @@ function renderMultiPhotoGroup(container: HTMLElement,
         item.removeAttribute('id');
         replacePhotoItem(item, medias[i]);
         container.appendChild(item);
-    }
-}
-
-function updateTweetBottomButtons(
-    container: HTMLElement,
-    tweetContent: TweetContent,
-    screenName: string,
-    viewsCount: number | undefined,
-): void {
-    const reply = container.querySelector('.replyNo .count');
-    const retweet = container.querySelector('.retweetNo .count');
-    const like = container.querySelector('.likeNo .count');
-    const views = container.querySelector('.viewNo .count');
-    const viewsLink = container.querySelector('.viewLink') as HTMLAnchorElement | null;
-
-    reply && (reply.textContent = formatCount(tweetContent.reply_count).toLocaleString() ?? '');
-    retweet && (retweet.textContent = formatCount(tweetContent.retweet_count + tweetContent.quote_count).toLocaleString() ?? '');
-    like && (like.textContent = formatCount(tweetContent.favorite_count).toLocaleString() ?? '');
-    views && (views.textContent = formatCount(viewsCount ?? 0).toLocaleString() ?? '');
-
-    if (viewsLink) {
-        viewsLink.href = `/${screenName}/status/${tweetContent.id_str}/analytics`;
     }
 }
 
@@ -407,3 +387,4 @@ function attachBodyPermalink(article: Element, author: TweetAuthor, tweetId: str
         }
     });
 }
+
