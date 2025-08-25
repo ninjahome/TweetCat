@@ -217,6 +217,7 @@ export type ParsedTwitterLink =
     | { kind: "tweet"; url: URL; tweetId: string; username?: string }
     | { kind: "profile"; url: URL; username: string }
     | { kind: "home"; url: URL }
+    | { kind: "explore"; url: URL }
     | { kind: "other"; url: URL };
 
 const RESERVED = new Set([
@@ -249,8 +250,9 @@ export function parseTwitterPath(href?: string | URL): ParsedTwitterLink {
     const parts = path.split("/").filter(Boolean); // 去空段
 
     // —— [NEW] 判断 home —— //
-    if (parts.length === 1 && parts[0].toLowerCase() === "home") {
-        return { kind: "home", url: u };
+    if (parts.length === 1) {
+        if (parts[0].toLowerCase() === "home") return {kind: "home", url: u};
+        if (parts[0].toLowerCase() === "explore") return {kind: "explore", url: u};
     }
 
     // —— 优先判断“推文链接” —— //

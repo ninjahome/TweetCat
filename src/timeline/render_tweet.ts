@@ -1,7 +1,7 @@
 import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity, TweetObj} from "./tweet_entry";
 import {formatTweetTime, isXArticle} from "../common/utils";
 import {videoRender} from "./render_video";
-import {updateTweetContentArea} from "./render_content";
+import {updateTweetContentArea, wireContentInternalLinks} from "./render_content";
 import {updateTweetQuoteArea} from "./render_quoted";
 import {updateTweetCardArea} from "./render_card";
 import {updateTweetBottomButtons} from "./render_action";
@@ -34,12 +34,14 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
 
     // console.log("tweet contents", JSON.stringify(target.tweetContent));
     const extraHiddenShortUrls = collectExtraHiddenShortUrls(target.card);
-
+    const contentContainer = article.querySelector(".tweet-content-container") as HTMLElement
     updateTweetContentArea(
-        article.querySelector(".tweet-content-container") as HTMLElement,
+        contentContainer,
         target.tweetContent,
         {hiddenShortUrls: extraHiddenShortUrls, hasMore: target.hasNoteExpandable}
     );
+
+    wireContentInternalLinks(contentContainer);
 
     const mediaArea = article.querySelector(".tweet-media-area") as HTMLElement;
     updateTweetMediaArea(mediaArea, target.tweetContent, tpl);

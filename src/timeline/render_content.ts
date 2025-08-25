@@ -1,5 +1,6 @@
 import {TweetContent, TweetEntity} from "./tweet_entry";
 import {logRCT} from "../common/debug_flags";
+import {bindTwitterInternalLink} from "./render_common";
 
 type Piece = { start: number; end: number; html: string };
 
@@ -63,6 +64,8 @@ export function updateTweetContentArea(
                 true   // ★ 强制使用完整文本
             );
             moreAnchor.hidden = true;
+
+            wireContentInternalLinks(container);
         }, {once: true});
     }
 }
@@ -263,4 +266,22 @@ function collectHiddenShortUrlPiecesBySearch(
         }
     }
     return pieces;
+}
+
+
+// somewhere after updateTweetContentArea() 完成本次 innerHTML 填充之后
+export function wireContentInternalLinks(container: HTMLElement) {
+    const anchors = container.querySelectorAll<HTMLAnchorElement>(
+        '.hashtag, .mention, a[href^="/hashtag/"], a[href^="/"][data-internal]' // 可按需扩展
+    );
+    anchors.forEach(a => {
+        const path = a.getAttribute('href') || '';
+        // 只处理以 “/” 开头的站内路径
+        if (path.startsWith('/')) {
+            // @ts-ignore 已存在于工程
+            if (typeof bindTwitterInternalLink === 'function') {
+                bindTwitterInternalLink(a, path);
+            }
+        }
+    });
 }

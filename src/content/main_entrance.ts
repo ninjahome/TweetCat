@@ -59,8 +59,8 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             logTPR("------>>> link info:", linkInfo)
             if (linkInfo.kind === "profile") {
                 appendFilterOnKolProfileHome(linkInfo.username).then();
-            }else if(linkInfo.kind === "home"){
-                if(getTweetCatFlag()){
+            } else if (linkInfo.kind === "home" || linkInfo.kind === "explore") {
+                if (getTweetCatFlag()) {
                     navigateToTweetCat();
                 }
             }
