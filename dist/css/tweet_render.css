@@ -315,8 +315,23 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    font-size: 15px;
+    line-height: 20px;
+    word-wrap:break-word;
+    white-space:nowrap;
+    text-align:inherit;
 }
+.tcq-qh-meta .tcq-qh-name{
+    font-weight: 700;
+}
+.tcq-qh-meta .tcq-qh-handle,
+.tcq-qh-meta .tcq-qh-handle,
+.tcq-qh-meta .tcq-qh-sep,
+.tcq-qh-time {
+    font-weight: 400;
+    color: rgb(83, 100, 113);
 
+}
 .tcq-qh-sep {
     opacity: .6;
 }
@@ -429,6 +444,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     color: rgb(29, 155, 240);
     background: none; /* 去掉渐变背景 */
     text-decoration: none;
+    margin-left: 12px;
 }
 
 .tcq-qcontent-more:hover {
@@ -647,12 +663,28 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 .tcq-quoted-block-row {
     flex-direction: row-reverse;
-    justify-content: flex-end;
-    padding: 8px 12px 12px 12px;
+    justify-content: flex-start;
 }
 
+.tcq-quoted-block-row .tcq-quoted-content {
+    flex: 8 1 0%;
+    margin: 8px 12px 12px 0 !important;
+}
+.tcq-quoted-block-row .tcq-quoted-media{
+    flex: 2 1 0%;
+    margin: 8px 0 12px 12px !important;
+    aspect-ratio: 1 / 1;
+    height: 100%;
+}
 .tcq-quoted-block-gap {
     margin-top: 4px;
+    flex-direction: column;
+}
+.tcq-quoted-block-gap .tcq-quoted-media {
+    overflow: hidden;
+    gap: 2px;
+    border-radius: 0 0 16px 16px;
+    aspect-ratio: 16 / 9;
 }
 .tcq-quoted-root.tcq--thumb-row [data-tcq-slot="header"]  { grid-column: 1 / -1; grid-row: 1; }
 .tcq-quoted-root.tcq--thumb-row [data-tcq-slot="media"]   { grid-column: 1;      grid-row: 2; margin-top: 0; }
@@ -665,4 +697,53 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tcq-quoted-root .tcq-qvideo-host {
     border-radius: 12px;
     overflow: hidden;
+}
+
+
+/* 统一关闭占位 padding，改为高度填充 */
+.tcq-quoted-block-gap .tcq-quoted-media .tcq-qphoto { display: block; height: 100%; }
+.tcq-quoted-block-gap .tcq-quoted-media .tcq-qmedia-aspect {
+    padding-top: 0 !important; height: 100%; display: block;
+}
+.tcq-quoted-block-gap .tcq-quoted-media img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+
+/* 1 图：明确单格并让唯一项占满整块 */
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-1 {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-1 > .tcq-tpl {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    height: 100%;
+}
+
+/* 2 图：左右各半 */
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 1fr;
+    gap: 2px;
+}
+
+/* 3 图：左 1 张跨两行，右侧上下各一张 */
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+}
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(1) {
+    grid-column: 1; grid-row: 1 / span 2; height: 100%;
+}
+
+/* 4 图：2×2 宫格 */
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
 }
