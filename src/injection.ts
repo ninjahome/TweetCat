@@ -8,9 +8,11 @@ export function postToContent(action: string, data?: unknown): void {
     window.postMessage(msg, '*'); // structured clone，安全传对象
 }
 
-function initInjection() {
+
+function initInjection(): void {
     initPagePatch();
     initUserTweetsCapture();
+    // installTxidGenAndDump();
 }
 
 initInjection();

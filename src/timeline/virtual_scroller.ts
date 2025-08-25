@@ -3,6 +3,7 @@ import {logVS} from "../common/debug_flags";
 
 export class VirtualScroller {
     private isRendering = false;
+    private isPause = false;
     private lastTop = 0;
     private lastDetectedTop = 0;
 
@@ -19,10 +20,7 @@ export class VirtualScroller {
             window.scrollTo(0, pos);
             this.lastTop = pos;
             this.isRendering = false;
-            logVS(`[scrollToTop] start to scroll to ${pos} current scrollY=${window.scrollY}`);
-            // deferByFrames(() => {
-            // }, 2);
-            logVS(`[mountAtStablePosition] rollback scheduled to ${res.targetTop}`);
+            logVS(`[scrollToTop] start to scroll to ${pos} current scrollY=${window.scrollY} target top=${res.targetTop}`);
         } else {
             this.lastTop = window.scrollY || document.documentElement.scrollTop;
             this.isRendering = false;
@@ -43,9 +41,29 @@ export class VirtualScroller {
         this.lastTop = 0;
     }
 
+    pause(): void {
+        if (this.isPause) return;
+
+        this.isPause = true;
+        logVS("------->>> lastTop when pause:", this.lastTop, " window y:", window.scrollY)
+    }
+
+    resume(): void {
+        if (!this.isPause) return;
+
+        logVS("------->>>before lastTop when resume:", this.lastTop, " window y:", window.scrollY)
+        requestAnimationFrame(() => {
+            window.scrollTo(0, this.lastTop);
+            requestAnimationFrame(() => {
+                logVS("------->>>after lastTop when resume:", this.lastTop, " window y:", window.scrollY)
+                this.isPause = false;
+            })
+        })
+    }
+
     private onScroll(): void {
         // logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
-        if (this.isRendering) {
+        if (this.isRendering || this.isPause) {
             return;
         }
 
@@ -75,9 +93,11 @@ export class VirtualScroller {
 
         this.isRendering = false;
         this.lastTop = 0;
+        this.isPause = false;
+
     }
 
-    private scrollStatusCheck(): { needUpdate: boolean; curTop: number} {
+    private scrollStatusCheck(): { needUpdate: boolean; curTop: number } {
         const curTop = window.scrollY || document.documentElement.scrollTop;
         const delta = Math.abs(curTop - this.lastTop) //Math.max(...this.scrollPositions.map(t => ));
         const threshold = TweetManager.EST_HEIGHT;

@@ -64,7 +64,8 @@ function filterTweets(nodes: NodeList) {
 
         if (__blockAdStatus && isAdTweetNode(divNode)) {
             // console.log("------->>> need to block Ads");
-            console.log("------>>> found ads and block it", divNode.dataset.testid);
+            //TODO:: count ads number of blocked by tweetCat
+            // console.log("------>>> found ads and block it", divNode.dataset.testid);
             divNode.style.display = "none";
             return;
         }

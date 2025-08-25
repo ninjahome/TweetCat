@@ -1,5 +1,6 @@
 import browser from "webextension-polyfill";
-import {logGuard, logRoute} from "../common/debug_flags";
+import {logRoute} from "../common/debug_flags";
+import {MsgType} from "../common/consts";
 
 let inited = false;
 let currentInTC: boolean | null = null;      // 记录上一次状态
@@ -9,6 +10,7 @@ const FULL = `${PATH}${HASH}`;
 initRouteGuard();
 
 let __tc_fromTweetCat = false;
+
 export function setTweetCatFlag(flag: boolean) {
     logRoute('set tweet  flag to →', flag);
     __tc_fromTweetCat = flag;
@@ -69,11 +71,11 @@ export function initRouteGuard() {
 
     injectHistoryPatchIntoPage();
 
-    logGuard('--------------->>>>✅ router init success');
+    logRoute('--------------->>>>✅ router init success');
 
     // ⬇️ 刷新 & 首次直链兜底
     if (location.hash.startsWith(HASH) && location.pathname !== PATH) {
-        logGuard('first-load hash detected, force routing');
+        logRoute('first-load hash detected, force routing');
         routeToTweetCat();
     }
 
@@ -89,18 +91,18 @@ export function handleLocationChange() {
     const inTC = isInTweetCatRoute();
     if (inTC === currentInTC) return;
     currentInTC = inTC;
-    window.dispatchEvent(new CustomEvent(inTC ? 'tc-mount' : 'tc-unmount'));
+    window.dispatchEvent(new CustomEvent(inTC ? MsgType.RouterTCMount : MsgType.RouterTcUnmount));
 }
 
 export function handleGrokMenuClick(ev: MouseEvent): void {
     if (!location.hash.startsWith(HASH)) return;  // 不在 TweetCat → 让 Twitter 处理
 
     ev.preventDefault();                          // 阻止 Twitter 默认逻辑
-    logGuard('grok menu click → exitTweetCat');
+    logRoute('grok menu click → exitTweetCat');
     history.replaceState({}, '', PATH);
     logRoute('replaceState →', PATH);
     window.dispatchEvent(new PopStateEvent('popstate'));
-    handleLocationChange();                              // 清除 hash + 派发 tc-unmount
+    handleLocationChange();
 }
 
 

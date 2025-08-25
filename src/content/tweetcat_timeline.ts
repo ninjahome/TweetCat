@@ -9,17 +9,19 @@ import {
 } from "../timeline/route_helper";
 import {logGuard} from "../common/debug_flags";
 
-import {setSelectedCategory} from "./tweetcat_web3_area";
+import {resetNewestTweet, setSelectedCategory} from "./tweetcat_web3_area";
 import {getSessCatID} from "../timeline/tweet_pager";
+import {MsgType} from "../common/consts";
 
 let manager: TweetManager | null = null;
 
-function bindTweetCatMenu(menuItem: HTMLElement) {
+function bindTweetCatMenu(menuItem: HTMLElement, area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplateElement) {
     menuItem.addEventListener("click", async (ev) => {
         ev.preventDefault();
         if (isInTweetCatRoute()) {
             logGuard('reenter tweetCat menu');
-            manager?.scrollToTop();//TODO::MayBe bug
+            tcMount(area, originalArea, tpl, true);
+            resetNewestTweet();
             return;
         }
         logGuard('menu click → routeToTweetCat');
@@ -41,29 +43,33 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
         setTweetCatFlag(false);
     })
 
-    bindTweetCatMenu(menuItem);
+    bindTweetCatMenu(menuItem, area, originalArea, tpl);
     menuList.insertBefore(menuItem, menuList.children[1]);
     main.insertBefore(area, originalArea);
 
     /* ---------- 生命周期 ----------------------------- */
-    window.addEventListener('tc-mount', () => {
+    window.addEventListener(MsgType.RouterTCMount, () => {
         tcMount(area, originalArea, tpl);
         menuItem.classList.add("tc-selected")
     });
 
-    window.addEventListener('tc-unmount', () => {
+    window.addEventListener(MsgType.RouterTCBeforeNav, () => {
+        if (!isInTweetCatRoute()) return;
+        manager?.scroller?.pause?.();
+    });
+
+    window.addEventListener(MsgType.RouterTcUnmount, () => {
         menuItem.classList.remove("tc-selected")
         tcUnmount(area, originalArea);
     });
 
-    /* ---------- 首屏直链补发 --------------------------- */
     const alreadyInTweetCat =
         location.pathname === '/i/grok' &&
         location.hash.startsWith('#/tweetCatTimeLine');
 
     if (alreadyInTweetCat) {
         logGuard('setup complete – dispatch synthetic tc-mount');
-        window.dispatchEvent(new CustomEvent('tc-mount'));
+        tcMount(area, originalArea, tpl, true);
     }
 
     const grokLink = document.querySelector('a[href="/i/grok"]') as HTMLAnchorElement | null;
@@ -75,19 +81,34 @@ function stopWatchingGrok() {
     grokMo = null;
 }
 
-function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplateElement) {
-    if (mounted) return;           // 已挂载则直接返回
+
+function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplateElement, force = false) {
+    if (mounted && !force) return;   // 已挂载且非强制 → 直接返回
     mounted = true;
 
-    logGuard('<< tc-mount >>');
-    ensureGrokNormalIcon();
     hideOriginalTweetArea(originalArea);
+    showTweetCatArea(area);
+
+    if (force && manager) {
+        manager.dispose?.();
+        manager = null;
+        console.log('[TC.KEEPALIVE] force remount – disposed old manager');
+    }
+
+    if (manager) {
+        console.log('[TC.KEEPALIVE] show (reuse instance)');
+        manager.scroller?.resume();
+        return;
+    }
+
+    console.log('<< tc-mount >>');
+    ensureGrokNormalIcon();
     deferByFrames(demoteGrokFont, 2);
 
-    area.style.display = 'block';
     const timelineEl = area.querySelector('.tweetTimeline') as HTMLElement;
-
     manager = new TweetManager(timelineEl, tpl);
+    console.log('[TC.KEEPALIVE] first mount (new instance)');
+
     setSelectedCategory(getSessCatID())
 }
 
@@ -98,6 +119,9 @@ export async function switchCategory(catID: number) {
 function tcUnmount(area: HTMLElement, originalArea: HTMLElement) {
     if (!mounted) return;          // 未挂载则忽略
     mounted = false;
+
+    manager?.scroller?.pause?.();
+    hideTweetCatArea(area);
 
     logGuard('<< tc-unmount >>');
     stopWatchingGrok();
@@ -114,10 +138,7 @@ function tcUnmount(area: HTMLElement, originalArea: HTMLElement) {
         }
     }, 2)
 
-    area.style.display = 'none';
     showOriginalTweetArea(originalArea);
-    manager?.dispose();
-    manager = null;
 }
 
 
@@ -147,6 +168,31 @@ export function showOriginalTweetArea(el: HTMLElement) {
         overflow: "",
         pointerEvents: "",
         visibility: "",
+    } as CSSStyleDeclaration);
+}
+
+
+// 新增：隐藏/显示 tweetCat 区域（不会把高度变成 0）
+function hideTweetCatArea(el: HTMLElement) {
+    Object.assign(el.style, {
+        position: 'fixed',
+        top: '0',
+        left: '-10000px',  // 挪出视口
+        width: '100%',     // 保持原宽度，避免布局突变
+        visibility: 'hidden',
+        pointerEvents: 'none',
+    } as CSSStyleDeclaration);
+}
+
+function showTweetCatArea(el: HTMLElement) {
+    if (el.style.display !== 'block') el.style.display = 'block';
+    Object.assign(el.style, {
+        position: '',
+        top: '',
+        left: '',
+        width: '',
+        visibility: '',
+        pointerEvents: '',
     } as CSSStyleDeclaration);
 }
 

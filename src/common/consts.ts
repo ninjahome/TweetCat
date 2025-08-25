@@ -57,7 +57,11 @@ export enum MsgType {
     IJLocationChange = 'IJLocationChange',
 
     TokenUsedByUser = 'TokenUsedByUser',
-    TokenFreeze = 'TokenFreeze'
+    TokenFreeze = 'TokenFreeze',
+
+    RouterTCMount = 'RouterTCMount',
+    RouterTcUnmount = 'RouterTcUnmount',
+    RouterTCBeforeNav = 'RouterTCBeforeNav',
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

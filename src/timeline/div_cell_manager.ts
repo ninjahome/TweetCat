@@ -29,7 +29,7 @@ export class TweetManager {
     private resizeLogger: TweetResizeObserverManager;
 
     private isRendering = false;
-    private scroller: VirtualScroller | null = null;
+    scroller: VirtualScroller | null = null;
     private cells: TweetCatCell[] = [];
     public listHeight: number = 0;
     private maxCssHeight: number = 0;

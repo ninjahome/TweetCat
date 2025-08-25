@@ -11,6 +11,13 @@ function wrap(fn: 'pushState' | 'replaceState') {
     logRoute('[TC-Patch] ⚠️ re-hook', fn);
 
     function wrapped(this: History, ...args: any[]) {
+
+        // ① 在真正导航之前，同步广播“即将导航”
+        try {
+            // 用 DOM 事件而不是 postMessage：同步、同一调用栈可达
+            window.dispatchEvent(new CustomEvent(MsgType.RouterTCBeforeNav));
+        } catch {}
+
         const ret = raw.apply(this, args);
         postToContent(MsgType.IJLocationChange);
         return ret;
