@@ -423,6 +423,8 @@ export function updateTweetQuoteArea(
     // 克隆 #tcqTplQuotedTweet 得到 root 后：
     root.classList.add('tcq-v2', condensed ? 'tcq--b2' : 'tcq--b1');
 
+    const quotedBlock = root.querySelector(".tcq-quoted-block") as HTMLElement
+    quotedBlock.classList.add(condensed ? 'tcq-quoted-block-row' : 'tcq-quoted-block-gap');
 
     fillQuotedHeader(root, quoted, tpl);   // 阶段 1
     fillQuotedContent(root, quoted, tpl, condensed);
