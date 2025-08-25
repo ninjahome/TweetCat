@@ -92,22 +92,22 @@ function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplate
     if (force && manager) {
         manager.dispose?.();
         manager = null;
-        console.log('[TC.KEEPALIVE] force remount – disposed old manager');
+        logGuard('[TC.KEEPALIVE] force remount – disposed old manager');
     }
 
     if (manager) {
-        console.log('[TC.KEEPALIVE] show (reuse instance)');
+        logGuard('[TC.KEEPALIVE] show (reuse instance)');
         manager.scroller?.resume();
         return;
     }
 
-    console.log('<< tc-mount >>');
+    logGuard('<< tc-mount >>');
     ensureGrokNormalIcon();
     deferByFrames(demoteGrokFont, 2);
 
     const timelineEl = area.querySelector('.tweetTimeline') as HTMLElement;
     manager = new TweetManager(timelineEl, tpl);
-    console.log('[TC.KEEPALIVE] first mount (new instance)');
+    logGuard('[TC.KEEPALIVE] first mount (new instance)');
 
     setSelectedCategory(getSessCatID())
 }
