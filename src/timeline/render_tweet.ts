@@ -4,8 +4,9 @@ import {videoRender} from "./render_video";
 import {updateTweetContentArea} from "./render_content";
 import {updateTweetQuoteArea} from "./render_quoted";
 import {updateTweetCardArea} from "./render_card";
-import {bindTwitterInternalLink} from "./render_common";
 import {updateTweetBottomButtons} from "./render_action";
+import {bindTwitterInternalLink, ensurePhotoLightbox} from './render_common';
+
 
 export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement): HTMLElement {
     const tweetCellDiv = tpl.content.getElementById("tweeCatCellDiv")!.cloneNode(true) as HTMLDivElement;
@@ -43,7 +44,7 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     const mediaArea = article.querySelector(".tweet-media-area") as HTMLElement;
     updateTweetMediaArea(mediaArea, target.tweetContent, tpl);
 
-    wireMediaAnchors(article, target.author, target.rest_id, target.tweetContent?.extended_entities?.media ?? []);
+    wireMediaAnchors(article, target.author, target.rest_id, target.tweetContent?.extended_entities?.media ?? [], tpl);
 
     if (target.card) {
         updateTweetCardArea(article.querySelector(".tweet-card-area") as HTMLElement,
@@ -147,20 +148,63 @@ export function insertRepostedBanner(
     if (disp) disp.textContent = author.displayName;
 }
 
+// render_tweet.ts
 function wireMediaAnchors(
     article: Element,
     author: { screenName: string },
     tweetId: string,
-    mediaList: Array<{ type: string }> = []
+    mediaList: Array<{ type: string; media_url_https?: string }> = [],
+    tpl?: HTMLTemplateElement,
 ): void {
-    const area = article.querySelector('.tweet-media-area'); // 只改本条 tweet 的媒体区
+    const area = article.querySelector('.tweet-media-area');
     if (!area) return;
 
+    // 若未显式传入 tpl，则尝试从文档里找到含有 Lightbox 子模板的 <template>
+    const tplFallback =
+        tpl ||
+        (document.getElementById('tcqTplPhotoLightbox')?.closest('template') as HTMLTemplateElement | null) ||
+        undefined;
+
     const links = Array.from(area.querySelectorAll<HTMLAnchorElement>('a'));
-    links.forEach((a, i) => {
+
+    for (let i = 0; i < links.length; i++) {
+        const a = links[i];
         const m = mediaList[i];
-        const seg = m?.type === 'photo' ? 'photo' : 'video';
-        const idx = seg === 'photo' ? (i + 1) : 1;
+
+        if (m?.type === 'photo') {
+            // ✅ 对图片：不走内部路由，改为 Lightbox
+            a.href = '#';
+            a.removeAttribute('target');
+            a.dataset.noDetail = '1';
+            a.dataset.mediaIndex = String(i + 1);
+            a.dataset.mediaType = 'photo';
+
+            if (!(a as any)._tc_lb) {
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // 从缩略图取 src/alt（模板里的 .tweetPhotoImg）
+                    const imgEl = a.querySelector<HTMLImageElement>('.tweetPhotoImg');
+                    const src = imgEl?.src || m?.media_url_https || '';
+                    if (!src) return;
+
+                    // 你已抽到公共模块的 API
+                    // @ts-ignore
+                    const { root: lbRoot, img: lbImg } = ensurePhotoLightbox(tplFallback);
+                    lbImg.src = src;
+                    lbImg.alt = imgEl?.alt || '';
+                    lbRoot.hidden = false;
+                }, { passive: false });
+                (a as any)._tc_lb = 1; // 记个标识，避免重复绑定
+            }
+
+            continue; // ← 清晰表达：跳过后续“内部路由”逻辑
+        }
+
+        // 保持原有：视频/动图仍按内部路由处理
+        const seg = 'video';
+        const idx = 1;
         const path = `/${author.screenName}/status/${tweetId}/${seg}/${idx}`;
 
         a.href = path;
@@ -168,11 +212,9 @@ function wireMediaAnchors(
         a.dataset.noDetail = '1';
         a.dataset.mediaIndex = String(idx);
         a.dataset.mediaType = seg;
-
-        // 绑定内部路由（如有）
         // @ts-ignore
         if (typeof bindTwitterInternalLink === 'function') bindTwitterInternalLink(a, path);
-    });
+    }
 }
 
 function wireCardAnchor(

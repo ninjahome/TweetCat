@@ -39,3 +39,40 @@ export function bindTwitterInternalLink(element: HTMLAnchorElement, path: string
     element.dataset.hasProtected = 'true';
 }
 
+export function cloneFromTpl(tpl: HTMLTemplateElement, id: string): HTMLElement | null {
+    const node = tpl.content.getElementById(id);
+    return node ? (node.cloneNode(true) as HTMLElement) : null;
+}
+
+export function ensurePhotoLightbox(tpl: HTMLTemplateElement) {
+    const INSTANCE_ID = 'tcqPhotoLightbox'; // 运行时实例 id
+    let root = document.getElementById(INSTANCE_ID) as HTMLElement | null;
+
+    if (!root) {
+        const cloned = cloneFromTpl(tpl, 'tcqTplPhotoLightbox') as HTMLElement | null;
+        if (!cloned) throw new Error('tpl tcqTplPhotoLightbox not found');
+        // 兼容 cloneFromTpl 可能返回外层 .tcq-tpl：取里面的真正根
+        root = cloned.matches('.tcq-photo-lightbox')
+            ? cloned
+            : (cloned.querySelector('.tcq-photo-lightbox') as HTMLElement);
+        if (!root) throw new Error('lightbox root missing');
+        root.id = INSTANCE_ID;
+        document.body.appendChild(root);
+    }
+
+    const img = root.querySelector('.tcq-plb-img') as HTMLImageElement;
+    const close = root.querySelector('.tcq-plb-close') as HTMLButtonElement;
+
+    if (!root.dataset.wired) {
+        root.addEventListener('click', (e) => {
+            if (e.target === root) root.hidden = true;
+        });
+        close?.addEventListener('click', () => (root.hidden = true));
+        document.addEventListener('keydown', (e) => {
+            if (!root.hidden && (e.key === 'Escape' || e.key === 'Esc')) root.hidden = true;
+        });
+        root.dataset.wired = '1';
+    }
+    return {root, img, close};
+}
+
