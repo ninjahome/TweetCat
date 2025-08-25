@@ -275,25 +275,28 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 /* ===== TweetCat Quoted (tcq-) 基础骨架：阶段0 ===== */
+
 .tcq-quoted-root {
     display: block;
     position: relative; /* 合并：原来单独的声明 */
     border: 1px solid var(--border-subtle, rgba(0, 0, 0, .08));
-    border-radius: 12px;
-    padding: 8px 10px;
+    border-radius: 16px;
     background: var(--bg-elevated, transparent);
     cursor: pointer; /* 整卡可点 */
+    line-height: 20px;
 }
 
 .tcq-quoted-root .tcq-quoted-header,
 .tcq-quoted-root .tcq-quoted-content,
 .tcq-quoted-root .tcq-quoted-media,
 .tcq-quoted-root .tcq-quoted-card {
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
 .tcq-quoted-root .tcq-quoted-header {
-    margin-top: 0;
+    margin-top: 12px;
+    margin-left: 12px;
+    margin-right: 12px;
 }
 
 /* Header 行内布局 */
@@ -323,7 +326,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     position: relative;
     display: block;
     overflow: hidden;
-    border-radius: 8px;
 }
 
 .tcq-qmedia + .tcq-qmedia {
@@ -364,12 +366,12 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 /* ===== tcq- 正文（embedded/compact） ===== */
 .tcq-quoted-root .tcq-quoted-content .tweet-content {
-    font-size: 14px; /* 比主推略小 */
-    line-height: 1.45; /* 更紧凑 */
+    font-size: 15px; /* 比主推略小 */
     display: -webkit-box;
     -webkit-box-orient: vertical;
     overflow: hidden;
     -webkit-line-clamp: 5;
+    margin-left: 12px;
 }
 
 /* 引用区内超链接、mention 的高亮略收敛，避免过强 */
@@ -543,13 +545,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     width: var(--tcq-thumb);
 }
 
-/* 文本两行截断（官方 B2 更紧凑） */
-.tcq-quoted-root.tcq--thumb-row .tcq-quoted-content .tweet-content {
-    display: -webkit-box;
-    -webkit-line-clamp: 5;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
 
 /* 可选：让缩略图只由外层裁切，内部图片不再重复圆角（视觉更利落） */
 .tcq-quoted-root.tcq--thumb-row .tcq-qmedia img {
@@ -646,15 +641,20 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 /* —— B2 + 4 图：默认 2×2 方格（用上面的默认占位即可） —— */
 
 /* —— B2 单图：横排骨架（你已在 TS 里加 .tcq--thumb-row） —— */
-.tcq-quoted-root.tcq--thumb-row {
-    display: grid;
-    grid-template-columns: var(--tcq-thumb) 1fr; /* 左缩略 + 右文本 */
-    grid-template-rows: auto auto;               /* 第1行 Header，第2行 媒体+正文 */
-    column-gap: 8px;
-    row-gap: 2px;
-    align-items: start;
+.tcq-quoted-block {
+    display: flex;
 }
-.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="header"]  { grid-column: 1 / -1; grid-row: 1; margin-top: 0; }
+
+.tcq-quoted-block-row {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    padding: 8px 12px 12px 12px;
+}
+
+.tcq-quoted-block-gap {
+    margin-top: 4px;
+}
+.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="header"]  { grid-column: 1 / -1; grid-row: 1; }
 .tcq-quoted-root.tcq--thumb-row [data-tcq-slot="media"]   { grid-column: 1;      grid-row: 2; margin-top: 0; }
 .tcq-quoted-root.tcq--thumb-row [data-tcq-slot="content"] { grid-column: 2;      grid-row: 2; margin-top: 0; }
 .tcq-quoted-root.tcq--thumb-row .tcq-quoted-media         { width: var(--tcq-thumb); }
