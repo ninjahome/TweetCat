@@ -552,7 +552,7 @@ span.duration-badge {
 .action-button {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 2px;
     background: none;
     border: none;
     color: #536471;

@@ -227,13 +227,23 @@ img, video {
 /* ---------- Actions ---------- */
 .action-button {
     color: var(--text-secondary);
+    padding: 0 8px;
 }
 
 .action-button:hover {
     background: var(--bg-hover);
     border-radius: 9999px;
+    color: #1D9bF0;
+}
+.action-button-download-icon svg path {
+    fill: rgb(83,100,113); /* Twitter 次要文字灰 */
+    transition: fill .2s;
 }
 
+/* 当鼠标悬停在 .action-button 上时，子图标变蓝 */
+.action-button:hover .action-button-download-icon svg path {
+    fill: rgb(29,155,240); /* Twitter 蓝 */
+}
 /* ---------- Accents (hover chips, labels, tabs) ---------- */
 .hover-chat:hover,
 .tweet-category-label {
@@ -746,4 +756,86 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
     gap: 2px;
+}
+
+.download-progress-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px;
+    border: 1px solid rgb(239, 243, 244); /* Twitter 风格浅灰线 */
+    border-radius: 16px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #fff;
+}
+
+.dpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dpi-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: rgb(15, 20, 25); /* Twitter 主文字颜色 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 80%;
+}
+
+.dpi-cancel {
+    background: none;
+    border: none;
+    color: rgb(29, 155, 240); /* Twitter 蓝 */
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.dpi-cancel:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+}
+
+.dpi-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dpi-progress {
+    flex: 1;
+    height: 4px;
+    border-radius: 9999px;
+    appearance: none;
+}
+
+.dpi-progress::-webkit-progress-bar {
+    background-color: rgb(239, 243, 244);
+    border-radius: 9999px;
+}
+
+.dpi-progress::-webkit-progress-value {
+    background-color: rgb(29, 155, 240);
+    border-radius: 9999px;
+}
+
+.dpi-progress::-moz-progress-bar {
+    background-color: rgb(29, 155, 240);
+    border-radius: 9999px;
+}
+
+.dpi-percent {
+    font-size: 13px;
+    color: rgb(83, 100, 113); /* Twitter 次要文字色 */
+    min-width: 32px;
+    text-align: right;
+}
+
+.dpi-meta {
+    font-size: 13px;
+    color: rgb(83, 100, 113);
 }
