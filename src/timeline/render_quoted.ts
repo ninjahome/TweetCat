@@ -346,7 +346,10 @@ function fillQuotedMedia(
             : (quoted?.tweetContent?.entities?.media || []) as TweetMediaEntity[];
 
 
-    if (!all?.length) return;
+    if (!all?.length) {
+        mediaSlot.style.display = 'none';
+        return;
+    }
 
     const photos = all.filter((m: any) => m?.type === 'photo');
     if (photos.length > 0) {
