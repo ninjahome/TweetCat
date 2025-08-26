@@ -1,6 +1,13 @@
 import {extractMissingFeature, getBearerToken} from "../common/utils";
 import {localGet} from "../common/local_storage";
-import {__DBK_query_id_map, Followers, Following, UserByScreenName, UserTweets} from "../common/consts";
+import {
+    __DBK_query_id_map,
+    BlueVerifiedFollowers,
+    Followers,
+    Following,
+    UserByScreenName,
+    UserTweets
+} from "../common/consts";
 import {
     FollowResult,
     FollowUser,
@@ -335,11 +342,11 @@ function buildFollowersUrl(userId: string, count = 20, cursor?: string): string 
 /**
  * 拉取一页 Followers
  */
-async function getFollowersPath(key: string): Promise<string> {
+async function getFollowersPath(apiKey: string): Promise<string> {
     // 你的本地映射：__DBK_query_id_map 里查 "Followers" 的 docId
     const map = (await localGet(__DBK_query_id_map)) as Record<string, string> || {};
-    const docId = map[key] || "i6PPdIMm1MO7CpAqjau7sw";
-    return `/i/api/graphql/${docId}/Followers`;
+    const docId = map[apiKey] || "i6PPdIMm1MO7CpAqjau7sw";
+    return `/i/api/graphql/${docId}/${apiKey}`;
 }
 
 export async function fetchFollowersPage(
@@ -347,7 +354,25 @@ export async function fetchFollowersPage(
     count = 20,
     cursor?: string
 ): Promise<{ users: FollowUser[]; nextCursor?: string }> {
-    const path = await getFollowersPath(Followers); // ✅ 已由你实现
+    return _followApi(Followers, userId, count, cursor)
+}
+
+
+export async function fetchBlueVerifiedFollowersPage(
+    userId: string,
+    count = 20,
+    cursor?: string): Promise<{ users: FollowUser[]; nextCursor?: string }> {
+    return _followApi(BlueVerifiedFollowers, userId, count, cursor);
+}
+
+export async function _followApi(
+    api: string,
+    userId: string,
+    count = 20,
+    cursor?: string
+): Promise<{ users: FollowUser[]; nextCursor?: string }> {
+
+    const path = await getFollowersPath(api); // ✅ 已由你实现
     const query = buildFollowersUrl(userId, count, cursor);
     const fullUrl = `https://x.com${path}${query}`;
 

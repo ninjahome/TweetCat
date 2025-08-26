@@ -76,6 +76,7 @@ export const SearchTimeline = "SearchTimeline" // 搜索结果（你可能以后
 export const CreateBookmark = "CreateBookmark"
 export const Following = "Following"
 export const Followers = "Followers"
+export const BlueVerifiedFollowers = "BlueVerifiedFollowers"
 
 export const watchedOps = [
     UserByScreenName,
@@ -87,6 +88,7 @@ export const watchedOps = [
     CreateBookmark,
     Following,
     Followers,
+    BlueVerifiedFollowers,
 ];
 
 export const defaultQueryKeyMap: Record<string, string> = {
@@ -99,4 +101,5 @@ export const defaultQueryKeyMap: Record<string, string> = {
     CreateBookmark: "aoDbu3RHznuiSkQ9aNM67Q",
     Following: "SaWqzw0TFAWMx1nXWjXoaQ",
     Followers: "i6PPdIMm1MO7CpAqjau7sw",
+    BlueVerifiedFollowers: "fxEl9kp1Tgolqkq8_Lo3sg",
 }
