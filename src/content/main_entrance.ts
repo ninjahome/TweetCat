@@ -13,7 +13,7 @@ import {logTPR} from "../common/debug_flags";
 import {setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 import {
-    createBookmark,
+    bookmarkApi,
     fetchBlueVerifiedFollowersPage,
     fetchFollowersPage,
     fetchFollowingPage
@@ -187,12 +187,11 @@ window.addEventListener('message', (e) => {
 });
 
 
-
 // content-script 末尾加一段（仅用于调试）
 ;(globalThis as any).__tw = Object.assign((globalThis as any).__tw || {}, {
     fetchFollowingPage,
     getTransactionIdFor,
     fetchFollowersPage,
     fetchBlueVerifiedFollowersPage,
-    createBookmark
+    bookmarkApi
 });

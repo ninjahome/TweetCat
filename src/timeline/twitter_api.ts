@@ -2,7 +2,7 @@ import {extractMissingFeature, getBearerToken} from "../common/utils";
 import {localGet} from "../common/local_storage";
 import {
     __DBK_query_id_map,
-    BlueVerifiedFollowers, CreateBookmark,
+    BlueVerifiedFollowers, CreateBookmark, DeleteBookmark,
     Followers,
     Following,
     UserByScreenName,
@@ -345,14 +345,6 @@ function buildFollowersUrl(userId: string, count = 20, cursor?: string): string 
     return `?variables=${variables}&features=${features}`;
 }
 
-
-async function getFollowersPath(apiKey: string): Promise<string> {
-    const map = (await localGet(__DBK_query_id_map)) as Record<string, string> || {};
-    const qid = map[apiKey];
-    if (!qid) throw new Error(`missing query id for ${apiKey}`);
-    return `/i/api/graphql/${qid}/${apiKey}`;
-}
-
 export async function fetchFollowersPage(
     userId: string,
     count = 20,
@@ -408,27 +400,26 @@ export async function _followApi(
     return {users, nextCursor};
 }
 
+export async function bookmarkApi(
+    tweetId: string,
+    isCreate: boolean
+): Promise<boolean> {
+    const apiKey = isCreate ? CreateBookmark : DeleteBookmark;
 
-export async function createBookmark(tweetId: string): Promise<boolean> {
-    // 1) 组 URL：使用你现有的 queryId 映射
-    const bp = await getUrlWithQueryID(CreateBookmark);
+    const bp = await getUrlWithQueryID(apiKey);
     if (!bp) {
-        throw new Error("Missing queryId for " + CreateBookmark);
+        throw new Error("Missing queryId for " + apiKey);
     }
     const txid = await getTransactionIdFor("POST", bp.path);
 
-    // 3) headers：沿用你现有的 generateHeaders，再补充 POST 所需字段
     const headers = await generateHeaders();
     headers["content-type"] = "application/json";
     headers["x-client-transaction-id"] = txid;
 
-    // 4) body：GraphQL 变量
     const body = JSON.stringify({
-        variables: {
-            tweet_id: tweetId,
-        },
+        variables: {tweet_id: tweetId},
     });
-    // 5) 发送 POST
+
     const resp = await fetch(bp.url, {
         method: "POST",
         headers,
@@ -436,18 +427,18 @@ export async function createBookmark(tweetId: string): Promise<boolean> {
         body,
     });
 
-    // 6) 错误处理（保持你项目里的风格，抽取缺失 features）
     if (!resp.ok) {
         const text = await resp.text().catch(() => "");
         extractMissingFeature?.(text);
         throw new Error(`HTTP ${resp.status}: ${text}`);
     }
 
-    // 7) 解析与返回布尔值
     const json = await resp.json();
     console.log("------>>>", json);
 
-    const result = json?.data?.tweet_bookmark_put;
+    const fieldName = isCreate ? "tweet_bookmark_put" : "tweet_bookmark_delete";
+
+    const result = json?.data?.[fieldName];
     if (result === "Done") {
         return true;
     }
