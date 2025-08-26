@@ -547,6 +547,7 @@ span.duration-badge {
     justify-content: space-between;
     align-items: center;
     flex-direction: row-reverse;
+    margin-top: 4px;
 }
 
 .action-button {
