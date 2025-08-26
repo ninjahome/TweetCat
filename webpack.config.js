@@ -62,9 +62,13 @@ module.exports = (env, argv) => {
             ],
         },
         resolve: {
+            alias: {
+                linkedom: path.resolve(__dirname, "src/shims/linkedom.ts"),
+            },
             extensions: ['.tsx', '.ts', '.js'],
             fallback: {
                 process: false,
+                canvas: false,
             },
         },
         plugins: plugins,

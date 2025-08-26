@@ -808,3 +808,90 @@ export function parseTimelineFromGraphQL(result: any): TweetResult {
     }
     return extractEntryObjs(allEntries);
 }
+
+
+
+export class FollowUser {
+    userID: string;
+    screen_name: string;
+    name: string;
+    avatarUrl: string;
+    verified: boolean;
+    description: string;
+    rawData: any
+
+    constructor(uid: string, sName: string, name: string, avatar: string, verified: boolean, desc: string, raw: any) {
+        this.userID = uid;
+        this.screen_name = sName;
+        this.name = name;
+        this.avatarUrl = avatar;
+        this.description = desc;
+        this.verified = verified;
+        this.rawData = raw;
+    }
+}
+
+
+export class FollowResult {
+    users: FollowUser[]
+    nextCursor?: string;
+    terminatedTop?: boolean;   // 顶部已终止
+    terminatedBottom?: boolean;// 底部已终止
+
+    constructor(users: FollowUser[], cursor?: string) {
+        this.users = users;
+        this.nextCursor = cursor;
+    }
+}
+
+export function parseFollowingFromGraphQL(json: any): FollowResult {
+
+    const instructions = json?.data?.user?.result?.timeline?.timeline?.instructions ?? [];
+    const out: FollowResult = new FollowResult([]);
+
+    for (const ins of instructions || []) {
+        switch (ins?.type) {
+            case "TimelineClearCache":
+                // 如果你有本地缓存，这里清理；无状态抓取可忽略
+                break;
+
+            case "TimelineTerminateTimeline":
+                if (ins?.direction === "Top") out.terminatedTop = true;
+                if (ins?.direction === "Bottom") out.terminatedBottom = true;
+                break;
+
+            case "TimelineAddEntries": {
+                const entries = ins?.entries || [];
+                for (const e of entries) {
+                    const c = e?.content;
+
+                    // 用户条目
+                    if (c?.entryType === "TimelineTimelineItem" &&
+                        c?.itemContent?.itemType === "TimelineUser") {
+                        const u = c?.itemContent?.user_results?.result;
+                        if (!u || u?.__typename !== "User") continue; // ✅ 跳过不可用
+
+                        const uObj = new FollowUser(u.rest_id,
+                            u.core?.screen_name ?? "",
+                            u.core?.name ?? "",
+                            u.avatar?.image_url ?? "",
+                            (u.is_blue_verified || u.verification?.verified) ?? false,
+                            u.legacy?.description ?? "",
+                            u
+                        )
+                        out.users.push(uObj);
+                    }
+
+                    if (c?.entryType === "TimelineTimelineCursor" && c?.cursorType === "Bottom") {
+                        out.nextCursor = c?.value;
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    return out;
+}

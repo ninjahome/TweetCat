@@ -73,6 +73,10 @@ export const HomeLatestTimeline = "HomeLatestTimeline"// 首页的最新推文�
 export const TweetDetail = "TweetDetail"         // 单条推文详情（用于评论）
 export const UsersByRestIds = "UsersByRestIds"     // 根据一批 userId 查询用户信息
 export const SearchTimeline = "SearchTimeline" // 搜索结果（你可能以后用）
+export const CreateBookmark = "CreateBookmark"
+export const Following = "Following"
+export const Followers = "Followers"
+
 export const watchedOps = [
     UserByScreenName,
     UserTweets,
@@ -80,6 +84,9 @@ export const watchedOps = [
     TweetDetail,
     UsersByRestIds,
     SearchTimeline,
+    CreateBookmark,
+    Following,
+    Followers,
 ];
 
 export const defaultQueryKeyMap: Record<string, string> = {
@@ -89,4 +96,7 @@ export const defaultQueryKeyMap: Record<string, string> = {
     TweetDetail: "b9Yw90FMr_zUb8DvA8r2ug",
     UsersByRestIds: "kCBEQ-OvWNVtotaYmqG0aw",
     SearchTimeline: "fL2MBiqXPk5pSrOS5ACLdA",
+    CreateBookmark: "aoDbu3RHznuiSkQ9aNM67Q",
+    Following: "SaWqzw0TFAWMx1nXWjXoaQ",
+    Followers: "i6PPdIMm1MO7CpAqjau7sw",
 }

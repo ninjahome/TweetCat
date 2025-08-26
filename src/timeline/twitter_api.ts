@@ -1,7 +1,14 @@
 import {extractMissingFeature, getBearerToken} from "../common/utils";
 import {localGet} from "../common/local_storage";
-import {__DBK_query_id_map, UserByScreenName, UserTweets} from "../common/consts";
-import {parseTimelineFromGraphQL, TweetResult} from "./tweet_entry";
+import {__DBK_query_id_map, Followers, Following, UserByScreenName, UserTweets} from "../common/consts";
+import {
+    FollowResult,
+    FollowUser,
+    parseFollowingFromGraphQL,
+    parseTimelineFromGraphQL,
+    TweetResult
+} from "./tweet_entry";
+import {getTransactionIdFor} from "../content/txid";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(key: string): Promise<string | null> {
@@ -187,4 +194,184 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
     const result = await response.json();
     // console.log("---------------->>>\n", result);
     return parseTimelineFromGraphQL(result);
+}
+
+
+async function buildFollowingURL(params: {
+    userId: string;
+    count?: number;
+    cursor?: string;
+}): Promise<string> {
+    const baseUrl = await getUrlWithQueryID(Following); // 从本地 queryId 映射取
+    if (!baseUrl) throw new Error("Missing queryId for 'Following'");
+
+    const variables: any = {
+        userId: params.userId,
+        count: params.count ?? 20,
+        includePromotedContent: false,
+        withGrokTranslatedBio: false,
+    };
+    if (params.cursor) variables.cursor = params.cursor;
+
+    // features 建议与页面抓到的保持一致；这里给出一个稳定子集即可
+    const features = {
+        rweb_video_screen_enabled: false,
+        payments_enabled: false,
+        rweb_xchat_enabled: false,
+        profile_label_improvements_pcf_label_in_post_enabled: true,
+        rweb_tipjar_consumption_enabled: true,
+        verified_phone_label_enabled: false,
+        creator_subscriptions_tweet_preview_api_enabled: true,
+        responsive_web_graphql_timeline_navigation_enabled: true,
+        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+        premium_content_api_read_enabled: false,
+        communities_web_enable_tweet_community_results_fetch: true,
+        c9s_tweet_anatomy_moderator_badge_enabled: true,
+        responsive_web_grok_analyze_button_fetch_trends_enabled: false,
+        responsive_web_grok_analyze_post_followups_enabled: true,
+        responsive_web_jetfuel_frame: true,
+        responsive_web_grok_share_attachment_enabled: true,
+        articles_preview_enabled: true,
+        responsive_web_edit_tweet_api_enabled: true,
+        graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
+        view_counts_everywhere_api_enabled: true,
+        longform_notetweets_consumption_enabled: true,
+        responsive_web_twitter_article_tweet_consumption_enabled: true,
+        tweet_awards_web_tipping_enabled: false,
+        responsive_web_grok_show_grok_translated_post: false,
+        responsive_web_grok_analysis_button_from_backend: true,
+        creator_subscriptions_quote_tweet_preview_enabled: false,
+        freedom_of_speech_not_reach_fetch_enabled: true,
+        standardized_nudges_misinfo: true,
+        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
+        longform_notetweets_rich_text_read_enabled: true,
+        longform_notetweets_inline_media_enabled: true,
+        responsive_web_grok_image_annotation_enabled: true,
+        responsive_web_grok_imagine_annotation_enabled: true,
+        responsive_web_grok_community_note_auto_translation_is_enabled: false,
+        responsive_web_enhance_cards_enabled: false,
+    };
+
+    return `${baseUrl}?variables=${encodeURIComponent(JSON.stringify(variables))}`
+        + `&features=${encodeURIComponent(JSON.stringify(features))}`;
+}
+
+export async function fetchFollowingPage(
+    userId: string,
+    count = 50,
+    cursor?: string
+): Promise<FollowResult> {
+    const url = await buildFollowingURL({userId, count, cursor});
+    const headers = await generateHeaders(); // 不需要 x-client-transaction-id / x-xp-forwarded-for
+    const resp = await fetch(url, {
+        method: "GET",
+        headers,
+        credentials: "include",
+    });
+
+    const text = await resp.text();
+    if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}: ${text}`);
+    }
+    const json = text ? JSON.parse(text) : {};
+    return parseFollowingFromGraphQL(json);
+}
+
+/**
+ * 构造 Followers 请求 URL
+ */
+function buildFollowersUrl(userId: string, count = 20, cursor?: string): string {
+    const variablesObj: any = {
+        userId,
+        count,
+        includePromotedContent: false,
+        withGrokTranslatedBio: false,
+    };
+    if (cursor) variablesObj.cursor = cursor;
+    const variables = encodeURIComponent(JSON.stringify(variablesObj));
+
+    const featuresObj = {
+        "rweb_video_screen_enabled": false,
+        "payments_enabled": false,
+        "rweb_xchat_enabled": false,
+        "profile_label_improvements_pcf_label_in_post_enabled": true,
+        "rweb_tipjar_consumption_enabled": true,
+        "verified_phone_label_enabled": false,
+        "creator_subscriptions_tweet_preview_api_enabled": true,
+        "responsive_web_graphql_timeline_navigation_enabled": true,
+        "responsive_web_graphql_skip_user_profile_image_extensions_enabled": false,
+        "premium_content_api_read_enabled": false,
+        "communities_web_enable_tweet_community_results_fetch": true,
+        "c9s_tweet_anatomy_moderator_badge_enabled": true,
+        "responsive_web_grok_analyze_button_fetch_trends_enabled": false,
+        "responsive_web_grok_analyze_post_followups_enabled": true,
+        "responsive_web_jetfuel_frame": true,
+        "responsive_web_grok_share_attachment_enabled": true,
+        "articles_preview_enabled": true,
+        "responsive_web_edit_tweet_api_enabled": true,
+        "graphql_is_translatable_rweb_tweet_is_translatable_enabled": true,
+        "view_counts_everywhere_api_enabled": true,
+        "longform_notetweets_consumption_enabled": true,
+        "responsive_web_twitter_article_tweet_consumption_enabled": true,
+        "tweet_awards_web_tipping_enabled": false,
+        "responsive_web_grok_show_grok_translated_post": false,
+        "responsive_web_grok_analysis_button_from_backend": false,
+        "creator_subscriptions_quote_tweet_preview_enabled": false,
+        "freedom_of_speech_not_reach_fetch_enabled": true,
+        "standardized_nudges_misinfo": true,
+        "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": true,
+        "longform_notetweets_rich_text_read_enabled": true,
+        "longform_notetweets_inline_media_enabled": true,
+        "responsive_web_grok_image_annotation_enabled": true,
+        "responsive_web_grok_imagine_annotation_enabled": true,
+        "responsive_web_grok_community_note_auto_translation_is_enabled": false,
+        "responsive_web_enhance_cards_enabled": false,
+    };
+    const features = encodeURIComponent(JSON.stringify(featuresObj));
+
+    return `?variables=${variables}&features=${features}`;
+}
+
+/**
+ * 拉取一页 Followers
+ */
+async function getFollowersPath(key: string): Promise<string> {
+    // 你的本地映射：__DBK_query_id_map 里查 "Followers" 的 docId
+    const map = (await localGet(__DBK_query_id_map)) as Record<string, string> || {};
+    const docId = map[key] || "i6PPdIMm1MO7CpAqjau7sw";
+    return `/i/api/graphql/${docId}/Followers`;
+}
+
+export async function fetchFollowersPage(
+    userId: string,
+    count = 20,
+    cursor?: string
+): Promise<{ users: FollowUser[]; nextCursor?: string }> {
+    const path = await getFollowersPath(Followers); // ✅ 已由你实现
+    const query = buildFollowersUrl(userId, count, cursor);
+    const fullUrl = `https://x.com${path}${query}`;
+
+    const txid = await getTransactionIdFor("GET", path);
+
+    const headers: Record<string, string> = {
+        "authorization": await getBearerToken(),  // ✅ 你已有
+        "x-client-transaction-id": txid,
+        "x-csrf-token": getCsrfToken(),           // ✅ 你已有
+        "x-twitter-active-user": "yes",
+        "x-twitter-auth-type": "OAuth2Session",
+        "x-twitter-client-language": "zh-cn",
+    };
+
+    const res = await fetch(fullUrl, {method: "GET", credentials: "include", headers});
+    if (!res.ok) {
+        if (res.status === 400 || res.status === 403) {
+            const text = await res.text().catch(() => "");
+            extractMissingFeature?.(text);
+        }
+        throw new Error(`Followers request failed: ${res.status} ${res.statusText}`);
+    }
+    const data = await res.json();
+
+    const {users, nextCursor} = parseFollowingFromGraphQL(data) as FollowResult;
+    return {users, nextCursor};
 }
