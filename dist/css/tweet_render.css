@@ -225,22 +225,31 @@ img, video {
 }
 
 /* ---------- Actions ---------- */
-.action-button {
-    color: var(--text-secondary);
-    padding: 0 8px;
+.tweet-actions .download {
+    flex-direction: row-reverse;
+}
+.action-button .action-button-download-btn {
+    display: flex;
+    background-color: rgb(29, 155, 240);
+    border-radius: 999px;
+    align-content: center;
+    justify-content: center;
+    padding: 6px 24px;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
 }
 
-.action-button:hover {
-    background: var(--bg-hover);
-    border-radius: 9999px;
-    color: #1D9bF0;
+.action-button-download-btn:hover {
+    background: rgba(25, 140, 216, 0.2);
+    color: rgba(29, 155, 240);
 }
+
 .action-button-download-icon svg path {
-    fill: rgb(83,100,113); /* Twitter 次要文字灰 */
+    fill: rgb(255, 255, 255); /* Twitter 次要文字灰 */
     transition: fill .2s;
+    font-weight: 700;
 }
-
-/* 当鼠标悬停在 .action-button 上时，子图标变蓝 */
 .action-button:hover .action-button-download-icon svg path {
     fill: rgb(29,155,240); /* Twitter 蓝 */
 }
