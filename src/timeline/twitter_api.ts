@@ -341,14 +341,12 @@ function buildFollowersUrl(userId: string, count = 20, cursor?: string): string 
     return `?variables=${variables}&features=${features}`;
 }
 
-/**
- * 拉取一页 Followers
- */
+
 async function getFollowersPath(apiKey: string): Promise<string> {
-    // 你的本地映射：__DBK_query_id_map 里查 "Followers" 的 docId
     const map = (await localGet(__DBK_query_id_map)) as Record<string, string> || {};
-    const docId = map[apiKey] || "i6PPdIMm1MO7CpAqjau7sw";
-    return `/i/api/graphql/${docId}/${apiKey}`;
+    const qid = map[apiKey];
+    if (!qid) throw new Error(`missing query id for ${apiKey}`);
+    return `/i/api/graphql/${qid}/${apiKey}`;
 }
 
 export async function fetchFollowersPage(
