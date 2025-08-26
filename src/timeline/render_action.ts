@@ -25,7 +25,7 @@ export function updateTweetBottomButtons(
         rewardBtn.dataset.wired = "1";
     }
 
-    const bookMarkBtn = container.querySelector(".action-button.bookMarked") as HTMLElement | null;
+    const bookMarkBtn = container.querySelector(".action-button.bookMarked") as HTMLButtonElement | null;
     const content = tweetObj.tweetContent;
     const bookTxt = bookMarkBtn?.querySelector(".bookmark-txt") as HTMLElement;
     setBookStratus(bookTxt, content.bookmarked);
@@ -33,7 +33,14 @@ export function updateTweetBottomButtons(
     if (bookMarkBtn && bookMarkBtn.dataset.wired !== "1") {
         logTCR("------>>>", content, tweetObj.rest_id);
         bookMarkBtn.addEventListener("click", async () => {
-            await bookMark(entryID, tweetObj.rest_id, content, bookTxt);
+            try {
+                bookMarkBtn.disabled = true;
+                await bookMark(entryID, tweetObj.rest_id, content, bookTxt);
+            } catch (e) {
+                logTCR("[bookMark] failed:", e);
+            } finally {
+                bookMarkBtn.disabled = false;
+            }
         });
         bookMarkBtn.dataset.wired = "1";
     }
@@ -72,16 +79,12 @@ function prepareDownloadBtn(downloadDiv: HTMLElement, tweetObj: TweetObj, mp4Lis
 }
 
 async function bookMark(eid: string, tid: string, content: TweetContent, statusEL: HTMLElement) {
-    try {
-        const statusToBe = !content.bookmarked;
-        await bookmarkApi(tid, statusToBe);
-        await sendMsgToService({entryID: eid, bookmarked: statusToBe}, MsgType.TweetBookmarkToggle);
-        content.bookmarked = statusToBe;
-        setBookStratus(statusEL, statusToBe);
-        logTCR("------>>> after bookMark:", content);
-    } catch (e) {
-        logTCR("[bookMark] failed:", e);
-    }
+    const statusToBe = !content.bookmarked;
+    await bookmarkApi(tid, statusToBe);
+    await sendMsgToService({entryID: eid, bookmarked: statusToBe}, MsgType.TweetBookmarkToggle);
+    content.bookmarked = statusToBe;
+    setBookStratus(statusEL, statusToBe);
+    logTCR("------>>> after bookMark:", content);
 }
 
 function rewardKol(_e: Event) {
