@@ -434,7 +434,7 @@ export async function bookmarkApi(
     }
 
     const json = await resp.json();
-    console.log("------>>>", json);
+    // console.log("------>>>", json);
 
     const fieldName = isCreate ? "tweet_bookmark_put" : "tweet_bookmark_delete";
 

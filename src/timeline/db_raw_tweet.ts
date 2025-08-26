@@ -9,7 +9,7 @@ import {
     databaseQueryByIndex,
     databaseQueryByIndexRange, idx_tweets_userid,
     idx_tweets_user_time, initialKols,
-    pruneOldDataIfNeeded, databaseQueryByTimeAndUserKeyFiltered, idx_tweets_time
+    pruneOldDataIfNeeded, databaseQueryByTimeAndUserKeyFiltered, idx_tweets_time, databaseGet
 } from "../common/database";
 import {logTC} from "../common/debug_flags";
 import {sendMsgToService, sleep} from "../common/utils";
@@ -70,6 +70,35 @@ export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]): 
     return 0;
 }
 
+export async function updateBookmarked(tweetId: string, value: boolean): Promise<boolean> {
+    try {
+        // 1) 从表里获取该 tweet
+        const obj = await databaseGet(__tableCachedTweets, tweetId) as WrapEntryObj;
+        if (!obj) {
+            console.warn(`❌ 未找到 tweetId=${tweetId} 的缓存记录`);
+            return false;
+        }
+
+        // 2) 修改 rawJson.legacy.bookmarked
+        const tweet = obj.rawJson?.content?.itemContent?.tweet_results?.result;
+        if (tweet?.legacy) {
+            tweet.legacy.bookmarked = value;
+        } else {
+            console.warn(`⚠️ tweetId=${tweetId} 没有 legacy 字段`);
+            return false;
+        }
+
+        // 3) 覆盖写回数据库
+        await databasePutItem(__tableCachedTweets, obj);
+
+        console.log(`✅ 已更新 tweetId=${tweetId} 的 bookmarked=${value}`);
+        return true;
+    } catch (err) {
+        console.error("❌ 更新 bookmarked 失败:", err);
+        return false;
+    }
+}
+
 export async function loadCachedTweetsByUserId(userId: string, limit = 10): Promise<WrapEntryObj[]> {
     return await databaseQueryByIndexRange(__tableCachedTweets, 'userId_timestamp_idx', [userId], limit) as WrapEntryObj[];
 }
@@ -108,28 +137,6 @@ export async function loadLatestTweets(
         timeStamp
     );
 }
-
-
-// export async function loadLatestTweets(limit: number = 20,
-//                                        category: number,
-//                                        timeStamp: number | undefined = undefined) {
-//     let filterFn: ((row: any) => boolean) | undefined = undefined;
-//
-//     if (category >= 0) {
-//         const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => item.catID === category);
-//         const categoryUserIds = new Set<string>(kols.map(k => k.kolUserId));
-//         filterFn = (row) => categoryUserIds.has(row.userId);
-//     }
-//
-//     return await databaseQueryByIndex(
-//         __tableCachedTweets,
-//         'timestamp_idx',
-//         limit,
-//         true,
-//         filterFn,
-//         timeStamp
-//     );
-// }
 
 export async function removeTweetsByKolID(kolID: string) {
     const deletedNo = await databaseDeleteByIndexValue(__tableCachedTweets, idx_tweets_userid, kolID);

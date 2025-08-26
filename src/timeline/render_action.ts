@@ -1,16 +1,20 @@
 import {logTCR} from "../common/debug_flags";
-import {TweetObj} from "./tweet_entry";
+import {TweetContent, TweetObj} from "./tweet_entry";
 import {
     onVideoDownloadAbort,
     onVideoDownloadError,
     onVideoDownloadProgress,
     onVideoDownloadStart, onVideoDownloadSuccess
 } from "../content/tweetcat_web3_area";
+import {sendMsgToService} from "../common/utils";
+import {MsgType} from "../common/consts";
+import {bookmarkApi} from "./twitter_api";
 
 export function updateTweetBottomButtons(
     container: HTMLElement,
     tweetObj: TweetObj,
-    mp4List: string[]
+    mp4List: string[],
+    entryID: string
 ): void {
     const downloadDiv = container.querySelector(".action-button.download") as HTMLElement;
     prepareDownloadBtn(downloadDiv, tweetObj, mp4List)
@@ -22,9 +26,24 @@ export function updateTweetBottomButtons(
     }
 
     const bookMarkBtn = container.querySelector(".action-button.bookMarked") as HTMLElement | null;
+    const content = tweetObj.tweetContent;
+    const bookTxt = bookMarkBtn?.querySelector(".bookmark-txt") as HTMLElement;
+    setBookStratus(bookTxt, content.bookmarked);
+
     if (bookMarkBtn && bookMarkBtn.dataset.wired !== "1") {
-        bookMarkBtn.addEventListener("click", bookMark);
+        logTCR("------>>>", content, tweetObj.rest_id);
+        bookMarkBtn.addEventListener("click", async () => {
+            await bookMark(entryID, tweetObj.rest_id, content, bookTxt);
+        });
         bookMarkBtn.dataset.wired = "1";
+    }
+}
+
+function setBookStratus(statusEL: HTMLElement, booked: boolean) {
+    if (booked) {
+        statusEL.innerText = "取消收藏";
+    } else {
+        statusEL.innerText = "收藏";
     }
 }
 
@@ -52,12 +71,21 @@ function prepareDownloadBtn(downloadDiv: HTMLElement, tweetObj: TweetObj, mp4Lis
     downloadBtn.dataset.dlWired = "1";
 }
 
-function bookMark(_e: Event) {
-    console.log("------>>> bookMark");
+async function bookMark(eid: string, tid: string, content: TweetContent, statusEL: HTMLElement) {
+    try {
+        const statusToBe = !content.bookmarked;
+        await bookmarkApi(tid, statusToBe);
+        await sendMsgToService({entryID: eid, bookmarked: statusToBe}, MsgType.TweetBookmarkToggle);
+        content.bookmarked = statusToBe;
+        setBookStratus(statusEL, statusToBe);
+        logTCR("------>>> after bookMark:", content);
+    } catch (e) {
+        logTCR("[bookMark] failed:", e);
+    }
 }
 
 function rewardKol(_e: Event) {
-    console.log("------>>> reward kol by usdt");
+    logTCR("------>>> reward kol by usdt");
 }
 
 async function downloadVideo(btn: HTMLButtonElement, selectEl: HTMLSelectElement, fileName: string) {

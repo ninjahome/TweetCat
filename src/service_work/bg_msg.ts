@@ -12,7 +12,7 @@ import {
     cacheRawTweets,
     initTweetsCheck,
     loadCachedTweetsByUserId,
-    loadLatestTweets, removeTweetsByKolID,
+    loadLatestTweets, removeTweetsByKolID, updateBookmarked,
     WrapEntryObj
 } from "../timeline/db_raw_tweet";
 import {loadAllKolCursors, loadCursorById, writeKolsCursors, writeOneCursor} from "../object/kol_cursor";
@@ -92,6 +92,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             const kid = request.data as string;
             await removeTweetsByKolID(kid);
             await tweetFM.removeFromImmediateQueue(kid);
+            return {success: true};
+        }
+
+        case MsgType.TweetBookmarkToggle:{
+            await updateBookmarked(request.data.entryID as string, request.data.bookmarked as boolean)
             return {success: true};
         }
 

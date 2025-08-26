@@ -66,7 +66,7 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     const mp4List: string[] = JSON.parse(videoWrapper?.dataset.mp4List ?? '[]');
     const tweetCatActionArea = article.querySelector(".tweet-actions") as HTMLElement;
 
-    updateTweetBottomButtons(tweetCatActionArea, target, mp4List);
+    updateTweetBottomButtons(tweetCatActionArea, target, mp4List, tweetEntry.entryId);
 
     attachBodyPermalink(article, target.author, target.rest_id);
 
@@ -193,11 +193,11 @@ function wireMediaAnchors(
 
                     // 你已抽到公共模块的 API
                     // @ts-ignore
-                    const { root: lbRoot, img: lbImg } = ensurePhotoLightbox(tplFallback);
+                    const {root: lbRoot, img: lbImg} = ensurePhotoLightbox(tplFallback);
                     lbImg.src = src;
                     lbImg.alt = imgEl?.alt || '';
                     lbRoot.hidden = false;
-                }, { passive: false });
+                }, {passive: false});
                 (a as any)._tc_lb = 1; // 记个标识，避免重复绑定
             }
 
