@@ -2,7 +2,7 @@ import {extractMissingFeature, getBearerToken} from "../common/utils";
 import {localGet} from "../common/local_storage";
 import {
     __DBK_query_id_map,
-    BlueVerifiedFollowers,
+    BlueVerifiedFollowers, CreateBookmark,
     Followers,
     Following,
     UserByScreenName,
@@ -18,14 +18,18 @@ import {
 import {getTransactionIdFor} from "../content/txid";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
-async function getUrlWithQueryID(key: string): Promise<string | null> {
-    const map = await localGet(__DBK_query_id_map) as Record<string, string> || {}
+async function getUrlWithQueryID(
+    key: string
+): Promise<{ url: string; path: string } | null> {
+    const map = (await localGet(__DBK_query_id_map)) as Record<string, string> || {};
     const queryID = map[key];
     if (!queryID) {
         return null;
     }
-    // console.log("------------->>>>>>>>>>>>>>>>>>>>>query id:", queryID);
-    return `${BASE_URL}${queryID}/${key}`
+
+    const url = `${BASE_URL}${queryID}/${key}`;
+    const path = new URL(url).pathname; // 例如: /i/api/graphql/<qid>/<key>
+    return {url, path};
 }
 
 interface TweetRequestParams {
@@ -94,12 +98,12 @@ async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): 
         "withArticlePlainText": false
     }));
 
-    const baseUrl = await getUrlWithQueryID(UserTweets);
-    if (!baseUrl) {
+    const bp = await getUrlWithQueryID(UserTweets);
+    if (!bp) {
         console.warn("------>>> failed to load base url for UserByScreenName")
         return ""
     }
-    return `${baseUrl}?variables=${variables}&features=${features}&fieldToggles=${fieldToggles}`;
+    return `${bp.url}?variables=${variables}&features=${features}&fieldToggles=${fieldToggles}`;
 }
 
 // 提取 csrf token
@@ -124,8 +128,8 @@ async function generateHeaders(): Promise<Record<string, string>> {
 }
 
 export async function getUserIdByUsername(username: string): Promise<string | null> {
-    const baseUrl = await getUrlWithQueryID(UserByScreenName); // 保持不变
-    if (!baseUrl) {
+    const bp = await getUrlWithQueryID(UserByScreenName); // 保持不变
+    if (!bp) {
         console.warn("------>>> failed to load base url for UserByScreenName");
         return null;
     }
@@ -156,7 +160,7 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
         withAuxiliaryUserLabels: true,
     };
 
-    const url = `${baseUrl}?variables=${encodeURIComponent(JSON.stringify(variables))}&features=${encodeURIComponent(JSON.stringify(features))}&fieldToggles=${encodeURIComponent(JSON.stringify(fieldToggles))}`;
+    const url = `${bp.url}?variables=${encodeURIComponent(JSON.stringify(variables))}&features=${encodeURIComponent(JSON.stringify(features))}&fieldToggles=${encodeURIComponent(JSON.stringify(fieldToggles))}`;
 
     const headers = {
         'authorization': await getBearerToken(),
@@ -210,8 +214,8 @@ async function buildFollowingURL(params: {
     count?: number;
     cursor?: string;
 }): Promise<string> {
-    const baseUrl = await getUrlWithQueryID(Following); // 从本地 queryId 映射取
-    if (!baseUrl) throw new Error("Missing queryId for 'Following'");
+    const bp = await getUrlWithQueryID(Following); // 从本地 queryId 映射取
+    if (!bp) throw new Error("Missing queryId for 'Following'");
 
     const variables: any = {
         userId: params.userId,
@@ -260,7 +264,7 @@ async function buildFollowingURL(params: {
         responsive_web_enhance_cards_enabled: false,
     };
 
-    return `${baseUrl}?variables=${encodeURIComponent(JSON.stringify(variables))}`
+    return `${bp.url}?variables=${encodeURIComponent(JSON.stringify(variables))}`
         + `&features=${encodeURIComponent(JSON.stringify(features))}`;
 }
 
@@ -372,11 +376,14 @@ export async function _followApi(
     cursor?: string
 ): Promise<{ users: FollowUser[]; nextCursor?: string }> {
 
-    const path = await getFollowersPath(api); // ✅ 已由你实现
+    const bp = await getUrlWithQueryID(api);
+    if (!bp) {
+        throw new Error("Missing queryId for " + api);
+    }
     const query = buildFollowersUrl(userId, count, cursor);
-    const fullUrl = `https://x.com${path}${query}`;
+    const fullUrl = `${bp.url}${query}`;
 
-    const txid = await getTransactionIdFor("GET", path);
+    const txid = await getTransactionIdFor("GET", bp.path);
 
     const headers: Record<string, string> = {
         "authorization": await getBearerToken(),  // ✅ 你已有
@@ -399,4 +406,52 @@ export async function _followApi(
 
     const {users, nextCursor} = parseFollowingFromGraphQL(data) as FollowResult;
     return {users, nextCursor};
+}
+
+
+export async function createBookmark(tweetId: string): Promise<boolean> {
+    // 1) 组 URL：使用你现有的 queryId 映射
+    const bp = await getUrlWithQueryID(CreateBookmark);
+    if (!bp) {
+        throw new Error("Missing queryId for " + CreateBookmark);
+    }
+    const txid = await getTransactionIdFor("POST", bp.path);
+
+    // 3) headers：沿用你现有的 generateHeaders，再补充 POST 所需字段
+    const headers = await generateHeaders();
+    headers["content-type"] = "application/json";
+    headers["x-client-transaction-id"] = txid;
+
+    // 4) body：GraphQL 变量
+    const body = JSON.stringify({
+        variables: {
+            tweet_id: tweetId,
+        },
+    });
+    // 5) 发送 POST
+    const resp = await fetch(bp.url, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body,
+    });
+
+    // 6) 错误处理（保持你项目里的风格，抽取缺失 features）
+    if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        extractMissingFeature?.(text);
+        throw new Error(`HTTP ${resp.status}: ${text}`);
+    }
+
+    // 7) 解析与返回布尔值
+    const json = await resp.json();
+    console.log("------>>>", json);
+
+    const result = json?.data?.tweet_bookmark_put;
+    if (result === "Done") {
+        return true;
+    }
+
+    const message = json?.errors?.[0]?.message || "Unknown error";
+    throw new Error(message);
 }

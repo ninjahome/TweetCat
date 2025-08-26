@@ -12,7 +12,12 @@ import {getTweetCatFlag, handleLocationChange, navigateToTweetCat} from "../time
 import {logTPR} from "../common/debug_flags";
 import {setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
-import {fetchBlueVerifiedFollowersPage, fetchFollowersPage, fetchFollowingPage} from "../timeline/twitter_api";
+import {
+    createBookmark,
+    fetchBlueVerifiedFollowersPage,
+    fetchFollowersPage,
+    fetchFollowingPage
+} from "../timeline/twitter_api";
 import {getTransactionIdFor} from "./txid";
 
 export function isHomePage(): boolean {
@@ -188,5 +193,6 @@ window.addEventListener('message', (e) => {
     fetchFollowingPage,
     getTransactionIdFor,
     fetchFollowersPage,
-    fetchBlueVerifiedFollowersPage
+    fetchBlueVerifiedFollowersPage,
+    createBookmark
 });

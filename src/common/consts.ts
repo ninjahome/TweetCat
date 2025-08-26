@@ -74,6 +74,7 @@ export const TweetDetail = "TweetDetail"         // 单条推文详情（用于�
 export const UsersByRestIds = "UsersByRestIds"     // 根据一批 userId 查询用户信息
 export const SearchTimeline = "SearchTimeline" // 搜索结果（你可能以后用）
 export const CreateBookmark = "CreateBookmark"
+export const DeleteBookmark = "DeleteBookmark"
 export const Following = "Following"
 export const Followers = "Followers"
 export const BlueVerifiedFollowers = "BlueVerifiedFollowers"
@@ -86,6 +87,7 @@ export const watchedOps = [
     UsersByRestIds,
     SearchTimeline,
     CreateBookmark,
+    DeleteBookmark,
     Following,
     Followers,
     BlueVerifiedFollowers,
@@ -99,6 +101,7 @@ export const defaultQueryKeyMap: Record<string, string> = {
     UsersByRestIds: "kCBEQ-OvWNVtotaYmqG0aw",
     SearchTimeline: "fL2MBiqXPk5pSrOS5ACLdA",
     CreateBookmark: "aoDbu3RHznuiSkQ9aNM67Q",
+    DeleteBookmark: "Wlmlj2-xzyS1GN3a6cj-mQ",
     Following: "SaWqzw0TFAWMx1nXWjXoaQ",
     Followers: "i6PPdIMm1MO7CpAqjau7sw",
     BlueVerifiedFollowers: "fxEl9kp1Tgolqkq8_Lo3sg",
