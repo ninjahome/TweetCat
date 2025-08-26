@@ -16,7 +16,7 @@ function updateDurationBadge(video: HTMLVideoElement, badge: HTMLElement, totalS
     });
 }
 
-export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTMLElement {
+export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement, isQuoted = false): HTMLElement {
     const wrapper = tpl.content
         .getElementById('media-video-template')!
         .cloneNode(true) as HTMLElement;
@@ -26,10 +26,14 @@ export function videoRender(m: TweetMediaEntity, tpl: HTMLTemplateElement): HTML
     const video = wrapper.querySelector('video') as HTMLVideoElement;
     const badge = wrapper.querySelector('.duration-badge') as HTMLElement | null;
 
-    const aspectRatio = m.video_info?.aspect_ratio;
-    if (aspectRatio && aspectRatio.length === 2) {
-        const [w, h] = aspectRatio;
-        wrapper.style.aspectRatio = `${w} / ${h}`;
+    if (!isQuoted) {
+        const aspectRatio = m.video_info?.aspect_ratio;
+        if (aspectRatio && aspectRatio.length === 2) {
+            const [w, h] = aspectRatio;
+            wrapper.style.aspectRatio = `${w} / ${h}`;
+        }
+    } else {
+        wrapper.style.aspectRatio = `16 / 9`;
     }
 
     const bestVariant = selectBestVideoVariant(m.video_info?.variants ?? []);

@@ -291,7 +291,7 @@ function renderQuotedVideos(root: HTMLElement, tpl: HTMLTemplateElement, mediaSl
     }
 
     // B1：普通卡内嵌播放器
-    const player = videoRender(first, tpl);
+    const player = videoRender(first, tpl, true);
     const isGif = first.type === 'animated_gif';
     player.classList.add('tcq-qvideo-host', 'tcq-qmedia');
 
