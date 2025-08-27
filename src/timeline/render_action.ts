@@ -32,10 +32,10 @@ export function updateTweetBottomButtons(
             try {
                 bookMarkBtn.disabled = true;
                 await bookMark(entryID, tweetObj.rest_id, content, bookMarkBtn);
-                showToastMsg("save as bookmarked success");
+                showToastMsg("bookmarked success", 2);
             } catch (e) {
                 logTCR("[bookMark] failed:", e);
-                showToastMsg("save as bookmarked failed:" + e);
+                showToastMsg("bookmarked failed:" + e, 4);
             } finally {
                 bookMarkBtn.disabled = false;
             }

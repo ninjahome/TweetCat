@@ -38,6 +38,7 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
 
     const toastForFavorite = tpl.content.getElementById('tweet-toast')!.cloneNode(true) as HTMLElement;
     document.body.appendChild(toastForFavorite);
+    toastForFavorite.style.display = 'none';
 
     let imageScaleDiv = tpl.content.getElementById("tcqPhotoLightbox")!.cloneNode(true) as HTMLElement;
     document.body.appendChild(imageScaleDiv);

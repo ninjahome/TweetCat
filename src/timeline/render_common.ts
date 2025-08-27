@@ -62,7 +62,7 @@ export function ensurePhotoLightbox() {
     return {root, img, close};
 }
 
-export function showToastMsg(msg: string, timeout: number = 3_000) {
+export function showToastMsg(msg: string, timeout: number = 3) {
     let root = document.getElementById('tweet-toast') as HTMLElement;
     const msgSpan = root.querySelector(".tweet-toast__msg") as HTMLSpanElement;
     if (root.style.display === 'flex') {
@@ -76,5 +76,5 @@ export function showToastMsg(msg: string, timeout: number = 3_000) {
     setTimeout(() => {
         root.style.display = 'none';
         msgSpan.innerText = '';
-    }, timeout);
+    }, timeout * 1000);
 }
