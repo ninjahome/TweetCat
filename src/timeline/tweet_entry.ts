@@ -1,7 +1,3 @@
-// Tweet Classes V2
-
-// --- 基础类 ---
-
 import {WrapEntryObj} from "./db_raw_tweet";
 import {logRC, logTOP} from "../common/debug_flags";
 import {isXArticle, toHttps} from "../common/utils";
@@ -146,7 +142,6 @@ export class TweetCard {
                     break;
                 }
 
-// [ADD] ====== broadcast 系列：缩略图（加入 images 并设置 mainImageUrl）======
                 case 'broadcast_thumbnail':
                 case 'broadcast_thumbnail_small':
                 case 'broadcast_thumbnail_large':
@@ -161,7 +156,6 @@ export class TweetCard {
                     break;
                 }
 
-// [ADD] ====== broadcast 系列：缩略图调色板 ======
                 case 'broadcast_thumbnail_color': {
                     const colorPalette = v?.image_color_value?.palette || [];
                     for (const palette of colorPalette) {
@@ -229,7 +223,6 @@ export class TweetMediaEntity {
     type: 'photo' | 'video' | 'animated_gif';
     url: string;
 
-    /** ▶️ 仅 video / animated_gif 有值 */
     video_info?: VideoInfo;
     original_info?: {
         width: number;
@@ -526,7 +519,6 @@ function buildArticleTweetCard(raw: any): TweetCard | null {
     } as TweetCard;
 }
 
-// [ADD] ------- unified_card 解析工具（最小实现） -------
 type UnifiedCardRaw = {
     type?: string; // e.g. "image_website"
     component_objects?: any;
@@ -632,11 +624,7 @@ function inflateUnifiedCard(raw: UnifiedCardRaw, card: any) {
             }
         }
     }
-    // ========= media 结束 =========
 }
-
-// [ADD END] ---------------------------------------------
-
 
 export class TweetObj {
     rest_id: string;
@@ -744,7 +732,6 @@ export class EntryObj {
     }
 }
 
-// 批量解析 entries 的函数
 export function extractEntryObjs(entries: any[]): TweetResult {
     const tweetEntries: EntryObj[] = [];
     const tweetRawEntries: WrapEntryObj[] = [];
@@ -809,8 +796,6 @@ export function parseTimelineFromGraphQL(result: any): TweetResult {
     return extractEntryObjs(allEntries);
 }
 
-
-
 export class FollowUser {
     userID: string;
     screen_name: string;
@@ -830,7 +815,6 @@ export class FollowUser {
         this.rawData = raw;
     }
 }
-
 
 export class FollowResult {
     users: FollowUser[]
