@@ -1,4 +1,4 @@
-import {EntryObj} from "./tweet_entry";
+import {buildSyntheticItemFromModule, EntryObj} from "./tweet_entry";
 import pLimit from 'p-limit';
 
 import {
@@ -18,35 +18,45 @@ import {fetchTweets} from "./twitter_api";
 
 const MAX_TWEETS_PER_KOL = 200;
 
-
 export class WrapEntryObj {
     tweetId: string;
     userId: string;
     timestamp: number;
     rawJson: any;
+    isConversation: boolean = false
 
-    constructor(entryId: string, userId: string, timestamp: number, rawJson: any) {
+    constructor(entryId: string, userId: string, timestamp: number, rawJson: any, isConversation: boolean) {
         this.tweetId = entryId;
         this.userId = userId;
         this.timestamp = timestamp;
         this.rawJson = rawJson;
+        this.isConversation = isConversation;
     }
 
-    static fromEntryObj(entry: EntryObj, rawJson: any): WrapEntryObj {
+    static fromEntryObj(entry: EntryObj, rawJson: any, isConversation: boolean = false): WrapEntryObj {
         return new WrapEntryObj(
             entry.entryId,
             entry.tweet.author.authorID,
             new Date(entry.tweet.tweetContent.created_at).getTime(),
-            rawJson
+            rawJson,
+            isConversation
         );
     }
 
-    toEntryObj(): EntryObj {
-        return new EntryObj(this.rawJson);
-    }
+    static toEntryObj(data: WrapEntryObj): EntryObj {
+        const raw = data.rawJson;
+        const entryType = raw?.content?.entryType ?? raw?.entryType;
 
-    static fromDbRow(row: any): WrapEntryObj {
-        return new WrapEntryObj(row.tweetId, row.userId, row.timestamp, row.rawJson);
+        if (entryType === 'TimelineTimelineModule') {
+            const syntheticItem = buildSyntheticItemFromModule(raw)
+            if (!syntheticItem) {
+                throw new Error('TimelineTimelineModule contains no tweet items');
+            }
+            return new EntryObj(syntheticItem);
+        }
+
+        // 非模块：保持现有行为
+        return new EntryObj(raw);
     }
 }
 
