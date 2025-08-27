@@ -86,7 +86,7 @@ export class TweetPager {
 }
 
 function unwrapEntryObj(rawData: WrapEntryObj[]): EntryObj[] {
-    return rawData.map(row => WrapEntryObj.fromDbRow(row).toEntryObj());
+    return rawData.map(row => WrapEntryObj.toEntryObj(row));
 }
 
 export const tweetPager = new TweetPager();
@@ -151,5 +151,3 @@ async function fetchNewestAtFirstOpen() {
     await startToFetchTweets(param);
     logPager("✅ finish tweets fetching at first open twitter page");
 }
-
-// localStorage.removeItem('tc:firstFetchAt');

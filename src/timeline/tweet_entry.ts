@@ -732,6 +732,22 @@ export class EntryObj {
     }
 }
 
+export function buildSyntheticItemFromModule(entry: any) {
+    const moduleContent = entry.content as any;
+    const rawItems: any[] = Array.isArray(moduleContent?.items) ? moduleContent.items : [];
+    if (rawItems.length === 0) return null;
+
+    const primaryRawItem = rawItems.filter((node) => node && node.item?.itemContent?.itemType === "TimelineTweet")[0];
+    if (!primaryRawItem) return null;
+
+    primaryRawItem.item.entryType = 'TimelineTimelineItem';
+    return {
+        entryId: primaryRawItem.entryId,
+        content: primaryRawItem.item,
+    };
+}
+
+
 export function extractEntryObjs(entries: any[]): TweetResult {
     const tweetEntries: EntryObj[] = [];
     const tweetRawEntries: WrapEntryObj[] = [];
@@ -751,8 +767,18 @@ export function extractEntryObjs(entries: any[]): TweetResult {
         } else if (entry?.content?.entryType === 'TimelineTimelineCursor') {
             if (entry.content.cursorType === 'Bottom') bottomCursor = entry.content.value;
             else if (entry.content.cursorType === 'Top') topCursor = entry.content.value;
-        } else if (entry.content.entryType === 'TimelineTimelineModule') continue;
-        else {
+        } else if (entry.content.entryType === 'TimelineTimelineModule') {
+
+            const syntheticItem = buildSyntheticItemFromModule(entry)
+            if (!syntheticItem) continue;
+
+            const entryObj = new EntryObj(syntheticItem);
+            tweetEntries.push(entryObj);
+
+            const wrap = WrapEntryObj.fromEntryObj(entryObj, entry, true);
+            tweetRawEntries.push(wrap);
+
+        } else {
             console.warn("unknown entry type", entry);
         }
     }

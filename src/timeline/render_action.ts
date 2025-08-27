@@ -11,11 +11,7 @@ import {MsgType} from "../common/consts";
 import {bookmarkApi} from "./twitter_api";
 
 export function updateTweetBottomButtons(
-    container: HTMLElement,
-    tweetObj: TweetObj,
-    mp4List: string[],
-    entryID: string
-): void {
+    container: HTMLElement, tweetObj: TweetObj, mp4List: string[], entryID: string): void {
     const downloadDiv = container.querySelector(".action-button.download") as HTMLElement;
     prepareDownloadBtn(downloadDiv, tweetObj, mp4List)
 

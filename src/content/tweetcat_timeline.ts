@@ -36,6 +36,9 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     const area = tpl.content.getElementById('tweetCatArea')!.cloneNode(true) as HTMLElement;
     area.style.display = 'none';
 
+    const toastForFavorite = tpl.content.getElementById('tweet-toast')!.cloneNode(true) as HTMLElement;
+    document.body.appendChild(toastForFavorite);
+
     const originalArea = main.firstChild as HTMLElement;
 
     const homeBtn = menuList.children[0];
