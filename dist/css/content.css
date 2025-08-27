@@ -546,7 +546,6 @@ span.duration-badge {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-direction: row-reverse;
     margin-top: 4px;
 }
 
@@ -567,8 +566,8 @@ span.duration-badge {
 .action-button .bookmark-icon,
 .action-button .like-icon,
 .action-button .share-icon {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     fill: currentColor;
 }
 

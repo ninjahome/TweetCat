@@ -228,6 +228,7 @@ img, video {
 .tweet-actions .download {
     flex-direction: row-reverse;
 }
+
 .action-button .action-button-download-btn {
     display: flex;
     background-color: rgb(29, 155, 240);
@@ -239,7 +240,10 @@ img, video {
     font-size: 15px;
     font-weight: 700;
 }
-
+.tweet-actions .bookMarked {
+    display: flex;
+    align-items: center;
+}
 .action-button-download-btn:hover {
     background: rgba(25, 140, 216, 0.2);
     color: rgba(29, 155, 240);
@@ -250,9 +254,20 @@ img, video {
     transition: fill .2s;
     font-weight: 700;
 }
-.action-button:hover .action-button-download-icon svg path {
+.bookmark-icon svg path {
+    fill: rgb(83, 100, 113); /* Twitter 次要文字灰 */
+    transition: fill .2s;
+    font-weight: 700;
+}
+.action-button:hover .action-button-download-icon svg path,
+.bookmark-icon:hover svg path {
     fill: rgb(29,155,240); /* Twitter 蓝 */
 }
+
+.bookmark-icon:active svg path{
+    fill: rgb(29,155,240); /* Twitter 蓝 */
+}
+
 /* ---------- Accents (hover chips, labels, tabs) ---------- */
 .hover-chat:hover,
 .tweet-category-label {
@@ -847,4 +862,52 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .dpi-meta {
     font-size: 13px;
     color: rgb(83, 100, 113);
+}
+
+/* Twitter toast */
+:root{
+    --tweet-toast-bg:#1DA1F2;  /* Twitter 蓝 */
+    --tweet-toast-fg:#fff;
+    --tweet-toast-radius:14px;
+    --tweet-toast-shadow:0 8px 24px rgba(0,0,0,.2);
+    --tweet-toast-pad:12px 18px;
+    --tweet-toast-gap:24px;
+    --tweet-toast-speed:300ms; /* 进出过渡 */
+    --tweet-toast-life:2800ms; /* 展示时长（JS 使用） */
+}
+
+/* 容器固定在底部居中 */
+.tweet-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 16px);
+    opacity: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: var(--tweet-toast-gap);
+    padding: var(--tweet-toast-pad);
+    border-radius: 999px;
+    background: var(--tweet-toast-bg);
+    color: var(--tweet-toast-fg);
+    box-shadow: var(--tweet-toast-shadow);
+    font: 600 16px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    max-width: calc(100vw - 24px);
+    white-space: nowrap;
+    transition: opacity var(--tweet-toast-speed) ease, transform var(--tweet-toast-speed) ease;
+    z-index: 9999;
+}
+
+/* 显示状态：上移并显现 */
+.tweet-toast.show {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    pointer-events: auto;
+}
+.tweet-toast__action{ text-decoration: underline; cursor: pointer; }
+.tweet-toast__close{ margin-left: 6px; cursor: pointer; opacity:.9; }
+
+@media (max-width:420px){
+    .tweet-toast{ gap:16px; padding:10px 14px; font-weight:600; font-size:15px; }
 }
