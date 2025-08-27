@@ -193,7 +193,7 @@ function wireMediaAnchors(
 
                     // 你已抽到公共模块的 API
                     // @ts-ignore
-                    const {root: lbRoot, img: lbImg} = ensurePhotoLightbox(tplFallback);
+                    const {root: lbRoot, img: lbImg} = ensurePhotoLightbox();
                     lbImg.src = src;
                     lbImg.alt = imgEl?.alt || '';
                     lbRoot.hidden = false;

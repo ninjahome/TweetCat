@@ -44,22 +44,8 @@ export function cloneFromTpl(tpl: HTMLTemplateElement, id: string): HTMLElement 
     return node ? (node.cloneNode(true) as HTMLElement) : null;
 }
 
-export function ensurePhotoLightbox(tpl: HTMLTemplateElement) {
-    const INSTANCE_ID = 'tcqPhotoLightbox'; // 运行时实例 id
-    let root = document.getElementById(INSTANCE_ID) as HTMLElement | null;
-
-    if (!root) {
-        const cloned = cloneFromTpl(tpl, 'tcqTplPhotoLightbox') as HTMLElement | null;
-        if (!cloned) throw new Error('tpl tcqTplPhotoLightbox not found');
-        // 兼容 cloneFromTpl 可能返回外层 .tcq-tpl：取里面的真正根
-        root = cloned.matches('.tcq-photo-lightbox')
-            ? cloned
-            : (cloned.querySelector('.tcq-photo-lightbox') as HTMLElement);
-        if (!root) throw new Error('lightbox root missing');
-        root.id = INSTANCE_ID;
-        document.body.appendChild(root);
-    }
-
+export function ensurePhotoLightbox() {
+    let root = document.getElementById('tcqPhotoLightbox') as HTMLElement;
     const img = root.querySelector('.tcq-plb-img') as HTMLImageElement;
     const close = root.querySelector('.tcq-plb-close') as HTMLButtonElement;
 
@@ -76,3 +62,19 @@ export function ensurePhotoLightbox(tpl: HTMLTemplateElement) {
     return {root, img, close};
 }
 
+export function showToastMsg(msg: string, timeout: number = 3_000) {
+    let root = document.getElementById('tweet-toast') as HTMLElement;
+    const msgSpan = root.querySelector(".tweet-toast__msg") as HTMLSpanElement;
+    if (root.style.display === 'flex') {
+        msgSpan.innerText = msg;
+        return;
+    }
+
+    root.style.display = 'flex';
+    msgSpan.innerText = msg;
+
+    setTimeout(() => {
+        root.style.display = 'none';
+        msgSpan.innerText = '';
+    }, timeout);
+}

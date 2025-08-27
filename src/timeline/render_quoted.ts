@@ -202,7 +202,7 @@ function renderQuotedPhotos(root: HTMLElement, tpl: HTMLTemplateElement, mediaSl
         anchor.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const {root: lbRoot, img: lbImg} = ensurePhotoLightbox(tpl);
+            const {root: lbRoot, img: lbImg} = ensurePhotoLightbox();
             lbImg.src = src;
             lbImg.alt = img?.alt || '';
             lbRoot.hidden = false;

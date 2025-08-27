@@ -9,6 +9,7 @@ import {
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {bookmarkApi} from "./twitter_api";
+import {showToastMsg} from "./render_common";
 
 export function updateTweetBottomButtons(
     container: HTMLElement, tweetObj: TweetObj, mp4List: string[], entryID: string): void {
@@ -31,8 +32,10 @@ export function updateTweetBottomButtons(
             try {
                 bookMarkBtn.disabled = true;
                 await bookMark(entryID, tweetObj.rest_id, content, bookMarkBtn);
+                showToastMsg("save as bookmarked success");
             } catch (e) {
                 logTCR("[bookMark] failed:", e);
+                showToastMsg("save as bookmarked failed:" + e);
             } finally {
                 bookMarkBtn.disabled = false;
             }
