@@ -161,12 +161,6 @@ function wireMediaAnchors(
     const area = article.querySelector('.tweet-media-area');
     if (!area) return;
 
-    // 若未显式传入 tpl，则尝试从文档里找到含有 Lightbox 子模板的 <template>
-    const tplFallback =
-        tpl ||
-        (document.getElementById('tcqTplPhotoLightbox')?.closest('template') as HTMLTemplateElement | null) ||
-        undefined;
-
     const links = Array.from(area.querySelectorAll<HTMLAnchorElement>('a'));
 
     for (let i = 0; i < links.length; i++) {
