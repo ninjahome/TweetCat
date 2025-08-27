@@ -741,12 +741,10 @@ export function buildSyntheticItemFromModule(entry: any) {
     if (!primaryRawItem) return null;
 
     primaryRawItem.item.entryType = 'TimelineTimelineItem';
-    const syntheticItem = {
+    return {
         entryId: primaryRawItem.entryId,
         content: primaryRawItem.item,
     };
-
-    return syntheticItem;
 }
 
 
