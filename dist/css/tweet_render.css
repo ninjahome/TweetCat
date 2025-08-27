@@ -911,7 +911,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     left: 50%;
     bottom: 28px;
     transform: translate(-50%, 16px);
-    opacity: 0;
+    opacity: 1;
     pointer-events: none;
     display: flex;
     align-items: center;
