@@ -35,7 +35,12 @@ export function updateTweetBottomButtons(
                 showToastMsg("bookmarked success", 2);
             } catch (e) {
                 console.log("[bookMark] failed:", e);
-                showToastMsg("bookmarked failed:" + e, 4);
+                const msg = String((e as any)?.message ?? e ?? "").toLowerCase();
+                if (msg.includes("_missing: tweet")) {
+                    showToastMsg("bookmarked success", 2);
+                } else {
+                    showToastMsg("bookmarked failed:" + e, 4);
+                }
             } finally {
                 bookMarkBtn.disabled = false;
             }
@@ -82,10 +87,16 @@ function prepareDownloadBtn(downloadDiv: HTMLElement, tweetObj: TweetObj, mp4Lis
 
 async function bookMark(eid: string, tid: string, content: TweetContent, statusEL: HTMLElement) {
     const statusToBe = !content.bookmarked;
-    await bookmarkApi(tid, statusToBe);
-    await sendMsgToService({entryID: eid, bookmarked: statusToBe}, MsgType.TweetBookmarkToggle);
+    if (statusToBe) {
+        await bookmarkApi(tid, statusToBe);
+        await sendMsgToService({entryID: eid, bookmarked: statusToBe}, MsgType.TweetBookmarkToggle);
+        setBookStratus(statusEL, statusToBe);
+    } else {
+        await sendMsgToService({entryID: eid, bookmarked: statusToBe}, MsgType.TweetBookmarkToggle);
+        setBookStratus(statusEL, statusToBe);
+        await bookmarkApi(tid, statusToBe);
+    }
     content.bookmarked = statusToBe;
-    setBookStratus(statusEL, statusToBe);
     logTCR("------>>> after bookMark:", content);
 }
 
