@@ -145,7 +145,7 @@ export class TweetManager {
         logTweetMgn(`[mountBatch] batch mount: viewStart=${viewStart} `);
 
         const centerIdx = this.deriveWindowFromMountedNodes();
-        if (!centerIdx) {
+        if (centerIdx===null) {
             return await this.fastMountBatch(viewStart);
         }
         return await this.normalMountBatch(centerIdx);

@@ -34,7 +34,7 @@ export function updateTweetBottomButtons(
                 await bookMark(entryID, tweetObj.rest_id, content, bookMarkBtn);
                 showToastMsg("bookmarked success", 2);
             } catch (e) {
-                logTCR("[bookMark] failed:", e);
+                console.log("[bookMark] failed:", e);
                 showToastMsg("bookmarked failed:" + e, 4);
             } finally {
                 bookMarkBtn.disabled = false;
