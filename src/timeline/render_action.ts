@@ -25,17 +25,16 @@ export function updateTweetBottomButtons(
         rewardBtn.dataset.wired = "1";
     }
 
-    const bookMarkBtn = container.querySelector(".action-button.bookMarked") as HTMLButtonElement | null;
+    const bookMarkBtn = container.querySelector(".action-button.bookMarked") as HTMLButtonElement;
     const content = tweetObj.tweetContent;
-    const bookTxt = bookMarkBtn?.querySelector(".bookmark-txt") as HTMLElement;
-    setBookStratus(bookTxt, content.bookmarked);
+    setBookStratus(bookMarkBtn, content.bookmarked);
 
     if (bookMarkBtn && bookMarkBtn.dataset.wired !== "1") {
         logTCR("------>>>", content, tweetObj.rest_id);
         bookMarkBtn.addEventListener("click", async () => {
             try {
                 bookMarkBtn.disabled = true;
-                await bookMark(entryID, tweetObj.rest_id, content, bookTxt);
+                await bookMark(entryID, tweetObj.rest_id, content, bookMarkBtn);
             } catch (e) {
                 logTCR("[bookMark] failed:", e);
             } finally {
@@ -46,11 +45,15 @@ export function updateTweetBottomButtons(
     }
 }
 
-function setBookStratus(statusEL: HTMLElement, booked: boolean) {
+function setBookStratus(bookMarkBtn: HTMLElement, booked: boolean) {
+    const bookTxt = bookMarkBtn.querySelector(".bookmark-txt") as HTMLElement;
+    const icon = bookMarkBtn.querySelector(".bookmark-icon") as HTMLElement
     if (booked) {
-        statusEL.innerText = "取消收藏";
+        bookTxt.innerText = "取消收藏";
+        icon.classList.add("active")
     } else {
-        statusEL.innerText = "收藏";
+        bookTxt.innerText = "收藏";
+        icon.classList.remove("active")
     }
 }
 

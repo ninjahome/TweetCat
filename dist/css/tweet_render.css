@@ -264,7 +264,7 @@ img, video {
     fill: rgb(29,155,240); /* Twitter 蓝 */
 }
 
-.bookmark-icon:active svg path{
+.bookmark-icon.active svg path{
     fill: rgb(29,155,240); /* Twitter 蓝 */
 }
 
