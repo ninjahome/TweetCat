@@ -145,7 +145,7 @@ export class TweetManager {
         logTweetMgn(`[mountBatch] batch mount: viewStart=${viewStart} `);
 
         const centerIdx = this.deriveWindowFromMountedNodes();
-        if (centerIdx===null) {
+        if (centerIdx === null) {
             return await this.fastMountBatch(viewStart);
         }
         return await this.normalMountBatch(centerIdx);
@@ -271,12 +271,19 @@ export class TweetManager {
 
         const EXPAND = TweetManager.EXTRA_BUFFER_COUNT / 2;
         const MIN_COUNT = TweetManager.MIN_TWEETS_COUNT;
-        const startIdx = Math.max(0, centerIdx - EXPAND);
+
+        let startIdx = Math.max(0, centerIdx - EXPAND);
         let endIdx = startIdx + MIN_COUNT;
-        const cellLen = this.cells.length;
+
+        if (centerIdx <= EXPAND + 1) {
+            startIdx = 0;
+            endIdx = startIdx + MIN_COUNT;
+            logTweetMgn("center idx maybe the center:", centerIdx, " EXPAND:", EXPAND);
+        }
 
         logTweetMgn(`[normalMountBatch]preparing anchorIdx=${centerIdx} window Changed:[${this.lastWindow?.s},${this.lastWindow?.e})->=[${startIdx}, ${endIdx}) `);
 
+        const cellLen = this.cells.length;
         if (endIdx > cellLen) {
             const needCount = endIdx - cellLen;
             await this.loadAndRenderTweetCell(needCount);
@@ -432,6 +439,10 @@ export class TweetManager {
 
         // 向后扩展 buffer，构建挂载窗口
         const buffer = TweetManager.EXTRA_BUFFER_COUNT / 2;
+        if (anchorIdx <= buffer) {
+            logTweetMgn(`[estimateWindow] scroll to tp anchor[${anchorIdx}] found range is[0,${TweetManager.MIN_TWEETS_COUNT})`);
+            return [0, TweetManager.MIN_TWEETS_COUNT];
+        }
         let endIndex = Math.min(anchorIdx + buffer, count);
         const startIdx = Math.max(0, endIndex - TweetManager.MIN_TWEETS_COUNT);
         logTweetMgn(`[estimateWindow] found anchor[${anchorIdx}] found range is[${startIdx},${endIndex})`);
