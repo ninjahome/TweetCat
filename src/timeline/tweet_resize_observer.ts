@@ -1,16 +1,24 @@
 import {logTweetMgn} from "../common/debug_flags";
 
+export type ResizeParam = {
+    index: number;
+    newHeight: number;
+    isMoreAction: boolean;
+}
+
+export type UpdateFunc =  (index: number, newHeight: number, isMoreAct: boolean) => void;
+
 type ResizeLogInfo = {
     index: number;
     lastHeight: number;
-    onUpdate: (index: number, newHeight: number) => void;
+    onUpdate:UpdateFunc;
 };
 
 export class TweetResizeObserverManager {
     private observer: ResizeObserver;
     private cellMap = new WeakMap<HTMLElement, ResizeLogInfo>();
 
-    private resizeQueue = new Map<HTMLElement, { index: number; newHeight: number }>();
+    private resizeQueue = new Map<HTMLElement, ResizeParam>();
     private debounceTimer: number | null = null;
 
     private readonly THRESHOLD = 2;        // px 以内变动忽略
@@ -31,7 +39,7 @@ export class TweetResizeObserverManager {
     observe(
         el: HTMLElement,
         index: number,
-        onUpdate: (idx: number, newH: number) => void
+        onUpdate: UpdateFunc
     ) {
         if (!el) return;
         const lastHeight = el.offsetHeight || 0;
@@ -66,7 +74,6 @@ export class TweetResizeObserverManager {
      */
     private handleResizeEntry(entry: ResizeObserverEntry) {
         const el = entry.target as HTMLElement;
-        if (!this.cellMap.has(el)) return;
         if (!el.isConnected) return;
 
         const info = this.cellMap.get(el);
@@ -78,7 +85,9 @@ export class TweetResizeObserverManager {
 
         if (Math.abs(delta) < this.THRESHOLD) return;
 
-        this.resizeQueue.set(el, {index, newHeight});
+        const isMoreAction = el.dataset.isMoreAct === '1'
+        this.resizeQueue.set(el, {index, newHeight, isMoreAction});
+        el.dataset.isMoreAct = '0';
     }
 
     /**
@@ -97,14 +106,15 @@ export class TweetResizeObserverManager {
      * 批处理触发更新回调
      */
     private flushResizeQueue() {
-        for (const [el, {index, newHeight}] of this.resizeQueue.entries()) {
+
+        for (const [el, {index, newHeight, isMoreAction}] of this.resizeQueue.entries()) {
             const info = this.cellMap.get(el);
             if (!info) continue;
 
             const {onUpdate} = info;
-            logTweetMgn(`[ResizeObserver] cell[${index}] height changed (debounced):${info.lastHeight} -> ${newHeight}`);
+            logTweetMgn(`[ResizeObserver] cell[${index}] height changed (debounced):${info.lastHeight} -> ${newHeight} isMoreAction=${isMoreAction}`);
             info.lastHeight = newHeight;
-            onUpdate(index, newHeight);
+            onUpdate(index, newHeight, isMoreAction);
         }
 
         this.resizeQueue.clear();

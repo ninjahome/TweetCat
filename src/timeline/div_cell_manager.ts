@@ -6,7 +6,7 @@ import {
 
 import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../common/debug_flags";
-import {TweetResizeObserverManager} from "./tweet_resize_observer";
+import {TweetResizeObserverManager, UpdateFunc} from "./tweet_resize_observer";
 import {findCellFromNode} from "./div_node_pool";
 import {tweetFetcher} from "./tweet_fetcher";
 
@@ -99,10 +99,10 @@ export class TweetManager {
         const idx = this.cells.indexOf(cell);
         if (idx === -1) return;
         const newH = this.heights[idx] + dh;
-        this.updateHeightAt(idx, newH);
+        this.updateHeightAt(idx, newH, false);
     };
 
-    public updateHeightAt = (idx: number, newH: number): void => {
+    public updateHeightAt: UpdateFunc = (idx: number, newH: number, isMoreAct: boolean) => {
         const oldH = this.heights[idx] ?? TweetManager.EST_HEIGHT;
         const delta = newH - oldH;
         if (Math.abs(delta) < 20) return;
@@ -125,7 +125,7 @@ export class TweetManager {
         const curTop = window.scrollY;
         const shouldAdjustScroll = curTop > changedOffset;
 
-        if (shouldAdjustScroll && this.scroller) {
+        if (shouldAdjustScroll && this.scroller && !isMoreAct) {
             const newTop = curTop + delta;
             this.scroller.scrollToTop({needScroll: true, targetTop: newTop});
             logTweetMgn(`[updateHeightAt] adjusted via VirtualScroller: scrollTop ${curTop} -> ${newTop}`);

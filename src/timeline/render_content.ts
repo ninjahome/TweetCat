@@ -57,6 +57,10 @@ export function updateTweetContentArea(
         moreAnchor.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
+
+            const node = (container.closest(".tweet-cardfloat") ?? container) as HTMLElement;
+            node.dataset.isMoreAct = '1';
+
             tweetContent.innerHTML = buildVisibleWithEntitiesHTML(
                 tweet,
                 opts?.hiddenShortUrls ?? [],
