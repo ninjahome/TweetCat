@@ -70,6 +70,7 @@ export class TweetCatCell {
         }
 
         if (this.node?.isConnected) this.node.remove();
+        this.node.style.visibility = 'hidden';
 
         globalNodePool.unregister(this.node);
         globalNodePool.release(this.id, this.node);

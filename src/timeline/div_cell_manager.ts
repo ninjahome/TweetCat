@@ -343,6 +343,7 @@ export class TweetManager {
                 this.heights[i] = realH;
                 this.offsets[i] = offset;
                 cell.node.style.transform = `translateY(${offset}px)`;
+                cell.node.style.visibility = 'visible';
                 logTweetMgn(`[normalMountBatch] cell[${i}] previous={o:${prevOffset},h:${prevHeight}} -> {0:${offset}, h:${realH}}`);
             }
 
