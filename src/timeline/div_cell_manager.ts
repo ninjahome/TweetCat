@@ -355,14 +355,6 @@ export class TweetManager {
         return {needScroll: needScroll, targetTop: window.scrollY + anchorDelta};
     }
 
-    private reorderMountedNodes(startIdx: number, endIndex: number) {
-        const fragment = document.createDocumentFragment();
-        for (let i = startIdx; i < endIndex; i++) {
-            fragment.appendChild(this.cells[i].node); // 已挂载节点会被“移动”
-        }
-        this.timelineEl.appendChild(fragment);
-    }
-
     private resolveMountDirection(
         startIdx: number,
         endIndex: number,
