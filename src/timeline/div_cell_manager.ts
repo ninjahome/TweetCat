@@ -59,13 +59,8 @@ export class TweetManager {
         logTweetMgn("------>>> tweet manager init success");
     }
 
-    public scrollToTop() {
-        this.scroller?.scrollToTop({needScroll: true, targetTop: 0})
-    }
-
     public async switchCategory(cat: number) {
         logTweetMgn("------>>> tweet category switch to:", cat);
-
         this.cleanTimeLineContent();
         tweetPager.switchCategory(cat);
         tweetFetcher.resetNotifications();
@@ -73,11 +68,9 @@ export class TweetManager {
     }
 
     cleanTimeLineContent() {
-
         this.timelineEl.innerHTML = "";
         this.timelineEl.style.removeProperty("height");
         this.timelineEl.style.removeProperty("min-height");
-
 
         this.cells.forEach(c => c.unmount());
 
@@ -179,7 +172,6 @@ export class TweetManager {
         const nodesToStable = await Promise.all(mountPromises);
         await waitStableAll(nodesToStable);
 
-
         for (let i = startIdx; i < endIndex; i++) {
             const cell = this.cells[i];
             const realH = cell.node.offsetHeight || estH;
@@ -226,7 +218,7 @@ export class TweetManager {
         try {
             const tweets = await tweetPager.getNextTweets(pageSize);
             if (!tweets.length) return;//TODO:: no more tweet data!!
-            logTweetMgn('------>>> prepare render ' + tweets.length + ' tweets to tweetCat cell')
+            logTweetMgn('[loadAndRenderTweetCell]prepare render ' + tweets.length + ' tweets to tweetCat cell')
             for (const tw of tweets) {
                 const lastIdx = this.cells.length;
                 const cell = new TweetCatCell(tw, this.tpl, this.onCellDh, lastIdx);
@@ -271,14 +263,18 @@ export class TweetManager {
 
         const EXPAND = TweetManager.EXTRA_BUFFER_COUNT / 2;
         const MIN_COUNT = TweetManager.MIN_TWEETS_COUNT;
+        const estH = TweetManager.EST_HEIGHT;
 
         let startIdx = Math.max(0, centerIdx - EXPAND);
         let endIdx = startIdx + MIN_COUNT;
 
-        if (centerIdx <= EXPAND + 1) {
-            startIdx = 0;
-            endIdx = startIdx + MIN_COUNT;
-            logTweetMgn("center idx maybe the center:", centerIdx, " EXPAND:", EXPAND);
+        const startOffset = this.offsets[startIdx];
+        const latestTop = window.scrollY || document.documentElement.scrollTop;
+        if (!!startOffset) {
+            if (startOffset > latestTop - EXPAND * estH) {
+                logTweetMgn(`[normalMountBatch]------->>>need to adjust top area startIdx=${startIdx} startOffset=${startOffset} latestTop:${latestTop}`);
+                startIdx = Math.max(0, startIdx - EXPAND);
+            }
         }
 
         logTweetMgn(`[normalMountBatch]preparing anchorIdx=${centerIdx} window Changed:[${this.lastWindow?.s},${this.lastWindow?.e})->=[${startIdx}, ${endIdx}) `);
@@ -301,7 +297,6 @@ export class TweetManager {
         const anchorOffset = this.offsets[centerIdx];
         let mountStartIdx = startIdx;
         let offset;
-        const estH = TweetManager.EST_HEIGHT;
         if (direction === MountDirection.Down) {
             mountStartIdx = centerIdx;
             offset = anchorOffset;
@@ -350,7 +345,9 @@ export class TweetManager {
             offset += realH;
             this.resizeLogger.observe(cell.node, i, this.updateHeightAt);
         }
-
+        const latestBottom = latestTop + window.innerHeight;
+        const endOffset = this.offsets[endIdx - 1];
+        if (endOffset - estH < latestBottom) console.log("++++++++++++++++++++++>>>>", endIdx, endOffset, latestBottom);
 
         this.unmountCellsBefore(startIdx);
         this.unmountCellsAfter(endIdx);

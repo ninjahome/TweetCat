@@ -69,8 +69,10 @@ export class TweetCatCell {
             videoObserver.unobserve(this.video);
         }
 
-        if (this.node?.isConnected) this.node.remove();
-        this.node.style.visibility = 'hidden';
+        if (this.node?.isConnected) {
+            this.node.remove();
+            this.node.style.visibility = 'hidden';
+        }
 
         globalNodePool.unregister(this.node);
         globalNodePool.release(this.id, this.node);
