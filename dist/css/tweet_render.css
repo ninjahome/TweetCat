@@ -477,6 +477,9 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    margin-right: 12px;
+    margin-bottom: 12px;
+    margin-top: 8px;
 }
 
 /* “显示更多”按钮 */
@@ -714,7 +717,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 .tcq-quoted-block-row .tcq-quoted-content {
     flex: 8 1 0%;
-    margin: 8px 12px 12px 0 !important;
 }
 .tcq-quoted-block-row .tcq-quoted-media{
     flex: 2 1 0%;
