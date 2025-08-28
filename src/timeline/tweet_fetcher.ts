@@ -2,13 +2,14 @@ import {fetchTweets, getUserIdByUsername} from "./twitter_api";
 import {sendMsgToService, sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
-import {cacheTweetsToSW} from "./db_raw_tweet";
+import {cacheTweetsToSW, WrapEntryObj} from "./db_raw_tweet";
 import {MsgType} from "../common/consts";
 import {EntryObj, parseTimelineFromGraphQL, TweetResult} from "./tweet_entry";
 import {queryKolById, updateKolIdToSw} from "../object/tweet_kol";
 import {resetNewestTweet, showNewestTweets} from "../content/tweetcat_web3_area";
 import {setLatestFetchAt} from "./tweet_pager";
 import {tweetFetchParam} from "../common/msg_obj";
+import {an} from "vitest/dist/chunks/reporters.d.BFLkQcL6";
 
 const MIN_FETCH_GAP = 5_000;
 
@@ -160,13 +161,12 @@ export async function fetchImmediateInNextRound(kolName: string, kolUserId?: str
         }
     }
     const cachedData = tempCacheForTweetOfKolProfilePage.get(kolID);
-    if (!cachedData) {
+    if (!cachedData || cachedData.length === 0) {
         logFT(`[fetchImmediateInNextRound]🚄  need to load tweets in next timer round.\n`);
         await sendMsgToService(kolID, MsgType.TimerKolInQueueAtOnce);
     } else {
         logFT(`[fetchImmediateInNextRound]💾  use cached data directly.\n`);
-        const wrapList = cachedData.wrapDbEntry;
-        await sendMsgToService({kolId: kolID, data: wrapList}, MsgType.TweetCacheToDB);
+        await sendMsgToService({kolId: kolID, data: cachedData}, MsgType.TweetCacheToDB);
         tempCacheForTweetOfKolProfilePage.delete(kolID);
     }
 }
@@ -204,7 +204,7 @@ export async function startToCheckKolId(ids: any[]) {
     }
 }
 
-const tempCacheForTweetOfKolProfilePage = new Map<string, TweetResult>();
+const tempCacheForTweetOfKolProfilePage = new Map<string, WrapEntryObj[]>();
 
 export async function processCapturedTweets(result: any, kolId: string) {
 
@@ -213,14 +213,44 @@ export async function processCapturedTweets(result: any, kolId: string) {
     await sendMsgToService({}, MsgType.TokenUsedByUser);
 
     const r = parseTimelineFromGraphQL(result);
+    const wrapList = r.wrapDbEntry;
     const kol = await queryKolById(kolId);
+
     if (!kol) {
         logFT(`no need to send tweets data to service for : ${kolId}`);
-        tempCacheForTweetOfKolProfilePage.set(kolId, r);
+        tempCacheForTweetOfKolProfilePage.set(kolId, wrapList);
         return;
     }
 
-    const wrapList = r.wrapDbEntry;
     await sendMsgToService({kolId: kolId, data: wrapList}, MsgType.TweetCacheToDB);
     logFT(`captured tweets cached ${wrapList.length} tweets for ${kolId}`);
+}
+
+export async function processCapturedHomeLatest(result: any) {
+    const res = parseTimelineFromGraphQL(result);
+
+    const kolToCache = new Set<string>();
+    for (const w of res.wrapDbEntry) {
+
+        let cachedData = tempCacheForTweetOfKolProfilePage.get(w.userId)
+        if (!cachedData) {
+            cachedData = [];
+            tempCacheForTweetOfKolProfilePage.set(w.userId, cachedData);
+        }
+        cachedData.push(w);
+
+        const kol = await queryKolById(w.userId);
+        if (!!kol) {
+            kolToCache.add(w.userId);
+        }
+    }
+
+    logFT(`captured tweets at home result`, res);
+
+    for (const kolId of kolToCache) {
+        const list = tempCacheForTweetOfKolProfilePage.get(kolId) ?? [];
+        if (list.length === 0) continue;
+        await sendMsgToService({kolId: kolId, data: list}, MsgType.TweetCacheToDB);
+        tempCacheForTweetOfKolProfilePage.delete(kolId);
+    }
 }

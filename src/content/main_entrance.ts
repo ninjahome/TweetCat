@@ -7,7 +7,12 @@ import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "../common/consts
 import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
-import {processCapturedTweets, startToCheckKolId, startToFetchTweets} from "../timeline/tweet_fetcher";
+import {
+    processCapturedHomeLatest,
+    processCapturedTweets,
+    startToCheckKolId,
+    startToFetchTweets
+} from "../timeline/tweet_fetcher";
 import {getTweetCatFlag, handleLocationChange, navigateToTweetCat} from "../timeline/route_helper";
 import {logTPR} from "../common/debug_flags";
 import {setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
@@ -175,6 +180,10 @@ window.addEventListener('message', (e) => {
             case MsgType.IJUserTweetsCaptured: {
                 const d = msg.data;
                 processCapturedTweets(d.tweets as any, d.kolID as string).then();
+                break;
+            }
+            case MsgType.IJHomeLatestCaptured: {
+                processCapturedHomeLatest(msg.data).then()
                 break;
             }
             default: {

@@ -1,6 +1,6 @@
 import {logFT} from "./common/debug_flags";
 import {postToContent} from "./injection";
-import {MsgType} from "./common/consts";
+import {HomeLatestTimeline, HomeTimeline, MsgType, UserTweets} from "./common/consts";
 
 declare global {
     interface Window {
@@ -15,14 +15,25 @@ declare global {
 /** ===== Debug helpers ===== */
 let __tc_req_seq__ = 0;
 
-function __tc_isUserTweetsUrl__(input: any): boolean {
+function __tc_isTargetTimelineUrl__(input: any): string | null {
     try {
         const url = typeof input === "string" ? input : String(input);
-        return url.includes("/UserTweets");
+
+        if (url.includes("/" + UserTweets)) {
+            return UserTweets;
+        }
+        if (url.includes("/" + HomeLatestTimeline)) {
+            return HomeLatestTimeline;
+        }
+        if (url.includes("/" + HomeTimeline)) {
+            return HomeTimeline;
+        }
+        return null;
     } catch {
-        return false;
+        return null;
     }
 }
+
 
 function __tc_parseVarsFromUrl__(rawUrl: string): any | null {
     try {
@@ -72,20 +83,26 @@ function __tc_installFetchUserTweetsCapture__(): void {
         try {
             const url = __tc_url_of__(input);
             const isGraphql = __tc_isGraphqlUrl__(url);
-            const isUserTweets = __tc_isUserTweetsUrl__(url);
+            const timeType = __tc_isTargetTimelineUrl__(url);
 
-            if (!isGraphql || !isUserTweets) return (originalFetch as any).call(this, input, init);
+            if (!isGraphql || !timeType) return (originalFetch as any).call(this, input, init);
 
-            const vars = __tc_parseVarsFromUrl__(url);
             const reqId = ++__tc_req_seq__;
             let response: Response;
 
             response = await (originalFetch as any).call(this, input, init);
             const cJson = response.clone();
             const result = await cJson.json();
-            logFT(`[F#${reqId}] json ok  result=${result}  for kol:${vars.userId}`);
 
-            postToContent(MsgType.IJUserTweetsCaptured, {tweets: result, kolID: vars.userId});
+            if (timeType === UserTweets) {
+                const vars = __tc_parseVarsFromUrl__(url);
+                logFT(`[F#${reqId}] tweets result=${result}  for kol:${vars.userId}`);
+                postToContent(MsgType.IJUserTweetsCaptured, {tweets: result, kolID: vars.userId});
+            } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
+                logFT(`[F#${reqId}] home latest result result=${result}`);
+                postToContent(MsgType.IJHomeLatestCaptured, result);
+            }
+
             return response;
         } catch (e) {
             console.warn(`[F#${__tc_req_seq__}] original fetch failed`, e);
@@ -116,66 +133,62 @@ function __tc_installXHRUserTweetsCapture__(): void {
         open(method: string, url: string, async?: boolean, user?: string | null, password?: string | null) {
             this.__tc_url__ = url;
 
-            if (__tc_isGraphqlUrl__(url)) {
-                logFT(`[X] ${method} ${__tc_isUserTweetsUrl__(url) ? "(UserTweets)" : ""} ${url}`);
-            }
-
-            if (__tc_isUserTweetsUrl__(url)) {
+            if (__tc_isTargetTimelineUrl__(url)) {
                 this.__tc_req_id__ = ++__tc_req_seq__;
                 const vars = __tc_parseVarsFromUrl__(url);
                 if (vars) this.__tc_user_id__ = vars.userId;
+                logFT(`[X] ${method} ${url}`);
             }
             return super.open(method, url, async ?? true, user ?? null, password ?? null);
         }
 
         send(...args: any[]): void {
-            if (this.__tc_url__ && __tc_isUserTweetsUrl__(this.__tc_url__)) {
-                const reqId = this.__tc_req_id__!;
-                this.addEventListener("readystatechange", () => logFT(`[X#${reqId}] rs=${this.readyState}`));
-                this.addEventListener("loadstart", () => logFT(`[X#${reqId}] loadstart`));
-                this.addEventListener("progress", () => logFT(`[X#${reqId}] progress`));
-                this.addEventListener("error", (e) => console.warn(`[X#${reqId}] error`, e));
-                this.addEventListener("abort", () => console.warn(`[X#${reqId}] abort`));
-
-                this.addEventListener("load", () => {
-                    try {
-                        const isText = this.responseType === "" || this.responseType === "text";
-                        logFT(`[X#${reqId}] load`, {
-                            status: this.status,
-                            responseType: this.responseType || "text",
-                        });
-
-                        if (isText && this.responseText) {
-                            try {
-                                const result = JSON.parse(this.responseText) as any;
-                                logFT(`[X#${reqId}] text(response) ok, result=${result}  for kol:${this.__tc_user_id__}`);
-                                postToContent(MsgType.IJUserTweetsCaptured, {
-                                    tweets: result,
-                                    kolID: this.__tc_user_id__
-                                });
-                            } catch (je) {
-                                console.warn(`[X#${reqId}] json fail`, je);
-                            }
-                        } else if (this.responseType === "json" && this.response) {
-                            // 兼容：若服务端/页面把 responseType 设成 json
-                            try {
-                                const result = this.response as any;
-                                logFT(`[X#${reqId}] json(response) ok, tweets=${result} for kol:${this.__tc_user_id__}`);
-                                postToContent(MsgType.IJUserTweetsCaptured, {
-                                    tweets: result,
-                                    kolID: this.__tc_user_id__
-                                });
-                            } catch (je) {
-                                console.warn(`[X#${reqId}] json(response) fail`, je);
-                            }
-                        } else {
-                            console.warn(`[X#${reqId}] non-text`, this.responseType);
-                        }
-                    } catch (err) {
-                        console.warn(`[X#${reqId}] load handler error`, err);
-                    }
-                });
+            const timeType = __tc_isTargetTimelineUrl__(this.__tc_url__);
+            if (!timeType || (timeType !== HomeLatestTimeline && timeType !== UserTweets && timeType !== HomeTimeline)) {
+                return (OriginalXHR.prototype.send as any).apply(this, args);
             }
+
+            const reqId = this.__tc_req_id__!;
+            this.addEventListener("readystatechange", () => logFT(`[X#${reqId}] rs=${this.readyState}`));
+            this.addEventListener("loadstart", () => logFT(`[X#${reqId}] loadstart`));
+            this.addEventListener("progress", () => logFT(`[X#${reqId}] progress`));
+            this.addEventListener("error", (e) => console.warn(`[X#${reqId}] error`, e));
+            this.addEventListener("abort", () => console.warn(`[X#${reqId}] abort`));
+
+            this.addEventListener("load", () => {
+                try {
+                    const isText = this.responseType === "" || this.responseType === "text";
+                    logFT(`[X#${reqId}] load`, {
+                        status: this.status,
+                        responseType: this.responseType || "text",
+                    });
+
+                    let result: any | undefined;
+                    if (isText && this.responseText) {
+                        result = JSON.parse(this.responseText) as any;
+                    } else if (this.responseType === "json" && this.response) {
+                        result = this.response as any;
+                    }
+                    if (!result) {
+                        console.warn(`[X#${reqId}] no result parsed, skip`);
+                        return;
+                    }
+
+                    if (timeType === UserTweets) {
+                        logFT(`[X#${reqId}] result=${result}  for kol:${this.__tc_user_id__}`);
+                        postToContent(MsgType.IJUserTweetsCaptured, {
+                            tweets: result,
+                            kolID: this.__tc_user_id__
+                        });
+                    } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
+                        logFT(`[X#${reqId}] home time line result=${result}`);
+                        postToContent(MsgType.IJHomeLatestCaptured, result);
+                    }
+
+                } catch (err) {
+                    console.warn(`[X#${reqId}] load handler error`, err);
+                }
+            });
 
             // @ts-ignore
             return (OriginalXHR.prototype.send as any).apply(this, args);

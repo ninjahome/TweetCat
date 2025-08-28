@@ -747,6 +747,40 @@ export function buildSyntheticItemFromModule(entry: any) {
     };
 }
 
+/** 统一解出 tweet 节点（兼容 Tweet / TweetWithVisibilityResults 等包裹） */
+function __tc_getTweetNode__(itemContent: any): any | null {
+    try {
+        const r = itemContent?.tweet_results?.result;
+        if (!r) return null;
+
+        // 常见两类：Tweet / TweetWithVisibilityResults
+        if (r.__typename === "Tweet") return r;
+        if (r.__typename === "TweetWithVisibilityResults" && r.tweet) return r.tweet;
+
+        // 兜底：若没有 __typename，尝试常见形态
+        return r.tweet ?? r;
+    } catch {
+        return null;
+    }
+}
+
+/** 是否为广告条目（Promoted tweet） */
+function __tc_isPromotedItem__(itemContent: any): boolean {
+    try {
+        if (!itemContent) return false;
+
+        // 情况1：直接挂在 itemContent 上
+        if (itemContent.promotedMetadata) return true;
+
+        // 情况2：挂在 tweet 节点上
+        const tweet = __tc_getTweetNode__(itemContent);
+        if (tweet?.promotedMetadata) return true;
+
+        return false;
+    } catch {
+        return false;
+    }
+}
 
 export function extractEntryObjs(entries: any[]): TweetResult {
     const tweetEntries: EntryObj[] = [];
@@ -756,6 +790,11 @@ export function extractEntryObjs(entries: any[]): TweetResult {
 
     for (const entry of entries) {
         if (entry?.content?.entryType === 'TimelineTimelineItem') {
+            if (__tc_isPromotedItem__(entry?.content?.itemContent)) {
+                logTOP("---------->>> this is promoted tweet (item), skip it!");
+                continue;
+            }
+
             try {
                 const obj = new EntryObj(entry)
                 tweetEntries.push(obj);
@@ -771,6 +810,11 @@ export function extractEntryObjs(entries: any[]): TweetResult {
 
             const syntheticItem = buildSyntheticItemFromModule(entry)
             if (!syntheticItem) continue;
+
+            if (__tc_isPromotedItem__(syntheticItem?.content?.itemContent)) {
+                logTOP("---------->>> this is promoted tweet (module), skip it!");
+                continue;
+            }
 
             const entryObj = new EntryObj(syntheticItem);
             tweetEntries.push(entryObj);
@@ -802,7 +846,9 @@ export class TweetResult {
 }
 
 export function parseTimelineFromGraphQL(result: any): TweetResult {
-    const instructions = result.data?.user?.result?.timeline?.timeline?.instructions || [];
+    const instructions = result?.data?.user?.result?.timeline?.timeline?.instructions ??
+        result?.data?.home?.home_timeline_urt?.instructions ??
+        [];
     const allEntries: any[] = [];
 
     for (const instruction of instructions) {

@@ -55,6 +55,7 @@ export enum MsgType {
     TimerKolInQueueAtOnce = 'TimerKolInQueueAtOnce',
 
     IJUserTweetsCaptured = 'UserTweetsCaptured',
+    IJHomeLatestCaptured = 'IJHomeLatestCaptured',
     IJLocationChange = 'IJLocationChange',
 
     TokenUsedByUser = 'TokenUsedByUser',
@@ -71,6 +72,7 @@ export const __DBK_query_id_map = "__DBK_query_id_map__";
 export const UserTweets = "UserTweets"// 获取指定用户的推文
 export const UserByScreenName = "UserByScreenName" // 根据 username 获取 userId
 export const HomeLatestTimeline = "HomeLatestTimeline"// 首页的最新推文流
+export const HomeTimeline = "HomeTimeline"// 首页的最新推文流
 export const TweetDetail = "TweetDetail"         // 单条推文详情（用于评论）
 export const UsersByRestIds = "UsersByRestIds"     // 根据一批 userId 查询用户信息
 export const SearchTimeline = "SearchTimeline" // 搜索结果（你可能以后用）
@@ -92,15 +94,17 @@ export const watchedOps = [
     Following,
     Followers,
     BlueVerifiedFollowers,
+    HomeTimeline,
 ];
 
 export const defaultQueryKeyMap: Record<string, string> = {
-    UserByScreenName: "x3RLKWW1Tl7JgU7YtGxuzw",
-    UserTweets: "MdhoJlJzYWas9JNmFz7H3A",
-    HomeLatestTimeline: "nMyTQqsJiUGBKLGNSQamAA",
-    TweetDetail: "b9Yw90FMr_zUb8DvA8r2ug",
-    UsersByRestIds: "kCBEQ-OvWNVtotaYmqG0aw",
-    SearchTimeline: "fL2MBiqXPk5pSrOS5ACLdA",
+    UserByScreenName: "ck5KkZ8t5cOmoLssopN99Q",
+    UserTweets: "E8Wq-_jFSaU7hxVcuOPR9g",
+    HomeLatestTimeline: "SFxmNKWfN9ySJcXG_tjX8g",
+    HomeTimeline: "DXmgQYmIft1oLP6vMkJixw",
+    TweetDetail: "iFEr5AcP121Og4wx9Yqo3w",
+    UsersByRestIds: "1hjT2eXW1Zcw-2xk8EbvoA",
+    SearchTimeline: "4fpceYZ6-YQCx_JSl_Cn_A",
     CreateBookmark: "aoDbu3RHznuiSkQ9aNM67Q",
     DeleteBookmark: "Wlmlj2-xzyS1GN3a6cj-mQ",
     Following: "SaWqzw0TFAWMx1nXWjXoaQ",
