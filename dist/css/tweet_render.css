@@ -8,7 +8,7 @@
       <html data-theme="auto|light|dark">
 */
 
-/* ---------- Design Tokens ---------- */
+
 :root {
     /* Light */
     --bg-primary: #ffffff;
@@ -32,6 +32,12 @@
     --shadow-pop: 0 4px 8px rgba(0, 0, 0, 0.15);
 
     --tcq-thumb: 96px;
+
+    --tweet-toast-shadow:0 8px 24px rgba(0,0,0,.2);
+    --tweet-toast-pad:12px 18px;
+    --tweet-toast-gap:24px;
+    --tweet-toast-speed:300ms; /* 进出过渡 */
+    --tweet-toast-life:2800ms; /* 展示时长（JS 使用） */
 }
 
 /* Prefer the user's OS setting */
@@ -44,7 +50,7 @@
         --bg-subtle: #0a0a0a;
 
         --text-primary: rgb(231, 233, 234);
-        --text-secondary: rgb(139, 152, 165);
+        --text-secondary: rgb(113, 118, 123);
         --text-muted: #9ca3af;
 
         --accent: rgb(29, 155, 240);
@@ -65,6 +71,12 @@
     .tweet-card-area a.tc-card-large__media {
         border: 1px solid #2F3336;
     }
+
+    .category-filter-btn::before,
+    .category-filter-clear-btn::before,
+    .category-filter-more-btn::before {
+        color: #2f3336;
+    }
 }
 
 /* Optional manual override via data-theme on <html> */
@@ -75,7 +87,7 @@ html[data-theme="dark"] {
     --bg-subtle: #0a0a0a;
 
     --text-primary: rgb(231, 233, 234);
-    --text-secondary: rgb(139, 152, 165);
+    --text-secondary: rgb(113, 118, 123);
     --text-muted: #9ca3af;
 
     --accent: rgb(29, 155, 240);
@@ -100,6 +112,7 @@ html[data-theme="light"] {
 
     --border-subtle: rgb(239, 243, 244);
     --border-strong: rgba(15, 20, 25, 0.1);
+
 }
 
 /* Smooth transition */
@@ -255,7 +268,7 @@ img, video {
     font-weight: 700;
 }
 .bookmark-icon svg path {
-    fill: rgb(83, 100, 113); /* Twitter 次要文字灰 */
+    fill: var(--text-secondary); /* Twitter 次要文字灰 */
     transition: fill .2s;
     font-weight: 700;
 }
@@ -363,7 +376,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tcq-qh-meta .tcq-qh-sep,
 .tcq-qh-time {
     font-weight: 400;
-    color: rgb(83, 100, 113);
+    color: var(--text-secondary);
 
 }
 .tcq-qh-sep {
@@ -883,26 +896,14 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 .dpi-percent {
     font-size: 13px;
-    color: rgb(83, 100, 113); /* Twitter 次要文字色 */
+    color: var(--text-secondary); /* Twitter 次要文字色 */
     min-width: 32px;
     text-align: right;
 }
 
 .dpi-meta {
     font-size: 13px;
-    color: rgb(83, 100, 113);
-}
-
-/* Twitter toast */
-:root{
-    --tweet-toast-bg:#1DA1F2;  /* Twitter 蓝 */
-    --tweet-toast-fg:#fff;
-    --tweet-toast-radius:14px;
-    --tweet-toast-shadow:0 8px 24px rgba(0,0,0,.2);
-    --tweet-toast-pad:12px 18px;
-    --tweet-toast-gap:24px;
-    --tweet-toast-speed:300ms; /* 进出过渡 */
-    --tweet-toast-life:2800ms; /* 展示时长（JS 使用） */
+    color: var(--text-secondary);
 }
 
 /* 容器固定在底部居中 */
@@ -918,8 +919,8 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     gap: var(--tweet-toast-gap);
     padding: var(--tweet-toast-pad);
     border-radius: 999px;
-    background: var(--tweet-toast-bg);
-    color: var(--tweet-toast-fg);
+    background: var(--accent);
+    color: #fff;
     box-shadow: var(--tweet-toast-shadow);
     font: 600 16px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     max-width: calc(100vw - 24px);

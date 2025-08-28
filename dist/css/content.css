@@ -46,9 +46,37 @@ img, video {
 }
 
 .category-filter-item.active {
-    background-color: rgb(74, 153, 233);
-    color: white;
+    background-color: rgba(15, 20, 25, 0.1);
 }
+
+.category-filter-btn,
+.category-filter-clear-btn,
+.category-filter-more-btn {
+    display: inline-flex;       /* 内联 flex 布局 */
+    align-items: center;        /* 垂直居中 */
+}
+
+/* 给每个按钮前加小圆点 */
+.category-filter-btn::before,
+.category-filter-clear-btn::before,
+.category-filter-more-btn::before {
+    content: "●";
+    display: inline-block;
+    margin-right: 4px;
+    font-size: 0.6em;
+    color: rgb(185, 202, 211); /* 默认灰色 */
+    transition: color 0.3s;
+}
+
+/* 不同分类选中时的小圆点颜色 */
+#category-filter-item-1.active .category-filter-btn::before { color: #f6cd01; }  /* Main - 红 */
+#category-filter-item-2.active .category-filter-btn::before { color: #866afb; }  /* test - 绿 */
+#category-filter-item-3.active .category-filter-btn::before { color: #fe466c; }  /* game - 蓝 */
+#category-filter-item-4.active .category-filter-btn::before { color: #faad14; }  /* TVdrama - 橙 */
+#category-filter-item-5.active .category-filter-btn::before { color: #06cbad; }  /* tweetcat - 紫 */
+#category-filter-item-6.active .category-filter-btn::before { color: #4592ef; }  /* 引文图文 - 青 */
+#category-filter-item-7.active .category-filter-btn::before { color: #f6cd01; }  /* post - 粉 */
+#category-filter-clear.active .category-filter-clear-btn::before { color: #4592ef; } /* All - 黑 */
 
 
 .category-popup-menu {
