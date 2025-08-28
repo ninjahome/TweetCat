@@ -774,9 +774,7 @@ function __tc_isPromotedItem__(itemContent: any): boolean {
 
         // 情况2：挂在 tweet 节点上
         const tweet = __tc_getTweetNode__(itemContent);
-        if (tweet?.promotedMetadata) return true;
-
-        return false;
+        return !!tweet?.promotedMetadata;
     } catch {
         return false;
     }

@@ -4,12 +4,11 @@ import {logFT} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW, WrapEntryObj} from "./db_raw_tweet";
 import {MsgType} from "../common/consts";
-import {EntryObj, parseTimelineFromGraphQL, TweetResult} from "./tweet_entry";
+import {EntryObj, parseTimelineFromGraphQL} from "./tweet_entry";
 import {queryKolById, updateKolIdToSw} from "../object/tweet_kol";
 import {resetNewestTweet, showNewestTweets} from "../content/tweetcat_web3_area";
 import {setLatestFetchAt} from "./tweet_pager";
 import {tweetFetchParam} from "../common/msg_obj";
-import {an} from "vitest/dist/chunks/reporters.d.BFLkQcL6";
 
 const MIN_FETCH_GAP = 5_000;
 
