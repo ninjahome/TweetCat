@@ -190,8 +190,7 @@ a:hover {
 }
 
 .category-filter-item.active {
-    background-color: var(--accent) !important;
-    color: #fff !important;
+    background-color: var(--bg-hover) !important;
 }
 
 /* ---------- Menus / Popovers ---------- */
