@@ -134,7 +134,7 @@ export class TweetManager {
 
         if (shouldAdjustScroll && this.scroller) {
             const newTop = curTop + delta;
-            this.scroller.scrollToTop({needScroll: true, targetTop: newTop}); // ✅ 交由 VirtualScroller 管理滚动状态
+            this.scroller.scrollToTop({needScroll: true, targetTop: newTop});
             logTweetMgn(`[updateHeightAt] adjusted via VirtualScroller: scrollTop ${curTop} -> ${newTop}`);
         }
 
