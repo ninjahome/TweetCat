@@ -197,7 +197,6 @@ export class TweetManager {
 
         this.finalizeListHeight(offset);
 
-
         const mountedCount = endIndex - startIdx;
         const middleIndex = startIdx + Math.floor(mountedCount / 2);
         const bottomOffset = this.offsets[endIndex - 1] ?? this.listHeight;
@@ -311,19 +310,15 @@ export class TweetManager {
 
         logTweetMgn(`[normalMountBatch] mountIdx=${mountStartIdx}, endIndex=${endIdx}, anchorOffset=${anchorOffset}  startOffset=${offset}`);
 
-        const mountedNodes: HTMLElement[] = [];
+        // const mountedNodes: HTMLElement[] = [];
         for (let i = mountStartIdx; i < endIdx; i++) {
             const cell = this.cells[i];
             if (!cell.node?.isConnected) {
                 logTweetMgn(`[normalMountBatch] cell[${i}] need to mount`);
                 await cell.mount(this.timelineEl, true);
-                mountedNodes.push(cell.node);
+                // mountedNodes.push(cell.node);
             }
         }
-
-        if (this.cells[startIdx].node.previousSibling) this.reorderMountedNodes(startIdx, endIdx)
-
-        await waitStableAll(mountedNodes);
 
         for (let i = mountStartIdx; i < endIdx; i++) {
             const cell = this.cells[i];
