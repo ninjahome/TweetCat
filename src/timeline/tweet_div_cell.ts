@@ -2,17 +2,6 @@ import {EntryObj} from "./tweet_entry";
 import {renderTweetHTML} from "./render_tweet";
 import {globalNodePool} from "./div_node_pool";
 import {logMount} from "../common/debug_flags";
-
-async function waitStable(node: HTMLElement, tries = 3, interval = 20) {
-    let last = node.offsetHeight;
-    while (tries-- > 0) {
-        await new Promise(r => setTimeout(r, interval));
-        const h = node.offsetHeight;
-        if (Math.abs(h - last) < 1) break;
-        last = h;
-    }
-}
-
 export class TweetCatCell {
     node!: HTMLElement;
     height = 0;

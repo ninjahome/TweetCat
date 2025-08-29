@@ -466,21 +466,3 @@ export class TweetManager {
         logTweetMgn(`[finalizeListHeight] offset=${offset}, applied height=${this.maxCssHeight}`);
     }
 }
-
-async function waitStableAll(nodes: HTMLElement[], tries = 3, interval = 50) {
-    if (nodes.length === 0) return;
-    let lastHeights = nodes.map(node => node.offsetHeight);
-    while (tries-- > 0) {
-        await new Promise(r => setTimeout(r, interval));
-        const curHeights = nodes.map(node => node.offsetHeight);
-        let stable = true;
-        for (let i = 0; i < nodes.length; i++) {
-            if (Math.abs(curHeights[i] - lastHeights[i]) >= 1) {
-                stable = false;
-                break;
-            }
-        }
-        if (stable) break;
-        lastHeights = curHeights;
-    }
-}
