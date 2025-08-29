@@ -32,13 +32,11 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
         insertRepostedBanner(article.querySelector(".tweet-topmargin") as HTMLElement, outer.author); // 你自己的函数
     }
 
-    // console.log("tweet contents", JSON.stringify(target.tweetContent));
-    const extraHiddenShortUrls = collectExtraHiddenShortUrls(target.card);
     const contentContainer = article.querySelector(".tweet-content-container") as HTMLElement
     updateTweetContentArea(
         contentContainer,
         target.tweetContent,
-        {hiddenShortUrls: extraHiddenShortUrls, hasMore: target.hasNoteExpandable}
+        {hiddenShortUrls: target.hiddenShortUrls, hasMore: target.hasNoteExpandable}
     );
 
     wireContentInternalLinks(contentContainer);
@@ -46,19 +44,19 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     const mediaArea = article.querySelector(".tweet-media-area") as HTMLElement;
     updateTweetMediaArea(mediaArea, target.tweetContent, tpl);
 
-    wireMediaAnchors(article, target.author, target.rest_id, target.tweetContent?.extended_entities?.media ?? [], tpl);
+    wireMediaAnchors(article, target.author, target.rest_id, target.tweetContent?.extended_entities?.media ?? []);
 
-    if (target.card) {
+    if (target.shouldShowCard) {
         updateTweetCardArea(article.querySelector(".tweet-card-area") as HTMLElement,
             target.card, tpl);
+        wireCardAnchor(article, target.author, target.rest_id);
     }
-    wireCardAnchor(article, target.author, target.rest_id);
 
     const quoteArea = article.querySelector(".tweet-quote-area") as HTMLElement | null;
     if (quoteArea) {
         quoteArea.innerHTML = '';
         if (target.quotedStatus) {
-            updateTweetQuoteArea(quoteArea, target.quotedStatus, tpl, hasMainMediaOrCard(target));
+            updateTweetQuoteArea(quoteArea, target.quotedStatus, tpl, target.hasMainAttachment);
         }
     }
 
@@ -72,13 +70,6 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
 
     return tweetCellDiv;
 }
-
-function hasMainMediaOrCard(t: TweetObj): boolean {
-    const hasMedia = !!t.tweetContent?.extended_entities?.media?.length;
-    const hasCard = !!t.card;
-    return hasMedia || hasCard;
-}
-
 // 渲染头像模块
 export function updateTweetAvatar(avatarArea: Element, author: TweetAuthor): void {
     // const highResUrl = getHighResAvatarUrl(author.legacy.profile_image_url_https);
@@ -156,7 +147,6 @@ function wireMediaAnchors(
     author: { screenName: string },
     tweetId: string,
     mediaList: Array<{ type: string; media_url_https?: string }> = [],
-    tpl?: HTMLTemplateElement,
 ): void {
     const area = article.querySelector('.tweet-media-area');
     if (!area) return;
@@ -356,18 +346,6 @@ function renderMultiPhotoGroup(container: HTMLElement,
         container.appendChild(item);
     }
 }
-
-function collectExtraHiddenShortUrls(
-    card?: { url?: string; entityUrl?: string } | null
-): string[] {
-    const set = new Set<string>();
-    for (const u of [card?.url, (card as any)?.entityUrl]) {
-        if (u && /^https?:\/\/t\.co\//i.test(u)) set.add(u);
-    }
-    return [...set];
-}
-
-
 // 新增：正文区域点击 -> 进入详情（贴近官方）
 function attachBodyPermalink(article: Element, author: TweetAuthor, tweetId: string): void {
     const body = article.querySelector('.tweet-body') as HTMLElement | null;

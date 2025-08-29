@@ -641,6 +641,10 @@ export class TweetObj {
     quotedStatus?: TweetObj;
     hasNoteExpandable?: boolean;
 
+    shouldShowCard: boolean = false;      // 是否真的显示 card
+    hiddenShortUrls: string[] = [];       // 需要从正文隐藏的 t.co
+    hasMainAttachment: boolean = false;   // 主贴是否有主附件（媒体或 card）
+
     constructor(raw: any, isQuoted = false) {
         const data = raw?.tweet ?? raw;
         this.rest_id = data.rest_id;
@@ -692,13 +696,41 @@ export class TweetObj {
             if (q?.__typename === 'Tweet') {
                 this.quotedStatus = new TweetObj(q, /*isQuoted*/ true);
             }
-            // 如果是 tombstone，先记个标记（后面 step6-5 再渲染墓碑）
-            // else if (q?.__typename === 'TextTombstone') { this.quotedTombstone = extractTombstoneText(q); }
         }
 
         const r = data?.legacy?.retweeted_status_result?.result ?? data?.retweeted_status_result?.result;
         if (r?.__typename === 'Tweet' && r?.core?.user_results?.result) {
             this.retweetedStatus = new TweetObj(r, /*isQuoted*/ false);
+        }
+
+        // ===== 派生标记：是否显示 card / 是否隐藏短链 / 是否有主附件 =====
+        try {
+            // 有“引用”判定：官方在有引用时抑制网页卡片
+            const hasQuote = !!(this.tweetContent?.is_quote_status || this.quotedStatus);
+
+            // 有“媒体”判定：有图/视频/GIF 时也抑制网页卡片
+            const mediaLen = this.tweetContent?.extended_entities?.media?.length || 0;
+            const hasMedia = mediaLen > 0;
+
+            // 是否真的要显示 card（而不是仅数据里存在）
+            this.shouldShowCard = !!this.card && !hasQuote && !hasMedia;
+
+            // 主贴是否有主附件（媒体或被允许显示的 card）
+            this.hasMainAttachment = hasMedia || this.shouldShowCard;
+
+            // 只有在真的显示 card 时，才把对应 t.co 从正文里隐藏
+            // 以 card.entityUrl 优先；没有则用 card.url 兜底
+            if (this.shouldShowCard && this.card) {
+                const tco = (this.card.entityUrl || this.card.url || "").trim();
+                if (tco) this.hiddenShortUrls = [tco];
+            } else {
+                this.hiddenShortUrls = [];
+            }
+        } catch {
+            // 任何异常都不要影响主体逻辑
+            this.shouldShowCard = false;
+            this.hiddenShortUrls = [];
+            this.hasMainAttachment = (this.tweetContent?.extended_entities?.media?.length || 0) > 0;
         }
     }
 
