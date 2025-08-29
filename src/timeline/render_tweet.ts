@@ -1,4 +1,4 @@
-import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity, TweetObj} from "./tweet_entry";
+import {EntryObj, TweetAuthor, TweetContent, TweetMediaEntity} from "./tweet_entry";
 import {formatTweetTime, isXArticle} from "../common/utils";
 import {videoRender} from "./render_video";
 import {updateTweetContentArea, wireContentInternalLinks} from "./render_content";
