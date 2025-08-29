@@ -188,34 +188,35 @@ function applyImage(node: HTMLElement, card: TweetCard): void {
 }
 
 function pickTemplateId(card: TweetCard): string {
-
     const noContent =
-        !card.title &&
-        !card.description &&
-        !card.domain &&
-        !(card.images?.length);
+        !card.title && !card.description && !card.domain && !(card.images?.length);
 
-    if (card.name === "unified_card" && noContent) {
-        return "tpl-inline-link-card--restricted";
+    if (card.name === 'unified_card' && noContent) {
+        return 'tpl-inline-link-card--restricted';
     }
 
-    if (card.name && card.name.startsWith("poll")) {
-        return "tpl-inline-link-card--poll";
+    if (card.name?.startsWith('poll')) {
+        return 'tpl-inline-link-card--poll';
     }
 
-    const isSummary = card.name === "summary";
-    const isPlayer = card.name === "player";
-    const isSli = card.name === "summary_large_image";
+    // 1) SLI 一律走大卡（无图=文本大卡；有图=覆盖大卡）
+    if (card.name === 'summary_large_image') {
+        return 'tpl-card-large';
+    }
 
-    const first = card.images?.[0];
-    const hasImage = !!(card.mainImageUrl || first?.url);
+    // 2) player 建议走大卡骨架（有独立模板就替换这里）
+    if (card.name === 'player') {
+        return 'tpl-card-large';
+    }
 
-    const preferLarge =
-        (isSli && hasImage) ||
-        (!isSummary && !isPlayer && hasImage);
+    // 3) summary 永远是小卡；其他类型根据是否有图决定
+    const isSummary = card.name === 'summary';
+    const hasImage = !!(card.mainImageUrl || card.images?.[0]?.url);
 
-    // ⬇️ large 用新模板 ID
-    return preferLarge ? "tpl-card-large" : "tpl-inline-link-card--small";
+    if (!isSummary && hasImage) {
+        return 'tpl-card-large';
+    }
+    return 'tpl-inline-link-card--small';
 }
 
 

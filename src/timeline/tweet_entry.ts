@@ -46,8 +46,8 @@ export class TweetCard {
     constructor(data: any) {
         // === 原始字段 ===
         this.restId = data.rest_id || '';
-        this.name = data.legacy?.name || '';
-        this.url = data.legacy?.url || '';
+        this.name   = data.name || data.legacy?.name || '';
+        this.url    = data.url  || data.legacy?.url  || '';
 
         const bindingValues = data.legacy?.binding_values || [];
 
