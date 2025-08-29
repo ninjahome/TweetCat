@@ -1,4 +1,4 @@
-import {fetchBookmarks, fetchTweets, getUserIdByUsername} from "./twitter_api";
+import {fetchTweets, getUserIdByUsername} from "./twitter_api";
 import {sendMsgToService, sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
