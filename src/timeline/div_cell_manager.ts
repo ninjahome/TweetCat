@@ -267,15 +267,6 @@ export class TweetManager {
         let startIdx = Math.max(0, centerIdx - EXPAND);
         let endIdx = startIdx + MIN_COUNT;
 
-        const startOffset = this.offsets[startIdx];
-        const latestTop = window.scrollY || document.documentElement.scrollTop;
-        if (!!startOffset) {
-            if (startOffset > latestTop - EXPAND * estH) {
-                logTweetMgn(`[normalMountBatch]------->>>need to adjust top area startIdx=${startIdx} startOffset=${startOffset} latestTop:${latestTop}`);
-                startIdx = Math.max(0, startIdx - EXPAND);
-            }
-        }
-
         logTweetMgn(`[normalMountBatch]preparing anchorIdx=${centerIdx} window Changed:[${this.lastWindow?.s},${this.lastWindow?.e})->=[${startIdx}, ${endIdx}) `);
 
         const cellLen = this.cells.length;
@@ -310,13 +301,11 @@ export class TweetManager {
 
         logTweetMgn(`[normalMountBatch] mountIdx=${mountStartIdx}, endIndex=${endIdx}, anchorOffset=${anchorOffset}  startOffset=${offset}`);
 
-        // const mountedNodes: HTMLElement[] = [];
         for (let i = mountStartIdx; i < endIdx; i++) {
             const cell = this.cells[i];
             if (!cell.node?.isConnected) {
                 logTweetMgn(`[normalMountBatch] cell[${i}] need to mount`);
                 await cell.mount(this.timelineEl, true);
-                // mountedNodes.push(cell.node);
             }
         }
 
@@ -340,9 +329,6 @@ export class TweetManager {
             offset += realH;
             this.resizeLogger.observe(cell.node, i, this.updateHeightAt);
         }
-        const latestBottom = latestTop + window.innerHeight;
-        const endOffset = this.offsets[endIdx - 1];
-        if (endOffset - estH < latestBottom) console.log("++++++++++++++++++++++>>>>", endIdx, endOffset, latestBottom);
 
         this.unmountCellsBefore(startIdx);
         this.unmountCellsAfter(endIdx);
