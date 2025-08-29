@@ -115,7 +115,6 @@ export class TweetManager {
             const cell = this.cells[i];
             if (cell?.node?.isConnected) {
                 cell.node.style.transform = `translateY(${offset}px)`;
-                cell.node.dataset.yValue = '' + offset;
             }
             offset += this.heights[i] ?? TweetManager.EST_HEIGHT;
         }
@@ -126,7 +125,7 @@ export class TweetManager {
         const curTop = window.scrollY;
         const shouldAdjustScroll = curTop > changedOffset;
 
-        if (shouldAdjustScroll && this.scroller && !isMoreAct) {
+        if (shouldAdjustScroll && this.scroller && !isMoreAct) {//
             const newTop = curTop + delta;
             this.scroller.scrollToTop({needScroll: true, targetTop: newTop});
             logTweetMgn(`[updateHeightAt] adjusted via VirtualScroller: scrollTop ${curTop} -> ${newTop}`);
@@ -144,14 +143,11 @@ export class TweetManager {
         if (centerIdx === null) result = await this.fastMountBatch(viewStart);
         else result = await this.normalMountBatch(centerIdx);
 
-        const {needAdjustTop, needAdjustBottom} = this.checkBoundaryAdjust();
-        if (needAdjustTop) {
-            console.log("---------top needs adjust");
-            // this.scroller?.scheduleMountAtStablePosition(window.scrollY);
-        }
+        const needAdjustBottom = this.checkBoundaryAdjust();
+
         if (needAdjustBottom) {
-            console.log("---------bottom needs adjust");
-            // this.scroller?.scheduleMountAtStablePosition(window.scrollY);
+            console.log("--------->>>bottom needs adjust");
+            result = await this.appendBottomTweets();
         }
 
         return result;
@@ -160,6 +156,9 @@ export class TweetManager {
     private mountCells(startIdx: number, endIndex: number, offset: number): number {
         for (let i = startIdx; i < endIndex; i++) {
             const cell = this.cells[i];
+            if (!cell.node?.isConnected) {
+                cell.mount(this.timelineEl);
+            }
             const realH = cell.node.offsetHeight || TweetManager.EST_HEIGHT;
 
             const prevOffset = this.offsets[i];
@@ -171,7 +170,6 @@ export class TweetManager {
                 this.heights[i] = realH;
                 this.offsets[i] = offset;
                 cell.node.style.transform = `translateY(${offset}px)`;
-                cell.node.dataset.yValue = '' + offset;
                 logTweetMgn(`[mountCells] cell[${i}] mounted at offset=${offset}, height=${realH}`);
             }
 
@@ -197,13 +195,6 @@ export class TweetManager {
         const estH = TweetManager.EST_HEIGHT;
         let offset = this.offsets[startIdx] ?? (startIdx * estH);
         logTweetMgn(`[fastMountBatch] prepare mounting range[${startIdx}, ${endIndex}) startOffset=${offset}, current scrollTop=${window.scrollY}`);
-
-        for (let i = startIdx; i < endIndex; i++) {
-            const cell = this.cells[i];
-            if (!cell.node?.isConnected) {
-                cell.mount(this.timelineEl);
-            }
-        }
 
         offset = this.mountCells(startIdx, endIndex, offset);
 
@@ -284,6 +275,15 @@ export class TweetManager {
 
         logTweetMgn(`[normalMountBatch]preparing anchorIdx=${centerIdx} window Changed:[${this.lastWindow?.s},${this.lastWindow?.e})->=[${startIdx}, ${endIdx}) `);
 
+        const startOffset = this.offsets[startIdx];
+        const latestTop = window.scrollY || document.documentElement.scrollTop;
+        if (!!startOffset) {
+            if (startOffset > latestTop - EXPAND * TweetManager.EST_HEIGHT) {
+                logTweetMgn(`[normalMountBatch]------->>>need to adjust top area startIdx=${startIdx} ->${startIdx - EXPAND}`);
+                startIdx = Math.max(0, startIdx - EXPAND);
+            }
+        }
+
         const cellLen = this.cells.length;
         if (endIdx > cellLen) {
             const needCount = endIdx - cellLen;
@@ -293,12 +293,14 @@ export class TweetManager {
         }
 
         const direction = this.resolveMountDirection(startIdx, endIdx)
-        logTweetMgn(`[resolveMountDirection] new window: [${startIdx}, ${endIdx}) direction=${direction}`);
         if (direction === MountDirection.None || direction === MountDirection.Replace) {
+            logTweetMgn(`[normalMountBatch] no need to change window: [${startIdx}, ${endIdx}) direction=${direction}`);
             return {needScroll: false};
         }
 
+        logTweetMgn(`[normalMountBatch] new window: [${startIdx}, ${endIdx}) direction=${direction}`);
         this.lastWindow = {s: startIdx, e: endIdx};
+
         const anchorOffset = this.offsets[centerIdx];
         let mountStartIdx = startIdx;
         let offset;
@@ -316,17 +318,9 @@ export class TweetManager {
 
         logTweetMgn(`[normalMountBatch] mountIdx=${mountStartIdx}, endIndex=${endIdx}, anchorOffset=${anchorOffset}  startOffset=${offset}`);
 
-        for (let i = mountStartIdx; i < endIdx; i++) {
-            const cell = this.cells[i];
-            if (!cell.node?.isConnected) {
-                cell.mount(this.timelineEl);
-                logTweetMgn(`[normalMountBatch] cell[${i}] need to mount`);
-            }
-        }
+        offset = this.mountCells(mountStartIdx, endIdx, offset);
 
         if (this.cells[startIdx].node.previousSibling) this.reorderMountedNodes(startIdx, endIdx)
-
-        offset = this.mountCells(mountStartIdx, endIdx, offset);
 
         this.unmountCellsBefore(startIdx);
         this.unmountCellsAfter(endIdx);
@@ -336,6 +330,46 @@ export class TweetManager {
         const anchorDelta = this.offsets[centerIdx] - anchorOffset;
         logTweetMgn(`[normalMountBatch] done, listHeight=${this.listHeight}, scrollTop=${window.scrollY} anchorDelta=${anchorDelta}`);
         const needScroll = Math.abs(anchorDelta) >= 10
+        return {needScroll: needScroll, targetTop: window.scrollY + anchorDelta};
+    }
+
+    async appendBottomTweets(): Promise<MountResult> {
+        const startIdx = this.lastWindow!.e - 1;
+        let endIdx = startIdx + TweetManager.MIN_TWEETS_COUNT;
+
+        if (endIdx > this.cells.length) {
+            const needCount = endIdx - this.cells.length;
+            await this.loadAndRenderTweetCell(needCount);
+            endIdx = this.cells.length;
+        }
+
+        this.lastWindow!.e = endIdx;
+
+        let offset = this.offsets[startIdx];
+        let anchorOffset = offset
+
+        offset = this.mountCells(startIdx, endIdx, offset);
+
+        this.finalizeListHeight(offset);
+
+        const anchorDelta = this.offsets[startIdx] - anchorOffset;
+        logTweetMgn(`[appendBottomTweets] done, listHeight=${this.listHeight}, scrollTop=${window.scrollY} anchorDelta=${anchorDelta}`);
+        const needScroll = Math.abs(anchorDelta) >= 10
+        return {needScroll: needScroll, targetTop: window.scrollY + anchorDelta};
+    }
+
+    async insertTopTweets(): Promise<MountResult> {
+        const endIdx = this.lastWindow!.s;
+        let startIdx = Math.max(0, endIdx - TweetManager.MIN_TWEETS_COUNT);
+        let offset = this.offsets[endIdx];
+        if (!offset) return {needScroll: false};
+
+        let anchorOffset = offset
+        this.mountCells(startIdx, endIdx, offset);
+        const anchorDelta = this.offsets[endIdx] - anchorOffset;
+        logTweetMgn(`[insertTopTweets] done, listHeight=${this.listHeight}, scrollTop=${window.scrollY} anchorDelta=${anchorDelta}`);
+        const needScroll = Math.abs(anchorDelta) >= 10;
+
         return {needScroll: needScroll, targetTop: window.scrollY + anchorDelta};
     }
 
@@ -457,34 +491,21 @@ export class TweetManager {
         logTweetMgn(`[finalizeListHeight] offset=${offset}, applied height=${this.maxCssHeight}`);
     }
 
-    public checkBoundaryAdjust(): { needAdjustTop: boolean; needAdjustBottom: boolean } {
+    public checkBoundaryAdjust(): boolean {
         const latestTop = window.scrollY || document.documentElement.scrollTop;
         const latestBottom = latestTop + window.innerHeight;
 
-        if (!this.lastWindow) return {needAdjustTop: false, needAdjustBottom: false};
+        if (!this.lastWindow) return false;
 
         const {s, e} = this.lastWindow;
-        if (e <= s) return {needAdjustTop: false, needAdjustBottom: false};
+        if (e <= s) return false;
 
         const lastIdx = e - 1;
-
-        const topBoundary = this.offsets[s] ?? 0;
         const bottomBoundary = (this.offsets[lastIdx] ?? 0) + (this.heights[lastIdx] ?? 0);
 
         const margin = TweetManager.EST_HEIGHT;
-        const expectedTop = latestTop - margin;
         const expectedBottom = latestBottom + margin;
-
-        const needAdjustTop = expectedTop >= 0 && topBoundary > expectedTop;
-        const needAdjustBottom = bottomBoundary < expectedBottom;
-
-        logTweetMgn(`[checkBoundaryAdjust] mounted range:
-  boundary[${topBoundary},${bottomBoundary}]
-  expected[${expectedTop},${expectedBottom}]
-  needAdjust[${needAdjustTop},${needAdjustBottom}]
-  scroll[${latestTop},${latestBottom}]`);
-
-        return {needAdjustTop, needAdjustBottom};
+        return bottomBoundary < expectedBottom;
     }
 }
 

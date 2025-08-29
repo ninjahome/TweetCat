@@ -36,7 +36,7 @@ export function updateTweetBottomButtons(
             } catch (e) {
                 console.log("[bookMark] failed:", e);
                 const msg = String((e as any)?.message ?? e ?? "").toLowerCase();
-                if (msg.includes("_missing: tweet")) {
+                if (msg.includes("_missing: tweet") || msg.includes("has already favorited tweet")) {
                     showToastMsg("bookmarked success", 2);
                 } else {
                     showToastMsg("bookmarked failed:" + e, 4);
@@ -87,15 +87,9 @@ function prepareDownloadBtn(downloadDiv: HTMLElement, tweetObj: TweetObj, mp4Lis
 
 async function bookMark(eid: string, tid: string, content: TweetContent, statusEL: HTMLElement) {
     const statusToBe = !content.bookmarked;
-    if (statusToBe) {
-        await bookmarkApi(tid, statusToBe);
-        await sendMsgToService({entryID: eid, bookmarked: statusToBe}, MsgType.TweetBookmarkToggle);
-        setBookStratus(statusEL, statusToBe);
-    } else {
-        await sendMsgToService({entryID: eid, bookmarked: statusToBe}, MsgType.TweetBookmarkToggle);
-        setBookStratus(statusEL, statusToBe);
-        await bookmarkApi(tid, statusToBe);
-    }
+    await sendMsgToService({entryID: eid, bookmarked: statusToBe}, MsgType.TweetBookmarkToggle);
+    setBookStratus(statusEL, statusToBe);
+    await bookmarkApi(tid, statusToBe);
     content.bookmarked = statusToBe;
     logTCR("------>>> after bookMark:", content);
 }
