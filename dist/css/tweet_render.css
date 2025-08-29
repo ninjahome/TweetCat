@@ -891,21 +891,22 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 .tw-dialog-overlay {
-    position: fixed;
-    inset: 0;
+    position: fixed !important;
+    inset: 0 !important;
+    display: flex !important;
+    pointer-events: auto !important;
     background: rgba(15,20,25,.45);
-    display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 2147483647 !important;
 }
 
 .tw-dialog-panel {
-    width: min(92vw, 480px);
-    border-radius: var(--card-radius);
-    box-shadow: var(--tweet-toast-shadow);
-    border: 1px solid var(--border-subtle);
     background: var(--bg-primary);
     color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--card-radius);
+    box-shadow: var(--tweet-toast-shadow);
 }
 
 .tw-dialog-header {
@@ -951,6 +952,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     justify-content:center;
     padding:16px;
 }
+
 .tw-dialog-btn {
     appearance:none;
     border-radius:9999px;
