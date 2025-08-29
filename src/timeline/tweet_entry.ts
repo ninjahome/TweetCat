@@ -875,10 +875,23 @@ export class TweetResult {
     }
 }
 
-export function parseTimelineFromGraphQL(result: any): TweetResult {
-    const instructions = result?.data?.user?.result?.timeline?.timeline?.instructions ??
-        result?.data?.home?.home_timeline_urt?.instructions ??
-        [];
+export function parseTimelineFromGraphQL(result: any, type: "tweets"|"home"|"bookmarked" ): TweetResult {
+    let instructions = [];
+    switch (type) {
+        case "tweets": {
+            instructions = result?.data?.user?.result?.timeline?.timeline?.instructions ?? []
+            break;
+        }
+        case "home": {
+            instructions = result?.data?.home?.home_timeline_urt?.instructions ?? []
+            break;
+        }
+        case "bookmarked": {
+            instructions = result?.data?.bookmark_timeline_v2?.timeline?.instructions ?? []
+            break;
+        }
+    }
+
     const allEntries: any[] = [];
 
     for (const instruction of instructions) {

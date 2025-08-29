@@ -60,12 +60,9 @@ function filterTweets(nodes: NodeList) {
             // console.log("------>>> is home page:", window.location.href);
             return;
         }
-        // console.log("------>>> new tweet div found:", divNode);
 
         if (__blockAdStatus && isAdTweetNode(divNode)) {
-            // console.log("------->>> need to block Ads");
-            //TODO:: count ads number of blocked by tweetCat
-            // console.log("------>>> found ads and block it", divNode.dataset.testid);
+            console.log("------>>> found ads and block it", divNode.dataset.testid);
             divNode.style.display = "none";
             return;
         }
@@ -75,7 +72,6 @@ function filterTweets(nodes: NodeList) {
         }
         const user = parseNameFromTweetCell(divNode);
         if (!user) {
-            // console.log("------------>>>>tweet user name not found:", divNode)
             return;
         }
 

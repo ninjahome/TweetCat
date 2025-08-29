@@ -81,6 +81,7 @@ export const DeleteBookmark = "DeleteBookmark"
 export const Following = "Following"
 export const Followers = "Followers"
 export const BlueVerifiedFollowers = "BlueVerifiedFollowers"
+export const Bookmarks = "Bookmarks"
 
 export const watchedOps = [
     UserByScreenName,
@@ -95,6 +96,7 @@ export const watchedOps = [
     Followers,
     BlueVerifiedFollowers,
     HomeTimeline,
+    Bookmarks,
 ];
 
 export const defaultQueryKeyMap: Record<string, string> = {
@@ -110,4 +112,5 @@ export const defaultQueryKeyMap: Record<string, string> = {
     Following: "SaWqzw0TFAWMx1nXWjXoaQ",
     Followers: "i6PPdIMm1MO7CpAqjau7sw",
     BlueVerifiedFollowers: "fxEl9kp1Tgolqkq8_Lo3sg",
+    Bookmarks: "pLtjrO4ubNh996M_Cubwsg",
 }

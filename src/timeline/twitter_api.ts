@@ -2,7 +2,7 @@ import {extractMissingFeature, getBearerToken} from "../common/utils";
 import {localGet} from "../common/local_storage";
 import {
     __DBK_query_id_map,
-    BlueVerifiedFollowers, CreateBookmark, DeleteBookmark,
+    BlueVerifiedFollowers, Bookmarks, CreateBookmark, DeleteBookmark,
     Followers,
     Following, HomeTimeline,
     UserByScreenName,
@@ -205,7 +205,7 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
     }
     const result = await response.json();
     // console.log("---------------->>>\n", result);
-    return parseTimelineFromGraphQL(result);
+    return parseTimelineFromGraphQL(result, "tweets");
 }
 
 
@@ -531,6 +531,90 @@ export async function fetchHomeTimeline(
     }
 
     const json = await resp.json();
-    return parseTimelineFromGraphQL(json);
+    return parseTimelineFromGraphQL(json, "home");
 }
 
+
+async function buildBookmarksURL(count: number = 20, cursor?: string): Promise<string> {
+    const bp = await getUrlWithQueryID(Bookmarks);
+    if (!bp) {
+        throw new Error("Missing queryId for 'Bookmarks'");
+    }
+
+    const variablesObj: any = {
+        count,
+        includePromotedContent: false, // 固定
+    };
+    if (cursor) variablesObj.cursor = cursor;
+
+    const variables = encodeURIComponent(JSON.stringify(variablesObj));
+
+    // features：与你刚才通过的特性集保持一致，避免 400（必含 verified_phone_label_enabled / creator_subscriptions_tweet_preview_api_enabled）
+    const features = encodeURIComponent(JSON.stringify({
+        rweb_video_screen_enabled: false,
+        payments_enabled: false,
+        rweb_xchat_enabled: false,
+        profile_label_improvements_pcf_label_in_post_enabled: true,
+        rweb_tipjar_consumption_enabled: true,
+        verified_phone_label_enabled: false,
+        creator_subscriptions_tweet_preview_api_enabled: true,
+        responsive_web_graphql_timeline_navigation_enabled: true,
+        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
+        premium_content_api_read_enabled: false,
+        communities_web_enable_tweet_community_results_fetch: true,
+        c9s_tweet_anatomy_moderator_badge_enabled: true,
+        responsive_web_grok_analyze_button_fetch_trends_enabled: false,
+        responsive_web_grok_analyze_post_followups_enabled: true,
+        responsive_web_jetfuel_frame: true,
+        responsive_web_grok_share_attachment_enabled: true,
+        articles_preview_enabled: true,
+        responsive_web_edit_tweet_api_enabled: true,
+        graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
+        view_counts_everywhere_api_enabled: true,
+        longform_notetweets_consumption_enabled: true,
+        responsive_web_twitter_article_tweet_consumption_enabled: true,
+        tweet_awards_web_tipping_enabled: false,
+        responsive_web_grok_show_grok_translated_post: false,
+        responsive_web_grok_analysis_button_from_backend: false,
+        creator_subscriptions_quote_tweet_preview_enabled: false,
+        freedom_of_speech_not_reach_fetch_enabled: true,
+        standardized_nudges_misinfo: true,
+        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
+        longform_notetweets_rich_text_read_enabled: true,
+        longform_notetweets_inline_media_enabled: true,
+        responsive_web_grok_image_annotation_enabled: true,
+        responsive_web_grok_imagine_annotation_enabled: true,
+        responsive_web_grok_community_note_auto_translation_is_enabled: false,
+        responsive_web_enhance_cards_enabled: false,
+    }));
+
+    return `${bp.url}?variables=${variables}&features=${features}`;
+}
+
+/**
+ * 拉取收藏列表（Bookmarks），解析仍复用 parseTimelineFromGraphQL
+ */
+export async function fetchBookmarks(
+    count: number = 20,
+    cursor?: string
+): Promise<TweetResult> {
+    const url = await buildBookmarksURL(count, cursor);
+    const headers = await generateHeaders();
+
+    const resp = await fetch(url, {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+    });
+
+    if (!resp.ok) {
+        const text = await resp.text();
+        const missing = extractMissingFeature(text);
+        console.log("------>>> Bookmarks missing feature:", missing);
+        throw new Error(`HTTP error ${resp.status}: ${text}`);
+    }
+
+    const json = await resp.json();
+    // console.log("--------------json------------>>>", json);
+    return parseTimelineFromGraphQL(json, "bookmarked");
+}

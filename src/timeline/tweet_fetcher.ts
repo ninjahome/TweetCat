@@ -1,4 +1,4 @@
-import {fetchTweets, getUserIdByUsername} from "./twitter_api";
+import {fetchBookmarks, fetchTweets, getUserIdByUsername} from "./twitter_api";
 import {sendMsgToService, sleep} from "../common/utils";
 import {logFT} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
@@ -211,7 +211,7 @@ export async function processCapturedTweets(result: any, kolId: string) {
 
     await sendMsgToService({}, MsgType.TokenUsedByUser);
 
-    const r = parseTimelineFromGraphQL(result);
+    const r = parseTimelineFromGraphQL(result,"tweets");
     const wrapList = r.wrapDbEntry;
     const kol = await queryKolById(kolId);
 
@@ -226,7 +226,7 @@ export async function processCapturedTweets(result: any, kolId: string) {
 }
 
 export async function processCapturedHomeLatest(result: any) {
-    const res = parseTimelineFromGraphQL(result);
+    const res = parseTimelineFromGraphQL(result,"home");
 
     const kolToCache = new Set<string>();
     for (const w of res.wrapDbEntry) {
