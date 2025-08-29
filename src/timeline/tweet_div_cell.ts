@@ -1,7 +1,3 @@
-/* ------------------------------------------------------------------
- * TweetCatCell 负责单行 tweet 的 DOM 生命周期 + 手动高度上报
- * ------------------------------------------------------------------*/
-
 import {EntryObj} from "./tweet_entry";
 import {renderTweetHTML} from "./render_tweet";
 import {globalNodePool} from "./div_node_pool";
@@ -32,7 +28,7 @@ export class TweetCatCell {
     }
 
     /** 首次或再次挂载 */
-    async mount(parent: HTMLElement, skipStable = false) {
+    mount(parent: HTMLElement) {
         if (!this.node) {
             this.node = globalNodePool.acquire(this.id) ?? renderTweetHTML(this.data, this.tpl);
             globalNodePool.register(this, this.node);
@@ -40,7 +36,7 @@ export class TweetCatCell {
             Object.assign(this.node.style, {
                 position: "absolute",
                 left: 0,
-                visibility: "visible"
+                visibility: "hidden"
             });
             this.video = this.node.querySelector("video") ?? undefined;
         }
@@ -52,13 +48,12 @@ export class TweetCatCell {
         }
 
         /* 若尚未测量，等待稳定后记录高度 */
-        if (!skipStable && !this.height) {
-            await waitStable(this.node);
+        if (!this.height) {
             this.height = this.node.offsetHeight;
             logMount(`[Cell#${this.id}] mount  height=${this.height} }`);
         }
 
-        logMount(`[Cell#${this.id}] mount skipStable=${skipStable}`);
+        logMount(`[Cell#${this.id}] mount`);
     }
 
     /** 从 DOM 移除 */
