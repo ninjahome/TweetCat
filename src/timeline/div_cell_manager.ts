@@ -7,7 +7,7 @@ import {
 import {VirtualScroller} from "./virtual_scroller";
 import {logTweetMgn} from "../common/debug_flags";
 import {TweetResizeObserverManager, UpdateFunc} from "./tweet_resize_observer";
-import {findCellFromNode} from "./div_node_pool";
+import {findCellFromNode, globalNodePool} from "./div_node_pool";
 import {tweetFetcher} from "./tweet_fetcher";
 
 export interface MountResult {
@@ -105,7 +105,7 @@ export class TweetManager {
     public updateHeightAt: UpdateFunc = (idx: number, newH: number, isMoreAct: boolean) => {
         const oldH = this.heights[idx] ?? TweetManager.EST_HEIGHT;
         const delta = newH - oldH;
-        if (Math.abs(delta) < 20) return;
+        if (Math.abs(delta) < 5) return;
 
         this.heights[idx] = newH;
 
@@ -113,9 +113,8 @@ export class TweetManager {
         for (let i = idx; i < this.cells.length; i++) {
             this.offsets[i] = offset;
             const cell = this.cells[i];
-            if (cell?.node?.isConnected) {
-                cell.node.style.transform = `translateY(${offset}px)`;
-            }
+            let node = cell?.node ?? globalNodePool.get(cell.id);
+            if (node) node.style.transform = `translateY(${offset}px)`;
             offset += this.heights[i] ?? TweetManager.EST_HEIGHT;
         }
 
@@ -128,7 +127,7 @@ export class TweetManager {
         if (shouldAdjustScroll && this.scroller && !isMoreAct) {//
             const newTop = curTop + delta;
             this.scroller.scrollToTop({needScroll: true, targetTop: newTop});
-            logTweetMgn(`[updateHeightAt] adjusted via VirtualScroller: scrollTop ${curTop} -> ${newTop}`);
+            logTweetMgn(`[updateHeightAt] adjusted via VirtualScroller: scrollTop ${curTop} -> ${newTop} isMoreAct：${isMoreAct}`);
         }
 
         logTweetMgn(`[updateHeightAt] cell[${idx}] height updated: ${oldH} -> ${newH}, delta=${delta}`);

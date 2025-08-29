@@ -77,6 +77,7 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     if (alreadyInTweetCat) {
         logGuard('setup complete – dispatch synthetic tc-mount');
         tcMount(area, originalArea, tpl, true);
+        menuItem.classList.add("tc-selected")
     }
 
     const grokLink = document.querySelector('a[href="/i/grok"]') as HTMLAnchorElement | null;

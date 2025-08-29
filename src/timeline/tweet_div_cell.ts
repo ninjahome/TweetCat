@@ -6,7 +6,7 @@ export class TweetCatCell {
     node!: HTMLElement;
     height = 0;
     private video?: HTMLVideoElement;
-    private readonly id: string;
+    readonly id: string;
 
     constructor(
         private readonly data: EntryObj,

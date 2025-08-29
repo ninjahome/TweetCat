@@ -19,6 +19,10 @@ export class NodePool {
         return node;
     }
 
+    get(id:string): HTMLElement | undefined{
+        return this.pool.get(id);
+    }
+
     release(id: string, node: HTMLElement) {
         if (this.pool.has(id)) return;  // 防止重复加入
 
