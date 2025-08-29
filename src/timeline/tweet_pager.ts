@@ -6,7 +6,7 @@ import {logPager} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {defaultAllCategoryID, MsgType} from "../common/consts";
 import {initBootstrapData, needBootStrap, WrapEntryObj} from "./db_raw_tweet";
-import {fetchTweets} from "./twitter_api";
+import {fetchHomeTimeline, fetchTweets} from "./twitter_api";
 import {BossOfTheTwitter} from "../common/database";
 import {KolCursor} from "../object/kol_cursor";
 import {startToFetchTweets} from "./tweet_fetcher";
@@ -43,8 +43,9 @@ export class TweetPager {
 
         const rawData = rsp.data as WrapEntryObj[];
         if (rawData.length === 0) {
-            console.warn("------>>> no data when switchCategory!");//TOOD::fetcher
-            return this.findNewestTweetsOfSomeBody();
+            console.log("------>>> no data and fetch home timeline ");
+            const result = await fetchHomeTimeline();
+            return result.tweets ?? []
         }
 
         const tweets = unwrapEntryObj(rawData);
@@ -52,7 +53,7 @@ export class TweetPager {
         this.timeStamp = lastOne.timestamp;
 
         if (tweets.length < pageSize) {
-            console.warn(`[getNextTweets] not enough data to show!`)//TODO::
+            console.warn(`[getNextTweets] not enough data to show!`)
         }
 
         logPager(`[getNextTweets] category:[${this.currentCategoryId}], timeStamp[${this.timeStamp}] load tweets=${tweets.length}`);
@@ -76,12 +77,6 @@ export class TweetPager {
         const needSrvData = needServerDataForFirstOpen();
         if (!needSrvData) return;
         fetchNewestAtFirstOpen().then();
-    }
-
-    //TODO::
-    async findNewestTweetsOfSomeBody(): Promise<EntryObj[]> {
-        const result = await fetchTweets(BossOfTheTwitter);
-        return result.tweets ?? []
     }
 }
 

@@ -216,7 +216,7 @@ export class TweetManager {
 
         try {
             const tweets = await tweetPager.getNextTweets(pageSize);
-            if (!tweets.length) return;//TODO:: no more tweet data!!
+            if (!tweets.length) return;
             logTweetMgn('[loadAndRenderTweetCell]prepare render ' + tweets.length + ' tweets to tweetCat cell')
             for (const tw of tweets) {
                 const lastIdx = this.cells.length;
