@@ -143,5 +143,5 @@ async function fetchNewestAtFirstOpen() {
 
     const param = new tweetFetchParam(rsp.data as KolCursor[], true);
     await startToFetchTweets(param);
-    logPager("✅ finish tweets fetching at first open twitter page");
+    console.log("✅ finish tweets fetching at first open twitter page");
 }

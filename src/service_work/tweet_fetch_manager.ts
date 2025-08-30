@@ -52,16 +52,16 @@ export class TweetFetcherManager {
         logBGT("[saveRuntimeStateToStorage]⚠️ State has been saved:", JSON.stringify(state));
     }
 
-    //
-    // async resetState(): Promise<void> {
-    //     this.currentNewGroupIndex = 0;
-    //     this.currentOldGroupIndex = 0;
-    //     this.newestFetch = true;
-    //     this.immediateQueue = [];
-    //
-    //     await this.saveRuntimeStateToStorage();
-    //     logBGT("[resetState]🔴 State has been reset on browser startup");
-    // }
+
+    async resetState(): Promise<void> {
+        this.currentNewGroupIndex = 0;
+        this.currentOldGroupIndex = 0;
+        this.newestFetch = true;
+        this.immediateQueue = [];
+
+        await this.saveRuntimeStateToStorage();
+        logBGT("[resetState]🔴 State has been reset on browser startup");
+    }
 
     public async getNextKolGroup(newest: boolean = true): Promise<KolCursor[]> {
 
@@ -136,7 +136,8 @@ export class TweetFetcherManager {
             cursorToFetch = await this.getImmediateCursors();
             newest = true;
         } else {
-            cursorToFetch = await this.getNextKolGroup(this.newestFetch);
+            // cursorToFetch = await this.getNextKolGroup(this.newestFetch);
+            cursorToFetch = await this.getNextKolGroup(true);
             newest = this.newestFetch;
             this.newestFetch = !this.newestFetch;
         }
