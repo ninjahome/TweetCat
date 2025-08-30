@@ -199,6 +199,21 @@ export class TweetCard {
             const firstWithUrl = this.images.find(it => !!it.url);
             if (firstWithUrl) this.mainImageUrl = firstWithUrl.url;
         }
+        (this as any).hasImage = !!this.mainImageUrl || (this.images?.some(i => !!i?.url));
+
+        // === 无图退化：如果名字还是大图卡，但没有图片，则降级为 "summary" ===
+        if (this.name === 'summary_large_image' && !(this as any).hasImage) {
+            this.name = 'summary';
+        }
+
+// === 统一把无协议的链接补成 https，避免 href="cnbc.com" 之类问题 ===
+        const ensureHttps = (u?: string) =>
+            u ? (/^https?:\/\//i.test(u) ? u : `https://${u}`) : u;
+
+        this.vanityUrl   = ensureHttps(this.vanityUrl);
+        this.expandedUrl = ensureHttps(this.expandedUrl);
+        this.url         = ensureHttps(this.url)!;
+        this.entityUrl   = ensureHttps(this.entityUrl);
     }
 }
 
@@ -457,7 +472,7 @@ export function buildFallbackTweetCard(raw: TweetContent): TweetCard | null {
 
         const entry = {
             // 统一为大图模板，避免 “x.com 小卡片” 的退化
-            name: "summary_large_image",
+            name: img ? "summary_large_image" : "summary",
             domain: "x.com",
             // 链接字段
             url: u.url,                 // t.co
@@ -501,7 +516,7 @@ function buildArticleTweetCard(raw: any): TweetCard | null {
 
     return {
         // 统一用大图卡，保持与官方一致
-        name: "summary_large_image",
+        name: img ? "summary_large_image" : "summary",
         // 文本
         title,
         description: desc || "",
@@ -715,8 +730,11 @@ export class TweetObj {
             // 是否真的要显示 card（而不是仅数据里存在）
             this.shouldShowCard = !!this.card && !hasQuote && !hasMedia;
 
+            const hasCardImage =
+                !!(this.card?.mainImageUrl) ||
+                !!(this.card?.images?.some(i => !!i?.url));
             // 主贴是否有主附件（媒体或被允许显示的 card）
-            this.hasMainAttachment = hasMedia || this.shouldShowCard;
+            this.hasMainAttachment = hasMedia || (this.shouldShowCard && hasCardImage);
 
             // 只有在真的显示 card 时，才把对应 t.co 从正文里隐藏
             // 以 card.entityUrl 优先；没有则用 card.url 兜底

@@ -136,8 +136,8 @@ export class TweetFetcherManager {
             cursorToFetch = await this.getImmediateCursors();
             newest = true;
         } else {
-            // cursorToFetch = await this.getNextKolGroup(this.newestFetch);
-            cursorToFetch = await this.getNextKolGroup(true);
+            cursorToFetch = await this.getNextKolGroup(this.newestFetch);
+            // cursorToFetch = await this.getNextKolGroup(true);
             newest = this.newestFetch;
             this.newestFetch = !this.newestFetch;
         }

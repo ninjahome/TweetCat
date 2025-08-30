@@ -47,7 +47,7 @@ export function updateTweetCardArea(
     card: TweetCard | null,
     tpl: HTMLTemplateElement,
 ): void {
-    logRC("[TweetCard DEBUG]", card);
+    logRC("[TweetCard DEBUG]", JSON.stringify(card));
     if (!container) return;
     container.innerHTML = "";
     if (!card) return;
