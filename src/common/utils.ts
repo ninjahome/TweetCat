@@ -91,7 +91,15 @@ export async function updateBearerToken(token: string) {
 }
 
 export function isAdTweetNode(node: HTMLElement): boolean {
-    return node.querySelector('[data-testid="placementTracking"]') !== null;
+    const container = node.querySelector(
+        '[data-testid="placementTracking"]' +
+        ':has(> [data-testid="top-impression-pixel"])' +
+        ':has(> [data-testid="right-impression-pixel"])' +
+        ':has(> [data-testid="bottom-impression-pixel"])' +
+        ':has(> [data-testid="left-impression-pixel"])'
+    ) as HTMLElement | null;
+
+    return !!container;
 }
 
 
