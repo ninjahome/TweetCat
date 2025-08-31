@@ -1,7 +1,7 @@
 import {
     __tableKolCursor,
     databaseGet,
-    databasePutItem,
+    databaseUpdateOrAddItem,
     databaseQueryAll,
     databaseQueryByFilter
 } from "../common/database";
@@ -115,12 +115,12 @@ export async function loadCursorsForKols(ids: string[]) {
 
 export async function writeKolsCursors(data: KolCursor[]) {
     for (const cursor of data) {
-        await databasePutItem(__tableKolCursor, cursor);
+        await databaseUpdateOrAddItem(__tableKolCursor, cursor);
     }
 }
 
 export async function writeOneCursor(cursor: KolCursor) {
-    await databasePutItem(__tableKolCursor, cursor);
+    await databaseUpdateOrAddItem(__tableKolCursor, cursor);
 }
 
 export async function  loadCursorById(id:string): Promise<any>{

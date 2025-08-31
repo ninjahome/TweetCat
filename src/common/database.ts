@@ -11,8 +11,6 @@ export const __tableKolsInCategory = '__table_kol_in_category__';
 export const __tableSystemSetting = '__table_system_setting__';
 export const __tableCachedTweets = '__table_cached_tweets__'
 export const __tableKolCursor = '__table_kol_cursor__';
-
-export const BossOfTheTwitter = '44196397';
 export const idx_tweets_user_time = 'userId_timestamp_idx'
 export const idx_tweets_time_user = 'timestamp_userId_idx';
 export const idx_tweets_userid = 'userId_idx'
@@ -348,11 +346,10 @@ export function databaseUpdate(storeName: string, keyName: string, keyVal: any, 
     });
 }
 
-export function databasePutItem(storeName: string, data: any): Promise<IDBValidKey> {
+export function databaseUpdateOrAddItem(storeName: string, data: any): Promise<IDBValidKey> {
     return new Promise((resolve, reject) => {
-        if (!__databaseObj) {
-            return reject('Database is not initialized');
-        }
+        if (!__databaseObj) return reject('Database is not initialized');
+
         const transaction = __databaseObj.transaction([storeName], 'readwrite');
         const objectStore = transaction.objectStore(storeName);
         const request = objectStore.put(data);
@@ -361,6 +358,29 @@ export function databasePutItem(storeName: string, data: any): Promise<IDBValidK
         request.onerror = event => {
             reject(`Error putting data to ${storeName}: ${(event.target as IDBRequest).error}`);
         };
+    });
+}
+
+export function databaseUpdateFields(storeName: string, key: IDBValidKey, changes: Record<string, any>) {
+
+    return new Promise((resolve, reject) => {
+        if (!__databaseObj) return reject('Database is not initialized');
+        const transaction = __databaseObj.transaction([storeName], 'readwrite');
+        const store = transaction.objectStore(storeName);
+        const getReq = store.get(key);
+
+        getReq.onsuccess = () => {
+            const record = getReq.result;
+            if (!record) return reject('Record not found');
+
+            Object.assign(record, changes); // 一次性更新多个字段
+
+            const putReq = store.put(record);
+            putReq.onsuccess = () => resolve('Fields updated successfully');
+            putReq.onerror = e => reject(`Error updating: ${(e.target as IDBRequest).error}`);
+        };
+
+        getReq.onerror = e => reject(`Error getting record: ${(e.target as IDBRequest).error}`);
     });
 }
 

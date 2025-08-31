@@ -8,6 +8,7 @@ import {sendMessageToX} from "../service_work/bg_msg";
 import {localGet, localSet} from "../common/local_storage";
 import {Category} from "../object/category";
 import {kolsForCategory} from "../object/tweet_kol";
+import {getSystemSetting, switchAdOn} from "../object/system_setting";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -102,9 +103,13 @@ async function setHomeStatus() {
         listDiv.append(clone);
     });
 
-    const isEnabled: boolean = await localGet(__DBK_AD_Block_Key) as boolean ?? false
+    const isEnabled: boolean = await localGet(__DBK_AD_Block_Key) as boolean ?? false//TODO:: refactor __DBK_AD_Block_Key logic
     const blockAdsToggle = document.getElementById('ad-block-toggle') as HTMLInputElement;
     blockAdsToggle.checked = isEnabled;
+
+    const adNumber = document.querySelector(".number-blocked-txt") as HTMLSpanElement;
+    const setting = await getSystemSetting();
+    adNumber.innerText = "" + setting.adsBlocked
 }
 
 function _cloneCatItem(clone: HTMLElement, category: Category) {
@@ -188,6 +193,7 @@ function initSettings() {
     blockAdsToggle.onchange = async () => {
         const isEnabled = blockAdsToggle.checked;
         await localSet(__DBK_AD_Block_Key, isEnabled);
+        await switchAdOn(isEnabled);
         console.log("------>>>Ad blocking is now", isEnabled ? "enabled" : "disabled");
         await sendMessageToX(MsgType.AdsBlockChanged, isEnabled);
     };

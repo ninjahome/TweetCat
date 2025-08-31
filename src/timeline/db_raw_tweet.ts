@@ -4,7 +4,7 @@ import pLimit from 'p-limit';
 import {
     __tableCachedTweets,
     __tableKolsInCategory, countTable, databaseDeleteByIndexValue,
-    databasePutItem,
+    databaseUpdateOrAddItem,
     databaseQueryByFilter,
     databaseQueryByIndex,
     databaseQueryByIndexRange, idx_tweets_userid,
@@ -69,7 +69,7 @@ export async function cacheRawTweets(kolId: string, rawTweets: WrapEntryObj[]): 
     const limit = pLimit(5);
     try {
         await Promise.all(
-            rawTweets.map(obj => limit(() => databasePutItem(__tableCachedTweets, obj)))
+            rawTweets.map(obj => limit(() => databaseUpdateOrAddItem(__tableCachedTweets, obj)))
         );
         const dataLen = await pruneOldDataIfNeeded(kolId, idx_tweets_user_time, __tableCachedTweets, MAX_TWEETS_PER_KOL);
         logTC(`[cacheRawTweets] ✅ [${rawTweets.length}] tweets cached, [${dataLen}] old tweets deleted for kol[${kolId}]`);
@@ -99,7 +99,7 @@ export async function updateBookmarked(tweetId: string, value: boolean): Promise
         }
 
         // 3) 覆盖写回数据库
-        await databasePutItem(__tableCachedTweets, obj);
+        await databaseUpdateOrAddItem(__tableCachedTweets, obj);
 
         console.log(`✅ 已更新 tweetId=${tweetId} 的 bookmarked=${value}`);
         return true;

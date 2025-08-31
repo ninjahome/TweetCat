@@ -90,7 +90,13 @@ export async function updateBearerToken(token: string) {
     await localSet(__DBK_Bearer_Token, token);
 }
 
-export function isAdTweetNode(node: HTMLElement): boolean {
+export function isAdTweetNode(node: HTMLElement, atStartUp: boolean = true): boolean {
+
+    if (atStartUp) {
+        const container = node.querySelector<HTMLElement>('[data-testid="placementTracking"]');
+        return !!container
+    }
+
     const container = node.querySelector(
         '[data-testid="placementTracking"]' +
         ':has(> [data-testid="top-impression-pixel"])' +

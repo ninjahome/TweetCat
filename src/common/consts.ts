@@ -38,6 +38,7 @@ export enum MsgType {
     KolRemove = 'KolRemove',
 
     AdsBlockChanged = 'AdsBlockChanged',
+    AdsBlockSuccess = 'AdsBlockSuccess',
 
     TweetCacheToDB = 'TweetCacheToDB',
     TweetReadByKolId = 'TweetReadByKolId',

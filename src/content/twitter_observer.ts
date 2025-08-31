@@ -6,6 +6,8 @@ import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {fetchImmediateInNextRound} from "../timeline/tweet_fetcher";
+import {logAD} from "../common/debug_flags";
+import {blockedAdNumIncrease} from "../object/system_setting";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -18,8 +20,9 @@ export function changeAdsBlockStatus(status: boolean) {
     __blockAdStatus = status;
     if (status) {
         (document.querySelectorAll('div[data-testid="cellInnerDiv"]') as NodeListOf<HTMLElement>).forEach(elm => {
-            if (isAdTweetNode(elm)) {
+            if (isAdTweetNode(elm, false)) {
                 elm.style.display = 'none';
+                logAD("------>>> remove ads at loaded", elm);
             }
         })
     }
@@ -55,15 +58,18 @@ export async function initObserver() {
 
 function filterTweets(nodes: NodeList) {
     nodes.forEach((divNode) => {
-
+        // console.log("------>>> div node:", divNode);
         if (!isTweetDiv(divNode)) {
             // console.log("------>>> is home page:", window.location.href);
             return;
         }
-
-        if (__blockAdStatus && isAdTweetNode(divNode)) {
-            console.log("------>>> found ads and block it", divNode.dataset.testid);
-            divNode.style.display = "none";
+        // console.log("------>>> tweet cell div node:", divNode, divNode.outerHTML);
+        if (isAdTweetNode(divNode, true)) {
+            logAD("------>>> found ads at startup", divNode);
+            if (__blockAdStatus) {
+                divNode.style.display = "none";
+                blockedAdNumIncrease().then();
+            }
             return;
         }
 

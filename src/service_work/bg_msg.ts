@@ -19,6 +19,7 @@ import {loadAllKolCursors, loadCursorById, writeKolsCursors, writeOneCursor} fro
 import {timerKolInQueueImmediate} from "./bg_timer";
 import {tweetFM} from "./tweet_fetch_manager";
 import {penalize429, useTokenByUser} from "./api_bucket_state";
+import {addBlockedAdsNumber} from "../object/system_setting";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -95,7 +96,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
-        case MsgType.TweetBookmarkToggle:{
+        case MsgType.TweetBookmarkToggle: {
             await updateBookmarked(request.data.entryID as string, request.data.bookmarked as boolean)
             return {success: true};
         }
@@ -140,10 +141,16 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
-        case MsgType.TokenFreeze:{
+        case MsgType.TokenFreeze: {
             await penalize429();
             return {success: true};
         }
+
+        case MsgType.AdsBlockSuccess: {
+            await addBlockedAdsNumber()
+            return {success: true};
+        }
+
         default:
             return {success: false, data: "unsupportable message type"};
     }
