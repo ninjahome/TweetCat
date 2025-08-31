@@ -48,6 +48,7 @@ img, video {
 .category-filter-item.active {
     background-color: rgba(15, 20, 25, 0.1);
 }
+
 .category-filter-item.active button {
     font-weight: 700;
 }
@@ -55,8 +56,8 @@ img, video {
 .category-filter-btn,
 .category-filter-clear-btn,
 .category-filter-more-btn {
-    display: inline-flex;       /* 内联 flex 布局 */
-    align-items: center;        /* 垂直居中 */
+    display: inline-flex; /* 内联 flex 布局 */
+    align-items: center; /* 垂直居中 */
 }
 
 /* 给每个按钮前加小圆点 */
@@ -66,20 +67,18 @@ img, video {
     display: inline-block;
     margin-right: 4px;
     font-size: 0.6em;
-    color: rgb(185, 202, 211); /* 默认灰色 */
+    color: #B9CAD3; /* 默认灰色 */
     transition: color 0.3s;
 }
 
 /* 不同分类选中时的小圆点颜色 */
-#category-filter-item-1.active .category-filter-btn::before { color: #f6cd01; }  /* Main - 红 */
-#category-filter-item-2.active .category-filter-btn::before { color: #866afb; }  /* test - 绿 */
-#category-filter-item-3.active .category-filter-btn::before { color: #fe466c; }  /* game - 蓝 */
-#category-filter-item-4.active .category-filter-btn::before { color: #faad14; }  /* TVdrama - 橙 */
-#category-filter-item-5.active .category-filter-btn::before { color: #06cbad; }  /* tweetcat - 紫 */
-#category-filter-item-6.active .category-filter-btn::before { color: #4592ef; }  /* 引文图文 - 青 */
-#category-filter-item-7.active .category-filter-btn::before { color: #f6cd01; }  /* post - 粉 */
-#category-filter-clear.active .category-filter-clear-btn::before { color: #4592ef; } /* All - 黑 */
+.category-filter-item.active .category-filter-btn::before {
+    color: var(--cat-point-color, #B9CAD3);
+}
 
+.category-filter-item.active .category-filter-clear-btn::before {
+    color: var(--cat-point-color, #B9CAD3);
+}
 
 .category-popup-menu {
     display: none;
@@ -657,6 +656,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     color: rgb(29, 155, 240);
     font-weight: 700;
 }
+
 .tweettabname {
     color: #1d9bf0 !important; /* Twitter 品牌蓝 */
 }
@@ -722,11 +722,11 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .inline-link-card .desc {
     font-size: 15px;
     color: rgb(83, 100, 113);
-    display: -webkit-box;          /* 弹性盒子模型 */
-    -webkit-line-clamp: 2;         /* 限制为 2 行 */
-    -webkit-box-orient: vertical;  /* 垂直排列子元素 */
-    overflow: hidden;              /* 隐藏超出的文本 */
-    text-overflow: ellipsis;       /* 超出用省略号 */
+    display: -webkit-box; /* 弹性盒子模型 */
+    -webkit-line-clamp: 2; /* 限制为 2 行 */
+    -webkit-box-orient: vertical; /* 垂直排列子元素 */
+    overflow: hidden; /* 隐藏超出的文本 */
+    text-overflow: ellipsis; /* 超出用省略号 */
     line-height: 1.4;
 }
 
@@ -769,7 +769,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tc-main-more {
     display: inline-block;
     margin-top: 6px;
-    font-size: 15px;            /* 主推正文字号 */
+    font-size: 15px; /* 主推正文字号 */
     line-height: 1.5;
     color: rgb(29, 155, 240);
     text-decoration: none;
@@ -807,6 +807,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     overflow: hidden;
     vertical-align: middle;
 }
+
 .tweet-card-area .inline-link:hover {
     background-color: rgba(0, 0, 0, 0.03);
 }
@@ -822,9 +823,9 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     /* 避免被旧规则覆盖：交给 small/large 指定宽高 */
     flex: none !important;
     height: auto !important;
-    position: relative;          /* 为绝对定位的 img / 播放浮层提供定位上下文 */
-    overflow: hidden;            /* 不让图片溢出 */
-    background-color: #f7f9f9;   /* 图未加载时的底色 */
+    position: relative; /* 为绝对定位的 img / 播放浮层提供定位上下文 */
+    overflow: hidden; /* 不让图片溢出 */
+    background-color: #f7f9f9; /* 图未加载时的底色 */
 }
 
 /* 统一图片铺满策略 + 左侧 12px 圆角 / 右侧直角 */
@@ -877,14 +878,14 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 /* 右侧 meta 文字区：纵向堆叠 + 2px 行间距 */
 .tweet-card-area .inline-link-card--small .meta {
     flex: 1;
-    min-width: 0;                 /* 允许省略/换行 */
+    min-width: 0; /* 允许省略/换行 */
     box-sizing: border-box;
     padding: 12px;
     border-left: 1px solid #cfd9de;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    row-gap: 2px;                 /* 文字块之间 2px 间隙 */
+    row-gap: 2px; /* 文字块之间 2px 间隙 */
 }
 
 /* 文本换行策略（避免超长 URL/无空格字符串溢出） */
@@ -912,9 +913,10 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .tweet-card-area .inline-link-card--small .meta .js-card-desc {
     display: -webkit-box;
-    -webkit-line-clamp: 2;      /* 限两行 */
+    -webkit-line-clamp: 2; /* 限两行 */
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.4;
@@ -964,9 +966,10 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     object-fit: cover;
     display: block;
 }
+
 .tweet-card-area a.tc-card-large__media {
-     border: 1px solid rgb(207, 217, 222);
- }
+    border: 1px solid rgb(207, 217, 222);
+}
 
 
 /* 下部遮罩（让标题读得清楚） */
@@ -997,10 +1000,10 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     border-radius: 4px;
     background-color: rgba(0, 0, 0, 0.77);
 
-    display: inline-block;   /* 根据文字宽度自适应 */
+    display: inline-block; /* 根据文字宽度自适应 */
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;     /* 如果只想一行 */
+    white-space: nowrap; /* 如果只想一行 */
     /* —— 如果要多行省略 ——
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1060,11 +1063,15 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     font-style: italic;
 }
 
-.tweet-body.is-permalink { cursor: pointer; }
+.tweet-body.is-permalink {
+    cursor: pointer;
+}
+
 .tweet-body.is-permalink a,
 .tweet-body.is-permalink button,
-.tweet-body.is-permalink [role=button] { cursor: auto; }
-
+.tweet-body.is-permalink [role=button] {
+    cursor: auto;
+}
 
 
 /* 图片下方的标题+摘要容器 */
@@ -1091,7 +1098,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 /* 文本模式下，图下的标题与描述容器 */
 .tc-card-large__meta {
-    display: none;               /* 默认不显示，JS 按模式打开 */
+    display: none; /* 默认不显示，JS 按模式打开 */
     padding: 12px 16px 0;
 }
 
@@ -1110,14 +1117,30 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 /* === 模式开关 === */
 /* 站内（x.com/i/article）：隐藏图下 caption，显示 meta；隐藏图上的覆盖标题（若存在）和来源行 */
-.tc-card-large--text .tc-card-large__caption { display: none; }
-.tc-card-large--text .tc-card-large__meta { display: block; }
-.tc-card-large--hide-source .tc-card-large__source { display: none; }
-.tweet-card-area .tc-card-large--text .tc-card-large__media .tc-card-large__title { display: none; }
+.tc-card-large--text .tc-card-large__caption {
+    display: none;
+}
+
+.tc-card-large--text .tc-card-large__meta {
+    display: block;
+}
+
+.tc-card-large--hide-source .tc-card-large__source {
+    display: none;
+}
+
+.tweet-card-area .tc-card-large--text .tc-card-large__media .tc-card-large__title {
+    display: none;
+}
 
 /* 站外（普通网页）：不显示 meta；caption 里只保留摘要，避免与图上的覆盖标题重复 */
-.tc-card-large--overlay .tc-card-large__caption .tc-card-large__title { display: none; }
-.tc-card-large--overlay .tc-card-large__meta { display: none; }
+.tc-card-large--overlay .tc-card-large__caption .tc-card-large__title {
+    display: none;
+}
+
+.tc-card-large--overlay .tc-card-large__meta {
+    display: none;
+}
 
 .tc-card-large--overlay .tc-card-large__caption:has(.tc-card-large__desc:empty),
 .tc-card-large--overlay .tc-card-large__caption:has(.tc-card-large__desc[style*="display: none"]) {

@@ -1,5 +1,5 @@
 import {sendMsgToService} from "../common/utils";
-import {defaultAllCategoryID, MsgType} from "../common/consts";
+import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
 import {EntryObj} from "../timeline/tweet_entry";
 import {switchCategory} from "./tweetcat_timeline";
 import {Category, queryCategoriesFromBG} from "../object/category";
@@ -7,12 +7,17 @@ import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {parseContentHtml} from "./main_entrance";
 
+const defaultCatPointColor = '#B9CAD3';
+
 export function setSelectedCategory(catID: number = defaultAllCategoryID) {
-    document.querySelectorAll(".category-filter-item").forEach(elm => {
-            elm.classList.remove("active");
-            const emlCatID = Number((elm as HTMLElement).dataset.categoryID);
+    document.querySelectorAll<HTMLElement>(".category-filter-item").forEach(elm => {
+            const emlCatID = Number(elm.dataset.categoryID);
             if (emlCatID === catID) {
                 elm.classList.add("active");
+                elm.style.setProperty("--cat-point-color", choseColorByID(emlCatID));
+            } else {
+                elm.classList.remove("active");
+                elm.style.setProperty("--cat-point-color", defaultCatPointColor);
             }
         }
     );
@@ -112,7 +117,7 @@ function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], 
     setSelectedCategory(getSessCatID());
 }
 
-export async function reloadCategoryContainer(categories: any) {
+export async function reloadCategoryContainer(categories: Category[]) {
     const container = document.querySelector(".category-filter-container") as HTMLElement
     if (!container) {
         console.warn("🚨------>>> failed to find tweet cat filter area");
@@ -120,7 +125,13 @@ export async function reloadCategoryContainer(categories: any) {
     }
     container.innerHTML = '';
     const tpl = await parseContentHtml("html/content.html");
-    populateCategoryArea(tpl, categories as Category[], container);
+    populateCategoryArea(tpl, categories, container);
+    const savedCatID = getSessCatID();
+    const target = categories.find(item => item.id === savedCatID);
+    if(!target){
+        await switchCategory(defaultAllCategoryID);
+        setSelectedCategory(defaultAllCategoryID);
+    }
 }
 
 /** 进度条注册表（按文件名管理一个 DOM 项目和它的控制器） */
