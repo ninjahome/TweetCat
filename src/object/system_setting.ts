@@ -35,8 +35,7 @@ export async function getSystemSetting(): Promise<SystemSetting> {
     if (!systemSetting) {
         systemSetting = new SystemSetting(0, false);
         delete systemSetting.id;
-        const sysId = await databaseAddItem(__tableSystemSetting, systemSetting);
-        systemSetting.id = sysId;
+        systemSetting.id = await databaseAddItem(__tableSystemSetting, systemSetting);
         return systemSetting;
     }
 
