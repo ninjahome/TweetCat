@@ -1,4 +1,4 @@
-import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./main_entrance";
+import {parseNameFromTweetCell, parseContentHtml} from "./main_entrance";
 import {__DBK_AD_Block_Key, choseColorByID, MsgType} from "../common/consts";
 import {isAdTweetNode, parseTwitterPath, sendMsgToService} from "../common/utils";
 import {localGet, localSet} from "../common/local_storage";
