@@ -6,7 +6,6 @@ import {Category, queryCategoriesFromBG} from "../object/category";
 import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {parseContentHtml} from "./main_entrance";
-import {an, s} from "vitest/dist/chunks/reporters.d.BFLkQcL6";
 
 export function setSelectedCategory(catID: number = defaultAllCategoryID) {
     document.querySelectorAll(".category-filter-item").forEach(elm => {
