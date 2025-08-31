@@ -73,8 +73,7 @@
     }
 
     .category-filter-btn::before,
-    .category-filter-clear-btn::before,
-    .category-filter-more-btn::before {
+    .category-filter-clear-btn::before{
         color: #2f3336;
     }
 }

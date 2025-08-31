@@ -2,11 +2,11 @@ import {sendMsgToService} from "../common/utils";
 import {defaultAllCategoryID, MsgType} from "../common/consts";
 import {EntryObj} from "../timeline/tweet_entry";
 import {switchCategory} from "./tweetcat_timeline";
-import {queryCategoriesFromBG} from "../object/category";
+import {Category, queryCategoriesFromBG} from "../object/category";
 import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {parseContentHtml} from "./main_entrance";
-import {s} from "vitest/dist/chunks/reporters.d.BFLkQcL6";
+import {an, s} from "vitest/dist/chunks/reporters.d.BFLkQcL6";
 
 export function setSelectedCategory(catID: number = defaultAllCategoryID) {
     document.querySelectorAll(".category-filter-item").forEach(elm => {
@@ -67,16 +67,14 @@ export async function changeFilterType(catId: number) {
 }
 
 export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main: HTMLElement) {
-    const filterContainerDiv = tpl.content.getElementById("category-filter-container");
-    const filterBtn = tpl.content.getElementById("category-filter-item");
-    const moreBtn = tpl.content.getElementById("category-filter-more");
-    const allCatBtn = tpl.content.getElementById("category-filter-clear");
-
-    if (!filterContainerDiv || !filterBtn || !moreBtn || !allCatBtn) {
-        console.error(`------>>> failed to filter buttons container is ${filterContainerDiv}
-         category button is ${filterBtn} clear button is ${allCatBtn}`);
+    const filterContainerDiv = tpl.content.getElementById("category-filter-container")?.cloneNode(true) as HTMLElement;
+    if (!filterContainerDiv) {
+        console.error(`------>>> failed to filter buttons container `);
         return;
     }
+
+    filterContainerDiv.removeAttribute('id');
+
     const container = main.querySelector(".tweet-main .tweet-cat-filter-area") as HTMLElement
     if (!container) {
         console.warn("🚨------>>> failed to find tweet cat filter area");
@@ -84,11 +82,19 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
     }
     container.appendChild(filterContainerDiv);
 
+    const categories = await queryCategoriesFromBG();
+    populateCategoryArea(tpl, categories, filterContainerDiv)
+}
+
+function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], container: HTMLElement) {
+    const filterBtn = tpl.content.getElementById("category-filter-item") as HTMLElement;
+    const moreBtn = tpl.content.getElementById("category-filter-more") as HTMLElement;
+    const allCatBtn = tpl.content.getElementById("category-filter-clear") as HTMLElement;
+
     allCatBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
     allCatBtn.dataset.categoryID = '' + defaultAllCategoryID;
-    filterContainerDiv.appendChild(allCatBtn);
+    container.appendChild(allCatBtn);
 
-    const categories = await queryCategoriesFromBG();
     categories.forEach((category) => {
         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
         cloneItem.id = "category-filter-item-" + category.id;
@@ -98,13 +104,24 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
         btn.addEventListener('click', async () => {
             await changeFilterType(category.id ?? defaultAllCategoryID);
         });
-        filterContainerDiv.appendChild(cloneItem);
+        container.appendChild(cloneItem);
     });
 
     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
-    filterContainerDiv.appendChild(moreBtn);
+    container.appendChild(moreBtn);
     logTPR("✅ ------>>> add filter container success")
     setSelectedCategory(getSessCatID());
+}
+
+export async function reloadCategoryContainer(categories: any) {
+    const container = document.querySelector(".category-filter-container") as HTMLElement
+    if (!container) {
+        console.warn("🚨------>>> failed to find tweet cat filter area");
+        return
+    }
+    container.innerHTML = '';
+    const tpl = await parseContentHtml("html/content.html");
+    populateCategoryArea(tpl, categories as Category[], container);
 }
 
 /** 进度条注册表（按文件名管理一个 DOM 项目和它的控制器） */

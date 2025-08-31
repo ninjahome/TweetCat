@@ -85,7 +85,7 @@ async function addNewCategory() {
     newCatInput.value = '';
 
     const changedCat = await loadCategories();
-    await sendMessageToX(MsgType.CategoryChanged, changedCat);
+    await sendMessageToX(MsgType.CategoryChanged, changedCat, false);
     hideLoading();
     showAlert("Tips", "Save Success");
 }

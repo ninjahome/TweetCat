@@ -160,7 +160,7 @@ async function openPlugin() {
     await browser.action.openPopup();
 }
 
-export async function sendMessageToX(action: string, data: any): Promise<boolean> {
+export async function sendMessageToX(action: string, data: any, onlyFirstTab: boolean = true): Promise<boolean> {
     const tabs = await browser.tabs.query({
         url: "*://x.com/*"
     });
@@ -170,14 +170,22 @@ export async function sendMessageToX(action: string, data: any): Promise<boolean
         return false;
     }
 
-    try {
-        await browser.tabs.sendMessage(tabs[0].id!, {
-            action: action,
-            data: data
-        });
-        return true;
-    } catch (err) {
-        console.warn("------>>> 发送消息失败", err);
-        return false;
+    for (let i = 0; i < tabs.length; i++) {
+        const tab = tabs[i];
+        try {
+            await browser.tabs.sendMessage(tab.id!, {
+                action: action,
+                data: data
+            });
+
+            if(onlyFirstTab)return true;
+
+        } catch (err) {
+            console.warn("------>>> 发送消息失败", err);
+            return false;
+        }
     }
+
+    return true;
+
 }

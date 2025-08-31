@@ -61,8 +61,7 @@ img, video {
 
 /* 给每个按钮前加小圆点 */
 .category-filter-btn::before,
-.category-filter-clear-btn::before,
-.category-filter-more-btn::before {
+.category-filter-clear-btn::before {
     content: "●";
     display: inline-block;
     margin-right: 4px;

@@ -15,7 +15,7 @@ import {
 } from "../timeline/tweet_fetcher";
 import {getTweetCatFlag, handleLocationChange, navigateToTweetCat} from "../timeline/route_helper";
 import {logTPR} from "../common/debug_flags";
-import {setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
+import {reloadCategoryContainer, setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 import {
     bookmarkApi,
@@ -82,7 +82,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
         }
         case MsgType.CategoryChanged: {
             logTPR("------>>> category changed.....")
-            // reloadCategoryContainer(request.data as Category[]).then();
+            reloadCategoryContainer(request.data).then();
             sendResponse({success: true});
             break;
         }
