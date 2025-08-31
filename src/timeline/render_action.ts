@@ -4,17 +4,20 @@ import {
     onVideoDownloadAbort,
     onVideoDownloadError,
     onVideoDownloadProgress,
-    onVideoDownloadStart, onVideoDownloadSuccess
+    onVideoDownloadStart,
+    onVideoDownloadSuccess
 } from "../content/tweetcat_web3_area";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {bookmarkApi} from "./twitter_api";
-import {showToastMsg} from "./render_common";
+import {indexToGrade, resolutionToNearestP, showToastMsg} from "./render_common";
 
 export function updateTweetBottomButtons(
     container: HTMLElement, tweetObj: TweetObj, mp4List: string[], entryID: string): void {
     const downloadDiv = container.querySelector(".action-button.download") as HTMLElement;
-    prepareDownloadBtn(downloadDiv, tweetObj, mp4List)
+
+    const fileName = "TweetCat_" + tweetObj.author.screenName + "@" + tweetObj.rest_id;
+    prepareDownloadBtn(downloadDiv, fileName, mp4List)
 
     const rewardBtn = container.querySelector(".action-button.reward") as HTMLElement | null;
     if (rewardBtn && rewardBtn.dataset.wired !== "1") {
@@ -61,7 +64,7 @@ function setBookStratus(bookMarkBtn: HTMLElement, booked: boolean) {
     }
 }
 
-function prepareDownloadBtn(downloadDiv: HTMLElement, tweetObj: TweetObj, mp4List: string[]) {
+export function prepareDownloadBtn(downloadDiv: HTMLElement, fileName: string, mp4List: string[], hostDiv?: HTMLElement) {
     if (mp4List.length === 0) {
         downloadDiv.style.display = "none";
         return;
@@ -69,17 +72,21 @@ function prepareDownloadBtn(downloadDiv: HTMLElement, tweetObj: TweetObj, mp4Lis
     logTCR("mp4 list:", mp4List);
     downloadDiv.style.display = ""; // 确保可见
 
-    const downloadBtn = downloadDiv.querySelector(".downloadVideo") as HTMLButtonElement;
+    const downloadBtn = downloadDiv.querySelector(".action-button-download-btn") as HTMLButtonElement;
     const selectEl = downloadDiv.querySelector(".download-selection") as HTMLSelectElement;
     const option = downloadDiv.querySelector(".download-option") as HTMLOptionElement;
 
+    selectEl.addEventListener("click", (e) => {
+        e.stopPropagation(); // 阻止冒泡到父节点
+    });
+
     populateDownloadOptions(selectEl, option, mp4List);
 
-    const fileName = "TweetCat_" + tweetObj.author.screenName + "@" + tweetObj.rest_id;
     if (downloadBtn.dataset.dlWired === "1") return;
 
-    downloadBtn.addEventListener("click", async () => {
-        await downloadVideo(downloadBtn, selectEl, fileName)
+    downloadBtn.addEventListener("click", async (e) => {
+        e.stopPropagation(); // 阻止冒泡到父节点
+        await downloadVideo(downloadBtn, selectEl, fileName, hostDiv)
     });
 
     downloadBtn.dataset.dlWired = "1";
@@ -98,7 +105,7 @@ function rewardKol(_e: Event) {
     logTCR("------>>> reward kol by usdt");
 }
 
-async function downloadVideo(btn: HTMLButtonElement, selectEl: HTMLSelectElement, fileName: string) {
+async function downloadVideo(btn: HTMLButtonElement, selectEl: HTMLSelectElement, fileName: string, hostDiv?: HTMLElement) {
     const url = selectEl.value;
     if (!url) {
         logTCR("[wireDownloadOnce] 未找到视频的URL");
@@ -117,7 +124,7 @@ async function downloadVideo(btn: HTMLButtonElement, selectEl: HTMLSelectElement
     selectEl.disabled = true;
 
     try {
-        const data = await downloadInProcess(url, filename);
+        const data = await downloadInProcess(url, filename, hostDiv);
         await saveMp4File(data, filename);
     } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") {
@@ -126,7 +133,6 @@ async function downloadVideo(btn: HTMLButtonElement, selectEl: HTMLSelectElement
         }
         onVideoDownloadError(filename, err as Error);
         showVideoTab(url);
-
         logTCR("[downloadMp4] stream failed, fallback to new tab:", err);
     } finally {
         selectEl.disabled = false;
@@ -147,7 +153,7 @@ function showVideoTab(url: string) {
 
 
 /** ======================== 工具函数 ======================== **/
-async function downloadInProcess(url: string, filename: string): Promise<BlobPart[]> {
+async function downloadInProcess(url: string, filename: string, hostDiv?: HTMLElement): Promise<BlobPart[]> {
     const ac = new AbortController();
     const signal = ac.signal;
 
@@ -158,7 +164,7 @@ async function downloadInProcess(url: string, filename: string): Promise<BlobPar
     const reader = resp.body?.getReader();
     if (!reader) throw new Error("ReadableStream not supported");
 
-    onVideoDownloadStart(total, filename, ac);
+    onVideoDownloadStart(total, filename, ac, hostDiv);
 
     const parts: BlobPart[] = [];
     let loaded = 0;
@@ -194,25 +200,6 @@ async function saveMp4File(parts: BlobPart[], filename: string): Promise<void> {
     onVideoDownloadSuccess(filename);
 }
 
-function resolutionToNearestP(url: string): string {
-    const m = url.match(/\/(\d+)x(\d+)\//);
-    if (!m) return `${360}p`;
-    const w = Number(m[1]), h = Number(m[2]);
-    if (!Number.isFinite(w) || !Number.isFinite(h)) return `${360}p`;
-
-    const shortEdge = Math.min(w, h);
-    const ladder = [144, 240, 360, 480, 540, 720, 1080, 1440, 2160];
-    let best = ladder[0], bestDiff = Math.abs(shortEdge - best);
-    for (let i = 1; i < ladder.length; i++) {
-        const diff = Math.abs(shortEdge - ladder[i]);
-        if (diff < bestDiff) {
-            best = ladder[i];
-            bestDiff = diff;
-        }
-    }
-    return `${best}p`;
-}
-
 
 function populateDownloadOptions(selectEl: HTMLSelectElement, option: HTMLOptionElement, items: string[]): void {
     selectEl.innerHTML = '';
@@ -236,10 +223,3 @@ function populateDownloadOptions(selectEl: HTMLSelectElement, option: HTMLOption
 }
 
 
-function indexToGrade(idx: number, total: number): string {
-    if (total <= 1) return "品质";
-    if (total === 2) return idx === 0 ? "品质低" : "品质高";
-    if (idx === 0) return "品质低";
-    if (idx === total - 1) return "品质高";
-    return "品质中";
-}

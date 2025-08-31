@@ -4,11 +4,12 @@ import {logFT} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW, WrapEntryObj} from "./db_raw_tweet";
 import {MsgType} from "../common/consts";
-import {EntryObj, parseTimelineFromGraphQL} from "./tweet_entry";
+import {EntryObj, parseTimelineFromGraphQL, TweetMediaEntity} from "./tweet_entry";
 import {queryKolById, updateKolIdToSw} from "../object/tweet_kol";
 import {resetNewestTweet, showNewestTweets} from "../content/tweetcat_web3_area";
 import {setLatestFetchAt} from "./tweet_pager";
 import {tweetFetchParam} from "../common/msg_obj";
+import {extractMp4UrlList} from "./render_video";
 
 const MIN_FETCH_GAP = 5_000;
 
@@ -211,9 +212,11 @@ export async function processCapturedTweets(result: any, kolId: string) {
 
     await sendMsgToService({}, MsgType.TokenUsedByUser);
 
-    const r = parseTimelineFromGraphQL(result,"tweets");
+    const r = parseTimelineFromGraphQL(result, "tweets");
     const wrapList = r.wrapDbEntry;
     const kol = await queryKolById(kolId);
+
+    cacheVideoTweet(r.tweets);
 
     if (!kol) {
         logFT(`no need to send tweets data to service for : ${kolId}`);
@@ -221,12 +224,20 @@ export async function processCapturedTweets(result: any, kolId: string) {
         return;
     }
 
+
     await sendMsgToService({kolId: kolId, data: wrapList}, MsgType.TweetCacheToDB);
     logFT(`captured tweets cached ${wrapList.length} tweets for ${kolId}`);
 }
 
+export async function processCapturedTweetDetail(result: any) {
+    const res = parseTimelineFromGraphQL(result, "tweetDetail");
+    cacheVideoTweet(res.tweets);
+}
+
 export async function processCapturedHomeLatest(result: any) {
-    const res = parseTimelineFromGraphQL(result,"home");
+    const res = parseTimelineFromGraphQL(result, "home");
+
+    cacheVideoTweet(res.tweets);
 
     const kolToCache = new Set<string>();
     for (const w of res.wrapDbEntry) {
@@ -252,4 +263,34 @@ export async function processCapturedHomeLatest(result: any) {
         await sendMsgToService({kolId: kolId, data: list}, MsgType.TweetCacheToDB);
         tempCacheForTweetOfKolProfilePage.delete(kolId);
     }
+}
+
+const videoCacheMap = new Map<string, { e: TweetMediaEntity, f: string }>();
+
+function cacheVideoTweet(tweets: EntryObj[]) {
+    tweets.forEach(obj => {
+        const tweetContent = obj.tweet.tweetContent;
+        const mediaList: TweetMediaEntity[] =
+            tweetContent.extended_entities?.media?.length
+                ? tweetContent.extended_entities.media
+                : tweetContent.entities?.media || [];
+
+        const videos = mediaList.filter(m => m.type === 'video' || m.type === 'animated_gif');
+
+        const fileName = "TweetCat_" + obj.tweet.author.screenName + "@" + obj.tweet.rest_id;
+        if (videos.length > 0) {
+            logFT("tweet with videos info:", tweetContent.id_str, videos)
+            videoCacheMap.set(tweetContent.id_str, {e: videos[0], f: fileName});
+        }
+    });
+}
+
+export function videoParamForTweets(sid: string): { m: string[], f: string } | null {
+    const videoInfo = videoCacheMap.get(sid)
+    if (!videoInfo) {
+        return null;
+    }
+
+    const array = extractMp4UrlList(videoInfo.e.video_info?.variants ?? []);
+    return {m: array, f: videoInfo.f};
 }

@@ -1,6 +1,6 @@
 import {logFT} from "./common/debug_flags";
 import {postToContent} from "./injection";
-import {HomeLatestTimeline, HomeTimeline, MsgType, UserTweets} from "./common/consts";
+import {HomeLatestTimeline, HomeTimeline, MsgType, TweetDetail, UserTweets} from "./common/consts";
 
 declare global {
     interface Window {
@@ -18,7 +18,6 @@ let __tc_req_seq__ = 0;
 function __tc_isTargetTimelineUrl__(input: any): string | null {
     try {
         const url = typeof input === "string" ? input : String(input);
-
         if (url.includes("/" + UserTweets)) {
             return UserTweets;
         }
@@ -28,6 +27,11 @@ function __tc_isTargetTimelineUrl__(input: any): string | null {
         if (url.includes("/" + HomeTimeline)) {
             return HomeTimeline;
         }
+
+        if (url.includes("/" + TweetDetail)) {
+            return TweetDetail;
+        }
+
         return null;
     } catch {
         return null;
@@ -101,6 +105,8 @@ function __tc_installFetchUserTweetsCapture__(): void {
             } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
                 logFT(`[F#${reqId}] home latest result result=${result}`);
                 postToContent(MsgType.IJHomeLatestCaptured, result);
+            } else if (timeType === TweetDetail) {
+                postToContent(MsgType.IJTweetDetailCaptured, result);
             }
 
             return response;
@@ -144,7 +150,8 @@ function __tc_installXHRUserTweetsCapture__(): void {
 
         send(...args: any[]): void {
             const timeType = __tc_isTargetTimelineUrl__(this.__tc_url__);
-            if (!timeType || (timeType !== HomeLatestTimeline && timeType !== UserTweets && timeType !== HomeTimeline)) {
+            if (!timeType || (timeType !== HomeLatestTimeline
+                && timeType !== UserTweets && timeType !== HomeTimeline && timeType !== TweetDetail)) {
                 return (OriginalXHR.prototype.send as any).apply(this, args);
             }
 
@@ -183,6 +190,8 @@ function __tc_installXHRUserTweetsCapture__(): void {
                     } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
                         logFT(`[X#${reqId}] home time line result=${result}`);
                         postToContent(MsgType.IJHomeLatestCaptured, result);
+                    } else if (timeType === TweetDetail) {
+                        postToContent(MsgType.IJTweetDetailCaptured, result);
                     }
 
                 } catch (err) {

@@ -8,7 +8,7 @@ import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils"
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
 import {
-    processCapturedHomeLatest,
+    processCapturedHomeLatest, processCapturedTweetDetail,
     processCapturedTweets,
     startToCheckKolId,
     startToFetchTweets
@@ -184,6 +184,10 @@ window.addEventListener('message', (e) => {
             }
             case MsgType.IJHomeLatestCaptured: {
                 processCapturedHomeLatest(msg.data).then()
+                break;
+            }
+            case MsgType.IJTweetDetailCaptured:{
+                processCapturedTweetDetail(msg.data).then()
                 break;
             }
             default: {

@@ -78,3 +78,30 @@ export function showToastMsg(msg: string, timeout: number = 3) {
         msgSpan.innerText = '';
     }, timeout * 1000);
 }
+
+export function resolutionToNearestP(url: string): string {
+    const m = url.match(/\/(\d+)x(\d+)\//);
+    if (!m) return `${360}p`;
+    const w = Number(m[1]), h = Number(m[2]);
+    if (!Number.isFinite(w) || !Number.isFinite(h)) return `${360}p`;
+
+    const shortEdge = Math.min(w, h);
+    const ladder = [144, 240, 360, 480, 540, 720, 1080, 1440, 2160];
+    let best = ladder[0], bestDiff = Math.abs(shortEdge - best);
+    for (let i = 1; i < ladder.length; i++) {
+        const diff = Math.abs(shortEdge - ladder[i]);
+        if (diff < bestDiff) {
+            best = ladder[i];
+            bestDiff = diff;
+        }
+    }
+    return `${best}p`;
+}
+
+export function indexToGrade(idx: number, total: number): string {
+    if (total <= 1) return "品质";
+    if (total === 2) return idx === 0 ? "品质低" : "品质高";
+    if (idx === 0) return "品质低";
+    if (idx === total - 1) return "品质高";
+    return "品质中";
+}

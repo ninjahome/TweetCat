@@ -58,6 +58,7 @@ export enum MsgType {
     IJUserTweetsCaptured = 'UserTweetsCaptured',
     IJHomeLatestCaptured = 'IJHomeLatestCaptured',
     IJLocationChange = 'IJLocationChange',
+    IJTweetDetailCaptured = 'IJTweetDetailCaptured',
 
     TokenUsedByUser = 'TokenUsedByUser',
     TokenFreeze = 'TokenFreeze',

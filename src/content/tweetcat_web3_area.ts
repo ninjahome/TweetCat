@@ -6,6 +6,7 @@ import {Category, queryCategoriesFromBG} from "../object/category";
 import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {parseContentHtml} from "./main_entrance";
+import {ensurePhotoLightbox} from "../timeline/render_common";
 
 const defaultCatPointColor = '#B9CAD3';
 
@@ -128,7 +129,7 @@ export async function reloadCategoryContainer(categories: Category[]) {
     populateCategoryArea(tpl, categories, container);
     const savedCatID = getSessCatID();
     const target = categories.find(item => item.id === savedCatID);
-    if(!target){
+    if (!target) {
         await switchCategory(defaultAllCategoryID);
         setSelectedCategory(defaultAllCategoryID);
     }
@@ -141,13 +142,16 @@ const progressRegistry = new Map<
 >();
 
 
-export function onVideoDownloadStart(total: number, filename: string, controller: AbortController) {
+export function onVideoDownloadStart(total: number, filename: string, controller: AbortController, hostDiv?: HTMLElement) {
     let rec = progressRegistry.get(filename);
     if (!!rec || total === 0) return;
 
-    const host = document.querySelector(".download-progress-list") as HTMLElement;
-    const itemTpl = document.querySelector(".download-progress-item") as HTMLElement;
-    const processBar = itemTpl.cloneNode(true) as HTMLElement;
+    if(!hostDiv){
+        hostDiv = document.querySelector(".download-progress-list") as HTMLElement;
+    }
+    const processBar = document.querySelector(".download-progress-item")?.cloneNode(true) as HTMLElement;
+    if (!processBar) return;
+
     processBar.style.display = 'block';
 
     (processBar.querySelector(".dpi-name") as HTMLSpanElement).innerText = filename;
@@ -162,7 +166,7 @@ export function onVideoDownloadStart(total: number, filename: string, controller
     rec = {el: processBar, total};
     progressRegistry.set(filename, rec);
 
-    host.appendChild(processBar);
+    hostDiv.appendChild(processBar);
 }
 
 /** 简单字节格式化 */

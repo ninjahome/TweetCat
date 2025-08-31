@@ -46,8 +46,8 @@ export class TweetCard {
     constructor(data: any) {
         // === 原始字段 ===
         this.restId = data.rest_id || '';
-        this.name   = data.name || data.legacy?.name || '';
-        this.url    = data.url  || data.legacy?.url  || '';
+        this.name = data.name || data.legacy?.name || '';
+        this.url = data.url || data.legacy?.url || '';
 
         const bindingValues = data.legacy?.binding_values || [];
 
@@ -210,10 +210,10 @@ export class TweetCard {
         const ensureHttps = (u?: string) =>
             u ? (/^https?:\/\//i.test(u) ? u : `https://${u}`) : u;
 
-        this.vanityUrl   = ensureHttps(this.vanityUrl);
+        this.vanityUrl = ensureHttps(this.vanityUrl);
         this.expandedUrl = ensureHttps(this.expandedUrl);
-        this.url         = ensureHttps(this.url)!;
-        this.entityUrl   = ensureHttps(this.entityUrl);
+        this.url = ensureHttps(this.url)!;
+        this.entityUrl = ensureHttps(this.entityUrl);
     }
 }
 
@@ -893,7 +893,7 @@ export class TweetResult {
     }
 }
 
-export function parseTimelineFromGraphQL(result: any, type: "tweets"|"home"|"bookmarked" ): TweetResult {
+export function parseTimelineFromGraphQL(result: any, type: "tweets" | "home" | "bookmarked" | "tweetDetail"): TweetResult {
     let instructions = [];
     switch (type) {
         case "tweets": {
@@ -906,6 +906,10 @@ export function parseTimelineFromGraphQL(result: any, type: "tweets"|"home"|"boo
         }
         case "bookmarked": {
             instructions = result?.data?.bookmark_timeline_v2?.timeline?.instructions ?? []
+            break;
+        }
+        case "tweetDetail": {
+            instructions = result?.data?.threaded_conversation_with_injections_v2?.instructions ?? []
             break;
         }
     }
