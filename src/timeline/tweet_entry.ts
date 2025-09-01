@@ -768,8 +768,8 @@ export class EntryObj {
     tweet: TweetObj;
 
     constructor(entry: any) {
-        logTOP("------->>>>>entry obj raw data:\n", JSON.stringify(entry));
-        console.log(entry);
+        logTOP("------->>>>>entry obj raw data:\n", JSON.stringify(entry), entry);
+        // console.log(entry);
         this.entryId = entry.entryId;
         this.sortIndex = entry.sortIndex;
         const content = entry.content;
