@@ -61,7 +61,12 @@ export function renderTweetHTML(tweetEntry: EntryObj, tpl: HTMLTemplateElement):
     }
 
     const videoWrapper = mediaArea.querySelector(".video-wrapper") as HTMLElement;
-    const mp4List: string[] = JSON.parse(videoWrapper?.dataset.mp4List ?? '[]');
+    let mp4List: string[] = JSON.parse(videoWrapper?.dataset.mp4List ?? '[]');
+    if(mp4List.length===0){
+        const  quotedVideoWrapper = quoteArea?.querySelector(".video-wrapper") as HTMLElement;
+        mp4List  = JSON.parse(quotedVideoWrapper?.dataset.mp4List ?? '[]');
+    }
+
     const tweetCatActionArea = article.querySelector(".tweet-actions") as HTMLElement;
 
     updateTweetBottomButtons(tweetCatActionArea, target, mp4List, tweetEntry.entryId);

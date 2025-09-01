@@ -215,7 +215,7 @@ export async function processCapturedTweets(result: any, kolId: string) {
     const r = parseTimelineFromGraphQL(result, "tweets");
     const wrapList = r.wrapDbEntry;
     const kol = await queryKolById(kolId);
-
+    console.log("----------------->>>>", r.tweets);
     cacheVideoTweet(r.tweets);
 
     if (!kol) {
@@ -231,7 +231,6 @@ export async function processCapturedTweets(result: any, kolId: string) {
 
 export async function processCapturedTweetDetail(result: any) {
     const res = parseTimelineFromGraphQL(result, "tweetDetail");
-    console.log("----------------->>>>", res.tweets);
     cacheVideoTweet(res.tweets);
 }
 
@@ -266,7 +265,7 @@ export async function processCapturedHomeLatest(result: any) {
     }
 }
 
-const videoCacheMap = new Map<string, { e: TweetMediaEntity, f: string }>();
+const videoCacheMap = new Map<string, { e: TweetMediaEntity, f: string, t: string }>();
 
 function cacheVideoTweet(tweets: EntryObj[]) {
     tweets.forEach(obj => {
@@ -276,22 +275,38 @@ function cacheVideoTweet(tweets: EntryObj[]) {
                 ? tweetContent.extended_entities.media
                 : tweetContent.entities?.media || [];
 
+        const quotedContent = obj.tweet.quotedStatus?.tweetContent;
+        const quotedMediaList: TweetMediaEntity[] =
+            quotedContent?.extended_entities?.media?.length
+                ? quotedContent?.extended_entities.media
+                : quotedContent?.entities?.media || [];
+
         const videos = mediaList.filter(m => m.type === 'video' || m.type === 'animated_gif');
 
-        const fileName = "TweetCat_" + obj.tweet.author.screenName + "@" + obj.tweet.rest_id;
         if (videos.length > 0) {
-            logIC("tweet with videos info:", tweetContent.id_str, videos)
-            videoCacheMap.set(tweetContent.id_str, {e: videos[0], f: fileName});
+            const fileName = "TweetCat_" + obj.tweet.author.screenName + "@" + obj.tweet.rest_id;
+            logIC("tweet with videos info:", tweetContent.id_str, videos);
+            videoCacheMap.set(tweetContent.id_str, {e: videos[0], f: fileName, t: "main"});
+            return;
         }
+
+        const quotedVideos = quotedMediaList.filter(m => m.type === 'video' || m.type === 'animated_gif');
+        if (quotedVideos.length > 0) {
+            const fileName = "TweetCat_" + obj.tweet.author.screenName + "@" + obj.tweet.rest_id;
+            logIC("quoted with videos info:", tweetContent.id_str, quotedVideos, "quoted_id:", quotedContent?.id_str)
+            videoCacheMap.set(tweetContent.id_str, {e: quotedVideos[0], f: fileName, t: "quoted"});
+        }
+
+        console.log("==============>>>>>", obj.tweet.retweetedStatus);
     });
 }
 
-export function videoParamForTweets(sid: string): { m: string[], f: string } | null {
+export function videoParamForTweets(sid: string): { m: string[], f: string, t: string } | null {
     const videoInfo = videoCacheMap.get(sid)
     if (!videoInfo) {
         return null;
     }
 
     const array = extractMp4UrlList(videoInfo.e.video_info?.variants ?? []);
-    return {m: array, f: videoInfo.f};
+    return {m: array, f: videoInfo.f, t: videoInfo.t};
 }

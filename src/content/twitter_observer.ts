@@ -94,9 +94,9 @@ function bindDownLoadBtn(actionMenuList: HTMLElement, fileName: string, mp4List:
 
 function tryVideoDownloadLater(tid: string, divNode: HTMLElement) {
     const videoInfo = videoParamForTweets(tid);
-    if(!videoInfo){
-        logAD("【try video download again failed】statusId:", tid, );
-        return
+    if (!videoInfo) {
+        logAD("【try video download again failed】statusId:", tid,);
+        return;
     }
 
     logAD("【try video download again success】statusId:", tid, " videoInfo:", videoInfo);
@@ -130,6 +130,7 @@ function prepareVideoForTweetDiv(divNode: HTMLDivElement) {
         return;
     }
 
+    logAD("[Tweet Timeline] found video info:", statusId, videoInfo);
     const actionMenuList = divNode.querySelector(".css-175oi2r.r-1kbdv8c.r-18u37iz.r-1wtj0ep.r-1ye8kvj.r-1s2bzr4") as HTMLElement;
     bindDownLoadBtn(actionMenuList, videoInfo.f, videoInfo.m, divNode);
 }
