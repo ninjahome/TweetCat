@@ -837,43 +837,44 @@ export function extractEntryObjs(entries: any[]): TweetResult {
     let bottomCursor: string | null = null;
     let topCursor = null;
 
-    for (const entry of entries) {
-        if (entry?.content?.entryType === 'TimelineTimelineItem') {
-            if (__tc_isPromotedItem__(entry?.content?.itemContent)) {
-                logTOP("---------->>> this is promoted tweet (item), skip it!");
-                continue;
-            }
+    try {
+        for (const entry of entries) {
+            if (entry?.content?.entryType === 'TimelineTimelineItem') {
+                if (__tc_isPromotedItem__(entry?.content?.itemContent)) {
+                    logTOP("---------->>> this is promoted tweet (item), skip it!");
+                    continue;
+                }
 
-            try {
                 const obj = new EntryObj(entry)
                 tweetEntries.push(obj);
                 const wrapObj = WrapEntryObj.fromEntryObj(obj, entry);
                 tweetRawEntries.push(wrapObj);
-            } catch (e) {
-                console.warn("parse entry failed :", e, " data:", entry)
+
+            } else if (entry?.content?.entryType === 'TimelineTimelineCursor') {
+                if (entry.content.cursorType === 'Bottom') bottomCursor = entry.content.value;
+                else if (entry.content.cursorType === 'Top') topCursor = entry.content.value;
+            } else if (entry.content.entryType === 'TimelineTimelineModule') {
+
+                const syntheticItem = buildSyntheticItemFromModule(entry)
+                if (!syntheticItem) continue;
+
+                if (__tc_isPromotedItem__(syntheticItem?.content?.itemContent)) {
+                    logTOP("---------->>> this is promoted tweet (module), skip it!");
+                    continue;
+                }
+
+                const entryObj = new EntryObj(syntheticItem);
+                tweetEntries.push(entryObj);
+
+                const wrap = WrapEntryObj.fromEntryObj(entryObj, entry, true);
+                tweetRawEntries.push(wrap);
+
+            } else {
+                console.warn("unknown entry type", entry);
             }
-        } else if (entry?.content?.entryType === 'TimelineTimelineCursor') {
-            if (entry.content.cursorType === 'Bottom') bottomCursor = entry.content.value;
-            else if (entry.content.cursorType === 'Top') topCursor = entry.content.value;
-        } else if (entry.content.entryType === 'TimelineTimelineModule') {
-
-            const syntheticItem = buildSyntheticItemFromModule(entry)
-            if (!syntheticItem) continue;
-
-            if (__tc_isPromotedItem__(syntheticItem?.content?.itemContent)) {
-                logTOP("---------->>> this is promoted tweet (module), skip it!");
-                continue;
-            }
-
-            const entryObj = new EntryObj(syntheticItem);
-            tweetEntries.push(entryObj);
-
-            const wrap = WrapEntryObj.fromEntryObj(entryObj, entry, true);
-            tweetRawEntries.push(wrap);
-
-        } else {
-            console.warn("unknown entry type", entry);
         }
+    } catch (e) {
+        console.warn("parse entry failed :", e)
     }
 
     logTOP("---------->>>next:", bottomCursor, "top:", topCursor)
