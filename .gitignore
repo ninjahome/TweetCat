@@ -21,3 +21,10 @@ bin-release/
 /node_modules/
 /.idea/
 /dist.zip
+/1.json
+/codex.patch
+/4.json
+/3.json
+/2.json
+/test.html
+/tests/
