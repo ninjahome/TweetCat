@@ -1,4 +1,5 @@
 import {setTweetCatFlag} from "./route_helper";
+import { t } from "../common/i18n";
 
 export function isTwitterStatusUrl(href: string | undefined): boolean {
     if (!href) return false;
@@ -99,9 +100,9 @@ export function resolutionToNearestP(url: string): string {
 }
 
 export function indexToGrade(idx: number, total: number): string {
-    if (total <= 1) return "品质";
-    if (total === 2) return idx === 0 ? "品质低" : "品质高";
-    if (idx === 0) return "品质低";
-    if (idx === total - 1) return "品质高";
-    return "品质中";
+    if (total <= 1) return t('quality');
+    if (total === 2) return idx === 0 ? t('quality_low') : t('quality_high');
+    if (idx === 0) return t('quality_low');
+    if (idx === total - 1) return t('quality_high');
+    return t('quality_mid');
 }

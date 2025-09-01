@@ -9,6 +9,7 @@ import {localGet, localSet} from "../common/local_storage";
 import {Category} from "../object/category";
 import {kolsForCategory} from "../object/tweet_kol";
 import {getSystemSetting, switchAdOn} from "../object/system_setting";
+import { t } from "../common/i18n";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -42,7 +43,7 @@ function initNewCatBtn() {
     newCategoryBtn.onclick = async () => {
         const categories = await loadCategories();
         if (categories.length >= MaxCategorySize) {
-            showAlert("Tips", "You can create up to 4 categories for now. We'll support more soon!");
+            showAlert(t('tips_title'), t('max_category_reached'));
             return;
         }
         const modalDialog = document.getElementById("modal-add-category") as HTMLElement
@@ -65,7 +66,7 @@ async function addNewCategory() {
     const newCatInput = modalDialog.querySelector(".new-category-name") as HTMLInputElement;
     const newCatStr = newCatInput.value;
     if (!newCatStr) {
-        showAlert("Tips", "Invalid category name");
+        showAlert(t('tips_title'), t('invalid_category_name'));
         return;
     }
 
@@ -74,7 +75,7 @@ async function addNewCategory() {
     delete item.id;
     const newID = await databaseAddItem(__tableCategory, item);
     if (!newID) {
-        showAlert("Tips", "Failed to add new category:" + newCatStr);
+        showAlert(t('tips_title'), t('add_category_failed', newCatStr));
         hideLoading();
         return;
     }
@@ -87,7 +88,7 @@ async function addNewCategory() {
     const changedCat = await loadCategories();
     await sendMessageToX(MsgType.CategoryChanged, changedCat, false);
     hideLoading();
-    showAlert("Tips", "Save Success");
+    showAlert(t('tips_title'), t('save_success'));
 }
 
 async function setHomeStatus() {
@@ -166,7 +167,7 @@ async function editCateName(cat: Category, parent: HTMLElement) {
     const inputArea = parent.querySelector(".category-name-val") as HTMLInputElement;
     const newCatName = inputArea.value;
     if (!newCatName) {
-        showAlert("Tips", "invalid category name");
+        showAlert(t('tips_title'), t('invalid_category_name'));
         return;
     }
     cat.catName = inputArea.value;
@@ -174,11 +175,11 @@ async function editCateName(cat: Category, parent: HTMLElement) {
     await updateCategoryDetail(cat);
     await sendMessageToX(MsgType.CategoryChanged, await loadCategories());
     hideLoading();
-    showAlert("Tips", "Update Success");
+    showAlert(t('tips_title'), t('update_success'));
 }
 
 function removeCatById(catId: number) {
-    showConfirmPopup("Delete this Category?", async () => {
+    showConfirmPopup(t('category_delete_confirm'), async () => {
         showLoading();
         await removeCategory(catId);
         await sendMessageToX(MsgType.CategoryChanged, await loadCategories());

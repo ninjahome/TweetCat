@@ -1,4 +1,6 @@
 
+import { t } from "../common/i18n";
+
 // 显示确认弹窗
 export function showConfirmPopup(message: string, onConfirm: () => void): void {
     const popup = document.getElementById('confirm-popup') as HTMLDivElement;
@@ -13,6 +15,9 @@ export function showConfirmPopup(message: string, onConfirm: () => void): void {
 
     // 设置提示消息
     msgSpan.textContent = message;
+
+    btnCancel.textContent = t('cancel');
+    btnOk.textContent = t('confirm');
 
     // 显示弹窗
     popup.style.display = 'block';
@@ -43,6 +48,7 @@ export function showAlert(title:string, message:string) {
     // 设置标题和消息
     alertTitle.textContent = title;
     alertMessage.textContent = message;
+    alertOk.textContent = t('ok');
 
     // 显示弹窗
     alertBox.style.display = 'block';
