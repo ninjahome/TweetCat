@@ -84,18 +84,18 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     grokLink?.addEventListener('click', handleGrokMenuClick, {passive: false});
 }
 
-function stopWatchingGrok() {
-    grokMo?.disconnect();
-    grokMo = null;
-}
-
-
 function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplateElement, force = false) {
     if (mounted && !force) return;   // 已挂载且非强制 → 直接返回
     mounted = true;
 
     hideOriginalTweetArea(originalArea);
     showTweetCatArea(area);
+    logGuard('<< tc-tcMount >>');
+
+    deferByFrames(()=>{
+        swapSvgToNormal();
+        demoteGrokFont();
+    }, 2);
 
     if (force && manager) {
         manager.dispose?.();
@@ -108,10 +108,6 @@ function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplate
         manager.scroller?.resume();
         return;
     }
-
-    logGuard('<< tc-mount >>');
-    ensureGrokNormalIcon();
-    deferByFrames(demoteGrokFont, 2);
 
     const timelineEl = area.querySelector('.tweetTimeline') as HTMLElement;
     manager = new TweetManager(timelineEl, tpl);
@@ -132,8 +128,6 @@ function tcUnmount(area: HTMLElement, originalArea: HTMLElement) {
     hideTweetCatArea(area);
 
     logGuard('<< tc-unmount >>');
-    stopWatchingGrok();
-
     deferByFrames(() => {
         const isNowInGrok = location.pathname === '/i/grok' &&
             !location.hash.startsWith('#/tweetCatTimeLine');
@@ -205,27 +199,12 @@ function showTweetCatArea(el: HTMLElement) {
 }
 
 
-let grokMo: MutationObserver | null = null;
-
-/* 在 tc-mount 时调用：加两帧延迟 + MutationObserver */
-function ensureGrokNormalIcon() {
-    deferByFrames(swapSvgToNormal, 2)
-    // 再监听 Grok 按钮子树，如被 React 覆盖再兜回来
-    if (grokMo) grokMo.disconnect();
-    const link = document.querySelector('a[href="/i/grok"]');
-    if (!link) return;
-    grokMo = new MutationObserver(swapSvgToNormal);
-    grokMo.observe(link, {childList: true, subtree: true, attributes: true});
-}
-
-
-/* ------------------------------------------------------------
+ /* ------------------------------------------------------------
  * Grok 字体细体 / 粗体切换工具
  * ------------------------------------------------------------ */
 const GROK_LINK_SELECTOR = 'a[href="/i/grok"]';
 const GROK_TEXT_CONTAINER_SEL = 'div[dir="ltr"]';
 const GROK_BOLD_CLASS = 'r-b88u0q';
-const NORMAL_COLOR = 'rgb(15,20,25)';
 const NORMAL_WEIGHT = '400';
 
 /** 进入 TweetCat 时：把 Grok 文本降为普通黑体 */
@@ -239,12 +218,10 @@ export function demoteGrokFont(): void {
 
     /* 2. 行内样式写死普通字重 + 颜色（带 !important） */
     textDiv.style.setProperty('font-weight', NORMAL_WEIGHT, 'important');
-    textDiv.style.setProperty('color', NORMAL_COLOR, 'important');
 
     /* 3. 内部 <span> 双保险 */
     textDiv.querySelectorAll('span').forEach(span => {
         (span as HTMLElement).style.setProperty('font-weight', NORMAL_WEIGHT, 'important');
-        (span as HTMLElement).style.setProperty('color', NORMAL_COLOR, 'important');
     });
 }
 
