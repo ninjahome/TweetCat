@@ -1,6 +1,6 @@
 import {fetchTweets, getUserIdByUsername} from "./twitter_api";
 import {sendMsgToService, sleep} from "../common/utils";
-import {logFT} from "../common/debug_flags";
+import {logFT, logIC} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW, WrapEntryObj} from "./db_raw_tweet";
 import {MsgType} from "../common/consts";
@@ -219,18 +219,19 @@ export async function processCapturedTweets(result: any, kolId: string) {
     cacheVideoTweet(r.tweets);
 
     if (!kol) {
-        logFT(`no need to send tweets data to service for : ${kolId}`);
+        logIC(`no need to send tweets data to service for : ${kolId}`);
         tempCacheForTweetOfKolProfilePage.set(kolId, wrapList);
         return;
     }
 
 
     await sendMsgToService({kolId: kolId, data: wrapList}, MsgType.TweetCacheToDB);
-    logFT(`captured tweets cached ${wrapList.length} tweets for ${kolId}`);
+    logIC(`captured tweets cached ${wrapList.length} tweets for ${kolId}`);
 }
 
 export async function processCapturedTweetDetail(result: any) {
     const res = parseTimelineFromGraphQL(result, "tweetDetail");
+    console.log("----------------->>>>", res.tweets);
     cacheVideoTweet(res.tweets);
 }
 
@@ -255,7 +256,7 @@ export async function processCapturedHomeLatest(result: any) {
         }
     }
 
-    logFT(`captured tweets at home result`, res);
+    logIC(`captured tweets at home result`, res);
 
     for (const kolId of kolToCache) {
         const list = tempCacheForTweetOfKolProfilePage.get(kolId) ?? [];
@@ -279,7 +280,7 @@ function cacheVideoTweet(tweets: EntryObj[]) {
 
         const fileName = "TweetCat_" + obj.tweet.author.screenName + "@" + obj.tweet.rest_id;
         if (videos.length > 0) {
-            logFT("tweet with videos info:", tweetContent.id_str, videos)
+            logIC("tweet with videos info:", tweetContent.id_str, videos)
             videoCacheMap.set(tweetContent.id_str, {e: videos[0], f: fileName});
         }
     });

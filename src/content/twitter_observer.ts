@@ -62,12 +62,18 @@ export async function initObserver() {
 
 function prepareVideoForTweetDetail(divNode: HTMLDivElement, tid: string) {
     const videoViews = divNode.querySelector('.css-175oi2r.r-1d09ksm.r-18u37iz.r-1wbh5a2.r-1471scf');
-    if (!videoViews) return;
+    if (!videoViews) {
+        logAD("tid:", tid, " videoViews is null:", divNode);
+        return;
+    }
 
     const videoInfo = videoParamForTweets(tid);
-    if (!videoInfo) return;
+    if (!videoInfo) {
+        logAD("tid:", tid, " videoInfo is null:", divNode);
+        return;
+    }
 
-    console.log("tid:", tid, " videoInfo:", videoInfo, divNode);
+    logAD("[Tweet Details]tid:", tid, " videoInfo:", videoInfo, divNode);
 
     const actionMenuList = divNode.querySelector(".css-175oi2r.r-18u37iz.r-1h0z5md.r-13awgt0")?.parentElement as HTMLElement;
 
@@ -84,6 +90,18 @@ function bindDownLoadBtn(actionMenuList: HTMLElement, fileName: string, mp4List:
     btnTxt.innerText = "";
     prepareDownloadBtn(downDiv, fileName, mp4List, hostDiv);
     actionMenuList.appendChild(downDiv);
+}
+
+function tryVideoDownloadLater(tid: string, divNode: HTMLElement) {
+    const videoInfo = videoParamForTweets(tid);
+    if(!videoInfo){
+        logAD("【try video download again failed】statusId:", tid, );
+        return
+    }
+
+    logAD("【try video download again success】statusId:", tid, " videoInfo:", videoInfo);
+    const actionMenuList = divNode.querySelector(".css-175oi2r.r-18u37iz.r-1h0z5md.r-13awgt0")?.parentElement as HTMLElement;
+    bindDownLoadBtn(actionMenuList, videoInfo.f, videoInfo.m, divNode);
 }
 
 function prepareVideoForTweetDiv(divNode: HTMLDivElement) {
@@ -105,8 +123,12 @@ function prepareVideoForTweetDiv(divNode: HTMLDivElement) {
     if (!statusId) return;
 
     const videoInfo = videoParamForTweets(statusId);
-    console.log("statusId:", statusId, " videoInfo:", videoInfo);
-    if (!videoInfo) return;
+    logAD("【Tweet Timeline】statusId:", statusId, " videoInfo:", videoInfo);
+    if (!videoInfo) {
+        logAD("[Tweet Timeline] no video info now, try later", statusId);
+        setTimeout(() => tryVideoDownloadLater(statusId, divNode), 2_000);
+        return;
+    }
 
     const actionMenuList = divNode.querySelector(".css-175oi2r.r-1kbdv8c.r-18u37iz.r-1wtj0ep.r-1ye8kvj.r-1s2bzr4") as HTMLElement;
     bindDownLoadBtn(actionMenuList, videoInfo.f, videoInfo.m, divNode);

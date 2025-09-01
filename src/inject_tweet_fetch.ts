@@ -1,4 +1,4 @@
-import {logFT} from "./common/debug_flags";
+import {logIC} from "./common/debug_flags";
 import {postToContent} from "./injection";
 import {HomeLatestTimeline, HomeTimeline, MsgType, TweetDetail, UserTweets} from "./common/consts";
 
@@ -73,7 +73,7 @@ function __tc_url_of__(input: RequestInfo | URL): string {
 /** Hook fetch */
 function __tc_installFetchUserTweetsCapture__(): void {
     if (window.__tc_extra_fetch_hooked__) {
-        logFT("✅fetch hook already installed");
+        logIC("✅fetch hook already installed");
         return;
     }
 
@@ -100,10 +100,10 @@ function __tc_installFetchUserTweetsCapture__(): void {
 
             if (timeType === UserTweets) {
                 const vars = __tc_parseVarsFromUrl__(url);
-                logFT(`[F#${reqId}] tweets result=${result}  for kol:${vars.userId}`);
+                logIC(`[F#${reqId}] tweets result=${result}  for kol:${vars.userId}`);
                 postToContent(MsgType.IJUserTweetsCaptured, {tweets: result, kolID: vars.userId});
             } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
-                logFT(`[F#${reqId}] home latest result result=${result}`);
+                logIC(`[F#${reqId}] home latest result result=${result}`);
                 postToContent(MsgType.IJHomeLatestCaptured, result);
             } else if (timeType === TweetDetail) {
                 postToContent(MsgType.IJTweetDetailCaptured, result);
@@ -119,13 +119,13 @@ function __tc_installFetchUserTweetsCapture__(): void {
     (window as any).fetch = patchedFetch as typeof window.fetch;
     window.__tc_extra_fetch_hooked__ = true;
     window.__tc_fetch_guard__ = patchedFetch;
-    logFT("✅ fetch hook installed");
+    logIC("✅ fetch hook installed");
 }
 
 /** Hook XHR */
 function __tc_installXHRUserTweetsCapture__(): void {
     if (window.__tc_extra_xhr_hooked__) {
-        logFT("✅xhr hook already installed");
+        logIC("✅xhr hook already installed");
         return;
     }
 
@@ -143,7 +143,7 @@ function __tc_installXHRUserTweetsCapture__(): void {
                 this.__tc_req_id__ = ++__tc_req_seq__;
                 const vars = __tc_parseVarsFromUrl__(url);
                 if (vars) this.__tc_user_id__ = vars.userId;
-                logFT(`[X] ${method} ${url}`);
+                logIC(`[X] ${method} ${url}`);
             }
             return super.open(method, url, async ?? true, user ?? null, password ?? null);
         }
@@ -156,16 +156,16 @@ function __tc_installXHRUserTweetsCapture__(): void {
             }
 
             const reqId = this.__tc_req_id__!;
-            this.addEventListener("readystatechange", () => logFT(`[X#${reqId}] rs=${this.readyState}`));
-            this.addEventListener("loadstart", () => logFT(`[X#${reqId}] loadstart`));
-            this.addEventListener("progress", () => logFT(`[X#${reqId}] progress`));
+            this.addEventListener("readystatechange", () => logIC(`[X#${reqId}] rs=${this.readyState}`));
+            this.addEventListener("loadstart", () => logIC(`[X#${reqId}] loadstart`));
+            this.addEventListener("progress", () => logIC(`[X#${reqId}] progress`));
             this.addEventListener("error", (e) => console.warn(`[X#${reqId}] error`, e));
             this.addEventListener("abort", () => console.warn(`[X#${reqId}] abort`));
 
             this.addEventListener("load", () => {
                 try {
                     const isText = this.responseType === "" || this.responseType === "text";
-                    logFT(`[X#${reqId}] load`, {
+                    logIC(`[X#${reqId}] load`, {
                         status: this.status,
                         responseType: this.responseType || "text",
                     });
@@ -182,13 +182,13 @@ function __tc_installXHRUserTweetsCapture__(): void {
                     }
 
                     if (timeType === UserTweets) {
-                        logFT(`[X#${reqId}] result=${result}  for kol:${this.__tc_user_id__}`);
+                        logIC(`[X#${reqId}] result=${result}  for kol:${this.__tc_user_id__}`);
                         postToContent(MsgType.IJUserTweetsCaptured, {
                             tweets: result,
                             kolID: this.__tc_user_id__
                         });
                     } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
-                        logFT(`[X#${reqId}] home time line result=${result}`);
+                        logIC(`[X#${reqId}] home time line result=${result}`);
                         postToContent(MsgType.IJHomeLatestCaptured, result);
                     } else if (timeType === TweetDetail) {
                         postToContent(MsgType.IJTweetDetailCaptured, result);
@@ -208,7 +208,7 @@ function __tc_installXHRUserTweetsCapture__(): void {
     window.XMLHttpRequest = __TC_XHR_Interceptor__;
     window.__tc_extra_xhr_hooked__ = true;
     window.__tc_xhr_guard__ = __TC_XHR_Interceptor__;
-    logFT("✅ xhr hook installed");
+    logIC("✅ xhr hook installed");
 }
 
 /** Watchdog: 若 hook 被覆盖则自动重装 */
@@ -235,13 +235,13 @@ function __tc_startHookWatchdog__(): void {
 /** Public init that only adds hooks if not already installed */
 export function initUserTweetsCapture(): void {
     if (window.__tc_extra_hooks_installed__) {
-        logFT("hooks already installed");
+        logIC("hooks already installed");
         return;
     }
-    logFT("installing hooks...");
+    logIC("installing hooks...");
     __tc_installFetchUserTweetsCapture__();
     __tc_installXHRUserTweetsCapture__();
     __tc_startHookWatchdog__();
     window.__tc_extra_hooks_installed__ = true;
-    logFT("✅ hooks ready");
+    logIC("✅ hooks ready");
 }
