@@ -270,7 +270,8 @@ img, video {
     transition: fill .2s;
     font-weight: 700;
 }
-.action-button:hover .action-button-download-icon svg path,
+
+.action-button-download-btn:hover .action-button-download-icon svg path,
 .bookmark-icon:hover svg path {
     fill: rgb(29,155,240); /* Twitter 蓝 */
 }
