@@ -11,10 +11,12 @@ import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {bookmarkApi} from "./twitter_api";
 import {indexToGrade, resolutionToNearestP, showToastMsg} from "./render_common";
+import { t } from "../common/i18n";
 
 export function updateTweetBottomButtons(
     container: HTMLElement, tweetObj: TweetObj, mp4List: string[], entryID: string): void {
     const downloadDiv = container.querySelector(".action-button.download") as HTMLElement;
+    (downloadDiv.querySelector(".download-txt") as HTMLElement).innerText=t('download_video')
 
     const fileName = "TweetCat_" + tweetObj.author.screenName + "@" + tweetObj.rest_id;
     prepareDownloadBtn(downloadDiv, fileName, mp4List)
@@ -35,14 +37,14 @@ export function updateTweetBottomButtons(
             try {
                 bookMarkBtn.disabled = true;
                 await bookMark(entryID, tweetObj.rest_id, content, bookMarkBtn);
-                showToastMsg("bookmarked success", 2);
+                showToastMsg(t('bookmark_success'), 2);
             } catch (e) {
                 console.log("[bookMark] failed:", e);
                 const msg = String((e as any)?.message ?? e ?? "").toLowerCase();
                 if (msg.includes("_missing: tweet") || msg.includes("has already favorited tweet")) {
-                    showToastMsg("bookmarked success", 2);
+                    showToastMsg(t('bookmark_success'), 2);
                 } else {
-                    showToastMsg("bookmarked failed:" + e, 4);
+                    showToastMsg(t('bookmark_failed', String(e)), 4);
                 }
             } finally {
                 bookMarkBtn.disabled = false;
@@ -56,10 +58,10 @@ function setBookStratus(bookMarkBtn: HTMLElement, booked: boolean) {
     const bookTxt = bookMarkBtn.querySelector(".bookmark-txt") as HTMLElement;
     const icon = bookMarkBtn.querySelector(".bookmark-icon") as HTMLElement
     if (booked) {
-        bookTxt.innerText = "取消收藏";
+        bookTxt.innerText = t('bookmark_remove');
         icon.classList.add("active")
     } else {
-        bookTxt.innerText = "收藏";
+        bookTxt.innerText = t('bookmark_add');
         icon.classList.remove("active")
     }
 }

@@ -14,10 +14,10 @@
     </div>
 
     <div class="category-show-area" id="category-show-area">
-        <button id="btn-add-category">+ Add Category</button>
+        <button id="btn-add-category">__MSG_add_category__</button>
 
         <div class="category-item" style="display: none" id="category-item-template">
-            <span class="category-name">Priority Follow</span>
+            <span class="category-name">__MSG_priority_follow__</span>
             <div style="display: flex; justify-content: flex-start; align-items: center">
                 <div class="category-kol-size">
                     <span class="kol-size-val" style="color: red"></span>
@@ -47,7 +47,7 @@
              style="margin-top: 16px; background-color: rgba(74,153,233,0.2);border-radius: 9999px;padding:12px 16px">
             <label style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
-                    <span>Block Ads</span>
+                    <span class="ads-blocked-tips">__MSG_block_ads__</span>
                     <span class="number-blocked-txt" style="color:rgb(29, 155, 240); background-color: rgba(29, 155, 240,0.2);border-radius: 999px; line-height: 20px;padding: 4px 12px; margin-left: 4px">0</span>
                 </div>
                 <input type="checkbox" id="ad-block-toggle"/>
@@ -74,10 +74,10 @@
                     </svg>
                 </div>
             </button>
-            <span style="margin-left: 8px">Category:</span>
+            <span style="margin-left: 8px" class="msg-category-label">__MSG_category_label__</span>
         </div>
         <div class="category-kol-operation">
-            <button class="category-remove-btn">Remove</button>
+            <button class="category-remove-btn">__MSG_remove__</button>
         </div>
     </div>
     <div class="category-id"></div>
@@ -89,7 +89,7 @@
         <!--
        <img src="../images/edit.png" alt="edit image">
           -->
-        <button class="name-edit">Save</button>
+        <button class="name-edit">__MSG_save__</button>
     </div>
     <!--
     <div class="category-kol-size">
@@ -103,39 +103,39 @@
 
 <div id="modal-add-category" class="modal-new-category">
     <div class="modal-content-new-category">
-        <h3>Add New Category</h3>
+        <h3>__MSG_add_new_category__</h3>
         <label>
-            <input type="text" class="new-category-name" placeholder="Enter category name">
+            <input type="text" class="new-category-name" placeholder="__MSG_enter_category_name__">
         </label>
         <div class="modal-buttons-new-category">
-            <button id="btn-cancel-new-category">Cancel</button>
-            <button id="btn-confirm-new-category">Confirm</button>
+            <button id="btn-cancel-new-category">__MSG_cancel__</button>
+            <button id="btn-confirm-new-category">__MSG_confirm__</button>
         </div>
     </div>
 </div>
 
 <div id="confirm-popup">
     <div class="popup-content">
-        <p id="confirm-message">提示信息...</p>
+        <p id="confirm-message">__MSG_confirm_message__</p>
         <div class="button-row">
-            <button id="btn-cancel">取消</button>
-            <button id="btn-ok">确定</button>
+            <button id="btn-cancel">__MSG_cancel__</button>
+            <button id="btn-ok">__MSG_confirm__</button>
         </div>
     </div>
 </div>
 
 <div id="custom-alert">
     <div id="alert-content">
-        <h3 id="alert-title">Alert</h3>
-        <p id="alert-message">This is a custom alert message!</p>
-        <button id="alert-ok">OK</button>
+        <h3 id="alert-title">__MSG_alert_title__</h3>
+        <p id="alert-message">__MSG_alert_message__</p>
+        <button id="alert-ok">__MSG_ok__</button>
     </div>
 </div>
 
 <div id="loading-overlay">
     <div id="loading-content">
         <div class="spinner"></div>
-        <div>正在处理，请稍候...</div>
+        <div>__MSG_loading__</div>
     </div>
 </div>
 

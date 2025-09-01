@@ -6,6 +6,7 @@ import {Category, queryCategoriesFromBG} from "../object/category";
 import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {parseContentHtml} from "./main_entrance";
+import {t} from "../common/i18n";
 
 const defaultCatPointColor = '#B9CAD3';
 
@@ -91,13 +92,15 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
 }
 
 function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], container: HTMLElement) {
-    const filterBtn = tpl.content.getElementById("category-filter-item") as HTMLElement;
-    const moreBtn = tpl.content.getElementById("category-filter-more") as HTMLElement;
-    const allCatBtn = tpl.content.getElementById("category-filter-clear") as HTMLElement;
+    const filterBtn = tpl.content.getElementById("category-filter-item")?.cloneNode(true) as HTMLElement;
+    const moreBtn = tpl.content.getElementById("category-filter-more")?.cloneNode(true) as HTMLElement;
+    const allCatBtnDiv = tpl.content.getElementById("category-filter-clear")?.cloneNode(true) as HTMLElement;
 
-    allCatBtn.querySelector(".category-filter-clear-btn")!.addEventListener("click", resetCategories)
-    allCatBtn.dataset.categoryID = '' + defaultAllCategoryID;
-    container.appendChild(allCatBtn);
+    const allCatBtn = allCatBtnDiv.querySelector(".category-filter-clear-btn") as HTMLButtonElement
+    allCatBtn.innerText = t('all');
+    allCatBtn.addEventListener("click", resetCategories);
+    allCatBtnDiv.dataset.categoryID = '' + defaultAllCategoryID;
+    container.appendChild(allCatBtnDiv);
 
     categories.forEach((category) => {
         const cloneItem = filterBtn.cloneNode(true) as HTMLElement;
@@ -145,7 +148,7 @@ export function onVideoDownloadStart(total: number, filename: string, controller
     let rec = progressRegistry.get(filename);
     if (!!rec || total === 0) return;
 
-    if(!hostDiv){
+    if (!hostDiv) {
         hostDiv = document.querySelector(".download-progress-list") as HTMLElement;
     }
     const processBar = document.querySelector(".download-progress-item")?.cloneNode(true) as HTMLElement;
@@ -154,7 +157,9 @@ export function onVideoDownloadStart(total: number, filename: string, controller
     processBar.style.display = 'block';
 
     (processBar.querySelector(".dpi-name") as HTMLSpanElement).innerText = filename;
-    (processBar.querySelector(".dpi-cancel") as HTMLButtonElement).addEventListener('click', () => {
+    const cancelBtn = processBar.querySelector(".dpi-cancel") as HTMLButtonElement;
+    cancelBtn.innerText=t('cancel');
+    cancelBtn.addEventListener('click', () => {
         try {
             controller.abort();
         } finally {

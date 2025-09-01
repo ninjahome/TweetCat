@@ -1,3 +1,5 @@
+import {t} from "../common/i18n";
+
 const imageList: string[] = [
     "../images/add-category.jpg",
     "../images/add-kol.jpg",
@@ -47,6 +49,11 @@ function nextImage(event: Event): void {
 document.addEventListener("DOMContentLoaded", initDashBoard);
 
 function initDashBoard(): void {
+
+    document.querySelector<HTMLElement>(".welcome-title")!.innerText = t('welcome_title');
+    document.querySelector<HTMLElement>(".subtitle")!.innerText = t('welcome_subtitle');
+    document.querySelector<HTMLElement>(".footer")!.innerText = t('footer_text');
+
     document.addEventListener("keydown", (e: KeyboardEvent) => {
         const modal = document.getElementById("modal") as HTMLElement | null;
         if (modal && modal.style.display === "flex") {
