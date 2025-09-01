@@ -1,22 +1,39 @@
-import {Category, defaultUserName, MsgType, TweetKol} from "./consts";
+import {sendMsgToService} from "../common/utils";
+import {MsgType} from "../common/consts";
 import {
     __tableCategory,
     __tableKolsInCategory,
-    databaseDelete, databaseDeleteByFilter, databaseGet,
-    databaseQueryByFilter,
+    databaseDelete,
+    databaseDeleteByFilter,
+    databaseGet, databaseQueryAll,
     databaseUpdate
-} from "./database";
-import {sendMsgToService} from "./utils";
+} from "../common/database";
+import {TweetKol} from "./tweet_kol";
 
-export async function loadCategories(forUser: string): Promise<Category[]> {
+export class Category {
+    id?: number;
+    catName: string;
+
+    constructor(n: string, i?: number) {
+        this.catName = n;
+        this.id = i;
+    }
+}
+
+
+/**************************************************
+ *
+ *             service work api
+ *
+ * *************************************************/
+
+export async function loadCategories(): Promise<Category[]> {
     try {
-        const categories = await databaseQueryByFilter(__tableCategory, (item) => {
-            return item.forUser === forUser;
-        })
+        const categories = await databaseQueryAll(__tableCategory)
         let tmpCatArr: Category[] = []
         for (let i = 0; i < categories.length; i++) {
             const item = categories[i];
-            const cat = new Category(item.catName, item.forUser, item.id);
+            const cat = new Category(item.catName, item.id);
             tmpCatArr.push(cat);
         }
 
@@ -33,22 +50,9 @@ export async function CategoryForId(catID: number): Promise<Category | null> {
     try {
         return await databaseGet(__tableCategory, catID) as Category;
     } catch (e) {
-        console.log("------>>> load categories failed:", e)
+        console.warn(`------>>> load categories by catID=[${catID}] failed:`, e)
         return null;
     }
-}
-
-export async function kolsForCategory(catID: number): Promise<Map<string, TweetKol>> {
-    const kols = await databaseQueryByFilter(__tableKolsInCategory, (item) => {
-        return item.catID === catID;
-    });
-
-    const kolInOneCategory = new Map<string, TweetKol>();
-    for (const k of kols) {
-        kolInOneCategory.set(k.kolName, new TweetKol(k.kolName, k.displayName, k.avatarUrl, k.catID));
-    }
-
-    return kolInOneCategory;
 }
 
 export async function updateKolsCategory(kol: TweetKol) {
@@ -99,11 +103,11 @@ export async function removeCategory(catID: number) {
 
 /**************************************************
  *
- *              service work api
+ *               content script api
  *
  * *************************************************/
 export async function queryCategoriesFromBG(): Promise<Category[]> {
-    const rsp = await sendMsgToService(defaultUserName, MsgType.QueryCatsByUser)
+    const rsp = await sendMsgToService({}, MsgType.CategoryQueryAll)
     if (!rsp.success) {
         console.log("------>>> load categories error:", rsp.data);
         return [];
@@ -113,7 +117,7 @@ export async function queryCategoriesFromBG(): Promise<Category[]> {
 }
 
 export async function queryCategoryById(catID: number): Promise<Category | null> {
-    const rsp = await sendMsgToService(catID, MsgType.QueryCatByID)
+    const rsp = await sendMsgToService(catID, MsgType.CategoryQueryById)
     if (!rsp.success) {
         console.log("------>>> load categories error:", rsp.data);
         return null;

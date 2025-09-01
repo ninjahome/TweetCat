@@ -14,7 +14,7 @@
     </div>
 
     <div class="category-show-area" id="category-show-area">
-        <button id="btn-add-category">+ Add Category </button>
+        <button id="btn-add-category">+ Add Category</button>
 
         <div class="category-item" style="display: none" id="category-item-template">
             <span class="category-name">Priority Follow</span>
@@ -24,7 +24,17 @@
                 </div>
                 <button class="category-edit-btn" style="opacity: 0.6">
                     <div>
-                        <svg id="图层_1" data-name="图层 1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><defs><style>.cls-1{fill:#191e24;}</style></defs><polygon class="cls-1" points="3.4 10.47 2.7 12.59 4.82 11.88 13.3 3.4 11.89 1.98 3.4 10.47"/><rect class="cls-1" x="2.7" y="13.02" width="4" height="1"/></svg>
+                        <svg id="图层_1" data-name="图层 1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                             viewBox="0 0 16 16">
+                            <defs>
+                                <style>.cls-1 {
+                                    fill: #191e24;
+                                }</style>
+                            </defs>
+                            <polygon class="cls-1"
+                                     points="3.4 10.47 2.7 12.59 4.82 11.88 13.3 3.4 11.89 1.98 3.4 10.47"/>
+                            <rect class="cls-1" x="2.7" y="13.02" width="4" height="1"/>
+                        </svg>
                     </div>
                 </button>
             </div>
@@ -33,10 +43,14 @@
         <div id="categories-list" class="categories-list">
         </div>
 
-        <div id="ad-block-setting" style="margin-top: 16px; padding: 10px; background-color: rgba(74,153,233,0.2);border-radius: 9999px;padding:16px">
+        <div id="ad-block-setting"
+             style="margin-top: 16px; background-color: rgba(74,153,233,0.2);border-radius: 9999px;padding:12px 16px">
             <label style="display: flex; align-items: center; justify-content: space-between;">
-                <span>Block Ads</span>
-                <input type="checkbox" id="ad-block-toggle" />
+                <div>
+                    <span>Block Ads</span>
+                    <span class="number-blocked-txt" style="color:rgb(29, 155, 240); background-color: rgba(29, 155, 240,0.2);border-radius: 999px; line-height: 20px;padding: 4px 12px; margin-left: 4px">0</span>
+                </div>
+                <input type="checkbox" id="ad-block-toggle"/>
             </label>
         </div>
     </div>
@@ -44,15 +58,19 @@
 </div>
 
 <div id="view-category-manager" class="view-category-manager page_view">
-    <div  style="display: flex; align-items: center;justify-content: space-between;padding: 16px">
+    <div style="display: flex; align-items: center;justify-content: space-between;padding: 16px">
         <div style="display: flex; align-items: center;justify-content: flex-start">
             <button class="button-back">
                 <div>
-                    <svg id="图层_1" data-name="图层 1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                    <svg id="图层_1" data-name="图层 1" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                         viewBox="0 0 16 16">
                         <defs>
-                            <style>.cls-1{fill:#191e24;}</style>
+                            <style>.cls-1 {
+                                fill: #191e24;
+                            }</style>
                         </defs>
-                        <polygon class="cls-1" points="15.97 6.75 3.85 6.75 8.41 2.19 7 0.78 0.03 7.75 7.5 15.22 8.91 13.81 3.85 8.75 15.97 8.75 15.97 6.75"/>
+                        <polygon class="cls-1"
+                                 points="15.97 6.75 3.85 6.75 8.41 2.19 7 0.78 0.03 7.75 7.5 15.22 8.91 13.81 3.85 8.75 15.97 8.75 15.97 6.75"/>
                     </svg>
                 </div>
             </button>
@@ -66,19 +84,19 @@
 
     <div class="category-name" style="padding: 0 16px">
         <label>
-            <input type="text" class="category-name-val" >
+            <input type="text" class="category-name-val">
         </label>
         <!--
        <img src="../images/edit.png" alt="edit image">
           -->
-       <button class="name-edit">Save</button>
-   </div>
-   <!--
-   <div class="category-kol-size">
-     <span>Kol Size:</span> <span class="kol-size-val"></span>
-     <button class="kol-manage-btn">Manage</button>
-   </div>
-   -->
+        <button class="name-edit">Save</button>
+    </div>
+    <!--
+    <div class="category-kol-size">
+      <span>Kol Size:</span> <span class="kol-size-val"></span>
+      <button class="kol-manage-btn">Manage</button>
+    </div>
+    -->
 
 </div>
 

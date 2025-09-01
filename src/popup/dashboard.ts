@@ -1,11 +1,14 @@
 import browser from "webextension-polyfill";
-import {__DBK_AD_Block_Key, Category, choseColorByID, defaultUserName, MaxCategorySize, MsgType} from "./consts";
-import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "./database";
-import {showView} from "./utils";
-import {kolsForCategory, loadCategories, removeCategory, updateCategoryDetail} from "./category";
+import {__DBK_AD_Block_Key, choseColorByID, MaxCategorySize, MsgType} from "../common/consts";
+import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/database";
+import {showView} from "../common/utils";
+import {loadCategories, removeCategory, updateCategoryDetail} from "../object/category";
 import {hideLoading, showAlert, showConfirmPopup, showLoading} from "./dash_common";
-import {broadcastToContent} from "./bg_msg";
-import {localGet, localSet} from "./local_storage";
+import {sendMessageToX} from "../service_work/bg_msg";
+import {localGet, localSet} from "../common/local_storage";
+import {Category} from "../object/category";
+import {kolsForCategory} from "../object/tweet_kol";
+import {getSystemSetting, switchAdOn} from "../object/system_setting";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -37,7 +40,7 @@ function dashRouter(path: string): void {
 function initNewCatBtn() {
     const newCategoryBtn = document.getElementById("btn-add-category") as HTMLElement;
     newCategoryBtn.onclick = async () => {
-        const categories = await loadCategories(defaultUserName);
+        const categories = await loadCategories();
         if (categories.length >= MaxCategorySize) {
             showAlert("Tips", "You can create up to 4 categories for now. We'll support more soon!");
             return;
@@ -67,7 +70,7 @@ async function addNewCategory() {
     }
 
     showLoading()
-    const item = new Category(newCatStr, defaultUserName);
+    const item = new Category(newCatStr);
     delete item.id;
     const newID = await databaseAddItem(__tableCategory, item);
     if (!newID) {
@@ -81,8 +84,8 @@ async function addNewCategory() {
     modalDialog.style.display = 'none'
     newCatInput.value = '';
 
-    const changedCat = await loadCategories(item.forUser);
-    broadcastToContent(MsgType.CategoryChanged, changedCat);
+    const changedCat = await loadCategories();
+    await sendMessageToX(MsgType.CategoryChanged, changedCat, false);
     hideLoading();
     showAlert("Tips", "Save Success");
 }
@@ -90,7 +93,7 @@ async function addNewCategory() {
 async function setHomeStatus() {
     const listDiv = document.getElementById("categories-list") as HTMLElement;
     const catItem = document.getElementById("category-item-template") as HTMLElement;
-    const categories = await loadCategories(defaultUserName);
+    const categories = await loadCategories();
 
     listDiv.innerHTML = '';
 
@@ -100,9 +103,13 @@ async function setHomeStatus() {
         listDiv.append(clone);
     });
 
-    const isEnabled: boolean = await localGet(__DBK_AD_Block_Key) as boolean ?? false
+    const isEnabled: boolean = await localGet(__DBK_AD_Block_Key) as boolean ?? false//TODO:: refactor __DBK_AD_Block_Key logic
     const blockAdsToggle = document.getElementById('ad-block-toggle') as HTMLInputElement;
     blockAdsToggle.checked = isEnabled;
+
+    const adNumber = document.querySelector(".number-blocked-txt") as HTMLSpanElement;
+    const setting = await getSystemSetting();
+    adNumber.innerText = "" + setting.adsBlocked
 }
 
 function _cloneCatItem(clone: HTMLElement, category: Category) {
@@ -165,7 +172,7 @@ async function editCateName(cat: Category, parent: HTMLElement) {
     cat.catName = inputArea.value;
     showLoading();
     await updateCategoryDetail(cat);
-    broadcastToContent(MsgType.CategoryChanged, await loadCategories(defaultUserName));
+    await sendMessageToX(MsgType.CategoryChanged, await loadCategories());
     hideLoading();
     showAlert("Tips", "Update Success");
 }
@@ -174,7 +181,7 @@ function removeCatById(catId: number) {
     showConfirmPopup("Delete this Category?", async () => {
         showLoading();
         await removeCategory(catId);
-        broadcastToContent(MsgType.CategoryChanged, await loadCategories(defaultUserName));
+        await sendMessageToX(MsgType.CategoryChanged, await loadCategories());
         hideLoading();
         showView('#onboarding/main-home', dashRouter);
     });
@@ -186,7 +193,8 @@ function initSettings() {
     blockAdsToggle.onchange = async () => {
         const isEnabled = blockAdsToggle.checked;
         await localSet(__DBK_AD_Block_Key, isEnabled);
+        await switchAdOn(isEnabled);
         console.log("------>>>Ad blocking is now", isEnabled ? "enabled" : "disabled");
-        broadcastToContent(MsgType.AdsBlockChanged, isEnabled);
+        await sendMessageToX(MsgType.AdsBlockChanged, isEnabled);
     };
 }

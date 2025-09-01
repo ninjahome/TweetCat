@@ -1,6 +1,8 @@
-import {kolsForCategory, loadCategories, removeKolsCategory, updateKolsCategory} from "./category";
-import {Category, defaultUserName, TweetKol} from "./consts";
-import {checkAndInitDatabase} from "./database";
+import {loadCategories, removeKolsCategory, updateKolsCategory} from "../object/category";
+import {checkAndInitDatabase} from "../common/database";
+import {Category} from "../object/category";
+import {kolsForCategory, TweetKol} from "../object/tweet_kol";
+import {removeTweetsByKolID} from "../timeline/db_raw_tweet";
 
 const queryUrl = new URL(window.location.href);
 document.addEventListener("DOMContentLoaded", initKolManager as EventListener);
@@ -24,7 +26,7 @@ async function initKolManager() {
 
     _curCatID = Number(catID);
 
-    _categories = await loadCategories(defaultUserName);
+    _categories = await loadCategories();
     populateCategoryList();
 
     _kolMap = await kolsForCategory(Number(catID));
@@ -69,7 +71,8 @@ function populateKolList() {
 
         const opArea = item.querySelector(".kol-op-area") as HTMLElement;
         opArea.querySelector(".kol-op-remove")!.addEventListener('click', async () => {
-            await removeKolsCategory(kol.kolName)
+            await removeKolsCategory(kol.kolName);
+            await removeTweetsByKolID(kol.kolUserId ?? "")
             updateCache(kol.kolName, item);
         });
 

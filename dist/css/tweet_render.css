@@ -1,0 +1,1026 @@
+/* ===== Twitter-like Auto Dark Mode (drop-in) =====
+   How to use:
+   1) Link this AFTER your existing content.css
+      <meta name="color-scheme" content="light dark">
+      <link rel="stylesheet" href="content.css">
+      <link rel="stylesheet" href="theme-dark.css">
+   2) Optional manual override (keeps auto by default):
+      <html data-theme="auto|light|dark">
+*/
+
+
+:root {
+    /* Light */
+    --bg-primary: #ffffff;
+    --bg-elevated: #ffffff;
+    --bg-hover: rgba(15, 20, 25, 0.03);
+    --bg-subtle: #f7f9f9;
+
+    --text-primary: rgb(15, 20, 25);
+    --text-secondary: rgb(83, 100, 113);
+    --text-muted: #6b7280;
+
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .1);
+
+    --border-subtle: rgb(239, 243, 244);
+    --border-strong: rgba(15, 20, 25, 0.1);
+
+    --card-radius: 12px;
+    --media-radius: 16px;
+
+    --shadow-pop: 0 4px 8px rgba(0, 0, 0, 0.15);
+
+    --tcq-thumb: 96px;
+
+    --tweet-toast-shadow:0 8px 24px rgba(0,0,0,.2);
+    --tweet-toast-pad:12px 18px;
+    --tweet-toast-gap:24px;
+    --tweet-toast-speed:300ms; /* 进出过渡 */
+    --tweet-toast-life:2800ms; /* 展示时长（JS 使用） */
+}
+
+/* Prefer the user's OS setting */
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Dark */
+        --bg-primary: #000000;
+        --bg-elevated: transparent;
+        --bg-hover: rgba(231, 233, 234, 0.08);
+        --bg-subtle: #0a0a0a;
+
+        --text-primary: rgb(231, 233, 234);
+        --text-secondary: rgb(113, 118, 123);
+        --text-muted: #9ca3af;
+
+        --accent: rgb(29, 155, 240);
+        --accent-subtle: rgba(29, 155, 240, .15);
+
+        --border-subtle: #2f3336;
+        --border-strong: rgba(231, 233, 234, 0.15);
+    }
+
+    .tweet-cardfloat:hover {
+        background-color: transparent !important;
+    }
+
+    .category-popup-menu {
+        background-color: #16181c !important;
+    }
+
+    .tweet-card-area a.tc-card-large__media {
+        border: 1px solid #2F3336;
+    }
+
+    .category-filter-btn::before,
+    .category-filter-clear-btn::before{
+        color: #2f3336;
+    }
+}
+
+/* Optional manual override via data-theme on <html> */
+html[data-theme="dark"] {
+    --bg-primary: #000000;
+    --bg-elevated: #16181c;
+    --bg-hover: rgba(231, 233, 234, 0.08);
+    --bg-subtle: #0a0a0a;
+
+    --text-primary: rgb(231, 233, 234);
+    --text-secondary: rgb(113, 118, 123);
+    --text-muted: #9ca3af;
+
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .15);
+
+    --border-subtle: #2f3336;
+    --border-strong: rgba(231, 233, 234, 0.15);
+}
+
+html[data-theme="light"] {
+    --bg-primary: #ffffff;
+    --bg-elevated: #ffffff;
+    --bg-hover: rgba(15, 20, 25, 0.03);
+    --bg-subtle: #f7f9f9;
+
+    --text-primary: rgb(15, 20, 25);
+    --text-secondary: rgb(83, 100, 113);
+    --text-muted: #6b7280;
+
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .1);
+
+    --border-subtle: rgb(239, 243, 244);
+    --border-strong: rgba(15, 20, 25, 0.1);
+
+}
+
+/* Smooth transition */
+*,
+*:before,
+*:after {
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+/* ---------- Global ---------- */
+html, body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+a {
+    color: var(--accent);
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ---------- Timeline / Layout ---------- */
+.tweetTimeline {
+    background-color: var(--bg-elevated) !important;
+    border-left-color: var(--border-subtle) !important;
+    border-right-color: var(--border-subtle) !important;
+}
+
+.tweet-bottomline {
+    background-color: var(--border-subtle) !important;
+}
+
+.each-tweet-rightBox {
+    background-color: var(--bg-elevated);
+    border-color: var(--border-subtle) !important;
+    border-radius: var(--card-radius);
+}
+
+.tweet-card {
+    background: transparent;
+}
+
+/* ---------- Text ---------- */
+.tweet-title,
+.tweet-author {
+    color: var(--text-primary) !important;
+}
+
+.tweet-username,
+.tweet-time,
+.retweet-container,
+.inline-link-card .desc,
+.tweet-card-area .inline-link-card--small .meta .js-card-domain,
+.tweet-card-area .inline-link-card--small .meta .js-card-desc,
+.tc-card-large__source {
+    color: var(--text-secondary) !important;
+}
+
+/* ---------- Category Filter ---------- */
+.category-filter-container {
+    background: var(--bg-elevated);
+    border-bottom-color: var(--border-subtle) !important;
+}
+
+.category-filter-item {
+    color: var(--text-primary);
+    border-color: var(--border-strong) !important;
+}
+
+.category-filter-item:hover {
+    background-color: var(--bg-hover) !important;
+    border-color: var(--border-strong) !important;
+}
+
+.category-filter-item.active {
+    background-color: var(--bg-hover) !important;
+}
+
+/* ---------- Menus / Popovers ---------- */
+.category-popup-menu {
+    background-color: var(--bg-elevated);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-pop);
+}
+
+.category-popup-menu .menu-item:hover {
+    background-color: var(--bg-hover);
+}
+
+/* ---------- Media ---------- */
+img, video {
+    border-radius: var(--media-radius);
+}
+
+.video-wrapper {
+    background-color: #000;
+}
+
+/* ---------- Cards & Links ---------- */
+.tweet-content .inline-link,
+.tweet-card-area .inline-link {
+    background-color: var(--bg-elevated);
+    border-color: var(--border-subtle);
+    color: inherit;
+}
+
+.tweet-content .inline-link:hover,
+.tweet-card-area .inline-link:hover {
+    background-color: var(--bg-hover);
+}
+
+
+/* Large card overlay title remains readable in both modes */
+.tweet-card-area .tc-card-large__shade {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .55) 100%);
+}
+
+.tweet-card-area .tc-card-large__title {
+    color: #fff;
+}
+
+/* ---------- Actions ---------- */
+.tweet-actions .download {
+    flex-direction: row-reverse;
+}
+
+.action-button .action-button-download-btn {
+    display: flex;
+    background-color: rgb(29, 155, 240);
+    border-radius: 999px;
+    align-content: center;
+    justify-content: center;
+    padding: 6px 24px;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+}
+.tweet-actions .bookMarked {
+    display: flex;
+    align-items: center;
+}
+.action-button-download-btn:hover {
+    background: rgba(25, 140, 216, 0.2);
+    color: rgba(29, 155, 240);
+}
+
+.action-button-download-icon svg path {
+    fill: rgb(255, 255, 255); /* Twitter 次要文字灰 */
+    transition: fill .2s;
+    font-weight: 700;
+}
+.bookmark-icon svg path {
+    fill: var(--text-secondary); /* Twitter 次要文字灰 */
+    transition: fill .2s;
+    font-weight: 700;
+}
+
+.action-button-download-btn:hover .action-button-download-icon svg path,
+.bookmark-icon:hover svg path {
+    fill: rgb(29,155,240); /* Twitter 蓝 */
+}
+
+.bookmark-icon.active svg path{
+    fill: rgb(29,155,240); /* Twitter 蓝 */
+}
+
+/* ---------- Accents (hover chips, labels, tabs) ---------- */
+.hover-chat:hover,
+.tweet-category-label {
+    background-color: var(--accent-subtle) !important;
+}
+
+.tweet-category-label:hover {
+    background-color: transparent !important;
+}
+
+/* Selected tab like Twitter */
+a.tweetCatMenuItem.tc-selected svg path {
+    fill: var(--accent) !important;
+}
+
+a.tweetCatMenuItem.tc-selected .tweettabname {
+    color: var(--accent) !important;
+    font-weight: 700;
+}
+
+/* ---------- Misc ---------- */
+.tweetch-logo:hover,
+.hasCategoryfile:hover,
+.hasCategorylabel:hover {
+    background-color: var(--bg-hover) !important;
+}
+
+.tweet-no-wrapper {
+    font-size: 15px;
+    color: #1D9BF0;
+}
+
+.tweet-no-wrapper .tweet-no {
+    font-weight: 700;
+}
+
+.new-tweet-notification {
+    padding: 16px;
+}
+
+/* ===== TweetCat Quoted (tcq-) 基础骨架：阶段0 ===== */
+
+.tcq-quoted-root {
+    display: block;
+    position: relative; /* 合并：原来单独的声明 */
+    border: 1px solid var(--border-subtle, rgba(0, 0, 0, .08));
+    border-radius: 16px;
+    background: var(--bg-elevated, transparent);
+    cursor: pointer; /* 整卡可点 */
+    line-height: 20px;
+}
+
+.tcq-quoted-root .tcq-quoted-header,
+.tcq-quoted-root .tcq-quoted-content,
+.tcq-quoted-root .tcq-quoted-media,
+.tcq-quoted-root .tcq-quoted-card {
+    margin-top: 4px;
+}
+
+.tcq-quoted-root .tcq-quoted-header {
+    margin-top: 12px;
+    margin-left: 12px;
+    margin-right: 12px;
+}
+
+/* Header 行内布局 */
+.tcq-qh-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tcq-qh-avatar img {
+    border-radius: 999px;
+    display: block;
+}
+
+.tcq-qh-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+    line-height: 20px;
+    word-wrap:break-word;
+    white-space:nowrap;
+    text-align:inherit;
+}
+.tcq-qh-meta .tcq-qh-name{
+    font-weight: 700;
+}
+.tcq-qh-meta .tcq-qh-handle,
+.tcq-qh-meta .tcq-qh-handle,
+.tcq-qh-meta .tcq-qh-sep,
+.tcq-qh-time {
+    font-weight: 400;
+    color: var(--text-secondary);
+
+}
+.tcq-qh-sep {
+    opacity: .6;
+}
+
+/* 媒体容器占位 */
+.tcq-qmedia {
+    position: relative;
+    display: block;
+    overflow: hidden;
+}
+
+.tcq-qmedia + .tcq-qmedia {
+    margin-top: 6px;
+}
+
+.tcq-qmedia .tcq-qmedia-aspect {
+    display: block;
+    width: 100%;
+    padding-top: 56.25%;
+}
+
+/* 16:9 */
+.tcq-qmedia img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 不可用占位 */
+.tcq-quoted-unavailable {
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, .03);
+}
+
+@media (prefers-color-scheme: dark) {
+    .tcq-quoted-root {
+        border-color: var(--border-subtle, rgba(255, 255, 255, .12));
+    }
+
+    .tcq-quoted-unavailable {
+        background: rgba(255, 255, 255, .06);
+    }
+}
+
+/* ===== tcq- 正文（embedded/compact） ===== */
+.tcq-quoted-root .tcq-quoted-content .tweet-content {
+    font-size: 15px; /* 比主推略小 */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    -webkit-line-clamp: 5;
+    margin-left: 12px;
+}
+
+/* 引用区内超链接、mention 的高亮略收敛，避免过强 */
+.tcq-quoted-root .tcq-quoted-content .tweet-content a {
+    text-decoration: none;
+}
+
+.tcq-quoted-root .tcq-quoted-content .tweet-content a:hover {
+    text-decoration: underline;
+}
+
+/* 隐形锚点（供程序化触发 SPA 路由） */
+.tcq-quoted-rootlink {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+/* 可达性：键盘焦点与悬停反馈（轻量，可按需保留） */
+.tcq-quoted-root:focus-visible {
+    outline: 2px solid rgba(29, 155, 240, .6);
+    outline-offset: 2px;
+    border-color: rgba(29, 155, 240, .35);
+}
+
+.tcq-quoted-root:hover {
+    background: color-mix(in srgb, var(--bg-elevated, transparent) 92%, #000 8%);
+}
+
+@media (prefers-color-scheme: dark) {
+    .tcq-quoted-root:hover {
+        background: color-mix(in srgb, var(--bg-elevated, transparent) 94%, #fff 6%);
+    }
+}
+
+
+/* —— 引用正文：折叠/更多（A1+B1） —— */
+.tcq-qcontent-wrap {
+    position: static; /* 不再用 absolute 叠加 */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-right: 12px;
+    margin-bottom: 12px;
+    margin-top: 8px;
+}
+
+/* “显示更多”按钮 */
+.tcq-qcontent-more {
+    position: static; /* 取消绝对定位 */
+    display: inline-block;
+    margin-top: 4px; /* 与正文留出一点间距 */
+    padding: 0; /* 官方是纯文本链接，无额外内边距 */
+    font-size: 14px;
+    line-height: 1.45;
+    color: rgb(29, 155, 240);
+    background: none; /* 去掉渐变背景 */
+    text-decoration: none;
+    margin-left: 12px;
+}
+
+.tcq-qcontent-more:hover {
+    text-decoration: underline;
+}
+
+/* 暗色适配（渐隐背景） */
+@media (prefers-color-scheme: dark) {
+    .tcq-qcontent-more {
+        color: rgb(142, 205, 248);
+        background: none;
+    }
+}
+
+
+/* === Quoted photo grids (A2/A3/A4) === */
+.tcq-quoted-root .tcq-quoted-media {
+    border-radius: 12px;
+    overflow: hidden;
+    gap: 2px;
+}
+
+/* 1 张：保持单列（模板内 .tcq-qmedia-aspect 提供比例） */
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--grid-1 {
+    display: block;
+}
+
+/* 2/4 张：2 列网格 */
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--grid-2,
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--grid-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* 3 张：左 1 张通栏、右侧上下两张 */
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+}
+
+/* === tcq- 轻量图片查看覆盖层 === */
+.tcq-photo-lightbox[hidden] {
+    display: none;
+}
+
+.tcq-photo-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 9999; /* 盖住后面的推文内容 */
+    background: rgba(0, 0, 0, .9); /* 与官方接近的暗幕 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tcq-plb-img {
+    max-width: 95vw;
+    max-height: 95vh;
+    border-radius: var(--media-radius, 12px);
+    display: block;
+}
+
+.tcq-plb-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 24px;
+    line-height: 1;
+    background: transparent;
+    color: #fff;
+    border: 0;
+    cursor: pointer;
+}
+
+
+/* === B2 单图：缩略图模式（与官方一致为小方图） === */
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--thumb {
+    display: inline-block; /* 不再占满整行 */
+    width: 88px; /* 约等于官方的小缩略图宽度 */
+    vertical-align: top;
+    gap: 0;
+}
+
+@media (min-width: 480px) {
+    .tcq-quoted-root .tcq-quoted-media.tcq-qphoto--thumb {
+        width: 96px;
+    }
+}
+
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--thumb .tcq-qphoto {
+    display: block;
+}
+
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--thumb .tcq-qmedia-aspect {
+    padding-top: 100%; /* 正方形缩略图 */
+}
+
+.tcq-quoted-root .tcq-quoted-media.tcq-qphoto--thumb img {
+    object-fit: cover; /* 居中裁切，避免变形 */
+}
+
+/* 任何 grid-n 布局下，都禁用兄弟 margin 顶距，只用 gap 控距 */
+.tcq-quoted-root .tcq-quoted-media[class*="tcq-qphoto--grid-"] .tcq-qmedia {
+    margin-top: 0;
+}
+
+/* 仅在引用媒体里把图片圆角归零，由容器裁切外轮廓 */
+.tcq-quoted-root .tcq-qmedia img {
+    border-radius: 0;
+}
+
+/* 缩略图容器在网格下需要 block，并固定宽度 */
+.tcq-quoted-root.tcq--thumb-row .tcq-quoted-media.tcq-qphoto--thumb {
+    width: var(--tcq-thumb);
+}
+
+
+/* 可选：让缩略图只由外层裁切，内部图片不再重复圆角（视觉更利落） */
+.tcq-quoted-root.tcq--thumb-row .tcq-qmedia img {
+    border-radius: 0;
+}
+
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-1 .tcq-qmedia-aspect {
+    padding-top: 100%;
+}
+
+/* === v2：B1（主推无媒体）多图比例 === */
+/* 2 图：略偏竖，接近官方视觉；如需更“方”，把 112% 调成 100% */
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-2 .tcq-qmedia-aspect {
+    padding-top: 112%;
+}
+
+/* 3 图 / 4 图：方形单元；3 图时第 1 张已由你的规则跨两行，形成左侧长图 */
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-3 .tcq-qmedia-aspect,
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-4 .tcq-qmedia-aspect {
+    padding-top: 100%;
+}
+
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-3 > *:first-child {
+    grid-row: span 2;
+}
+
+/* 2) v2：B1 三图——让第 1 个格子的“占位”变成两格高（≈2:1） */
+.tcq-v2.tcq--b1 .tcq-quoted-media.tcq-qphoto--grid-3 > *:first-child .tcq-qmedia-aspect {
+    padding-top: 200%;
+}
+
+/* === B2（主推含媒体） === */
+
+/* 媒体与正文更紧 */
+.tcq-v2.tcq--b2 .tcq-quoted-media {
+    margin-top: 4px;
+}
+
+/* 多图「缩略簇」：整体就是 1 个方形缩略 */
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2,
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3,
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-4 {
+    display: inline-grid;
+    width: var(--tcq-thumb);
+    height: var(--tcq-thumb);
+    grid-template-columns: 1fr 1fr;  /* 两列 */
+    grid-template-rows: 1fr 1fr;     /* 两行（比 auto-rows 更明确） */
+    gap: 2px;
+    vertical-align: top;
+}
+
+/* 默认：小格按正方形占位（后面会对“跨两行”的格子改为用高度撑满） */
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 .tcq-qmedia-aspect,
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 .tcq-qmedia-aspect,
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-4 .tcq-qmedia-aspect {
+    padding-top: 100%;
+}
+
+/* —— B2 + 2 图：左右各半（两张都纵向跨满两行） —— */
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 > .tcq-tpl {
+    grid-row: 1 / -1;   /* 每个 tpl 跨满两行 */
+    height: 100%;
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 > .tcq-tpl .tcq-qphoto {
+    display: block;
+    height: 100%;      /* qphoto 撑满父容器 */
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-2 > .tcq-tpl .tcq-qmedia-aspect {
+    height: 100%;      /* aspect 改用高度撑满 */
+    padding-top: 0;    /* 去掉默认方格占位 */
+}
+
+/* —— B2 + 3 图：左 1 张跨两行，右侧上下各一张 —— */
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / -1;   /* 跨两行 */
+    height: 100%;
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(1) .tcq-qphoto {
+    display: block;
+    height: 100%;
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(1) .tcq-qmedia-aspect {
+    height: 100%;
+    padding-top: 0;
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(2) {
+    grid-column: 2; grid-row: 1;
+}
+.tcq-v2.tcq--b2 .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(3) {
+    grid-column: 2; grid-row: 2;
+}
+
+/* —— B2 + 4 图：默认 2×2 方格（用上面的默认占位即可） —— */
+
+/* —— B2 单图：横排骨架（你已在 TS 里加 .tcq--thumb-row） —— */
+.tcq-quoted-block {
+    display: flex;
+}
+
+.tcq-quoted-block-row {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+}
+
+.tcq-quoted-block-row .tcq-quoted-content {
+    flex: 8 1 0%;
+}
+.tcq-quoted-block-row .tcq-quoted-media{
+    flex: 2 1 0%;
+    margin: 8px 0 12px 12px !important;
+    aspect-ratio: 1 / 1;
+    height: 100%;
+}
+.tcq-quoted-block-gap {
+    margin-top: 4px;
+    flex-direction: column;
+}
+.tcq-quoted-block-gap .tcq-quoted-media {
+    overflow: hidden;
+    gap: 2px;
+    border-radius: 0 0 16px 16px;
+}
+.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="header"]  { grid-column: 1 / -1; grid-row: 1; }
+.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="media"]   { grid-column: 1;      grid-row: 2; margin-top: 0; }
+.tcq-quoted-root.tcq--thumb-row [data-tcq-slot="content"] { grid-column: 2;      grid-row: 2; margin-top: 0; }
+.tcq-quoted-root.tcq--thumb-row .tcq-quoted-media         { width: var(--tcq-thumb); }
+.tcq-quoted-root.tcq--thumb-row .tcq-quoted-media.tcq-qphoto--thumb { width: var(--tcq-thumb); }
+
+
+/* B1 内嵌播放器在引用卡的圆角与裁剪 */
+.tcq-quoted-root .tcq-qvideo-host {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+
+/* 统一关闭占位 padding，改为高度填充 */
+.tcq-quoted-block-gap .tcq-quoted-media .tcq-qphoto {
+    display: block;
+    height: 100%;
+}
+.tcq-quoted-block-gap .tcq-quoted-media .tcq-qmedia-aspect {
+    padding-top: 0 !important;
+    height: 100%;
+    display: block;
+}
+.tcq-quoted-block-gap .tcq-quoted-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* 1 图：明确单格并让唯一项占满整块 */
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-1 {
+    display: block;
+    width: 100%;
+    max-height: 516px;
+    overflow: hidden;
+}
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-1 .tcq-qmedia-aspect {
+    display: none !important;
+}
+
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-1 .tcq-qphoto {
+    width: 100%;
+    max-height: 516px;
+    display: flex  ;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-1 img {
+    max-width: 100% !important;
+    max-height: 516px !important;
+    width: auto !important;
+    height: auto !important;
+    display: block !important;
+    margin: auto !important;
+    position: static !important;
+    object-fit: contain !important;
+}
+
+    /* 2 图：左右各半 */
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 1fr;
+    gap: 2px;
+    aspect-ratio: 16 / 9;
+}
+
+/* 3 图：左 1 张跨两行，右侧上下各一张 */
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    aspect-ratio: 16 / 9;
+}
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-3 > .tcq-tpl:nth-child(1) {
+    grid-column: 1; grid-row: 1 / span 2; height: 100%;
+}
+
+/* 4 图：2×2 宫格 */
+.tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-4 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 2px;
+    aspect-ratio: 16 / 9;
+}
+
+.download-progress-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px;
+    background: var(--bg-elevated);
+    border-bottom-color: var(--border-subtle) !important;
+    border-radius: 16px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.dpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dpi-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary); /* Twitter 主文字颜色 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 80%;
+}
+
+.dpi-cancel {
+    background: none;
+    border: none;
+    color: rgb(29, 155, 240); /* Twitter 蓝 */
+    font-size: 14px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.dpi-cancel:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+}
+
+.dpi-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dpi-progress {
+    flex: 1;
+    height: 4px;
+    border-radius: 9999px;
+    appearance: none;
+}
+
+.dpi-progress::-webkit-progress-bar {
+    background-color: var(--border-subtle);
+    border-radius: 9999px;
+}
+
+.dpi-progress::-webkit-progress-value {
+    background-color: rgb(29, 155, 240);
+    border-radius: 9999px;
+}
+
+.tw-dialog-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    background: rgba(15,20,25,.45);
+    align-items: center;
+    justify-content: center;
+    z-index: 2147483647 !important;
+}
+
+.tw-dialog-panel {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--card-radius);
+    box-shadow: var(--tweet-toast-shadow);
+}
+
+.tw-dialog-header {
+    position: relative;
+    padding: 12px 16px;
+    text-align: center;
+}
+.tw-dialog-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0;
+}
+.tw-dialog-close {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    appearance: none;
+    border: 0;
+    background: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 9999px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+.tw-dialog-close:hover { background: var(--accent-subtle); }
+
+.tw-dialog-content {
+    padding:0 16px;
+    text-align:center;
+}
+.tw-dialog-text {
+    margin:0;
+    font-size:15px;
+    color: var(--text-secondary);
+}
+
+.tw-dialog-buttons {
+    display:flex;
+    gap:12px;
+    justify-content:center;
+    padding:16px;
+}
+
+.tw-dialog-btn {
+    appearance:none;
+    border-radius:9999px;
+    padding:8px 24px;
+    border:1px solid;
+    cursor:pointer;
+    font-weight:700;
+    transition: background var(--tweet-toast-speed);
+}
+.tw-dialog-btn-confirm {
+    border-color: transparent;
+    background: var(--accent);
+    color: #fff;
+}
+.tw-dialog-btn-confirm:hover {
+    background: var(--accent-subtle);
+    color: var(--accent);
+}
+
+.dpi-progress::-moz-progress-bar {
+    background-color: rgb(29, 155, 240);
+    border-radius: 9999px;
+}
+
+.dpi-percent {
+    font-size: 13px;
+    color: var(--text-secondary); /* Twitter 次要文字色 */
+    min-width: 32px;
+    text-align: right;
+}
+
+.dpi-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* 容器固定在底部居中 */
+.tweet-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 16px);
+    opacity: 1;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: var(--tweet-toast-gap);
+    padding: var(--tweet-toast-pad);
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: var(--tweet-toast-shadow);
+    font: 600 16px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    max-width: calc(100vw - 24px);
+    white-space: nowrap;
+    transition: opacity var(--tweet-toast-speed) ease, transform var(--tweet-toast-speed) ease;
+    z-index: 9999;
+}
+
+/* 显示状态：上移并显现 */
+.tweet-toast.show {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    pointer-events: auto;
+}
+.tweet-toast__action{ text-decoration: underline; cursor: pointer; }
+.tweet-toast__close{ margin-left: 6px; cursor: pointer; opacity:.9; }
+
+@media (max-width:420px){
+    .tweet-toast{ gap:16px; padding:10px 14px; font-weight:600; font-size:15px; }
+}

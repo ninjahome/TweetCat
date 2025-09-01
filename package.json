@@ -1,21 +1,27 @@
 {
-  "name": "TweetyCat",
-  "version": "1.0.8",
-  "description": "catch your favorite tweets",
-  "scripts": {
-    "build:d": "webpack --mode development --stats-error-details",
-    "build:r": "webpack --mode production --stats-error-details"
-  },
   "dependencies": {
-    "webextension-polyfill": "^0.12.0"
+    "hls.js": "^1.6.10",
+    "webextension-polyfill": "^0.12.0",
+    "x-client-transaction-id": "^0.1.8"
   },
+  "description": "catch your favorite tweets",
   "devDependencies": {
+    "@types/node": "^24.2.1",
     "@types/webextension-polyfill": "^0.12.3",
     "cross-env": "^7.0.3",
     "ts-loader": "^9.5.2",
-    "typescript": "^5.8.2",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
     "webpack": "^5.93.0",
     "webpack-cli": "^6.0.1"
   },
-  "private": true
+  "name": "TweetyCat",
+  "private": true,
+  "scripts": {
+    "build:d": "webpack --mode development --stats-error-details",
+    "build:r": "webpack --mode production --stats-error-details",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "version": "1.4.5"
 }

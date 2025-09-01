@@ -1,0 +1,91 @@
+import {EntryObj} from "./tweet_entry";
+import {renderTweetHTML} from "./render_tweet";
+import {globalNodePool} from "./div_node_pool";
+import {logMount} from "../common/debug_flags";
+export class TweetCatCell {
+    node!: HTMLElement;
+    height = 0;
+    private video?: HTMLVideoElement;
+    readonly id: string;
+
+    constructor(
+        private readonly data: EntryObj,
+        private readonly tpl: HTMLTemplateElement,
+        private readonly reportDh: (cell: TweetCatCell, dh: number) => void,
+        public readonly index: number) {
+        this.id = data.entryId;
+    }
+
+    /** 首次或再次挂载 */
+    mount(parent: HTMLElement) {
+        if (!this.node) {
+            this.node = globalNodePool.acquire(this.id) ?? renderTweetHTML(this.data, this.tpl);
+            globalNodePool.register(this, this.node);
+
+            Object.assign(this.node.style, {
+                position: "absolute",
+                left: 0,
+                visibility: "hidden"
+            });
+            this.video = this.node.querySelector("video") ?? undefined;
+        }
+
+        parent.appendChild(this.node);
+
+        if (this.video) {
+            videoObserver.observe(this.video);
+        }
+
+        /* 若尚未测量，等待稳定后记录高度 */
+        if (!this.height) {
+            this.height = this.node.offsetHeight;
+            logMount(`[Cell#${this.id}] mount  height=${this.height} }`);
+        }
+
+        logMount(`[Cell#${this.id}] mount`);
+    }
+
+    /** 从 DOM 移除 */
+    unmount() {
+        logMount(`[Cell#${this.id}] unmount`);
+
+        if (this.video) {
+            videoObserver.unobserve(this.video);
+        }
+
+        if (this.node?.isConnected) {
+            this.node.remove();
+            this.node.style.visibility = 'hidden';
+        }
+
+        globalNodePool.unregister(this.node);
+        globalNodePool.release(this.id, this.node);
+
+        this.node = null as any;
+    }
+
+    /** 在交互或媒体 onload 时手动调用 */
+    reportHeight(newH: number) {
+        const dh = newH - this.height;
+        if (!dh) return;
+        this.height = newH;
+        this.reportDh(this, dh);       // 汇报给核心 Manager
+    }
+}
+
+
+const videoObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        const video = entry.target as HTMLVideoElement;
+        if (entry.isIntersecting) {
+            video.play().catch(err => {
+                console.log("------>>> video play failed:", err)
+            });
+        } else {
+            video.pause();
+        }
+    });
+}, {
+    root: null,
+    threshold: 0.75
+});

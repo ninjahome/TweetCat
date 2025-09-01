@@ -1,9 +1,18 @@
+img, video {
+    border-radius: 16px;
+}
+
+.tweetCatMenuItem-contain:hover {
+    background-color: #e7e7e8;
+    border-radius: 9999px;
+}
+
 .category-filter-container {
     padding: 16px;
     border-bottom: 1px solid rgb(240, 243, 244);
-    display: flex;            /* 启用 Flex 布局 */
-    align-items: center;      /* 垂直居中（可选） */
-    gap: 16px;                /* 子元素间距（可选） */
+    display: flex; /* 启用 Flex 布局 */
+    align-items: center; /* 垂直居中（可选） */
+    gap: 16px; /* 子元素间距（可选） */
     flex-wrap: wrap;
     max-width: 100%;
 }
@@ -15,8 +24,8 @@
     border-radius: 9999px;
     border: 1px solid rgba(15, 20, 25, 0.1);
     display: flex;
-    justify-content: center;  /* 水平居中 */
-    align-items: center;      /* 垂直居中 */
+    justify-content: center; /* 水平居中 */
+    align-items: center; /* 垂直居中 */
     color: rgb(15, 20, 25);
 }
 
@@ -25,8 +34,8 @@
     border: 0 solid rgba(0, 0, 0, 0);
     line-height: 36px;
     cursor: pointer;
-    font: 14px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    font-weight: 700;
+    font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 400;
     font-size: 15px;
     white-space: nowrap;
 }
@@ -35,18 +44,48 @@
     background-color: rgba(15, 20, 25, 0.1);
     border: 1px solid rgba(15, 20, 25, 0.1);
 }
+
 .category-filter-item.active {
-    background-color: rgb(74, 153, 233);
-    color: white;
+    background-color: rgba(15, 20, 25, 0.1);
 }
 
+.category-filter-item.active button {
+    font-weight: 700;
+}
+
+.category-filter-btn,
+.category-filter-clear-btn,
+.category-filter-more-btn {
+    display: inline-flex; /* 内联 flex 布局 */
+    align-items: center; /* 垂直居中 */
+}
+
+/* 给每个按钮前加小圆点 */
+.category-filter-btn::before,
+.category-filter-clear-btn::before {
+    content: "●";
+    display: inline-block;
+    margin-right: 4px;
+    font-size: 0.6em;
+    color: #B9CAD3; /* 默认灰色 */
+    transition: color 0.3s;
+}
+
+/* 不同分类选中时的小圆点颜色 */
+.category-filter-item.active .category-filter-btn::before {
+    color: var(--cat-point-color, #B9CAD3);
+}
+
+.category-filter-item.active .category-filter-clear-btn::before {
+    color: var(--cat-point-color, #B9CAD3);
+}
 
 .category-popup-menu {
     display: none;
     position: absolute;
     background-color: #ffffff;
-    border: 1px solid rgba(0,0,0,0.1);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     border-radius: 12px;
     width: 220px;
     z-index: 10000;
@@ -97,38 +136,1022 @@
 
 .dot {
     display: inline-block;
-    width: 8px;           /* 控制圆点大小 */
+    width: 8px; /* 控制圆点大小 */
     height: 8px;
-    border-radius: 50%;    /* 关键：变成圆形 */
+    border-radius: 50%; /* 关键：变成圆形 */
 }
 
 .tweetch-logo:hover,
-.hasCategoryfile:hover{
+.hasCategoryfile:hover {
     background-color: rgba(15, 20, 25, 0.1);
     border-radius: 9999px;
     padding: 0 8px;
 }
-.hasCategorylabel:hover{
+
+.hasCategorylabel:hover {
     background-color: rgba(15, 20, 25, 0.1);
     border-radius: 9999px;
 }
+
 .hasCategorylabel .tweet-category-label {
     font-weight: 800;
     padding: 7px 16px;
 }
-.hover-chat:hover{
+
+.hover-chat:hover {
     background-color: rgba(74, 153, 233, 0.1);
     border-radius: 9999px;
 }
 
 .tweet-category-label {
-   padding: 7px 8px;
+    padding: 7px 8px;
     border-radius: 999px;
     background-color: rgba(69, 146, 239, 0.1);
 }
-.tweet-category-label:hover{
+
+.tweet-category-label:hover {
     background-color: transparent;
 }
+
 .category-name {
     font-weight: 1000;
 }
+
+
+.tweet-main-content {
+    width: 1050px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.tweet-cardfloat {
+    width: 100%;
+    min-height: 100px;
+    left: 0;
+    will-change: transform;
+    visibility: hidden;
+    scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
+    overflow-anchor: none;
+}
+
+.tweet-cardfloat:hover {
+    background-color: rgba(247, 247, 247);
+}
+
+.tweetNode {
+    position: absolute;
+    left: 0;
+    width: 100%;
+}
+
+
+.tweet-main {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    flex-shrink: 1;
+    flex-grow: 1;
+}
+
+.tweet-rightBox {
+    flex: 0 0 350px; /* 明确声明：固定列宽，不伸缩 */
+    width: 350px;
+    margin-right: 70px;
+    padding: 12px 0 16px;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+}
+
+.tweetTimeline {
+    max-width: 600px;
+    width: 100%;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-color: rgb(239, 243, 244);
+    background-color: rgb(255, 255, 255);
+    scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
+    box-sizing: border-box;
+    list-style: none;
+    padding: 0px;
+    position: relative;
+    text-decoration: none;
+    z-index: 0;
+    overflow: hidden;
+    min-height: 100%;
+}
+
+.tweet-card {
+    padding: 0 16px 12px;
+    background: rgba(0, 0, 0, 0.0);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.tweet-topmargin {
+    padding: 12px 0 0;
+}
+
+.tweet-topmargin-container {
+    display: none;
+}
+
+
+.retweet-container {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: rgb(83, 100, 113);
+    margin-top: -4px;
+    margin-bottom: 4px;
+}
+
+.retweet-icon {
+    display: flex;
+    justify-content: flex-end;
+    flex-basis: 40px;
+    margin-right: 8px;
+}
+
+.retweet-svg-icon {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.retweet-label {
+    line-height: 1.2;
+}
+
+.retweet-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.retweet-text {
+    font-weight: 700;
+}
+
+.retweet-text:hover {
+    text-decoration: underline;
+}
+
+.tweet-main {
+    display: none;
+    flex-direction: row;
+    align-items: stretch;
+    background-color: rgba(0, 0, 0, 0.00);
+    border: 0 solid black;
+    box-sizing: border-box;
+    flex-basis: auto;
+    flex-shrink: 0;
+    list-style: none;
+    margin: 0px;
+    min-height: 0px;
+    min-width: 0px;
+    padding: 0px;
+    position: relative;
+    text-decoration: none;
+    z-index: 0;
+}
+
+.tweet-header {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    background-color: rgba(0, 0, 0, 0.00);
+    border: 0 solid black;
+    box-sizing: border-box;
+    flex-basis: auto;
+    flex-shrink: 0;
+    list-style: none;
+    margin: 0px;
+    min-height: 0px;
+    min-width: 0px;
+    padding: 0px;
+    position: relative;
+    text-decoration: none;
+    z-index: 0;
+}
+
+.tweet-header img.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.tweet-header-meta {
+    display: flex;
+    align-items: center;
+    min-width: 0; /* 关键，让子元素可收缩 */
+}
+
+.display-name-link,
+.user-name-link {
+    flex: 0 1 auto; /* 允许收缩 */
+    min-width: 0;
+}
+
+
+.tweet-author,
+.tweet-username {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 100%;
+}
+
+.tweet-author {
+    color: rgb(15, 20, 25);
+    font-size: 15px;
+    line-height: 20px;
+    font-weight: 700;
+    font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.tweet-username,
+.tweet-time {
+    color: #536471;
+    font-size: 15px;
+    font-weight: 400;
+}
+
+.tweet-content {
+    color: var(--text-primary) !important;
+    font-size: 15px;
+    margin: 0px;
+    padding: 0px;
+    text-align: inherit;
+    text-decoration: none;
+    white-space: inherit;
+    word-wrap: break-word;
+}
+
+.verified-svg {
+    color: rgb(29, 155, 240);
+    fill: currentcolor;
+    height: 1.25em;
+    margin: 0 2px;
+}
+
+.tweet-image {
+    display: none;
+    flex-wrap: wrap;
+    gap: 2px;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 12px;
+    position: relative;
+    border-radius: 16px;
+    border: 1px solid var(--border-subtle);
+}
+
+span.duration-badge {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    color: white;
+    background: rgba(0, 0, 0, 0.77);
+    max-width: 95%;
+    padding: 0 8px;
+    border-radius: 4px;
+    line-height: 20px;
+    text-align: center;
+}
+
+.tweet-image img {
+    width: 100%;
+    height: 100%; /* 修正高度填充 */
+    object-fit: cover;
+    display: block;
+    border-radius: 0;
+}
+
+.tweet-image > div {
+    flex: 1 1 48%;
+    box-sizing: border-box;
+}
+
+.tweet-image.four-images {
+    height: 290.25px;
+}
+
+.tweet-image.four-images > div {
+    height: 50%;
+}
+
+.two-images img {
+    height: 290.25px;
+}
+
+/* 单图逻辑 */
+.tweet-image.single-image {
+    display: inline-flex !important;
+    flex-direction: column;
+    align-content: flex-start;
+    max-height: 590px;
+    width: auto;
+}
+
+.tweet-image.single-image > div {
+    max-width: 100%;
+
+}
+
+.tweet-image.single-image img {
+    width: 100%;
+    height: auto;
+    max-height: 590px;
+    object-fit: contain;
+}
+
+.tweet-image.single-image > div .tweetPhotoBackImg {
+    border-radius: 16px !important;
+}
+
+/* Three image layout: 1 left, 2 stacked right */
+.tweet-image.three-images {
+    height: 290.25px;
+    display: flex;
+    overflow: hidden;
+}
+
+.tweet-image.three-images img {
+    height: 100%;
+}
+
+.tweet-image.three-images .left-photo {
+    width: 50%;
+    height: 100%;
+}
+
+.left-photo div {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    overflow: hidden;
+}
+
+.tweet-image.three-images .right-photo {
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tweet-image.three-images .right-photo > div {
+    flex: 1;
+    height: 50%; /* 可选补强 */
+    box-sizing: border-box;
+}
+
+
+.tweet-image.three-images img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.tweet-image.four-images > div .tweetPhotoBackImg {
+    height: 100% !important;
+}
+
+/* Round corners */
+.tweet-image.single-image img {
+    border-radius: 16px;
+}
+
+.tweet-image.two-images > div:first-child img {
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
+}
+
+.tweet-image.two-images > div:last-child img {
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
+}
+
+.tweet-image.four-images > div:first-child img {
+    border-top-left-radius: 16px;
+}
+
+.tweet-image.four-images > div:nth-child(2) img {
+    border-top-right-radius: 16px;
+}
+
+.tweet-image.four-images > div:nth-child(3) img {
+    border-bottom-left-radius: 16px;
+}
+
+.tweet-image.four-images > div:nth-child(4) img {
+    border-bottom-right-radius: 16px;
+}
+
+.tweet-image.three-images .left img {
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
+}
+
+.tweet-image.three-images .right > div:first-child img {
+    border-top-right-radius: 16px;
+}
+
+.tweet-image.three-images .right > div:last-child img {
+    border-bottom-right-radius: 16px;
+}
+
+.tweet-bottomline {
+    background-color: rgb(239, 243, 244);
+    height: 1px;
+    width: 100%;
+}
+
+.tweet-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.action-button {
+    display: flex;
+    align-items: center;
+    flex-direction:row-reverse;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: #536471;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.action-button .reply-icon,
+.action-button .retweet-icon,
+.action-button .view-icon,
+.action-button .bookmark-icon,
+.action-button .like-icon,
+.action-button .share-icon {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+.each-tweet-rightBox {
+    border-radius: 12px;
+    border: 1px solid rgb(239, 243, 244);
+    margin-bottom: 16px;
+}
+
+.trending-tweet {
+    padding: 12px 16px;
+    gap: 12px;
+    display: flex;
+    align-items: flex-start;
+}
+
+.tweet-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f1419;
+}
+
+.tweet-show-area {
+    flex: 1;
+    min-width: 0;
+}
+
+.video-wrapper {
+    max-height: 590px;
+    overflow: hidden;
+    position: relative;
+    background-color: black;
+    border-radius: 16px;
+}
+
+.video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+
+/* ---------- TweetCat 被选中时的统一类 ---------- */
+.tweetCatMenuItem-contain:hover {
+    background-color: rgba(29, 155, 240, .1); /* 背景淡蓝 */
+    border-radius: 9999px; /* 和官方一样的全圆角 */
+}
+
+/* 图标改成蓝色 */
+a.tweetCatMenuItem.tc-selected svg path {
+    fill: rgb(29, 155, 240);
+}
+
+/* 文本：蓝色 + 粗体 */
+a.tweetCatMenuItem.tc-selected .tweettabname {
+    color: rgb(29, 155, 240);
+    font-weight: 700;
+}
+
+.tweettabname {
+    color: #1d9bf0 !important; /* Twitter 品牌蓝 */
+}
+
+/* 推文正文中的 inline media（图片/视频） */
+.tweet-content .inline-media {
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 100%;
+    border-radius: 16px; /* 和 img, video 保持一致 */
+    overflow: hidden;
+}
+
+/* 推文正文中的链接卡片（step3） */
+.tweet-content .inline-link {
+    display: inline-block;
+    max-width: 100%;
+    text-decoration: none;
+    border: 1px solid rgb(239, 243, 244);
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #fff;
+    color: inherit;
+    vertical-align: middle;
+}
+
+.tweet-content .inline-link:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.inline-link-card {
+    display: flex;
+    align-items: stretch;
+}
+
+.inline-link-card .thumb {
+    flex: 0 0 72px;
+    height: 72px;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+
+.inline-link-card .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.inline-link-card .meta {
+    flex: 1;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+.inline-link-card .title {
+    font-size: 15px;
+    color: rgb(15, 20, 25);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inline-link-card .desc {
+    font-size: 15px;
+    color: rgb(83, 100, 113);
+    display: -webkit-box; /* 弹性盒子模型 */
+    -webkit-line-clamp: 2; /* 限制为 2 行 */
+    -webkit-box-orient: vertical; /* 垂直排列子元素 */
+    overflow: hidden; /* 隐藏超出的文本 */
+    text-overflow: ellipsis; /* 超出用省略号 */
+    line-height: 1.4;
+}
+
+
+/* 正文排版基础（如果你已有类似规则可忽略） */
+.tweet-content {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+/* 统一链接外观（与 X 接近） */
+.tweet-content a {
+    text-decoration: none;
+    color: rgb(29, 155, 240); /* 主题可抽成变量 */
+}
+
+.tweet-content a:hover {
+    text-decoration: underline;
+}
+
+/* 实体稍微强调一下字重 */
+.tweet-content .mention,
+.tweet-content .hashtag,
+.tweet-content .cashtag {
+    font-weight: 500;
+}
+
+/* 如果你想分别定制，也可以加： */
+.tweet-content .url { /* 普通链接 */
+}
+
+.tweet-content .mention { /* @alice   */
+}
+
+.tweet-content .hashtag { /* #测试    */
+}
+
+.tc-main-more {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 15px; /* 主推正文字号 */
+    line-height: 1.5;
+    color: rgb(29, 155, 240);
+    text-decoration: none;
+}
+
+.tc-main-more:hover {
+    text-decoration: underline;
+}
+
+@media (prefers-color-scheme: dark) {
+    .tc-main-more {
+        color: rgb(142, 205, 248);
+    }
+}
+
+.tweet-card-area {
+    margin-top: 8px;
+}
+
+
+/* =========================
+  TweetCard 专用样式（仅限 .tweet-card-area）
+  small：summary
+  large：summary_large_image
+  ========================= */
+/* ============= 基础容器 ============= */
+.tweet-card-area .inline-link {
+    display: inline-block;
+    width: 100%;
+    text-decoration: none;
+    color: inherit;
+    background-color: #fff;
+    border: 1px solid rgb(239, 243, 244);
+    border-radius: 12px;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+.tweet-card-area .inline-link:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* 卡片骨架：small 为左右结构，large 为上下结构（large 未在此处展开） */
+.tweet-card-area .inline-link-card {
+    display: flex;
+    align-items: stretch;
+}
+
+/* ============= 缩略图与播放按钮（通用） ============= */
+.tweet-card-area .inline-link-card .thumb {
+    /* 避免被旧规则覆盖：交给 small/large 指定宽高 */
+    flex: none !important;
+    height: auto !important;
+    position: relative; /* 为绝对定位的 img / 播放浮层提供定位上下文 */
+    overflow: hidden; /* 不让图片溢出 */
+    background-color: #f7f9f9; /* 图未加载时的底色 */
+}
+
+/* 统一图片铺满策略 + 左侧 12px 圆角 / 右侧直角 */
+.tweet-card-area .inline-link-card .thumb .card-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* 播放浮层（仅当元素存在时显示） */
+.tweet-card-area .inline-link-card .card-play-icon {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    background: rgba(0, 0, 0, .5);
+    color: #fff;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 18px;
+    line-height: 1;
+    pointer-events: none; /* 不挡点击 */
+}
+
+/* ============= Small（summary：左图右文） ============= */
+/* 左侧缩略图 130x130，右侧文本区 */
+.tweet-card-area .inline-link-card--small {
+    display: flex;
+    min-height: 130px; /* 与缩略图保持等高 */
+}
+
+.tweet-card-area .inline-link-card--small .thumb {
+    width: 130px;
+    height: 130px;
+    flex: 0 0 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 右侧 meta 文字区：纵向堆叠 + 2px 行间距 */
+.tweet-card-area .inline-link-card--small .meta {
+    flex: 1;
+    min-width: 0; /* 允许省略/换行 */
+    box-sizing: border-box;
+    padding: 12px;
+    border-left: 1px solid #cfd9de;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    row-gap: 2px; /* 文字块之间 2px 间隙 */
+}
+
+/* 文本换行策略（避免超长 URL/无空格字符串溢出） */
+.tweet-card-area .inline-link-card--small .meta,
+.tweet-card-area .inline-link-card--small .meta * {
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+}
+
+/* 行1：域名（灰） */
+.tweet-card-area .inline-link-card--small .meta .js-card-domain {
+    font-size: 12px;
+    color: rgb(83, 100, 113);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 可选：标题单行省略、描述最多两行（需要可保留，不要可删除） */
+.tweet-card-area .inline-link-card--small .meta .js-card-title {
+    font-weight: 600;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tweet-card-area .inline-link-card--small .meta .js-card-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* 限两行 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.4;
+    color: rgb(83, 100, 113);
+}
+
+/* ============= Large（官方结构版） ============= */
+.tweet-card-area .tc-card-large { /* 外层容器，仅用于分组，不做样式限制 */
+}
+
+/* 点击区域：整张大图 */
+.tweet-card-area .tc-card-large__media {
+    position: relative;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* 维持高宽比（官方此例约 52.356%） */
+.tweet-card-area .tc-card-large__ratio {
+    padding-bottom: 52.356%;
+}
+
+/* 图层容器 */
+.tweet-card-area .tc-card-large__imgwrap {
+    position: absolute;
+    inset: 0;
+}
+
+/* 兼容“先背景再 img”两套：低网速也先有模糊底 */
+.tweet-card-area .tc-card-large__bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center center;
+    filter: none;
+}
+
+/* 主图 */
+.tweet-card-area .tc-card-large__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.tweet-card-area a.tc-card-large__media {
+    border: 1px solid rgb(207, 217, 222);
+}
+
+
+/* 下部遮罩（让标题读得清楚） */
+.tweet-card-area .tc-card-large__shade {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, .55) 100%);
+}
+
+/* 标题浮层（白字） */
+.tweet-card-area .tc-card-large__title {
+    font-size: 13px;
+    position: absolute;
+    left: 12px;
+    bottom: 10px;
+    font-weight: 400;
+
+    /* 去掉 right:12px 和强制宽度/高度 */
+    color: #fff;
+    line-height: 16px;
+    max-width: calc(100% - 24px); /* 避免超出容器，仍然限制左右留白 */
+
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.77);
+
+    display: inline-block; /* 根据文字宽度自适应 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap; /* 如果只想一行 */
+    /* —— 如果要多行省略 ——
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    */
+    z-index: 1;
+}
+
+/* 底部“来自 domain” */
+.tweet-card-area .tc-card-large__source {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 16px;
+    color: rgb(83, 100, 113);
+    text-decoration: none;
+}
+
+.tweet-card-area .tc-card-large__source:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* 可选：统一圆角（与小卡保持一致感） */
+.tweet-card-area .tc-card-large__media,
+.tweet-card-area .tc-card-large__img {
+    border-radius: 12px;
+}
+
+/* 受限内容 */
+.tweet-card-area .inline-link-card--restricted {
+    display: block;
+    border: 1px solid rgb(207, 217, 222);
+    border-radius: 12px;
+    padding: 12px;
+    background: rgb(247, 249, 249);
+    font-size: 14px;
+    color: rgb(83, 100, 113);
+    line-height: 1.4;
+    text-align: center;
+}
+
+/* 投票内容 */
+.tweet-card-area .inline-link-card--poll {
+    padding: 12px;
+    border: 1px solid #e6ecf0;
+    border-radius: 12px;
+    background: #f7f9f9;
+    font-size: 14px;
+    color: rgb(83, 100, 113);
+}
+
+.tweet-card-area .inline-link-card--poll .poll-placeholder {
+    text-align: center;
+    font-style: italic;
+}
+
+.tweet-body.is-permalink {
+    cursor: pointer;
+}
+
+.tweet-body.is-permalink a,
+.tweet-body.is-permalink button,
+.tweet-body.is-permalink [role=button] {
+    cursor: auto;
+}
+
+
+/* 图片下方的标题+摘要容器 */
+.tc-card-large__caption {
+    padding: 12px 14px 0;
+}
+
+.tweet-card-area .tc-card-large__caption .tc-card-large__title {
+    position: static;
+    margin: 0 0 6px;
+    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.25;
+    color: #0f1419;
+}
+
+.tweet-card-area .tc-card-large__caption .tc-card-large__desc {
+    font-size: 14px;
+    line-height: 1.35;
+    color: #536471;
+    margin: 0 14px 8px 14px;
+}
+
+
+/* 文本模式下，图下的标题与描述容器 */
+.tc-card-large__meta {
+    display: none; /* 默认不显示，JS 按模式打开 */
+    padding: 12px 16px 0;
+}
+
+.tc-card-large__title-text {
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 6px;
+}
+
+/* 仅作用于元信息区里的描述，不影响 caption 的描述 */
+.tc-card-large__meta .tc-card-large__desc {
+    color: var(--tc-color-muted, #536471);
+    line-height: 1.45;
+    margin-bottom: 10px;
+}
+
+/* === 模式开关 === */
+/* 站内（x.com/i/article）：隐藏图下 caption，显示 meta；隐藏图上的覆盖标题（若存在）和来源行 */
+.tc-card-large--text .tc-card-large__caption {
+    display: none;
+}
+
+.tc-card-large--text .tc-card-large__meta {
+    display: block;
+}
+
+.tc-card-large--hide-source .tc-card-large__source {
+    display: none;
+}
+
+.tweet-card-area .tc-card-large--text .tc-card-large__media .tc-card-large__title {
+    display: none;
+}
+
+/* 站外（普通网页）：不显示 meta；caption 里只保留摘要，避免与图上的覆盖标题重复 */
+.tc-card-large--overlay .tc-card-large__caption .tc-card-large__title {
+    display: none;
+}
+
+.tc-card-large--overlay .tc-card-large__meta {
+    display: none;
+}
+
+.tc-card-large--overlay .tc-card-large__caption:has(.tc-card-large__desc:empty),
+.tc-card-large--overlay .tc-card-large__caption:has(.tc-card-large__desc[style*="display: none"]) {
+    display: none;
+}
+
+/* 让大图、图下文字区域显示手型（覆盖 .is-permalink 的 cursor: auto） */
+.tweet-card-area a.tc-card-large__media,
+.tweet-card-area .tc-card-large__caption,
+.tweet-card-area .tc-card-large__meta {
+    cursor: pointer;
+}
+

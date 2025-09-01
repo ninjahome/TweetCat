@@ -23,11 +23,12 @@ module.exports = (env, argv) => {
         mode: mode,
         devtool: mode === 'development' ? 'inline-source-map' : false, // 生产模式下不生成 Source Map
         entry: {
-            background: path.resolve(__dirname, './src/background.ts'),
-            welcome: path.resolve(__dirname, './src/welcome.ts'),
-            dashboard: path.resolve(__dirname, './src/dashboard.ts'),
-            content: path.resolve(__dirname, './src/content.ts'),
-            kol_mg: path.resolve(__dirname, './src/kol_mg.ts'),
+            background: path.resolve(__dirname, './src/service_work/background.ts'),
+            welcome: path.resolve(__dirname, './src/popup/welcome.ts'),
+            injection: path.resolve(__dirname, './src/injection.ts'),
+            dashboard: path.resolve(__dirname, './src/popup/dashboard.ts'),
+            content: path.resolve(__dirname, './src/content/main_entrance.ts'),
+            kol_mg: path.resolve(__dirname, './src/popup/kol_mg.ts'),
         },
         output: {
             filename: 'js/[name].js',
@@ -61,9 +62,13 @@ module.exports = (env, argv) => {
             ],
         },
         resolve: {
+            alias: {
+                linkedom: path.resolve(__dirname, "src/shims/linkedom.ts"),
+            },
             extensions: ['.tsx', '.ts', '.js'],
             fallback: {
                 process: false,
+                canvas: false,
             },
         },
         plugins: plugins,

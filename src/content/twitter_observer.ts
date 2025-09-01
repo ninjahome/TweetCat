@@ -1,26 +1,33 @@
-import {parseNameFromTweetCell, parseContentHtml, isHomePage} from "./content";
-import {_curKolFilter, resetCategories} from "./content_filter";
-import {queryCategoriesFromBG, queryCategoryById} from "./category";
-import {__DBK_AD_Block_Key, Category, choseColorByID, maxMissedTweetOnce, MsgType, TweetKol} from "./consts";
-import {isAdTweetNode, sendMsgToService} from "./utils";
-import {localGet} from "./local_storage";
+import {parseNameFromTweetCell, parseContentHtml} from "./main_entrance";
+import {__DBK_AD_Block_Key, choseColorByID, MsgType} from "../common/consts";
+import {isAdTweetNode, parseTwitterPath, sendMsgToService} from "../common/utils";
+import {localGet, localSet} from "../common/local_storage";
+import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
+import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
+import {getUserIdByUsername} from "../timeline/twitter_api";
+import {fetchImmediateInNextRound, videoParamForTweets} from "../timeline/tweet_fetcher";
+import {logAD} from "../common/debug_flags";
+import {blockedAdNumIncrease} from "../object/system_setting";
+import {prepareDownloadBtn} from "../timeline/render_action";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
 let __blockAdStatus: boolean = false;
+new Map<string, TweetKol>();
 
 export function changeAdsBlockStatus(status: boolean) {
     console.log("------>>> change block ads settings:", status);
-    // window.location.reload();
 
     __blockAdStatus = status;
     if (status) {
-        (document.querySelectorAll('div[data-testid="cellInnerDiv" ]') as NodeListOf<HTMLElement>).forEach(elm => {
-            if (isAdTweetNode(elm)) {
+        (document.querySelectorAll('div[data-testid="cellInnerDiv"]') as NodeListOf<HTMLElement>).forEach(elm => {
+            if (isAdTweetNode(elm, false)) {
                 elm.style.display = 'none';
+                logAD("------>>> remove ads at loaded", elm);
             }
         })
     }
+    localSet(__DBK_AD_Block_Key, status ?? false).then();
 }
 
 const observer = new MutationObserver((mutations) => {
@@ -31,15 +38,18 @@ const observer = new MutationObserver((mutations) => {
     });
 });
 
+
+let _contentTemplate: HTMLTemplateElement | null = null;
+
 export async function initObserver() {
     __blockAdStatus = await localGet(__DBK_AD_Block_Key) as boolean ?? false;
 
     observer.observe(document.body, {childList: true, subtree: true});
 
-    const contentTemplate = await parseContentHtml('html/content.html');
+    const tpl = await parseContentHtml('html/content.html');
 
-    __menuBtnDiv = contentTemplate.content.getElementById("filter-menu-on-main") as HTMLElement;
-    const popupMenu = contentTemplate.content.getElementById("category-popup-menu") as HTMLElement;
+    __menuBtnDiv = tpl.content.getElementById("filter-menu-on-main") as HTMLElement;
+    const popupMenu = tpl.content.getElementById("category-popup-menu") as HTMLElement;
     if (!__menuBtnDiv || !popupMenu) {
         console.warn(`------>>> failed to load filter menu ${__menuBtnDiv} ${__categoryPopupMenu}`);
         return;
@@ -47,52 +57,116 @@ export async function initObserver() {
 
     __categoryPopupMenu = popupMenu.cloneNode(true) as HTMLElement;
     document.body.appendChild(__categoryPopupMenu);
+    _contentTemplate = tpl;
 }
 
-let missCounter = 0;
+function prepareVideoForTweetDetail(divNode: HTMLDivElement, mainTweetID: string) {
+    const videoViews = divNode.querySelector('.css-175oi2r.r-1d09ksm.r-18u37iz.r-1wbh5a2.r-1471scf');
+    if (!videoViews) {
+        logAD("[Tweet Details] mainTweetID:", mainTweetID, " find video in tweet detail list");
+        prepareVideoForTweetDiv(divNode);
+        return;
+    }
+
+    const videoInfo = videoParamForTweets(mainTweetID);
+    const actionMenuList = divNode.querySelector(".css-175oi2r.r-18u37iz.r-1h0z5md.r-13awgt0")?.parentElement as HTMLElement;
+    if (!videoInfo) {
+        logAD("[Tweet Details]mainTweetID:", mainTweetID, " no video now, try later:", divNode);
+        setTimeout(() => tryVideoDownloadLater(actionMenuList, mainTweetID, divNode), 2_000);
+        return;
+    }
+
+    logAD("[Tweet Details]mainTweetID:", mainTweetID, " videoInfo:", videoInfo, divNode);
+    bindDownLoadBtn(actionMenuList, videoInfo.f, videoInfo.m, divNode);
+}
+
+function bindDownLoadBtn(actionMenuList: HTMLElement, fileName: string, mp4List: string[], hostDiv: HTMLElement) {
+    if (!_contentTemplate) return;
+    if (!actionMenuList) return;
+
+    const downDiv = _contentTemplate.content.querySelector(".action-button.download")?.cloneNode(true) as HTMLElement;
+    if (!downDiv) return;
+    const btnTxt = downDiv.querySelector(".download-txt") as HTMLSpanElement
+    btnTxt.innerText = "";
+    prepareDownloadBtn(downDiv, fileName, mp4List, hostDiv);
+    actionMenuList.appendChild(downDiv);
+}
+
+function tryVideoDownloadLater(actionMenuList: HTMLElement, tid: string, divNode: HTMLElement) {
+    const videoInfo = videoParamForTweets(tid);
+    if (!videoInfo) {
+        logAD("【try video download again failed】statusId:", tid,);
+        return;
+    }
+
+    logAD("【try video download again success】statusId:", tid, " videoInfo:", videoInfo);
+    bindDownLoadBtn(actionMenuList, videoInfo.f, videoInfo.m, divNode);
+}
+
+function findTweetIDOfTweetDiv(divNode: HTMLDivElement) {
+    const anchors = Array.from(divNode.querySelectorAll<HTMLAnchorElement>("a[href]"));
+    const regex = /^\/[^/]+\/status\/(\d+)$/;
+
+    let statusId: string | null = null;
+
+    for (const a of anchors) {
+        const href = a.getAttribute("href") || "";
+        const match = href.match(regex);
+        if (match) {
+            statusId = match[1];
+            break;
+        }
+    }
+
+    return statusId;
+}
+
+function prepareVideoForTweetDiv(divNode: HTMLDivElement) {
+
+    const statusId = findTweetIDOfTweetDiv(divNode);
+    if (!statusId) return;
+
+    const videoInfo = videoParamForTweets(statusId);
+    logAD("【Tweet Timeline】statusId:", statusId, " videoInfo:", videoInfo);
+    const actionMenuList = divNode.querySelector(".css-175oi2r.r-18u37iz.r-1h0z5md.r-13awgt0")?.parentElement as HTMLElement;
+    if (!videoInfo) {
+        logAD("[Tweet Timeline] no video info now, try later", statusId);
+        setTimeout(() => tryVideoDownloadLater(actionMenuList, statusId, divNode), 2_000);
+        return;
+    }
+
+    logAD("[Tweet Timeline] found video info:", statusId, videoInfo);
+    bindDownLoadBtn(actionMenuList, videoInfo.f, videoInfo.m, divNode);
+}
 
 function filterTweets(nodes: NodeList) {
+    const linkInfo = parseTwitterPath(window.location.href)
     nodes.forEach((divNode) => {
-
+        // console.log("------>>> div node:", divNode);
         if (!isTweetDiv(divNode)) {
             // console.log("------>>> is home page:", window.location.href);
             return;
         }
-        if (__blockAdStatus && isAdTweetNode(divNode)) {
-            // console.log("------->>> need to block Ads");
-            console.log("------>>> found ads and block it", divNode.dataset.testid);
-            divNode.style.display = "none";
+        // console.log("------>>> tweet cell div node:", divNode, divNode.outerHTML);
+        if (isAdTweetNode(divNode, true)) {
+            logAD("------>>> found ads at startup", divNode);
+            if (__blockAdStatus) {
+                divNode.style.display = "none";
+                blockedAdNumIncrease().then();
+            }
             return;
         }
 
-        if (!isHomePage()) {
-            return;
+        if (linkInfo.kind === "home") {
+            const user = parseNameFromTweetCell(divNode);
+            appendCategoryMenuOnTweet(divNode, user).then();
         }
-        const user = parseNameFromTweetCell(divNode);
-        if (!user) {
-            // console.log("------------>>>>tweet user name not found:", divNode)
-            return;
-        }
-
-        appendCategoryMenuOnTweet(divNode, user).then();
-
-        if (_curKolFilter.size === 0) {
-            return;
+        if (linkInfo.kind === "home" || linkInfo.kind === "profile") {
+            prepareVideoForTweetDiv(divNode);
         }
 
-        if (_curKolFilter.has(user.kolName)) {
-            console.log('------>>> hint:', user.displayString());
-            missCounter = 0;
-            return;
-        }
-
-        console.log('------>>> miss:', user.displayString());
-        divNode.style.display = "none";
-        missCounter++;
-        if (missCounter > maxMissedTweetOnce) {
-            alert("Too few tweets for this category.");
-            resetCategories();
-            missCounter = 0;
+        if (linkInfo.kind === "tweet") {
+            prepareVideoForTweetDetail(divNode, linkInfo.tweetId);
         }
     });
 }
@@ -125,8 +199,8 @@ async function setCatMenu(kolName: string, clone: HTMLElement) {
     }
 }
 
-async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: TweetKol) {
-
+async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: TweetKol | null) {
+    if (!rawKol) return;
     const menuAreaDiv = tweetCellDiv.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep") as HTMLElement
     if (!menuAreaDiv) {
         console.log("------>>> no menu area in this tweet cell:", tweetCellDiv);
@@ -154,13 +228,30 @@ async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: Twee
         if (!kol) {
             kol = new TweetKol(rawKol.kolName, rawKol.displayName);
         }
+        _kolCompletion(kol, tweetCellDiv).then();
 
-        if (!kol.avatarUrl) {
-            kol.avatarUrl = getKolAvatarLink(tweetCellDiv) ?? "";
-            // console.log("------>>>tweet cell avatar url link:", kol.avatarUrl);
-        }
         showPopupMenu(e, clone, categories, kol, setCatMenu);
     };
+}
+
+async function _kolCompletion(kol: TweetKol, tweetCellDiv: HTMLElement) {
+    let needUpDateKolData = false;
+    if (!kol.avatarUrl) {
+        needUpDateKolData = true
+        kol.avatarUrl = getKolAvatarLink(tweetCellDiv) ?? "";
+        // console.log("------>>>tweet cell avatar url link:", kol.avatarUrl);
+    }
+
+    if (!kol.kolUserId) {
+        needUpDateKolData = true
+        kol.kolUserId = await getUserIdByUsername(kol.kolName) ?? "";
+    }
+
+    if (!needUpDateKolData) {
+        return;
+    }
+    await updateKolIdToSw(kol);
+    console.log("------>>> update kol data success", kol)
 }
 
 export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories: Category[], kol: TweetKol, callback?: (kolName: string, clone: HTMLElement) => Promise<void>) {
@@ -190,11 +281,12 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
     const removeBtn = __categoryPopupMenu.querySelector(".menu-item-remove") as HTMLElement;
     removeBtn.style.display = !!kol.catID ? 'block' : 'none';
     removeBtn.onclick = () => {
-        sendMsgToService(kol.kolName, MsgType.RemoveKol).then(async () => {
+        sendMsgToService(kol.kolName, MsgType.KolRemove).then(async () => {
             __categoryPopupMenu.style.display = 'none';
             if (callback) {
                 await callback(kol.kolName, buttonElement);
             }
+            if (kol.kolUserId) sendMsgToService(kol.kolUserId, MsgType.TweetRemoveByKolID).then()
         });
     }
 
@@ -245,11 +337,12 @@ async function changeCategoryOfKol(menuItem: HTMLElement, cat: Category, kol: Tw
     _setItemActive(menuItem, cat.id!);
 
     kol.catID = cat.id;
-    await sendMsgToService(kol, MsgType.UpdateKolCat);
+    await updateKolIdToSw(kol);
+    fetchImmediateInNextRound(kol.kolName, kol.kolUserId).then();
 }
 
 export async function queryKolDetailByName(kolName: string): Promise<TweetKol | null> {
-    const rsp = await sendMsgToService(kolName, MsgType.QueryKolCat);
+    const rsp = await sendMsgToService(kolName, MsgType.KolQueryByName);
 
     if (!rsp) {
         return null;

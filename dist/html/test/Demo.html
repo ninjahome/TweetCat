@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tweet Demo Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .tweet-main {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            flex-shrink: 1;
+            flex-grow: 1;
+        }
+
+        .tweet-main-content {
+            width: 1050px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tweet-cardfloat {
+            max-width: 600px;
+            scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
+        }
+
+        .tweet-cardfloat:hover {
+            background-color: rgba(247, 247, 247);
+        }
+
+        .tweetTimeline {
+            max-width: 600px;
+            width: 100%;
+            border-left-width: 1px;
+            border-right-width: 1px;
+            border-color: rgb(239, 243, 244);
+            background-color: rgb(255, 255, 255);
+            scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
+            margin: auto;
+            align-items: stretch;
+            background-color: rgba(0, 0, 0, 0.00);
+            box-sizing: border-box;
+            display: flex;
+            flex-basis: auto;
+            flex-direction: column;
+            flex-shrink: 0;
+            list-style: none;
+            padding: 0px;
+            position: relative;
+            text-decoration: none;
+            z-index: 0;
+        }
+
+        .tweet-card {
+            padding: 0 16px 12px;
+            background: rgba(0, 0, 0, 0.0);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .tweet-topmargin {
+            padding: 12px 0 0;
+        }
+
+        .retweet-container {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            color: rgb(83, 100, 113);
+            margin-top: -4px;
+            margin-bottom: 4px;
+        }
+
+        .retweet-icon {
+            display: flex;
+            justify-content: flex-end;
+            flex-basis: 40px;
+            margin-right: 8px;
+        }
+
+        .retweet-svg-icon {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        .retweet-label {
+            line-height: 1.2;
+        }
+
+        .retweet-link {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .retweet-text {
+            font-weight: 700;
+        }
+
+        .retweet-text:hover {
+            text-decoration: underline;
+        }
+
+        .tweet-header {
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            background-color: rgba(0, 0, 0, 0.00);
+            border: 0 solid black;
+            box-sizing: border-box;
+            flex-basis: auto;
+            flex-shrink: 0;
+            list-style: none;
+            margin: 0px;
+            min-height: 0px;
+            min-width: 0px;
+            padding: 0px;
+            position: relative;
+            text-decoration: none;
+            z-index: 0;
+        }
+
+        .tweet-header img.avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .tweet-header-meta {
+            display: flex;
+            align-items: center;
+        }
+
+        .tweet-author {
+            color: rgb(15, 20, 25);
+            font-size: 15px;
+            line-height: 20px;
+            font-weight: 700;
+            font-family: TwitterChirp, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .tweet-username,
+        .tweet-time {
+            color: #536471;
+            font-size: 15px;
+            font-weight: 400;
+        }
+
+        .tweet-content {
+            color: rgb(15, 20, 25);
+            font-size: 15px;
+            margin: 0px;
+            padding: 0px;
+            text-align: inherit;
+            text-decoration: none;
+            white-space: inherit;
+            word-wrap: break-word;
+        }
+
+        .verified-svg {
+            color: rgb(29, 155, 240);
+            fill: currentcolor;
+            height: 1.25em;
+            margin: 0 2px;
+        }
+
+        .tweet-image {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            border-radius: 16px;
+            overflow: hidden;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 12px;
+        }
+
+        .tweet-image img {
+            width: 100%;
+            height: 100%; /* 修正高度填充 */
+            object-fit: cover;
+            display: block;
+            border-radius: 0;
+        }
+
+        .tweet-image > div {
+            flex: 1 1 48%;
+            box-sizing: border-box;
+        }
+
+        .tweet-image.four-images {
+            height: 290.25px;
+        }
+
+        .tweet-image.four-images > div {
+            height: 50%;
+        }
+
+        .tweet-image.two-images img {
+            max-height: 290.25px;
+        }
+
+        /* 单图逻辑 */
+        .tweet-image.single-image {
+            display: flex;
+            flex-direction: column;
+            align-content: flex-start;
+            max-height: 590px;
+        }
+
+        .tweet-image.single-image > div {
+            max-width: 100%;
+        }
+
+        .tweet-image.single-image img {
+            width: 100%;
+            height: auto;
+            max-height: 590px;
+            object-fit: contain;
+            border-radius: 16px;
+        }
+
+        /* Three image layout: 1 left, 2 stacked right */
+        .tweet-image.three-images {
+            height: 290.25px;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .tweet-image.three-images img {
+            height: 100%;
+        }
+
+        .tweet-image.three-images .left-photo {
+            width: 50%;
+            height: 100%;
+        }
+
+        .left-photo div {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            overflow: hidden;
+        }
+
+        .tweet-image.three-images .right-photo {
+            width: 50%;
+            height: 50%;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .tweet-image.three-images .right-photo > div {
+            flex: 1;
+            height: 50%; /* 可选补强 */
+            box-sizing: border-box;
+        }
+
+
+        .tweet-image.three-images img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Round corners */
+        .tweet-image.single-image img {
+            border-radius: 16px;
+        }
+
+        .tweet-image.two-images > div:first-child img {
+            border-top-left-radius: 16px;
+            border-bottom-left-radius: 16px;
+        }
+
+        .tweet-image.two-images > div:last-child img {
+            border-top-right-radius: 16px;
+            border-bottom-right-radius: 16px;
+        }
+
+        .tweet-image.four-images > div:first-child img {
+            border-top-left-radius: 16px;
+        }
+
+        .tweet-image.four-images > div:nth-child(2) img {
+            border-top-right-radius: 16px;
+        }
+
+        .tweet-image.four-images > div:nth-child(3) img {
+            border-bottom-left-radius: 16px;
+        }
+
+        .tweet-image.four-images > div:nth-child(4) img {
+            border-bottom-right-radius: 16px;
+        }
+
+        .tweet-image.three-images .left img {
+            border-top-left-radius: 16px;
+            border-bottom-left-radius: 16px;
+        }
+
+        .tweet-image.three-images .right > div:first-child img {
+            border-top-right-radius: 16px;
+        }
+
+        .tweet-image.three-images .right > div:last-child img {
+            border-bottom-right-radius: 16px;
+        }
+
+        .tweet-bottomline {
+            background-color: rgb(239, 243, 244);
+            height: 1px;
+            width: 100%;
+        }
+
+        .tweet-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+        }
+
+        .action-button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            color: #536471;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .action-button .reply-icon,
+        .action-button .retweet-icon,
+        .action-button .view-icon,
+        .action-button .bookmark-icon,
+        .action-button .like-icon,
+        .action-button .share-icon {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        .tweet-rightBox {
+            width: 350px;
+        }
+
+        .trending-tweet {
+            padding: 12px 16px;
+            gap: 12px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .tweet-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f1419;
+        }
+    </style>
+</head>
+<body>
+<div class="tweet-main">
+    <div class="tweet-main-content">
+        <div aria-label="时间线：你的主页时间线" class="tweetTimeline r-jxzhtn">
+            <!-- Text Tweet -->
+            <div class="tweet-cardfloat">
+                <article class="tweet-card">
+                    <div class="tweet-topmargin">
+                        <div style="display: block">
+                            <div>
+                                <div class="retweet-container">
+                                    <div class="retweet-icon">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="retweet-svg-icon">
+                                            <g>
+                                                <path d="M4.75 3.79l4.603 4.3-1.706 1.82L6 8.38v7.37c0 .97.784 1.75 1.75 1.75H13V20H7.75c-2.347 0-4.25-1.9-4.25-4.25V8.38L1.853 9.91.147 8.09l4.603-4.3zm11.5 2.71H11V4h5.25c2.347 0 4.25 1.9 4.25 4.25v7.37l1.647-1.53 1.706 1.82-4.603 4.3-4.603-4.3 1.706-1.82L18 15.62V8.25c0-.97-.784-1.75-1.75-1.75z">
+                                                </path>
+                                            </g>
+                                        </svg>
+                                    </div>
+
+                                    <div class="retweet-label">
+                                        <a href="/Thebestfigen" dir="ltr" role="link" class="retweet-link">
+                  <span class="retweet-text" data-testid="socialContext">
+                    <span class="retweeter-name">The Best</span> reposted
+                  </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <div class="tweet-header">
+                        <div style="display: flex; flex-direction: column; margin-right: 8px;">
+                            <img src="https://pbs.twimg.com/profile_images/1901383181061779456/l1XwliGQ_normal.jpg"
+                                 class="avatar"/>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="tweet-header-meta">
+                                <span class="tweet-author">out of context dogs</span>
+                                <div dir="ltr" class="verified-box" style="color: rgb(15, 20, 25);">
+              <span class="verified-icon">
+                <svg viewBox="0 0 22 22" aria-label="认证账号" role="img"
+                     class="verified-svg"
+                     data-testid="icon-verified">
+                  <g>
+                    <path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"></path>
+                  </g>
+                </svg>
+              </span>
+                                </div>
+                                <div class="tweet-username">@elonmusk</div>
+                                <span style="padding: 0 4px">·</span>
+                                <div class="tweet-time">1小时</div>
+                            </div>
+
+                            <div class="tweet-body">
+                                <div class="tweet-content"> Funny 😂😂</div>
+                            </div>
+
+                            <div class="tweet-actions" role="group"
+                                 aria-label="Post actions: 120 replies, 340 retweets, 1.2k likes, 30 bookmarks, 15k views">
+                                <!-- Reply -->
+                                <button class="action-button" aria-label="120 replies" type="button">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" class="reply-icon">
+                                        <g>
+                                            <path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path>
+                                        </g>
+                                    </svg>
+                                    <span class="count">120</span>
+                                </button>
+
+                                <!-- Retweet -->
+                                <button class="action-button" aria-label="340 retweets" type="button">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" class="retweet-icon">
+                                        <g>
+                                            <path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.79-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.79 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46 2.068 1.93V8c0-1.1-.896-2-2-2z"></path>
+                                        </g>
+                                    </svg>
+                                    <span class="count">340</span>
+                                </button>
+
+                                <!-- Like -->
+                                <button class="action-button" aria-label="1.2k likes" type="button">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" class="like-icon">
+                                        <g>
+                                            <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"></path>
+                                        </g>
+                                    </svg>
+                                    <span class="count">1.2k</span>
+                                </button>
+                                <!-- Views -->
+                                <button class="action-button" aria-label="15k views" type="button">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true" class="view-icon">
+                                        <g>
+                                            <path d="M8.75 21V3h2v18h-2zM18 21V8.5h2V21h-2zM4 21l.004-10h2L6 21H4zm9.248 0v-7h2v7h-2z"></path>
+                                        </g>
+                                    </svg>
+                                    <span class="count">130</span>
+                                </button>
+
+                                <div style="display: flex;align-items: center;flex-direction: row">
+                                    <!-- Bookmark -->
+                                    <button class="action-button" aria-label="15k views" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="bookmark-icon">
+                                            <g>
+                                                <path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z"></path>
+                                            </g>
+                                        </svg>
+                                    </button>
+
+                                    <!-- Share -->
+                                    <button class="action-button" aria-label="30 bookmarks" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="share-icon">
+                                            <g>
+                                                <path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"></path>
+                                            </g>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                <div class="tweet-bottomline"></div>
+            </div>
+            <!-- Image Tweet -->
+            <div class="tweet-cardfloat">
+                <article class="tweet-card">
+                    <div class="tweet-topmargin">
+                        <div style="display: none">
+                            <div>
+                                <div class="retweet-container">
+                                    <div class="retweet-icon">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="retweet-svg-icon">
+                                            <g>
+                                                <path d="M4.75 3.79l4.603 4.3-1.706 1.82L6 8.38v7.37c0 .97.784 1.75 1.75 1.75H13V20H7.75c-2.347 0-4.25-1.9-4.25-4.25V8.38L1.853 9.91.147 8.09l4.603-4.3zm11.5 2.71H11V4h5.25c2.347 0 4.25 1.9 4.25 4.25v7.37l1.647-1.53 1.706 1.82-4.603 4.3-4.603-4.3 1.706-1.82L18 15.62V8.25c0-.97-.784-1.75-1.75-1.75z">
+                                                </path>
+                                            </g>
+                                        </svg>
+                                    </div>
+
+                                    <div class="retweet-label">
+                                        <a href="/Thebestfigen" dir="ltr" role="link" class="retweet-link">
+                  <span class="retweet-text" data-testid="socialContext">
+                    <span class="retweeter-name">The Best</span> reposted
+                  </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tweet-header">
+                        <div style="display: flex; flex-direction: column; margin-right: 8px;">
+                            <img src="https://pbs.twimg.com/profile_images/1901383181061779456/l1XwliGQ_normal.jpg"
+                                 class="avatar"/>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="tweet-header-meta">
+                                <span class="tweet-author">out of context dogs</span>
+                                <div dir="ltr" class="verified-box" style="color: rgb(15, 20, 25);">
+              <span class="verified-icon">
+                <svg viewBox="0 0 22 22" aria-label="认证账号" role="img"
+                     class="verified-svg"
+                     data-testid="icon-verified">
+                  <g>
+                    <path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"></path>
+                  </g>
+                </svg>
+              </span>
+                                </div>
+                                <div class="tweet-username">@elonmusk</div>
+                                <span style="padding: 0 4px">·</span>
+                                <div class="tweet-time">1小时</div>
+                            </div>
+                            <div class="tweet-body">
+                                <div class="tweet-content"> Funny 😂😂</div>
+                                <div class="tweet-image" id="tweetImages">
+                                    <div>
+                                        <img src="https://pbs.twimg.com/media/GhsGjB2XwAAjME-?format=jpg&name=small">
+                                    </div>
+                                    <div>
+                                        <img src="https://pbs.twimg.com/media/GhsGjB2XwAAjME-?format=jpg&name=small">
+                                    </div>
+                                </div>
+                                <div class="tweet-actions" role="group"
+                                     aria-label="Post actions: 120 replies, 340 retweets, 1.2k likes, 30 bookmarks, 15k views">
+                                    <!-- Reply -->
+                                    <button class="action-button" aria-label="120 replies" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="reply-icon">
+                                            <g>
+                                                <path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">120</span>
+                                    </button>
+
+                                    <!-- Retweet -->
+                                    <button class="action-button" aria-label="340 retweets" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="retweet-icon">
+                                            <g>
+                                                <path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.79-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.79 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46 2.068 1.93V8c0-1.1-.896-2-2-2z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">340</span>
+                                    </button>
+
+                                    <!-- Like -->
+                                    <button class="action-button" aria-label="1.2k likes" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="like-icon">
+                                            <g>
+                                                <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">1.2k</span>
+                                    </button>
+                                    <!-- Views -->
+                                    <button class="action-button" aria-label="15k views" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="view-icon">
+                                            <g>
+                                                <path d="M8.75 21V3h2v18h-2zM18 21V8.5h2V21h-2zM4 21l.004-10h2L6 21H4zm9.248 0v-7h2v7h-2z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">130</span>
+                                    </button>
+
+                                    <div style="display: flex;align-items: center;flex-direction: row">
+                                        <!-- Bookmark -->
+                                        <button class="action-button" aria-label="15k views" type="button">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true" class="bookmark-icon">
+                                                <g>
+                                                    <path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z"></path>
+                                                </g>
+                                            </svg>
+                                        </button>
+
+                                        <!-- Share -->
+                                        <button class="action-button" aria-label="30 bookmarks" type="button">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true" class="share-icon">
+                                                <g>
+                                                    <path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"></path>
+                                                </g>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                <div class="tweet-bottomline"></div>
+            </div>
+            <!-- Image Tweet -->
+            <div class="tweet-cardfloat">
+                <article class="tweet-card">
+                    <div class="tweet-topmargin">
+                        <div style="display: none">
+                            <div>
+                                <div class="retweet-container">
+                                    <div class="retweet-icon">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="retweet-svg-icon">
+                                            <g>
+                                                <path d="M4.75 3.79l4.603 4.3-1.706 1.82L6 8.38v7.37c0 .97.784 1.75 1.75 1.75H13V20H7.75c-2.347 0-4.25-1.9-4.25-4.25V8.38L1.853 9.91.147 8.09l4.603-4.3zm11.5 2.71H11V4h5.25c2.347 0 4.25 1.9 4.25 4.25v7.37l1.647-1.53 1.706 1.82-4.603 4.3-4.603-4.3 1.706-1.82L18 15.62V8.25c0-.97-.784-1.75-1.75-1.75z">
+                                                </path>
+                                            </g>
+                                        </svg>
+                                    </div>
+
+                                    <div class="retweet-label">
+                                        <a href="/Thebestfigen" dir="ltr" role="link" class="retweet-link">
+                  <span class="retweet-text" data-testid="socialContext">
+                    <span class="retweeter-name">The Best</span> reposted
+                  </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tweet-header">
+                        <div style="display: flex; flex-direction: column; margin-right: 8px;">
+                            <img src="https://pbs.twimg.com/profile_images/1901383181061779456/l1XwliGQ_normal.jpg"
+                                 class="avatar"/>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="tweet-header-meta">
+                                <span class="tweet-author">out of context dogs</span>
+                                <div dir="ltr" class="verified-box" style="color: rgb(15, 20, 25);">
+              <span class="verified-icon">
+                <svg viewBox="0 0 22 22" aria-label="认证账号" role="img"
+                     class="verified-svg"
+                     data-testid="icon-verified">
+                  <g>
+                    <path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"></path>
+                  </g>
+                </svg>
+              </span>
+                                </div>
+                                <div class="tweet-username">@elonmusk</div>
+                                <span style="padding: 0 4px">·</span>
+                                <div class="tweet-time">1小时</div>
+                            </div>
+                            <div class="tweet-body">
+                                <div class="tweet-content"> Funny 😂😂</div>
+                                <div class="tweet-image" id="tweetImages">
+                                    <div>
+                                        <img src="https://pbs.twimg.com/media/GhsGjB2XwAAjME-?format=jpg&name=small">
+                                    </div>
+                                </div>
+                                <div class="tweet-actions" role="group"
+                                     aria-label="Post actions: 120 replies, 340 retweets, 1.2k likes, 30 bookmarks, 15k views">
+                                    <!-- Reply -->
+                                    <button class="action-button" aria-label="120 replies" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="reply-icon">
+                                            <g>
+                                                <path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">120</span>
+                                    </button>
+
+                                    <!-- Retweet -->
+                                    <button class="action-button" aria-label="340 retweets" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="retweet-icon">
+                                            <g>
+                                                <path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.79-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.79 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46 2.068 1.93V8c0-1.1-.896-2-2-2z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">340</span>
+                                    </button>
+
+                                    <!-- Like -->
+                                    <button class="action-button" aria-label="1.2k likes" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="like-icon">
+                                            <g>
+                                                <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">1.2k</span>
+                                    </button>
+                                    <!-- Views -->
+                                    <button class="action-button" aria-label="15k views" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="view-icon">
+                                            <g>
+                                                <path d="M8.75 21V3h2v18h-2zM18 21V8.5h2V21h-2zM4 21l.004-10h2L6 21H4zm9.248 0v-7h2v7h-2z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">130</span>
+                                    </button>
+
+                                    <div style="display: flex;align-items: center;flex-direction: row">
+                                        <!-- Bookmark -->
+                                        <button class="action-button" aria-label="15k views" type="button">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true" class="bookmark-icon">
+                                                <g>
+                                                    <path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z"></path>
+                                                </g>
+                                            </svg>
+                                        </button>
+
+                                        <!-- Share -->
+                                        <button class="action-button" aria-label="30 bookmarks" type="button">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true" class="share-icon">
+                                                <g>
+                                                    <path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"></path>
+                                                </g>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                <div class="tweet-bottomline"></div>
+            </div>
+            <!-- Image Tweet -->
+            <div class="tweet-cardfloat">
+                <article class="tweet-card">
+                    <div class="tweet-topmargin">
+                        <div style="display: none">
+                            <div>
+                                <div class="retweet-container">
+                                    <div class="retweet-icon">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="retweet-svg-icon">
+                                            <g>
+                                                <path d="M4.75 3.79l4.603 4.3-1.706 1.82L6 8.38v7.37c0 .97.784 1.75 1.75 1.75H13V20H7.75c-2.347 0-4.25-1.9-4.25-4.25V8.38L1.853 9.91.147 8.09l4.603-4.3zm11.5 2.71H11V4h5.25c2.347 0 4.25 1.9 4.25 4.25v7.37l1.647-1.53 1.706 1.82-4.603 4.3-4.603-4.3 1.706-1.82L18 15.62V8.25c0-.97-.784-1.75-1.75-1.75z">
+                                                </path>
+                                            </g>
+                                        </svg>
+                                    </div>
+
+                                    <div class="retweet-label">
+                                        <a href="/Thebestfigen" dir="ltr" role="link" class="retweet-link">
+                  <span class="retweet-text" data-testid="socialContext">
+                    <span class="retweeter-name">The Best</span> reposted
+                  </span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tweet-header">
+                        <div style="display: flex; flex-direction: column; margin-right: 8px;">
+                            <img src="https://pbs.twimg.com/profile_images/1901383181061779456/l1XwliGQ_normal.jpg"
+                                 class="avatar"/>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div class="tweet-header-meta">
+                                <span class="tweet-author">out of context dogs</span>
+                                <div dir="ltr" class="verified-box" style="color: rgb(15, 20, 25);">
+              <span class="verified-icon">
+                <svg viewBox="0 0 22 22" aria-label="认证账号" role="img"
+                     class="verified-svg"
+                     data-testid="icon-verified">
+                  <g>
+                    <path d="M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z"></path>
+                  </g>
+                </svg>
+              </span>
+                                </div>
+                                <div class="tweet-username">@elonmusk</div>
+                                <span style="padding: 0 4px">·</span>
+                                <div class="tweet-time">1小时</div>
+                            </div>
+                            <div class="tweet-body">
+                                <div class="tweet-content"> Funny 😂😂</div>
+                                <div class="tweet-image" id="tweetImages">
+                                    <div class="left-photo">
+                                        <div>
+                                            <img src="https://pbs.twimg.com/media/GhsGjB2XwAAjME-?format=jpg&name=small">
+                                        </div>
+                                    </div>
+                                    <div class="right-photo">
+                                        <div style="height: 100%;">
+                                            <img src="https://pbs.twimg.com/media/GhsGjB2XwAAjME-?format=jpg&name=small">
+                                        </div>
+                                        <div style="height: 100%;">
+                                            <img src="https://pbs.twimg.com/media/GhsGjB2XwAAjME-?format=jpg&name=small">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="tweet-actions" role="group"
+                                     aria-label="Post actions: 120 replies, 340 retweets, 1.2k likes, 30 bookmarks, 15k views">
+                                    <!-- Reply -->
+                                    <button class="action-button" aria-label="120 replies" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="reply-icon">
+                                            <g>
+                                                <path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">120</span>
+                                    </button>
+
+                                    <!-- Retweet -->
+                                    <button class="action-button" aria-label="340 retweets" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="retweet-icon">
+                                            <g>
+                                                <path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.79-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.79 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46 2.068 1.93V8c0-1.1-.896-2-2-2z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">340</span>
+                                    </button>
+
+                                    <!-- Like -->
+                                    <button class="action-button" aria-label="1.2k likes" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="like-icon">
+                                            <g>
+                                                <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">1.2k</span>
+                                    </button>
+                                    <!-- Views -->
+                                    <button class="action-button" aria-label="15k views" type="button">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true" class="view-icon">
+                                            <g>
+                                                <path d="M8.75 21V3h2v18h-2zM18 21V8.5h2V21h-2zM4 21l.004-10h2L6 21H4zm9.248 0v-7h2v7h-2z"></path>
+                                            </g>
+                                        </svg>
+                                        <span class="count">130</span>
+                                    </button>
+
+                                    <div style="display: flex;align-items: center;flex-direction: row">
+                                        <!-- Bookmark -->
+                                        <button class="action-button" aria-label="15k views" type="button">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true" class="bookmark-icon">
+                                                <g>
+                                                    <path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z"></path>
+                                                </g>
+                                            </svg>
+                                        </button>
+
+                                        <!-- Share -->
+                                        <button class="action-button" aria-label="30 bookmarks" type="button">
+                                            <svg viewBox="0 0 24 24" aria-hidden="true" class="share-icon">
+                                                <g>
+                                                    <path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"></path>
+                                                </g>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                <div class="tweet-bottomline"></div>
+            </div>
+        </div>
+        <div class="tweet-rightBox">
+            <div class="trending-tweet r-jxzhtn">
+                <div>
+                    <span class="tweet-title">Title</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+</body>
+<script>
+    document.querySelectorAll('.tweet-image').forEach(container => {
+        const count = container.querySelectorAll('img').length;
+        container.classList.remove('single-image', 'two-images', 'three-images', 'four-images');
+
+        if (count === 1) {
+            container.classList.add('single-image');
+        } else if (count === 2) {
+            container.classList.add('two-images');
+        } else if (count === 3) {
+            container.classList.add('three-images');
+        } else if (count === 4) {
+            container.classList.add('four-images');
+        }
+    });
+</script>
+</html>
