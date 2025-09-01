@@ -4,7 +4,7 @@ import {logFT, logIC} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW, WrapEntryObj} from "./db_raw_tweet";
 import {MsgType} from "../common/consts";
-import {EntryObj, parseTimelineFromGraphQL, TweetMediaEntity} from "./tweet_entry";
+import {EntryObj, parseTimelineFromGraphQL, TweetMediaEntity, TweetObj} from "./tweet_entry";
 import {queryKolById, updateKolIdToSw} from "../object/tweet_kol";
 import {resetNewestTweet, showNewestTweets} from "../content/tweetcat_web3_area";
 import {setLatestFetchAt} from "./tweet_pager";
@@ -215,7 +215,8 @@ export async function processCapturedTweets(result: any, kolId: string) {
     const r = parseTimelineFromGraphQL(result, "tweets");
     const wrapList = r.wrapDbEntry;
     const kol = await queryKolById(kolId);
-    console.log("----------------->>>>", r.tweets);
+    
+    // console.log("----------------->>>>", r.tweets);
     cacheVideoTweet(r.tweets);
 
     if (!kol) {
@@ -267,37 +268,44 @@ export async function processCapturedHomeLatest(result: any) {
 
 const videoCacheMap = new Map<string, { e: TweetMediaEntity, f: string, t: string }>();
 
+function _parseVideoFromObj(tid: string, type: string, tweet?: TweetObj): boolean {
+    if (!tweet) return false;
+
+    const tweetContent = tweet.tweetContent;
+    const mediaList: TweetMediaEntity[] =
+        tweetContent.extended_entities?.media?.length
+            ? tweetContent.extended_entities.media
+            : tweetContent.entities?.media || [];
+
+    const videos = mediaList.filter(m => m.type === 'video' || m.type === 'animated_gif');
+    if (videos.length === 0) return false;
+
+    const fileName = "TweetCat_" + tweet.author.screenName + "@" + tid;
+    logIC("tweet with videos info:", type, tid, videos);
+    videoCacheMap.set(tid, {e: videos[0], f: fileName, t: type});
+    return true;
+}
+
 function cacheVideoTweet(tweets: EntryObj[]) {
     tweets.forEach(obj => {
-        const tweetContent = obj.tweet.tweetContent;
-        const mediaList: TweetMediaEntity[] =
-            tweetContent.extended_entities?.media?.length
-                ? tweetContent.extended_entities.media
-                : tweetContent.entities?.media || [];
 
-        const quotedContent = obj.tweet.quotedStatus?.tweetContent;
-        const quotedMediaList: TweetMediaEntity[] =
-            quotedContent?.extended_entities?.media?.length
-                ? quotedContent?.extended_entities.media
-                : quotedContent?.entities?.media || [];
+        let tidForVideo = obj.tweet.tweetContent.id_str
+        const retweetObj = obj.tweet.retweetedStatus;
 
-        const videos = mediaList.filter(m => m.type === 'video' || m.type === 'animated_gif');
-
-        if (videos.length > 0) {
-            const fileName = "TweetCat_" + obj.tweet.author.screenName + "@" + obj.tweet.rest_id;
-            logIC("tweet with videos info:", tweetContent.id_str, videos);
-            videoCacheMap.set(tweetContent.id_str, {e: videos[0], f: fileName, t: "main"});
-            return;
+        if (retweetObj) {
+            tidForVideo = retweetObj.rest_id;
         }
 
-        const quotedVideos = quotedMediaList.filter(m => m.type === 'video' || m.type === 'animated_gif');
-        if (quotedVideos.length > 0) {
-            const fileName = "TweetCat_" + obj.tweet.author.screenName + "@" + obj.tweet.rest_id;
-            logIC("quoted with videos info:", tweetContent.id_str, quotedVideos, "quoted_id:", quotedContent?.id_str)
-            videoCacheMap.set(tweetContent.id_str, {e: quotedVideos[0], f: fileName, t: "quoted"});
-        }
+        let found = _parseVideoFromObj(tidForVideo, "main", obj.tweet);
+        if (found) return;
 
-        console.log("==============>>>>>", obj.tweet.retweetedStatus);
+        found = _parseVideoFromObj(tidForVideo, "quoted", obj.tweet.quotedStatus);
+        if (found) return;
+
+        if (retweetObj) {
+            found = _parseVideoFromObj(tidForVideo, "retweetedQuoted", retweetObj.quotedStatus);
+            if (found) return;
+        }
     });
 }
 
