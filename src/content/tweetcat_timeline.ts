@@ -12,6 +12,7 @@ import {logGuard} from "../common/debug_flags";
 import {resetNewestTweet, setSelectedCategory} from "./tweetcat_web3_area";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {MsgType} from "../common/consts";
+import {t} from "../common/i18n";
 
 let manager: TweetManager | null = null;
 
@@ -35,6 +36,7 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     const menuItem = tpl.content.getElementById('tweetCatMenuItem')!.cloneNode(true) as HTMLElement;
     const area = tpl.content.getElementById('tweetCatArea')!.cloneNode(true) as HTMLElement;
     area.style.display = 'none';
+    area.querySelector<HTMLElement>(".tweet-title")!.innerText = t('web3_coming');
 
     const toastForFavorite = tpl.content.getElementById('tweet-toast')!.cloneNode(true) as HTMLElement;
     document.body.appendChild(toastForFavorite);

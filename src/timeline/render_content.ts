@@ -1,6 +1,7 @@
 import {TweetContent, TweetEntity} from "./tweet_entry";
 import {logRCT} from "../common/debug_flags";
 import {bindTwitterInternalLink} from "./render_common";
+import {t} from "../common/i18n";
 
 type Piece = { start: number; end: number; html: string };
 
@@ -51,6 +52,8 @@ export function updateTweetContentArea(
 
     if (isShowMore && !isQuoted) {
         const moreAnchor = container.querySelector(".tc-main-more") as HTMLElement;
+        moreAnchor.innerText = t('show_more');
+
         logRCT("this tweets should show more:\n", tweet.note_full_text);
         moreAnchor.hidden = false;
         moreAnchor.removeAttribute("hidden");
@@ -101,6 +104,7 @@ export function buildVisibleWithEntitiesHTML(
     if (!isQuoted) {
         pieces.push(...collectMentionPieces(entities, start, end, cpToCu));
         pieces.push(...collectHashtagPieces(entities, start, end, cpToCu));
+        pieces.push(...collectCashtagPieces(entities, start, end, cpToCu));
         pieces.push(...collectUrlPiecesWithHiddenSet(entities, full, start, end, hidden, cpToCu));
     }
     pieces.push(...collectHiddenShortUrlPiecesBySearch(full, start, end, hidden));
@@ -150,6 +154,25 @@ function collectHashtagPieces(
         }];
     });
 }
+
+// 现在：跳到 /search?q=$TICKER&src=cashtag_click
+function collectCashtagPieces(
+    entities: TweetEntity, visibleS: number, visibleE: number, cpToCu: number[]
+): Piece[] {
+    const arr = entities?.symbols ?? [];
+    return arr.flatMap(sym => {
+        const [s, e] = cpRangeToCuClamped(sym.indices?.[0], sym.indices?.[1], cpToCu);
+        if (e <= visibleS || s >= visibleE) return [];
+        const t = sym.text ?? '';
+        const q = encodeURIComponent(`$${t}`);
+        const href = `/search?q=${q}&src=cashtag_click`; // ← 与 X 一致
+        return [{
+            start: s, end: e,
+            html: `<a href="${href}" class="cashtag" data-internal>$${escapeHTML(t)}</a>`
+        }];
+    });
+}
+
 
 function collectUrlPiecesWithHiddenSet(
     entities: TweetEntity,
@@ -276,7 +299,7 @@ function collectHiddenShortUrlPiecesBySearch(
 // somewhere after updateTweetContentArea() 完成本次 innerHTML 填充之后
 export function wireContentInternalLinks(container: HTMLElement) {
     const anchors = container.querySelectorAll<HTMLAnchorElement>(
-        '.hashtag, .mention, a[href^="/hashtag/"], a[href^="/"][data-internal]' // 可按需扩展
+        '.hashtag, .mention, .cashtag, a[href^="/hashtag/"], a[href^="/"][data-internal]' // 可按需扩展
     );
     anchors.forEach(a => {
         const path = a.getAttribute('href') || '';

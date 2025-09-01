@@ -9,6 +9,7 @@ import {localGet, localSet} from "../common/local_storage";
 import {Category} from "../object/category";
 import {kolsForCategory} from "../object/tweet_kol";
 import {getSystemSetting, switchAdOn} from "../object/system_setting";
+import {t} from "../common/i18n";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -39,10 +40,11 @@ function dashRouter(path: string): void {
 
 function initNewCatBtn() {
     const newCategoryBtn = document.getElementById("btn-add-category") as HTMLElement;
+    newCategoryBtn.innerText = t('add_category');
     newCategoryBtn.onclick = async () => {
         const categories = await loadCategories();
         if (categories.length >= MaxCategorySize) {
-            showAlert("Tips", "You can create up to 4 categories for now. We'll support more soon!");
+            showAlert(t('tips_title'), t('max_category_reached'));
             return;
         }
         const modalDialog = document.getElementById("modal-add-category") as HTMLElement
@@ -54,6 +56,10 @@ function initNewCatModalDialog() {
     const cancelBtn = document.getElementById("btn-cancel-new-category") as HTMLElement;
     const confirmBtn = document.getElementById("btn-confirm-new-category") as HTMLElement;
     const modalDialog = document.getElementById("modal-add-category") as HTMLElement
+    (modalDialog.querySelector("h3") as HTMLElement).innerText = t('add_new_category');
+    cancelBtn.innerText = t('cancel');
+    confirmBtn.innerText = t('confirm');
+    (modalDialog.querySelector(".new-category-name") as HTMLInputElement).placeholder = t('enter_category_name');
 
     cancelBtn.addEventListener('click', () => modalDialog.style.display = 'none');
     confirmBtn.addEventListener('click', addNewCategory);
@@ -61,11 +67,12 @@ function initNewCatModalDialog() {
 
 async function addNewCategory() {
 
-    const modalDialog = document.getElementById("modal-add-category") as HTMLElement
+    const modalDialog = document.getElementById("modal-add-category") as HTMLElement;
     const newCatInput = modalDialog.querySelector(".new-category-name") as HTMLInputElement;
+
     const newCatStr = newCatInput.value;
     if (!newCatStr) {
-        showAlert("Tips", "Invalid category name");
+        showAlert(t('tips_title'), t('invalid_category_name'));
         return;
     }
 
@@ -74,7 +81,7 @@ async function addNewCategory() {
     delete item.id;
     const newID = await databaseAddItem(__tableCategory, item);
     if (!newID) {
-        showAlert("Tips", "Failed to add new category:" + newCatStr);
+        showAlert(t('tips_title'), t('add_category_failed', newCatStr));
         hideLoading();
         return;
     }
@@ -87,7 +94,7 @@ async function addNewCategory() {
     const changedCat = await loadCategories();
     await sendMessageToX(MsgType.CategoryChanged, changedCat, false);
     hideLoading();
-    showAlert("Tips", "Save Success");
+    showAlert(t('tips_title'), t('save_success'));
 }
 
 async function setHomeStatus() {
@@ -108,6 +115,7 @@ async function setHomeStatus() {
     blockAdsToggle.checked = isEnabled;
 
     const adNumber = document.querySelector(".number-blocked-txt") as HTMLSpanElement;
+    (document.querySelector(".ads-blocked-tips") as HTMLSpanElement).innerText = t('block_ads');
     const setting = await getSystemSetting();
     adNumber.innerText = "" + setting.adsBlocked
 }
@@ -137,6 +145,7 @@ function _cloneCatItem(clone: HTMLElement, category: Category) {
 
 function editCategory(cat: Category) {
     const mgmDvi = document.getElementById("view-category-manager") as HTMLDivElement;
+    (mgmDvi.querySelector(".msg-category-label") as HTMLElement).innerText = t('category_label');
 
     const catIdDiv = mgmDvi.querySelector(".category-id") as HTMLDivElement
     catIdDiv.innerText = "" + cat.id;
@@ -145,11 +154,13 @@ function editCategory(cat: Category) {
     catNameDiv.value = cat.catName;
 
     const nameEditBtn = mgmDvi.querySelector(".name-edit") as HTMLElement;
+    nameEditBtn.innerText = t('save');
     nameEditBtn.onclick = async () => {
         await editCateName(cat, mgmDvi)
     }
 
     const rmBtn = mgmDvi.querySelector(".category-remove-btn") as HTMLElement;
+    rmBtn.innerText = t('remove');
     rmBtn.onclick = () => {
         removeCatById(cat.id!);
     }
@@ -166,7 +177,7 @@ async function editCateName(cat: Category, parent: HTMLElement) {
     const inputArea = parent.querySelector(".category-name-val") as HTMLInputElement;
     const newCatName = inputArea.value;
     if (!newCatName) {
-        showAlert("Tips", "invalid category name");
+        showAlert(t('tips_title'), t('invalid_category_name'));
         return;
     }
     cat.catName = inputArea.value;
@@ -174,11 +185,11 @@ async function editCateName(cat: Category, parent: HTMLElement) {
     await updateCategoryDetail(cat);
     await sendMessageToX(MsgType.CategoryChanged, await loadCategories());
     hideLoading();
-    showAlert("Tips", "Update Success");
+    showAlert(t('tips_title'), t('update_success'));
 }
 
 function removeCatById(catId: number) {
-    showConfirmPopup("Delete this Category?", async () => {
+    showConfirmPopup(t('category_delete_confirm'), async () => {
         showLoading();
         await removeCategory(catId);
         await sendMessageToX(MsgType.CategoryChanged, await loadCategories());

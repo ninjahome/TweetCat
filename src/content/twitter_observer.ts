@@ -9,6 +9,7 @@ import {fetchImmediateInNextRound, videoParamForTweets} from "../timeline/tweet_
 import {logAD} from "../common/debug_flags";
 import {blockedAdNumIncrease} from "../object/system_setting";
 import {prepareDownloadBtn} from "../timeline/render_action";
+import {t} from "../common/i18n";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -280,6 +281,7 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
 
     const removeBtn = __categoryPopupMenu.querySelector(".menu-item-remove") as HTMLElement;
     removeBtn.style.display = !!kol.catID ? 'block' : 'none';
+    (removeBtn.firstElementChild as HTMLElement).innerText = t('remove_category');
     removeBtn.onclick = () => {
         sendMsgToService(kol.kolName, MsgType.KolRemove).then(async () => {
             __categoryPopupMenu.style.display = 'none';

@@ -4,6 +4,7 @@ import {updateTweetContentArea} from './render_content';
 import {formatTweetTime, formatVideoDuration} from "../common/utils";
 import {logRQ} from "../common/debug_flags";
 import {videoRender} from "./render_video";
+import {t} from "../common/i18n";
 
 function pickQuotedBasics(quoted: TweetObj) {
     const name = quoted?.author?.displayName ?? '';
@@ -83,6 +84,7 @@ function fillQuotedContent(
     // 3) 拿到正文和“显示更多”
     const textEl = wrap.querySelector<HTMLElement>('.tweet-content')!;
     const moreEl = wrap.querySelector<HTMLAnchorElement>('.tcq-qcontent-more')!;
+    moreEl.innerText = t('show_more');
 
     const shouldShowMore = !condensed && !!quoted.hasNoteExpandable;
     // 调试
