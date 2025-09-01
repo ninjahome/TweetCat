@@ -581,6 +581,7 @@ span.duration-badge {
 .action-button {
     display: flex;
     align-items: center;
+    flex-direction:row-reverse;
     gap: 2px;
     background: none;
     border: none;
