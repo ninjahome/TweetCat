@@ -215,7 +215,7 @@ export async function processCapturedTweets(result: any, kolId: string) {
     const r = parseTimelineFromGraphQL(result, "tweets");
     const wrapList = r.wrapDbEntry;
     const kol = await queryKolById(kolId);
-    
+
     // console.log("----------------->>>>", r.tweets);
     cacheVideoTweet(r.tweets);
 
