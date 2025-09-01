@@ -60,23 +60,23 @@ export async function initObserver() {
     _contentTemplate = tpl;
 }
 
-function prepareVideoForTweetDetail(divNode: HTMLDivElement, tid: string) {
+function prepareVideoForTweetDetail(divNode: HTMLDivElement, mainTweetID: string) {
     const videoViews = divNode.querySelector('.css-175oi2r.r-1d09ksm.r-18u37iz.r-1wbh5a2.r-1471scf');
     if (!videoViews) {
-        logAD("tid:", tid, " videoViews is null:", divNode);
+        logAD("[Tweet Details] mainTweetID:", mainTweetID, " find video in tweet detail list");
+        prepareVideoForTweetDiv(divNode);
         return;
     }
 
-    const videoInfo = videoParamForTweets(tid);
-    if (!videoInfo) {
-        logAD("tid:", tid, " videoInfo is null:", divNode);
-        return;
-    }
-
-    logAD("[Tweet Details]tid:", tid, " videoInfo:", videoInfo, divNode);
-
+    const videoInfo = videoParamForTweets(mainTweetID);
     const actionMenuList = divNode.querySelector(".css-175oi2r.r-18u37iz.r-1h0z5md.r-13awgt0")?.parentElement as HTMLElement;
+    if (!videoInfo) {
+        logAD("[Tweet Details]mainTweetID:", mainTweetID, " no video now, try later:", divNode);
+        setTimeout(() => tryVideoDownloadLater(actionMenuList, mainTweetID, divNode), 2_000);
+        return;
+    }
 
+    logAD("[Tweet Details]mainTweetID:", mainTweetID, " videoInfo:", videoInfo, divNode);
     bindDownLoadBtn(actionMenuList, videoInfo.f, videoInfo.m, divNode);
 }
 
@@ -92,7 +92,7 @@ function bindDownLoadBtn(actionMenuList: HTMLElement, fileName: string, mp4List:
     actionMenuList.appendChild(downDiv);
 }
 
-function tryVideoDownloadLater(tid: string, divNode: HTMLElement) {
+function tryVideoDownloadLater(actionMenuList: HTMLElement, tid: string, divNode: HTMLElement) {
     const videoInfo = videoParamForTweets(tid);
     if (!videoInfo) {
         logAD("【try video download again failed】statusId:", tid,);
@@ -100,12 +100,10 @@ function tryVideoDownloadLater(tid: string, divNode: HTMLElement) {
     }
 
     logAD("【try video download again success】statusId:", tid, " videoInfo:", videoInfo);
-    const actionMenuList = divNode.querySelector(".css-175oi2r.r-18u37iz.r-1h0z5md.r-13awgt0")?.parentElement as HTMLElement;
     bindDownLoadBtn(actionMenuList, videoInfo.f, videoInfo.m, divNode);
 }
 
-function prepareVideoForTweetDiv(divNode: HTMLDivElement) {
-
+function findTweetIDOfTweetDiv(divNode: HTMLDivElement) {
     const anchors = Array.from(divNode.querySelectorAll<HTMLAnchorElement>("a[href]"));
     const regex = /^\/[^/]+\/status\/(\d+)$/;
 
@@ -120,18 +118,24 @@ function prepareVideoForTweetDiv(divNode: HTMLDivElement) {
         }
     }
 
+    return statusId;
+}
+
+function prepareVideoForTweetDiv(divNode: HTMLDivElement) {
+
+    const statusId = findTweetIDOfTweetDiv(divNode);
     if (!statusId) return;
 
     const videoInfo = videoParamForTweets(statusId);
     logAD("【Tweet Timeline】statusId:", statusId, " videoInfo:", videoInfo);
+    const actionMenuList = divNode.querySelector(".css-175oi2r.r-18u37iz.r-1h0z5md.r-13awgt0")?.parentElement as HTMLElement;
     if (!videoInfo) {
         logAD("[Tweet Timeline] no video info now, try later", statusId);
-        setTimeout(() => tryVideoDownloadLater(statusId, divNode), 2_000);
+        setTimeout(() => tryVideoDownloadLater(actionMenuList, statusId, divNode), 2_000);
         return;
     }
 
     logAD("[Tweet Timeline] found video info:", statusId, videoInfo);
-    const actionMenuList = divNode.querySelector(".css-175oi2r.r-1kbdv8c.r-18u37iz.r-1wtj0ep.r-1ye8kvj.r-1s2bzr4") as HTMLElement;
     bindDownLoadBtn(actionMenuList, videoInfo.f, videoInfo.m, divNode);
 }
 

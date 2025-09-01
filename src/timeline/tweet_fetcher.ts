@@ -215,7 +215,6 @@ export async function processCapturedTweets(result: any, kolId: string) {
     const r = parseTimelineFromGraphQL(result, "tweets");
     const wrapList = r.wrapDbEntry;
     const kol = await queryKolById(kolId);
-
     // console.log("----------------->>>>", r.tweets);
     cacheVideoTweet(r.tweets);
 
@@ -303,6 +302,9 @@ function cacheVideoTweet(tweets: EntryObj[]) {
         if (found) return;
 
         if (retweetObj) {
+            found = _parseVideoFromObj(tidForVideo, "retweeted", retweetObj);
+            if (found) return;
+
             found = _parseVideoFromObj(tidForVideo, "retweetedQuoted", retweetObj.quotedStatus);
             if (found) return;
         }
