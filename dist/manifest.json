@@ -29,7 +29,7 @@
     "https://twitter.com/*",
     "https://x.com/*",
     "*://x.com/*",
-    "https://tweetcat.simplenets.org/*"
+    "https://tweetcat.dessage.xyz/*"
   ],
   "background": {
     "service_worker": "js/background.js"
