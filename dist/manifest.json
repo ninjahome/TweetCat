@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TweetCat",
-  "version": "1.4.6",
+  "version": "2.0.1",
   "default_locale": "en",
   "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {
@@ -27,6 +27,7 @@
   ],
   "host_permissions": [
     "https://twitter.com/*",
+    "https://www.youtube.com/*",
     "https://x.com/*",
     "*://x.com/*",
     "https://tweetcat.dessage.xyz/*"
