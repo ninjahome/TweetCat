@@ -254,6 +254,7 @@ img, video {
 .tweet-actions .bookMarked {
     display: flex;
     align-items: center;
+    flex-direction: row;
 }
 .action-button-download-btn:hover {
     background: rgba(25, 140, 216, 0.2);
