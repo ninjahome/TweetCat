@@ -151,6 +151,16 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
+        case MsgType.SaveVideo:{
+            const urlData = request.data;
+            browser.downloads.download({
+                url: urlData.url,
+                filename: typeof urlData.filename === "string" ? urlData.filename : undefined,
+                saveAs: true // 测试阶段弹“另存为”，确认拿到的不是 0 字节
+            }).then()
+            return {success: true};
+        }
+
         default:
             return {success: false, data: "unsupportable message type"};
     }

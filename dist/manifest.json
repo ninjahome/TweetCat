@@ -23,7 +23,8 @@
     "webRequest",
     "storage",
     "activeTab",
-    "tabs"
+    "tabs",
+    "downloads"
   ],
   "host_permissions": [
     "https://twitter.com/*",
