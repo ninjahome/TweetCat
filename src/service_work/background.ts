@@ -176,6 +176,3 @@ browser.webRequest.onBeforeRequest.addListener(
         types: ["xmlhttprequest"],
     }
 );
-
-
-

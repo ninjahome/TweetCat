@@ -27,7 +27,9 @@
   ],
   "host_permissions": [
     "https://twitter.com/*",
+    "https://youtube.com/*",
     "https://www.youtube.com/*",
+    "*://*.googlevideo.com/*",
     "https://x.com/*",
     "*://x.com/*",
     "https://tweetcat.dessage.xyz/*"
@@ -39,7 +41,10 @@
     {
       "matches": [
         "https://twitter.com/*",
-        "https://x.com/*"
+        "https://x.com/*",
+        "https://www.youtube.com/*",
+        "https://youtube.com/*",
+        "*://*.googlevideo.com/*"
       ],
       "js": [
         "js/content.js"
@@ -57,7 +62,10 @@
       ],
       "matches": [
         "https://twitter.com/*",
-        "https://x.com/*"
+        "https://x.com/*",
+        "https://youtube.com/*",
+        "https://www.youtube.com/*",
+        "*://*.googlevideo.com/*"
       ]
     }
   ],
