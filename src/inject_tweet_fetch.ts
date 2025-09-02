@@ -71,8 +71,8 @@ function __tc_url_of__(input: RequestInfo | URL): string {
 }
 
 /** Hook fetch */
-function __tc_installFetchUserTweetsCapture__(): void {
-    if (window.__tc_extra_fetch_hooked__) {
+function __tc_installFetch__(): void {
+    if (window.ytHasPatchedFetch) {
         logIC("✅fetch hook already installed");
         return;
     }
@@ -117,14 +117,14 @@ function __tc_installFetchUserTweetsCapture__(): void {
     };
 
     (window as any).fetch = patchedFetch as typeof window.fetch;
-    window.__tc_extra_fetch_hooked__ = true;
-    window.__tc_fetch_guard__ = patchedFetch;
+    window.ytHasPatchedFetch = true;
+    window.ytPatchedFetch = patchedFetch;
     logIC("✅ fetch hook installed");
 }
 
 /** Hook XHR */
-function __tc_installXHRUserTweetsCapture__(): void {
-    if (window.__tc_extra_xhr_hooked__) {
+function __tc_installXHR__(): void {
+    if (window.ytHasPatchedXHR) {
         logIC("✅xhr hook already installed");
         return;
     }
@@ -206,8 +206,8 @@ function __tc_installXHRUserTweetsCapture__(): void {
 
     // @ts-ignore
     window.XMLHttpRequest = __TC_XHR_Interceptor__;
-    window.__tc_extra_xhr_hooked__ = true;
-    window.__tc_xhr_guard__ = __TC_XHR_Interceptor__;
+    window.ytHasPatchedXHR = true;
+    window.ytPatchedXHR = __TC_XHR_Interceptor__;
     logIC("✅ xhr hook installed");
 }
 
@@ -216,15 +216,15 @@ function __tc_startHookWatchdog__(): void {
     const RECHECK_MS = 500;
     setInterval(() => {
         try {
-            if ((window as any).fetch !== window.__tc_fetch_guard__) {
+            if ((window as any).fetch !== window.ytPatchedFetch) {
                 console.warn("fetch hook lost, re-hooking...");
-                window.__tc_extra_fetch_hooked__ = false;
-                __tc_installFetchUserTweetsCapture__();
+                window.ytHasPatchedFetch = false;
+                __tc_installFetch__();
             }
-            if (window.XMLHttpRequest !== window.__tc_xhr_guard__) {
+            if (window.XMLHttpRequest !== window.ytPatchedXHR) {
                 console.warn("xhr hook lost, re-hooking...");
-                window.__tc_extra_xhr_hooked__ = false;
-                __tc_installXHRUserTweetsCapture__();
+                window.ytHasPatchedXHR = false;
+                __tc_installXHR__();
             }
         } catch (e) {
             console.warn("watchdog error", e);
@@ -234,14 +234,14 @@ function __tc_startHookWatchdog__(): void {
 
 /** Public init that only adds hooks if not already installed */
 export function initUserTweetsCapture(): void {
-    if (window.__tc_extra_hooks_installed__) {
+    if (window.ytExtraHooksInstalled) {
         logIC("hooks already installed");
         return;
     }
     logIC("installing hooks...");
-    __tc_installFetchUserTweetsCapture__();
-    __tc_installXHRUserTweetsCapture__();
+    __tc_installFetch__();
+    __tc_installXHR__();
     __tc_startHookWatchdog__();
-    window.__tc_extra_hooks_installed__ = true;
+    window.ytExtraHooksInstalled = true;
     logIC("✅ hooks ready");
 }
