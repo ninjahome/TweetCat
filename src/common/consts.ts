@@ -59,7 +59,6 @@ export enum MsgType {
     IJHomeLatestCaptured = 'IJHomeLatestCaptured',
     IJLocationChange = 'IJLocationChange',
     IJTweetDetailCaptured = 'IJTweetDetailCaptured',
-    IJYoutubeVideoParam = 'IJYoutubeVideoParam',
 
     TokenUsedByUser = 'TokenUsedByUser',
     TokenFreeze = 'TokenFreeze',
@@ -68,7 +67,9 @@ export enum MsgType {
     RouterTcUnmount = 'RouterTcUnmount',
     RouterTCBeforeNav = 'RouterTCBeforeNav',
 
-    SaveVideo = "SaveVideo",
+    YTQueryVideoParam = "YTQueryVideoParam",
+    YTVideoParamGot = 'YTVideoParamGot',
+    YTVideoSave = 'YTVideoSave',
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

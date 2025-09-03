@@ -151,13 +151,8 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
-        case MsgType.SaveVideo:{
-            const urlData = request.data;
-            browser.downloads.download({
-                url: urlData.url,
-                filename: typeof urlData.filename === "string" ? urlData.filename : undefined,
-                saveAs: true // 测试阶段弹“另存为”，确认拿到的不是 0 字节
-            }).then()
+        case MsgType.YTVideoSave: {
+            await saveSimpleVideo(request.data);
             return {success: true};
         }
 
@@ -170,9 +165,9 @@ async function openPlugin() {
     await browser.action.openPopup();
 }
 
-export async function sendMessageToX(action: string, data: any, onlyFirstTab: boolean = true): Promise<boolean> {
+export async function sendMessageToX(action: string, data: any, onlyFirstTab: boolean = true, url = '*://x.com/*'): Promise<boolean> {
     const tabs = await browser.tabs.query({
-        url: "*://x.com/*"
+        url: url
     });
 
     if (tabs.length === 0) {
@@ -188,14 +183,37 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
                 data: data
             });
 
-            if(onlyFirstTab)return true;
+            if (onlyFirstTab) return true;
 
         } catch (err) {
             console.warn("------>>> 发送消息失败", err);
             return false;
         }
     }
-
     return true;
-
 }
+
+
+async function saveSimpleVideo(msg: any) {
+    const {url, title, quality = '', container = 'mp4'} = msg;
+    const fname = makeSafeFilename(`${title || 'video'}${quality ? '.' + quality : ''}.${container}`);
+
+    try {
+        const id = await browser.downloads.download({
+            url,
+            filename: fname,   // 下载目录内的相对路径
+            saveAs: true       // 让用户选保存位置；如不需要可设为 false
+        });
+        console.log('[DL] started:', id);
+    } catch (e) {
+        console.warn('[DL] failed:', e);
+    }
+}
+
+function makeSafeFilename(name: string) {
+    return name.replace(/[\\/:*?"<>|]+/g, '_').slice(0, 120);
+}
+
+browser.downloads.onChanged.addListener((delta) => {
+    if (delta.state?.current === 'complete') console.log('[DL] complete:', delta.id);
+});

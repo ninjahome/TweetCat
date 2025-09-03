@@ -2,7 +2,8 @@
   "dependencies": {
     "hls.js": "^1.6.10",
     "webextension-polyfill": "^0.12.0",
-    "x-client-transaction-id": "^0.1.8"
+    "x-client-transaction-id": "^0.1.8",
+    "youtubei.js": "^15.0.1"
   },
   "description": "catch your favorite tweets",
   "devDependencies": {

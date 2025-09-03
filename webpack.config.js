@@ -19,23 +19,10 @@ module.exports = (env, argv) => {
         }),
     ];
 
-    return {
-        mode: mode,
-        devtool: mode === 'development' ? 'inline-source-map' : false, // 生产模式下不生成 Source Map
-        entry: {
-            background: path.resolve(__dirname, './src/service_work/background.ts'),
-            welcome: path.resolve(__dirname, './src/popup/welcome.ts'),
-            injection: path.resolve(__dirname, './src/injection.ts'),
-            dashboard: path.resolve(__dirname, './src/popup/dashboard.ts'),
-            content: path.resolve(__dirname, './src/content/main_entrance.ts'),
-            kol_mg: path.resolve(__dirname, './src/popup/kol_mg.ts'),
-            yt_content: path.resolve(__dirname, './src/youtube/content.ts'),
-            yt_inject: path.resolve(__dirname, './src/youtube/inject.ts'),
-        },
-        output: {
-            filename: 'js/[name].js',
-            path: path.resolve(__dirname, 'dist'),
-        },
+    // 公共配置片段
+    const common = {
+        mode,
+        devtool: mode === 'development' ? 'inline-source-map' : false,
         module: {
             rules: [
                 {
@@ -52,11 +39,11 @@ module.exports = (env, argv) => {
                 new TerserPlugin({
                     terserOptions: {
                         compress: {
-                            drop_console: true, // 可选：移除 console.log
-                            unused: true,  // 启用删除未使用的代码
+                            drop_console: true,
+                            unused: true,
                         },
                         format: {
-                            comments: false, // 移除注释
+                            comments: false,
                         },
                     },
                     extractComments: false,
@@ -73,6 +60,53 @@ module.exports = (env, argv) => {
                 canvas: false,
             },
         },
-        plugins: plugins,
+        plugins,
+        output: {
+            filename: 'js/[name].js',
+            path: path.resolve(__dirname, 'dist'),
+        },
     };
+
+    // background 专用配置：目标是 webworker
+    const bgConfig = {
+        ...common,
+        entry: {
+            background: path.resolve(__dirname, './src/service_work/background.ts'),
+        },
+        target: 'webworker',
+        resolve: {
+            ...common.resolve,
+            fallback: {
+                ...common.resolve.fallback,
+                fs: false,
+                net: false,
+                tls: false,
+                path: false,
+                stream: false,
+                crypto: false,
+                zlib: false,
+                http: false,
+                https: false,
+                url: false,
+            },
+        },
+    };
+
+    // 其他入口（popup / content / inject 等）保持 web 目标
+    const webConfig = {
+        ...common,
+        entry: {
+            welcome: path.resolve(__dirname, './src/popup/welcome.ts'),
+            injection: path.resolve(__dirname, './src/injection.ts'),
+            dashboard: path.resolve(__dirname, './src/popup/dashboard.ts'),
+            content: path.resolve(__dirname, './src/content/main_entrance.ts'),
+            kol_mg: path.resolve(__dirname, './src/popup/kol_mg.ts'),
+            yt_content: path.resolve(__dirname, './src/youtube/content.ts'),
+            yt_inject: path.resolve(__dirname, './src/youtube/inject.ts'),
+        },
+        target: 'web',
+    };
+
+    // 返回两份配置
+    return [bgConfig, webConfig];
 };

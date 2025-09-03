@@ -27,3 +27,8 @@ export class tweetFetchParam {
         this.newest = newest;
     }
 }
+
+export function postWindowMsg(action: string, data?: unknown): void {
+    const msg = new TcMessage(action, true, data);
+    window.postMessage(msg, '*'); // structured clone，安全传对象
+}

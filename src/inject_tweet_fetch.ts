@@ -1,14 +1,14 @@
-import {logIC} from "./common/debug_flags";
-import {postToContent} from "./injection";
 import {HomeLatestTimeline, HomeTimeline, MsgType, TweetDetail, UserTweets} from "./common/consts";
+import {logIC} from "./common/debug_flags";
+import {postWindowMsg} from "./common/msg_obj";
 
 declare global {
     interface Window {
-        __tc_extra_fetch_hooked__?: boolean;
-        __tc_extra_xhr_hooked__?: boolean;
-        __tc_extra_hooks_installed__?: boolean;
-        __tc_fetch_guard__?: any;
-        __tc_xhr_guard__?: any;
+        ytExtraHooksInstalled?: boolean;
+        ytHasPatchedFetch?: boolean;
+        ytPatchedFetch?: any;
+        ytHasPatchedXHR?: boolean;
+        ytPatchedXHR?: any;
     }
 }
 
@@ -101,12 +101,12 @@ function __tc_installFetch__(): void {
             if (timeType === UserTweets) {
                 const vars = __tc_parseVarsFromUrl__(url);
                 logIC(`[F#${reqId}] tweets result=${result}  for kol:${vars.userId}`);
-                postToContent(MsgType.IJUserTweetsCaptured, {tweets: result, kolID: vars.userId});
+                postWindowMsg(MsgType.IJUserTweetsCaptured, {tweets: result, kolID: vars.userId});
             } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
                 logIC(`[F#${reqId}] home latest result result=${result}`);
-                postToContent(MsgType.IJHomeLatestCaptured, result);
+                postWindowMsg(MsgType.IJHomeLatestCaptured, result);
             } else if (timeType === TweetDetail) {
-                postToContent(MsgType.IJTweetDetailCaptured, result);
+                postWindowMsg(MsgType.IJTweetDetailCaptured, result);
             }
 
             return response;
@@ -183,15 +183,15 @@ function __tc_installXHR__(): void {
 
                     if (timeType === UserTweets) {
                         logIC(`[X#${reqId}] result=${result}  for kol:${this.__tc_user_id__}`);
-                        postToContent(MsgType.IJUserTweetsCaptured, {
+                        postWindowMsg(MsgType.IJUserTweetsCaptured, {
                             tweets: result,
                             kolID: this.__tc_user_id__
                         });
                     } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
                         logIC(`[X#${reqId}] home time line result=${result}`);
-                        postToContent(MsgType.IJHomeLatestCaptured, result);
+                        postWindowMsg(MsgType.IJHomeLatestCaptured, result);
                     } else if (timeType === TweetDetail) {
-                        postToContent(MsgType.IJTweetDetailCaptured, result);
+                        postWindowMsg(MsgType.IJTweetDetailCaptured, result);
                     }
 
                 } catch (err) {
