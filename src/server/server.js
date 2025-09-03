@@ -24,12 +24,6 @@ function getYT() {
 }
 
 // 把 Headers 对象转为普通对象
-function headersToObject(h) {
-    const out = {};
-    for (const [k, v] of Object.entries(h || {})) out[k] = v;
-    return out;
-}
-
 const server = http.createServer(async (req, res) => {
     setCORS(res);
     if (req.method === 'OPTIONS') {

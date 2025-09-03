@@ -1,9 +1,8 @@
 /// <reference lib="webworker" />
-import browser, {Runtime, WebNavigation} from "webextension-polyfill";
+import browser, {Runtime} from "webextension-polyfill";
 import {bgMsgDispatch} from "./bg_msg";
 import {
     __DBK_query_id_map,
-    __targetUrlToFilter,
     defaultQueryKeyMap,
     MsgType,
     watchedOps
