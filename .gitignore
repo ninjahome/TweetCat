@@ -29,3 +29,5 @@ bin-release/
 /test.html
 /tests/
 /src/server/package-lock.json
+/local_app/TweetCatApp/TweetCatApp.xcodeproj/xcuserdata/
+/local_app/TweetCatApp/TweetCatApp.xcodeproj/project.xcworkspace/
