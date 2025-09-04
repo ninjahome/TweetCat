@@ -20,6 +20,7 @@ import {timerKolInQueueImmediate} from "./bg_timer";
 import {tweetFM} from "./tweet_fetch_manager";
 import {penalize429, useTokenByUser} from "./api_bucket_state";
 import {addBlockedAdsNumber} from "../object/system_setting";
+import {saveSimpleVideo} from "./local_app";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -151,6 +152,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
+        case MsgType.YTVideoSave: {
+            await saveSimpleVideo(request.data as string);
+            return {success: true};
+        }
+
         default:
             return {success: false, data: "unsupportable message type"};
     }
@@ -160,9 +166,9 @@ async function openPlugin() {
     await browser.action.openPopup();
 }
 
-export async function sendMessageToX(action: string, data: any, onlyFirstTab: boolean = true): Promise<boolean> {
+export async function sendMessageToX(action: string, data: any, onlyFirstTab: boolean = true, url = '*://x.com/*'): Promise<boolean> {
     const tabs = await browser.tabs.query({
-        url: "*://x.com/*"
+        url: url
     });
 
     if (tabs.length === 0) {
@@ -178,14 +184,12 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
                 data: data
             });
 
-            if(onlyFirstTab)return true;
+            if (onlyFirstTab) return true;
 
         } catch (err) {
             console.warn("------>>> 发送消息失败", err);
             return false;
         }
     }
-
     return true;
-
 }

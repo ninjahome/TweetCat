@@ -66,6 +66,10 @@ export enum MsgType {
     RouterTCMount = 'RouterTCMount',
     RouterTcUnmount = 'RouterTcUnmount',
     RouterTCBeforeNav = 'RouterTCBeforeNav',
+
+    YTQueryVideoParam = "YTQueryVideoParam",
+    YTVideoParamGot = 'YTVideoParamGot',
+    YTVideoSave = 'YTVideoSave',
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

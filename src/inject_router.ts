@@ -1,6 +1,6 @@
 import {logRoute} from "./common/debug_flags";
-import {postToContent} from "./injection";
 import {MsgType} from "./common/consts";
+import {postWindowMsg} from "./common/msg_obj";
 
 
 /** 包裹指定方法；若已包裹则跳过 */
@@ -19,7 +19,7 @@ function wrap(fn: 'pushState' | 'replaceState') {
         } catch {}
 
         const ret = raw.apply(this, args);
-        postToContent(MsgType.IJLocationChange);
+        postWindowMsg(MsgType.IJLocationChange);
         return ret;
     }
 
@@ -38,8 +38,8 @@ export function initPagePatch(): void {
     if ((window as any).__tc_hist_patched) return;
 
     ensureHooks();                          // 首次 hook
-    window.addEventListener('popstate', () => postToContent(MsgType.IJLocationChange));
-    postToContent(MsgType.IJLocationChange);                                 // 首次同步
+    window.addEventListener('popstate', () => postWindowMsg(MsgType.IJLocationChange));
+    postWindowMsg(MsgType.IJLocationChange);                                 // 首次同步
 
     setInterval(ensureHooks, 200);          // watchdog（静默）
     (window as any).__tc_hist_patched = true;

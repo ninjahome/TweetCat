@@ -1,14 +1,14 @@
-import {logIC} from "./common/debug_flags";
-import {postToContent} from "./injection";
 import {HomeLatestTimeline, HomeTimeline, MsgType, TweetDetail, UserTweets} from "./common/consts";
+import {logIC} from "./common/debug_flags";
+import {postWindowMsg} from "./common/msg_obj";
 
 declare global {
     interface Window {
-        __tc_extra_fetch_hooked__?: boolean;
-        __tc_extra_xhr_hooked__?: boolean;
-        __tc_extra_hooks_installed__?: boolean;
-        __tc_fetch_guard__?: any;
-        __tc_xhr_guard__?: any;
+        ytExtraHooksInstalled?: boolean;
+        ytHasPatchedFetch?: boolean;
+        ytPatchedFetch?: any;
+        ytHasPatchedXHR?: boolean;
+        ytPatchedXHR?: any;
     }
 }
 
@@ -71,8 +71,8 @@ function __tc_url_of__(input: RequestInfo | URL): string {
 }
 
 /** Hook fetch */
-function __tc_installFetchUserTweetsCapture__(): void {
-    if (window.__tc_extra_fetch_hooked__) {
+function __tc_installFetch__(): void {
+    if (window.ytHasPatchedFetch) {
         logIC("✅fetch hook already installed");
         return;
     }
@@ -101,12 +101,12 @@ function __tc_installFetchUserTweetsCapture__(): void {
             if (timeType === UserTweets) {
                 const vars = __tc_parseVarsFromUrl__(url);
                 logIC(`[F#${reqId}] tweets result=${result}  for kol:${vars.userId}`);
-                postToContent(MsgType.IJUserTweetsCaptured, {tweets: result, kolID: vars.userId});
+                postWindowMsg(MsgType.IJUserTweetsCaptured, {tweets: result, kolID: vars.userId});
             } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
                 logIC(`[F#${reqId}] home latest result result=${result}`);
-                postToContent(MsgType.IJHomeLatestCaptured, result);
+                postWindowMsg(MsgType.IJHomeLatestCaptured, result);
             } else if (timeType === TweetDetail) {
-                postToContent(MsgType.IJTweetDetailCaptured, result);
+                postWindowMsg(MsgType.IJTweetDetailCaptured, result);
             }
 
             return response;
@@ -117,14 +117,14 @@ function __tc_installFetchUserTweetsCapture__(): void {
     };
 
     (window as any).fetch = patchedFetch as typeof window.fetch;
-    window.__tc_extra_fetch_hooked__ = true;
-    window.__tc_fetch_guard__ = patchedFetch;
+    window.ytHasPatchedFetch = true;
+    window.ytPatchedFetch = patchedFetch;
     logIC("✅ fetch hook installed");
 }
 
 /** Hook XHR */
-function __tc_installXHRUserTweetsCapture__(): void {
-    if (window.__tc_extra_xhr_hooked__) {
+function __tc_installXHR__(): void {
+    if (window.ytHasPatchedXHR) {
         logIC("✅xhr hook already installed");
         return;
     }
@@ -183,15 +183,15 @@ function __tc_installXHRUserTweetsCapture__(): void {
 
                     if (timeType === UserTweets) {
                         logIC(`[X#${reqId}] result=${result}  for kol:${this.__tc_user_id__}`);
-                        postToContent(MsgType.IJUserTweetsCaptured, {
+                        postWindowMsg(MsgType.IJUserTweetsCaptured, {
                             tweets: result,
                             kolID: this.__tc_user_id__
                         });
                     } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
                         logIC(`[X#${reqId}] home time line result=${result}`);
-                        postToContent(MsgType.IJHomeLatestCaptured, result);
+                        postWindowMsg(MsgType.IJHomeLatestCaptured, result);
                     } else if (timeType === TweetDetail) {
-                        postToContent(MsgType.IJTweetDetailCaptured, result);
+                        postWindowMsg(MsgType.IJTweetDetailCaptured, result);
                     }
 
                 } catch (err) {
@@ -206,8 +206,8 @@ function __tc_installXHRUserTweetsCapture__(): void {
 
     // @ts-ignore
     window.XMLHttpRequest = __TC_XHR_Interceptor__;
-    window.__tc_extra_xhr_hooked__ = true;
-    window.__tc_xhr_guard__ = __TC_XHR_Interceptor__;
+    window.ytHasPatchedXHR = true;
+    window.ytPatchedXHR = __TC_XHR_Interceptor__;
     logIC("✅ xhr hook installed");
 }
 
@@ -216,15 +216,15 @@ function __tc_startHookWatchdog__(): void {
     const RECHECK_MS = 500;
     setInterval(() => {
         try {
-            if ((window as any).fetch !== window.__tc_fetch_guard__) {
+            if ((window as any).fetch !== window.ytPatchedFetch) {
                 console.warn("fetch hook lost, re-hooking...");
-                window.__tc_extra_fetch_hooked__ = false;
-                __tc_installFetchUserTweetsCapture__();
+                window.ytHasPatchedFetch = false;
+                __tc_installFetch__();
             }
-            if (window.XMLHttpRequest !== window.__tc_xhr_guard__) {
+            if (window.XMLHttpRequest !== window.ytPatchedXHR) {
                 console.warn("xhr hook lost, re-hooking...");
-                window.__tc_extra_xhr_hooked__ = false;
-                __tc_installXHRUserTweetsCapture__();
+                window.ytHasPatchedXHR = false;
+                __tc_installXHR__();
             }
         } catch (e) {
             console.warn("watchdog error", e);
@@ -234,14 +234,14 @@ function __tc_startHookWatchdog__(): void {
 
 /** Public init that only adds hooks if not already installed */
 export function initUserTweetsCapture(): void {
-    if (window.__tc_extra_hooks_installed__) {
+    if (window.ytExtraHooksInstalled) {
         logIC("hooks already installed");
         return;
     }
     logIC("installing hooks...");
-    __tc_installFetchUserTweetsCapture__();
-    __tc_installXHRUserTweetsCapture__();
+    __tc_installFetch__();
+    __tc_installXHR__();
     __tc_startHookWatchdog__();
-    window.__tc_extra_hooks_installed__ = true;
+    window.ytExtraHooksInstalled = true;
     logIC("✅ hooks ready");
 }
