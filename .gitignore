@@ -28,3 +28,4 @@ bin-release/
 /2.json
 /test.html
 /tests/
+/src/server/package-lock.json
