@@ -24,7 +24,6 @@
     "storage",
     "activeTab",
     "tabs",
-    "downloads",
     "contextMenus",
     "cookies",
     "nativeMessaging"

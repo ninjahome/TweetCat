@@ -119,8 +119,8 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
     switch (request.action) {
         case MsgType.NaviUrlChanged: {
             console.log("-------->>> url changed:", window.location);
-            const videoID = isWatchingPage()
-            if (videoID) checkIfVideoLoaded(videoID);
+            // const videoID = isWatchingPage()
+            // if (videoID) checkIfVideoLoaded(videoID);
             sendResponse({success: true});
             break;
         }
