@@ -1,11 +1,30 @@
 #!/bin/bash
-# Native Messaging Host: yt-dlp bridge (robust)
+# Native Messaging Host: yt-dlp bridge (robust + auto background download)
 # Protocol: 4-byte little-endian length + JSON
 
 LOG_FILE="/tmp/ytdlp_host.log"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >>"$LOG_FILE"
+}
+
+# --- bin resolvers (bash) ---
+resolve_yt_dlp() {
+  if [ -n "${YT_DLP_BIN:-}" ] && [ -x "$YT_DLP_BIN" ]; then echo "$YT_DLP_BIN"; return 0; fi
+  local candidates=( "./bin/yt-dlp_macos" "/opt/homebrew/bin/yt-dlp" "/usr/local/bin/yt-dlp" )
+  for c in "${candidates[@]}"; do
+    [ -x "$c" ] && { echo "$c"; return 0; }
+  done
+  command -v yt-dlp 2>/dev/null || true
+}
+
+resolve_ffmpeg() {
+  if [ -n "${FFMPEG_BIN:-}" ] && [ -x "$FFMPEG_BIN" ]; then echo "$FFMPEG_BIN"; return 0; fi
+  local candidates=( "./bin/ffmpeg" "/opt/homebrew/bin/ffmpeg" "/usr/local/bin/ffmpeg" )
+  for c in "${candidates[@]}"; do
+    [ -x "$c" ] && { echo "$c"; return 0; }
+  done
+  command -v ffmpeg 2>/devnull || true
 }
 
 # read first 4 bytes (little-endian) as length
@@ -191,18 +210,14 @@ formats = data.get("formats", [])
 
 # ---------- filters & helpers ----------
 ALLOWED_VIDEO_EXT = {"mp4", "webm"}
-MIN_HEIGHT = 144  # 过滤掉 144p 以下（避免 27/45/90 之类）
+MIN_HEIGHT = 144
 def is_storyboard(f):
-    # 典型 storyboard: ext=mhtml 或 format_note/quality_label 包含 storyboard/images
     ext = (f.get("ext") or "").lower()
     fn  = (f.get("format_note") or "").lower()
     return (ext == "mhtml") or ("storyboard" in fn) or ("images" in fn)
-
 def is_m3u8_progressive(f):
-    # 去掉 m3u8 progressive，保留 https 的 progressive，避免重复（如 93 vs 18）
     proto = (f.get("protocol") or "").lower()
     return proto.startswith("m3u8")
-
 def valid_video_only(f):
     if is_storyboard(f): return False
     if (f.get("acodec") != "none"): return False
@@ -211,7 +226,6 @@ def valid_video_only(f):
     if (f.get("vcodec") or "") == "none": return False
     ext = (f.get("ext") or "").lower()
     return ext in ALLOWED_VIDEO_EXT
-
 def valid_progressive(f):
     if is_storyboard(f): return False
     if is_m3u8_progressive(f): return False
@@ -221,10 +235,8 @@ def valid_progressive(f):
     if h is None or h < MIN_HEIGHT: return False
     ext = (f.get("ext") or "").lower()
     return ext in ALLOWED_VIDEO_EXT
-
 def valid_audio_only(f):
     return (f.get("vcodec") == "none")
-
 def codec_tag(vc):
     vc = vc or ""
     if vc.startswith("avc1"): return "AVC"
@@ -253,7 +265,6 @@ for f in formats:
             "acodec": (f.get("acodec") or "")
         })
 
-# 组合：优先用 140(m4a) 与视频流合并
 preferred_audio = next((a for a in audio_only if a["id"] == "140"), None)
 
 items = []
@@ -266,7 +277,6 @@ if preferred_audio:
             "kind": "merge"
         })
 
-# progressive 备选（只保留 https 的 mp4/webm）
 for p in progressive:
     items.append({
         "label": f'{p["height"]}p {p.get("ext","").upper()} (progressive)',
@@ -275,7 +285,6 @@ for p in progressive:
         "kind": "single"
     })
 
-# 排序：从高到低；去重（value）
 items.sort(key=lambda x: (x.get("height") or 0, x.get("kind")=="single"), reverse=True)
 seen = set()
 uniq = []
@@ -287,6 +296,71 @@ for it in items:
 
 print(json.dumps({"ok": True, "items": uniq}))
 PY
+}
+
+# --- NEW: start background download of first item, log-only, no response ---
+start_background_download_first() {
+  local cookie_file="$1"   # /tmp/ytcookies_xxx.txt
+  local url="$2"           # video url
+  local formats_json="$3"  # json object string {"ok":..., "items":[...]}
+
+  # 解析第一项的 value/label
+  local sel_json fsel label
+  sel_json=$(/usr/bin/python3 - "$formats_json" <<'PY' 2>>"$LOG_FILE"
+import sys, json
+try:
+    j = json.loads(sys.argv[1])
+    if j.get("ok") and j.get("items"):
+        it = j["items"][0]
+        print(json.dumps({"value": it.get("value",""), "label": it.get("label","")}, ensure_ascii=False))
+    else:
+        print("{}")
+except Exception:
+    print("{}")
+PY
+)
+  fsel=$(/usr/bin/python3 - "$sel_json" <<'PY' 2>>"$LOG_FILE"
+import sys, json
+try:
+    d=json.loads(sys.argv[1]); print(d.get("value",""))
+except Exception:
+    print("")
+PY
+)
+  label=$(/usr/bin/python3 - "$sel_json" <<'PY' 2>>"$LOG_FILE"
+import sys, json
+try:
+    d=json.loads(sys.argv[1]); print(d.get("label",""))
+except Exception:
+    print("")
+PY
+)
+
+  if [ -z "$fsel" ]; then
+    log "[download] no selectable item, skip."
+    return 0
+  fi
+
+  (
+    local yt ff
+    yt="$(resolve_yt_dlp)"
+    ff="$(resolve_ffmpeg)"
+    if [ -z "$yt" ]; then
+      log "[download] yt-dlp not found; abort."
+      exit 0
+    fi
+
+    # 组装命令
+    local out_tmpl="${HOME}/Downloads/%(title)s.%(ext)s"
+    local cmd=( "$yt" --cookies "$cookie_file" -f "$fsel" --merge-output-format mp4 )
+    [ -n "$ff" ] && cmd+=( --ffmpeg-location "$ff" )
+    cmd+=( --newline -o "$out_tmpl" "$url" )
+
+    log "[download] start label='${label}' format='${fsel}' yt='${yt}' ffmpeg='${ff}' out='${out_tmpl}' url='${url}'"
+    "${cmd[@]}" >>"$LOG_FILE" 2>&1
+    local rc=$?
+    log "[download] done rc=${rc}"
+  ) &
 }
 
 log "ytdlp_host.sh started"
@@ -312,7 +386,6 @@ while true; do
 
       # 默认合法对象
       formats_json='{"ok":false,"items":[]}'
-
       if [ -n "$url" ]; then
         if out=$(build_format_dropdown "$cookie_path" "$url" 2>>"$LOG_FILE"); then
           if printf '%s' "$out" | head -c 1 | grep -q '{'; then
@@ -325,6 +398,10 @@ while true; do
         fi
       fi
 
+      # --- 触发后台下载第一项（仅写日志，不返回给 background）---
+      start_background_download_first "$cookie_path" "$url" "$formats_json"
+
+      # 仍按原协议返回 cookie_file + formats（供前端显示/选择）
       payload=$(/usr/bin/python3 - "$cookie_path" "$formats_json" <<'PY'
 import sys, json
 cookie = sys.argv[1]
