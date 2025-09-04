@@ -20,6 +20,7 @@ import {timerKolInQueueImmediate} from "./bg_timer";
 import {tweetFM} from "./tweet_fetch_manager";
 import {penalize429, useTokenByUser} from "./api_bucket_state";
 import {addBlockedAdsNumber} from "../object/system_setting";
+import {saveSimpleVideo} from "./local_app";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -152,7 +153,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.YTVideoSave: {
-            await saveSimpleVideo(request.data);
+            await saveSimpleVideo(request.data as string);
             return {success: true};
         }
 
@@ -192,28 +193,3 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
     }
     return true;
 }
-
-
-async function saveSimpleVideo(msg: any) {
-    const {url, title, quality = '', container = 'mp4'} = msg;
-    const fname = makeSafeFilename(`${title || 'video'}${quality ? '.' + quality : ''}.${container}`);
-
-    try {
-        const id = await browser.downloads.download({
-            url,
-            filename: fname,   // 下载目录内的相对路径
-            saveAs: true       // 让用户选保存位置；如不需要可设为 false
-        });
-        console.log('[DL] started:', id);
-    } catch (e) {
-        console.warn('[DL] failed:', e);
-    }
-}
-
-function makeSafeFilename(name: string) {
-    return name.replace(/[\\/:*?"<>|]+/g, '_').slice(0, 120);
-}
-
-browser.downloads.onChanged.addListener((delta) => {
-    if (delta.state?.current === 'complete') console.log('[DL] complete:', delta.id);
-});

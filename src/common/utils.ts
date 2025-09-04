@@ -147,18 +147,6 @@ export function observeSimple(targetNode: HTMLElement,
 
     return observer;
 }
-
-export function formatCount(n: number): string {
-    if (n >= 1_000_000) {
-        return (n / 1_000_000).toFixed(n % 1_000_000 >= 100_000 ? 1 : 0) + 'M';
-    } else if (n >= 1_000) {
-        return (n / 1_000).toFixed(n % 1_000 >= 100 ? 1 : 0) + 'K';
-    } else {
-        return n.toString();
-    }
-}
-
-
 /**
  * Friendly time‑ago / date stamp — mirrors Twitter UI behaviour.
  *   • < 60 s   →  "xs ago" / "x秒前"

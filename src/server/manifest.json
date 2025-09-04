@@ -1,0 +1,9 @@
+{
+  "name": "com.dessage.ytdlp_bridge",
+  "description": "Bridge between browser extension and yt-dlp shell host",
+  "path": "/Users/hyperorchid/ninja/TweetCat/src/server/ytdlp_host.sh",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://gjdlclglpkjibapaafmfifnkjpmgodli/"
+  ]
+}

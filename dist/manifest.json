@@ -25,13 +25,17 @@
     "activeTab",
     "tabs",
     "downloads",
-    "contextMenus"
+    "contextMenus",
+    "cookies",
+    "nativeMessaging"
   ],
   "host_permissions": [
     "https://twitter.com/*",
-    "https://youtube.com/*",
+    "https://*.youtube.com/*",
     "https://www.youtube.com/*",
     "*://*.googlevideo.com/*",
+    "https://*.google.com/*",
+    "https://accounts.google.com/*",
     "https://x.com/*",
     "*://x.com/*",
     "https://tweetcat.dessage.xyz/*"

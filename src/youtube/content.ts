@@ -1,7 +1,7 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {observeSimple} from "../common/utils";
+import {observeSimple, sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {isTcMessage, postWindowMsg, TcMessage} from "../common/msg_obj";
+import {isTcMessage, TcMessage} from "../common/msg_obj";
 import {YTParsedLite} from "./video_obj";
 
 (function injectPageScript() {
@@ -44,16 +44,36 @@ function checkIfVideoLoaded(videoID: string) {
         document.documentElement;
 
     const judgeFunc = (_mutations: MutationRecord[]) =>
-        document.querySelector('video.video-stream.html5-main-video') as HTMLElement | null;
+     document.getElementById("below") as HTMLElement | null;;
+        // document.querySelector('video.video-stream.html5-main-video') as HTMLElement | null;
 
-    const onFound = (_videoEl: HTMLElement) => {
-        postWindowMsg(MsgType.YTQueryVideoParam, videoID);
+    const onFound = (belowArea: HTMLElement) => {
+        // ✅ 去掉 postWindowMsg
+        console.log("------------------>>> video element found:", videoID);
+
+        // ✅ 创建按钮并添加到视频下面
+        const btn = document.createElement("button");
+        btn.textContent = "下载视频";
+        btn.style.backgroundColor = "red";
+        btn.style.color = "white";
+        btn.style.fontSize = "20px";
+        btn.style.padding = "10px 20px";
+        btn.style.marginTop = "10px";
+        btn.style.border = "none";
+        btn.style.cursor = "pointer";
+        btn.style.display = "block";
+
+        btn.addEventListener("click", async () => {
+            console.log("下载按钮被点击，videoID=", videoID);
+            await sendMsgToService(videoID, MsgType.YTVideoSave);
+        });
+
+        belowArea.parentElement.insertBefore(btn, belowArea);
         videoObserver = null;
         return true;
     };
 
     videoObserver = observeSimple(root as HTMLElement, judgeFunc, onFound);
-    console.log("------------------>>> start to query video info:", videoID);
 }
 
 function parseVideoParam(videoInfo: YTParsedLite) {
@@ -99,8 +119,8 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
     switch (request.action) {
         case MsgType.NaviUrlChanged: {
             console.log("-------->>> url changed:", window.location);
-            // const videoID = isWatchingPage()
-            // if (videoID) checkIfVideoLoaded(videoID);
+            const videoID = isWatchingPage()
+            if (videoID) checkIfVideoLoaded(videoID);
             sendResponse({success: true});
             break;
         }
