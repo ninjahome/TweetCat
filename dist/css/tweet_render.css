@@ -251,6 +251,7 @@ img, video {
     font-size: 15px;
     font-weight: 700;
 }
+
 .tweet-actions .bookMarked {
     display: flex;
     align-items: center;
@@ -788,8 +789,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tcq-quoted-block-gap .tcq-quoted-media.tcq-qphoto--grid-1 img {
     max-width: 100% !important;
     max-height: 516px !important;
-    width: auto !important;
-    height: auto !important;
     display: block !important;
     margin: auto !important;
     position: static !important;
