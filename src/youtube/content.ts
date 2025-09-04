@@ -44,7 +44,7 @@ function checkIfVideoLoaded(videoID: string) {
         document.documentElement;
 
     const judgeFunc = (_mutations: MutationRecord[]) =>
-     document.getElementById("below") as HTMLElement | null;;
+     document.getElementById("below") as HTMLElement | null;
         // document.querySelector('video.video-stream.html5-main-video') as HTMLElement | null;
 
     const onFound = (belowArea: HTMLElement) => {
