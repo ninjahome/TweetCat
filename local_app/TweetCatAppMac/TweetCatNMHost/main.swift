@@ -106,8 +106,18 @@ func handleStart(_ req: [String: Any]) -> [String: Any] {
         }
 }
 
+private let kIncomingNote = Notification.Name("com.tweetcat.nativeMessage.incoming")
+
 func handleCookie(_ req: [String: Any]) -> [String: Any] {
-        return ["ok": true, "message": "success"]
+    // 直接把原始 payload 交给 UI，让 UI 自行解析 videoId / cookies / url 等
+    DistributedNotificationCenter.default().post(
+        name: kIncomingNote,
+        object: nil,
+        userInfo: ["payload": req]
+    )
+
+    // 立即返回成功（本函数不关心 UI 是否在线）
+    return ["ok": true, "message": "success"]
 }
 
 func handleCheck(_ req: [String: Any]) -> [String: Any] {
