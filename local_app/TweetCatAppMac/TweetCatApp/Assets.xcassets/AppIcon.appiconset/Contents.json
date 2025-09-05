@@ -6,7 +6,7 @@
       "size" : "16x16"
     },
     {
-      "filename" : "tweetcat 4.png",
+      "filename" : "tweetcatApp 4.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "16x16"
@@ -17,7 +17,7 @@
       "size" : "32x32"
     },
     {
-      "filename" : "tweetcat 3.png",
+      "filename" : "tweetcatApp 3.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "32x32"
@@ -28,7 +28,7 @@
       "size" : "128x128"
     },
     {
-      "filename" : "tweetcat 2.png",
+      "filename" : "tweetcatApp 2.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "128x128"
@@ -39,7 +39,7 @@
       "size" : "256x256"
     },
     {
-      "filename" : "tweetcat 1.png",
+      "filename" : "tweetcatApp 1.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "256x256"
@@ -50,7 +50,7 @@
       "size" : "512x512"
     },
     {
-      "filename" : "tweetcat.png",
+      "filename" : "tweetcatApp.png",
       "idiom" : "mac",
       "scale" : "2x",
       "size" : "512x512"

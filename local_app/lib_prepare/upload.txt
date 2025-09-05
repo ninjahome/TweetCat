@@ -1,0 +1,1 @@
+scp -i ~/Documents/conf/dessage-rbc TweetCatApp.dmg ribencong@35.247.142.146:~/

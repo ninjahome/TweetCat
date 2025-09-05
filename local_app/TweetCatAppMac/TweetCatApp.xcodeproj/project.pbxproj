@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		69EEC0DD2E6AC3D0000A5D98 /* TweetCatNMHost in CopyFiles */ = {isa = PBXBuildFile; fileRef = 69EEC0D32E6AC0B9000A5D98 /* TweetCatNMHost */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		699BD97C2E69B3E90068C0FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,12 +25,42 @@
 			remoteGlobalIDString = 699BD96A2E69B3E50068C0FF;
 			remoteInfo = TweetCatApp;
 		};
+		69EEC0DA2E6AC300000A5D98 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 699BD9632E69B3E40068C0FF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 69EEC0D22E6AC0B9000A5D98;
+			remoteInfo = TweetCatNMHost;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		69EEC0D12E6AC0B9000A5D98 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		69EEC0DC2E6AC3AE000A5D98 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				69EEC0DD2E6AC3D0000A5D98 /* TweetCatNMHost in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		699BD96B2E69B3E50068C0FF /* TweetCatApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TweetCatApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		699BD97B2E69B3E90068C0FF /* TweetCatAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TweetCatAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		699BD9852E69B3E90068C0FF /* TweetCatAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TweetCatAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		69EEC0D32E6AC0B9000A5D98 /* TweetCatNMHost */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TweetCatNMHost; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -43,6 +77,11 @@
 		699BD9882E69B3E90068C0FF /* TweetCatAppUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = TweetCatAppUITests;
+			sourceTree = "<group>";
+		};
+		69EEC0D42E6AC0B9000A5D98 /* TweetCatNMHost */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = TweetCatNMHost;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +108,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		69EEC0D02E6AC0B9000A5D98 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -78,6 +124,7 @@
 				699BD96D2E69B3E50068C0FF /* TweetCatApp */,
 				699BD97E2E69B3E90068C0FF /* TweetCatAppTests */,
 				699BD9882E69B3E90068C0FF /* TweetCatAppUITests */,
+				69EEC0D42E6AC0B9000A5D98 /* TweetCatNMHost */,
 				699BD96C2E69B3E50068C0FF /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,6 +135,7 @@
 				699BD96B2E69B3E50068C0FF /* TweetCatApp.app */,
 				699BD97B2E69B3E90068C0FF /* TweetCatAppTests.xctest */,
 				699BD9852E69B3E90068C0FF /* TweetCatAppUITests.xctest */,
+				69EEC0D32E6AC0B9000A5D98 /* TweetCatNMHost */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -103,10 +151,12 @@
 				699BD9682E69B3E50068C0FF /* Frameworks */,
 				699BD9692E69B3E50068C0FF /* Resources */,
 				69EEC0962E6A7AB7000A5D98 /* Sign Embedded Tools */,
+				69EEC0DC2E6AC3AE000A5D98 /* CopyFiles */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				69EEC0DB2E6AC300000A5D98 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				699BD96D2E69B3E50068C0FF /* TweetCatApp */,
@@ -164,6 +214,28 @@
 			productReference = 699BD9852E69B3E90068C0FF /* TweetCatAppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		69EEC0D22E6AC0B9000A5D98 /* TweetCatNMHost */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 69EEC0D72E6AC0B9000A5D98 /* Build configuration list for PBXNativeTarget "TweetCatNMHost" */;
+			buildPhases = (
+				69EEC0CF2E6AC0B9000A5D98 /* Sources */,
+				69EEC0D02E6AC0B9000A5D98 /* Frameworks */,
+				69EEC0D12E6AC0B9000A5D98 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				69EEC0D42E6AC0B9000A5D98 /* TweetCatNMHost */,
+			);
+			name = TweetCatNMHost;
+			packageProductDependencies = (
+			);
+			productName = TweetCatNMHost;
+			productReference = 69EEC0D32E6AC0B9000A5D98 /* TweetCatNMHost */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -185,6 +257,9 @@
 						CreatedOnToolsVersion = 16.4;
 						TestTargetID = 699BD96A2E69B3E50068C0FF;
 					};
+					69EEC0D22E6AC0B9000A5D98 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 				};
 			};
 			buildConfigurationList = 699BD9662E69B3E40068C0FF /* Build configuration list for PBXProject "TweetCatApp" */;
@@ -204,6 +279,7 @@
 				699BD96A2E69B3E50068C0FF /* TweetCatApp */,
 				699BD97A2E69B3E90068C0FF /* TweetCatAppTests */,
 				699BD9842E69B3E90068C0FF /* TweetCatAppUITests */,
+				69EEC0D22E6AC0B9000A5D98 /* TweetCatNMHost */,
 			);
 		};
 /* End PBXProject section */
@@ -276,6 +352,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		69EEC0CF2E6AC0B9000A5D98 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -288,6 +371,11 @@
 			isa = PBXTargetDependency;
 			target = 699BD96A2E69B3E50068C0FF /* TweetCatApp */;
 			targetProxy = 699BD9862E69B3E90068C0FF /* PBXContainerItemProxy */;
+		};
+		69EEC0DB2E6AC300000A5D98 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 69EEC0D22E6AC0B9000A5D98 /* TweetCatNMHost */;
+			targetProxy = 69EEC0DA2E6AC300000A5D98 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -544,6 +632,30 @@
 			};
 			name = Release;
 		};
+		69EEC0D82E6AC0B9000A5D98 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2XYK8RBB6M;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.tweetcat.host;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		69EEC0D92E6AC0B9000A5D98 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 2XYK8RBB6M;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.tweetcat.host;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -579,6 +691,15 @@
 			buildConfigurations = (
 				699BD9962E69B3E90068C0FF /* Debug */,
 				699BD9972E69B3E90068C0FF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		69EEC0D72E6AC0B9000A5D98 /* Build configuration list for PBXNativeTarget "TweetCatNMHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				69EEC0D82E6AC0B9000A5D98 /* Debug */,
+				69EEC0D92E6AC0B9000A5D98 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

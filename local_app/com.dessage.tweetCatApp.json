@@ -1,0 +1,9 @@
+{
+  "name": "com.dessage.tweetCatApp",
+  "description": "Bridge between browser extension and yt-dlp Swift host",
+  "path": "/Applications/TweetCatApp.app/Contents/MacOS/TweetCatNMHost",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://gjdlclglpkjibapaafmfifnkjpmgodli/"
+  ]
+}
