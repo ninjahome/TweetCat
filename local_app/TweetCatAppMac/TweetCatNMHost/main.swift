@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 enum NMErr: Error { case eof, invalidHeader, invalidJSON, tooLarge }
@@ -37,6 +38,83 @@ func writeMessage(_ json: [String: Any], to out: FileHandle) throws {
         try out.synchronize()
 }
 
+// ====== 占位逻辑函数 ======
+
+private let UI_BUNDLE_ID = "com.dessage.tweetcatapp"  // 改成你的 UI App Bundle Identifier
+
+private func isUIRunning() -> Bool {
+        !NSRunningApplication.runningApplications(
+                withBundleIdentifier: UI_BUNDLE_ID
+        ).isEmpty
+}
+
+private func launchUIIfNeeded(timeout: TimeInterval = 10) throws {
+        if isUIRunning() { return }  // 已在运行，不重复启动
+
+        guard
+                let appURL = NSWorkspace.shared.urlForApplication(
+                        withBundleIdentifier: UI_BUNDLE_ID
+                )
+        else {
+                throw NSError(
+                        domain: "NMHost",
+                        code: 404,
+                        userInfo: [
+                                NSLocalizedDescriptionKey:
+                                        "UI app not found by bundle id: \(UI_BUNDLE_ID)"
+                        ]
+                )
+        }
+
+        let cfg = NSWorkspace.OpenConfiguration()
+        var launchError: Error?
+        let sem = DispatchSemaphore(value: 1)
+        sem.wait()
+        NSWorkspace.shared.openApplication(at: appURL, configuration: cfg) {
+                _,
+                err in
+                launchError = err
+                sem.signal()
+        }
+        _ = sem.wait(timeout: .now() + timeout)
+        if let e = launchError {
+                throw e
+        }
+        // 再次确认已在运行
+        if !isUIRunning() {
+                throw NSError(
+                        domain: "NMHost",
+                        code: 408,
+                        userInfo: [
+                                NSLocalizedDescriptionKey:
+                                        "UI app did not become running in time"
+                        ]
+                )
+        }
+}
+
+func handleStart(_ req: [String: Any]) -> [String: Any] {
+        do {
+                try launchUIIfNeeded()
+                return ["ok": true, "message": "success"]  // 已在运行或已成功拉起
+        } catch {
+                return [
+                        "ok": false,
+                        "message":
+                                "failed to start UI: \(error.localizedDescription)",
+                ]
+        }
+}
+
+func handleCookie(_ req: [String: Any]) -> [String: Any] {
+        return ["ok": true, "message": "success"]
+}
+
+func handleCheck(_ req: [String: Any]) -> [String: Any] {
+        return ["ok": true, "message": "success"]
+}
+
+// ====== 主流程 ======
 func run() {
         let stdin = FileHandle.standardInput
         let stdout = FileHandle.standardOutput
@@ -44,46 +122,38 @@ func run() {
                 // 1) 读浏览器扩展消息
                 let req = try readMessage(stdin: stdin)
 
-                // 2) 转发给 UI App
-                DistributedNotificationCenter.default().post(
-                        name: Notification.Name(
-                                "com.tweetcat.nativeMessage.incoming"
-                        ),
-                        object: nil,
-                        userInfo: ["payload": req]
-                )
+                // 2) 根据 action 分发
+                let action = req["action"] as? String ?? ""
+                let resp: [String: Any]
 
-                // 3) 回一个伪造响应
-                let fakeItems: [[String: Any]] = [
-                        [
-                                "label": "720p AVC + m4a（mock）",
-                                "value": "best[height<=720]", "height": 720,
-                                "kind": "progressive",
-                        ],
-                        [
-                                "label": "1080p (video-only, mock)",
-                                "value": "bestvideo[height<=1080]+bestaudio",
-                                "height": 1080, "kind": "merge",
-                        ],
-                ]
-                let resp: [String: Any] = [
-                        "ok": true,
-                        "message": "received & forwarded to TweetCatApp",
-                        "formats": ["items": fakeItems],
-                        "echo": req,
-                ]
+                switch action {
+                case "start":
+                        resp = handleStart(req)
+                case "cookie":
+                        resp = handleCookie(req)
+                case "check":
+                        resp = handleCheck(req)
+                default:
+                        resp = [
+                                "ok": false,
+                                "message": "unknown action: \(action)",
+                        ]
+                }
+
+                // 3) 返回结果
                 try writeMessage(resp, to: stdout)
                 exit(0)
+
         } catch NMErr.eof {
                 exit(0)
         } catch {
                 try? writeMessage(
-                        ["ok": false, "error": "\(error)"],
+                        ["ok": false, "message": "\(error)"],
                         to: stdout
                 )
                 exit(1)
         }
 }
 
-// 顶层入口：**不要有 @main**，直接调用
+// 顶层入口
 run()

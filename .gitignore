@@ -44,3 +44,5 @@ bin-release/
 /local_app/lib_prepare/TweetCatApp.dmg
 /local_app/lib_prepare/TweetCatApp.notary.log
 /local_app/lib_prepare/TweetCatApp.app.notary.log
+/local_app/lib_prepare/TweetCatApp.dmg.notary.log
+/lib_download/

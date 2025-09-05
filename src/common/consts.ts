@@ -70,6 +70,8 @@ export enum MsgType {
     YTQueryVideoParam = "YTQueryVideoParam",
     YTVideoParamGot = 'YTVideoParamGot',
     YTVideoSave = 'YTVideoSave',
+    CheckIfLocalAppInstalled = 'CheckIfLocalAppInstalled',
+    StartLocalApp = 'StartLocalApp',
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

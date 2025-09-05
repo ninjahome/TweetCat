@@ -2,5 +2,31 @@ scp -i ~/Documents/conf/dessage-rbc TweetCatApp.dmg ribencong@35.247.142.146:~/
 
 
 
+test script
 
- python3 testmsg.py | /Applications/TweetCatApp.app/Contents/MacOS/TweetCatNMHost | python3 decode.py
+chrome.runtime.sendNativeMessage(
+  'com.dessage.tweetcatapp',
+  { action: 'start', videoId: '' },
+  resp => console.log('resp(start)=', resp, 'lastError=', chrome.runtime.lastError)
+);
+
+
+chrome.runtime.sendNativeMessage(
+  'com.dessage.tweetcatapp',
+  {
+    action: 'cookie',
+    videoId: 'abc123',
+    url: 'https://www.youtube.com/watch?v=abc123',
+    cookies: [
+      { name: 'SID', value: 'dummy123', domain: '.youtube.com', path: '/' }
+    ]
+  },
+  resp => console.log('resp(cookie)=', resp, 'lastError=', chrome.runtime.lastError)
+);
+
+
+chrome.runtime.sendNativeMessage(
+  'com.dessage.tweetcatapp',
+  { action: 'check', videoId: '' },
+  resp => console.log('resp(check)=', resp, 'lastError=', chrome.runtime.lastError)
+);

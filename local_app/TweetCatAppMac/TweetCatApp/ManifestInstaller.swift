@@ -9,7 +9,7 @@
 import Foundation
 
 /// 你资源里的文件名（不含路径）
-private let kManifestBaseName = "com.dessage.tweetCatApp"
+private let kManifestBaseName = "com.dessage.tweetcatapp"
 private let kManifestExt = "json"
 
 /// 目标：~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.dessage.tweetCatApp.json

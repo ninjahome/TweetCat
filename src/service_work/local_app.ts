@@ -1,11 +1,9 @@
 // ====== 1) 配置：你的 Native Messaging Host 名称 ======
 import browser from "webextension-polyfill";
 
-// const NATIVE_HOST = 'com.dessage.ytdlp_bridge'; // ← 和原生侧注册的名字一致
-const NATIVE_HOST = 'com.dessage.tweetCatApp'; // ← 和原生侧注册的名字一致
+const NATIVE_HOST = 'com.dessage.tweetcatapp';
 
-// ====== 2) 对原生壳子的消息协议（你可以按需扩展） ======
-type NativeAction = 'probe' | 'download';
+type NativeAction = 'start' | 'cookie' | 'check';
 
 interface NativeRequest {
     action: NativeAction;
@@ -20,24 +18,11 @@ interface NativeRequest {
         httpOnly?: boolean;
         expires?: number;
     }>;
-    formatQuery?: string;       // 可选：yt-dlp 的格式选择表达式
-    outTemplate?: string;       // 可选：输出模板
 }
 
 interface NativeResponse {
     ok: boolean;
     message?: string;
-    data?: any;
-    cookie_file?: string;
-    formats?: {
-        ok: boolean;
-        items: Array<{
-            label: string;
-            value: string;
-            height?: number;
-            kind?: "merge" | "single";
-        }>;
-    };
 }
 
 // ====== 3) 发送工具：发消息到原生壳子（带超时&错误处理） ======
@@ -56,17 +41,14 @@ async function sendToNative(payload: NativeRequest, timeoutMs = 15000): Promise<
     }
 }
 
-// ====== 4) 你已有的方法：这里直接调用原生壳子，先做“探测” ======
 export async function saveSimpleVideo(videoID: string) {
     console.log("---------->>> video id to download", videoID);
 
     const cookies = await readYouTubeCookies();
-    // const summary = cookies.map((c) => `${c.name}@${c.domain}${c.path}`);
-    // console.log(`[cookies] summary (${summary.length}):`, summary);
 
     const url = `https://www.youtube.com/watch?v=${videoID}`;
     const req: NativeRequest = {
-        action: 'probe',
+        action: 'cookie',
         videoId: videoID,
         url,
         cookies,
@@ -78,8 +60,63 @@ export async function saveSimpleVideo(videoID: string) {
         return;
     }
 
-    const items = res.formats?.ok ? res.formats.items : [];
-    console.log('[native][probe] ok, cookie_file:', res.cookie_file, items);
+    console.log('[native] ok:');
+}
+
+export async function openLocalApp(): Promise<boolean> {
+    console.log("---------->>> start to open local app");
+    const req: NativeRequest = {
+        action: 'start',
+        videoId: ''
+    };
+
+    const resp = await sendToNative(req);
+    const success = !!(resp && (resp as any).ok === true);
+    if (!success) {
+        console.warn("failed to open local app:", resp?.message);
+        return false;
+    }
+
+    return true;
+}
+
+export async function checkLocalApp(): Promise<boolean> {
+    console.log("---------->>> start to check if local app installed");
+    const req: NativeRequest = {
+        action: 'check',
+        videoId: ''
+    };
+
+    try {
+        const resp = await browser.runtime.sendNativeMessage(NATIVE_HOST, req) as NativeResponse;
+        return !!(resp && (resp as any).ok === true);
+    } catch (err: any) {
+        const msg = String(err?.message || err || "").toLowerCase();
+
+        console.log("------>>>local host error message:", msg);
+        // 1) 没找到 host（清单未放到正确目录 / name 不匹配 / 浏览器不是这个通道）
+        if (msg.includes("specified native messaging host not found")) {
+            return false;
+        }
+
+        // 2) 不允许访问（allowed_origins 的扩展 ID 不匹配）
+        if (msg.includes("access to the specified native messaging host is forbidden")) {
+            return false;
+        }
+
+        // 3) 能找到 host，但沟通失败（host 启动后退出/崩溃/通信异常）：
+        //    就“算作已安装”，因为清单与路径都生效了，只是运行异常
+        if (
+            msg.includes("native host has exited") ||
+            msg.includes("could not establish connection") ||
+            msg.includes("error when communicating")
+        ) {
+            return true;
+        }
+
+        // 其它未知错误：保守起见当作未安装
+        return false;
+    }
 }
 
 
@@ -102,20 +139,6 @@ async function readYouTubeCookies(): Promise<browser.Cookies.Cookie[]> {
         try {
             const list = await browser.cookies.getAll({url});
             console.log(`[cookies] ${url} -> count=${list.length}`);
-
-            // // 详细打印（含敏感值，谨慎！）
-            // for (const c of list) {
-            //     const preview =
-            //         typeof c.value === "string" ? c.value.slice(0, 60) : String(c.value);
-            //     console.log(
-            //         `[cookie] domain=${c.domain} path=${c.path} name=${c.name} ` +
-            //         `httpOnly=${c.httpOnly} secure=${c.secure} sameSite=${c.sameSite} ` +
-            //         `expiry=${c.expirationDate ?? "(session)"} value="${preview}${
-            //             c.value.length > 60 ? "..." : ""
-            //         }"`
-            //     );
-            // }
-
             collected.push(...list);
         } catch (e) {
             console.warn(`[cookies] failed for ${url}:`, e);

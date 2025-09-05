@@ -44,8 +44,8 @@ function checkIfVideoLoaded(videoID: string) {
         document.documentElement;
 
     const judgeFunc = (_mutations: MutationRecord[]) =>
-     document.getElementById("below") as HTMLElement | null;
-        // document.querySelector('video.video-stream.html5-main-video') as HTMLElement | null;
+        document.getElementById("below") as HTMLElement | null;
+    // document.querySelector('video.video-stream.html5-main-video') as HTMLElement | null;
 
     const onFound = (belowArea: HTMLElement) => {
         // ✅ 去掉 postWindowMsg
@@ -66,6 +66,7 @@ function checkIfVideoLoaded(videoID: string) {
         btn.addEventListener("click", async () => {
             console.log("下载按钮被点击，videoID=", videoID);
             await sendMsgToService(videoID, MsgType.YTVideoSave);
+            await sendMsgToService({}, MsgType.StartLocalApp);
         });
 
         belowArea.parentElement.insertBefore(btn, belowArea);

@@ -20,7 +20,7 @@ import {timerKolInQueueImmediate} from "./bg_timer";
 import {tweetFM} from "./tweet_fetch_manager";
 import {penalize429, useTokenByUser} from "./api_bucket_state";
 import {addBlockedAdsNumber} from "../object/system_setting";
-import {saveSimpleVideo} from "./local_app";
+import {checkLocalApp, openLocalApp, saveSimpleVideo} from "./local_app";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -155,6 +155,13 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.YTVideoSave: {
             await saveSimpleVideo(request.data as string);
             return {success: true};
+        }
+
+        case MsgType.CheckIfLocalAppInstalled:{
+            return {success:await checkLocalApp()}
+        }
+        case MsgType.StartLocalApp:{
+            return {success:await openLocalApp()}
         }
 
         default:

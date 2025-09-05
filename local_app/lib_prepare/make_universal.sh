@@ -1,16 +1,19 @@
 #!/bin/bash
 set -e
 
-# 当前目录
+# 当前目录（脚本所在目录）
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# 库文件所在目录
+LIB_DIR="$DIR/../../lib_download"
+
 # 目标目录
-DEST="$DIR/../TweetCatApp/TweetCatApp/Resources"
+DEST="$DIR/../TweetCatAppMac/TweetCatApp/Resources"
 
 echo "合并 ffmpeg..."
 lipo -create \
-  "$DIR/ffmpeg-darwin-arm64" \
-  "$DIR/ffmpeg-darwin-x64" \
+  "$LIB_DIR/ffmpeg-darwin-arm64" \
+  "$LIB_DIR/ffmpeg-darwin-x64" \
   -output "$DIR/ffmpeg"
 
 chmod +x "$DIR/ffmpeg"
@@ -18,8 +21,8 @@ lipo -info "$DIR/ffmpeg"
 
 echo "合并 ffprobe..."
 lipo -create \
-  "$DIR/ffprobe-darwin-arm64" \
-  "$DIR/ffprobe-darwin-x64" \
+  "$LIB_DIR/ffprobe-darwin-arm64" \
+  "$LIB_DIR/ffprobe-darwin-x64" \
   -output "$DIR/ffprobe"
 
 chmod +x "$DIR/ffprobe"
