@@ -37,47 +37,53 @@ func writeMessage(_ json: [String: Any], to out: FileHandle) throws {
         try out.synchronize()
 }
 
-// ===== 顶层入口（无 @main）=====
-let stdin = FileHandle.standardInput
-let stdout = FileHandle.standardOutput
+func run() {
+        let stdin = FileHandle.standardInput
+        let stdout = FileHandle.standardOutput
+        do {
+                // 1) 读浏览器扩展消息
+                let req = try readMessage(stdin: stdin)
 
-do {
-        // 1) 读浏览器扩展的消息
-        let req = try readMessage(stdin: stdin)
+                // 2) 转发给 UI App
+                DistributedNotificationCenter.default().post(
+                        name: Notification.Name(
+                                "com.tweetcat.nativeMessage.incoming"
+                        ),
+                        object: nil,
+                        userInfo: ["payload": req]
+                )
 
-        // 2) 转发给你的 UI App（注意：这里用无 options 的通用写法）
-        DistributedNotificationCenter.default().post(
-                name: Notification.Name("com.tweetcat.nativeMessage.incoming"),
-                object: nil,
-                userInfo: ["payload": req]
-        )
-   
-
-        // 3) 回一个伪造响应给浏览器
-        let fakeItems: [[String: Any]] = [
-                [
-                        "label": "720p AVC + m4a（mock）",
-                        "value": "best[height<=720]", "height": 720,
-                        "kind": "progressive",
-                ],
-                [
-                        "label": "1080p (video-only, mock)",
-                        "value": "bestvideo[height<=1080]+bestaudio",
-                        "height": 1080, "kind": "merge",
-                ],
-        ]
-        let resp: [String: Any] = [
-                "ok": true,
-                "message": "received & forwarded to TweetCatApp",
-                "formats": ["items": fakeItems],
-                "echo": req,
-        ]
-        try writeMessage(resp, to: stdout)
-        exit(0)
-} catch NMErr.eof {
-        exit(0)
-} catch {
-        let err: [String: Any] = ["ok": false, "error": "\(error)"]
-        try? writeMessage(err, to: stdout)
-        exit(1)
+                // 3) 回一个伪造响应
+                let fakeItems: [[String: Any]] = [
+                        [
+                                "label": "720p AVC + m4a（mock）",
+                                "value": "best[height<=720]", "height": 720,
+                                "kind": "progressive",
+                        ],
+                        [
+                                "label": "1080p (video-only, mock)",
+                                "value": "bestvideo[height<=1080]+bestaudio",
+                                "height": 1080, "kind": "merge",
+                        ],
+                ]
+                let resp: [String: Any] = [
+                        "ok": true,
+                        "message": "received & forwarded to TweetCatApp",
+                        "formats": ["items": fakeItems],
+                        "echo": req,
+                ]
+                try writeMessage(resp, to: stdout)
+                exit(0)
+        } catch NMErr.eof {
+                exit(0)
+        } catch {
+                try? writeMessage(
+                        ["ok": false, "error": "\(error)"],
+                        to: stdout
+                )
+                exit(1)
+        }
 }
+
+// 顶层入口：**不要有 @main**，直接调用
+run()

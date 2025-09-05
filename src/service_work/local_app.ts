@@ -1,7 +1,8 @@
 // ====== 1) 配置：你的 Native Messaging Host 名称 ======
 import browser from "webextension-polyfill";
 
-const NATIVE_HOST = 'com.dessage.ytdlp_bridge'; // ← 和原生侧注册的名字一致
+// const NATIVE_HOST = 'com.dessage.ytdlp_bridge'; // ← 和原生侧注册的名字一致
+const NATIVE_HOST = 'com.dessage.tweetCatApp'; // ← 和原生侧注册的名字一致
 
 // ====== 2) 对原生壳子的消息协议（你可以按需扩展） ======
 type NativeAction = 'probe' | 'download';

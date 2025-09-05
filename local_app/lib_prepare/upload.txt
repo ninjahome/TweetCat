@@ -1,1 +1,6 @@
 scp -i ~/Documents/conf/dessage-rbc TweetCatApp.dmg ribencong@35.247.142.146:~/
+
+
+
+
+ python3 testmsg.py | /Applications/TweetCatApp.app/Contents/MacOS/TweetCatNMHost | python3 decode.py

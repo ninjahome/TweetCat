@@ -10,24 +10,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 }
 
-// 简单桥接：接收 Host Helper 转来的消息
-enum NativeMessageBridge {
-        static let notificationName = Notification.Name(
-                "com.tweetcat.nativeMessage.incoming"
-        )
+// 放到任意初始化早、且只注册一次的地方（比如 ContentView.onAppear 或 App.init）
+final class NativeMessageReceiver: ObservableObject {
+        static let shared = NativeMessageReceiver()
+        @Published var lastPayload: [String: Any] = [:]
 
-        static func startObserving() {
+        private init() {
                 DistributedNotificationCenter.default().addObserver(
-                        forName: notificationName,
+                        forName: Notification.Name(
+                                "com.tweetcat.nativeMessage.incoming"
+                        ),
                         object: nil,
                         queue: .main
                 ) { note in
-                        // Host Helper 发来的 payload（来自浏览器扩展）
                         if let payload = note.userInfo?["payload"]
                                 as? [String: Any]
                         {
-                                // 你可以在这里接管业务：例如更新 UI / 入库 / 触发下载
-                                print("收到扩展消息：", payload)
+                                print("收到扩展消息:", payload)
+                                self.lastPayload = payload
+                        } else {
+                                print("收到扩展消息但无 payload")
                         }
                 }
         }
@@ -62,8 +64,10 @@ struct TweetCatApp: App {
                         ContentView()
                                 .onAppear {
                                         // ✅ 开始监听原生消息（Host Helper 会转发到这里）
-                                        NativeMessageBridge.startObserving()
+                                        _ = NativeMessageReceiver.shared
 
+                                        ManifestInstaller
+                                                .ensureChromeManifestInstalled()
                                         // 你原来的启动逻辑保留
                                         guard !didRunStartupTask else { return }
                                         didRunStartupTask = true

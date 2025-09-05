@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		69EEC0DD2E6AC3D0000A5D98 /* TweetCatNMHost in CopyFiles */ = {isa = PBXBuildFile; fileRef = 69EEC0D32E6AC0B9000A5D98 /* TweetCatNMHost */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		69EEC1262E6AD0CF000A5D98 /* TweetCatNMHost in CopyFiles */ = {isa = PBXBuildFile; fileRef = 69EEC0D32E6AC0B9000A5D98 /* TweetCatNMHost */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,7 +25,7 @@
 			remoteGlobalIDString = 699BD96A2E69B3E50068C0FF;
 			remoteInfo = TweetCatApp;
 		};
-		69EEC0DA2E6AC300000A5D98 /* PBXContainerItemProxy */ = {
+		69EEC0FA2E6ACDC2000A5D98 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 699BD9632E69B3E40068C0FF /* Project object */;
 			proxyType = 1;
@@ -50,7 +50,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 6;
 			files = (
-				69EEC0DD2E6AC3D0000A5D98 /* TweetCatNMHost in CopyFiles */,
+				69EEC1262E6AD0CF000A5D98 /* TweetCatNMHost in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -156,7 +156,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				69EEC0DB2E6AC300000A5D98 /* PBXTargetDependency */,
+				69EEC0FB2E6ACDC2000A5D98 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				699BD96D2E69B3E50068C0FF /* TweetCatApp */,
@@ -372,10 +372,10 @@
 			target = 699BD96A2E69B3E50068C0FF /* TweetCatApp */;
 			targetProxy = 699BD9862E69B3E90068C0FF /* PBXContainerItemProxy */;
 		};
-		69EEC0DB2E6AC300000A5D98 /* PBXTargetDependency */ = {
+		69EEC0FB2E6ACDC2000A5D98 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 69EEC0D22E6AC0B9000A5D98 /* TweetCatNMHost */;
-			targetProxy = 69EEC0DA2E6AC300000A5D98 /* PBXContainerItemProxy */;
+			targetProxy = 69EEC0FA2E6ACDC2000A5D98 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -510,7 +510,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 2XYK8RBB6M;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -542,7 +542,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = 2XYK8RBB6M;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -635,11 +635,13 @@
 		69EEC0D82E6AC0B9000A5D98 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 2XYK8RBB6M;
 				ENABLE_HARDENED_RUNTIME = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.tweetcat.host;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -647,11 +649,13 @@
 		69EEC0D92E6AC0B9000A5D98 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 2XYK8RBB6M;
 				ENABLE_HARDENED_RUNTIME = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.tweetcat.host;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
