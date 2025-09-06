@@ -33,8 +33,7 @@ final class NativeMessageReceiver: ObservableObject {
 
         /// 把收到的 payload 落成 Netscape cookie 文件，并记录一个 TweetCatItem
         private func processPayload(_ payload: [String: Any]) {
-                // 期望字段（见你提供的 2.txt）
-                // ["action": "cookie", "url": "...", "cookies": [[...]], "videoId": "1SLgftq3jZw"]
+      
                 let action = payload["action"] as? String ?? ""
                 guard action == "cookie" else {
                         NSLog("忽略 action=\(action)")
@@ -65,15 +64,32 @@ final class NativeMessageReceiver: ObservableObject {
                                 createdAt: Date()
                         )
                         self.items.insert(item, at: 0)
-                        
-                        YTDLP.queryInfo(videoId: videoId, url: url)
+ 
+                        YTDLPManager.shared.enqueueQuery(
+                                videoId: videoId,
+                                url: url
+                        ) { result in
+                                switch result {
+                                case .success(let info):
+                                        YTDLP.printSummary(info)
+                                        let opts = YTDLP.buildDownloadOptions(
+                                                from: info
+                                        )
+                                        YTDLP.printDownloadOptions(
+                                                opts,
+                                                url: url,
+                                                cookieFile: fileURL.path
+                                        )
+                                case .failure(let err):
+                                        print("查询失败: \(err)")
+                                }
+                        }
 
                 } catch {
                         NSLog(
                                 "写 Netscape cookies 失败: \(error.localizedDescription)"
                         )
                 }
-                
-                
+
         }
 }

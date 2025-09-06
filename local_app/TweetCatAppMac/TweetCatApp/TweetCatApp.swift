@@ -34,6 +34,9 @@ struct TweetCatApp: App {
 
         init() {
                 quickProxyCheck(proxyEnv: ProxyConfig.vpn2)
+                YTDLPManager.shared.start()
+                _ = NativeMessageReceiver.shared
+                ManifestInstaller.ensureChromeManifestInstalled()
         }
 
         @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -56,25 +59,9 @@ struct TweetCatApp: App {
                 }
         }()
 
-        @State private var didRunStartupTask = false
-
         var body: some Scene {
                 WindowGroup {
                         ContentView()
-                                .onAppear {
-                                        // ✅ 开始监听原生消息（Host Helper 会转发到这里）
-                                        _ = NativeMessageReceiver.shared
-
-                                        ManifestInstaller
-                                                .ensureChromeManifestInstalled()
-                                        // 你原来的启动逻辑保留
-                                        guard !didRunStartupTask else { return }
-                                        didRunStartupTask = true
-                                        DispatchQueue.global(qos: .utility)
-                                                .async {
-                                                        YTDLP.printVersion()
-                                                }
-                                }
                 }
                 .modelContainer(sharedModelContainer)
         }

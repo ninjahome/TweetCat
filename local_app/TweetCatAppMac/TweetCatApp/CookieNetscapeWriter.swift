@@ -5,9 +5,9 @@
 //  Created by wesley on 2025/9/6.
 //
 
-
 import AppKit
 import Foundation
+
 
 // MARK: - 模型对象：videoId + url + 创建时间
 struct TweetCatItem: Identifiable {
@@ -16,7 +16,6 @@ struct TweetCatItem: Identifiable {
         let url: String
         let createdAt: Date
 }
-
 
 // MARK: - 单例：把 cookies 写成 Netscape 格式文件
 final class CookieNetscapeWriter {
@@ -33,9 +32,8 @@ final class CookieNetscapeWriter {
                 -> URL
         {
                 let lines = makeNetscapeLines(from: cookies)
-                let filename = "tweetCat_\(videoId).txt"
-                let outURL = try baseDir().appendingPathComponent(
-                        filename,
+                let outURL = URL(
+                        fileURLWithPath: kTweetCatCookieFile,
                         isDirectory: false
                 )
 

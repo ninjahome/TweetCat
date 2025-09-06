@@ -47,9 +47,22 @@
 		69EEC0D32E6AC0B9000A5D98 /* TweetCatNMHost */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TweetCatNMHost; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		69462BC62E6C2B2900B45674 /* Exceptions for "TweetCatApp" folder in "TweetCatNMHost" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Consts.swift,
+			);
+			target = 69EEC0D22E6AC0B9000A5D98 /* TweetCatNMHost */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		699BD96D2E69B3E50068C0FF /* TweetCatApp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				69462BC62E6C2B2900B45674 /* Exceptions for "TweetCatApp" folder in "TweetCatNMHost" target */,
+			);
 			path = TweetCatApp;
 			sourceTree = "<group>";
 		};

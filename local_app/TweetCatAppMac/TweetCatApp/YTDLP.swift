@@ -71,7 +71,7 @@ enum YTDLP {
                         print("yt-dlp_macos 不在 App Bundle 中。")
                         return
                 }
-                let cookieFile = "/tmp/tweetCat_\(videoId).txt"
+                let cookieFile = kTweetCatCookieFile
 
                 let args: [String] = [
                         "--no-progress", "--no-warnings", "--no-color",
@@ -148,7 +148,7 @@ enum YTDLP {
 
         // MARK: - 解析与工具
 
-        private static func decodeYTDLPInfo(from text: String) -> YTDLPInfo? {
+        public static func decodeYTDLPInfo(from text: String) -> YTDLPInfo? {
                 // 先剔除可能的 BOM / 控制符
                 let cleaned = text.trimmingCharacters(
                         in: .whitespacesAndNewlines
@@ -184,7 +184,7 @@ enum YTDLP {
                 return results
         }
 
-        private static func printSummary(_ info: YTDLPInfo) {
+        public static func printSummary(_ info: YTDLPInfo) {
                 print("== yt-dlp JSON 摘要 ==")
                 print("id: \(info.id)")
                 print("title: \(info.title)")
@@ -380,7 +380,7 @@ enum YTDLP {
         static func printDownloadOptions(
                 _ items: [DownloadOption],
                 url: String,
-                cookieFile: String
+                cookieFile: String = kTweetCatCookieFile
         ) {
                 let outTmpl =
                         ("\(NSHomeDirectory())/Downloads/%(title)s.%(ext)s")

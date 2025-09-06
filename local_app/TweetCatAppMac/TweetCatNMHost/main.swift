@@ -40,6 +40,15 @@ func writeMessage(_ json: [String: Any], to out: FileHandle) throws {
 
 // ====== 占位逻辑函数 ======
 
+private func cookiesFileURL() -> URL {
+        URL(fileURLWithPath: kTweetCatCookieFile, isDirectory: false)
+}
+private func cookiesHashURL() -> URL {
+        cookiesFileURL().deletingPathExtension().appendingPathExtension(
+                "hash.txt"
+        )
+}
+
 private let UI_BUNDLE_ID = "com.dessage.tweetcatapp"  // 改成你的 UI App Bundle Identifier
 
 private func isUIRunning() -> Bool {
@@ -106,22 +115,117 @@ func handleStart(_ req: [String: Any]) -> [String: Any] {
         }
 }
 
-private let kIncomingNote = Notification.Name("com.tweetcat.nativeMessage.incoming")
+private let kIncomingNote = Notification.Name(
+        "com.tweetcat.nativeMessage.incoming"
+)
 
 func handleCookie(_ req: [String: Any]) -> [String: Any] {
-    // 直接把原始 payload 交给 UI，让 UI 自行解析 videoId / cookies / url 等
-    DistributedNotificationCenter.default().post(
-        name: kIncomingNote,
-        object: nil,
-        userInfo: ["payload": req]
-    )
+        guard let cookieText = req["cookies"] as? String,
+                let hash = req["hash"] as? String
+        else {
+                return ["ok": false, "message": "invalid payload"]
+        }
 
-    // 立即返回成功（本函数不关心 UI 是否在线）
-    return ["ok": true, "message": "success"]
+        let outURL = cookiesFileURL()
+        do {
+                try cookieText.write(
+                        to: outURL,
+                        atomically: true,
+                        encoding: .utf8
+                )
+                try? FileManager.default.setAttributes(
+                        [.posixPermissions: 0o600],
+                        ofItemAtPath: outURL.path
+                )
+
+                let hashURL = cookiesHashURL()
+                try hash.write(to: hashURL, atomically: true, encoding: .utf8)
+                try? FileManager.default.setAttributes(
+                        [.posixPermissions: 0o600],
+                        ofItemAtPath: hashURL.path
+                )
+        } catch {
+                return ["ok": false, "message": "write failed: \(error)"]
+        }
+
+        // 同时转发给 UI，让 UI 知道 cookie 更新
+        DistributedNotificationCenter.default().post(
+                name: kIncomingNote,
+                object: nil,
+                userInfo: ["payload": req]
+        )
+
+        return ["ok": true, "message": "success"]
+}
+
+func handleGetFingerprint(_ req: [String: Any]) -> [String: Any] {
+        let fileURL = cookiesFileURL()
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+                return ["exists": false]
+        }
+
+        var resp: [String: Any] = ["exists": true]
+
+        if let attrs = try? FileManager.default.attributesOfItem(
+                atPath: fileURL.path
+        ),
+                let size = attrs[.size] as? Int
+        {
+                resp["length"] = size
+        }
+
+        if let sha = try? String(contentsOf: cookiesHashURL(), encoding: .utf8)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        {
+                resp["sha256"] = sha
+        }
+
+        return resp
 }
 
 func handleCheck(_ req: [String: Any]) -> [String: Any] {
-        return ["ok": true, "message": "success"]
+        return handleGetFingerprint(req)
+}
+
+func handleVideoID(_ req: [String: Any]) -> [String: Any] {
+        // 基本校验
+        guard let videoId = req["videoId"] as? String, !videoId.isEmpty,
+                let url = req["url"] as? String, !url.isEmpty
+        else {
+                return [
+                        "ok": false, "code": "INVALID_PAYLOAD",
+                        "message": "missing videoId or url",
+                ]
+        }
+
+        // 1) 始终先转发 videoId 请求给 UI
+        var payload = req
+        payload["action"] = "videoID"
+        payload["videoId"] = videoId
+        payload["url"] = url
+
+        DistributedNotificationCenter.default().post(
+                name: kIncomingNote,
+                object: nil,
+                userInfo: ["payload": payload]
+        )
+
+        // 2) 再处理 cookies/hash（如果有传递）
+        var cookieWriteOk: Bool? = nil
+        if let cookies = req["cookies"] as? String, !cookies.isEmpty,
+                let hash = req["hash"] as? String, !hash.isEmpty
+        {
+                let cookieResp = handleCookie(req)
+                cookieWriteOk = (cookieResp["ok"] as? Bool) ?? false
+        }
+
+        // 3) 返回结果
+        var resp: [String: Any] = [
+                "ok": true,
+                "message": "videoId forwarded",
+        ]
+        if let ok = cookieWriteOk { resp["cookieWriteOk"] = ok }
+        return resp
 }
 
 // ====== 主流程 ======
@@ -141,6 +245,8 @@ func run() {
                         resp = handleStart(req)
                 case "cookie":
                         resp = handleCookie(req)
+                case "videoId":
+                        resp = handleVideoID(req)
                 case "check":
                         resp = handleCheck(req)
                 default:
