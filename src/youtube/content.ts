@@ -52,8 +52,10 @@ function checkIfVideoLoaded(videoID: string) {
         console.log("------------------>>> video element found:", videoID);
 
         // ✅ 创建按钮并添加到视频下面
+        const bid = "video-downloader-btn"
         const btn = document.createElement("button");
         btn.textContent = "下载视频";
+        btn.id = bid
         btn.style.backgroundColor = "red";
         btn.style.color = "white";
         btn.style.fontSize = "20px";
@@ -66,8 +68,9 @@ function checkIfVideoLoaded(videoID: string) {
         btn.addEventListener("click", async () => {
             console.log("下载按钮被点击，videoID=", videoID);
             await sendMsgToService(videoID, MsgType.YTVideoSave);
-            await sendMsgToService({}, MsgType.StartLocalApp);
+            // await sendMsgToService({}, MsgType.StartLocalApp);
         });
+        belowArea.parentElement.querySelector("#" + bid)?.remove();
 
         belowArea.parentElement.insertBefore(btn, belowArea);
         videoObserver = null;

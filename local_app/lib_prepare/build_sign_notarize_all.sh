@@ -48,11 +48,28 @@ sign_one() {
   codesign --force --options runtime --timestamp --sign "$DEV_ID_APP" "$target"
 }
 
+### 0) 先签名内置外部工具
+TOOLS_DIR="$APP_ABS/Contents/Resources"
+TOOLS=( "yt-dlp_macos" "ffmpeg" "ffprobe" )
+
+info "Pre-sign embedded tools"
+for f in "${TOOLS[@]}"; do
+  BIN="$TOOLS_DIR/$f"
+  if [[ -f "$BIN" ]]; then
+    info "Fix & sign: $BIN"
+    chmod 755 "$BIN"
+    xattr -rc "$BIN" || true
+    codesign --remove-signature "$BIN" || true
+    codesign --force --options runtime --timestamp --sign "$DEV_ID_APP" "$BIN"
+  else
+    info "WARN: $BIN not found, skipped"
+  fi
+done
+
 ### 1) 递归签名嵌套 Mach-O
 info "Scanning and signing nested Mach-O files (may take a while)..."
 
 CANDIDATES=()
-# 兼容 bash 3.2：用 -print0 + read -d ''
 while IFS= read -r -d '' f; do
   CANDIDATES+=("$f")
 done < <(find "$APP_ABS/Contents" \( \
@@ -73,7 +90,6 @@ done
 
 if ((${#NEED_SIGN[@]} > 0)); then
   info "Found ${#NEED_SIGN[@]} Mach-O files to sign."
-  # 多轮覆盖依赖顺序
   for i in 1 2; do
     for f in "${NEED_SIGN[@]}"; do
       sign_one "$f" || err "签名失败: $f"

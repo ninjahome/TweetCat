@@ -1,0 +1,31 @@
+set -euo pipefail
+
+if [[ "${CODESIGNING_ALLOWED:-YES}" != "YES" ]]; then
+  echo "Codesigning not allowed. Skipping."
+  exit 0
+fi
+
+APP_CONTENTS="${TARGET_BUILD_DIR}/${CONTENTS_FOLDER_PATH}"
+TOOLS_DIR="${APP_CONTENTS}/Resources"
+TOOLS=( "yt-dlp_macos" "ffmpeg" "ffprobe" )
+
+IDENTITY="${EXPANDED_CODE_SIGN_IDENTITY:-"-"}"
+
+echo "Tools dir: ${TOOLS_DIR}"
+
+for name in "${TOOLS[@]}"; do
+  BIN="${TOOLS_DIR}/${name}"
+  if [[ -f "${BIN}" ]]; then
+    echo "Fix permission & sign (HR on): ${name}"
+    chmod 755 "${BIN}"
+    /usr/bin/codesign --force \
+      --sign "${IDENTITY}" \
+      --options runtime \
+      --timestamp \
+      "${BIN}"
+  else
+    echo "WARN: ${BIN} not found (skipped)"
+  fi
+done
+
+echo "✅ Embedded tools prepared & signed (with Hardened Runtime)."

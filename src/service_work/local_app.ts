@@ -2,8 +2,9 @@
 import browser from "webextension-polyfill";
 
 const NATIVE_HOST = 'com.dessage.tweetcatapp';
+// const NATIVE_HOST = 'com.dessage.ytdlp_bridge';
 
-type NativeAction = 'start' | 'cookie' | 'check';
+type NativeAction = 'start' | 'cookie' | 'check' | 'probe';
 
 interface NativeRequest {
     action: NativeAction;
@@ -48,7 +49,7 @@ export async function saveSimpleVideo(videoID: string) {
 
     const url = `https://www.youtube.com/watch?v=${videoID}`;
     const req: NativeRequest = {
-        action: 'cookie',
+        action: 'cookie',//probe//cookie
         videoId: videoID,
         url,
         cookies,

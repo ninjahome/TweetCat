@@ -88,6 +88,7 @@ enum ManifestInstaller {
                     print("Manifest installed to:", dstURL.path)
                     return
                 }
+                    
                 
                 // 4) 存在 → 比较版本
                 let installed = try? loadInstalledManifest(at: dstURL)
