@@ -10,8 +10,32 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 }
 
+func quickProxyCheck(proxyEnv: [String: String]) {
+        do {
+                let (code, _, err) = try Subprocess.runStreamed(
+                        executableURL: URL(fileURLWithPath: "/usr/bin/curl"),
+                        arguments: [
+                                "-s", "--max-time", "10",
+                                "https://ipinfo.io/ip",
+                        ],
+                        proxyEnv: proxyEnv,
+                        timeoutSec: 15,
+                        onStdoutLine: { print("[curl] \($0)") },
+                        onStderrLine: { _ in }
+                )
+                print("[curl] exit=\(code) err=\(err)")
+        } catch {
+                print("[curl] failed: \(error)")
+        }
+}
+
 @main
 struct TweetCatApp: App {
+
+        init() {
+                quickProxyCheck(proxyEnv: ProxyConfig.vpn2)
+        }
+
         @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
         var sharedModelContainer: ModelContainer = {
                 let schema = Schema([

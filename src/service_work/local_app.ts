@@ -61,7 +61,7 @@ export async function saveSimpleVideo(videoID: string) {
         return;
     }
 
-    console.log('[native] ok:');
+    console.log('[native] ok:',JSON.stringify(res));
 }
 
 export async function openLocalApp(): Promise<boolean> {

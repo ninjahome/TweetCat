@@ -65,11 +65,15 @@ final class NativeMessageReceiver: ObservableObject {
                                 createdAt: Date()
                         )
                         self.items.insert(item, at: 0)
+                        
+                        YTDLP.queryInfo(videoId: videoId, url: url)
 
                 } catch {
                         NSLog(
                                 "写 Netscape cookies 失败: \(error.localizedDescription)"
                         )
                 }
+                
+                
         }
 }
