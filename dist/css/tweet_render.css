@@ -312,6 +312,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tweet-no-wrapper {
     font-size: 15px;
     color: #1D9BF0;
+    cursor: pointer;
 }
 
 .tweet-no-wrapper .tweet-no {
