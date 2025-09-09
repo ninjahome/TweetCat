@@ -116,49 +116,12 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
 });
 
 
-
-
-let lastHandled = { tabId: null, url: null, time: 0 };
-
-function normalizeUrl(url) {
-    // 提取主机和路径，忽略查询参数
-    try {
-        const urlObj = new URL(url);
-        return `${urlObj.origin}${urlObj.pathname}`;
-    } catch {
-        return url;
-    }
-}
-
 async function handleNavigation(details) {
-    const now = Date.now();
-    const normalizedUrl = normalizeUrl(details.url);
-
-    // 防抖：忽略 10 秒内的重复主框架导航
-    if (
-        details.frameId === 0 &&
-        details.tabId === lastHandled.tabId &&
-        normalizedUrl === lastHandled.url &&
-        now - lastHandled.time < 10000
-    ) {
-        console.log('Ignoring duplicate navigation:', details.url);
-        return;
-    }
-
-    console.log("----->>", {
-        url: details.url,
-        tabId: details.tabId,
-        frameId: details.frameId,
-        transitionType: details.transitionType || 'undefined',
-        timeStamp: details.timeStamp
-    });
 
     if (details.frameId !== 0) {
         console.log('Ignoring subframe navigation:', details.url);
         return;
     }
-
-    lastHandled = { tabId: details.tabId, url: normalizedUrl, time: now };
 
     console.log('Main frame navigation:', details.url, 'TransitionType:', details.transitionType || 'undefined');
 
@@ -184,8 +147,6 @@ browser.webNavigation.onHistoryStateUpdated.addListener(handleNavigation, {
         { hostSuffix: 'x.com', schemes: ['https'] }
     ]
 });
-
-
 
 browser.webRequest.onBeforeSendHeaders.addListener(
     async (details) => {

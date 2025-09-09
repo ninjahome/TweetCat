@@ -3,6 +3,7 @@ import {observeSimple, sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {isTcMessage, TcMessage} from "../common/msg_obj";
 import {YTParsedLite} from "./video_obj";
+import {VideoMeta} from "../object/video_meta";
 
 (function injectPageScript() {
     try {
@@ -50,6 +51,13 @@ function checkIfVideoLoaded(videoID: string) {
     const onFound = (belowArea: HTMLElement) => {
         // ✅ 去掉 postWindowMsg
         console.log("------------------>>> video element found:", videoID);
+        const info = extractYTInfo(videoID);
+        if (info) {
+            console.log("标题:", info.title);
+            console.log("时长:", info.duration);
+            console.log("缩略图:", info.thumbs);
+        }
+        sendMsgToService(info, MsgType.YTVideoMetaGot).then();
 
         // ✅ 创建按钮并添加到视频下面
         const bid = "video-downloader-btn"
@@ -67,8 +75,6 @@ function checkIfVideoLoaded(videoID: string) {
 
         btn.addEventListener("click", async () => {
             console.log("下载按钮被点击，videoID=", videoID);
-            await sendMsgToService(videoID, MsgType.YTVideoSave);
-            // await sendMsgToService({}, MsgType.StartLocalApp);
         });
         belowArea.parentElement.querySelector("#" + bid)?.remove();
 
@@ -131,4 +137,29 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
     }
 
     return true;
+}
+
+
+export function extractYTInfo(videoID: string): VideoMeta | null {
+    try {
+        const html = document.documentElement.innerHTML;
+        // 非贪婪匹配，只抓 ytInitialPlayerResponse 对象
+        const match = html.match(/ytInitialPlayerResponse\s*=\s*(\{.*?\})\s*;/s);
+        if (!match) return null;
+
+        const data = JSON.parse(match[1]);
+
+        const title = data?.videoDetails?.title ?? "";
+        const duration = parseInt(data?.videoDetails?.lengthSeconds ?? "0", 10);
+        const thumbs = data?.videoDetails?.thumbnail?.thumbnails ?? [];
+
+        if (!title || !duration || !Array.isArray(thumbs)) {
+            return null;
+        }
+
+        return {videoID, title, duration, thumbs};
+    } catch (err) {
+        console.error("[TweetCat] extractYTInfo failed:", err);
+        return null;
+    }
 }

@@ -67,9 +67,8 @@ export enum MsgType {
     RouterTcUnmount = 'RouterTcUnmount',
     RouterTCBeforeNav = 'RouterTCBeforeNav',
 
-    YTQueryVideoParam = "YTQueryVideoParam",
+    YTVideoMetaGot = "YTVideoMetaGot",
     YTVideoParamGot = 'YTVideoParamGot',
-    YTVideoSave = 'YTVideoSave',
     CheckIfLocalAppInstalled = 'CheckIfLocalAppInstalled',
     StartLocalApp = 'StartLocalApp',
 }

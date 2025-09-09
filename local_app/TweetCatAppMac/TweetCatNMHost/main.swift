@@ -115,10 +115,6 @@ func handleStart(_ req: [String: Any]) -> [String: Any] {
         }
 }
 
-private let kIncomingNote = Notification.Name(
-        "com.tweetcat.nativeMessage.incoming"
-)
-
 func handleCookie(_ req: [String: Any]) -> [String: Any] {
         guard let cookieText = req["cookies"] as? String,
                 let hash = req["hash"] as? String
@@ -144,7 +140,10 @@ func handleCookie(_ req: [String: Any]) -> [String: Any] {
                         [.posixPermissions: 0o600],
                         ofItemAtPath: hashURL.path
                 )
+
+                NSLog("update cookie file succeess!")
         } catch {
+                NSLog("update cookie file failed \(error)")
                 return ["ok": false, "message": "write failed: \(error)"]
         }
 
