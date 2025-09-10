@@ -116,13 +116,34 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
 });
 
 
-async function handleNavigation(details) {
+let lastDetails: any = null;
+let lastTimeStamp = 0;
+
+async function handleNavigation(details: any) {
 
     if (details.frameId !== 0) {
         console.log('Ignoring subframe navigation:', details.url);
         return;
     }
 
+    // 拷贝一个对象用于比较，排除 timeStamp
+    const {timeStamp, ...rest} = details;
+
+    const sameContent = JSON.stringify(rest) === JSON.stringify(lastDetails)
+    if (
+        lastDetails && sameContent &&
+        Math.abs(timeStamp - lastTimeStamp) < 500 // 阈值 500ms
+    ) {
+        console.log("⚠️ 忽略重复导航事件:", details.url);
+        return;
+    }
+
+    // 更新 lastDetails
+    lastDetails = rest;
+    lastTimeStamp = timeStamp;
+
+
+    console.log("------------------->>>>>", lastTimeStamp, JSON.stringify(details))
     console.log('Main frame navigation:', details.url, 'TransitionType:', details.transitionType || 'undefined');
 
     try {
@@ -136,15 +157,15 @@ async function handleNavigation(details) {
 
 browser.webNavigation.onCompleted.addListener(handleNavigation, {
     url: [
-        { hostSuffix: 'youtube.com', schemes: ['https'] },
-        { hostSuffix: 'x.com', schemes: ['https'] }
+        {hostSuffix: 'youtube.com', schemes: ['https']},
+        {hostSuffix: 'x.com', schemes: ['https']}
     ]
 });
 
 browser.webNavigation.onHistoryStateUpdated.addListener(handleNavigation, {
     url: [
-        { hostSuffix: 'youtube.com', schemes: ['https'] },
-        { hostSuffix: 'x.com', schemes: ['https'] }
+        {hostSuffix: 'youtube.com', schemes: ['https']},
+        {hostSuffix: 'x.com', schemes: ['https']}
     ]
 });
 

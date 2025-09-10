@@ -33,9 +33,14 @@ func writeMessage(_ json: [String: Any], to out: FileHandle) throws {
         let data = try JSONSerialization.data(withJSONObject: json, options: [])
         var n = UInt32(data.count).littleEndian
         let hdr = withUnsafeBytes(of: &n) { Data($0) }
-        out.write(hdr)
-        out.write(data)
-        try out.synchronize()
+        do {
+                try out.write(contentsOf: hdr)
+                try out.write(contentsOf: data)
+                fflush(stdout)
+        } catch {
+                // 对端关闭 -> 忽略或抛出自定义错误
+                throw NMErr.eof
+        }
 }
 
 // ====== 占位逻辑函数 ======
@@ -147,12 +152,13 @@ func handleCookie(_ req: [String: Any]) -> [String: Any] {
                 return ["ok": false, "message": "write failed: \(error)"]
         }
 
-        // 同时转发给 UI，让 UI 知道 cookie 更新
-        DistributedNotificationCenter.default().post(
-                name: kIncomingNote,
-                object: nil,
-                userInfo: ["payload": req]
-        )
+//        // 同时转发给 UI，让 UI 知道 cookie 更新
+//        DistributedNotificationCenter.default().postNotificationName(
+//                kIncomingNote,
+//                object: nil,
+//                userInfo: ["payload": req],
+//                deliverImmediately: true
+//        )
 
         return ["ok": true, "message": "success"]
 }
@@ -186,27 +192,22 @@ func handleCheck(_ req: [String: Any]) -> [String: Any] {
         return handleGetFingerprint(req)
 }
 
-func handleVideoID(_ req: [String: Any]) -> [String: Any] {
+func handleVideoMeta(_ req: [String: Any]) -> [String: Any] {
         // 基本校验
-        guard let videoId = req["videoId"] as? String, !videoId.isEmpty,
-                let url = req["url"] as? String, !url.isEmpty
+        guard let videoMeta = req["videoMeta"] as? [String: Any],
+                !videoMeta.isEmpty
         else {
                 return [
                         "ok": false, "code": "INVALID_PAYLOAD",
-                        "message": "missing videoId or url",
+                        "message": "missing video meta",
                 ]
         }
 
-        // 1) 始终先转发 videoId 请求给 UI
-        var payload = req
-        payload["action"] = "videoID"
-        payload["videoId"] = videoId
-        payload["url"] = url
-
-        DistributedNotificationCenter.default().post(
-                name: kIncomingNote,
+        DistributedNotificationCenter.default().postNotificationName(
+                kGotVideoMeta,
                 object: nil,
-                userInfo: ["payload": payload]
+                userInfo: ["payload": videoMeta],
+                deliverImmediately: true
         )
 
         // 2) 再处理 cookies/hash（如果有传递）
@@ -221,7 +222,7 @@ func handleVideoID(_ req: [String: Any]) -> [String: Any] {
         // 3) 返回结果
         var resp: [String: Any] = [
                 "ok": true,
-                "message": "videoId forwarded",
+                "message": "video meta forwarded",
         ]
         if let ok = cookieWriteOk { resp["cookieWriteOk"] = ok }
         return resp
@@ -244,8 +245,8 @@ func run() {
                         resp = handleStart(req)
                 case "cookie":
                         resp = handleCookie(req)
-                case "videoId":
-                        resp = handleVideoID(req)
+                case "videoMeta":
+                        resp = handleVideoMeta(req)
                 case "check":
                         resp = handleCheck(req)
                 default:
@@ -257,6 +258,7 @@ func run() {
 
                 // 3) 返回结果
                 try writeMessage(resp, to: stdout)
+                NSLog("------->>>process action[\(action)] success")
                 exit(0)
 
         } catch NMErr.eof {

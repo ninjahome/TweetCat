@@ -7,7 +7,7 @@ const KS_YT_COOKIE_KEY = "__KS_YT_COOKIE__";
 const NATIVE_HOST = 'com.dessage.tweetcatapp';
 // const NATIVE_HOST = 'com.dessage.ytdlp_bridge';
 
-type NativeAction = 'start' | 'cookie' | 'check' | 'probe' | 'videoId';
+type NativeAction = 'start' | 'cookie' | 'check' | 'probe' | 'videoMeta';
 
 interface NativeRequest {
     action: NativeAction;
@@ -92,7 +92,6 @@ async function sendToNative(payload: NativeRequest, timeoutMs = 15000): Promise<
         const resp = await browser.runtime.sendNativeMessage(NATIVE_HOST, payload) as NativeResponse;
         return resp ?? {ok: false, message: 'empty native response'};
     } catch (err: any) {
-        // 当原生 host 未注册/未安装时，这里会抛错
         return {ok: false, message: String(err?.message || err)};
     } finally {
         clearTimeout(t);
@@ -100,9 +99,8 @@ async function sendToNative(payload: NativeRequest, timeoutMs = 15000): Promise<
 }
 
 export async function videoMetaGot(videoMeta: VideoMeta) {
-    console.log("---------->>>got a video id", videoMeta);
+    console.log("---------->>>got a video meta:", videoMeta);
 
-    const url = `https://www.youtube.com/watch?v=${videoMeta.videoID}`;
     let cookieData = await sessionGet(KS_YT_COOKIE_KEY);
 
     if (!cookieData) {
@@ -111,7 +109,7 @@ export async function videoMetaGot(videoMeta: VideoMeta) {
     }
 
     const req: NativeRequest = {
-        action: "videoId",
+        action: "videoMeta",
         videoMeta,
     };
 

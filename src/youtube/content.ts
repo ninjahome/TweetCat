@@ -3,7 +3,7 @@ import {observeSimple, sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {isTcMessage, TcMessage} from "../common/msg_obj";
 import {YTParsedLite} from "./video_obj";
-import {VideoMeta} from "../object/video_meta";
+import {VideoMeta, YouTubePageType} from "../object/video_meta";
 
 (function injectPageScript() {
     try {
@@ -52,33 +52,11 @@ function checkIfVideoLoaded(videoID: string) {
         // ✅ 去掉 postWindowMsg
         console.log("------------------>>> video element found:", videoID);
         const info = extractYTInfo(videoID);
-        if (info) {
-            console.log("标题:", info.title);
-            console.log("时长:", info.duration);
-            console.log("缩略图:", info.thumbs);
-        }
+        if (!info) return;
+
+        console.log("--------video infos:", info);
+
         sendMsgToService(info, MsgType.YTVideoMetaGot).then();
-
-        // ✅ 创建按钮并添加到视频下面
-        const bid = "video-downloader-btn"
-        const btn = document.createElement("button");
-        btn.textContent = "下载视频";
-        btn.id = bid
-        btn.style.backgroundColor = "red";
-        btn.style.color = "white";
-        btn.style.fontSize = "20px";
-        btn.style.padding = "10px 20px";
-        btn.style.marginTop = "10px";
-        btn.style.border = "none";
-        btn.style.cursor = "pointer";
-        btn.style.display = "block";
-
-        btn.addEventListener("click", async () => {
-            console.log("下载按钮被点击，videoID=", videoID);
-        });
-        belowArea.parentElement.querySelector("#" + bid)?.remove();
-
-        belowArea.parentElement.insertBefore(btn, belowArea);
         videoObserver = null;
         return true;
     };
@@ -86,26 +64,62 @@ function checkIfVideoLoaded(videoID: string) {
     videoObserver = observeSimple(root as HTMLElement, judgeFunc, onFound);
 }
 
+let latestVideoID = ""
+
+function checkIfShortsLoaded(videoID: string) {
+    if (latestVideoID === videoID) return;
+    latestVideoID = videoID;
+    console.log("------------>>>checkIfShortsLoaded: ", videoID);
+
+    const shortsInfo = extractYTShortsInfo(videoID);
+    if (!shortsInfo) {
+        setTimeout(() => {
+            const tryAgainInfo = extractYTShortsInfo(videoID);
+            console.log("--------try again infos:", tryAgainInfo);
+            if (!tryAgainInfo) return;
+            sendMsgToService(tryAgainInfo, MsgType.YTVideoMetaGot).then();
+        }, 500);
+        return
+    }
+    console.log("--------shorts infos:", shortsInfo);
+    sendMsgToService(shortsInfo, MsgType.YTVideoMetaGot).then();
+}
+
 function parseVideoParam(videoInfo: YTParsedLite) {
     console.log(videoInfo)
 }
 
-
-function isWatchingPage(): string | null {
+export function isWatchingPage(): { videoId: string; type: YouTubePageType } | null {
     try {
-        const {hostname, pathname, search} = window.location;
-        const isYouTube = hostname === 'youtube.com' || hostname.endsWith('.youtube.com');
-        if (!isYouTube) return null;
-        if (pathname !== '/watch') return null;
+        const u = new URL(window.location.href);
 
-        const params = new URLSearchParams(search);
-        const v = params.get('v');
-        if (v && /^[A-Za-z0-9_-]{11}$/.test(v)) return v;
+        // 只处理 youtube.com
+        if (u.hostname !== "www.youtube.com" && u.hostname !== "youtube.com") {
+            return null;
+        }
+
+        // watch 模式
+        if (u.pathname === "/watch") {
+            const videoId = u.searchParams.get("v");
+            if (videoId) {
+                return {videoId, type: YouTubePageType.Watch};
+            }
+        }
+
+        // shorts 模式
+        if (u.pathname.startsWith("/shorts/")) {
+            const videoId = u.pathname.split("/")[2];
+            if (videoId) {
+                return {videoId, type: YouTubePageType.Shorts};
+            }
+        }
+
         return null;
     } catch {
         return null;
     }
 }
+
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
     return contentMsgDispatch(request, _sender, sendResponse)
@@ -117,7 +131,7 @@ window.addEventListener('message', (e) => {
     const msg = e.data as TcMessage;
     if (!isTcMessage(msg)) return;
     switch (msg.action) {
-        case MsgType.YTVideoParamGot: {
+        case MsgType.IJYTVideoParamGot: {
             parseVideoParam(msg.data as YTParsedLite);
             break;
         }
@@ -129,8 +143,11 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
     switch (request.action) {
         case MsgType.NaviUrlChanged: {
             console.log("-------->>> url changed:", window.location);
-            const videoID = isWatchingPage()
-            if (videoID) checkIfVideoLoaded(videoID);
+            const videoInfo = isWatchingPage()
+            if (videoInfo) {
+                if (videoInfo.type === YouTubePageType.Watch) checkIfVideoLoaded(videoInfo.videoId);
+                else checkIfShortsLoaded(videoInfo.videoId);
+            }
             sendResponse({success: true});
             break;
         }
@@ -157,9 +174,63 @@ export function extractYTInfo(videoID: string): VideoMeta | null {
             return null;
         }
 
-        return {videoID, title, duration, thumbs};
+        const videoTyp = YouTubePageType.Watch;
+        return {videoID, videoTyp, title, duration, thumbs};
     } catch (err) {
         console.error("[TweetCat] extractYTInfo failed:", err);
         return null;
     }
 }
+
+
+function extractYTShortsInfo(videoID: string): VideoMeta | null {
+    // 1) 用 videoID 拼 href，并用 closest() 锁定当前 shorts 的基本单元 container
+    const hrefPart = `/shorts/${videoID}`;
+    const anchor =
+        document.querySelector<HTMLAnchorElement>(`a[href$="${hrefPart}"], a[href*="${hrefPart}?"]`);
+    const container = anchor?.closest<HTMLDivElement>(
+        'div.reel-video-in-sequence-new.style-scope.ytd-shorts'
+    );
+    if (!container) return null;
+
+    // 2) 在 container 内获取“当前视频”的标题
+    // 优先：player 顶部条里的标题链接（必须匹配当前 videoID，避免串台）
+    let title =
+        container.querySelector<HTMLAnchorElement>(
+            `.ytp-title .ytp-title-link[href*="${hrefPart}"]`
+        )?.textContent?.trim() || '';
+
+    // 回退：overlay 面板里的 h2（真正的当条标题）
+    if (!title) {
+        title =
+            container.querySelector<HTMLHeadingElement>(
+                'yt-shorts-video-title-view-model h2'
+            )?.textContent?.trim() || '';
+    }
+
+    // 绝不从以下节点取文本：会指向“下一条”，导致你遇到的偏移
+    // container.querySelector('yt-reel-multi-format-link-view-model h3')
+
+    // 3) 缩略图（你这边已正确获取，这里保留）
+    const thumbs: VideoMeta['thumbs'] = [];
+    const thumbDiv = container.querySelector<HTMLDivElement>('.reel-video-in-sequence-thumbnail');
+    if (thumbDiv) {
+        const bg =
+            getComputedStyle(thumbDiv).getPropertyValue('background-image') ||
+            thumbDiv.style.backgroundImage;
+        const m = bg && bg.match(/url\(["']?(.*?)["']?\)/);
+        if (m && m[1]) {
+            thumbs.push({url: m[1], width: 0, height: 0});
+        }
+    }
+
+    return {
+        videoID,
+        videoTyp: YouTubePageType.Shorts,
+        title,
+        duration: 0,
+        thumbs,
+    };
+}
+
+

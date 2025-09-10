@@ -10,6 +10,11 @@ import Foundation
 public let kIncomingNote = Notification.Name(
         "com.tweetcat.nativeMessage.incoming"
 )
+
+public let kGotVideoMeta = Notification.Name(
+        "com.tweetcat.nativeMessage.gotvideometa"
+)
+
 /// 全局固定 cookie 文件路径（App 内统一使用）
 /// 指向：~/Library/Application Support/TweetCat/cookies.txt
 public let kTweetCatCookieFile: String = {
