@@ -134,7 +134,7 @@ struct ShowcaseView: View {
                 @unknown default:
                     EmptyView()
                 }
-            }
+            }.id(c.thumbnailURL?.absoluteString ?? "no-thumb")
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(c.title)
@@ -194,7 +194,7 @@ struct ShowcaseView: View {
         .padding(16)
         .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(radius: 1)
+        .shadow(radius: 1).id(c.id)
     }
 
     // 空状态（无扩展消息）

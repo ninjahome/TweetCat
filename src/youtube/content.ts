@@ -20,24 +20,11 @@ import {VideoMeta, YouTubePageType} from "../object/video_meta";
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
 async function onDocumentLoaded() {
-    // const vid = isWatchingPage();
-    // if (vid) checkIfVideoLoaded(vid);
+    watchMicroformat();
 }
 
-let videoObserver: MutationObserver | null = null;
 
-function stopVideoObserver() {
-    if (videoObserver) {
-        try {
-            videoObserver.disconnect();
-        } catch {
-        }
-        videoObserver = null;
-    }
-}
-
-function checkIfVideoLoaded(videoID: string) {
-    stopVideoObserver();
+function watchMicroformat() {
 
     const root =
         document.getElementById('primary') ??
@@ -45,23 +32,28 @@ function checkIfVideoLoaded(videoID: string) {
         document.documentElement;
 
     const judgeFunc = (_mutations: MutationRecord[]) =>
-        document.getElementById("below") as HTMLElement | null;
-    // document.querySelector('video.video-stream.html5-main-video') as HTMLElement | null;
+        document.getElementById("microformat") as HTMLElement | null;
 
-    const onFound = () => {
-        // ✅ 去掉 postWindowMsg
-        console.log("------------------>>> video element found:", videoID);
-        const info = extractYTInfo(videoID);
-        if (!info) return;
+    const onFound = (mDiv) => {
+        observeSimple(mDiv, () => {
+            return document.querySelector("player-microformat-renderer") as HTMLElement
+        }, (pmr) => {
 
-        console.log("--------video infos:", info);
+            const {videoId} = isWatchingPage();
+            console.log("------------------>>> video element found:", videoId);
+            const info = extractYTInfo(videoId, pmr);
+            if (!info) return;
 
-        sendMsgToService(info, MsgType.YTVideoMetaGot).then();
-        videoObserver = null;
+            console.log("--------video infos:", info);
+
+            sendMsgToService(info, MsgType.YTVideoMetaGot).then();
+            return false;
+        })
+
         return true;
     };
 
-    videoObserver = observeSimple(root as HTMLElement, judgeFunc, onFound);
+    observeSimple(root as HTMLElement, judgeFunc, onFound);
 }
 
 let latestVideoID = ""
@@ -144,44 +136,60 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
         case MsgType.NaviUrlChanged: {
             console.log("-------->>> url changed:", window.location);
             const videoInfo = isWatchingPage()
-            if (videoInfo) {
-                if (videoInfo.type === YouTubePageType.Watch) checkIfVideoLoaded(videoInfo.videoId);
-                else checkIfShortsLoaded(videoInfo.videoId);
+            if (videoInfo && videoInfo.type === YouTubePageType.Shorts) {
+                checkIfShortsLoaded(videoInfo.videoId);
             }
             sendResponse({success: true});
             break;
+
         }
     }
 
     return true;
 }
 
-
-export function extractYTInfo(videoID: string): VideoMeta | null {
+export function extractYTInfo(videoID: string, microElem: Element | null): VideoMeta | null {
     try {
-        const html = document.documentElement.innerHTML;
-        // 非贪婪匹配，只抓 ytInitialPlayerResponse 对象
-        const match = html.match(/ytInitialPlayerResponse\s*=\s*(\{.*?\})\s*;/s);
-        if (!match) return null;
+        if (!microElem) return null;
 
-        const data = JSON.parse(match[1]);
+        const raw = microElem.textContent;
+        if (!raw) return null;
 
-        const title = data?.videoDetails?.title ?? "";
-        const duration = parseInt(data?.videoDetails?.lengthSeconds ?? "0", 10);
-        const thumbs = data?.videoDetails?.thumbnail?.thumbnails ?? [];
+        const data = JSON.parse(raw);
+        console.log(data)
 
-        if (!title || !duration || !Array.isArray(thumbs)) {
+        const title = data?.name ?? "";
+        const durationStr = data?.duration ?? ""; // e.g. "PT181S"
+        const duration = (() => {
+            const m = durationStr.match(/^PT(\d+)S$/);
+            return m ? parseInt(m[1], 10) : 0;
+        })();
+
+        const thumbs: Array<{ url: string; width: number; height: number }> = [];
+        if (Array.isArray(data?.thumbnailUrl)) {
+            for (const url of data.thumbnailUrl) {
+                thumbs.push({url, width: 0, height: 0}); // schema.org 里没写宽高
+            }
+        } else if (typeof data?.thumbnailUrl === "string") {
+            thumbs.push({url: data.thumbnailUrl, width: 0, height: 0});
+        }
+
+        if (!title || !duration || thumbs.length === 0) {
             return null;
         }
 
-        const videoTyp = YouTubePageType.Watch;
-        return {videoID, videoTyp, title, duration, thumbs};
+        return {
+            videoID,
+            videoTyp: YouTubePageType.Watch,
+            title,
+            duration,
+            thumbs,
+        };
     } catch (err) {
         console.error("[TweetCat] extractYTInfo failed:", err);
         return null;
     }
 }
-
 
 function extractYTShortsInfo(videoID: string): VideoMeta | null {
     // 1) 用 videoID 拼 href，并用 closest() 锁定当前 shorts 的基本单元 container
@@ -229,7 +237,13 @@ function extractYTShortsInfo(videoID: string): VideoMeta | null {
         videoTyp: YouTubePageType.Shorts,
         title,
         duration: 0,
-        thumbs,
+        thumbs: [
+            {
+                url: `https://i.ytimg.com/vi/${videoID}/hqdefault.jpg`,
+                width: 0,
+                height: 0,
+            },
+        ],
     };
 }
 
