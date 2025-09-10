@@ -48,7 +48,7 @@ function checkIfVideoLoaded(videoID: string) {
         document.getElementById("below") as HTMLElement | null;
     // document.querySelector('video.video-stream.html5-main-video') as HTMLElement | null;
 
-    const onFound = (belowArea: HTMLElement) => {
+    const onFound = () => {
         // ✅ 去掉 postWindowMsg
         console.log("------------------>>> video element found:", videoID);
         const info = extractYTInfo(videoID);
