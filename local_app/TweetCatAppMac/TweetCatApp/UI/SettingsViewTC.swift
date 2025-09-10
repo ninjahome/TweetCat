@@ -39,8 +39,7 @@ struct SettingsViewTC: View {
     @AppStorage("notifyDone") private var notifyDone: Bool = true
     @AppStorage("notifyFail") private var notifyFail: Bool = true
 
-    // 模拟检测结果（假数据）
-    @State private var detected = DetectedNetworkState()
+    @StateObject private var netVM = NetworkInspectorViewModel()
 
     private var conflict: ConflictPolicy {
         get { ConflictPolicy(rawValue: conflictPolicyRaw) ?? .rename }
@@ -66,6 +65,8 @@ struct SettingsViewTC: View {
             ToolbarItem(placement: .principal) {
                 Text("设置").font(.title3)
             }
+        }.task {
+            if netVM.status == nil { netVM.refresh() }
         }
     }
 
@@ -129,75 +130,79 @@ struct SettingsViewTC: View {
                 )
 
                 if useAutoDetectNetwork {
-                    // 只读展示（假数据）
+                    // 真实检测结果
                     VStack(alignment: .leading, spacing: 6) {
-                        Label(
-                            detected.hasUtun
-                                ? "发现 utun 接口"
-                                : "未发现 utun 接口",
-                            systemImage: detected
-                                .hasUtun
-                                ? "checkmark.circle"
-                                : "xmark.circle"
-                        )
-                        Label(
-                            detected
-                                .defaultRouteViaVPN
-                                ? "默认路由可能经过 VPN"
-                                : "默认路由未经过 VPN",
-                            systemImage: detected
-                                .defaultRouteViaVPN
-                                ? "checkmark.circle"
-                                : "xmark.circle"
-                        )
-                        if let http = detected
-                            .systemHTTPProxy
-                        {
+                        if netVM.loading {
+                            ProgressView("检测中…")
+                        } else if let s = netVM.status {
                             Label(
-                                "系统 HTTP 代理：\(http)",
-                                systemImage:
-                                    "network"
+                                s.hasUtunInterface
+                                    ? "发现 utun 接口" : "未发现 utun 接口",
+                                systemImage: s.hasUtunInterface
+                                    ? "checkmark.circle" : "xmark.circle"
                             )
-                        }
-                        if let socks = detected
-                            .systemSOCKSProxy
-                        {
                             Label(
-                                "系统 SOCKS 代理：\(socks)",
-                                systemImage:
-                                    "network"
+                                s.defaultRouteViaUtun
+                                    ? "默认路由可能经过 VPN" : "默认路由未经过 VPN",
+                                systemImage: s.defaultRouteViaUtun
+                                    ? "checkmark.circle" : "xmark.circle"
                             )
+                            if let httpHost = s.systemProxy.httpHost,
+                                let httpPort = s.systemProxy.httpPort
+                            {
+                                Label(
+                                    "系统 HTTP 代理：\(httpHost):\(httpPort)",
+                                    systemImage: "network"
+                                )
+                            }
+                            if let socksHost = s.systemProxy.socksHost,
+                                let socksPort = s.systemProxy.socksPort
+                            {
+                                Label(
+                                    "系统 SOCKS 代理：\(socksHost):\(String(socksPort))",
+                                    systemImage: "network"
+                                )
+                            }
+                            if let pac = s.systemProxy.pacURL, !pac.isEmpty {
+                                Label("PAC URL：\(pac)", systemImage: "link")
+                            }
+                            if let ip = s.outboundIPSample {
+                                Label("出口 IP：\(ip)", systemImage: "globe")
+                            }
+                            Text(s.note)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text("尚未获得检测结果").foregroundStyle(.secondary)
                         }
-                        if let pac = detected.pacURL {
-                            Label(
-                                "PAC URL：\(pac)",
-                                systemImage:
-                                    "link"
-                            )
-                        }
-                        if let ip = detected.outboundIP {
-                            Label(
-                                "出口 IP（示例）：\(ip)",
-                                systemImage:
-                                    "globe"
-                            )
-                        }
-                        Text(detected.note).font(
-                            .footnote
-                        ).foregroundStyle(.secondary)
                     }
                     .padding(.leading, 2)
 
                     HStack {
-                        Button("重新检测（假）") {
-                            // 假动作：随机切换一两项，模拟“重新检测”
-                            detected.hasUtun
-                                .toggle()
-                            detected
-                                .defaultRouteViaVPN =
-                                detected.hasUtun
+                        Button("重新检测") { netVM.refresh() }
+                            .buttonStyle(.bordered).disabled(netVM.loading)
+                        // 可选：预览将传给 yt-dlp 的 --proxy
+                        if let s = netVM.status {
+                            let applied = ProxyApplier.makeYTDLPProxyConfig(
+                                network: s,
+                                manual: ManualProxyForm()  // auto 模式下传默认表单即可
+                            )
+                            if let url = applied.cliProxyURL, !url.isEmpty {
+                                Text("将应用到 yt-dlp 的代理：\(url)")
+                                    .font(
+                                        .system(.caption, design: .monospaced)
+                                    )
+                                    .foregroundStyle(.secondary)
+                            } else if s.isLikelyVPNOrProxyAvailable {
+                                Text("预计走 VPN（无显式代理），将不设置 --proxy")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("未检测到代理/VPN，yt-dlp 可能无法访问外网")
+                                    .font(.caption)
+                                    .foregroundStyle(.red)
+                            }
                         }
-                        .buttonStyle(.bordered)
                         Spacer()
                     }
                 } else {
@@ -349,7 +354,57 @@ struct SettingsViewTC: View {
                 )
             }
             .padding(.top, 6)
+
+            // 只读预览：手动模式下将应用到 yt-dlp 的 --proxy
+            if manualMode == .manual || manualMode == .useSystem
+                || manualMode == .autoDetect
+            {
+                Divider().padding(.vertical, 4)
+                Text("将应用到 yt-dlp 的代理：\(previewProxy())")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
+    }
+
+    // 在 SettingsViewTC 里加：
+    private func buildManualForm() -> ManualProxyForm {
+        var f = ManualProxyForm()
+        switch manualMode {
+        case .manual:
+            f.mode = .manual
+            if !socksHost.isEmpty, socksPort > 0 {
+                f.socksHost = socksHost
+                f.socksPort = socksPort
+                f.socksV5 = socksV5
+            } else if !httpHost.isEmpty, httpPort > 0 {
+                f.httpHost = httpHost
+                f.httpPort = httpPort
+                if !alsoUseForHTTPS {
+                    if !httpsHost.isEmpty, httpsPort > 0 {
+                        f.httpsHost = httpsHost
+                        f.httpsPort = httpsPort
+                    }
+                }
+            }
+            if !pacURL.isEmpty { f.pacURL = pacURL }
+        case .useSystem:
+            f.mode = .auto  // “跟随系统代理”本质等价 auto
+        case .autoDetect:
+            f.mode = .auto
+        case .none, .pac:
+            break
+        }
+        return f
+    }
+
+    private func previewProxy() -> String {
+        guard let s = netVM.status else { return "(等待网络检测结果)" }
+        let applied = ProxyApplier.makeYTDLPProxyConfig(
+            network: s,
+            manual: buildManualForm()
+        )
+        return applied.cliProxyURL ?? "(无 --proxy，走直连/系统层 VPN)"
     }
 
     // MARK: 通知
