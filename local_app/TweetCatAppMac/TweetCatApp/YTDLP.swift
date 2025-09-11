@@ -57,7 +57,7 @@ enum YTDLP {
     public static func decodeYTDLPInfo(from data: Data) -> YTDLPInfo? {
         do {
             let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            decoder.keyDecodingStrategy = .useDefaultKeys
             return try decoder.decode(YTDLPInfo.self, from: data)
         } catch {
             // 调试日志，帮助定位 JSON 解析失败的原因
