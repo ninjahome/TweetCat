@@ -81,7 +81,6 @@ final class YDLHelperSocket {
         // 逐块接收直到遇到换行或者超时
         let recvSema = DispatchSemaphore(value: 0)
         var buffer = Data()
-        var done = false
 
         func recvOnce() {
             conn.receive(minimumIncompleteLength: 1, maximumLength: 16 * 1024) {
@@ -91,7 +90,6 @@ final class YDLHelperSocket {
                 err in
                 if let err = err {
                     NSLog("YDLHelperSocket: recv error: \(err)")
-                    done = true
                     recvSema.signal()
                     return
                 }
@@ -99,7 +97,6 @@ final class YDLHelperSocket {
                     buffer.append(d)
                     // 协议是“单行 JSON”，以换行结尾
                     if buffer.last == 0x0A {  // '\n'
-                        done = true
                         recvSema.signal()
                         return
                     }
@@ -108,7 +105,6 @@ final class YDLHelperSocket {
                     return
                 }
                 // 连接对端没再给数据了
-                done = true
                 recvSema.signal()
             }
         }
@@ -204,13 +200,19 @@ final class YDLHelperSocket {
             return false
         }
     }
-
+    private static var infoCache: [String: YTDLP.YTDLPInfo] = [:]
     func fetchVideoInfo(
         videoID: String,
         cookiesFile: String,
         proxy: String?,  // 可选
         timeout: TimeInterval = 15.0
-    ) -> YTDLP.YTDLPInfo? {  // 直接返回强类型
+    ) -> YTDLP.YTDLPInfo? {
+
+        // 1. 先查缓存
+        if let cached = YDLHelperSocket.infoCache[videoID] {
+            NSLog("fetchVideoInfo: hit cache for \(videoID)")
+            return cached
+        }
         startIfNeeded()
 
         let url = "https://www.youtube.com/watch?v=\(videoID)"
@@ -243,6 +245,7 @@ final class YDLHelperSocket {
 
         // 先尝试直接解码
         if let info = YTDLP.decodeYTDLPInfo(from: Data(result.utf8)) {
+            YDLHelperSocket.infoCache[videoID] = info
             return info  // 直接返回 YTDLPInfo
         }
 
@@ -250,6 +253,7 @@ final class YDLHelperSocket {
         if let firstJSON = YTDLP.extractTopLevelJSONObjects(from: result).first,
             let info = YTDLP.decodeYTDLPInfo(from: Data(firstJSON.utf8))
         {
+            YDLHelperSocket.infoCache[videoID] = info
             return info
         }
 
