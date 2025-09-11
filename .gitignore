@@ -46,3 +46,11 @@ bin-release/
 /local_app/lib_prepare/TweetCatApp.app.notary.log
 /local_app/lib_prepare/TweetCatApp.dmg.notary.log
 /lib_download/
+/local_app/lib_prepare/tweetcat_ydl_server.spec
+/local_app/lib_prepare/tweetcat_ydl_server_x86.spec
+/local_app/TweetCatAppMac/TweetCatApp/Resources/tweetcat_ydl_server
+/local_app/lib_prepare/tweetcat_ydl_server_x86_64.spec
+/local_app/TweetCatAppMac/TweetCatApp/Resources/tweetcat_ydl_server
+/local_app/lib_prepare/dist/tweetcat_ydl_server_x86_64
+/local_app/TweetCatAppMac/TweetCatApp/Resources/tweetcat_ydl_server
+/local_app/TweetCatAppMac/TweetCatApp/Resources/tweetcat_ydl_server

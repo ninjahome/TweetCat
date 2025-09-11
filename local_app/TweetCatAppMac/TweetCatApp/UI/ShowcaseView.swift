@@ -9,12 +9,12 @@ import SwiftUI
 
 struct ShowcaseView: View {
     @EnvironmentObject private var appState: AppState
-    @StateObject private var vm = ShowcaseViewModelMock()
+    @StateObject private var vm = ShowcaseViewModel()
 
     @State private var showAlert = false
     @State private var alertTitle = ""
     @State private var alertMessage = ""
-
+    
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -22,15 +22,6 @@ struct ShowcaseView: View {
             content
         }
         .navigationTitle("展示")
-        .toolbar {
-            ToolbarItemGroup(placement: .automatic) {
-                Button {
-                    vm.simulateIncomingCandidate()
-                } label: {
-                    Label("模拟候选", systemImage: "sparkles")
-                }
-            }
-        }
         .sheet(isPresented: $vm.showFormatSheet) {
             FormatSheetView(
                 options: vm.formatOptions,
@@ -45,12 +36,24 @@ struct ShowcaseView: View {
                 }
             )
             .frame(minWidth: 640, minHeight: 420)
-        }
-
-        .alert(alertTitle, isPresented: $showAlert) {
+        }.alert("错误", isPresented: $vm.showError) {
             Button("好") {}
         } message: {
-            Text(alertMessage)
+            Text(vm.errorMessage ?? "未知错误")
+        }
+        .overlay {
+            if vm.loading {
+                ZStack {
+                    Color.black.opacity(0.3).ignoresSafeArea()
+                    VStack(spacing: 12) {
+                        ProgressView("正在获取视频下载信息，请稍等…")
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .padding()
+                            .background(.thinMaterial)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+            }
         }
     }
 
@@ -62,7 +65,7 @@ struct ShowcaseView: View {
             Spacer()
             if vm.current != nil {
                 Button {
-                    vm.fetchFormats()
+                    vm.fetchFormatsReal()
                 } label: {
                     Label(
                         "获取/下载",
@@ -96,105 +99,126 @@ struct ShowcaseView: View {
 
     // 候选卡片
     private func candidateCard(_ c: UIVideoCandidate) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            AsyncImage(url: c.thumbnailURL) { phase in
-                switch phase {
-                case .empty:
-                    ZStack { ProgressView() }.frame(
-                        width: 320,
-                        height: 180
-                    )
-                    .background(Color.gray.opacity(0.1))
-                    .clipShape(
-                        RoundedRectangle(
-                            cornerRadius: 12
-                        )
-                    )
-                case .success(let image):
-                    image.resizable().scaledToFill()
-                        .frame(width: 320, height: 180)
-                        .clipped()
-                        .clipShape(
-                            RoundedRectangle(
-                                cornerRadius: 12
-                            )
-                        )
-                case .failure:
-                    ZStack {
-                        Image(systemName: "photo")
-                        Text("缩略图加载失败").font(.caption2)
-                    }
-                    .frame(width: 320, height: 180)
-                    .background(Color.gray.opacity(0.1))
-                    .clipShape(
-                        RoundedRectangle(
-                            cornerRadius: 12
-                        )
-                    )
-                @unknown default:
-                    EmptyView()
-                }
-            }.id(c.thumbnailURL?.absoluteString ?? "no-thumb")
+        let isShorts = c.sourceURL?.absoluteString.contains("/shorts/") ?? false
 
-            VStack(alignment: .leading, spacing: 8) {
-                Text(c.title)
-                    .font(.title3).bold()
-                    .lineLimit(2)
-                HStack(spacing: 8) {
-                    Label(c.videoId, systemImage: "number")
-                        .font(.callout)
-                    if let sec = c.durationSec {
-                        Label(
-                            "\(sec) 秒",
-                            systemImage: "clock"
-                        ).font(.callout)
-                    }
-                }
-                .foregroundStyle(.secondary)
+        return VStack(alignment: .center, spacing: 12) {
+            // 缩略图
+            thumbnailView(for: c, isShorts: isShorts)
 
-                if let url = c.sourceURL {
-                    Link(destination: url) {
-                        Label(
-                            "在浏览器中打开",
-                            systemImage: "safari"
-                        )
-                    }
-                    .font(.callout)
-                }
+            // 视频信息
+            infoView(for: c)
 
-                Spacer(minLength: 8)
-
-                HStack(spacing: 12) {
-                    Button {
-                        vm.fetchFormats()
-                    } label: {
-                        Label(
-                            "获取/下载",
-                            systemImage:
-                                "arrow.down.circle.fill"
-                        )
-                        .frame(minWidth: 120)
-                    }
-                    .buttonStyle(.borderedProminent)
-
-                    Button {
-                        vm.current = nil
-                    } label: {
-                        Label(
-                            "清除",
-                            systemImage:
-                                "xmark.circle"
-                        )
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
-            Spacer()
+            // 操作按钮
+            actionButtons()
         }
         .padding(16)
         .background(.thinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(radius: 1).id(c.id)
+        .shadow(radius: 1)
+        .id(c.id)
+    }
+
+    // MARK: - 缩略图视图
+    @ViewBuilder
+    private func thumbnailView(for c: UIVideoCandidate, isShorts: Bool)
+        -> some View
+    {
+        if isShorts {
+            // Shorts：固定 9:16 比例，适合竖屏
+            AsyncImage(url: c.thumbnailURL) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                        .frame(width: 240, height: 426)
+                case .success(let image):
+                    image.resizable()
+                        .scaledToFill()
+                        .frame(width: 240, height: 426)
+                        .clipped()
+                case .failure:
+                    Color.gray.opacity(0.2)
+                        .overlay(Image(systemName: "photo"))
+                        .frame(width: 240, height: 426)
+                @unknown default:
+                    EmptyView()
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        } else {
+            // Watch：宽度撑满，保持 16:9
+            AsyncImage(url: c.thumbnailURL) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                case .success(let image):
+                    image.resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                case .failure:
+                    Color.gray.opacity(0.2)
+                        .overlay(Image(systemName: "photo"))
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                @unknown default:
+                    EmptyView()
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    // MARK: - 视频信息视图
+    @ViewBuilder
+    private func infoView(for c: UIVideoCandidate) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(c.title)
+                .font(.title3).bold()
+                .lineLimit(2)
+
+            HStack(spacing: 8) {
+                Label(c.videoId, systemImage: "number")
+                    .font(.callout)
+                if let sec = c.durationSec {
+                    Label("\(sec) 秒", systemImage: "clock")
+                        .font(.callout)
+                }
+            }
+            .foregroundStyle(.secondary)
+
+            if let url = c.sourceURL {
+                Link(destination: url) {
+                    Label("在浏览器中打开", systemImage: "safari")
+                }
+                .font(.callout)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - 操作按钮视图
+    @ViewBuilder
+    private func actionButtons() -> some View {
+        HStack(spacing: 20) {
+            Button {
+                vm.fetchFormatsReal()
+            } label: {
+                Label("获取/下载", systemImage: "arrow.down.circle.fill")
+                    .frame(minWidth: 120)
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button {
+                vm.current = nil
+            } label: {
+                Label("清除", systemImage: "xmark.circle")
+                    .frame(minWidth: 80)
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(.top, 12)
     }
 
     // 空状态（无扩展消息）
@@ -232,11 +256,6 @@ struct ShowcaseView: View {
             }
 
             Divider().padding(.vertical, 8)
-            Button {
-                vm.simulateIncomingCandidate()
-            } label: {
-                Label("模拟：注入一条候选", systemImage: "bolt.fill")
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

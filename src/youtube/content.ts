@@ -156,7 +156,6 @@ export function extractYTInfo(videoID: string, microElem: Element | null): Video
         if (!raw) return null;
 
         const data = JSON.parse(raw);
-        console.log(data)
 
         const title = data?.name ?? "";
         const durationStr = data?.duration ?? ""; // e.g. "PT181S"
