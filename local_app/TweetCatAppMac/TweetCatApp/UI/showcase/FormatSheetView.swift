@@ -18,7 +18,7 @@ struct FormatSheetView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 List {
-                    Section("可用格式（假数据）") {
+                    Section("可用格式") {
                         ForEach(options) { f in
                             FormatRowView(
                                 option: f,

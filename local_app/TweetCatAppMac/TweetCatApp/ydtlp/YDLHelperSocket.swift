@@ -200,7 +200,7 @@ final class YDLHelperSocket {
             return false
         }
     }
-    private static var infoCache: [String: YTDLP.YTDLPInfo] = [:]
+
     func fetchVideoInfo(
         videoID: String,
         cookiesFile: String,
@@ -208,11 +208,12 @@ final class YDLHelperSocket {
         timeout: TimeInterval = 15.0
     ) -> YTDLP.YTDLPInfo? {
 
-        // 1. 先查缓存
-        if let cached = YDLHelperSocket.infoCache[videoID] {
+        // 1) 统一缓存入口：先内存、再磁盘
+        if let cached = TempInfoCache.shared.get(videoID: videoID) {
             NSLog("fetchVideoInfo: hit cache for \(videoID)")
             return cached
         }
+
         startIfNeeded()
 
         let url = "https://www.youtube.com/watch?v=\(videoID)"
@@ -245,7 +246,7 @@ final class YDLHelperSocket {
 
         // 先尝试直接解码
         if let info = YTDLP.decodeYTDLPInfo(from: Data(result.utf8)) {
-            YDLHelperSocket.infoCache[videoID] = info
+            TempInfoCache.shared.set(videoID: videoID, info: info)
             return info  // 直接返回 YTDLPInfo
         }
 
@@ -253,7 +254,7 @@ final class YDLHelperSocket {
         if let firstJSON = YTDLP.extractTopLevelJSONObjects(from: result).first,
             let info = YTDLP.decodeYTDLPInfo(from: Data(firstJSON.utf8))
         {
-            YDLHelperSocket.infoCache[videoID] = info
+            TempInfoCache.shared.set(videoID: videoID, info: info)
             return info
         }
 

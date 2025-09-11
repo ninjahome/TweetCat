@@ -7,8 +7,8 @@ enum YTDLP {
         Bundle.main.url(forResource: "yt-dlp_macos", withExtension: nil)
     }
 
-    // 用于解析 yt-dlp -J 的最小模型
-    struct YTDLPFormat: Decodable {
+    // MARK: - 格式
+    struct YTDLPFormat: Codable {
         let format_id: String?
         let ext: String?
         let acodec: String?
@@ -20,29 +20,30 @@ enum YTDLP {
         let filesize: Int64?
         let filesize_approx: Int64?
         let format_note: String?  // 例如 "dash" / "drc" / "storyboard"
-        let proto: String?  // ← 新增：承接 JSON 的 "protocol"
+        let proto: String?  // ← 新增字段你本来已有
 
         private enum CodingKeys: String, CodingKey {
             case format_id, ext, acodec, vcodec, resolution, width,
-                height, tbr, filesize, filesize_approx,
-                format_note
+                height, tbr, filesize, filesize_approx, format_note
             case proto = "protocol"
         }
     }
 
     // MARK: - 字幕信息
-    struct SubtitleInfo: Decodable {
+    struct SubtitleInfo: Codable {
         let url: String
         let ext: String
     }
-    // MARK: - UI 字幕选项转换（预留）
-    struct SubtitleOption: Decodable {
+
+    // UI 用的可选项，是否 Codable 都行；这里顺手也设为 Codable
+    struct SubtitleOption: Codable {
         let lang: String
         let ext: String
         let url: String
     }
 
-    struct YTDLPInfo: Decodable {
+    // MARK: - 顶层 Info（改为 Codable）
+    struct YTDLPInfo: Codable {
         let id: String
         let title: String
         let duration: Int?
