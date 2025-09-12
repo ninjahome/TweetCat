@@ -7,14 +7,14 @@
 
 import Foundation
 
-enum LibraryCategory: String, CaseIterable, Identifiable {
+enum LibraryCategory: String, CaseIterable, Identifiable, Codable {
     case watch = "Watch"
     case shorts = "Shorts"
     var id: String { rawValue }
 }
 
-struct LibraryItem: Identifiable, Equatable {
-    let id = UUID()
+struct LibraryItem: Identifiable, Equatable, Codable {
+    let id: UUID
     var title: String
     var videoId: String
     var thumbURL: URL?
@@ -22,6 +22,26 @@ struct LibraryItem: Identifiable, Equatable {
     var fileSizeMB: Int
     var createdAt: Date
     var category: LibraryCategory
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        videoId: String,
+        thumbURL: URL?,
+        fileName: String,
+        fileSizeMB: Int,
+        createdAt: Date,
+        category: LibraryCategory
+    ) {
+        self.id = id
+        self.title = title
+        self.videoId = videoId
+        self.thumbURL = thumbURL
+        self.fileName = fileName
+        self.fileSizeMB = fileSizeMB
+        self.createdAt = createdAt
+        self.category = category
+    }
 }
 
 enum LibrarySort: String, CaseIterable, Identifiable {

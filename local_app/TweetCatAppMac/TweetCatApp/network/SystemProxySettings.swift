@@ -47,3 +47,25 @@ public struct YTDLPProxyConfig: Equatable {
     /// 可选：为子进程设置的环境变量（http_proxy/https_proxy/all_proxy 等）
     public var env: [String: String] = [:]
 }
+
+
+public func prepareProxy(manual: ManualProxyForm = ManualProxyForm()) async
+    -> String?
+{
+    let inspector = NetworkInspector()
+    let status = await inspector.detect()
+    print("[Network] 检测结果: \(status.note)")
+
+    let proxyConfig = ProxyApplier.makeYTDLPProxyConfig(
+        network: status,
+        manual: manual
+    )
+    let cli = proxyConfig.cliProxyURL
+    if let cli, !cli.isEmpty {
+        print("[Network] 使用代理: \(cli)  env=\(proxyConfig.env)")
+        return cli
+    } else {
+        print("[Network] 未使用代理（直连）")
+        return nil
+    }
+}

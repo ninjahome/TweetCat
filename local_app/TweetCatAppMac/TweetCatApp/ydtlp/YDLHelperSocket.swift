@@ -629,3 +629,12 @@ extension YDLHelperSocket {
         )
     }
 }
+
+
+extension YDLHelperSocket {
+    
+    @discardableResult
+    func quitTask(taskId: String, remove: Bool = false) {
+        
+    }
+}

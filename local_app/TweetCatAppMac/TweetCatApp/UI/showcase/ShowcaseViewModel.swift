@@ -9,7 +9,6 @@ import Combine
 import Foundation
 
 final class ShowcaseViewModel: ObservableObject {
-    var downloadCenter: DownloadCenter?
     @Published var current: UIVideoCandidate? = nil
     @Published var showFormatSheet: Bool = false
     @Published var formatOptions: [UIFormatOption] = []
@@ -50,6 +49,7 @@ final class ShowcaseViewModel: ObservableObject {
             videoId: c.videoId,
             title: c.title,
             formatSummary: sel.formatValue,
+            pageTyp: c.pageTyp.lowercased(),
             progress: 0.0,
             speedText: "",
             etaText: "",
@@ -62,7 +62,7 @@ final class ShowcaseViewModel: ObservableObject {
         )
 
         Task { @MainActor in
-            downloadCenter?.addTask(newTask)
+            DownloadCenter.shared.addTask(newTask)
         }
 
         // 1) URL
@@ -105,9 +105,12 @@ final class ShowcaseViewModel: ObservableObject {
                 outputTemplate: outTmpl,
                 cookiesFile: cookiesPath,
                 proxy: proxy,
-                onEvent: { [weak downloadCenter] line in
+                onEvent: { line in
                     Task { @MainActor in
-                        downloadCenter?.handleDownloadEvent(line, taskId: taskId)
+                        DownloadCenter.shared.handleDownloadEvent(
+                            line,
+                            taskId: taskId
+                        )
                     }
                 },
                 onClose: { [weak self] result in
@@ -179,31 +182,6 @@ final class ShowcaseViewModel: ObservableObject {
     }
 }
 
-// MARK: - Proxy
-private extension ShowcaseViewModel {
-    /// 统一的代理准备逻辑：检测网络 → 生成 CLI 代理字符串。
-    /// - Returns: 若可用则返回 CLI 代理形如 "socks5://127.0.0.1:1080"，否则返回 nil。
-    func prepareProxy(manual: ManualProxyForm = ManualProxyForm()) async
-        -> String?
-    {
-        let inspector = NetworkInspector()
-        let status = await inspector.detect()
-        print("[Network] 检测结果: \(status.note)")
-
-        let proxyConfig = ProxyApplier.makeYTDLPProxyConfig(
-            network: status,
-            manual: manual
-        )
-        let cli = proxyConfig.cliProxyURL
-        if let cli, !cli.isEmpty {
-            print("[Network] 使用代理: \(cli)  env=\(proxyConfig.env)")
-            return cli
-        } else {
-            print("[Network] 未使用代理（直连）")
-            return nil
-        }
-    }
-}
 
 private extension ShowcaseViewModel {
     /// shell 参数安全转义（简单版）

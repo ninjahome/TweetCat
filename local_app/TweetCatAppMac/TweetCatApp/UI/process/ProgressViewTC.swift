@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProgressViewTC: View {
-    @EnvironmentObject var downloadCenter: DownloadCenter
+    @ObservedObject var downloadCenter = DownloadCenter.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -35,11 +35,9 @@ struct ProgressViewTC: View {
             ForEach(downloadCenter.items) { task in
                 TaskRowView(
                     task: task,
-                    onPause: {},
-                    onResume: {},
-                    onCancel: {},
-                    onRetry: {},
-                    onReveal: {}
+                    onStop: { DownloadCenter.shared.stopTask(task.id) },
+                    onRemove: { DownloadCenter.shared.removeTask(task.id) },
+                    onRetry: {}
                 )
             }
         }
@@ -49,11 +47,9 @@ struct ProgressViewTC: View {
 
 private struct TaskRowView: View {
     let task: DownloadTask
-    let onPause: () -> Void
-    let onResume: () -> Void
-    let onCancel: () -> Void
+    let onStop: () -> Void
+    let onRemove: () -> Void
     let onRetry: () -> Void
-    let onReveal: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -137,13 +133,13 @@ private struct TaskRowView: View {
         switch task.state {
         case .queued:
             HStack {
-                Button("开始", action: onResume)
-                Button("取消", action: onCancel).foregroundStyle(.red)
+                Button("重试", action: onRetry)
+                Button("删除", action: onRemove).foregroundStyle(.red)
             }
         case .running:
             HStack {
-                Button("暂停", action: onPause)
-                Button("取消", action: onCancel).foregroundStyle(.red)
+                Button("暂停", action: onStop)
+                Button("删除", action: onRemove).foregroundStyle(.red)
             }
         case .merging:
             HStack {
@@ -154,12 +150,12 @@ private struct TaskRowView: View {
             }
         case .done:
             HStack {
-                Button("在 Finder 中显示", action: onReveal)
+                Text("").hidden()
             }
         case .failed:
             HStack {
                 Button("重试", action: onRetry)
-                Button("删除", action: onCancel).foregroundStyle(.red)
+                Button("删除", action: onRemove).foregroundStyle(.red)
             }
         }
     }

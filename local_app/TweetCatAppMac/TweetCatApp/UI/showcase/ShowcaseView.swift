@@ -10,7 +10,7 @@ import SwiftUI
 struct ShowcaseView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var vm = ShowcaseViewModel()
-    @EnvironmentObject var downloadCenter: DownloadCenter
+    @ObservedObject var downloadCenter = DownloadCenter.shared
 
     var body: some View {
         VStack(spacing: 0) {
@@ -50,8 +50,6 @@ struct ShowcaseView: View {
                     }
                 }
             }
-        }.onAppear {
-            vm.downloadCenter = downloadCenter
         }
     }
 
