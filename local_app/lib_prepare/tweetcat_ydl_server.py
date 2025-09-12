@@ -7,10 +7,8 @@
 调试/日志：stderr
 """
 
-import socketserver
 import json
 import sys
-import traceback
 
 try:
     import yt_dlp

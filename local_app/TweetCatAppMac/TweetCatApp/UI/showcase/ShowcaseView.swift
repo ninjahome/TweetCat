@@ -14,7 +14,7 @@ struct ShowcaseView: View {
     @State private var showAlert = false
     @State private var alertTitle = ""
     @State private var alertMessage = ""
-    
+
     var body: some View {
         VStack(spacing: 0) {
             header
