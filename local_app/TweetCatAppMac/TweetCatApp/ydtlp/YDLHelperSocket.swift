@@ -5,13 +5,15 @@ final class YDLHelperSocket {
     static let shared = YDLHelperSocket()
     let controlPort = UInt16(54320)
     let streamPort = UInt16(54321)
-    
+    public private(set) var serverReady: Bool = false
+
     private init() {}
 
     private var process: Process?
     private var connection: NWConnection?
 
-    // MARK: - Public 
+    // MARK: - Start & readiness
+
     func startIfNeeded() {
         if process?.isRunning == true { return }
         guard
@@ -36,12 +38,152 @@ final class YDLHelperSocket {
         do {
             try p.run()
             process = p
+            scheduleReadyProbe(delay: 5.0, timeout: 20.0)
             NSLog("YDLHelperSocket: server started pid=\(p.processIdentifier)")
         } catch {
             NSLog(
                 "YDLHelperSocket: failed to run server: \(error.localizedDescription)"
             )
+            return
         }
+    }
+
+    /// 异步调度：先延迟 `delay` 秒，再做阻塞式端口探测；成功则置 serverReady = true。
+    func scheduleReadyProbe(
+        delay: TimeInterval = 5.0,
+        timeout: TimeInterval = 20.0
+    ) {
+        // 先标记为未就绪，避免旧状态误导
+        serverReady = false
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+            Thread.sleep(forTimeInterval: delay)
+            let ok = self.blockingProbeReady(timeout: timeout)
+            DispatchQueue.main.async { self.serverReady = ok }
+        }
+    }
+
+    /// 阻塞式探测：控制端必须能 version 往返；下载端 TCP 必须可连。
+    private func blockingProbeReady(timeout: TimeInterval) -> Bool {
+        let start = Date()
+        var ctrlOK = false
+        var strmOK = false
+
+        while Date().timeIntervalSince(start) < timeout {
+            if !ctrlOK { ctrlOK = probeControlReady(timeout: 1.0) }
+            if !strmOK {
+                strmOK = probePortReady(port: streamPort, timeout: 1.0)
+            }
+            if ctrlOK && strmOK {
+                NSLog("YDLHelperSocket: server ready (control & stream up)")
+                return true
+            }
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+
+        NSLog(
+            "YDLHelperSocket: waitForServerReady timeout (control=\(ctrlOK), stream=\(strmOK))"
+        )
+        return false
+    }
+
+    // MARK: - Readiness probes
+
+    /// 探测控制通道是否就绪：连 controlPort，发送 {"cmd":"version"} 并等待一行 JSON（含 "version"）
+    private func probeControlReady(timeout: TimeInterval) -> Bool {
+        let host = NWEndpoint.Host("127.0.0.1")
+        guard let port = NWEndpoint.Port(rawValue: controlPort) else {
+            return false
+        }
+        let conn = NWConnection(host: host, port: port, using: .tcp)
+
+        let sema = DispatchSemaphore(value: 0)
+        var ready = false
+        conn.stateUpdateHandler = { st in
+            if case .ready = st {
+                ready = true
+                sema.signal()
+            }
+            if case .failed = st { sema.signal() }
+            if case .cancelled = st { sema.signal() }
+        }
+        conn.start(queue: .global())
+
+        if sema.wait(timeout: .now() + timeout) != .success || !ready {
+            conn.cancel()
+            return false
+        }
+
+        // 发 version
+        let payload = #"{"cmd":"version"}"#.data(using: .utf8)!
+        let sendSema = DispatchSemaphore(value: 0)
+        conn.send(
+            content: payload + Data([0x0A]),
+            completion: .contentProcessed { _ in sendSema.signal() }
+        )
+        _ = sendSema.wait(timeout: .now() + timeout)
+
+        // 收一行
+        let recvSema = DispatchSemaphore(value: 0)
+        var ok = false
+        var buffer = Data()
+        func recvLoop() {
+            conn.receive(minimumIncompleteLength: 1, maximumLength: 16 * 1024) {
+                data,
+                _,
+                _,
+                err in
+                if err != nil {
+                    recvSema.signal()
+                    return
+                }
+                if let d = data, !d.isEmpty {
+                    buffer.append(d)
+                    if let nl = buffer.firstIndex(of: 0x0A) {
+                        let line = buffer[..<nl]
+                        if let s = String(data: line, encoding: .utf8),
+                            let obj = try? JSONSerialization.jsonObject(
+                                with: Data(s.utf8)
+                            ) as? [String: Any],
+                            (obj["ok"] as? Bool) == true,
+                            obj["version"] != nil
+                        {
+                            ok = true
+                        }
+                        recvSema.signal()
+                        return
+                    }
+                    recvLoop()
+                    return
+                }
+                recvSema.signal()
+            }
+        }
+        recvLoop()
+        _ = recvSema.wait(timeout: .now() + timeout)
+        conn.cancel()
+        return ok
+    }
+
+    /// 探测任意端口的 TCP 就绪（用于 streamPort）
+    private func probePortReady(port: UInt16, timeout: TimeInterval) -> Bool {
+        let host = NWEndpoint.Host("127.0.0.1")
+        guard let p = NWEndpoint.Port(rawValue: port) else { return false }
+        let conn = NWConnection(host: host, port: p, using: .tcp)
+        let sema = DispatchSemaphore(value: 0)
+        var ok = false
+        conn.stateUpdateHandler = { st in
+            if case .ready = st {
+                ok = true
+                sema.signal()
+            }
+            if case .failed = st { sema.signal() }
+            if case .cancelled = st { sema.signal() }
+        }
+        conn.start(queue: .global())
+        _ = sema.wait(timeout: .now() + timeout)
+        conn.cancel()
+        return ok
     }
 
     func stop() {
@@ -49,6 +191,7 @@ final class YDLHelperSocket {
         connection = nil
         process?.terminate()
         process = nil
+        serverReady = false
         NSLog("YDLHelperSocket: stopped")
     }
 

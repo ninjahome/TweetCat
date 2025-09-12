@@ -17,7 +17,6 @@ struct ShowcaseView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            header
             Divider()
             content
         }
@@ -55,29 +54,6 @@ struct ShowcaseView: View {
                 }
             }
         }
-    }
-
-    // MARK: - Header
-    private var header: some View {
-        HStack {
-            Text("来自浏览器扩展的候选视频")
-                .font(.headline)
-            Spacer()
-            if vm.current != nil {
-                Button {
-                    vm.fetchFormatsReal()
-                } label: {
-                    Label(
-                        "获取/下载",
-                        systemImage:
-                            "arrow.down.circle.fill"
-                    )
-                }
-                .buttonStyle(.borderedProminent)
-            }
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 10)
     }
 
     // MARK: - Content
@@ -198,12 +174,20 @@ struct ShowcaseView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    // 放在 View 顶部（和其它 @State 并列）
+    @State private var showServerNotReadyAlert = false
+    @State private var serverAlertMessage = "Python 服务正在启动，请稍后再试。"
     // MARK: - 操作按钮视图
     @ViewBuilder
     private func actionButtons() -> some View {
         HStack(spacing: 20) {
             Button {
-                vm.fetchFormatsReal()
+                if YDLHelperSocket.shared.serverReady {
+                    vm.fetchFormatsReal()
+                } else {
+                    // 仅提示，不做额外逻辑
+                    showServerNotReadyAlert = true
+                }
             } label: {
                 Label("获取/下载", systemImage: "arrow.down.circle.fill")
                     .frame(minWidth: 120)
@@ -219,7 +203,13 @@ struct ShowcaseView: View {
             .buttonStyle(.bordered)
         }
         .padding(.top, 12)
+        .alert("服务尚未就绪", isPresented: $showServerNotReadyAlert) {
+            Button("我知道了", role: .cancel) { }
+        } message: {
+            Text(serverAlertMessage)
+        }
     }
+
 
     // 空状态（无扩展消息）
     private var emptyState: some View {
