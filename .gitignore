@@ -54,3 +54,5 @@ bin-release/
 /local_app/lib_prepare/dist/tweetcat_ydl_server_x86_64
 /local_app/TweetCatAppMac/TweetCatApp/Resources/tweetcat_ydl_server
 /local_app/TweetCatAppMac/TweetCatApp/Resources/tweetcat_ydl_server
+/local_app/lib_prepare/tweetcat_ydl/tweetcat_ydl_server_x86_64.spec
+/local_app/lib_prepare/tweetcat_ydl/build/
