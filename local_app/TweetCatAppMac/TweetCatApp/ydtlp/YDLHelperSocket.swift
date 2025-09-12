@@ -509,6 +509,7 @@ extension YDLHelperSocket {
     }
 
     func fetchVideoInfo(
+        url: String,
         videoID: String,
         cookiesFile: String,
         proxy: String?,  // 可选
@@ -522,8 +523,7 @@ extension YDLHelperSocket {
         }
 
         startIfNeeded()
-
-        let url = "https://www.youtube.com/watch?v=\(videoID)"
+ 
         var payload: [String: String] = [
             "cmd": "videometa",
             "url": url,

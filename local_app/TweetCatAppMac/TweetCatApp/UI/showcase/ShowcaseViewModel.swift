@@ -122,7 +122,10 @@ final class ShowcaseViewModel: ObservableObject {
 
             let cookiesPath = cookiesFileURL().path
 
+            let urlStr = c.sourceURL?.absoluteString ?? "https://www.youtube.com/watch?v=\(c.videoId)"
+
             if let info = YDLHelperSocket.shared.fetchVideoInfo(
+                url: urlStr,
                 videoID: c.videoId,
                 cookiesFile: cookiesPath,
                 proxy: proxy,
