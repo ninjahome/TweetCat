@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProgressViewTC: View {
-    @StateObject private var vm = ProgressViewModelMock()
+    @EnvironmentObject var downloadCenter: DownloadCenter
 
     var body: some View {
         VStack(spacing: 0) {
@@ -22,41 +22,9 @@ struct ProgressViewTC: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            Picker("筛选", selection: $vm.filter) {
-                ForEach(ProgressViewModelMock.Filter.allCases) {
-                    f in
-                    Text(f.rawValue).tag(f)
-                }
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 360)
-
+            Text("所有任务")
+                .font(.headline)
             Spacer()
-
-            Button {
-                // 演示：再塞一个排队的假任务
-                let new = MockDownloadTask(
-                    title:
-                        "新的假任务 \(Int.random(in: 100...999))",
-                    videoId: UUID().uuidString.prefix(6)
-                        .description,
-                    thumbURL: URL(
-                        string:
-                            "https://via.placeholder.com/160x90.png?text=NEW"
-                    ),
-                    formatSummary: "Best/mp4",
-                    state: .queued,
-                    progress: 0,
-                    speedText: nil,
-                    etaText: nil,
-                    downloadedText: nil,
-                    errorMessage: nil
-                )
-                vm.items.insert(new, at: 0)
-            } label: {
-                Label("添加假任务", systemImage: "plus.circle")
-            }
-            .buttonStyle(.bordered)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -64,14 +32,14 @@ struct ProgressViewTC: View {
 
     private var listArea: some View {
         List {
-            ForEach(vm.filteredItems) { item in
+            ForEach(downloadCenter.items) { task in
                 TaskRowView(
-                    item: item,
-                    onPause: { vm.pause(item.id) },
-                    onResume: { vm.resume(item.id) },
-                    onCancel: { vm.cancel(item.id) },
-                    onRetry: { vm.retry(item.id) },
-                    onReveal: { vm.revealInFinder(item.id) }
+                    task: task,
+                    onPause: {},
+                    onResume: {},
+                    onCancel: {},
+                    onRetry: {},
+                    onReveal: {}
                 )
             }
         }
@@ -80,7 +48,7 @@ struct ProgressViewTC: View {
 }
 
 private struct TaskRowView: View {
-    let item: MockDownloadTask
+    let task: DownloadTask
     let onPause: () -> Void
     let onResume: () -> Void
     let onCancel: () -> Void
@@ -90,115 +58,69 @@ private struct TaskRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .top, spacing: 12) {
-                AsyncImage(url: item.thumbURL) { phase in
+                AsyncImage(url: task.thumbURL) { phase in
                     switch phase {
                     case .empty:
-                        Rectangle().fill(
-                            .gray.opacity(0.1)
-                        )
-                        .frame(width: 120, height: 68)
-                        .overlay { ProgressView() }
-                        .clipShape(
-                            RoundedRectangle(
-                                cornerRadius: 8
-                            )
-                        )
+                        Rectangle()
+                            .fill(.gray.opacity(0.1))
+                            .frame(width: 120, height: 68)
+                            .overlay { ProgressView() }
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                     case .success(let image):
-                        image.resizable().scaledToFill()
-                            .frame(
-                                width: 120,
-                                height: 68
-                            )
-                            .clipShape(
-                                RoundedRectangle(
-                                    cornerRadius:
-                                        8
-                                )
-                            )
+                        image.resizable()
+                            .scaledToFill()
+                            .frame(width: 120, height: 68)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                     case .failure:
                         Image(systemName: "photo")
-                            .frame(
-                                width: 120,
-                                height: 68
-                            )
-                            .background(
-                                .gray.opacity(
-                                    0.1
-                                )
-                            )
-                            .clipShape(
-                                RoundedRectangle(
-                                    cornerRadius:
-                                        8
-                                )
-                            )
+                            .frame(width: 120, height: 68)
+                            .background(.gray.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                     @unknown default:
                         EmptyView()
                     }
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.title)
+                    Text(task.title)
                         .font(.headline)
                         .lineLimit(2)
-                    Text(
-                        "\(item.videoId) • \(item.formatSummary)"
-                    )
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+
+                    Text("\(task.videoId) • \(task.formatSummary)")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
 
                     // 进度条 + 速度/ETA/大小
                     HStack(spacing: 8) {
-                        ProgressView(
-                            value: item.progress
-                        )
-                        .frame(width: 220)
-                        if let speed = item.speedText {
-                            Label(
-                                speed,
-                                systemImage:
-                                    "bolt.fill"
-                            )
-                            .labelStyle(
-                                .titleAndIcon
-                            )
-                            .font(.caption)
-                            .foregroundStyle(
-                                .secondary
-                            )
+                        ProgressView(value: task.progress)
+                            .frame(width: 220)
+
+                        if !task.speedText.isEmpty {
+                            Label(task.speedText, systemImage: "bolt.fill")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        if let eta = item.etaText {
-                            Label(
-                                eta,
-                                systemImage:
-                                    "clock"
-                            )
-                            .font(.caption)
-                            .foregroundStyle(
-                                .secondary
-                            )
+                        if !task.etaText.isEmpty {
+                            Label(task.etaText, systemImage: "clock")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        if let dl = item.downloadedText {
-                            Text(dl).font(.caption)
-                                .foregroundStyle(
-                                    .secondary
-                                )
+                        if !task.downloadedText.isEmpty {
+                            Text(task.downloadedText)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                     }
 
-                    // 状态/错误
-                    if item.state == .failed,
-                        let err = item.errorMessage
-                    {
+                    // 状态 or 错误
+                    if task.state == .failed, let err = task.errorMessage {
                         Text("错误：\(err)")
                             .font(.caption)
                             .foregroundStyle(.red)
                     } else {
-                        Text(item.state.rawValue)
+                        Text(statusText(for: task.state))
                             .font(.caption)
-                            .foregroundStyle(
-                                .secondary
-                            )
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -212,34 +134,23 @@ private struct TaskRowView: View {
 
     @ViewBuilder
     private var controls: some View {
-        switch item.state {
+        switch task.state {
         case .queued:
             HStack {
                 Button("开始", action: onResume)
-                Button("取消", action: onCancel).foregroundStyle(
-                    .red
-                )
+                Button("取消", action: onCancel).foregroundStyle(.red)
             }
         case .running:
             HStack {
                 Button("暂停", action: onPause)
-                Button("取消", action: onCancel).foregroundStyle(
-                    .red
-                )
-            }
-        case .paused:
-            HStack {
-                Button("继续", action: onResume)
-                Button("取消", action: onCancel).foregroundStyle(
-                    .red
-                )
+                Button("取消", action: onCancel).foregroundStyle(.red)
             }
         case .merging:
             HStack {
                 ProgressView().controlSize(.small)
-                Text("合并中…").font(.caption).foregroundStyle(
-                    .secondary
-                )
+                Text("合并中…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         case .done:
             HStack {
@@ -248,10 +159,18 @@ private struct TaskRowView: View {
         case .failed:
             HStack {
                 Button("重试", action: onRetry)
-                Button("删除", action: onCancel).foregroundStyle(
-                    .red
-                )
+                Button("删除", action: onCancel).foregroundStyle(.red)
             }
+        }
+    }
+
+    private func statusText(for state: DownloadState) -> String {
+        switch state {
+        case .queued: return "等待中"
+        case .running: return "下载中"
+        case .merging: return "合并中"
+        case .done: return "已完成"
+        case .failed: return "失败"
         }
     }
 }

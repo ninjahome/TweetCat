@@ -10,10 +10,7 @@ import SwiftUI
 struct ShowcaseView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var vm = ShowcaseViewModel()
-
-    @State private var showAlert = false
-    @State private var alertTitle = ""
-    @State private var alertMessage = ""
+    @EnvironmentObject var downloadCenter: DownloadCenter
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,11 +24,11 @@ struct ShowcaseView: View {
                 selectedID: $vm.selectedFormatID,
                 onCancel: { vm.showFormatSheet = false },
                 onConfirm: {
-                    let result = vm.startDownloadSelected()
-                    alertTitle = result.title
-                    alertMessage = result.message
+                    vm.startDownloadSelected()
                     vm.showFormatSheet = false
-                    showAlert = true
+                    DispatchQueue.main.async {
+                        appState.selectedTab = .progress
+                    }
                 }
             )
             .frame(minWidth: 640, minHeight: 420)
@@ -53,6 +50,8 @@ struct ShowcaseView: View {
                     }
                 }
             }
+        }.onAppear {
+            vm.downloadCenter = downloadCenter
         }
     }
 
@@ -204,12 +203,11 @@ struct ShowcaseView: View {
         }
         .padding(.top, 12)
         .alert("服务尚未就绪", isPresented: $showServerNotReadyAlert) {
-            Button("我知道了", role: .cancel) { }
+            Button("我知道了", role: .cancel) {}
         } message: {
             Text(serverAlertMessage)
         }
     }
-
 
     // 空状态（无扩展消息）
     private var emptyState: some View {

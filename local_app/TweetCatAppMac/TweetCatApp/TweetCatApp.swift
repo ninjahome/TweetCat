@@ -24,6 +24,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 @main
 struct TweetCatApp: App {
+    @StateObject private var downloadCenter = DownloadCenter()
 
     init() {
         signal(SIGPIPE, SIG_IGN)
@@ -35,7 +36,7 @@ struct TweetCatApp: App {
 
     var body: some Scene {
         WindowGroup {
-            SidebarView()
+            SidebarView().environmentObject(downloadCenter)
         }
     }
 }

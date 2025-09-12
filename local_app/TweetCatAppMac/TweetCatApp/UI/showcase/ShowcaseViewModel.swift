@@ -9,6 +9,7 @@ import Combine
 import Foundation
 
 final class ShowcaseViewModel: ObservableObject {
+    var downloadCenter: DownloadCenter?
     @Published var current: UIVideoCandidate? = nil
     @Published var showFormatSheet: Bool = false
     @Published var formatOptions: [UIFormatOption] = []
@@ -18,7 +19,7 @@ final class ShowcaseViewModel: ObservableObject {
     @Published var showError: Bool = false
 
     private var bag = Set<AnyCancellable>()
-
+    deinit { print("[VM] ShowcaseViewModel deinit") }
     init() {
         NativeMessageReceiver.shared.$latestCandidate
             .receive(on: DispatchQueue.main)
@@ -29,14 +30,39 @@ final class ShowcaseViewModel: ObservableObject {
             .store(in: &bag)
     }
 
-    func startDownloadSelected() -> (title: String, message: String) {
+    func startDownloadSelected() {
         guard let c = current else {
-            return ("未选择视频", "请先接收扩展消息或点击“模拟候选”按钮。")
+            self.errorMessage = "未选择视频，请先接收扩展消息或点击“模拟候选”。"
+            self.showError = true
+            return
         }
         guard
             let sel = formatOptions.first(where: { $0.id == selectedFormatID })
         else {
-            return ("未选择格式", "请选择一个下载格式后再开始。")
+            self.errorMessage = "未选择格式，请先选择一个下载格式后再开始。"
+            self.showError = true
+            return
+        }
+
+        let taskId = "\(c.videoId)_\(sel.formatValue)"
+        let newTask = DownloadTask(
+            id: taskId,
+            videoId: c.videoId,
+            title: c.title,
+            formatSummary: sel.formatValue,
+            progress: 0.0,
+            speedText: "",
+            etaText: "",
+            downloadedText: "",
+            state: .running,
+            errorMessage: nil,
+            thumbURL: c.thumbnailURL,
+            filepath: nil,
+            updatedAt: Date()
+        )
+
+        Task { @MainActor in
+            downloadCenter?.addTask(newTask)
         }
 
         // 1) URL
@@ -79,8 +105,10 @@ final class ShowcaseViewModel: ObservableObject {
                 outputTemplate: outTmpl,
                 cookiesFile: cookiesPath,
                 proxy: proxy,
-                onEvent: { [weak self] line in
-                    Task { @MainActor in self?.handleDownloadEvent(line) }
+                onEvent: { [weak downloadCenter] line in
+                    Task { @MainActor in
+                        downloadCenter?.handleDownloadEvent(line, taskId: taskId)
+                    }
                 },
                 onClose: { [weak self] result in
                     Task { @MainActor in
@@ -97,10 +125,6 @@ final class ShowcaseViewModel: ObservableObject {
                 }
             )
         }
-
-        let info =
-            "\(sel.kind.rawValue) • \(sel.resolution) • \(sel.container.uppercased())"
-        return ("已开始下载", "《\(c.title)》\n\(info)")
     }
 
     private func cookiesFileURL() -> URL {
@@ -122,7 +146,9 @@ final class ShowcaseViewModel: ObservableObject {
 
             let cookiesPath = cookiesFileURL().path
 
-            let urlStr = c.sourceURL?.absoluteString ?? "https://www.youtube.com/watch?v=\(c.videoId)"
+            let urlStr =
+                c.sourceURL?.absoluteString
+                ?? "https://www.youtube.com/watch?v=\(c.videoId)"
 
             if let info = YDLHelperSocket.shared.fetchVideoInfo(
                 url: urlStr,
@@ -210,122 +236,5 @@ private extension ShowcaseViewModel {
             \(cmd)
             """
         )
-    }
-}
-
-private extension ShowcaseViewModel {
-    func handleDownloadEvent(_ line: String) {
-        // 原始行
-        print("[DL][raw] \(line)")
-
-        // 解析
-        guard
-            let data = line.data(using: .utf8),
-            let obj = try? JSONSerialization.jsonObject(with: data)
-                as? [String: Any],
-            let event = obj["event"] as? String
-        else {
-            print("[DL][warn] parse failed")
-            return
-        }
-
-        // 统一头
-        print("[DL][event] \(event)")
-        // 也打印一份美化后的 JSON 供排查
-        ppJSON(obj)
-
-        switch event {
-        case "start":
-            // 可能包含 taskId / url / format_value 等
-            let url = obj["url"] as? String
-            let fmt = obj["format"] as? String ?? obj["format_value"] as? String
-            print("[DL][start] url=\(url ?? "n/a") format=\(fmt ?? "n/a")")
-
-        case "meta":
-            // 期望有 title / id / duration 等
-            let title = obj["title"] as? String
-            let vid = obj["id"] as? String
-            let dur = val(obj, "duration")
-            print(
-                "[DL][meta] title=\(title ?? "n/a") id=\(vid ?? "n/a") duration=\(dur.map { "\($0)s" } ?? "n/a")"
-            )
-
-        case "progress":
-            // downloaded / total / percent / speed / eta / phase / filename
-            let downloaded = val(obj, "downloaded")
-            let total = val(obj, "total")
-            let percent = val(obj, "percent")
-            let speed = val(obj, "speed")
-            let eta = val(obj, "eta")
-            let phase = obj["phase"] as? String
-            let filename = obj["filename"] as? String
-
-            print(
-                "[DL][progress] "
-                    + "p=\(percent.map { String(format: "%.2f", $0) } ?? "n/a") "
-                    + "dl=\(downloaded.map { String(format: "%.0f", $0) } ?? "n/a") "
-                    + "tot=\(total.map { String(format: "%.0f", $0) } ?? "n/a") "
-                    + "spd=\(speed.map { String(format: "%.1f", $0) } ?? "n/a") "
-                    + "eta=\(eta.map { String(format: "%.0f", $0) } ?? "n/a") "
-                    + "phase=\(phase ?? "n/a") " + "file=\(filename ?? "n/a")"
-            )
-
-        case "merging":
-            // 一般会有 target / container / program(ffmpeg) 等
-            let target = obj["target"] as? String
-            let container = obj["container"] as? String
-            let program = obj["program"] as? String
-            print(
-                "[DL][merging] target=\(target ?? "n/a") container=\(container ?? "n/a") program=\(program ?? "n/a")"
-            )
-
-        case "done":
-            // 可能包含 filepath / filename / elapsed / filesize 等
-            let filepath =
-                obj["filepath"] as? String ?? obj["filename"] as? String
-            let elapsed = val(obj, "elapsed")
-            let size = val(obj, "filesize")
-            print(
-                "[DL][done] file=\(filepath ?? "n/a") elapsed=\(elapsed.map { "\($0)s" } ?? "n/a") size=\(size.map { String(format: "%.0f", $0) } ?? "n/a")"
-            )
-
-        case "error":
-            // 可能是 { error: {code,message} } 或 { error: "..." }
-            if let err = obj["error"] as? [String: Any] {
-                let code =
-                    err["code"] as? String ?? (err["errno"] as? String)
-                    ?? (val(err, "code").map { "\($0)" })
-                let msg =
-                    err["message"] as? String ?? err["msg"] as? String
-                    ?? "\(err)"
-                print("[DL][error] code=\(code ?? "n/a") message=\(msg)")
-            } else if let errStr = obj["error"] as? String {
-                print("[DL][error] \(errStr)")
-            } else {
-                print("[DL][error] unknown payload")
-            }
-
-        default:
-            print("[DL][info] unknown event: \(event)")
-        }
-    }
-
-    // MARK: - Debug helpers (仅日志用)
-    private func ppJSON(_ dict: [String: Any]) {
-        guard
-            let data = try? JSONSerialization.data(
-                withJSONObject: dict,
-                options: [.prettyPrinted, .withoutEscapingSlashes]
-            ),
-            let s = String(data: data, encoding: .utf8)
-        else { return }
-        print("[DL][json]\n\(s)")
-    }
-
-    private func val(_ dict: [String: Any], _ key: String) -> Double? {
-        if let d = dict[key] as? Double { return d }
-        if let n = dict[key] as? NSNumber { return n.doubleValue }
-        if let s = dict[key] as? String, let d = Double(s) { return d }
-        return nil
     }
 }
