@@ -35,6 +35,16 @@ final class YDLHelperSocket {
             )
         }
 
+        // 将 App Bundle 的 Resources 目录前置到 PATH，供后端进程找到 ffmpeg / ffprobe
+        var env = ProcessInfo.processInfo.environment
+        let resourcesDir = binURL.deletingLastPathComponent().path
+        let currentPATH = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+        env["PATH"] = "\(resourcesDir):\(currentPATH)"
+        p.environment = env
+
+        NSLog("YDLHelperSocket: PATH=\(env["PATH"] ?? "<nil>")")
+        NSLog("YDLHelperSocket: resourcesDir=\(resourcesDir)")
+
         do {
             try p.run()
             process = p
@@ -208,7 +218,7 @@ final class YDLHelperSocket {
 
         let payload = (line + "\n").data(using: .utf8)!
         let t0 = Date()
-        NSLog("YDLHelperSocket: send cmd=\(line) at \(t0)")
+        NSLog("YDLHelperSocket: send cmd=%@ at %@", line, "\(t0)")
 
         // 发送
         let sendSema = DispatchSemaphore(value: 0)
@@ -272,18 +282,10 @@ final class YDLHelperSocket {
         NSLog("YDLHelperSocket: recv bytes=\(buffer.count)")
 
         let result = String(data: buffer, encoding: .utf8)
-        NSLog("YDLHelperSocket: result(raw)=\(result ?? "<decode-failed>")")
+        NSLog("YDLHelperSocket: result(raw)=%@", result ?? "<decode-failed>")
         return result
     }
 
-    /// 向服务器发送一行 JSON 命令（以 '\n' 结尾），随后**流式**读取 NDJSON 事件。
-    /// - Parameters:
-    ///   - line: 已编码好的单行 JSON 命令（无需包含末尾换行，本方法会自动追加）
-    ///   - timeout: 连接建立与首发写入的超时（流式读取本身不设总时长上限）
-    ///   - stopWhen: 如果提供，则当某一行满足条件时立即结束（例如检测到 `"event":"done"`）
-    ///   - onEvent: 每读取到一行（去掉行尾 `\n`）都会回调一次
-    ///   - onClose: 流式结束时回调（成功 EOF / 匹配结束条件 / 取消 / 出错）
-    /// - Returns: 取消闭包；调用后会关闭本次临时连接并触发 onClose（若尚未触发）
     @discardableResult
     func requestStream(
         _ line: String,
@@ -348,7 +350,7 @@ final class YDLHelperSocket {
         // 4) 发送单行命令
         let payload = (line + "\n").data(using: .utf8) ?? Data()
         let t0 = Date()
-        NSLog("YDLHelperSocket.stream: send cmd=\(line) at \(t0)")
+        NSLog("YDLHelperSocket.stream: send cmd=%@ at %@", line, "\(t0)")
         let sendSema = DispatchSemaphore(value: 0)
         conn.send(
             content: payload,
@@ -567,4 +569,63 @@ extension YDLHelperSocket {
         return nil
     }
 
+}
+
+extension YDLHelperSocket {
+    /// 发起下载（事件流），返回取消闭包
+    @discardableResult
+    func startDownload(
+        url: String,
+        formatValue: String,
+        outputTemplate: String,
+        cookiesFile: String,
+        proxy: String?,
+        onEvent: @escaping (String) -> Void,
+        onClose: @escaping (Result<Void, Error>) -> Void
+    ) -> () -> Void {
+        // 组装一行 JSON 命令（下载通道协议）
+        var payload: [String: Any] = [
+            "cmd": "download",
+            "url": url,
+            "format_value": formatValue,
+            "output_template": outputTemplate,
+            "cookies": cookiesFile,
+        ]
+        if let proxy, !proxy.isEmpty { payload["proxy"] = proxy }
+
+        guard
+            let data = try? JSONSerialization.data(
+                withJSONObject: payload,
+                options: []
+            ),
+            let line = String(data: data, encoding: .utf8)
+        else {
+            NSLog("startDownload: encode payload failed")
+            onClose(
+                .failure(
+                    NSError(
+                        domain: "YDLHelperSocket",
+                        code: -1,
+                        userInfo: [NSLocalizedDescriptionKey: "encode failed"]
+                    )
+                )
+            )
+            return {}
+        }
+
+        // stopWhen：读到 "event":"done" 或 "event":"error" 即结束
+        let stopWhen: (String) -> Bool = { s in
+            // 粗匹配足够用，避免为性能每行都做完整 JSON 解析
+            return s.contains(#""event":"done""#)
+                || s.contains(#""event":"error""#)
+        }
+
+        return requestStream(
+            line,
+            timeout: 15.0,
+            stopWhen: stopWhen,
+            onEvent: onEvent,
+            onClose: onClose
+        )
+    }
 }

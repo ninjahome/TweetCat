@@ -81,7 +81,8 @@ final class NativeMessageReceiver: ObservableObject {
             videoId: vid,
             thumbnailURL: thumbURL,
             sourceURL: sourceURL,
-            durationSec: durationSec
+            durationSec: durationSec,
+            pageTyp: pageTyp
         )
 
         DispatchQueue.main.async {

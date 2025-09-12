@@ -6,12 +6,13 @@ from .utils import NDJSONWriter, now_ts, as_int, as_float
 def run_download(writer: NDJSONWriter, params: Dict[str, Any]) -> None:
     """
     执行一次下载，把完整生命周期事件通过 writer 以 NDJSON 推送：
-    start/meta/progress/merging/done/error
+    start / progress / merging / done / error
+    （⚠️ 已移除 meta 事件；元信息请走控制通道 videometa）
     """
     url: str = params.get("url") or ""
     fmt: Optional[str] = params.get("format_value")
     outtmpl: Optional[str] = params.get("output_template")
-    cookies: Optional[str] = params.get("cookies_path")
+    cookies: Optional[str] = params.get("cookies_path") or params.get("cookies")
     proxy: Optional[str] = params.get("proxy")
 
     # 先发一个 start，让前端立即有反馈
@@ -27,7 +28,7 @@ def run_download(writer: NDJSONWriter, params: Dict[str, Any]) -> None:
     ydl_opts: Dict[str, Any] = dict(
         quiet=True,
         no_warnings=True,
-        continuedl=True,         # 断点续传（默认 True，这里显式）
+        continuedl=True,         # 断点续传
         noprogress=True,         # 不向 stdout 刷进度
         outtmpl=outtmpl or "%(title)s.%(ext)s",
         merge_output_format="mp4",
@@ -44,25 +45,11 @@ def run_download(writer: NDJSONWriter, params: Dict[str, Any]) -> None:
     if proxy:
         ydl_opts["proxy"] = proxy
 
-    # 真正下载
+    print(f"[ydl][opts] outtmpl={ydl_opts.get('outtmpl')}", flush=True)
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        # 可选 meta（不影响下载）
-        try:
-            info = ydl.extract_info(url, download=False)
-            writer.send({
-                "event": "meta",
-                "state": "running",
-                "ts": now_ts(),
-                "title": info.get("title"),
-                "id": info.get("id"),
-                "duration": as_int(info.get("duration")),
-            })
-        except Exception:
-            pass
-
         ydl.download([url])
 
-    # 走到这里意味着下载+后处理已完成
+    # 下载+后处理完成
     writer.send({
         "event": "done",
         "state": "done",
@@ -90,8 +77,8 @@ def _build_progress_hook(writer: NDJSONWriter):
                 "downloaded": downloaded,
                 "total": total,
                 "percent": percent,
-                "speed": speed,
-                "eta": eta,
+                "speed": speed,   # Bytes/s
+                "eta": eta,       # 秒
                 "phase": "downloading",
                 "filename": filename
             })
