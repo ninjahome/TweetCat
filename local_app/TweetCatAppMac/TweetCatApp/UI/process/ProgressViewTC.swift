@@ -35,13 +35,22 @@ struct ProgressViewTC: View {
             ForEach(downloadCenter.items) { task in
                 TaskRowView(
                     task: task,
-                    onStop: { DownloadCenter.shared.stopTask(task.id) },
-                    onRemove: { DownloadCenter.shared.removeTask(task.id) },
+                    onStop: { stopTask(taskID: task.id) },
+                    onRemove: { removeTask(taskID: task.id) },
                     onRetry: {}
                 )
             }
         }
         .listStyle(.inset)
+    }
+
+    private func stopTask(taskID: String) {
+        YDLHelperSocket.shared.cancelTask(taskID: taskID)
+    }
+
+    private func removeTask(taskID: String) {
+        YDLHelperSocket.shared.cancelTask(taskID: taskID)
+        DownloadCenter.shared.removeTaskData(taskID)
     }
 }
 
@@ -148,11 +157,19 @@ private struct TaskRowView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            
         case .done:
             HStack {
                 Text("").hidden()
             }
+            
         case .failed:
+            HStack {
+                Button("重试", action: onRetry)
+                Button("删除", action: onRemove).foregroundStyle(.red)
+            }
+            
+        case .cancelled:
             HStack {
                 Button("重试", action: onRetry)
                 Button("删除", action: onRemove).foregroundStyle(.red)
@@ -167,6 +184,7 @@ private struct TaskRowView: View {
         case .merging: return "合并中"
         case .done: return "已完成"
         case .failed: return "失败"
+        case .cancelled: return "已取消"
         }
     }
 }

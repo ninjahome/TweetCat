@@ -47,3 +47,9 @@ def fail(cmd: str, code: str, message: str, hint: str = "") -> Dict[str, Any]:
     if hint:
         e["hint"] = hint
     return {"ok": False, "cmd": cmd, "error": e}
+
+task_control_map: dict[str, object] = {}
+
+class DownloadCancelled(Exception):
+    """Raised when a download is cancelled by user"""
+    pass

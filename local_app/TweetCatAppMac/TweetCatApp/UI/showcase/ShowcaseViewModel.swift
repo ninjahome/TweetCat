@@ -100,7 +100,7 @@ final class ShowcaseViewModel: ObservableObject {
             )
 
             _ = YDLHelperSocket.shared.startDownload(
-                url: urlString,
+                taskID: taskId, url: urlString,
                 formatValue: sel.formatValue,  // ★ 关键：精准传递 -f 的值
                 outputTemplate: outTmpl,
                 cookiesFile: cookiesPath,

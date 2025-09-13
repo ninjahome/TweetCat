@@ -507,6 +507,26 @@ extension YDLHelperSocket {
         print("YDLHelperSocket raw result:", result ?? "<-no result->")
 
     }
+    
+    func cancelTask(taskID:String,  timeout: TimeInterval = 15.0) {
+        startIfNeeded()
+
+        let payload: [String: Any] = [
+            "cmd": "cancel",
+            "task_id": taskID
+        ]
+        guard
+            let data = try? JSONSerialization.data(withJSONObject: payload),
+            let line = String(data: data, encoding: .utf8)
+        else {
+            print("invalid version payload to python server")
+            return
+        }
+
+        let result = requestLine(line, timeout: timeout)
+        print("YDLHelperSocket raw result:", result ?? "<-no result->")
+
+    }
 
     func fetchVideoInfo(
         url: String,
@@ -575,6 +595,7 @@ extension YDLHelperSocket {
     /// 发起下载（事件流），返回取消闭包
     @discardableResult
     func startDownload(
+        taskID: String,
         url: String,
         formatValue: String,
         outputTemplate: String,
@@ -587,6 +608,7 @@ extension YDLHelperSocket {
         var payload: [String: Any] = [
             "cmd": "download",
             "url": url,
+            "task_id": taskID,
             "format_value": formatValue,
             "output_template": outputTemplate,
             "cookies": cookiesFile,
@@ -627,14 +649,5 @@ extension YDLHelperSocket {
             onEvent: onEvent,
             onClose: onClose
         )
-    }
-}
-
-
-extension YDLHelperSocket {
-    
-    @discardableResult
-    func quitTask(taskId: String, remove: Bool = false) {
-        
     }
 }

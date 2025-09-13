@@ -9,6 +9,8 @@ from typing import Any, Dict, Tuple
 
 import yt_dlp
 
+from .utils import task_control_map
+
 CONTROL_HOST = os.environ.get("YDL_CONTROL_HOST", "127.0.0.1")
 CONTROL_PORT = int(os.environ.get("YDL_CONTROL_PORT", "54320"))
 
@@ -44,8 +46,18 @@ class ControlHandler(socketserver.StreamRequestHandler):
         if cmd == "videometa":
             return self._handle_videometa(req), True
 
+        if cmd == "cancel":
+            return self._handle_cancel(req), True
+
         # 不支持的命令
         return {"ok": False, "error": f"UNSUPPORTED_CMD: {cmd}"}, True
+
+
+    def _handle_cancel(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        task_id = data.get("task_id")
+        task_control_map[task_id] = True
+        return {"ok": True, "cancelled": task_id}
+
 
     def _handle_version(self) -> Dict[str, Any]:
         try:
@@ -55,19 +67,7 @@ class ControlHandler(socketserver.StreamRequestHandler):
         return {"ok": True, "version": version}
 
     def _handle_videometa(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        一次性获取 yt_dlp 的完整 info JSON：
-        入参：
-          {
-            "cmd": "videometa",
-            "url": "...",            # 必填
-            "cookies": "...",        # 可选（Netscape 文件路径）
-            "proxy": "http://..."    # 可选
-          }
-        返回：
-          - 成功：yt_dlp 的原始 info 对象（dict）
-          - 失败：{"ok": false, "error": "..."}
-        """
+
         url = data.get("url")
         cookies = data.get("cookies") or data.get("cookies_path")  # 兼容 cookies_path
         proxy = data.get("proxy")

@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 enum DownloadState: String, Codable {
-    case queued, running, merging, done, failed
+    case queued, running, merging, done, failed, cancelled
 }
 struct DownloadTask: Identifiable, Codable {
     let id: String

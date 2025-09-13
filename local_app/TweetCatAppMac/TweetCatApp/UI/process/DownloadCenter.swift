@@ -128,6 +128,15 @@ extension DownloadCenter {
                 )
             }
 
+        case "cancelled":
+            updateTask(taskId) { task in
+                task.state = .cancelled
+                task.errorMessage = "已取消"
+                task.speedText = ""
+                task.etaText = ""
+                task.downloadedText = ""
+            }
+
         case "error":
             let errMsg: String
             if let errDict = obj["error"] as? [String: Any],
@@ -239,10 +248,14 @@ extension DownloadCenter {
             var restored: [String: DownloadTask] = [:]
             for var t in decoded {
                 switch t.state {
-                case .running, .merging: t.state = .queued
-                case .failed: break
-                case .queued: break
-                case .done: continue  // 不应出现在 active，忽略
+                case .running, .merging:
+                    t.state = .queued
+
+                case .failed, .queued, .cancelled:
+                    break  // 保持原样
+
+                case .done:
+                    continue  // 不应出现在 active，忽略
                 }
                 t.speedText = ""
                 t.etaText = ""
@@ -264,11 +277,7 @@ extension DownloadCenter {
 extension DownloadCenter {
     func stopTask(_ id: String) {
         guard var task = tasks[id] else { return }
-
-        YDLHelperSocket.shared.quitTask(taskId: id, remove: false)
-
-        // 更新本地状态
-        task.state = .queued  // 或者你定义的 .paused
+        task.state = .queued
         task.speedText = ""
         task.etaText = ""
         task.updatedAt = Date()
@@ -276,17 +285,14 @@ extension DownloadCenter {
         saveActive()
     }
 
-    func removeTask(_ id: String) {
-        guard tasks[id] != nil else { return }
-        YDLHelperSocket.shared.quitTask(taskId: id, remove: false)
-        removeTaskData(id)
-    }
-
     func retryTask(
         _ id: String,
         onClose: @escaping (Result<Void, Error>) -> Void
     ) async {
         guard var task = tasks[id] else { return }
+        task.state = .running
+        tasks[id] = task
+        saveActive()
 
         let cookiesPath = URL(
             fileURLWithPath: kTweetCatCookieFile,
@@ -317,6 +323,7 @@ extension DownloadCenter {
             + "/%(title)s [%(height)sp-%(vcodec)s+%(acodec)s].%(ext)s"
 
         _ = YDLHelperSocket.shared.startDownload(
+            taskID: id,
             url: urlString,
             formatValue: task.formatSummary,
             outputTemplate: outTmpl,

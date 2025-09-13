@@ -5,7 +5,7 @@ import traceback
 
 import yt_dlp
 
-from .utils import NDJSONWriter, now_ts, map_error_code
+from .utils import NDJSONWriter, now_ts, map_error_code, DownloadCancelled
 from .downloader import run_download
 
 STREAM_HOST = os.environ.get("YDL_STREAM_HOST", "127.0.0.1")
@@ -34,6 +34,10 @@ class DownloadStreamHandler(socketserver.StreamRequestHandler):
         except yt_dlp.utils.DownloadError as e:
             code = map_error_code(str(e))
             self._send_error(writer, code, str(e))
+
+        except DownloadCancelled:
+            return
+
         except Exception as e:
             self._send_error(writer, "UNKNOWN", f"{e}\n{traceback.format_exc()}")
 
