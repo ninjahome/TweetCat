@@ -45,6 +45,7 @@ struct ProgressViewTC: View {
     }
 
     private func stopTask(taskID: String) {
+        WaitOverlayManager.shared.show(message: "正在取消任务…", timeout: 5.0)
         YDLHelperSocket.shared.cancelTask(taskID: taskID)
     }
 

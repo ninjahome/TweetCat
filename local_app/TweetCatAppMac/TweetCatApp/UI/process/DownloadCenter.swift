@@ -157,6 +157,7 @@ extension DownloadCenter {
         default:
             break
         }
+        WaitOverlayManager.shared.hide()
     }
 
     private func formatBytes(_ bytes: Double) -> String {

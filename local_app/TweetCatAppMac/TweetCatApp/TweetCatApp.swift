@@ -35,9 +35,16 @@ struct TweetCatApp: App {
 
     var body: some Scene {
         WindowGroup {
-            SidebarView().onAppear {
-                DownloadCenter.shared.loadActive()
-                LibraryCenter.shared.load()
+            ZStack {
+                // 你的主界面
+                SidebarView()
+                    .onAppear {
+                        DownloadCenter.shared.loadActive()
+                        LibraryCenter.shared.load()
+                    }
+
+                // 全局等待层（始终挂在最上层）
+                WaitOverlay()
             }
         }
     }
