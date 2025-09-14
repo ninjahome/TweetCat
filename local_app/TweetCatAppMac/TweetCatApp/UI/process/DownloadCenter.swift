@@ -295,10 +295,7 @@ extension DownloadCenter {
         tasks[id] = task
         saveActive()
 
-        let cookiesPath = URL(
-            fileURLWithPath: kTweetCatCookieFile,
-            isDirectory: false
-        ).path()
+        let cookiesPath = NSString(string: kTweetCatCookieFile).expandingTildeInPath
         let proxy = await prepareProxy()
 
         let cat = (task.pageTyp.lowercased() == "shorts") ? "shorts" : "watch"
