@@ -18,7 +18,7 @@ final class ShowcaseViewModel: ObservableObject {
     @Published var showError: Bool = false
 
     private var bag = Set<AnyCancellable>()
-    
+
     init() {
         NativeMessageReceiver.shared.$latestCandidate
             .receive(on: DispatchQueue.main)
@@ -75,21 +75,11 @@ final class ShowcaseViewModel: ObservableObject {
 
             let cookiesPath = cookiesFileURL().path
             let cat = (c.pageTyp.lowercased() == "shorts") ? "shorts" : "watch"
-            let downloads = FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("Downloads", isDirectory: true)
-                .appendingPathComponent("TweetCat", isDirectory: true)
-                .appendingPathComponent(cat, isDirectory: true)
+            let dPath =
+                AppConfigManager.shared.load()?.path(for: cat)
+                ?? AppConfig.defaultPath
 
-            // 确保目录存在
-            try? FileManager.default.createDirectory(
-                at: downloads,
-                withIntermediateDirectories: true,
-                attributes: nil
-            )
-
-            let outTmpl =
-                downloads.path
-                + "/%(title)s [%(height)sp-%(vcodec)s+%(acodec)s].%(ext)s"
+            let outTmpl = dPath.path + "/%(title)s [%(height)sp-%(vcodec)s+%(acodec)s].%(ext)s"
 
             printReproCommand(
                 url: urlString,
@@ -100,7 +90,8 @@ final class ShowcaseViewModel: ObservableObject {
             )
 
             _ = YDLHelperSocket.shared.startDownload(
-                taskID: taskId, url: urlString,
+                taskID: taskId,
+                url: urlString,
                 formatValue: sel.formatValue,  // ★ 关键：精准传递 -f 的值
                 outputTemplate: outTmpl,
                 cookiesFile: cookiesPath,
@@ -181,7 +172,6 @@ final class ShowcaseViewModel: ObservableObject {
         }
     }
 }
-
 
 private extension ShowcaseViewModel {
     /// shell 参数安全转义（简单版）

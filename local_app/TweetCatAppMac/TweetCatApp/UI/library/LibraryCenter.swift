@@ -74,14 +74,15 @@ final class LibraryCenter: ObservableObject {
 
     func add(
         from task: DownloadTask,
-        overrideFileName: String? = nil,
         overrideFileSizeMB: Int? = nil
     ) {
-        let fileName =
-            overrideFileName
-            ?? (task.filepath as NSString?)?.lastPathComponent
-            ?? "\(task.videoId).mp4"
-
+        let fileFullPathName =
+            task.filepath
+            ?? AppConfig.defaultPath.appendingPathComponent(
+                "\(task.videoId).mp4",
+                isDirectory: false
+            ).path
+        
         var fileSizeMB: Double = Double(overrideFileSizeMB ?? 0)
 
         // fallback：如果没有传回 filesize，就自己查
@@ -100,7 +101,7 @@ final class LibraryCenter: ObservableObject {
             title: task.title,
             videoId: task.videoId,
             thumbURL: task.thumbURL,
-            fileName: fileName,
+            fileName: fileFullPathName,
             fileSizeMB: Int(fileSizeMB),
             createdAt: Date(),
             category: task.pageTyp == "shorts" ? .shorts : .watch

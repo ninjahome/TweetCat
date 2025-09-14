@@ -9,8 +9,7 @@ import SwiftUI
 
 struct SettingsViewTC: View {
     // ✅ 保留下载目录
-    @AppStorage("downloadRoot") private var downloadRoot: String =
-        "~/Downloads/TweetCat"
+    @State private var downloadRoot: String = "~/Downloads/TweetCat"
 
     // ❌ 其他下载参数改为临时值（不再持久化）
     @State private var autoCreateSubdirs: Bool = true
@@ -68,12 +67,17 @@ struct SettingsViewTC: View {
             }
         }
         .task {
+
+            if let config = AppConfigManager.shared.load() {
+                self.downloadRoot = config.downloadRoot
+            }
+
             if netVM.status == nil { netVM.refresh() }
             // 获取 yt-dlp 版本
             DispatchQueue.global().async {
-                YDLHelperSocket.shared.versionTest()
+                let version = YDLHelperSocket.shared.versionTest()
                 DispatchQueue.main.async {
-                    self.ytdlpVersion = "已获取（见日志）"
+                    self.ytdlpVersion = version
                 }
             }
         }
@@ -88,8 +92,25 @@ struct SettingsViewTC: View {
                     Spacer()
                     Text(downloadRoot).foregroundStyle(.secondary)
                 }
+
+                // ✅ 新增按钮：修改根目录
+                Button("选择根目录") {
+                    let panel = NSOpenPanel()
+                    panel.canChooseFiles = false
+                    panel.canCreateDirectories = true
+                    panel.canChooseDirectories = true
+                    panel.allowsMultipleSelection = false
+                    if panel.runModal() == .OK, let url = panel.url {
+                        downloadRoot = url.path
+                        // 保存到 config.json
+                        let config = AppConfig(downloadRoot: downloadRoot)
+                        AppConfigManager.shared.save(config)
+                    }
+                }
+                .buttonStyle(.bordered)
+
                 // 🔘 清空临时文件按钮
-                Button("清空临时文件") {
+                Button("清空临时视频缓存文件") {
                     SettingsManager.shared.clearTempFiles()
                 }
                 .buttonStyle(.borderedProminent)
@@ -367,15 +388,13 @@ struct SettingsViewTC: View {
     private var integrationSection: some View {
         GroupBox("集成状态（只读）") {
             VStack(alignment: .leading, spacing: 8) {
-                Label("浏览器扩展：等待消息…（假）", systemImage: "puzzlepiece.extension")
-
-                Label("扩展信息：人工配置项 v1.0.0", systemImage: "info.circle")
+                Label("TweetCat v2.0.3", systemImage: "puzzlepiece.extension")
 
                 if let version =
                     Bundle.main.infoDictionary?["CFBundleShortVersionString"]
                     as? String
                 {
-                    Label("App 版本：\(version)", systemImage: "app.badge")
+                    Label("App 版本：\(version)", systemImage: "info.circle")
                 }
 
                 Label(

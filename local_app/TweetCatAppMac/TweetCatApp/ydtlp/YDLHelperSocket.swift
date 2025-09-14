@@ -489,7 +489,7 @@ final class YDLHelperSocket {
 
 extension YDLHelperSocket {
 
-    func versionTest(timeout: TimeInterval = 5.0) {
+    func versionTest(timeout: TimeInterval = 5.0) -> String {
         startIfNeeded()
 
         let payload: [String: Any] = [
@@ -500,14 +500,28 @@ extension YDLHelperSocket {
             let line = String(data: data, encoding: .utf8)
         else {
             print("invalid version payload to python server")
-            return
+            return "(invalid payload)"
         }
 
         let result = requestLine(line, timeout: timeout)
         print("YDLHelperSocket raw result:", result ?? "<-no result->")
 
+        // ✅ 解析 JSON
+        if let r = result,
+            let data = r.data(using: .utf8),
+            let obj = try? JSONSerialization.jsonObject(with: data)
+                as? [String: Any]
+        {
+            if let ok = obj["ok"] as? Bool, ok,
+                let version = obj["version"] as? String
+            {
+                return version
+            }
+        }
+
+        return "(获取版本失败)"
     }
-    
+
     func cancelTask(taskID:String,  timeout: TimeInterval = 15.0) {
         startIfNeeded()
 

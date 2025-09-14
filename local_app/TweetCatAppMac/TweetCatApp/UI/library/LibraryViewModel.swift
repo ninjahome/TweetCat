@@ -70,15 +70,8 @@ final class LibraryViewModel: ObservableObject {
     /// 播放（系统默认播放器）
     func play(_ id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
-        guard let url = resolveFileURL(for: item) else {
-            GlobalAlertManager.shared.show(
-                title: "播放失败",
-                message: "找不到文件路径：\(item.fileName)",
-                onConfirm: { LibraryCenter.shared.delete(id) }
-            )
-            return
-        }
-        
+        let url = URL(fileURLWithPath: item.fileName)
+
         if !FileManager.default.fileExists(atPath: url.path) {
             GlobalAlertManager.shared.show(
                 title: "播放失败",
@@ -93,14 +86,7 @@ final class LibraryViewModel: ObservableObject {
     /// 在 Finder 中显示
     func reveal(_ id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
-        guard let url = resolveFileURL(for: item) else {
-            GlobalAlertManager.shared.show(
-                title: "无法显示",
-                message: "找不到文件路径：\(item.fileName)",
-                onConfirm: { LibraryCenter.shared.delete(id) }
-            )
-            return
-        }
+        let url = URL(fileURLWithPath: item.fileName)
         if !FileManager.default.fileExists(atPath: url.path) {
             GlobalAlertManager.shared.show(
                 title: "无法显示",
@@ -109,53 +95,40 @@ final class LibraryViewModel: ObservableObject {
             )
             return
         }
+
         NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
     /// 删除记录（可选删除物理文件）
     func delete(_ id: UUID, alsoDeleteFile: Bool = false) {
         guard let item = items.first(where: { $0.id == id }) else { return }
-
-        if alsoDeleteFile, let url = resolveFileURL(for: item) {
-            do {
-                try FileManager.default.removeItem(at: url)
-            } catch let error as NSError {
-                if error.domain == NSCocoaErrorDomain,
-                    error.code == NSFileNoSuchFileError
-                {
-                    print(
-                        "未找到文件" + url.absoluteString + " error:"
-                            + error.localizedDescription
-                    )
-                } else {
-                    GlobalAlertManager.shared.show(
-                        title: "删除失败",
-                        message: "无法删除文件：\(error.localizedDescription)",
-                        onConfirm: {}
-                    )
-                }
+        LibraryCenter.shared.delete(id)
+        
+        guard  alsoDeleteFile else{return}
+        
+        let url = URL(fileURLWithPath: item.fileName)
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch let error as NSError {
+            if error.domain == NSCocoaErrorDomain,
+                error.code == NSFileNoSuchFileError
+            {
+                print(
+                    "未找到文件" + url.absoluteString + " error:"
+                        + error.localizedDescription
+                )
+            } else {
+                GlobalAlertManager.shared.show(
+                    title: "删除失败",
+                    message: "无法删除文件：\(error.localizedDescription)",
+                    onConfirm: {}
+                )
             }
         }
-
-        LibraryCenter.shared.delete(id)
     }
 
     /// 移动分类（Watch ↔ Shorts）
     func moveToOtherCategory(_ id: UUID) {
         LibraryCenter.shared.moveToOtherCategory(id)
-    }
-
-    // MARK: - Helpers
-
-    /// ~/Downloads/TweetCat/<shorts|watch>/<fileName>
-    private func resolveFileURL(for item: LibraryItem) -> URL? {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        let catFolder = (item.category == .shorts) ? "shorts" : "watch"
-        let dir =
-            home
-            .appendingPathComponent("Downloads", isDirectory: true)
-            .appendingPathComponent("TweetCat", isDirectory: true)
-            .appendingPathComponent(catFolder, isDirectory: true)
-        return dir.appendingPathComponent(item.fileName, isDirectory: false)
     }
 }

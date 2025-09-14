@@ -133,12 +133,10 @@ extension DownloadCenter {
                 return
             }
 
-            var finalFileName: String?
             var finalFileSizeMB: Int?
 
             if let finalPath = obj["filename"] as? String {
                 finishedTask.filepath = finalPath
-                finalFileName = (finalPath as NSString).lastPathComponent
             }
 
             if let fs = obj["filesize"] as? NSNumber {
@@ -148,7 +146,6 @@ extension DownloadCenter {
             DispatchQueue.main.async {
                 LibraryCenter.shared.add(
                     from: finishedTask,
-                    overrideFileName: finalFileName,
                     overrideFileSizeMB: finalFileSizeMB
                 )
                 self.removeTaskData(taskId)
@@ -346,26 +343,19 @@ extension DownloadCenter {
         let proxy = await prepareProxy()
 
         let cat = (task.pageTyp.lowercased() == "shorts") ? "shorts" : "watch"
+
+        let dPath =
+            AppConfigManager.shared.load()?.path(for: cat)
+            ?? AppConfig.defaultPath
+
+        let outTmpl =
+            dPath.path
+            + "/%(title)s [%(height)sp-%(vcodec)s+%(acodec)s].%(ext)s"
+
         let urlString =
             (task.pageTyp.lowercased() == "shorts")
             ? "https://www.youtube.com/shorts?v=\(task.videoId)"
             : "https://www.youtube.com/watch?v=\(task.videoId)"
-
-        let downloads = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Downloads", isDirectory: true)
-            .appendingPathComponent("TweetCat", isDirectory: true)
-            .appendingPathComponent(cat, isDirectory: true)
-
-        // 确保目录存在
-        try? FileManager.default.createDirectory(
-            at: downloads,
-            withIntermediateDirectories: true,
-            attributes: nil
-        )
-
-        let outTmpl =
-            downloads.path
-            + "/%(title)s [%(height)sp-%(vcodec)s+%(acodec)s].%(ext)s"
 
         _ = YDLHelperSocket.shared.startDownload(
             taskID: id,
