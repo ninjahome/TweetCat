@@ -19,11 +19,25 @@ enum AppTab: String, CaseIterable, Identifiable {
 }
 
 struct SidebarView: View {
-    @State private var selectedTab: AppTab? = .showcase  // ✅ 本地状态
+    @EnvironmentObject private var appState: AppState
+
+    // ✅ 安全包装 Binding，避免在视图更新阶段直接修改 @Published
+    private var safeSelectedTabBinding: Binding<AppTab?> {
+        Binding(
+            get: { appState.selectedTab },
+            set: { newValue in
+                if let value = newValue {
+                    DispatchQueue.main.async {
+                        appState.selectedTab = value
+                    }
+                }
+            }
+        )
+    }
 
     var body: some View {
         NavigationSplitView {
-            List(selection: $selectedTab) {
+            List(selection: safeSelectedTabBinding) {
                 NavigationLink(value: AppTab.showcase) {
                     Label("展示", systemImage: "rectangle.stack.person.crop")
                 }
@@ -43,7 +57,7 @@ struct SidebarView: View {
             .listStyle(.sidebar)
             .navigationTitle("TweetCat")
         } detail: {
-            if let selected = selectedTab {
+            if let selected = appState.selectedTab {
                 DetailRouterView(selectedTab: selected)
             } else {
                 Text("请选择一个功能")
@@ -52,7 +66,6 @@ struct SidebarView: View {
         }
     }
 }
-
 
 private struct DetailRouterView: View {
     let selectedTab: AppTab

@@ -37,11 +37,34 @@ struct ProgressViewTC: View {
                     task: task,
                     onStop: { stopTask(taskID: task.id) },
                     onRemove: { removeTask(taskID: task.id) },
-                    onRetry: {}
+                    onRetry: { restartLoadVideo(taskID: task.id) }
                 )
             }
         }
         .listStyle(.inset)
+    }
+
+    private func restartLoadVideo(taskID: String) {
+        // 显示等待层
+        WaitOverlayManager.shared.show(message: "正在启动任务", timeout: 5.0)
+
+        Task {
+            await DownloadCenter.shared.retryTask(taskID) { result in
+                // 不管成功还是失败，都先隐藏等待层
+                WaitOverlayManager.shared.hide()
+
+                switch result {
+                case .success:
+                    print("任务 \(taskID) 重试成功")
+                case .failure(let error):
+                    GlobalAlertManager.shared.show(
+                        title: "任务启动失败",
+                        message: error.localizedDescription,
+                        onConfirm: {}
+                    )
+                }
+            }
+        }
     }
 
     private func stopTask(taskID: String) {

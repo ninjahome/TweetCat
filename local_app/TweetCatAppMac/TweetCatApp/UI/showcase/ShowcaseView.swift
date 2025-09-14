@@ -26,9 +26,7 @@ struct ShowcaseView: View {
                 onConfirm: {
                     vm.startDownloadSelected()
                     vm.showFormatSheet = false
-                    DispatchQueue.main.async {
-                        appState.selectedTab = .progress
-                    }
+                    appState.selectedTab = .progress
                 }
             )
             .frame(minWidth: 640, minHeight: 420)
