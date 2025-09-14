@@ -8,15 +8,14 @@
 import Foundation
 import SwiftUICore
 
-// 下载中心（数据源）
 @MainActor
 class DownloadCenter: ObservableObject {
-    static let shared = DownloadCenter()  // ← 单例实例
+    static let shared = DownloadCenter()
     private init() {}
     weak var appState: AppState?
 
     @Published private(set) var items: [DownloadTask] = []
-    private var tasks: [String: DownloadTask] = [:]  // ← String key
+    private var tasks: [String: DownloadTask] = [:]
     private var pendingSaveWork: DispatchWorkItem?
 
     func addTask(_ task: DownloadTask) {
@@ -51,8 +50,13 @@ extension DownloadCenter {
 
     @MainActor
     func handleDownloadEvent(_ line: String, taskId: String) {
-        // 原始行
-        print("[DL][raw] \(line)")
+
+        LogsCenter.shared.log(
+            source: .ytdlp,
+            level: .info,
+            message: "[raw] \(line)",
+            taskId: taskId
+        )
 
         // 解析
         guard
@@ -61,14 +65,21 @@ extension DownloadCenter {
                 as? [String: Any],
             let event = obj["event"] as? String
         else {
-            print("[DL][warn] parse failed")
+            LogsCenter.shared.log(
+                source: .ytdlp,
+                level: .warn,
+                message: "parse failed",
+                taskId: taskId
+            )
             return
         }
 
-        // 统一头
-        print("[DL][event] \(event)")
-        // 也打印一份美化后的 JSON 供排查
-        ppJSON(obj)
+        LogsCenter.shared.log(
+            source: .ytdlp,
+            level: .info,
+            message: "[event] \(event)",
+            taskId: taskId
+        )
 
         switch event {
         case "start":
@@ -141,11 +152,13 @@ extension DownloadCenter {
                     overrideFileSizeMB: finalFileSizeMB
                 )
                 self.removeTaskData(taskId)
-                print(
-                    "[migrate] moved \(taskId) to library & removed from active"
+                LogsCenter.shared.log(
+                    source: .ytdlp,
+                    level: .info,
+                    message:
+                        "[migrate] moved \(taskId) to library & removed from active",
+                    taskId: taskId
                 )
-
-                self.appState?.selectedTab = .library
             }
 
         case "cancelled":
@@ -156,6 +169,13 @@ extension DownloadCenter {
                 task.etaText = ""
                 task.downloadedText = ""
             }
+
+            LogsCenter.shared.log(
+                source: .ytdlp,
+                level: .info,
+                message: "[cancelled] task \(taskId)  by user",
+                taskId: taskId
+            )
 
         case "error":
             let errMsg: String
@@ -172,8 +192,14 @@ extension DownloadCenter {
                 task.speedText = ""
                 task.etaText = ""
                 task.downloadedText = ""
-
             }
+
+            LogsCenter.shared.log(
+                source: .ytdlp,
+                level: .error,
+                message: errMsg,
+                taskId: taskId
+            )
         default:
             break
         }

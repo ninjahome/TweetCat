@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct LogsViewTC: View {
-    @StateObject private var vm = LogsViewModelMock()
+    @StateObject private var vm = LogsCenter.shared.vm
     @State private var scrollToBottomToggle = false  // 用于触发 ScrollViewReader 滚动
     @State private var showExportAlert = false
 
@@ -44,14 +44,14 @@ struct LogsViewTC: View {
     private var header: some View {
         HStack(spacing: 12) {
             Picker("来源", selection: $vm.sourceFilter) {
-                ForEach(LogsViewModelMock.SourceFilter.allCases) { s in
+                ForEach(LogsViewModel.SourceFilter.allCases) { s in
                     Text(s.rawValue).tag(s)
                 }
             }
             .frame(width: 180)
 
             Picker("级别", selection: $vm.levelFilter) {
-                ForEach(LogsViewModelMock.LevelFilter.allCases) { l in
+                ForEach(LogsViewModel.LevelFilter.allCases) { l in
                     Text(l.rawValue).tag(l)
                 }
             }
