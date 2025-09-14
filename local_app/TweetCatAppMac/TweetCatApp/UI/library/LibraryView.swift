@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct LibraryView: View {
-    @StateObject private var vm = LibraryViewModelMock()
+    @StateObject private var vm = LibraryViewModel()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -62,13 +62,28 @@ struct LibraryView: View {
                         item: it,
                         onPlay: { vm.play(it.id) },
                         onReveal: { vm.reveal(it.id) },
-                        onDelete: { vm.delete(it.id) },
+                        onDelete: { deleteFile(it: it) },
                         onMove: { vm.moveToOtherCategory(it.id) }
                     )
                 }
             }
         }
         .listStyle(.inset)
+    }
+
+    func deleteFile(it: LibraryItem) {
+        GlobalAlertManager.shared.show(
+            title: "确认删除",
+            message: "确定要删除《\(it.title)》吗？",
+            onConfirm: {
+                GlobalAlertManager.shared.show(
+                    title: "删除方式",
+                    message: "是否同时删除磁盘上的视频文件？",
+                    onConfirm: { vm.delete(it.id, alsoDeleteFile: true) },
+                    onCancel: { vm.delete(it.id, alsoDeleteFile: false) }
+                )
+            }
+        )
     }
 
     private var emptyPlaceholder: some View {

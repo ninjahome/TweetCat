@@ -18,7 +18,7 @@ final class ShowcaseViewModel: ObservableObject {
     @Published var showError: Bool = false
 
     private var bag = Set<AnyCancellable>()
-    deinit { print("[VM] ShowcaseViewModel deinit") }
+    
     init() {
         NativeMessageReceiver.shared.$latestCandidate
             .receive(on: DispatchQueue.main)

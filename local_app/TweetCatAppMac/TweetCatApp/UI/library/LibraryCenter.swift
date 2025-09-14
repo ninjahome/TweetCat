@@ -10,7 +10,7 @@ import SwiftUI
 
 @MainActor
 final class LibraryCenter: ObservableObject {
-    static let shared = LibraryCenter()  // ← 单例实例
+    static let shared: LibraryCenter = MainActor.assumeIsolated { LibraryCenter() }
     private init() {}  // ← 禁止外部 init
 
     @Published private(set) var items: [LibraryItem] = []

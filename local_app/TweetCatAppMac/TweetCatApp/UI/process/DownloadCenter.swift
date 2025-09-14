@@ -6,10 +6,12 @@
 //
 
 import Foundation
+import SwiftUICore
 
 // 下载中心（数据源）
 @MainActor
 class DownloadCenter: ObservableObject {
+    @EnvironmentObject private var appState: AppState
     static let shared = DownloadCenter()  // ← 单例实例
     private init() {}
 
@@ -126,6 +128,8 @@ extension DownloadCenter {
                 print(
                     "[migrate] moved \(taskId) to library & removed from active"
                 )
+                
+                self.appState.selectedTab = .library
             }
 
         case "cancelled":
