@@ -50,8 +50,19 @@ struct ProgressViewTC: View {
     }
 
     private func removeTask(taskID: String) {
-        YDLHelperSocket.shared.cancelTask(taskID: taskID)
-        DownloadCenter.shared.removeTaskData(taskID)
+        GlobalAlertManager.shared.show(
+            title: "确认删除",
+            message: "你确定要删除这个任务吗？",
+            onConfirm: {
+                // 用户点击“确认”
+                YDLHelperSocket.shared.cancelTask(taskID: taskID)
+                DownloadCenter.shared.removeTaskData(taskID)
+            },
+            onCancel: {
+                // 用户点击“取消”（可选）
+                print("用户取消删除")
+            }
+        )
     }
 }
 
@@ -158,18 +169,18 @@ private struct TaskRowView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            
+
         case .done:
             HStack {
                 Text("").hidden()
             }
-            
+
         case .failed:
             HStack {
                 Button("重试", action: onRetry)
                 Button("删除", action: onRemove).foregroundStyle(.red)
             }
-            
+
         case .cancelled:
             HStack {
                 Button("重试", action: onRetry)

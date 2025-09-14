@@ -24,6 +24,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 @main
 struct TweetCatApp: App {
+    @StateObject private var appState = AppState()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
         signal(SIGPIPE, SIG_IGN)
@@ -31,20 +33,18 @@ struct TweetCatApp: App {
         ManifestInstaller.ensureChromeManifestInstalled()
     }
 
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-
     var body: some Scene {
         WindowGroup {
             ZStack {
-                // 你的主界面
                 SidebarView()
+                    .environmentObject(appState)
                     .onAppear {
                         DownloadCenter.shared.loadActive()
                         LibraryCenter.shared.load()
                     }
 
-                // 全局等待层（始终挂在最上层）
                 WaitOverlay()
+                GlobalAlertView()
             }
         }
     }
