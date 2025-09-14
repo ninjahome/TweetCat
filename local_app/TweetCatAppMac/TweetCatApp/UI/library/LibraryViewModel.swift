@@ -18,9 +18,6 @@ final class LibraryViewModel: ObservableObject {
     // 来自 LibraryCenter 的数据快照
     @Published var items: [LibraryItem] = []
 
-    // 供 UI 显示错误提示
-    @Published var alertMessage: String?
-
     // MARK: - Private
     private var cancellables = Set<AnyCancellable>()
 
@@ -74,11 +71,20 @@ final class LibraryViewModel: ObservableObject {
     func play(_ id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
         guard let url = resolveFileURL(for: item) else {
-            alertMessage = "找不到文件：\(item.fileName)"
+            GlobalAlertManager.shared.show(
+                title: "播放失败",
+                message: "找不到文件路径：\(item.fileName)",
+                onConfirm: { LibraryCenter.shared.delete(id) }
+            )
             return
         }
+        
         if !FileManager.default.fileExists(atPath: url.path) {
-            alertMessage = "文件已丢失：\(item.fileName)"
+            GlobalAlertManager.shared.show(
+                title: "播放失败",
+                message: "文件已丢失：\(item.fileName)",
+                onConfirm: { LibraryCenter.shared.delete(id) }
+            )
             return
         }
         NSWorkspace.shared.open(url)
@@ -88,11 +94,19 @@ final class LibraryViewModel: ObservableObject {
     func reveal(_ id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
         guard let url = resolveFileURL(for: item) else {
-            alertMessage = "找不到文件：\(item.fileName)"
+            GlobalAlertManager.shared.show(
+                title: "无法显示",
+                message: "找不到文件路径：\(item.fileName)",
+                onConfirm: { LibraryCenter.shared.delete(id) }
+            )
             return
         }
         if !FileManager.default.fileExists(atPath: url.path) {
-            alertMessage = "文件已丢失：\(item.fileName)"
+            GlobalAlertManager.shared.show(
+                title: "无法显示",
+                message: "文件已丢失：\(item.fileName)",
+                onConfirm: { LibraryCenter.shared.delete(id) }
+            )
             return
         }
         NSWorkspace.shared.activateFileViewerSelecting([url])
@@ -109,7 +123,10 @@ final class LibraryViewModel: ObservableObject {
                 if error.domain == NSCocoaErrorDomain,
                     error.code == NSFileNoSuchFileError
                 {
-                    // 文件不存在，忽略
+                    print(
+                        "未找到文件" + url.absoluteString + " error:"
+                            + error.localizedDescription
+                    )
                 } else {
                     GlobalAlertManager.shared.show(
                         title: "删除失败",

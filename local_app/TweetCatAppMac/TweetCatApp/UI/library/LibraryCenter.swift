@@ -10,7 +10,9 @@ import SwiftUI
 
 @MainActor
 final class LibraryCenter: ObservableObject {
-    static let shared: LibraryCenter = MainActor.assumeIsolated { LibraryCenter() }
+    static let shared: LibraryCenter = MainActor.assumeIsolated {
+        LibraryCenter()
+    }
     private init() {}  // ← 禁止外部 init
 
     @Published private(set) var items: [LibraryItem] = []
@@ -70,15 +72,20 @@ final class LibraryCenter: ObservableObject {
         }
     }
 
-    func add(from task: DownloadTask) {
+    func add(
+        from task: DownloadTask,
+        overrideFileName: String? = nil,
+        overrideFileSizeMB: Int? = nil
+    ) {
         let fileName =
-            (task.filepath as NSString?)?.lastPathComponent
+            overrideFileName
+            ?? (task.filepath as NSString?)?.lastPathComponent
             ?? "\(task.videoId).mp4"
 
-        // 默认大小 0
-        var fileSizeMB: Double = 0
+        var fileSizeMB: Double = Double(overrideFileSizeMB ?? 0)
 
-        if let filepath = task.filepath {
+        // fallback：如果没有传回 filesize，就自己查
+        if fileSizeMB <= 0, let filepath = task.filepath {
             let fileURL = URL(fileURLWithPath: filepath)
             if let attrs = try? FileManager.default.attributesOfItem(
                 atPath: fileURL.path
@@ -115,10 +122,48 @@ final class LibraryCenter: ObservableObject {
     }
 
     func moveToOtherCategory(_ id: UUID) {
-        if let idx = items.firstIndex(where: { $0.id == id }) {
-            items[idx].category =
-                (items[idx].category == .watch) ? .shorts : .watch
+        guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
+        var item = items[idx]
+
+        // 原始目录
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let oldCat = item.category == .watch ? "watch" : "shorts"
+        let newCat = item.category == .watch ? "shorts" : "watch"
+
+        let oldURL =
+            home
+            .appendingPathComponent("Downloads", isDirectory: true)
+            .appendingPathComponent("TweetCat", isDirectory: true)
+            .appendingPathComponent(oldCat, isDirectory: true)
+            .appendingPathComponent(item.fileName)
+
+        let newDir =
+            home
+            .appendingPathComponent("Downloads", isDirectory: true)
+            .appendingPathComponent("TweetCat", isDirectory: true)
+            .appendingPathComponent(newCat, isDirectory: true)
+
+        let newURL = newDir.appendingPathComponent(item.fileName)
+
+        do {
+            try FileManager.default.createDirectory(
+                at: newDir,
+                withIntermediateDirectories: true
+            )
+            if FileManager.default.fileExists(atPath: oldURL.path) {
+                try FileManager.default.moveItem(at: oldURL, to: newURL)
+            }
+            // 更新逻辑分类
+            item.category = (item.category == .watch) ? .shorts : .watch
+            items[idx] = item
             scheduleSave()
+        } catch {
+            GlobalAlertManager.shared.show(
+                title: "移动失败",
+                message: "无法移动文件：\(error.localizedDescription)",
+                onConfirm: {}
+            )
         }
     }
+
 }

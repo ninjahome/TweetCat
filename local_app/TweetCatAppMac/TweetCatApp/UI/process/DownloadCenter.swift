@@ -11,9 +11,9 @@ import SwiftUICore
 // 下载中心（数据源）
 @MainActor
 class DownloadCenter: ObservableObject {
-    @EnvironmentObject private var appState: AppState
     static let shared = DownloadCenter()  // ← 单例实例
     private init() {}
+    weak var appState: AppState?
 
     @Published private(set) var items: [DownloadTask] = []
     private var tasks: [String: DownloadTask] = [:]  // ← String key
@@ -118,18 +118,34 @@ extension DownloadCenter {
             }
 
         case "done":
-            guard let finishedTask = tasks[taskId] else {
+            guard var finishedTask = tasks[taskId] else {
                 return
             }
 
+            var finalFileName: String?
+            var finalFileSizeMB: Int?
+
+            if let finalPath = obj["filename"] as? String {
+                finishedTask.filepath = finalPath
+                finalFileName = (finalPath as NSString).lastPathComponent
+            }
+
+            if let fs = obj["filesize"] as? NSNumber {
+                finalFileSizeMB = Int(Double(truncating: fs) / 1024.0 / 1024.0)
+            }
+
             DispatchQueue.main.async {
-                LibraryCenter.shared.add(from: finishedTask)
+                LibraryCenter.shared.add(
+                    from: finishedTask,
+                    overrideFileName: finalFileName,
+                    overrideFileSizeMB: finalFileSizeMB
+                )
                 self.removeTaskData(taskId)
                 print(
                     "[migrate] moved \(taskId) to library & removed from active"
                 )
-                
-                self.appState.selectedTab = .library
+
+                self.appState?.selectedTab = .library
             }
 
         case "cancelled":
@@ -299,7 +315,8 @@ extension DownloadCenter {
         tasks[id] = task
         saveActive()
 
-        let cookiesPath = NSString(string: kTweetCatCookieFile).expandingTildeInPath
+        let cookiesPath = NSString(string: kTweetCatCookieFile)
+            .expandingTildeInPath
         let proxy = await prepareProxy()
 
         let cat = (task.pageTyp.lowercased() == "shorts") ? "shorts" : "watch"

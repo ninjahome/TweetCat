@@ -39,6 +39,7 @@ struct TweetCatApp: App {
                 SidebarView()
                     .environmentObject(appState)
                     .onAppear {
+                        DownloadCenter.shared.appState = appState
                         DownloadCenter.shared.loadActive()
                         LibraryCenter.shared.load()
                     }

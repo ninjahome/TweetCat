@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional
 import yt_dlp
+import os
 
 from .utils import NDJSONWriter, now_ts, as_int, as_float, task_control_map, DownloadCancelled
 
@@ -52,14 +53,6 @@ def run_download(writer: NDJSONWriter, params: Dict[str, Any]) -> None:
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-
-        # 下载+后处理完成
-        writer.send({
-            "event": "done",
-            "state": "done",
-            "ts": now_ts(),
-            "ok": True
-        })
     except Exception as e:
         raise
     finally:
@@ -123,6 +116,7 @@ def _build_postprocessor_hook(writer: NDJSONWriter, task_id: str):
 
         st = d.get("status")
         pp = d.get("postprocessor")
+
         if st == "started":
             writer.send({
                 "taskId": task_id,
@@ -132,15 +126,25 @@ def _build_postprocessor_hook(writer: NDJSONWriter, task_id: str):
                 "details": f"{pp} started"
             })
         elif st == "finished":
+            # ✅ 最终文件路径
+            info = d.get("info_dict") or {}
+            final_file = info.get("filepath") or info.get("__final_filename") or info.get("filename")
+
+            file_size = None
+            if final_file and os.path.exists(final_file):
+                file_size = os.path.getsize(final_file)
+
             writer.send({
                 "taskId": task_id,
-                "event": "merging",
-                "state": "merging",
+                "event": "done",
+                "state": "done",
                 "ts": now_ts(),
-                "details": f"{pp} finished"
+                "ok": True,
+                "filename": final_file,
+                "filesize": file_size   # 👈 字节数
             })
-
     return hook
+
 
 
 def exit_download(writer, task_id: str, message: str = "cancelled by user"):
