@@ -118,3 +118,9 @@ final class CookieNetscapeWriter {
                 return out
         }
 }
+
+extension CookieNetscapeWriter {
+    static func cookieFileURL() -> URL {
+        return URL(fileURLWithPath: kTweetCatCookieFile)
+    }
+}

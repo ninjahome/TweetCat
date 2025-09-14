@@ -110,3 +110,7 @@ enum ManifestInstaller {
         }
     }
 }
+
+public func installedManifestPath() -> URL {
+    return chromeManifestURL()
+}

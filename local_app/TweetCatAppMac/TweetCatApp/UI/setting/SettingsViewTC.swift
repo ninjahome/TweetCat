@@ -1,3 +1,4 @@
+import AppKit
 //
 //  SettingsViewTC.swift
 //  TweetCatApp
@@ -7,22 +8,23 @@
 import SwiftUI
 
 struct SettingsViewTC: View {
-    // 假数据：先放到 AppStorage，方便你重启后保持
+    // ✅ 保留下载目录
     @AppStorage("downloadRoot") private var downloadRoot: String =
         "~/Downloads/TweetCat"
-    @AppStorage("autoCreateSubdirs") private var autoCreateSubdirs: Bool =
-        true
-    @AppStorage("shortsThreshold") private var shortsThreshold: Int = 60
-    @AppStorage("concurrency") private var concurrency: Int = 1
-    @AppStorage("conflictPolicy") private var conflictPolicyRaw: String =
-        ConflictPolicy.rename.rawValue
 
+    // ❌ 其他下载参数改为临时值（不再持久化）
+    @State private var autoCreateSubdirs: Bool = true
+    @State private var shortsThreshold: Int = 60
+    @State private var concurrency: Int = 1
+    @State private var conflict: ConflictPolicy = .rename
+
+    // 网络设置保持不动
     @AppStorage("useAutoDetectNetwork") private var useAutoDetectNetwork: Bool =
         true
     @AppStorage("manualProxyMode") private var manualProxyModeRaw: String =
         ProxyMode.autoDetect.rawValue
 
-    // 手动代理字段（仅 UI 存储，后续接入真实逻辑再统一落地）
+    // 手动代理字段
     @AppStorage("httpHost") private var httpHost: String = "127.0.0.1"
     @AppStorage("httpPort") private var httpPort: Int = 31080
     @AppStorage("alsoHTTPS") private var alsoUseForHTTPS: Bool = true
@@ -41,10 +43,9 @@ struct SettingsViewTC: View {
 
     @StateObject private var netVM = NetworkInspectorViewModel()
 
-    private var conflict: ConflictPolicy {
-        get { ConflictPolicy(rawValue: conflictPolicyRaw) ?? .rename }
-        set { conflictPolicyRaw = newValue.rawValue }
-    }
+    // 集成状态相关
+    @State private var ytdlpVersion: String = "(检测中...)"
+
     private var manualMode: ProxyMode {
         get { ProxyMode(rawValue: manualProxyModeRaw) ?? .autoDetect }
         set { manualProxyModeRaw = newValue.rawValue }
@@ -65,8 +66,16 @@ struct SettingsViewTC: View {
             ToolbarItem(placement: .principal) {
                 Text("设置").font(.title3)
             }
-        }.task {
+        }
+        .task {
             if netVM.status == nil { netVM.refresh() }
+            // 获取 yt-dlp 版本
+            DispatchQueue.global().async {
+                YDLHelperSocket.shared.versionTest()
+                DispatchQueue.main.async {
+                    self.ytdlpVersion = "已获取（见日志）"
+                }
+            }
         }
     }
 
@@ -77,44 +86,14 @@ struct SettingsViewTC: View {
                 HStack {
                     Text("根目录")
                     Spacer()
-                    Text(downloadRoot).foregroundStyle(
-                        .secondary
-                    )
+                    Text(downloadRoot).foregroundStyle(.secondary)
                 }
-                Toggle(
-                    "自动创建 Watch/Shorts 子目录",
-                    isOn: $autoCreateSubdirs
-                )
-                Stepper(
-                    "Shorts 阈值（秒）：\(shortsThreshold)",
-                    value: $shortsThreshold,
-                    in: 5...180
-                )
-                Stepper(
-                    "并发下载数：\(concurrency)",
-                    value: $concurrency,
-                    in: 1...3
-                )
-                Picker(
-                    "冲突策略",
-                    selection: Binding<ConflictPolicy>(
-                        get: {
-                            ConflictPolicy(
-                                rawValue:
-                                    conflictPolicyRaw
-                            ) ?? .rename
-                        },
-                        set: {
-                            conflictPolicyRaw =
-                                $0.rawValue
-                        }  // ⬅️ 直接写底层存储
-                    )
-                ) {
-                    ForEach(ConflictPolicy.allCases) { c in
-                        Text(c.rawValue).tag(c)
-                    }
+                // 🔘 清空临时文件按钮
+                Button("清空临时文件") {
+                    SettingsManager.shared.clearTempFiles()
                 }
-                .frame(width: 260)
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
             }
             .padding(8)
         }
@@ -185,7 +164,7 @@ struct SettingsViewTC: View {
                         if let s = netVM.status {
                             let applied = ProxyApplier.makeYTDLPProxyConfig(
                                 network: s,
-                                manual: ManualProxyForm()  // auto 模式下传默认表单即可
+                                manual: ManualProxyForm()
                             )
                             if let url = applied.cliProxyURL, !url.isEmpty {
                                 Text("将应用到 yt-dlp 的代理：\(url)")
@@ -213,36 +192,25 @@ struct SettingsViewTC: View {
         }
     }
 
-    // 手动表单（参考你的截图）
+    // 手动表单
     private var manualProxyForm: some View {
         VStack(alignment: .leading, spacing: 10) {
             Picker(
                 "代理模式",
                 selection: Binding<ProxyMode>(
                     get: {
-                        ProxyMode(
-                            rawValue:
-                                manualProxyModeRaw
-                        ) ?? .autoDetect
+                        ProxyMode(rawValue: manualProxyModeRaw) ?? .autoDetect
                     },
-                    set: {
-                        manualProxyModeRaw = $0.rawValue
-                    }
+                    set: { manualProxyModeRaw = $0.rawValue }
                 )
             ) {
                 Text("No proxy").tag(ProxyMode.none)
-                Text(
-                    "Auto-detect proxy settings for this network"
-                ).tag(ProxyMode.autoDetect)
-                Text("Use system proxy settings").tag(
-                    ProxyMode.useSystem
+                Text("Auto-detect proxy settings for this network").tag(
+                    ProxyMode.autoDetect
                 )
-                Text("Manual proxy configuration").tag(
-                    ProxyMode.manual
-                )
-                Text("Automatic proxy configuration URL").tag(
-                    ProxyMode.pac
-                )
+                Text("Use system proxy settings").tag(ProxyMode.useSystem)
+                Text("Manual proxy configuration").tag(ProxyMode.manual)
+                Text("Automatic proxy configuration URL").tag(ProxyMode.pac)
             }
             .pickerStyle(.radioGroup)
             .frame(maxWidth: 560, alignment: .leading)
@@ -255,16 +223,12 @@ struct SettingsViewTC: View {
                 ) {
                     GridRow {
                         Text("HTTP Proxy")
-                        TextField(
-                            "host",
-                            text: $httpHost
-                        ).frame(width: 200)
+                        TextField("host", text: $httpHost).frame(width: 200)
                         Text("Port")
                         TextField(
                             "port",
                             value: $httpPort,
-                            formatter:
-                                NumberFormatter()
+                            formatter: NumberFormatter()
                         ).frame(width: 80)
                     }
                     GridRow {
@@ -276,58 +240,45 @@ struct SettingsViewTC: View {
                     }
                     GridRow {
                         Text("HTTPS Proxy")
-                        TextField(
-                            "host",
-                            text: $httpsHost
-                        ).frame(width: 200).disabled(
-                            alsoUseForHTTPS
-                        )
+                        TextField("host", text: $httpsHost)
+                            .frame(width: 200).disabled(alsoUseForHTTPS)
                         Text("Port")
                         TextField(
                             "port",
                             value: $httpsPort,
-                            formatter:
-                                NumberFormatter()
-                        ).frame(width: 80).disabled(
-                            alsoUseForHTTPS
+                            formatter: NumberFormatter()
                         )
+                        .frame(width: 80).disabled(alsoUseForHTTPS)
                     }
                     GridRow {
                         Text("SOCKS Host")
                         TextField(
                             "socks5://host or 127.0.0.1",
                             text: $socksHost
-                        ).frame(width: 200)
+                        )
+                        .frame(width: 200)
                         Text("Port")
                         TextField(
                             "port",
                             value: $socksPort,
-                            formatter:
-                                NumberFormatter()
-                        ).frame(width: 80)
+                            formatter: NumberFormatter()
+                        )
+                        .frame(width: 80)
                     }
                     GridRow {
                         Text("SOCKS v4 / v5")
                         HStack {
-                            Toggle(
-                                "SOCKS v5",
-                                isOn: $socksV5
-                            )
+                            Toggle("SOCKS v5", isOn: $socksV5)
                         }
                         .gridCellColumns(3)
                     }
                 }
             } else if manualMode == .pac {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(
-                        "Automatic proxy configuration URL"
-                    )
-                    TextField(
-                        "http(s)://example.com/proxy.pac",
-                        text: $pacURL
-                    )
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 420)
+                    Text("Automatic proxy configuration URL")
+                    TextField("http(s)://example.com/proxy.pac", text: $pacURL)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 420)
                     HStack {
                         Button("Reload") { /* 假动作 */  }
                         Spacer()
@@ -335,7 +286,6 @@ struct SettingsViewTC: View {
                 }
             }
 
-            // 统一的 "No proxy for" 与选项
             VStack(alignment: .leading, spacing: 8) {
                 Text("No proxy for")
                 TextField(
@@ -348,14 +298,10 @@ struct SettingsViewTC: View {
                     "Do not prompt for authentication if password is saved",
                     isOn: .constant(true)
                 )
-                Toggle(
-                    "Proxy DNS when using SOCKS v4",
-                    isOn: .constant(false)
-                )
+                Toggle("Proxy DNS when using SOCKS v4", isOn: .constant(false))
             }
             .padding(.top, 6)
 
-            // 只读预览：手动模式下将应用到 yt-dlp 的 --proxy
             if manualMode == .manual || manualMode == .useSystem
                 || manualMode == .autoDetect
             {
@@ -367,7 +313,6 @@ struct SettingsViewTC: View {
         }
     }
 
-    // 在 SettingsViewTC 里加：
     private func buildManualForm() -> ManualProxyForm {
         var f = ManualProxyForm()
         switch manualMode {
@@ -389,7 +334,7 @@ struct SettingsViewTC: View {
             }
             if !pacURL.isEmpty { f.pacURL = pacURL }
         case .useSystem:
-            f.mode = .auto  // “跟随系统代理”本质等价 auto
+            f.mode = .auto
         case .autoDetect:
             f.mode = .auto
         case .none, .pac:
@@ -422,18 +367,38 @@ struct SettingsViewTC: View {
     private var integrationSection: some View {
         GroupBox("集成状态（只读）") {
             VStack(alignment: .leading, spacing: 8) {
+                Label("浏览器扩展：等待消息…（假）", systemImage: "puzzlepiece.extension")
+
+                Label("扩展信息：人工配置项 v1.0.0", systemImage: "info.circle")
+
+                if let version =
+                    Bundle.main.infoDictionary?["CFBundleShortVersionString"]
+                    as? String
+                {
+                    Label("App 版本：\(version)", systemImage: "app.badge")
+                }
+
                 Label(
-                    "浏览器扩展：等待消息…（假）",
-                    systemImage: "puzzlepiece.extension"
-                )
-                Label(
-                    "yt-dlp：\( "v2025.00 (mock)" )",
+                    "yt-dlp：\(ytdlpVersion)",
                     systemImage: "wrench.and.screwdriver"
                 )
+
                 Label(
-                    "Manifest：已安装（假）",
-                    systemImage: "checkmark.seal"
+                    "Manifest：\(installedManifestPath().path)",
+                    systemImage: "doc.plaintext"
                 )
+
+                HStack {
+                    Label(
+                        "Cookie 文件：\(CookieNetscapeWriter.cookieFileURL().path)",
+                        systemImage: "folder"
+                    )
+                    Spacer()
+                    Button("打开") {
+                        NSWorkspace.shared.activateFileViewerSelecting(
+                            [CookieNetscapeWriter.cookieFileURL()])
+                    }
+                }
             }
             .padding(8)
         }

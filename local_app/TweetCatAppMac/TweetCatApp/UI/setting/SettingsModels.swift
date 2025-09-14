@@ -74,3 +74,13 @@ struct SettingsPreview {
     var ytdlpVersion: String = "v2025.00 (mock)"
     var manifestOK: Bool = true
 }
+
+struct SettingsManager {
+    static let shared = SettingsManager()
+
+    // 清空临时文件（占位）
+    func clearTempFiles() {
+        // TODO: 实现清空逻辑
+        print("清空临时文件（未实现）")
+    }
+}
