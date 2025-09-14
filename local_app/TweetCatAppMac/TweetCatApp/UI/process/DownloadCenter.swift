@@ -157,6 +157,10 @@ extension DownloadCenter {
                     taskId: taskId
                 )
             }
+            DownloadNotifier.shared.notifySuccess(
+                title: "下载完成",
+                message: "视频《\(finishedTask.title)》已保存"
+            )
 
         case "cancelled":
             updateTask(taskId) { task in
@@ -196,6 +200,11 @@ extension DownloadCenter {
                 level: .error,
                 message: errMsg,
                 taskId: taskId
+            )
+
+            DownloadNotifier.shared.notifyFail(
+                title: "下载失败",
+                message: errMsg
             )
         default:
             break
@@ -344,9 +353,7 @@ extension DownloadCenter {
 
         let cat = (task.pageTyp.lowercased() == "shorts") ? "shorts" : "watch"
 
-        let dPath =
-            AppConfigManager.shared.load()?.path(for: cat)
-            ?? AppConfig.defaultPath
+        let dPath = AppConfigManager.shared.load().path(for: cat)
 
         let outTmpl =
             dPath.path

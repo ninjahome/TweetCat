@@ -75,9 +75,7 @@ final class ShowcaseViewModel: ObservableObject {
 
             let cookiesPath = cookiesFileURL().path
             let cat = (c.pageTyp.lowercased() == "shorts") ? "shorts" : "watch"
-            let dPath =
-                AppConfigManager.shared.load()?.path(for: cat)
-                ?? AppConfig.defaultPath
+            let dPath = AppConfigManager.shared.load().path(for: cat) 
 
             let outTmpl = dPath.path + "/%(title)s [%(height)sp-%(vcodec)s+%(acodec)s].%(ext)s"
 

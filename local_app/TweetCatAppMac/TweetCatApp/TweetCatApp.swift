@@ -31,6 +31,7 @@ struct TweetCatApp: App {
         signal(SIGPIPE, SIG_IGN)
         _ = NativeMessageReceiver.shared
         ManifestInstaller.ensureChromeManifestInstalled()
+        DownloadNotifier.shared.requestAuthorization()
     }
 
     var body: some Scene {

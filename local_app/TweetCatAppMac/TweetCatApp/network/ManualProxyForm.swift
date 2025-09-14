@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct ManualProxyForm {
+public struct ManualProxyForm: Codable {
     public var mode: ProxyModeChoice = .auto  // auto/manual/off
     // manual 模式下可选字段：
     public var httpHost: String?

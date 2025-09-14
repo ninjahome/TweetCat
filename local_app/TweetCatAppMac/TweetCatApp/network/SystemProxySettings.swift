@@ -32,9 +32,19 @@ public struct NetworkStatus: Equatable {
     public var isLikelyVPNOrProxyAvailable: Bool {
         defaultRouteViaUtun || systemProxy.hasAnyProxy
     }
+
+    static func empty() -> NetworkStatus {
+        return NetworkStatus(
+            hasUtunInterface: false,
+            defaultRouteViaUtun: false,
+            systemProxy: .init(),
+            outboundIPSample: nil,
+            note: "无检测结果"
+        )
+    }
 }
 
-public enum ProxyModeChoice: String {
+public enum ProxyModeChoice: String, Codable {
     case auto  // 优先使用系统代理/自动探测
     case manual  // 使用手动配置（来自设置页）
     case off  // 不使用代理
@@ -47,7 +57,6 @@ public struct YTDLPProxyConfig: Equatable {
     /// 可选：为子进程设置的环境变量（http_proxy/https_proxy/all_proxy 等）
     public var env: [String: String] = [:]
 }
-
 
 public func prepareProxy(manual: ManualProxyForm = ManualProxyForm()) async
     -> String?

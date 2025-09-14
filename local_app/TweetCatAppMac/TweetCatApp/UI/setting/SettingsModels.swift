@@ -77,10 +77,88 @@ struct SettingsPreview {
 
 struct SettingsManager {
     static let shared = SettingsManager()
+    private init() {}
 
-    // 清空临时文件（占位）
-    func clearTempFiles() {
-        // TODO: 实现清空逻辑
-        print("清空临时文件（未实现）")
+    /// 清理 .part 临时文件
+    func clearTempFiles(in root: String) {
+        let expandedRoot = (root as NSString).expandingTildeInPath
+        let shorts = URL(fileURLWithPath: expandedRoot).appendingPathComponent(
+            "shorts"
+        )
+        let watch = URL(fileURLWithPath: expandedRoot).appendingPathComponent(
+            "watch"
+        )
+
+        let fm = FileManager.default
+        let candidates = [shorts, watch]
+        let now = Date()
+
+        // 正则：匹配包含 .part 的文件
+        let regex = try! NSRegularExpression(
+            pattern: #"\.part(\.|$)"#,
+            options: .caseInsensitive
+        )
+
+        for dir in candidates {
+            print("🔍 检查目录: \(dir.path)")
+
+            var isDir: ObjCBool = false
+            if !fm.fileExists(atPath: dir.path, isDirectory: &isDir)
+                || !isDir.boolValue
+            {
+                print("⚠️ 目录不存在或不是文件夹: \(dir.path)")
+                continue
+            }
+
+            do {
+                let files = try fm.contentsOfDirectory(
+                    at: dir,
+                    includingPropertiesForKeys: [.contentModificationDateKey]
+                )
+                print("📂 目录 \(dir.lastPathComponent) 中找到 \(files.count) 个文件")
+
+                for file in files {
+                    print("➡️ 发现文件: \(file.lastPathComponent)")
+
+                    let name = file.lastPathComponent
+                    let range = NSRange(location: 0, length: name.utf16.count)
+                    if regex.firstMatch(in: name, options: [], range: range)
+                        != nil
+                    {
+                        print("🎯 命中临时文件: \(name)")
+
+                        do {
+                            // 最近修改时间检查（避免删除活跃文件）
+                            let attrs = try fm.attributesOfItem(
+                                atPath: file.path
+                            )
+                            if let modDate = attrs[.modificationDate] as? Date {
+                                let interval = now.timeIntervalSince(modDate)
+                                if interval < 10 {
+                                    print(
+                                        "⏸ 跳过活跃文件: \(name) (最近修改: \(Int(interval)) 秒前)"
+                                    )
+                                    continue
+                                }
+                            }
+
+                            try fm.removeItem(at: file)
+
+                            if fm.fileExists(atPath: file.path) {
+                                print("⚠️ 删除尝试后文件仍存在: \(name)")
+                            } else {
+                                print("🗑 已删除临时文件: \(name)")
+                            }
+                        } catch {
+                            print(
+                                "❌ 删除失败: \(name) - \(error.localizedDescription)"
+                            )
+                        }
+                    }
+                }
+            } catch {
+                print("❌ 无法读取目录 \(dir.path): \(error.localizedDescription)")
+            }
+        }
     }
 }

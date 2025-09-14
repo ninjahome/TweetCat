@@ -11,6 +11,7 @@ struct ShowcaseView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var vm = ShowcaseViewModel()
     @ObservedObject var downloadCenter = DownloadCenter.shared
+    @Environment(\.openURL) private var openURL  // ✅ 新增
 
     var body: some View {
         VStack(spacing: 0) {
@@ -216,23 +217,31 @@ struct ShowcaseView: View {
                 .foregroundStyle(.secondary)
             HStack(spacing: 12) {
                 Button {
-                    // 这里仅演示；后续可打开真实扩展商店链接
+                    openURL(
+                        URL(
+                            string:
+                                "https://chromewebstore.google.com/detail/tweetcat/mcgmafamfmogminikgkjecephgccoggp"
+                        )!
+                    )
                 } label: {
                     Label(
                         "下载扩展",
-                        systemImage:
-                            "square.and.arrow.down"
+                        systemImage: "square.and.arrow.down"
                     )
                 }
                 .buttonStyle(.borderedProminent)
 
                 Button {
-                    // 这里仅演示；后续可跳转到内置帮助页
+                    openURL(
+                        URL(
+                            string:
+                                "https://www.youtube.com/watch?v=lpDHYTZW9xU"
+                        )!
+                    )
                 } label: {
                     Label(
                         "查看安装指南",
-                        systemImage:
-                            "questionmark.circle"
+                        systemImage: "questionmark.circle"
                     )
                 }
                 .buttonStyle(.bordered)

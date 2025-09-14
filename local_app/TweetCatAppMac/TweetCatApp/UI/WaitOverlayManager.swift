@@ -36,8 +36,11 @@ class WaitOverlayManager: ObservableObject {
 
     /// 隐藏等待界面
     func hide() {
-        self.isWaiting = false
-        self.message = nil
+        DispatchQueue.main.async {
+            self.isWaiting = false
+            self.message = nil
+        }
+
         hideTask?.cancel()
         hideTask = nil
     }

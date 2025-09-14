@@ -42,6 +42,29 @@ struct SettingsViewTC: View {
 
     @StateObject private var netVM = NetworkInspectorViewModel()
 
+    private func applyProxyConfig() {
+
+        if useAutoDetectNetwork {
+            // 自动模式：依赖 netVM 检测结果
+            if let s = netVM.status {
+                let applied = ProxyApplier.makeYTDLPProxyConfig(
+                    network: s,
+                    manual: ManualProxyForm()
+                )
+                print("✅ 已应用自动检测代理配置: \(applied.cliProxyURL ?? "(无代理)")")
+            } else {
+                print("⚠️ 自动检测尚未完成，无法应用配置")
+            }
+        } else {
+            // 手动模式：直接用表单生成
+            let applied = ProxyApplier.makeYTDLPProxyConfig(
+                network: netVM.status ?? .empty(),
+                manual: buildManualForm()
+            )
+            print("✅ 已应用手动代理配置: \(applied.cliProxyURL ?? "(无代理)")")
+        }
+    }
+
     // 集成状态相关
     @State private var ytdlpVersion: String = "(检测中...)"
 
@@ -68,8 +91,19 @@ struct SettingsViewTC: View {
         }
         .task {
 
-            if let config = AppConfigManager.shared.load() {
-                self.downloadRoot = config.downloadRoot
+            let config = AppConfigManager.shared.load()
+            self.downloadRoot = config.downloadRoot
+            self.notifyDone = config.notifyDone
+            self.notifyFail = config.notifyFail
+            if let proxy = config.manualProxy {
+                self.httpHost = proxy.httpHost ?? ""
+                self.httpPort = proxy.httpPort ?? 0
+                self.httpsHost = proxy.httpsHost ?? ""
+                self.httpsPort = proxy.httpsPort ?? 0
+                self.socksHost = proxy.socksHost ?? ""
+                self.socksPort = proxy.socksPort ?? 0
+                self.socksV5 = proxy.socksV5
+                self.pacURL = proxy.pacURL ?? ""
             }
 
             if netVM.status == nil { netVM.refresh() }
@@ -102,8 +136,8 @@ struct SettingsViewTC: View {
                     panel.allowsMultipleSelection = false
                     if panel.runModal() == .OK, let url = panel.url {
                         downloadRoot = url.path
-                        // 保存到 config.json
-                        let config = AppConfig(downloadRoot: downloadRoot)
+                        var config = AppConfigManager.shared.load()
+                        config.downloadRoot = downloadRoot
                         AppConfigManager.shared.save(config)
                     }
                 }
@@ -111,7 +145,21 @@ struct SettingsViewTC: View {
 
                 // 🔘 清空临时文件按钮
                 Button("清空临时视频缓存文件") {
-                    SettingsManager.shared.clearTempFiles()
+                    GlobalAlertManager.shared.show(
+                        title: "清空临时文件",
+                        message: "这将删除所有 .part 临时文件，所有未完成的视频需要重新下载，是否继续？",
+                        onConfirm: {
+                            WaitOverlayManager.shared.show()
+                            DispatchQueue.global().async {
+                                SettingsManager.shared.clearTempFiles(
+                                    in: downloadRoot
+                                )
+                                DispatchQueue.main.async {
+                                    WaitOverlayManager.shared.hide()
+                                }
+                            }
+                        }
+                    )
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.red)
@@ -124,89 +172,80 @@ struct SettingsViewTC: View {
     private var networkSection: some View {
         GroupBox("网络 / 代理 / VPN") {
             VStack(alignment: .leading, spacing: 12) {
-                Toggle(
-                    "自动检测网络（优先使用系统代理 / 检测 utun / 观察默认路由）",
-                    isOn: $useAutoDetectNetwork
-                )
 
-                if useAutoDetectNetwork {
-                    // 真实检测结果
-                    VStack(alignment: .leading, spacing: 6) {
-                        if netVM.loading {
-                            ProgressView("检测中…")
-                        } else if let s = netVM.status {
+                VStack(alignment: .leading, spacing: 6) {
+                    if netVM.loading {
+                        ProgressView("检测中…")
+                    } else if let s = netVM.status {
+                        Label(
+                            s.hasUtunInterface
+                                ? "发现 utun 接口" : "未发现 utun 接口",
+                            systemImage: s.hasUtunInterface
+                                ? "checkmark.circle" : "xmark.circle"
+                        )
+                        Label(
+                            s.defaultRouteViaUtun
+                                ? "默认路由可能经过 VPN" : "默认路由未经过 VPN",
+                            systemImage: s.defaultRouteViaUtun
+                                ? "checkmark.circle" : "xmark.circle"
+                        )
+                        if let httpHost = s.systemProxy.httpHost,
+                            let httpPort = s.systemProxy.httpPort
+                        {
                             Label(
-                                s.hasUtunInterface
-                                    ? "发现 utun 接口" : "未发现 utun 接口",
-                                systemImage: s.hasUtunInterface
-                                    ? "checkmark.circle" : "xmark.circle"
+                                "系统 HTTP 代理：\(httpHost):\(httpPort)",
+                                systemImage: "network"
                             )
+                        }
+                        if let socksHost = s.systemProxy.socksHost,
+                            let socksPort = s.systemProxy.socksPort
+                        {
                             Label(
-                                s.defaultRouteViaUtun
-                                    ? "默认路由可能经过 VPN" : "默认路由未经过 VPN",
-                                systemImage: s.defaultRouteViaUtun
-                                    ? "checkmark.circle" : "xmark.circle"
+                                "系统 SOCKS 代理：\(socksHost):\(String(socksPort))",
+                                systemImage: "network"
                             )
-                            if let httpHost = s.systemProxy.httpHost,
-                                let httpPort = s.systemProxy.httpPort
-                            {
-                                Label(
-                                    "系统 HTTP 代理：\(httpHost):\(httpPort)",
-                                    systemImage: "network"
+                        }
+                        if let pac = s.systemProxy.pacURL, !pac.isEmpty {
+                            Label("PAC URL：\(pac)", systemImage: "link")
+                        }
+                        if let ip = s.outboundIPSample {
+                            Label("出口 IP：\(ip)", systemImage: "globe")
+                        }
+                        Text(s.note)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("尚未获得检测结果").foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.leading, 2)
+
+                HStack {
+                    Button("重新检测") { netVM.refresh() }
+                        .buttonStyle(.bordered).disabled(netVM.loading)
+                    // 可选：预览将传给 yt-dlp 的 --proxy
+                    if let s = netVM.status {
+                        let applied = ProxyApplier.makeYTDLPProxyConfig(
+                            network: s,
+                            manual: ManualProxyForm()
+                        )
+                        if let url = applied.cliProxyURL, !url.isEmpty {
+                            Text("将应用到 yt-dlp 的代理：\(url)")
+                                .font(
+                                    .system(.caption, design: .monospaced)
                                 )
-                            }
-                            if let socksHost = s.systemProxy.socksHost,
-                                let socksPort = s.systemProxy.socksPort
-                            {
-                                Label(
-                                    "系统 SOCKS 代理：\(socksHost):\(String(socksPort))",
-                                    systemImage: "network"
-                                )
-                            }
-                            if let pac = s.systemProxy.pacURL, !pac.isEmpty {
-                                Label("PAC URL：\(pac)", systemImage: "link")
-                            }
-                            if let ip = s.outboundIPSample {
-                                Label("出口 IP：\(ip)", systemImage: "globe")
-                            }
-                            Text(s.note)
-                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else if s.isLikelyVPNOrProxyAvailable {
+                            Text("预计走 VPN（无显式代理），将不设置 --proxy")
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                         } else {
-                            Text("尚未获得检测结果").foregroundStyle(.secondary)
+                            Text("未检测到代理/VPN，请开启代理/VPN")
+                                .font(.caption)
+                                .foregroundStyle(.red)
                         }
                     }
-                    .padding(.leading, 2)
-
-                    HStack {
-                        Button("重新检测") { netVM.refresh() }
-                            .buttonStyle(.bordered).disabled(netVM.loading)
-                        // 可选：预览将传给 yt-dlp 的 --proxy
-                        if let s = netVM.status {
-                            let applied = ProxyApplier.makeYTDLPProxyConfig(
-                                network: s,
-                                manual: ManualProxyForm()
-                            )
-                            if let url = applied.cliProxyURL, !url.isEmpty {
-                                Text("将应用到 yt-dlp 的代理：\(url)")
-                                    .font(
-                                        .system(.caption, design: .monospaced)
-                                    )
-                                    .foregroundStyle(.secondary)
-                            } else if s.isLikelyVPNOrProxyAvailable {
-                                Text("预计走 VPN（无显式代理），将不设置 --proxy")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            } else {
-                                Text("未检测到代理/VPN，yt-dlp 可能无法访问外网")
-                                    .font(.caption)
-                                    .foregroundStyle(.red)
-                            }
-                        }
-                        Spacer()
-                    }
-                } else {
-                    manualProxyForm
+                    Spacer()
                 }
             }
             .padding(8)
@@ -331,6 +370,25 @@ struct SettingsViewTC: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            Button("应用") {
+                WaitOverlayManager.shared.show()
+                DispatchQueue.global().async {
+                    let form = buildManualForm()
+                    var config = AppConfigManager.shared.load()
+                    config.manualProxy = form
+                    AppConfigManager.shared.save(config)
+
+                    applyProxyConfig()
+
+                    DispatchQueue.main.async {
+                        WaitOverlayManager.shared.hide()
+                    }
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.blue)
+            .padding(.top, 8)
         }
     }
 
@@ -378,7 +436,22 @@ struct SettingsViewTC: View {
         GroupBox("通知") {
             VStack(alignment: .leading, spacing: 8) {
                 Toggle("下载完成时通知", isOn: $notifyDone)
+                    .onChange(of: notifyDone) { oldValue, newValue in
+                        var config =
+                            AppConfigManager.shared.load()
+                        config.notifyDone = newValue
+                        config.notifyFail = notifyFail
+                        AppConfigManager.shared.save(config)
+                    }
+
                 Toggle("下载失败时通知", isOn: $notifyFail)
+                    .onChange(of: notifyDone) { oldValue, newValue in
+                        var config =
+                            AppConfigManager.shared.load()
+                        config.notifyDone = notifyDone
+                        config.notifyFail = newValue
+                        AppConfigManager.shared.save(config)
+                    }
             }
             .padding(8)
         }
