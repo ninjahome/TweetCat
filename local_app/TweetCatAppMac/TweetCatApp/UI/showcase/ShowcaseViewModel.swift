@@ -75,9 +75,11 @@ final class ShowcaseViewModel: ObservableObject {
 
             let cookiesPath = cookiesFileURL().path
             let cat = (c.pageTyp.lowercased() == "shorts") ? "shorts" : "watch"
-            let dPath = AppConfigManager.shared.load().path(for: cat) 
+            let dPath = AppConfigManager.shared.load().path(for: cat)
 
-            let outTmpl = dPath.path + "/%(title)s [%(height)sp-%(vcodec)s+%(acodec)s].%(ext)s"
+            let outTmpl =
+                dPath.path
+                + "/%(title)s [%(height)sp-%(vcodec)s+%(acodec)s].%(ext)s"
 
             printReproCommand(
                 url: urlString,
@@ -157,7 +159,14 @@ final class ShowcaseViewModel: ObservableObject {
                     let opts = UIFormatOption.fromYTDLPInfo(info)
                     UIFormatOption.debugPrintOptions(opts)  // 调试输出
                     self.formatOptions = opts
-                    self.selectedFormatID = opts.first?.id
+                    if let bestApple = opts.filter({
+                        $0.compatibility == .apple
+                    }).max(by: { $0.height < $1.height }) {
+                        self.selectedFormatID = bestApple.id
+                    } else {
+                        // 如果没有 Apple 组，就退回到第一个
+                        self.selectedFormatID = opts.first?.id
+                    }
                     self.showFormatSheet = true
                 }
             } else {

@@ -41,6 +41,10 @@ def run_download(writer: NDJSONWriter, params: Dict[str, Any]) -> None:
         retries=3,
         fragment_retries=3,
         concurrent_fragment_downloads=3,
+        writesubtitles=True,       # --write-subs
+        writeautomaticsub=True,    # --write-auto-subs
+        embedsublang=True,         # --embed-subs
+        subtitlesformat="best",     # --sub-format best
     )
     if fmt:
         ydl_opts["format"] = fmt

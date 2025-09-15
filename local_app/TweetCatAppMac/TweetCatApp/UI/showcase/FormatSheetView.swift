@@ -14,18 +14,23 @@ struct FormatSheetView: View {
     let onConfirm: () -> Void
 
     var body: some View {
-        // macOS 13+ 用 NavigationStack，类型推断更稳
         NavigationStack {
             VStack(spacing: 0) {
                 List {
-                    Section("可用格式") {
-                        ForEach(options) { f in
-                            FormatRowView(
-                                option: f,
-                                isSelected: selectedID == f.id
-                            )
-                            .contentShape(Rectangle())
-                            .onTapGesture { selectedID = f.id }
+                    ForEach(UIFormatOption.Compatibility.allCases, id: \.self) {
+                        category in
+                        let group = options.filter {
+                            $0.compatibility == category
+                        }
+                        Section(category.rawValue) {
+                            ForEach(group) { f in
+                                FormatRowView(
+                                    option: f,
+                                    isSelected: selectedID == f.id
+                                )
+                                .contentShape(Rectangle())
+                                .onTapGesture { selectedID = f.id }
+                            }
                         }
                     }
                 }
