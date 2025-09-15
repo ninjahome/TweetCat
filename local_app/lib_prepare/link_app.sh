@@ -1,8 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-DERIVED_DIR="$HOME/xcodedata/Derived Data"
-TARGET_APP="${1:-}"                  # 可选：传入具体 .app 名字
+# 默认 xcodedata，可通过第一个参数覆盖
+XCODEDATA_DIR="${1:-xcodedata}"
+DERIVED_DIR="$HOME/$XCODEDATA_DIR/Derived Data"
+
+TARGET_APP="${2:-}"                  # 可选：传入具体 .app 名字
 TARGET_DIR="/Applications"
 
 err(){ echo "❌ $*" >&2; exit 1; }

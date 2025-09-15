@@ -15,6 +15,11 @@ fi
 ARCH=$(python3 -c "import platform; print(platform.machine())")
 echo "==> 当前 Python 架构: $ARCH"
 
+# 确保依赖安装
+echo "==> 检查并安装必要依赖..."
+python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade pyinstaller yt-dlp
+
 # 生成带架构后缀的目标文件名
 OUT_BASENAME="${APP_NAME}_${ARCH}"
 OUTFILE="${DIST_DIR}/${OUT_BASENAME}"
@@ -29,6 +34,7 @@ python3 -m PyInstaller \
   --name "${OUT_BASENAME}" \
   --clean \
   --noconfirm \
+  --hidden-import=yt_dlp \
   --collect-submodules yt_dlp \
   --collect-data yt_dlp \
   "${ENTRY}"

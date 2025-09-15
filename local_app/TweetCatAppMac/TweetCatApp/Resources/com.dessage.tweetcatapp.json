@@ -4,7 +4,9 @@
   "path": "/Applications/TweetCatApp.app/Contents/MacOS/TweetCatNMHost",
   "type": "stdio",
   "allowed_origins": [
-    "chrome-extension://gjdlclglpkjibapaafmfifnkjpmgodli/"
+    "chrome-extension://gjdlclglpkjibapaafmfifnkjpmgodli/",
+    "chrome-extension://klenfangigbnemmimgkgfmhajlbnnhid/",
+    "chrome-extension://mcgmafamfmogminikgkjecephgccoggp/"
   ],
-  "version":2
+  "version":3
 }
