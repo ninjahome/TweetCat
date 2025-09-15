@@ -112,7 +112,15 @@ extension UIFormatOption {
             {
                 let height = f.height ?? 0
                 let resText = "\(height)p"
-                let estSize = f.filesize ?? f.filesize_approx ?? 0
+                let estSize =
+                    f.filesize
+                    ?? f.filesize_approx
+                    ?? estimateSizeBytes(
+                        bitrateKbps: f.tbr,
+                        durationSec: info.duration
+                    )
+                    ?? 0
+
                 results.append(
                     UIFormatOption(
                         formatValue: fid,
@@ -146,9 +154,27 @@ extension UIFormatOption {
                 if let a = audioCandidate, let aid = a.format_id {
                     let height = f.height ?? 0
                     let resText = "\(height)p"
-                    let estSize =
-                        (f.filesize ?? f.filesize_approx ?? 0)
-                        + (a.filesize ?? a.filesize_approx ?? 0)
+
+                    let vSize =
+                        f.filesize
+                        ?? f.filesize_approx
+                        ?? estimateSizeBytes(
+                            bitrateKbps: f.tbr,
+                            durationSec: info.duration
+                        )
+                        ?? 0
+
+                    let aSize =
+                        a.filesize
+                        ?? a.filesize_approx
+                        ?? estimateSizeBytes(
+                            bitrateKbps: a.tbr,
+                            durationSec: info.duration
+                        )
+                        ?? 0
+
+                    let estSize = vSize + aSize
+
                     results.append(
                         UIFormatOption(
                             formatValue: "\(fid)+\(aid)",
@@ -213,4 +239,17 @@ extension UIFormatOption {
         }
     }
 
+}
+
+// 新增：辅助函数，用码率和时长估算大小
+private func estimateSizeBytes(
+    bitrateKbps: Double?,
+    durationSec: Int?
+) -> Int64? {
+    guard let br = bitrateKbps, let dur = durationSec, br > 0, dur > 0
+    else {
+        return nil
+    }
+    let bytes = br * 1000.0 / 8.0 * Double(dur)
+    return Int64(bytes)
 }

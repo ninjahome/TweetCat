@@ -9,8 +9,10 @@ import Combine
 import Foundation
 
 final class ShowcaseViewModel: ObservableObject {
+    static let shared = ShowcaseViewModel()
     @Published var current: UIVideoCandidate? = nil
     @Published var showFormatSheet: Bool = false
+    @Published var history: [UIVideoCandidate] = []
     @Published var formatOptions: [UIFormatOption] = []
     @Published var selectedFormatID: UIFormatOption.ID? = nil
     @Published var loading: Bool = false
@@ -19,12 +21,18 @@ final class ShowcaseViewModel: ObservableObject {
 
     private var bag = Set<AnyCancellable>()
 
-    init() {
+    private init() {
         NativeMessageReceiver.shared.$latestCandidate
             .receive(on: DispatchQueue.main)
             .sink { [weak self] cand in
                 guard let self, let cand else { return }
                 self.current = cand
+                if let idx = self.history.firstIndex(where: {
+                    $0.videoId == cand.videoId
+                }) {
+                    self.history.remove(at: idx)
+                }
+                self.history.insert(cand, at: 0)
             }
             .store(in: &bag)
     }
