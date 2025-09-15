@@ -1,4 +1,11 @@
-from tweetcat_ydl.server import main
+import sys
+import yt_dlp
+from tweetcat_ydl.server import main as server_main
 
 if __name__ == "__main__":
-    main()
+    if "--version" in sys.argv:
+        print("tweetcat_ydl_server 1.0.0")
+        print("yt_dlp version:", yt_dlp.version.__version__)
+        sys.exit(0)
+
+    server_main()

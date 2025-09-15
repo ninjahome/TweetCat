@@ -56,6 +56,9 @@ info "Pre-sign embedded tools"
 for f in "${TOOLS[@]}"; do
   BIN="$TOOLS_DIR/$f"
   if [[ -f "$BIN" ]]; then
+    info "Check existing signature for: $BIN"
+    codesign -dv --verbose=2 "$BIN" 2>&1 || true   # 新增日志
+    echo "=== End of signature check ==="
     info "Fix & sign: $BIN"
     chmod 755 "$BIN"
     xattr -rc "$BIN" || true
@@ -65,6 +68,8 @@ for f in "${TOOLS[@]}"; do
     info "WARN: $BIN not found, skipped"
   fi
 done
+
+info "✅ Embedded tools re-signed"   # ← 新增总结提示
 
 ### 1) 递归签名嵌套 Mach-O
 info "Scanning and signing nested Mach-O files (may take a while)..."

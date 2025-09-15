@@ -1,37 +1,46 @@
 #!/bin/bash
-set -e
+set -euo pipefail
+
+PYTHON="/usr/local/bin/python3.13"   # 官方 universal2 Python
 
 APP_NAME="tweetcat_ydl_server"
 DIST_DIR="dist"
-ENTRY="main.py"                # 新入口
+ENTRY="main.py"
+
+err(){ echo "❌ $*" >&2; exit 1; }
+info(){ echo "==> $*"; }
+
+[[ -x "$PYTHON" ]] || err "未找到 $PYTHON，请确认安装了官方 universal2 Python"
+
+info "使用 Python: $PYTHON"
+"$PYTHON" --version
 
 # 可选：清理
-if [ "$1" = "--clean" ]; then
-    echo "==> 清理旧的构建目录..."
+if [[ "${1:-}" == "--clean" ]]; then
+    info "清理旧的构建目录..."
     rm -rf build __pycache__ "${DIST_DIR:?}"/*
 fi
 
-# 当前架构
-ARCH=$(python3 -c "import platform; print(platform.machine())")
-echo "==> 当前 Python 架构: $ARCH"
-
-# 确保依赖安装
-echo "==> 检查并安装必要依赖..."
-python3 -m pip install --upgrade pip
-python3 -m pip install --upgrade pyinstaller yt-dlp
-
-# 生成带架构后缀的目标文件名
-OUT_BASENAME="${APP_NAME}_${ARCH}"
-OUTFILE="${DIST_DIR}/${OUT_BASENAME}"
-
-# 确保 dist 目录存在
 mkdir -p "$DIST_DIR"
 
-# 构建（单文件）
-echo "==> 构建 ${ARCH} 版本..."
-python3 -m PyInstaller \
+# 安装依赖
+info "检查并安装必要依赖..."
+"$PYTHON" -m pip install --upgrade pip
+"$PYTHON" -m pip install --upgrade pyinstaller yt-dlp
+
+# 当前架构
+ARCH=$(uname -m)
+info "当前机器架构: $ARCH"
+
+# 输出文件
+OUT_ARCH_FILE="${DIST_DIR}/${APP_NAME}_${ARCH}"
+FINAL="${DIST_DIR}/${APP_NAME}"
+
+# 构建当前架构
+info "构建 ${ARCH} 版本..."
+arch -${ARCH} "$PYTHON" -m PyInstaller \
   --onefile \
-  --name "${OUT_BASENAME}" \
+  --name "${APP_NAME}_${ARCH}" \
   --clean \
   --noconfirm \
   --hidden-import=yt_dlp \
@@ -39,45 +48,39 @@ python3 -m PyInstaller \
   --collect-data yt_dlp \
   "${ENTRY}"
 
-# PyInstaller 在 dist 下会生成 ${OUT_BASENAME} 可执行文件
-if [ ! -f "${OUTFILE}" ]; then
-  # 在某些 PyInstaller 版本中，输出会是 dist/${OUT_BASENAME}（无后缀）
-  # 统一重命名为我们预期的 OUTFILE
-  if [ -f "dist/${OUT_BASENAME}" ]; then
-    mv "dist/${OUT_BASENAME}" "${OUTFILE}"
-  else
-    echo "!! 未找到构建产物 dist/${OUT_BASENAME}" >&2
-    exit 1
-  fi
-fi
+[[ -f "$OUT_ARCH_FILE" ]] || err "构建失败: $OUT_ARCH_FILE"
+info "已生成: $OUT_ARCH_FILE"
+file "$OUT_ARCH_FILE"
 
-# 合并逻辑（若 dist 中已有另一架构的成品）
-FINAL="${DIST_DIR}/${APP_NAME}"
-
-OTHER_ARCH=""
-if [ "$ARCH" = "x86_64" ]; then
+# 检查是否能合并
+OTHER_ARCH="x86_64"
+if [[ "$ARCH" == "x86_64" ]]; then
     OTHER_ARCH="arm64"
-elif [ "$ARCH" = "arm64" ]; then
-    OTHER_ARCH="x86_64"
 fi
-
 OTHER_FILE="${DIST_DIR}/${APP_NAME}_${OTHER_ARCH}"
 
-if [ -n "$OTHER_ARCH" ] && [ -f "$OTHER_FILE" ]; then
-    echo "==> 发现 ${OTHER_ARCH} 版本，使用 lipo 合并为通用二进制..."
-    lipo -create -output "$FINAL" "$OUTFILE" "$OTHER_FILE"
+if [[ -f "$OTHER_FILE" ]]; then
+    info "发现 ${OTHER_ARCH} 版本，使用 lipo 合并为 Universal Binary..."
+    lipo -create -output "$FINAL" "$OUT_ARCH_FILE" "$OTHER_FILE"
+    info "合并完成: $FINAL"
+    file "$FINAL"
 else
-    echo "==> 未发现 ${OTHER_ARCH} 版本，直接使用 ${ARCH} 版本"
-    cp "$OUTFILE" "$FINAL"
+    info "未找到 ${OTHER_ARCH} 版本，暂时只保留当前架构产物: $OUT_ARCH_FILE"
+    cp "$OUT_ARCH_FILE" "$FINAL"
 fi
 
-echo "==> 完成: $FINAL"
-file "$FINAL"
+# ✅ 验证
+info "验证可执行文件..."
+if "$FINAL" --version >/dev/null 2>&1; then
+    echo "✅ 验证成功：$FINAL 可以运行，yt_dlp 已打包"
+else
+    err "验证失败：运行 $FINAL 出错"
+fi
 
 # 部署到 App 资源目录
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DEST="$DIR/../../TweetCatAppMac/TweetCatApp/Resources"
 mkdir -p "$DEST"
-mv -f "$FINAL" "$DEST/$APP_NAME"
+cp -f "$FINAL" "$DEST/$APP_NAME"
 
-echo "==> 已部署到: $DEST/$APP_NAME"
+echo "✅ 已部署到: $DEST/$APP_NAME"
