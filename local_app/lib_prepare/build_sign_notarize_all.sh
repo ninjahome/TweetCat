@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ### ===== 必填/可配参数 =====
-APP_PATH="${1:-${APP_PATH:-}}"
+APP_PATH="${1:-${APP_PATH:-"$(dirname "$0")/TweetCatApp/TweetCatApp.app"}}"
 DEV_ID_APP="${DEV_ID_APP:-Developer ID Application: Yushian (Beijing) Technology Co., Ltd.}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-notary-profile}"
 
