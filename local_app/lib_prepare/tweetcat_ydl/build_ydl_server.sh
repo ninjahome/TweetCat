@@ -46,6 +46,7 @@ arch -${ARCH} "$PYTHON" -m PyInstaller \
   --hidden-import=yt_dlp \
   --collect-submodules yt_dlp \
   --collect-data yt_dlp \
+  --collect-data certifi \
   "${ENTRY}"
 
 [[ -f "$OUT_ARCH_FILE" ]] || err "构建失败: $OUT_ARCH_FILE"

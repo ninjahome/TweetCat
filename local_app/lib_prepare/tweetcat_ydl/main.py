@@ -1,6 +1,8 @@
 import sys
 import yt_dlp
 from tweetcat_ydl.server import main as server_main
+import ssl, certifi
+ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 
 if __name__ == "__main__":
     if "--version" in sys.argv:
