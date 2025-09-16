@@ -51,7 +51,7 @@ final class YDLHelperSocket {
         try? FileManager.default.createDirectory(
             at: runtimeDir,
             withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o755]
+            attributes: [.posixPermissions: 0o700]
         )
 
         // 调用 Subprocess 清理隔离属性
@@ -72,7 +72,9 @@ final class YDLHelperSocket {
         // 设置环境变量，让 PyInstaller 解压到固定目录并禁止清理
         env["PYINSTALLER_EXTRACT_DIR"] = runtimeDir.path
         env["PYINSTALLER_NO_CLEANUP"] = "1"
-        env["PYI_DEBUG"] = "1"
+#if DEBUG
+env["PYI_DEBUG"] = "1"
+#endif
 
         p.environment = env
         

@@ -66,6 +66,7 @@ info "编译定制 bootloader..."
 python3 ./waf distclean all || err "bootloader 编译失败"
 popd >/dev/null
 
+
 # 如果 pip 安装 hatchling 失败（SSL 错误或下载不到），可以先手动执行：
 #   python -m pip install hatchling -i https://pypi.tuna.tsinghua.edu.cn/simple
 
@@ -76,9 +77,10 @@ pushd "$PYINSTALLER_SRC" >/dev/null
 "$PYTHON" -m build --wheel --no-isolation
 WHEEL_FILE=$(ls dist/pyinstaller-*.whl | head -n 1 || true)
 [[ -f "$WHEEL_FILE" ]] || err "未找到生成的 PyInstaller wheel"
-"$PYTHON" -m pip install "$WHEEL_FILE"
+"$PYTHON" -m pip install --force-reinstall "$WHEEL_FILE"   # ✅ 强制覆盖旧版本
 popd >/dev/null
 "$PYTHON" -m pip install --upgrade yt-dlp certifi
+
 
 
 # 5. 构建 onefile（根据当前机器架构决定）
@@ -95,23 +97,67 @@ fi
 
 for ARCH in "${ARCH_LIST[@]}"; do
     OUT_ARCH_FILE="${DIST_DIR}/${APP_NAME}_${ARCH}"
+    SPEC_FILE="${APP_NAME}_${ARCH}.spec"
     info "构建 ${ARCH} 版本..."
 
-    arch -${ARCH} "$PYTHON" -m PyInstaller \
-      --onefile \
-      --name "${APP_NAME}_${ARCH}" \
-      --clean \
-      --noconfirm \
-      --hidden-import=yt_dlp \
-      --collect-submodules yt_dlp \
-      --collect-data yt_dlp \
-      --collect-data certifi \
-      "${ENTRY}"
+    # 🔑 自动生成 spec 文件
+    cat > "$SPEC_FILE" <<EOF
+# -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+
+datas = []
+hiddenimports = ['yt_dlp']
+datas += collect_data_files('yt_dlp')
+datas += collect_data_files('certifi')
+hiddenimports += collect_submodules('yt_dlp')
+
+a = Analysis(
+    ['${ENTRY}'],
+    pathex=['.'],
+    binaries=[],
+    datas=datas,
+    hiddenimports=hiddenimports,
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+
+pyz = PYZ(a.pure)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    a.binaries,
+    a.datas,
+    [],
+    name='${APP_NAME}_${ARCH}',
+    debug=True,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=True,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
+EOF
+
+    # 🔑 使用生成的 spec 文件
+    arch -${ARCH} "$PYTHON" -m PyInstaller "$SPEC_FILE"
 
     [[ -f "$OUT_ARCH_FILE" ]] || err "构建失败: $OUT_ARCH_FILE"
     info "已生成: $OUT_ARCH_FILE"
     file "$OUT_ARCH_FILE"
 done
+
+
 
 # 6. lipo 合并
 FINAL="${DIST_DIR}/${APP_NAME}"
@@ -135,12 +181,10 @@ fi
 file "$FINAL"
 
 # 7. 验证
-info "验证可执行文件..."
-if "$FINAL" --version >/dev/null 2>&1; then
-    echo "✅ 验证成功：$FINAL 可以运行，yt_dlp 已打包"
-else
-    err "验证失败：运行 $FINAL 出错"
-fi
+info "验证可执行文件 (带调试)..."
+PYI_DEBUG=1 PYINSTALLER_EXTRACT_DIR="/tmp/TweetCatRuntime" PYINSTALLER_NO_CLEANUP=1 "$FINAL" --version
+ls -lah /tmp/TweetCatRuntime | head || true
+
 
 # 8. 部署到 App 资源目录
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
