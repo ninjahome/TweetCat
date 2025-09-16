@@ -1,0 +1,112 @@
+#!/bin/bash
+set -euo pipefail
+
+PYTHON="/usr/local/bin/python3.13"   # 官方 universal2 Python
+APP_NAME="tweetcat_ydl_server"
+DIST_DIR="dist"
+ENTRY="main.py"
+DEST="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../TweetCatAppMac/TweetCatApp/Resources"
+
+MODE="release"
+DO_CLEAN="no"
+
+# 参数解析
+for arg in "$@"; do
+    case "$arg" in
+        debug) MODE="debug" ;;
+        release) MODE="release" ;;
+        clean) DO_CLEAN="yes" ;;
+    esac
+done
+
+err(){ echo "❌ $*" >&2; exit 1; }
+info(){ echo "==> $*"; }
+
+[[ -x "$PYTHON" ]] || err "未找到 $PYTHON，请确认安装了官方 universal2 Python"
+
+info "使用 Python: $PYTHON"
+"$PYTHON" --version
+
+if [[ "$DO_CLEAN" == "yes" ]]; then
+    info "清理旧的构建目录..."
+    rm -rf build __pycache__ "${DIST_DIR:?}"/*
+fi
+
+mkdir -p "$DIST_DIR"
+
+# 安装依赖（清华镜像）
+PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
+info "检查并安装必要依赖 (镜像: $PIP_INDEX_URL)..."
+"$PYTHON" -m pip install --upgrade pip setuptools wheel -i "$PIP_INDEX_URL"
+"$PYTHON" -m pip install --upgrade nuitka ordered-set zstandard certifi -i "$PIP_INDEX_URL"
+
+# 如果是 release 模式，获取 certifi 目录
+CERTIFI_DIR=""
+if [[ "$MODE" == "release" ]]; then
+    CERTIFI_DIR=$($PYTHON -c "import certifi, os; print(os.path.dirname(certifi.__file__))")
+    [[ -d "$CERTIFI_DIR" ]] || err "未找到 certifi 目录"
+    info "发现 certifi 目录: $CERTIFI_DIR"
+fi
+
+# 当前架构
+ARCH=$(uname -m)
+OUT_NAME="${APP_NAME}_${ARCH}"
+OUT_FILE="${DIST_DIR}/${OUT_NAME}"
+FINAL="${DIST_DIR}/${APP_NAME}"
+
+# 构建当前架构
+info "构建当前架构: $ARCH (模式: $MODE)"
+(
+  cd "$DIST_DIR"
+  if [[ "$MODE" == "debug" ]]; then
+    # Debug: 跳过 lazy_extractors，加快编译
+    "$PYTHON" -m nuitka \
+      --onefile \
+      --enable-plugin=tk-inter \
+      --include-package=yt_dlp \
+      --nofollow-import-to=yt_dlp.extractor.lazy_extractors \
+      --output-filename="${OUT_NAME}" \
+      "../${ENTRY}"
+  else
+    # Release: 完整打包 yt_dlp + certifi
+    "$PYTHON" -m nuitka \
+      --onefile \
+      --enable-plugin=tk-inter \
+      --include-package=yt_dlp \
+      --include-package=yt_dlp.extractor.common \
+      --include-package=yt_dlp.extractor.youtube \
+      --include-data-dir=${CERTIFI_DIR}=certifi \
+      --output-filename="${OUT_NAME}" \
+      "../${ENTRY}"
+  fi
+)
+
+[[ -f "$OUT_FILE" ]] || err "构建失败: $OUT_FILE"
+info "已生成: $OUT_FILE"
+file "$OUT_FILE"
+
+# 检查是否需要合并
+if [[ "$ARCH" == "x86_64" ]]; then
+    OTHER_ARCH="arm64"
+else
+    OTHER_ARCH="x86_64"
+fi
+
+OTHER_FILE="${DIST_DIR}/${APP_NAME}_${OTHER_ARCH}"
+
+if [[ -f "$OTHER_FILE" ]]; then
+    info "发现 ${OTHER_ARCH} 版本，使用 lipo 合并为 Universal Binary..."
+    lipo -create -output "$FINAL" "$OUT_FILE" "$OTHER_FILE"
+    info "合并完成: $FINAL"
+else
+    info "未发现 ${OTHER_ARCH} 版本，当前架构产物作为最终结果"
+    cp "$OUT_FILE" "$FINAL"
+fi
+
+file "$FINAL"
+
+# 部署到 Xcode 资源目录
+mkdir -p "$DEST"
+cp -f "$FINAL" "$DEST/$APP_NAME"
+
+echo "✅ 已部署到: $DEST/$APP_NAME"
