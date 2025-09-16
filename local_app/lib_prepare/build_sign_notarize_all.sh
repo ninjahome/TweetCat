@@ -50,7 +50,7 @@ sign_one() {
 
 ### 0) 先签名内置外部工具
 TOOLS_DIR="$APP_ABS/Contents/Resources"
-TOOLS=( "yt-dlp_macos" "ffmpeg" "ffprobe" )
+TOOLS=( "tweetcat_ydl_server" "ffmpeg" "ffprobe" )
 
 info "Pre-sign embedded tools"
 for f in "${TOOLS[@]}"; do
@@ -63,7 +63,10 @@ for f in "${TOOLS[@]}"; do
     chmod 755 "$BIN"
     xattr -rc "$BIN" || true
     codesign --remove-signature "$BIN" || true
-    codesign --force --options runtime --timestamp --sign "$DEV_ID_APP" "$BIN"
+    codesign --force --options runtime --timestamp \
+      --entitlements entitlements.plist \
+      --sign "$DEV_ID_APP" "$BIN"
+
   else
     info "WARN: $BIN not found, skipped"
   fi
@@ -104,7 +107,10 @@ fi
 
 ### 2) 深度重签主 .app
 info "Deep re-sign the app bundle"
-codesign --force --deep --options runtime --timestamp --sign "$DEV_ID_APP" "$APP_ABS"
+codesign --force --deep --options runtime --timestamp \
+  --entitlements entitlements.plist \
+  --sign "$DEV_ID_APP" "$APP_ABS"
+
 
 ### 3) 验证签名完整性
 info "Verify codesign"

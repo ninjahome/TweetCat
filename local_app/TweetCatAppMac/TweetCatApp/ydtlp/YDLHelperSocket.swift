@@ -13,98 +13,108 @@ final class YDLHelperSocket {
     private var connection: NWConnection?
 
     // MARK: - Start & readiness
-
-    func startIfNeeded() {
-        if process?.isRunning == true { return }
-        guard
-            let binURL = Bundle.main.url(
-                forResource: "tweetcat_ydl_server",
-                withExtension: nil
-            )
-        else {
-            NSLog("YDLHelperSocket: server not found in bundle")
-            return
-        }
-
-        let p = Process()
-        p.executableURL = binURL
-        p.qualityOfService = .userInitiated
-        p.terminationHandler = { proc in
-            NSLog(
-                "YDLHelperSocket: server terminated (status=\(proc.terminationStatus))"
-            )
-        }
-
-        // 将 App Bundle 的 Resources 目录前置到 PATH，供后端进程找到 ffmpeg / ffprobe
-        var env = ProcessInfo.processInfo.environment
-        let resourcesDir = binURL.deletingLastPathComponent().path
-        let currentPATH = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
-        env["PATH"] = "\(resourcesDir):\(currentPATH)"
-        // ✅ 固定 PyInstaller runtime 解压目录
-        let runtimeDir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent(
-                "Library/TweetCatRuntime",
-                isDirectory: true
-            )
-
-        // 确保目录存在
-        try? FileManager.default.createDirectory(
-            at: runtimeDir,
-            withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700]
-        )
-
-        // 调用 Subprocess 清理隔离属性
-        do {
-            _ = try Subprocess.run(
-                executableURL: URL(fileURLWithPath: "/usr/bin/xattr"),
-                arguments: ["-dr", "com.apple.quarantine", runtimeDir.path]
-            )
-            NSLog(
-                "YDLHelperSocket: cleared quarantine attributes for runtimeDir"
-            )
-        } catch {
-            NSLog(
-                "YDLHelperSocket: xattr failed: \(error.localizedDescription)"
-            )
-        }
-
-        // 设置环境变量，让 PyInstaller 解压到固定目录并禁止清理
-        env["PYINSTALLER_EXTRACT_DIR"] = runtimeDir.path
-        env["PYINSTALLER_NO_CLEANUP"] = "1"
+        func startIfNeeded() {
+                if process?.isRunning == true { return }
+                guard
+                        let binURL = Bundle.main.url(
+                                forResource: "tweetcat_ydl_server",
+                                withExtension: nil
+                        )
+                else {
+                        NSLog("YDLHelperSocket: server not found in bundle")
+                        return
+                }
+                
+                let p = Process()
+                p.executableURL = binURL
+                p.qualityOfService = .userInitiated
+                p.terminationHandler = { proc in
+                        NSLog("YDLHelperSocket: server terminated (status=\(proc.terminationStatus))")
+                }
+                
+                // 将 App Bundle 的 Resources 目录前置到 PATH
+                var env = ProcessInfo.processInfo.environment
+                let resourcesDir = binURL.deletingLastPathComponent().path
+                let currentPATH = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
+                env["PATH"] = "\(resourcesDir):\(currentPATH)"
+                
+                // ✅ 固定 PyInstaller runtime 解压目录
+                let runtimeDir = FileManager.default.homeDirectoryForCurrentUser
+                        .appendingPathComponent("Library/TweetCatRuntime", isDirectory: true)
+                
+                try? FileManager.default.createDirectory(
+                        at: runtimeDir,
+                        withIntermediateDirectories: true,
+                        attributes: [.posixPermissions: 0o700]
+                )
+                
+                // 清理隔离属性
+                do {
+                        _ = try Subprocess.run(
+                                executableURL: URL(fileURLWithPath: "/usr/bin/xattr"),
+                                arguments: ["-dr", "com.apple.quarantine", runtimeDir.path]
+                        )
+                        NSLog("YDLHelperSocket: cleared quarantine attributes for runtimeDir")
+                } catch {
+                        NSLog("YDLHelperSocket: xattr failed: \(error.localizedDescription)")
+                }
+                
+                // 设置 PyInstaller 环境变量
+                env["PYINSTALLER_EXTRACT_DIR"] = runtimeDir.path
+                env["PYINSTALLER_NO_CLEANUP"] = "1"
 #if DEBUG
-env["PYI_DEBUG"] = "1"
+                env["PYI_DEBUG"] = "1"
 #endif
-
-        p.environment = env
-        
-        for (key, value) in env {
-            NSLog("YDLHelperSocket ENV: \(key)=\(value)")
+                p.environment = env
+                
+                for (key, value) in env {
+                        NSLog("YDLHelperSocket ENV: \(key)=\(value)")
+                }
+                NSLog("DEBUG ExtractDir Path = \(runtimeDir.path)")
+                NSLog("YDLHelperSocket: resourcesDir=\(resourcesDir)")
+                
+                // 🆕 启动前打印 server 的签名信息
+                do {
+                        let check = try Subprocess.run(
+                                executableURL: URL(fileURLWithPath: "/usr/bin/codesign"),
+                                arguments: ["-dv", "--verbose=4", binURL.path]
+                        )
+                        NSLog("YDLHelperSocket: codesign info for tweetcat_ydl_server:\n\(check)")
+                } catch {
+                        NSLog("YDLHelperSocket: failed to check codesign for server: \(error.localizedDescription)")
+                }
+                
+                // 启动 server
+                do {
+                        try p.run()
+                        process = p
+                        scheduleReadyProbe(delay: 5.0, timeout: 20.0)
+                        NSLog("YDLHelperSocket: server started pid=\(p.processIdentifier)")
+                        
+                        // 🆕 延迟 3 秒检查 runtime 下的 Python 库签名
+                        DispatchQueue.global().asyncAfter(deadline: .now() + 3.0) {
+                                let pythonBin = runtimeDir.appendingPathComponent("Python.framework/Versions/3.13/Python").path
+                                if FileManager.default.fileExists(atPath: pythonBin) {
+                                        do {
+                                                let check = try Subprocess.run(
+                                                        executableURL: URL(fileURLWithPath: "/usr/bin/codesign"),
+                                                        arguments: ["-dv", "--verbose=4", pythonBin]
+                                                )
+                                                NSLog("YDLHelperSocket: codesign info for runtime Python:\n\(check)")
+                                        } catch {
+                                                NSLog("YDLHelperSocket: failed to check codesign for Python: \(error.localizedDescription)")
+                                        }
+                                } else {
+                                        NSLog("YDLHelperSocket: runtime Python not found at \(pythonBin)")
+                                }
+                        }
+                        
+                } catch {
+                        NSLog("YDLHelperSocket: failed to run server: \(error.localizedDescription)")
+                        return
+                }
+                
         }
-
-        NSLog("YDLHelperSocket: PATH=\(env["PATH"] ?? "<nil>")")
-        NSLog("DEBUG ExtractDir Path = \(runtimeDir.path)") 
-        NSLog("YDLHelperSocket: resourcesDir=\(resourcesDir)")
-        NSLog(
-            "YDLHelperSocket: PYINSTALLER_EXTRACT_DIR=\(env["PYINSTALLER_EXTRACT_DIR"] ?? "<nil>")"
-        )
-        NSLog(
-            "YDLHelperSocket: PYINSTALLER_NO_CLEANUP=\(env["PYINSTALLER_NO_CLEANUP"] ?? "<nil>")"
-        )
-
-        do {
-            try p.run()
-            process = p
-            scheduleReadyProbe(delay: 5.0, timeout: 20.0)
-            NSLog("YDLHelperSocket: server started pid=\(p.processIdentifier)")
-        } catch {
-            NSLog(
-                "YDLHelperSocket: failed to run server: \(error.localizedDescription)"
-            )
-            return
-        }
-    }
-
     /// 异步调度：先延迟 `delay` 秒，再做阻塞式端口探测；成功则置 serverReady = true。
     func scheduleReadyProbe(
         delay: TimeInterval = 5.0,
