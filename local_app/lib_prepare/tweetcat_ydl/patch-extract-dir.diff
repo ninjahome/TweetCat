@@ -1,0 +1,109 @@
+diff --git a/bootloader/src/pyi_main.c b/bootloader/src/pyi_main.c
+index 2239b72be..e3870ff28 100644
+--- a/bootloader/src/pyi_main.c
++++ b/bootloader/src/pyi_main.c
+@@ -424,9 +424,12 @@ pyi_main(struct PYI_CONTEXT *pyi_ctx)
+              * `pyi_ctx->application_home_dir`. */
+             PYI_DEBUG("LOADER: creating temporary directory (runtime_tmpdir=%s)...\n", pyi_ctx->runtime_tmpdir);
+ 
+-            if (pyi_create_temporary_application_directory(pyi_ctx) < 0) {
+-                PYI_ERROR("Could not create temporary directory!\n");
+-                return -1;
++            if (!pyi_try_custom_extract_dir(pyi_ctx)) {
++                if (pyi_create_temporary_application_directory(pyi_ctx) < 0) {
++                    PYI_ERROR("Could not create temporary directory!\n");
++                    return -1;
++                }
++                PYI_DEBUG("LOADER: created temporary directory: %s\n", pyi_ctx->application_home_dir);
+             }
+ 
+             PYI_DEBUG("LOADER: created temporary directory: %s\n", pyi_ctx->application_home_dir);
+@@ -1116,9 +1119,13 @@ int pyi_main_onefile_parent_cleanup(struct PYI_CONTEXT *pyi_ctx)
+     pyi_splash_finalize(pyi_ctx->splash);
+     pyi_splash_context_free(&pyi_ctx->splash);
+ 
+-    /* Remove the application's temporary directory */
+-    PYI_DEBUG("LOADER: removing temporary directory: %s\n", pyi_ctx->application_home_dir);
+-    cleanup_status = pyi_recursive_rmdir(pyi_ctx->application_home_dir);
++    if (pyi_no_cleanup) {
++        PYI_DEBUG("LOADER: skipping cleanup of custom extract dir: %s\n", pyi_ctx->application_home_dir);
++        cleanup_status = 0;
++    } else {
++        PYI_DEBUG("LOADER: removing temporary directory: %s\n", pyi_ctx->application_home_dir);
++        cleanup_status = pyi_recursive_rmdir(pyi_ctx->application_home_dir);
++    }
+ 
+ #ifdef _WIN32
+     /* On Windows, we might fail to remove temporary directory due to
+diff --git a/bootloader/src/pyi_utils.c b/bootloader/src/pyi_utils.c
+index 7f6ea75e8..56826b237 100644
+--- a/bootloader/src/pyi_utils.c
++++ b/bootloader/src/pyi_utils.c
+@@ -17,6 +17,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <errno.h>
+ 
+ #ifdef _WIN32
+     #include <windows.h>
+@@ -244,3 +245,43 @@ pyi_utils_find_magic_pattern(FILE *fp, const unsigned char *magic, size_t magic_
+ 
+     return offset;
+ }
++/* --- Custom extract dir helpers --- */
++
++int pyi_no_cleanup = 0;
++
++int pyi_try_custom_extract_dir(struct PYI_CONTEXT *pyi_ctx)
++{
++    char *custom = getenv("PYINSTALLER_EXTRACT_DIR");
++    if (!custom || !custom[0]) {
++        return 0;  /* 没有设置环境变量，返回 false */
++    }
++
++    if (snprintf(pyi_ctx->application_home_dir, PYI_PATH_MAX, "%s", custom) >= PYI_PATH_MAX) {
++        return 0;  /* 路径太长 */
++    }
++
++    if (pyi_path_mkdir(pyi_ctx->application_home_dir) != 0) {
++        return 0;  /* 创建目录失败 */
++    }
++
++    const char *no_cleanup = getenv("PYINSTALLER_NO_CLEANUP");
++    if (no_cleanup && no_cleanup[0] == '1')
++        pyi_no_cleanup = 1;
++
++    PYI_DEBUG("LOADER: using custom extract dir: %s\n", pyi_ctx->application_home_dir);
++    return 1;
++}
++
++/*
++ * Create a directory. Return 0 on success, -1 on failure.
++ */
++int pyi_path_mkdir(const char *path)
++{
++#ifdef _WIN32
++    wchar_t wpath[PYI_PATH_MAX];
++    pyi_win32_utf8_to_wcs(path, wpath, PYI_PATH_MAX);
++    return CreateDirectoryW(wpath, NULL) ? 0 : -1;
++#else
++    return mkdir(path, 0700) == 0 || errno == EEXIST ? 0 : -1;
++#endif
++}
+diff --git a/bootloader/src/pyi_utils.h b/bootloader/src/pyi_utils.h
+index 46b854e85..765877ac8 100644
+--- a/bootloader/src/pyi_utils.h
++++ b/bootloader/src/pyi_utils.h
+@@ -23,6 +23,11 @@
+ 
+ struct PYI_CONTEXT;
+ 
++/* Custom extract dir helpers */
++extern int pyi_no_cleanup;
++int pyi_try_custom_extract_dir(struct PYI_CONTEXT *pyi_ctx);
++int pyi_path_mkdir(const char *path);
++
+ /* Environment variables. */
+ char *pyi_getenv(const char *variable);
+ int pyi_setenv(const char *variable, const char *value);

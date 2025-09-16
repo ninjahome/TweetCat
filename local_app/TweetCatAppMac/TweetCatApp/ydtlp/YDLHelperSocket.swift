@@ -40,18 +40,18 @@ final class YDLHelperSocket {
         let resourcesDir = binURL.deletingLastPathComponent().path
         let currentPATH = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
         env["PATH"] = "\(resourcesDir):\(currentPATH)"
-
         // ✅ 固定 PyInstaller runtime 解压目录
         let runtimeDir = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent(
-                "Library/Application Support/TweetCat/runtime",
+                "Library/TweetCatRuntime",
                 isDirectory: true
             )
 
         // 确保目录存在
         try? FileManager.default.createDirectory(
             at: runtimeDir,
-            withIntermediateDirectories: true
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
         )
 
         // 调用 Subprocess 清理隔离属性
@@ -69,14 +69,22 @@ final class YDLHelperSocket {
             )
         }
 
-        // 设置环境变量，让 PyInstaller 解压到固定目录
-        env["PYINSTALLER_TEMP"] = runtimeDir.path
+        // 设置环境变量，让 PyInstaller 解压到固定目录并禁止清理
+        env["PYINSTALLER_EXTRACT_DIR"] = runtimeDir.path
+        env["PYINSTALLER_NO_CLEANUP"] = "1"
+        env["PYI_DEBUG"] = "1"
 
         p.environment = env
 
         NSLog("YDLHelperSocket: PATH=\(env["PATH"] ?? "<nil>")")
+        NSLog("DEBUG ExtractDir Path = \(runtimeDir.path)") 
         NSLog("YDLHelperSocket: resourcesDir=\(resourcesDir)")
-        NSLog("YDLHelperSocket: PYINSTALLER_TEMP=\(env["PYINSTALLER_TEMP"] ?? "<nil>")")
+        NSLog(
+            "YDLHelperSocket: PYINSTALLER_EXTRACT_DIR=\(env["PYINSTALLER_EXTRACT_DIR"] ?? "<nil>")"
+        )
+        NSLog(
+            "YDLHelperSocket: PYINSTALLER_NO_CLEANUP=\(env["PYINSTALLER_NO_CLEANUP"] ?? "<nil>")"
+        )
 
         do {
             try p.run()
