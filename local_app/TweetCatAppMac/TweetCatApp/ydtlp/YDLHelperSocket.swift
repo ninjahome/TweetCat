@@ -40,10 +40,43 @@ final class YDLHelperSocket {
         let resourcesDir = binURL.deletingLastPathComponent().path
         let currentPATH = env["PATH"] ?? "/usr/bin:/bin:/usr/sbin:/sbin"
         env["PATH"] = "\(resourcesDir):\(currentPATH)"
+
+        // ✅ 固定 PyInstaller runtime 解压目录
+        let runtimeDir = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(
+                "Library/Application Support/TweetCat/runtime",
+                isDirectory: true
+            )
+
+        // 确保目录存在
+        try? FileManager.default.createDirectory(
+            at: runtimeDir,
+            withIntermediateDirectories: true
+        )
+
+        // 调用 Subprocess 清理隔离属性
+        do {
+            _ = try Subprocess.run(
+                executableURL: URL(fileURLWithPath: "/usr/bin/xattr"),
+                arguments: ["-dr", "com.apple.quarantine", runtimeDir.path]
+            )
+            NSLog(
+                "YDLHelperSocket: cleared quarantine attributes for runtimeDir"
+            )
+        } catch {
+            NSLog(
+                "YDLHelperSocket: xattr failed: \(error.localizedDescription)"
+            )
+        }
+
+        // 设置环境变量，让 PyInstaller 解压到固定目录
+        env["PYINSTALLER_TEMP"] = runtimeDir.path
+
         p.environment = env
 
         NSLog("YDLHelperSocket: PATH=\(env["PATH"] ?? "<nil>")")
         NSLog("YDLHelperSocket: resourcesDir=\(resourcesDir)")
+        NSLog("YDLHelperSocket: PYINSTALLER_TEMP=\(env["PYINSTALLER_TEMP"] ?? "<nil>")")
 
         do {
             try p.run()
@@ -522,12 +555,12 @@ extension YDLHelperSocket {
         return "(获取版本失败)"
     }
 
-    func cancelTask(taskID:String,  timeout: TimeInterval = 15.0) {
+    func cancelTask(taskID: String, timeout: TimeInterval = 15.0) {
         startIfNeeded()
 
         let payload: [String: Any] = [
             "cmd": "cancel",
-            "task_id": taskID
+            "task_id": taskID,
         ]
         guard
             let data = try? JSONSerialization.data(withJSONObject: payload),
@@ -557,7 +590,7 @@ extension YDLHelperSocket {
         }
 
         startIfNeeded()
- 
+
         var payload: [String: String] = [
             "cmd": "videometa",
             "url": url,
