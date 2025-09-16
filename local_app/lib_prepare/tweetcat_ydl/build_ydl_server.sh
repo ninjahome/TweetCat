@@ -27,7 +27,7 @@ done
 # 可选：清理
 if [[ $CLEAN -eq 1 ]]; then
     info "清理旧的构建目录..."
-    rm -rf build __pycache__ "${DIST_DIR:?}"/*
+    rm -rf build __pycache__
 fi
 
 mkdir -p "$DIST_DIR"
