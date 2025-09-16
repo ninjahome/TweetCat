@@ -51,7 +51,7 @@ final class YDLHelperSocket {
         try? FileManager.default.createDirectory(
             at: runtimeDir,
             withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700]
+            attributes: [.posixPermissions: 0o755]
         )
 
         // 调用 Subprocess 清理隔离属性
@@ -75,6 +75,10 @@ final class YDLHelperSocket {
         env["PYI_DEBUG"] = "1"
 
         p.environment = env
+        
+        for (key, value) in env {
+            NSLog("YDLHelperSocket ENV: \(key)=\(value)")
+        }
 
         NSLog("YDLHelperSocket: PATH=\(env["PATH"] ?? "<nil>")")
         NSLog("DEBUG ExtractDir Path = \(runtimeDir.path)") 
