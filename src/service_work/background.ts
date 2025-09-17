@@ -116,50 +116,34 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
 });
 
 
+let lastDetails: any = null;
+let lastTimeStamp = 0;
 
-
-let lastHandled = { tabId: null, url: null, time: 0 };
-
-function normalizeUrl(url) {
-    // 提取主机和路径，忽略查询参数
-    try {
-        const urlObj = new URL(url);
-        return `${urlObj.origin}${urlObj.pathname}`;
-    } catch {
-        return url;
-    }
-}
-
-async function handleNavigation(details) {
-    const now = Date.now();
-    const normalizedUrl = normalizeUrl(details.url);
-
-    // 防抖：忽略 10 秒内的重复主框架导航
-    if (
-        details.frameId === 0 &&
-        details.tabId === lastHandled.tabId &&
-        normalizedUrl === lastHandled.url &&
-        now - lastHandled.time < 10000
-    ) {
-        console.log('Ignoring duplicate navigation:', details.url);
-        return;
-    }
-
-    console.log("----->>", {
-        url: details.url,
-        tabId: details.tabId,
-        frameId: details.frameId,
-        transitionType: details.transitionType || 'undefined',
-        timeStamp: details.timeStamp
-    });
+async function handleNavigation(details: any) {
 
     if (details.frameId !== 0) {
         console.log('Ignoring subframe navigation:', details.url);
         return;
     }
 
-    lastHandled = { tabId: details.tabId, url: normalizedUrl, time: now };
+    // 拷贝一个对象用于比较，排除 timeStamp
+    const {timeStamp, ...rest} = details;
 
+    const sameContent = JSON.stringify(rest) === JSON.stringify(lastDetails)
+    if (
+        lastDetails && sameContent &&
+        Math.abs(timeStamp - lastTimeStamp) < 500 // 阈值 500ms
+    ) {
+        console.log("⚠️ 忽略重复导航事件:", details.url);
+        return;
+    }
+
+    // 更新 lastDetails
+    lastDetails = rest;
+    lastTimeStamp = timeStamp;
+
+
+    console.log("------------------->>>>>", lastTimeStamp, JSON.stringify(details))
     console.log('Main frame navigation:', details.url, 'TransitionType:', details.transitionType || 'undefined');
 
     try {
@@ -173,19 +157,17 @@ async function handleNavigation(details) {
 
 browser.webNavigation.onCompleted.addListener(handleNavigation, {
     url: [
-        { hostSuffix: 'youtube.com', schemes: ['https'] },
-        { hostSuffix: 'x.com', schemes: ['https'] }
+        {hostSuffix: 'youtube.com', schemes: ['https']},
+        {hostSuffix: 'x.com', schemes: ['https']}
     ]
 });
 
 browser.webNavigation.onHistoryStateUpdated.addListener(handleNavigation, {
     url: [
-        { hostSuffix: 'youtube.com', schemes: ['https'] },
-        { hostSuffix: 'x.com', schemes: ['https'] }
+        {hostSuffix: 'youtube.com', schemes: ['https']},
+        {hostSuffix: 'x.com', schemes: ['https']}
     ]
 });
-
-
 
 browser.webRequest.onBeforeSendHeaders.addListener(
     async (details) => {

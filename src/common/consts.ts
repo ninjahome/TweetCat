@@ -67,9 +67,10 @@ export enum MsgType {
     RouterTcUnmount = 'RouterTcUnmount',
     RouterTCBeforeNav = 'RouterTCBeforeNav',
 
-    YTQueryVideoParam = "YTQueryVideoParam",
-    YTVideoParamGot = 'YTVideoParamGot',
-    YTVideoSave = 'YTVideoSave',
+    YTVideoMetaGot = "YTVideoMetaGot",
+    IJYTVideoParamGot = 'IJYTVideoParamGot',
+    CheckIfLocalAppInstalled = 'CheckIfLocalAppInstalled',
+    StartLocalApp = 'StartLocalApp',
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

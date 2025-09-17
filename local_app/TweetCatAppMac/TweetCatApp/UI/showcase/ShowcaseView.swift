@@ -1,0 +1,326 @@
+//
+//  ShowcaseView.swift
+//  TweetCatApp
+//
+//  Created by wesley on 2025/9/10.
+//
+
+import SwiftUI
+
+struct ShowcaseView: View {
+    @EnvironmentObject private var appState: AppState
+    @StateObject private var vm = ShowcaseViewModel.shared
+    @ObservedObject var downloadCenter = DownloadCenter.shared
+    @Environment(\.openURL) private var openURL  // ✅ 新增
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Divider()
+            content
+            historyList
+        }
+        .navigationTitle("展示")
+        .sheet(isPresented: $vm.showFormatSheet) {
+            FormatSheetView(
+                options: vm.formatOptions,
+                selectedID: $vm.selectedFormatID,
+                onCancel: { vm.showFormatSheet = false },
+                onConfirm: {
+                    vm.startDownloadSelected()
+                    vm.showFormatSheet = false
+                }
+            )
+            .frame(minWidth: 640, minHeight: 420)
+        }.alert("错误", isPresented: $vm.showError) {
+            Button("好") {}
+        } message: {
+            Text(vm.errorMessage ?? "未知错误")
+        }
+        .overlay {
+            if vm.loading {
+                ZStack {
+                    Color.black.opacity(0.3).ignoresSafeArea()
+                    VStack(spacing: 12) {
+                        ProgressView("正在获取视频下载信息，请稍等…")
+                            .progressViewStyle(CircularProgressViewStyle())
+                            .padding()
+                            .background(.thinMaterial)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - 历史列表（横向卡片流 + 当前高亮 + 清空按钮）
+    private var historyList: some View {
+        Group {
+            if !vm.history.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("历史捕捉")
+                            .font(.headline)
+                        Spacer()
+                        Button(role: .destructive) {
+                            vm.history.removeAll()   // ✅ 清空逻辑
+                        } label: {
+                            Label("清空", systemImage: "trash")
+                                .labelStyle(.titleAndIcon)
+                                .font(.caption)
+                        }
+                        .buttonStyle(.borderless)   // ✅ 避免整行触发
+                    }
+                    .padding(.horizontal)
+
+                    ScrollView(.horizontal, showsIndicators: true) {
+                        HStack(spacing: 12) {
+                            ForEach(vm.history) { item in
+                                VStack(spacing: 6) {
+                                    AsyncImage(url: item.thumbnailURL) { phase in
+                                        switch phase {
+                                        case .success(let img):
+                                            img.resizable()
+                                                .scaledToFill()
+                                        default:
+                                            Color.gray.opacity(0.2)
+                                        }
+                                    }
+                                    .frame(width: 160, height: 90)
+                                    .clipped()
+                                    .cornerRadius(8)
+
+                                    Text(item.title)
+                                        .font(.caption)
+                                        .lineLimit(2)
+                                        .frame(width: 160, alignment: .leading)
+                                }
+                                .padding(6)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(
+                                            item.id == vm.current?.id
+                                                ? Color.accentColor : Color.clear,
+                                            lineWidth: 2
+                                        )
+                                )
+                                .onTapGesture {
+                                    vm.current = item   // 点击 → 切换到该候选
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    .frame(height: 150)
+                }
+                .padding(.top, 8)
+            }
+        }
+    }
+
+    // MARK: - Content
+    private var content: some View {
+        Group {
+            if let c = vm.current {
+                candidateCard(c)
+            } else {
+                emptyState
+            }
+        }
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: .infinity,
+            alignment: .top
+        )
+        .padding()
+    }
+
+    // 候选卡片
+    private func candidateCard(_ c: UIVideoCandidate) -> some View {
+        let isShorts = c.sourceURL?.absoluteString.contains("/shorts/") ?? false
+
+        return VStack(alignment: .center, spacing: 12) {
+            // 缩略图
+            thumbnailView(for: c, isShorts: isShorts)
+
+            // 视频信息
+            infoView(for: c)
+
+            // 操作按钮
+            actionButtons()
+        }
+        .padding(16)
+        .background(.thinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(radius: 1)
+        .id(c.id)
+    }
+
+    // MARK: - 缩略图视图
+    @ViewBuilder
+    private func thumbnailView(for c: UIVideoCandidate, isShorts: Bool)
+        -> some View
+    {
+        if isShorts {
+            // Shorts：固定 9:16 比例，适合竖屏
+            AsyncImage(url: c.thumbnailURL) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                        .frame(width: 240, height: 426)
+                case .success(let image):
+                    image.resizable()
+                        .scaledToFill()
+                        .frame(width: 240, height: 426)
+                        .clipped()
+                case .failure:
+                    Color.gray.opacity(0.2)
+                        .overlay(Image(systemName: "photo"))
+                        .frame(width: 240, height: 426)
+                @unknown default:
+                    EmptyView()
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        } else {
+            // Watch：宽度撑满，保持 16:9
+            AsyncImage(url: c.thumbnailURL) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                case .success(let image):
+                    image.resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                case .failure:
+                    Color.gray.opacity(0.2)
+                        .overlay(Image(systemName: "photo"))
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                @unknown default:
+                    EmptyView()
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    // MARK: - 视频信息视图
+    @ViewBuilder
+    private func infoView(for c: UIVideoCandidate) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(c.title)
+                .font(.title3).bold()
+                .lineLimit(2)
+
+            HStack(spacing: 8) {
+                Label(c.videoId, systemImage: "number")
+                    .font(.callout)
+                if let sec = c.durationSec {
+                    Label("\(sec) 秒", systemImage: "clock")
+                        .font(.callout)
+                }
+            }
+            .foregroundStyle(.secondary)
+
+            if let url = c.sourceURL {
+                Link(destination: url) {
+                    Label("在浏览器中打开", systemImage: "safari")
+                }
+                .font(.callout)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // 放在 View 顶部（和其它 @State 并列）
+    @State private var showServerNotReadyAlert = false
+    @State private var serverAlertMessage = "Python 服务正在启动，请稍后再试。"
+    // MARK: - 操作按钮视图
+    @ViewBuilder
+    private func actionButtons() -> some View {
+        HStack(spacing: 20) {
+            Button {
+                if YDLHelperSocket.shared.serverReady {
+                    vm.fetchFormatsReal()
+                } else {
+                    // 仅提示，不做额外逻辑
+                    showServerNotReadyAlert = true
+                }
+            } label: {
+                Label("获取/下载", systemImage: "arrow.down.circle.fill")
+                    .frame(minWidth: 120)
+            }
+            .buttonStyle(.borderedProminent)
+
+            Button {
+                vm.current = nil
+            } label: {
+                Label("清除", systemImage: "xmark.circle")
+                    .frame(minWidth: 80)
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(.top, 12)
+        .alert("服务尚未就绪", isPresented: $showServerNotReadyAlert) {
+            Button("我知道了", role: .cancel) {}
+        } message: {
+            Text(serverAlertMessage)
+        }
+    }
+
+    // 空状态（无扩展消息）
+    private var emptyState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "puzzlepiece.extension")
+                .font(.system(size: 64))
+                .padding(12)
+            Text("等待浏览器扩展的消息")
+                .font(.title3).bold()
+            Text("请先安装并启用 TweetCat 浏览器扩展，并在 YouTube 登录后选择一个视频。")
+                .foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                Button {
+                    openURL(
+                        URL(
+                            string:
+                                "https://chromewebstore.google.com/detail/tweetcat/mcgmafamfmogminikgkjecephgccoggp"
+                        )!
+                    )
+                } label: {
+                    Label(
+                        "下载扩展",
+                        systemImage: "square.and.arrow.down"
+                    )
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button {
+                    openURL(
+                        URL(
+                            string:
+                                "https://www.youtube.com/watch?v=lpDHYTZW9xU"
+                        )!
+                    )
+                } label: {
+                    Label(
+                        "查看安装指南",
+                        systemImage: "questionmark.circle"
+                    )
+                }
+                .buttonStyle(.bordered)
+            }
+
+            Divider().padding(.vertical, 8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// 预览
+#Preview {
+    ShowcaseView()
+        .environmentObject(AppState())
+}
