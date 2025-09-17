@@ -77,6 +77,9 @@ COMMON_FLAGS=(
   --include-package=yt_dlp.extractor.common
   --include-package=yt_dlp.extractor.youtube
   --include-data-dir="${CERTIFI_DIR}=certifi"
+  --nofollow-import-to=yt_dlp.extractor.lazy_extractors
+  --verbose
+  --show-modules
 )
 
 "$PYTHON" -m nuitka \
@@ -105,6 +108,13 @@ else
 fi
 
 file "$FINAL"
+
+# 提示是否为 Universal Binary
+if file "$FINAL" | grep -q "universal"; then
+  echo "🍎 最终产物是 Universal Binary ✅"
+else
+  echo "⚠️ 最终产物不是 Universal Binary（当前架构: $ARCH）"
+fi
 
 # 部署到 Xcode 资源目录
 mkdir -p "$DEST"
