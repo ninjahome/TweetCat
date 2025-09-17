@@ -64,7 +64,6 @@ for f in "${TOOLS[@]}"; do
     xattr -rc "$BIN" || true
     codesign --remove-signature "$BIN" || true
     codesign --force --options runtime --timestamp \
-      --entitlements entitlements.plist \
       --sign "$DEV_ID_APP" "$BIN"
 
   else
@@ -108,7 +107,6 @@ fi
 ### 2) 深度重签主 .app
 info "Deep re-sign the app bundle"
 codesign --force --deep --options runtime --timestamp \
-  --entitlements entitlements.plist \
   --sign "$DEV_ID_APP" "$APP_ABS"
 
 
