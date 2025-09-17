@@ -82,17 +82,26 @@ async function setCategoryStatusOnProfileHome(kolName: string, clone: HTMLElemen
     let kol = await queryKolDetailByName(kolName);
     const buttonDiv = clone.querySelector('.noCategory') as HTMLElement;
     const nameDiv = clone.querySelector(".hasCategory") as HTMLElement;
-    if (!kol) {
+
+    // 没有 kol 或没有 catID → 未分类
+    if (!kol || !kol.catID) {
+        buttonDiv.style.display = 'flex';   // profile 页默认布局
+        nameDiv.style.display = 'none';
+        return;
+    }
+
+    const cat = await queryCategoryById(kol.catID!);
+    if (!cat) {
+        // 分类被删除或无效 → 也当作未分类
         buttonDiv.style.display = 'flex';
         nameDiv.style.display = 'none';
-    } else {
-        buttonDiv.style.display = 'none';
-        nameDiv.style.display = 'block';
-        const cat = await queryCategoryById(kol.catID!);
-        if (!!cat) {
-            (nameDiv.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(kol.catID!);
-            nameDiv.querySelector(".category-name")!.textContent = cat.catName;
-        }
+        console.log("category not found or invalid for kol", kol);
+        return;
     }
-}
 
+    // 正常分类展示
+    buttonDiv.style.display = 'none';
+    nameDiv.style.display = 'block';
+    (nameDiv.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(kol.catID!);
+    nameDiv.querySelector(".category-name")!.textContent = cat.catName;
+}

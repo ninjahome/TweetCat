@@ -179,26 +179,35 @@ function isTweetDiv(node: Node): node is HTMLDivElement {
     );
 }
 
+
 async function setCatMenu(kolName: string, clone: HTMLElement) {
     const catBtn = clone.querySelector('.noCategory') as HTMLElement;
     const catName = clone.querySelector(".hasCategory") as HTMLElement;
 
     let kol = await queryKolDetailByName(kolName);
-    if (!kol) {
+    // 没有 kol 或没有 catID → 未分类
+    if (!kol || !kol.catID) {
+        catBtn.style.display = 'block';   // timeline 默认布局
+        catName.style.display = 'none';
+        return;
+    }
+
+    const cat = await queryCategoryById(kol.catID!);
+    if (!cat) {
+        // 分类被删除或无效 → 也当作未分类
         catBtn.style.display = 'block';
         catName.style.display = 'none';
-    } else {
-        catBtn.style.display = 'none';
-        catName.style.display = 'block';
-        const cat = await queryCategoryById(kol.catID!);
-        if (!cat) {
-            console.log("------>>>category data is null for kol", kol);
-            return;
-        }
-        (clone.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(kol.catID!);
-        catName.querySelector(".menu-item-category-name")!.textContent = cat.catName;
+        console.log("category not found or invalid for kol", kol);
+        return;
     }
+
+    // 正常分类展示
+    catBtn.style.display = 'none';
+    catName.style.display = 'block';
+    (clone.querySelector(".dot") as HTMLElement).style.backgroundColor = choseColorByID(kol.catID!);
+    catName.querySelector(".menu-item-category-name")!.textContent = cat.catName;
 }
+
 
 async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: TweetKol | null) {
     if (!rawKol) return;
