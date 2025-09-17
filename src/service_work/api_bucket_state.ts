@@ -2,7 +2,7 @@ import {localGet, localSet} from "../common/local_storage";
 import {logBGT} from "../common/debug_flags";
 
 const STATE_KEY = "__tc_token_bucket_state__";
-const DEFAULT_TOKEN_CAP = 6;
+const DEFAULT_TOKEN_CAP = 4;
 const COOL_DOWN_MS_ON_429 = 4 * 60_000;
 
 export interface BucketState {

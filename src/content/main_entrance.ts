@@ -3,7 +3,7 @@ import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./twitter_obser
 import {
     appendFilterOnKolProfileHome,
 } from "./twitter_ui";
-import {__targetUrlToFilter, maxElmFindTryTimes, MsgType} from "../common/consts";
+import {maxElmFindTryTimes, MsgType} from "../common/consts";
 import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
