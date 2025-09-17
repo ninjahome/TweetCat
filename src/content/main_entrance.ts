@@ -17,17 +17,6 @@ import {getTweetCatFlag, handleLocationChange, navigateToTweetCat} from "../time
 import {logTPR} from "../common/debug_flags";
 import {reloadCategoryContainer, setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
-import {
-    bookmarkApi,
-    fetchBlueVerifiedFollowersPage,
-    fetchFollowersPage,
-    fetchFollowingPage
-} from "../timeline/twitter_api";
-import {getTransactionIdFor} from "./txid";
-
-export function isHomePage(): boolean {
-    return window.location.href === __targetUrlToFilter;
-}
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
