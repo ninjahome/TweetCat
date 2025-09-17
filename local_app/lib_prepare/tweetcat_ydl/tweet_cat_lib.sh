@@ -7,15 +7,12 @@ DIST_DIR="dist"
 ENTRY="main.py"
 DEST="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../TweetCatAppMac/TweetCatApp/Resources"
 
-MODE="release"
 DO_CLEAN="no"
 JOBS=""   # 默认空，Nuitka 会自己用满 CPU
 
 # 参数解析
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    debug) MODE="debug" ;;
-    release) MODE="release" ;;
     clean) DO_CLEAN="yes" ;;
     -j) shift; JOBS="--jobs=$1" ;;
     *) echo "⚠️ 未知参数: $1" ;;
@@ -35,6 +32,10 @@ info "使用 Python: $PYTHON"
 export PYTHONPATH="$(cd ..; pwd):${PYTHONPATH:-}"
 info "已设置 PYTHONPATH=$PYTHONPATH"
 
+# 强制禁用 yt_dlp 懒加载抽取器
+export YTDLP_NO_LAZY_EXTRACTORS=1
+info "已设置 YTDLP_NO_LAZY_EXTRACTORS=1"
+
 if [[ "$DO_CLEAN" == "yes" ]]; then
   info "清理旧的构建目录..."
   rm -rf build __pycache__ "${DIST_DIR:?}"/*
@@ -46,15 +47,15 @@ mkdir -p "$DIST_DIR"
 PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
 info "检查并安装必要依赖 (镜像: $PIP_INDEX_URL)..."
 "$PYTHON" -m pip install --upgrade pip setuptools wheel -i "$PIP_INDEX_URL"
-"$PYTHON" -m pip install --upgrade nuitka ordered-set zstandard certifi -i "$PIP_INDEX_URL"
+"$PYTHON" -m pip install --upgrade \
+  nuitka ordered-set zstandard certifi \
+  mutagen brotli pycryptodomex websockets \
+  -i "$PIP_INDEX_URL"
 
-# release 模式需要 certifi 数据
-CERTIFI_DIR=""
-if [[ "$MODE" == "release" ]]; then
-  CERTIFI_DIR=$("$PYTHON" -c "import certifi, os; print(os.path.dirname(certifi.__file__))")
-  [[ -d "$CERTIFI_DIR" ]] || err "未找到 certifi 目录"
-  info "发现 certifi 目录: $CERTIFI_DIR"
-fi
+# certifi 数据目录
+CERTIFI_DIR=$("$PYTHON" -c "import certifi, os; print(os.path.dirname(certifi.__file__))")
+[[ -d "$CERTIFI_DIR" ]] || err "未找到 certifi 目录"
+info "发现 certifi 目录: $CERTIFI_DIR"
 
 # 当前架构
 ARCH=$(uname -m)
@@ -62,33 +63,25 @@ OUT_NAME="${APP_NAME}_${ARCH}"
 OUT_FILE="${DIST_DIR}/${OUT_NAME}"
 FINAL="${DIST_DIR}/${APP_NAME}"
 
-info "构建当前架构: $ARCH (模式: $MODE, jobs: ${JOBS:-auto})"
+info "构建当前架构: $ARCH (jobs: ${JOBS:-auto})"
 
-if [[ "$MODE" == "debug" ]]; then
-  "$PYTHON" -m nuitka \
-    --onefile \
-    --enable-plugin=tk-inter \
-    --include-package=yt_dlp \
-    --include-package=tweetcat_ydl \
-    --nofollow-import-to=yt_dlp.extractor.lazy_extractors \
-    ${JOBS} \
-    --output-dir="$DIST_DIR" \
-    --output-filename="${OUT_NAME}" \
-    "$ENTRY"
-else
-  "$PYTHON" -m nuitka \
-    --onefile \
-    --enable-plugin=tk-inter \
-    --include-package=yt_dlp \
-    --include-package=tweetcat_ydl \
-    --include-package=yt_dlp.extractor.common \
-    --include-package=yt_dlp.extractor.youtube \
-    --include-data-dir=${CERTIFI_DIR}=certifi \
-    ${JOBS} \
-    --output-dir="$DIST_DIR" \
-    --output-filename="${OUT_NAME}" \
-    "$ENTRY"
-fi
+COMMON_FLAGS=(
+  --onefile
+  ${JOBS}
+  --output-dir="$DIST_DIR"
+  --output-filename="${OUT_NAME}"
+  --include-package=yt_dlp
+  --include-package=yt_dlp.postprocessor
+  --include-package=yt_dlp.networking
+  --include-package=tweetcat_ydl
+  --include-package=yt_dlp.extractor.common
+  --include-package=yt_dlp.extractor.youtube
+  --include-data-dir="${CERTIFI_DIR}=certifi"
+)
+
+"$PYTHON" -m nuitka \
+  "${COMMON_FLAGS[@]}" \
+  "$ENTRY"
 
 [[ -f "$OUT_FILE" ]] || err "构建失败: $OUT_FILE"
 info "已生成: $OUT_FILE"
