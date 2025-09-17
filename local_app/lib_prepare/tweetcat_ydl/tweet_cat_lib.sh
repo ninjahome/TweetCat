@@ -32,6 +32,14 @@ info "使用 Python: $PYTHON"
 export PYTHONPATH="$(cd ..; pwd):${PYTHONPATH:-}"
 info "已设置 PYTHONPATH=$PYTHONPATH"
 
+
+# 当前架构
+ARCH=$(uname -m)
+OUT_NAME="${APP_NAME}_${ARCH}"
+OUT_FILE="${DIST_DIR}/${OUT_NAME}"
+FINAL="${DIST_DIR}/${APP_NAME}"
+
+
 # 强制禁用 yt_dlp 懒加载抽取器
 export YTDLP_NO_LAZY_EXTRACTORS=1
 info "已设置 YTDLP_NO_LAZY_EXTRACTORS=1"
@@ -75,12 +83,6 @@ info "检查并安装必要依赖 (镜像: $PIP_INDEX_URL)..."
 CERTIFI_DIR=$("$PYTHON" -c "import certifi, os; print(os.path.dirname(certifi.__file__))")
 [[ -d "$CERTIFI_DIR" ]] || err "未找到 certifi 目录"
 info "发现 certifi 目录: $CERTIFI_DIR"
-
-# 当前架构
-ARCH=$(uname -m)
-OUT_NAME="${APP_NAME}_${ARCH}"
-OUT_FILE="${DIST_DIR}/${OUT_NAME}"
-FINAL="${DIST_DIR}/${APP_NAME}"
 
 info "构建当前架构: $ARCH (jobs: ${JOBS:-auto})"
 
