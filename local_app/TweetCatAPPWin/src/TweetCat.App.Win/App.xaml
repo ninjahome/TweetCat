@@ -1,0 +1,10 @@
+<Application x:Class="TweetCat.App.Win.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:TweetCat.App.Win.Converters"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <converters:SelectionBrushConverter x:Key="SelectionBrushConverter" />
+        <converters:FileSizeConverter x:Key="FileSizeConverter" />
+    </Application.Resources>
+</Application>

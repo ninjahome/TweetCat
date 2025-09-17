@@ -1,0 +1,33 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34309.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{4B5B8C41-3755-47C7-9C08-115F02F866AA}") = "TweetCat.Core", "src/TweetCat.Core/TweetCat.Core.csproj", "{4B5B8C41-3755-47C7-9C08-115F02F866AA}"
+EndProject
+Project("{CECB4146-70E3-4CB7-9251-9D39D66F2A0F}") = "TweetCat.App.Win", "src/TweetCat.App.Win/TweetCat.App.Win.csproj", "{CECB4146-70E3-4CB7-9251-9D39D66F2A0F}"
+EndProject
+Project("{6D045D0D-55CE-46AA-9A9E-C2A4E64A0FD3}") = "TweetCat.NativeMessagingHost", "src/TweetCat.NativeMessagingHost/TweetCat.NativeMessagingHost.csproj", "{6D045D0D-55CE-46AA-9A9E-C2A4E64A0FD3}"
+EndProject
+Global
+GlobalSection(SolutionConfigurationPlatforms) = preSolution
+Debug|Any CPU = Debug|Any CPU
+Release|Any CPU = Release|Any CPU
+EndGlobalSection
+GlobalSection(ProjectConfigurationPlatforms) = postSolution
+{4B5B8C41-3755-47C7-9C08-115F02F866AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+{4B5B8C41-3755-47C7-9C08-115F02F866AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+{4B5B8C41-3755-47C7-9C08-115F02F866AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+{4B5B8C41-3755-47C7-9C08-115F02F866AA}.Release|Any CPU.Build.0 = Release|Any CPU
+{CECB4146-70E3-4CB7-9251-9D39D66F2A0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+{CECB4146-70E3-4CB7-9251-9D39D66F2A0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+{CECB4146-70E3-4CB7-9251-9D39D66F2A0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+{CECB4146-70E3-4CB7-9251-9D39D66F2A0F}.Release|Any CPU.Build.0 = Release|Any CPU
+{6D045D0D-55CE-46AA-9A9E-C2A4E64A0FD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+{6D045D0D-55CE-46AA-9A9E-C2A4E64A0FD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+{6D045D0D-55CE-46AA-9A9E-C2A4E64A0FD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+{6D045D0D-55CE-46AA-9A9E-C2A4E64A0FD3}.Release|Any CPU.Build.0 = Release|Any CPU
+EndGlobalSection
+GlobalSection(SolutionProperties) = preSolution
+HideSolutionNode = FALSE
+EndGlobalSection
+EndGlobal
