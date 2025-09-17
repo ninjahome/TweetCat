@@ -40,13 +40,31 @@ function pushOrReplace(path: string) {
     const method: 'pushState' | 'replaceState' =
         (!hasEntry && history.length <= 1) ? 'replaceState' : 'pushState';
     const nextState = {...(history.state || {}), __tcEntered: true};
-    history[method](nextState, '', path);
-    logRoute(`${method} →`, path);
+
+
+
+    const u = new URL(path, location.origin);
+    u.search = '';
+
+    history[method](nextState, '', u.pathname + u.hash);
+    logRoute(`${method} →`, u.pathname + u.hash);
+}
+
+function sanitizeQueryNextTick() {
+    requestAnimationFrame(() => {
+        if (location.pathname === PATH &&
+            location.hash.startsWith(HASH) &&
+            location.search) {
+            history.replaceState(history.state, '', `${PATH}${HASH}`);
+            logRoute('sanitize → strip query to', `${PATH}${HASH}`);
+        }
+    });
 }
 
 export function routeToTweetCat() {
     if (location.hash === HASH) return; // 已在 TweetCat，不再 push/replace
     pushOrReplace(FULL);          // ← 统一入口
+    sanitizeQueryNextTick();       // ← 新增
     handleLocationChange();
 }
 
@@ -55,6 +73,7 @@ export function navigateToTweetCat(): void {
     pushOrReplace(FULL);          // ← 统一入口
     window.dispatchEvent(new PopStateEvent('popstate'));
     handleLocationChange();
+    sanitizeQueryNextTick();       // ← 新增
     setTweetCatFlag(false)
 }
 
@@ -95,9 +114,9 @@ export function handleLocationChange() {
 }
 
 export function handleGrokMenuClick(ev: MouseEvent): void {
-    if (!location.hash.startsWith(HASH)) return;  // 不在 TweetCat → 让 Twitter 处理
+    if (!location.hash.startsWith(HASH)) return;
 
-    ev.preventDefault();                          // 阻止 Twitter 默认逻辑
+    ev.preventDefault();
     logRoute('grok menu click → exitTweetCat');
     history.replaceState({}, '', PATH);
     logRoute('replaceState →', PATH);
