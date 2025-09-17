@@ -38,7 +38,26 @@ info "已设置 YTDLP_NO_LAZY_EXTRACTORS=1"
 
 if [[ "$DO_CLEAN" == "yes" ]]; then
   info "清理旧的构建目录..."
-  rm -rf build __pycache__ "${DIST_DIR:?}"/*
+  rm -rf build __pycache__
+  # 确定另一架构
+    if [[ "$ARCH" == "x86_64" ]]; then
+      OTHER_ARCH="arm64"
+    else
+      OTHER_ARCH="x86_64"
+    fi
+    OTHER_FILE="${DIST_DIR}/${APP_NAME}_${OTHER_ARCH}"
+
+    # 删除 dist 下所有内容，但保留另一架构的二进制
+    shopt -s nullglob
+    for f in "${DIST_DIR}"/*; do
+      if [[ "$f" == "$OTHER_FILE" ]]; then
+        info "保留另一架构产物: $f"
+      else
+        rm -rf "$f"
+        info "已删除: $f"
+      fi
+    done
+    shopt -u nullglob
 fi
 
 mkdir -p "$DIST_DIR"
