@@ -4,6 +4,7 @@ import {MsgType} from "../common/consts";
 import {isTcMessage, TcMessage} from "../common/msg_obj";
 import {YTParsedLite} from "./video_obj";
 import {VideoMeta, YouTubePageType} from "../object/video_meta";
+import {logYT} from "../common/debug_flags";
 
 (function injectPageScript() {
     try {
@@ -40,11 +41,11 @@ function watchMicroformat() {
         }, (pmr) => {
 
             const {videoId} = isWatchingPage();
-            console.log("------------------>>> video element found:", videoId);
+            logYT("------------------>>> video element found:", videoId);
             const info = extractYTInfo(videoId, pmr);
             if (!info) return;
 
-            console.log("--------video infos:", info);
+            logYT("--------video infos:", info);
 
             sendMsgToService(info, MsgType.YTVideoMetaGot).then();
             return false;
@@ -61,24 +62,24 @@ let latestVideoID = ""
 function checkIfShortsLoaded(videoID: string) {
     if (latestVideoID === videoID) return;
     latestVideoID = videoID;
-    console.log("------------>>>checkIfShortsLoaded: ", videoID);
+    logYT("------------>>>checkIfShortsLoaded: ", videoID);
 
     const shortsInfo = extractYTShortsInfo(videoID);
     if (!shortsInfo) {
         setTimeout(() => {
             const tryAgainInfo = extractYTShortsInfo(videoID);
-            console.log("--------try again infos:", tryAgainInfo);
+            logYT("--------try again infos:", tryAgainInfo);
             if (!tryAgainInfo) return;
             sendMsgToService(tryAgainInfo, MsgType.YTVideoMetaGot).then();
         }, 2_000);
         return
     }
-    console.log("--------shorts infos:", shortsInfo);
+    logYT("--------shorts infos:", shortsInfo);
     sendMsgToService(shortsInfo, MsgType.YTVideoMetaGot).then();
 }
 
 function parseVideoParam(videoInfo: YTParsedLite) {
-    console.log(videoInfo)
+    logYT(videoInfo)
 }
 
 export function isWatchingPage(): { videoId: string; type: YouTubePageType } | null {
@@ -134,7 +135,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     switch (request.action) {
         case MsgType.NaviUrlChanged: {
-            console.log("-------->>> url changed:", window.location);
+            logYT("-------->>> url changed:", window.location);
             const videoInfo = isWatchingPage()
             if (videoInfo && videoInfo.type === YouTubePageType.Shorts) {
                 checkIfShortsLoaded(videoInfo.videoId);

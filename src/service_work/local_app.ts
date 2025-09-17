@@ -2,6 +2,7 @@
 import browser from "webextension-polyfill";
 import {sessionGet, sessionSet} from "../common/session_storage";
 import {VideoMeta} from "../object/video_meta";
+import {logYT} from "../common/debug_flags";
 
 const KS_YT_COOKIE_KEY = "__KS_YT_COOKIE__";
 const NATIVE_HOST = 'com.dessage.tweetcatapp';
@@ -73,8 +74,8 @@ export async function captureAndStoreYouTubeCookies(): Promise<void> {
         const hash = await sha256Hex(netscape);
 
         // 打印内容与 Swift/yt-dlp 一致（包含两行头 + 空行 + 正文）
-        console.log("[TweetCat] Netscape cookies:\n" + netscape);
-        console.log("[TweetCat] Hash:", hash);
+        logYT("[TweetCat] Netscape cookies:\n" + netscape);
+        logYT("[TweetCat] Hash:", hash);
 
         await sessionSet(KS_YT_COOKIE_KEY, {netscape, hash});
     } catch (err) {
@@ -99,7 +100,7 @@ async function sendToNative(payload: NativeRequest, timeoutMs = 15000): Promise<
 }
 
 export async function videoMetaGot(videoMeta: VideoMeta) {
-    console.log("---------->>>got a video meta:", videoMeta);
+    logYT("---------->>>got a video meta:", videoMeta);
 
     let cookieData = await sessionGet(KS_YT_COOKIE_KEY);
 
@@ -118,7 +119,7 @@ export async function videoMetaGot(videoMeta: VideoMeta) {
         req.hash = cookieData.hash;
     }
 
-    console.log("[TweetCat] NativeRequest:", req);
+    logYT("[TweetCat] NativeRequest:", req);
 
     const res = await sendToNative(req);
     if (!res.ok) {
@@ -126,11 +127,11 @@ export async function videoMetaGot(videoMeta: VideoMeta) {
         return;
     }
 
-    console.log('[native] ok:', JSON.stringify(res));
+    logYT('[native] ok:', JSON.stringify(res));
 }
 
 export async function openLocalApp(): Promise<boolean> {
-    console.log("---------->>> start to open local app");
+    logYT("---------->>> start to open local app");
     const req: NativeRequest = {
         action: 'start',
     };
@@ -146,7 +147,7 @@ export async function openLocalApp(): Promise<boolean> {
 }
 
 export async function checkLocalApp(): Promise<boolean> {
-    console.log("---------->>> start to check if local app installed");
+    logYT("---------->>> start to check if local app installed");
     const req: NativeRequest = {
         action: 'check',
     };
@@ -157,7 +158,7 @@ export async function checkLocalApp(): Promise<boolean> {
     } catch (err: any) {
         const msg = String(err?.message || err || "").toLowerCase();
 
-        console.log("------>>>local host error message:", msg);
+        logYT("------>>>local host error message:", msg);
         // 1) 没找到 host（清单未放到正确目录 / name 不匹配 / 浏览器不是这个通道）
         if (msg.includes("specified native messaging host not found")) {
             return false;
@@ -185,12 +186,12 @@ export async function checkLocalApp(): Promise<boolean> {
 
 
 async function sendUpdatedCookie() {
-    console.log("---------->>>start to update cookie");
+    logYT("---------->>>start to update cookie");
 
     let cookieData = await sessionGet(KS_YT_COOKIE_KEY);
 
     if (!cookieData) {
-        console.log("------>>> no cookie data to update");
+        logYT("------>>> no cookie data to update");
         return;
     }
 
@@ -202,7 +203,7 @@ async function sendUpdatedCookie() {
         hash,
     };
 
-    console.log("[TweetCat] NativeRequest:", req);
+    logYT("[TweetCat] NativeRequest:", req);
 
     const res = await sendToNative(req);
     if (!res.ok) {
@@ -210,7 +211,7 @@ async function sendUpdatedCookie() {
         return;
     }
 
-    console.log('[native] ok:', JSON.stringify(res));
+    logYT('[native] ok:', JSON.stringify(res));
 }
 
 
@@ -232,7 +233,7 @@ async function readYouTubeCookies(): Promise<browser.Cookies.Cookie[]> {
     for (const url of COOKIE_URLS) {
         try {
             const list = await browser.cookies.getAll({url});
-            console.log(`[cookies] ${url} -> count=${list.length}`);
+            logYT(`[cookies] ${url} -> count=${list.length}`);
             collected.push(...list);
         } catch (e) {
             console.warn(`[cookies] failed for ${url}:`, e);
@@ -245,12 +246,12 @@ async function readYouTubeCookies(): Promise<browser.Cookies.Cookie[]> {
         map.set(`${c.name}|${c.domain}|${c.path}`, c);
     }
     const uniques = [...map.values()];
-    console.log(`[cookies] total unique=${uniques.length}`);
+    logYT(`[cookies] total unique=${uniques.length}`);
 
     // 额外打印关键 cookie 是否存在（便于快速判断登录态）
     const want = ["SAPISID", "__Secure-3PAPISID", "APISID", "SID", "HSID", "SSID"];
     const have = new Set(uniques.map((c) => c.name));
-    console.log(
+    logYT(
         `[cookies] presence: ` +
         want.map((k) => `${k}=${have.has(k) ? "YES" : "NO"}`).join(", ")
     );
@@ -284,14 +285,14 @@ function matchDomain(d: string) {
 
 async function refresh() {
     try {
-        console.log("------------------>>>> read cookie again for update:");
+        logYT("------------------>>>> read cookie again for update:");
 
         const cookies = await readYouTubeCookies();
         const netscape = toNetscape(cookies);
         const hash = await sha256Hex(netscape);
 
-        console.log("[TweetCat] Netscape cookies:\n" + netscape);
-        console.log("[TweetCat] Hash:", hash);
+        logYT("[TweetCat] Netscape cookies:\n" + netscape);
+        logYT("[TweetCat] Hash:", hash);
 
         await sessionSet(KS_YT_COOKIE_KEY, {netscape, hash});
 
@@ -311,17 +312,17 @@ async function onChanged(changeInfo: browser.Cookies.OnChangedChangeInfoType) {
     // 只关心关键字段；新增/覆盖/删除均触发
     if (!IMPORTANT_COOKIES.has(c.name)) return;
 
-    console.log("------------------>>>> cookie changed name:", c.name);
+    logYT("------------------>>>> cookie changed name:", c.name);
     refresh().then();
 }
 
 async function ensureInitialCookies() {
     const existing = await sessionGet(KS_YT_COOKIE_KEY);
     if (!existing) {
-        console.log("[TweetCat] no cookie in session, capturing...");
+        logYT("[TweetCat] no cookie in session, capturing...");
         await refresh();
     } else {
-        console.log("[TweetCat] cookie already in session, skip init capture.");
+        logYT("[TweetCat] cookie already in session, skip init capture.");
     }
 }
 
@@ -329,7 +330,7 @@ function setupCookieWatcher() {
     if (!browser.cookies.onChanged.hasListener(onChanged)) {
         browser.cookies.onChanged.addListener(onChanged);
     }
-    console.log("[TweetCat] cookie watcher started (important-only)");
+    logYT("[TweetCat] cookie watcher started (important-only)");
 
     // 启动时检查 session 是否已有 cookie，没有就先生成一次
     ensureInitialCookies().catch(err =>

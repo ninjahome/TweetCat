@@ -22,7 +22,8 @@ export const DBG = {
     TwitterVideoRender: false,
     TwitterActionRender: false,
     AdBlock: false,
-    InjectCapture:true,
+    InjectCapture:false,
+    Youtube:false,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -54,3 +55,4 @@ export const logTVR = makeLogger('TwitterVideoRender', 'TwitterVideoRender');
 export const logTCR = makeLogger('TwitterActionRender', 'TwitterActionRender');
 export const logAD = makeLogger('AdBlock', 'AdBlock');
 export const logIC = makeLogger('InjectCapture', 'InjectCapture');
+export const logYT = makeLogger('Youtube', 'Youtube');
