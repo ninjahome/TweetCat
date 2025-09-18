@@ -22,7 +22,7 @@ struct LogsViewTC: View {
         }
         .navigationTitle("日志")
         .padding(.top, 6)
-        .onChange(of: vm.lines.count) { oldValue, newValue in
+        .onChange(of: vm.lines.count) { newValue in
             // 新行到达时，如果开启自动滚动且未暂停，则滚动到底部
             if vm.autoScroll && !vm.paused {
                 scrollToBottomToggle.toggle()
@@ -95,7 +95,7 @@ struct LogsViewTC: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
             }
-            .onChange(of: scrollToBottomToggle) { oldValue, newValue in
+            .onChange(of: scrollToBottomToggle) { newValue in
                 withAnimation(.linear(duration: 0.1)) {
                     proxy.scrollTo("BOTTOM", anchor: .bottom)
                 }
