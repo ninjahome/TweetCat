@@ -436,7 +436,7 @@ struct SettingsViewTC: View {
         GroupBox("通知") {
             VStack(alignment: .leading, spacing: 8) {
                 Toggle("下载完成时通知", isOn: $notifyDone)
-                    .onChange(of: notifyDone) { oldValue, newValue in
+                    .onChange(of: notifyDone) { newValue in
                         var config =
                             AppConfigManager.shared.load()
                         config.notifyDone = newValue
@@ -445,7 +445,7 @@ struct SettingsViewTC: View {
                     }
 
                 Toggle("下载失败时通知", isOn: $notifyFail)
-                    .onChange(of: notifyDone) { oldValue, newValue in
+                    .onChange(of: notifyDone) { newValue in
                         var config =
                             AppConfigManager.shared.load()
                         config.notifyDone = notifyDone
