@@ -57,6 +57,7 @@ export function updateTweetContentArea(
         logRCT("this tweets should show more:\n", tweet.note_full_text);
         moreAnchor.hidden = false;
         moreAnchor.removeAttribute("hidden");
+        moreAnchor.style.visibility = "visible";
         moreAnchor.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -71,6 +72,7 @@ export function updateTweetContentArea(
                 true   // ★ 强制使用完整文本
             );
             moreAnchor.hidden = true;
+            moreAnchor.style.visibility = "hidden";   // 隐藏
 
             wireContentInternalLinks(container);
         }, {once: true});
