@@ -105,12 +105,14 @@ function fillQuotedContent(
 
     // 5) A1+B1：主推无媒体 → 一定显示“更多”
     moreEl.hidden = false;
+    moreEl.style.visibility = "visible";  // 显示
     moreEl.removeAttribute('hidden');                    // 确保可见
 
     // 详情页链接（优先根锚点）
     const sn = quoted?.author?.screenName ?? '';
     const id = quoted?.tweetContent?.id_str ?? (quoted as any)?.rest_id ?? '';
     const href = (sn && id) ? `/${sn}/status/${id}` : '';
+    console.log(sn, id, href);
     bindTwitterInternalLink(moreEl, href);
     // 调试日志（可保留，便于核对）
     logRQ('[Quoted][A1+B1] force-show more', {href, condensed})
