@@ -228,8 +228,8 @@ img, video {
     width: 100%;
     border-left-width: 1px;
     border-right-width: 1px;
-    border-color: rgb(239, 243, 244);
-    background-color: rgb(255, 255, 255);
+    background-color: var(--bg-elevated);
+    border-color: var(--border-subtle);
     scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
     box-sizing: border-box;
     list-style: none;
@@ -373,7 +373,7 @@ img, video {
 
 .tweet-username,
 .tweet-time {
-    color: #536471;
+    color: var(--text-secondary);
     font-size: 15px;
     font-weight: 400;
 }
@@ -603,7 +603,8 @@ span.duration-badge {
 
 .each-tweet-rightBox {
     border-radius: 12px;
-    border: 1px solid rgb(239, 243, 244);
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-elevated);
     margin-bottom: 16px;
 }
 
@@ -617,7 +618,7 @@ span.duration-badge {
 .tweet-title {
     font-size: 20px;
     font-weight: 800;
-    color: #0f1419;
+    color: var(--text-primary);;
 }
 
 .tweet-show-area {
