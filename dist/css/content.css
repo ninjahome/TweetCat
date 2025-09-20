@@ -1156,3 +1156,26 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     cursor: pointer;
 }
 
+/* ==== 兼容系统 dark 模式 ==== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #000;
+        --text-primary: rgb(231, 233, 234);
+        --text-secondary: rgb(113, 118, 123);
+        --border-subtle: #2f3336;
+    }
+}
+
+/* ==== 兼容 x.com 内部切换 ==== */
+html[data-theme="dark"] {
+    --bg-primary: #000;
+    --text-primary: rgb(231, 233, 234);
+    --text-secondary: rgb(113, 118, 123);
+    --border-subtle: #2f3336;
+}
+html[data-theme="light"] {
+    --bg-primary: #fff;
+    --text-primary: rgb(15, 20, 25);
+    --text-secondary: rgb(83, 100, 113);
+    --border-subtle: rgb(239, 243, 244);
+}
