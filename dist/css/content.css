@@ -1202,3 +1202,27 @@ html[style*="color-scheme: light"] {
     --border-strong: rgba(15, 20, 25, 0.1);
 }
 
+html[data-bg="default"] {
+    --bg-primary: #ffffff;
+    --bg-elevated: #ffffff;
+    --text-primary: #0f1419;
+    --text-secondary: #536471;
+    --border-subtle: #e1e8ed;
+}
+
+html[data-bg="dim"] {
+    --bg-primary: #15202b;   /* Twitter Dim 背景色 */
+    --bg-elevated: #192734;
+    --text-primary: #e7e9ea;
+    --text-secondary: #8899a6;
+    --border-subtle: #38444d;
+}
+
+html[data-bg="lightsout"] {
+    --bg-primary: #000000;   /* 纯黑 */
+    --bg-elevated: #000000;
+    --text-primary: #e7e9ea;
+    --text-secondary: #71767b;
+    --border-subtle: #2f3336;
+}
+
