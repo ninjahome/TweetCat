@@ -80,3 +80,89 @@ function readKolInCategory(catID) {
 // 用法：
 // await readKolInCategory(-1)   // 查询全部
 // await readKolInCategory(2)    // 查询 catID=2 的所有 kolName 拼接字符串
+
+
+
+
+您好！针对本地部署、免 API 访问的 VTT 字幕文件翻译（英文到中文）需求，以下是更精炼的推荐，专注于完全离线的开源解决方案。这些工具使用本地运行的开源翻译模型，并支持 VTT 文件的解析和翻译，保持时间戳不变。
+
+### 推荐开源本地部署方案
+1. **Argos Translate + webvtt-py**
+   - **描述**：Argos Translate 是一个轻量级开源神经翻译库，支持英文到中文（简体），完全离线。结合 webvtt-py 解析 VTT 文件，实现字幕翻译。
+   - **适用性**：简单易用，适合 CPU 环境，初学者友好。
+   - **GitHub**：
+     - Argos Translate: https://github.com/argosopentech/argos-translate
+     - webvtt-py: https://github.com/glenn20/webvtt-py
+   - **许可证**：MIT。
+   - **安装与使用**：
+     ```bash
+     pip install argostranslate webvtt-py
+     ```
+     示例代码：
+     ```python
+     import webvtt
+     import argostranslate.translate
+     from argostranslate.package import install_from_indices
+
+     # 安装英文到中文模型
+     install_from_indices("en", "zh")
+     translator = argostranslate.translate.get_translation_from_codes("en", "zh")
+
+     # 解析并翻译 VTT
+     vtt = webvtt.read("input.vtt")
+     for caption in vtt:
+         caption.text = translator.translate(caption.text)
+     vtt.save("output_translated.vtt")
+     ```
+   - **优点**：安装简单，模型轻量（约 200MB），翻译速度快。
+   - **局限**：翻译质量略低于商业模型，但对字幕场景够用。
+
+2. **MarianMT (Hugging Face Transformers)**
+   - **描述**：使用 Hugging Face 的 MarianMT 模型（如 `Helsinki-NLP/opus-mt-en-zh`），完全离线翻译英文到中文。配合 webvtt-py 处理 VTT 文件。
+   - **适用性**：适合有 GPU 或较高配置 CPU 的用户，翻译质量较高。
+   - **GitHub**：https://github.com/huggingface/transformers
+   - **许可证**：Apache 2.0。
+   - **安装与使用**：
+     ```bash
+     pip install transformers torch webvtt-py
+     ```
+     示例代码：
+     ```python
+     from transformers import MarianTokenizer, MarianMTModel
+     import webvtt
+
+     # 加载模型
+     model_name = "Helsinki-NLP/opus-mt-en-zh"
+     tokenizer = MarianTokenizer.from_pretrained(model_name)
+     model = MarianMTModel.from_pretrained(model_name)
+
+     # 解析并翻译 VTT
+     vtt = webvtt.read("input.vtt")
+     for caption in vtt:
+         inputs = tokenizer(caption.text, return_tensors="pt", padding=True)
+         translated = model.generate(**inputs)
+         caption.text = tokenizer.batch_decode(translated, skip_special_tokens=True)[0]
+     vtt.save("output_translated.vtt")
+     ```
+   - **优点**：翻译质量好，社区支持强，模型可缓存本地。
+   - **局限**：模型较大（约 300-500MB），需要 2-4GB 内存。
+
+### 选择建议
+- **推荐 Argos Translate**：如果追求简单和轻量，Argos Translate 是最佳选择，安装和运行门槛低，适合大多数场景。
+- **选择 MarianMT**：如果需要更高的翻译质量且有 GPU，MarianMT 是更好的选项。
+- **硬件älj
+
+System: 硬件要求**：
+- Argos Translate：普通 PC（4GB RAM，CPU）即可运行，GPU 可加速。
+- MarianMT：建议 8GB RAM，GPU 可显著提升速度（模型大小约 300-500MB）。
+
+**快速上手步骤**：
+1. 安装依赖：`pip install argostranslate webvtt-py`（或 `transformers torch webvtt-py`）。
+2. 下载模型（Argos：`install_from_indices("en", "zh")`；MarianMT：自动下载）。
+3. 使用上述代码，替换 `input.vtt` 为你的文件路径。
+
+**注意**：
+- 确保下载模型后断网测试，确认离线工作。
+- 如果翻译质量需优化，可尝试调整模型参数或手动后处理。
+
+如果需要进一步指导（例如具体安装步骤或代码调试），请告诉我！
