@@ -61,7 +61,7 @@
     }
 
     .tweet-cardfloat:hover {
-        background-color: transparent !important;
+        background-color: rgba(255, 255, 255, 0.1) !important;
     }
 
     .category-popup-menu {
@@ -137,7 +137,6 @@ a:hover {
 
 /* ---------- Timeline / Layout ---------- */
 .tweetTimeline {
-    background-color: var(--bg-elevated) !important;
     border-left-color: var(--border-subtle) !important;
     border-right-color: var(--border-subtle) !important;
 }
@@ -147,7 +146,6 @@ a:hover {
 }
 
 .each-tweet-rightBox {
-    background-color: var(--bg-elevated);
     border-color: var(--border-subtle) !important;
     border-radius: var(--card-radius);
 }
@@ -162,34 +160,12 @@ a:hover {
     color: var(--text-primary) !important;
 }
 
-.tweet-username,
-.tweet-time,
 .retweet-container,
 .inline-link-card .desc,
 .tweet-card-area .inline-link-card--small .meta .js-card-domain,
 .tweet-card-area .inline-link-card--small .meta .js-card-desc,
 .tc-card-large__source {
     color: var(--text-secondary) !important;
-}
-
-/* ---------- Category Filter ---------- */
-.category-filter-container {
-    background: var(--bg-elevated);
-    border-bottom-color: var(--border-subtle) !important;
-}
-
-.category-filter-item {
-    color: var(--text-primary);
-    border-color: var(--border-strong) !important;
-}
-
-.category-filter-item:hover {
-    background-color: var(--bg-hover) !important;
-    border-color: var(--border-strong) !important;
-}
-
-.category-filter-item.active {
-    background-color: var(--bg-hover) !important;
 }
 
 /* ---------- Menus / Popovers ---------- */
