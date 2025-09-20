@@ -70,7 +70,7 @@ function checkIfShortsLoaded(videoID: string) {
             console.log("--------try again infos:", tryAgainInfo);
             if (!tryAgainInfo) return;
             sendMsgToService(tryAgainInfo, MsgType.YTVideoMetaGot).then();
-        }, 500);
+        }, 2_000);
         return
     }
     console.log("--------shorts infos:", shortsInfo);

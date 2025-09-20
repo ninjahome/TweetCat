@@ -1,0 +1,12 @@
+{
+  "name": "com.tweetcat.host",
+  "description": "TweetCat Windows Native Messaging Host",
+  "path": "..\\src\\TweetCat.NativeMessagingHost\\bin\\Release\\net8.0-windows\\TweetCat.NativeMessagingHost.exe",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://pejdijmbapbnjigimijfemifjjpdicdn/",
+    "chrome-extension://oolkckfpcmmccmejnacahikkbnchnfjm/",
+    "chrome-extension://ppbbhagfjjogihidlbibpakcjoibbfjg/",
+    "chrome-extension://loboekigmfghfkiepjcnnjimemhdpmch/"
+  ]
+}
