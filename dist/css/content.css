@@ -8,8 +8,9 @@ img, video {
 }
 
 .category-filter-container {
+    background-color: transparent;
     padding: 16px;
-    border-bottom: 1px solid rgb(240, 243, 244);
+    border-bottom: 1px solid var(--border-subtle);
     display: flex; /* 启用 Flex 布局 */
     align-items: center; /* 垂直居中（可选） */
     gap: 16px; /* 子元素间距（可选） */
@@ -22,11 +23,11 @@ img, video {
     padding: 0 16px;
     background-color: rgba(0, 0, 0, 0);
     border-radius: 9999px;
-    border: 1px solid rgba(15, 20, 25, 0.1);
+    border: 1px solid var(--border-strong);
     display: flex;
     justify-content: center; /* 水平居中 */
     align-items: center; /* 垂直居中 */
-    color: rgb(15, 20, 25);
+    color: var(--text-primary);
 }
 
 .category-filter-item button {
@@ -41,14 +42,13 @@ img, video {
 }
 
 .category-filter-item:hover {
-    background-color: rgba(15, 20, 25, 0.1);
-    border: 1px solid rgba(15, 20, 25, 0.1);
+    background-color: var(--bg-hover);
+    border: 1px solid var(--border-strong);
 }
 
 .category-filter-item.active {
-    background-color: rgba(15, 20, 25, 0.1);
+    background-color: var(--bg-hover);
 }
-
 .category-filter-item.active button {
     font-weight: 700;
 }
@@ -177,7 +177,6 @@ img, video {
     font-weight: 1000;
 }
 
-
 .tweet-main-content {
     width: 1050px;
     display: flex;
@@ -226,10 +225,9 @@ img, video {
 .tweetTimeline {
     max-width: 600px;
     width: 100%;
-    border-left-width: 1px;
-    border-right-width: 1px;
-    border-color: rgb(239, 243, 244);
-    background-color: rgb(255, 255, 255);
+    border-left: 1px solid var(--border-subtle);
+    border-right: 1px solid var(--border-subtle);
+    background-color: transparent !important;
     scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
     box-sizing: border-box;
     list-style: none;
@@ -373,7 +371,7 @@ img, video {
 
 .tweet-username,
 .tweet-time {
-    color: #536471;
+    color: var(--text-secondary);
     font-size: 15px;
     font-weight: 400;
 }
@@ -603,7 +601,8 @@ span.duration-badge {
 
 .each-tweet-rightBox {
     border-radius: 12px;
-    border: 1px solid rgb(239, 243, 244);
+    border: 1px solid var(--border-subtle);
+    background-color: transparent;
     margin-bottom: 16px;
 }
 
@@ -617,7 +616,7 @@ span.duration-badge {
 .tweet-title {
     font-size: 20px;
     font-weight: 800;
-    color: #0f1419;
+    color: var(--text-primary);;
 }
 
 .tweet-show-area {
@@ -1153,5 +1152,53 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tweet-card-area .tc-card-large__caption,
 .tweet-card-area .tc-card-large__meta {
     cursor: pointer;
+}
+
+/* ==== 兼容系统 dark 模式 ==== */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #000;
+        --text-primary: rgb(231, 233, 234);
+        --text-secondary: rgb(113, 118, 123);
+        --border-subtle: #2f3336;
+    }
+}
+/* 跟随 x.com 的 color-scheme */
+
+html[style*="color-scheme: dark"] .tweet-cardfloat:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+html[style*="color-scheme: dark"] {
+    --bg-primary: #000000;
+    --bg-elevated: #16181c;
+    --bg-hover: rgba(231, 233, 234, 0.08);
+    --bg-subtle: #0a0a0a;
+
+    --text-primary: rgb(231, 233, 234);
+    --text-secondary: rgb(113, 118, 123);
+    --text-muted: #9ca3af;
+
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .15);
+
+    --border-subtle: #2f3336;
+    --border-strong: rgba(231, 233, 234, 0.15);
+}
+
+html[style*="color-scheme: light"] {
+    --bg-primary: #ffffff;
+    --bg-elevated: #ffffff;
+    --bg-hover: rgba(15, 20, 25, 0.03);
+    --bg-subtle: #f7f9f9;
+
+    --text-primary: rgb(15, 20, 25);
+    --text-secondary: rgb(83, 100, 113);
+    --text-muted: #6b7280;
+
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .1);
+
+    --border-subtle: rgb(239, 243, 244);
+    --border-strong: rgba(15, 20, 25, 0.1);
 }
 
