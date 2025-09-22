@@ -20,10 +20,51 @@ import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
+type ThemeMode = "default" | "dim" | "lightsout";
+
+function setBgMode(mode: ThemeMode): void {
+    document.documentElement.setAttribute("data-bg", mode);
+}
+
+/** 用 computedStyle 读真实背景色；不要用 .style（那是 inline） */
+function detectTwitterTheme(): ThemeMode {
+    const bg = getComputedStyle(document.body).backgroundColor || "";
+    // 亮色
+    if (bg.includes("255, 255, 255")) return "default";
+    // 暗色（Twitter 经典深蓝）
+    if (bg.includes("21, 32, 43")) return "dim";
+    // 黑色（Lights out）
+    if (bg.includes("0, 0, 0")) return "lightsout";
+    // 兜底：按更深主题处理
+    return "lightsout";
+}
+
+export function syncTwitterTheme(): void {
+    setBgMode(detectTwitterTheme());
+}
+
+let __themeObserver: MutationObserver | null = null;
+
+/** 监听 body 的 class/style 变化以同步主题；只注册一次 */
+function installThemeObserverOnce(): void {
+    if (__themeObserver) return;
+    __themeObserver = new MutationObserver(() => {
+        syncTwitterTheme();
+    });
+    __themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ["class", "style"],
+    });
+    // 初次同步
+    syncTwitterTheme();
+}
+
+
 async function onDocumentLoaded() {
     addCustomStyles('css/content.css');
     addCustomStyles('css/tweet_render.css');
     await initObserver();
+    installThemeObserverOnce();
     await parseUserInfo(async (userName) => {
         logTPR("------->>>>tweet user name:", userName);
     });
@@ -164,6 +205,7 @@ window.addEventListener('message', (e) => {
         switch (msg.action) {
             case MsgType.IJLocationChange: {
                 handleLocationChange();
+                syncTwitterTheme();
                 break;
             }
             case MsgType.IJUserTweetsCaptured: {
@@ -175,7 +217,7 @@ window.addEventListener('message', (e) => {
                 processCapturedHomeLatest(msg.data).then()
                 break;
             }
-            case MsgType.IJTweetDetailCaptured:{
+            case MsgType.IJTweetDetailCaptured: {
                 processCapturedTweetDetail(msg.data).then()
                 break;
             }
