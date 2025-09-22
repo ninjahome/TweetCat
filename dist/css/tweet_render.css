@@ -965,7 +965,9 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     font-size: 13px;
     color: var(--text-secondary);
 }
-
+.download-selection {
+    border: 1px solid var(--border-strong);
+}
 /* 容器固定在底部居中 */
 .tweet-toast {
     position: fixed;
