@@ -338,4 +338,4 @@ function setupCookieWatcher() {
     );
 }
 
-setupCookieWatcher();
+// setupCookieWatcher();
