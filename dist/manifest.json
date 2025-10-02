@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TweetCat",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "default_locale": "en",
   "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {
@@ -28,11 +28,6 @@
   ],
   "host_permissions": [
     "https://twitter.com/*",
-    "https://*.youtube.com/*",
-    "https://www.youtube.com/*",
-    "*://*.googlevideo.com/*",
-    "https://*.google.com/*",
-    "https://accounts.google.com/*",
     "https://x.com/*",
     "*://x.com/*",
     "https://tweetcat.dessage.xyz/*"
@@ -50,16 +45,6 @@
         "js/content.js"
       ],
       "run_at": "document_start"
-    },
-    {
-      "matches": [
-        "https://www.youtube.com/*",
-        "https://youtube.com/*"
-      ],
-      "js": [
-        "js/yt_content.js"
-      ],
-      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
@@ -73,15 +58,6 @@
       "matches": [
         "https://twitter.com/*",
         "https://x.com/*"
-      ]
-    },
-    {
-      "resources": [
-        "js/yt_inject.js"
-      ],
-      "matches": [
-        "https://www.youtube.com/*",
-        "https://youtube.com/*"
       ]
     }
   ],
