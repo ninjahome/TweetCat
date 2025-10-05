@@ -52,5 +52,9 @@
   "wait_title": {"message": "正在处理......"},
   "wait_start_grok": {"message": "启动 AI 对话"},
   "conversation_start": {"message": "你好"},
-  "ai_trend_btn": {"message": "24小时分类趋势(AI)"}
+  "ai_trend_btn": {"message": "24小时分类趋势(AI)"},
+  "ai_output_language": {"message": "中文"},
+  "warning": {"message": "警告"},
+  "no_kol_in_category": {"message": "此分类下没有 KOL"},
+  "confirm": {"message": "确认"}
 }

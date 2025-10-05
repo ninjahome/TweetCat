@@ -45,6 +45,15 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     let imageScaleDiv = tpl.content.getElementById("tcqPhotoLightbox")!.cloneNode(true) as HTMLElement;
     document.body.appendChild(imageScaleDiv);
 
+    let dialogDiv = tpl.content.getElementById("tw-dialog-overlay")!.cloneNode(true) as HTMLElement;
+    document.body.appendChild(dialogDiv);
+    (dialogDiv.querySelector(".tw-dialog-btn-confirm") as HTMLElement).innerText = t('confirm');
+    dialogDiv.style.setProperty('display', 'none', 'important');
+    const dialogClose = dialogDiv.querySelector(".tw-dialog-close") as HTMLButtonElement;
+    dialogClose.addEventListener('click', () => {
+        dialogDiv.style.setProperty('display', 'none', 'important');
+    })
+
     let waitingOverlay = tpl.content.getElementById("global-wait-overlay")!.cloneNode(true) as HTMLElement;
     (waitingOverlay.querySelector(".wait-title") as HTMLElement).innerText = t('wait_title');
     document.body.appendChild(waitingOverlay);
@@ -98,7 +107,7 @@ function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplate
     showTweetCatArea(area);
     logGuard('<< tc-tcMount >>');
 
-    deferByFrames(()=>{
+    deferByFrames(() => {
         swapSvgToNormal();
         demoteGrokFont();
     }, 2);
@@ -205,9 +214,9 @@ function showTweetCatArea(el: HTMLElement) {
 }
 
 
- /* ------------------------------------------------------------
- * Grok 字体细体 / 粗体切换工具
- * ------------------------------------------------------------ */
+/* ------------------------------------------------------------
+* Grok 字体细体 / 粗体切换工具
+* ------------------------------------------------------------ */
 const GROK_LINK_SELECTOR = 'a[href="/i/grok"]';
 const GROK_TEXT_CONTAINER_SEL = 'div[dir="ltr"]';
 const GROK_BOLD_CLASS = 'r-b88u0q';

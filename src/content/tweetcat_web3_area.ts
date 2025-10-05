@@ -7,8 +7,9 @@ import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {parseContentHtml} from "./main_entrance";
 import {t} from "../common/i18n";
-import {showToastMsg} from "../timeline/render_common";
+import {showDialog, showToastMsg} from "../timeline/render_common";
 import {addGrokResponse, createGrokConversation} from "../timeline/twitter_api";
+import {queryFilterFromBG} from "../object/tweet_kol";
 
 const defaultCatPointColor = '#B9CAD3';
 
@@ -35,6 +36,7 @@ const onNewestNotificationClick = async (ev: Event) => {
     notificationContainer.style.display = "none";
     await switchCategory(defaultAllCategoryID);
     setSelectedCategory(defaultAllCategoryID);
+    showAITrendBtn(defaultAllCategoryID);
 };
 
 export async function showNewestTweets(tweets: EntryObj[]) {
@@ -95,7 +97,10 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
     populateCategoryArea(tpl, categories, filterContainerDiv);
 
     const AIBtn = document.querySelector(".btn-ai-trend-of-category") as HTMLElement;
-    AIBtn.addEventListener('click', grokConversation)
+    AIBtn.addEventListener('click', (e) => {
+        const currentID = Number(AIBtn.dataset.currentId) || defaultAllCategoryID;
+        grokConversation(currentID);
+    })
     AIBtn.querySelector("span").innerText = t('ai_trend_btn');
 }
 
@@ -144,6 +149,7 @@ export async function reloadCategoryContainer(categories: Category[]) {
     if (!target) {
         await switchCategory(defaultAllCategoryID);
         setSelectedCategory(defaultAllCategoryID);
+        showAITrendBtn(defaultAllCategoryID);
     }
 }
 
@@ -241,11 +247,19 @@ function showAITrendBtn(catId: number) {
         return;
     }
 
+    AIBtn.dataset.currentID = catId + '';
     if (catId === defaultAllCategoryID) AIBtn.style.display = 'none';
     else AIBtn.style.display = 'block';
 }
 
-async function grokConversation() {
+async function grokConversation(catID: number) {
+
+    const kolMaps = await queryFilterFromBG(catID);
+    if (kolMaps.size === 0) {
+        showDialog(t('warning'), t('no_kol_in_category'));
+        return;
+    }
+
     const gwo = document.getElementById("global-wait-overlay") as HTMLElement;
     const detail = document.getElementById("global-wait-detail") as HTMLElement;
 
@@ -261,48 +275,25 @@ async function grokConversation() {
         const conversationID = await createGrokConversation();
         console.log("convId:", conversationID);
 
-        // const prompt = `
-        // 你是推特的内容搜索引擎，你作为 grok ，和 x 平台是同一家公司旗下的产品，你是可以拿到 x 平台的数据进行学习和加工的，
-        // 现在需要你做的是：
-        // @0xAA_Science, @0xSunNFT, @0x_Allending, @BTCdayu, @BillGates, @Joylou1209, @NFTfafafa, @Phyrex_Ni, @WutalkWu,
-        //  @_FORAB, @ai_9684xtpa, @bitfish1, @evilcos, @hexiecs, @huahuayjy, @lanhubiji, @realDonaldTrump, @tmel0211, @tweetCatOrg。
-        // 以上这些推特账号在最近24小时内讨论最多最热的三个话题是什么？按照总互动 40% + ER 30% + Views 20% + Mentions 10%的权重来定义最热
-        // `
-
-        const prompt =`
-        角色与任务
-你是一个高度专业化的X平台内容分析引擎。你的核心任务是实时追踪和分析指定KOL的讨论动态。
-
-核心指令
-请分析以下列表中的推特账号在最近24小时内发布的所有推文。
-根据我提供的热度权重公式，识别并总结出他们共同讨论的、热度最高的三个话题。
-
-分析账号列表
-@0xAA_Science, @0xSunNFT, @0x_Allending, @BTCdayu, @BillGates, @Joylou1209, @NFTfafafa, @Phyrex_Ni, @WutalkWu, @_FORAB, @ai_9684xtpa, @bitfish1, @evilcos, @hexiecs, @huahuayjy, @lanhubiji, @realDonaldTrump, @tmel0211, @tweetCatOrg
-
-热度权重计算公式
-请严格按照以下公式为每条推文计算热度得分，并聚合到话题维度：
-热度得分 = (总互动数 * 0.4) + (喜爱数 * 0.3) + (浏览量 * 0.2) + (被提及/引用数 * 0.1)
-注：总互动数 = 喜爱数 + 转推数 + 回复数 + 引用推文数。
-
-输出格式要求
-请以清晰的Markdown格式呈现结果，每个话题遵循以下结构：
-
-话题 1: [用一句话精准概括的话题名称]
-
-热度指数: [计算出的具体数值]
-
-核心观点/内容: 简要总结该话题下的主要观点、事件或情绪。
-
-代表性推文: 提供1-2条最具代表性的推文链接或摘要，并注明发布者。
-
-驱动热度的关键账号: 列出在该话题下贡献了最高热度推文的2-3个主要账号。
-
-（话题2和话题3依此类推）
-
-行动开始
-请开始执行分析。
-
+        const language = t('ai_output_language');
+        const prompt = `
+请分析以下X账号@0xAA_Science, @0xSunNFT, @0x_Allending, @BTCdayu, @BillGates, @Joylou1209, @NFTfafafa, @Phyrex_Ni, 
+@WutalkWu, @_FORAB, @ai_9684xtpa, @bitfish1, @elonmusk, @evilcos, @hexiecs, @huahuayjy, @lanhubiji, @realDonaldTrump, 
+@tmel0211, @tweetCatOrg 在最近24小时内讨论的最热三个话题。
+话题热度的定义基于以下加权指标：总互动（40%）：包括点赞、转推、回复、收藏的总数。
+为避免单一高影响力KOL（如Elon Musk）主导，计算时对每个账号的总互动数据进行对数标准化（log10(互动数+1)），
+然后归一化到[0,1]范围，跨账号求和。 ER（互动率，25%）：定义为总互动数除以浏览量。为减少极端值影响，
+ER也进行对数标准化（log10(ER+0.0001)），然后归一化到[0,1]范围，跨账号求和。 浏览量（20%）：对每个账号的浏览量进行对数标准化（log10(浏览量+1)），
+归一化到[0,1]范围，跨账号求和。 提及账号比例（15%）：定义为提及该话题的账号数除以总账号数（即参与讨论的账号占比），直接取比例值[0,1]，
+以反映多个KOL同时讨论的直观热度。热度计算步骤：提取每个话题的上述四个指标值。 
+对总互动、ER、浏览量进行对数标准化和归一化处理（公式：(log10(x+offset) - min) / (max - min)，其中offset防止零值问题）。 
+计算加权和：热度分数 = 0.4×标准化总互动 + 0.25×标准化ER + 0.2×标准化浏览量 + 0.15×提及账号比例。 按热度分数降序排列，
+输出前三个话题。输出格式：列出最热三个话题，每个话题包括：话题名称和简要描述（50字以内）。 热度分数（0-100，归一化后乘100）。 
+主要驱动因素（哪个指标贡献最大）。 提及该话题的代表性账号及示例帖子（每个话题至少1-2个账号，附帖子ID或简要内容）。 
+参与讨论的账号比例（X/Y，X为提及话题的账号数，Y为总账号数）。若数据不足（如部分账号无活跃帖子），
+注明并基于可用数据分析。 若需进一步聚焦某账号或话题，提供补充分析选项。
+附加要求：确保分析基于最近24小时的X帖子数据，若需实时抓取，优先使用X平台数据。 
+若某账号（如高影响力KOL）发帖量极少但互动极高，需在结果中标注其对热度的潜在影响。 若话题重叠或模糊，尝试合并相似主题，以避免重复。
 `;
 
         const {text, meta} = await addGrokResponse(conversationID, prompt, {
