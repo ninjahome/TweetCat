@@ -112,7 +112,6 @@ function fillQuotedContent(
     const sn = quoted?.author?.screenName ?? '';
     const id = quoted?.tweetContent?.id_str ?? (quoted as any)?.rest_id ?? '';
     const href = (sn && id) ? `/${sn}/status/${id}` : '';
-    console.log(sn, id, href);
     bindTwitterInternalLink(moreEl, href);
     // 调试日志（可保留，便于核对）
     logRQ('[Quoted][A1+B1] force-show more', {href, condensed})

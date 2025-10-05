@@ -1226,3 +1226,51 @@ html[data-bg="lightsout"] {
     --border-subtle: #2f3336;
 }
 
+@keyframes gwait-spin { to { transform: rotate(360deg); } }
+
+.global-wait-overlay-background{
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    display: none;                 /* 通过 TS 改为 'block' 显示 */
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: saturate(1.2) blur(3px);
+    -webkit-backdrop-filter: saturate(1.2) blur(3px);
+    pointer-events: auto;          /* 捕获所有事件，阻止与页面其它元素交互 */
+    overscroll-behavior: contain;  /* 阻止滚动穿透 */
+    touch-action: none;            /* 移动端禁用手势 */
+    cursor: wait;
+}
+
+.global-wait-overlay-outer{
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+}
+
+.global-wait-overlay-inner{
+    min-width: 260px;
+    max-width: min(92vw, 520px);
+    border-radius: 16px;
+    background: rgba(255,255,255,0.95);
+    color: #111;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+    padding: 20px 24px;
+    text-align: center;
+    user-select: none;
+}
+
+.global-wait-detail{
+    margin-top: 12px;
+    text-align: left;
+    font-size: 13px;
+    line-height: 1.55;
+    max-height: 40vh;
+    overflow: auto;
+    background: rgba(0,0,0,0.04);
+    padding: 10px 12px;
+    border-radius: 10px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+

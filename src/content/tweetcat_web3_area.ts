@@ -7,6 +7,8 @@ import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {parseContentHtml} from "./main_entrance";
 import {t} from "../common/i18n";
+import {showToastMsg} from "../timeline/render_common";
+import {addGrokResponse, createGrokConversation} from "../timeline/twitter_api";
 
 const defaultCatPointColor = '#B9CAD3';
 
@@ -69,6 +71,7 @@ export async function resetCategories() {
 export async function changeFilterType(catId: number) {
     await switchCategory(catId);
     setSelectedCategory(catId);
+    showAITrendBtn(catId);
 }
 
 export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main: HTMLElement) {
@@ -88,7 +91,10 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
     container.appendChild(filterContainerDiv);
 
     const categories = await queryCategoriesFromBG();
-    populateCategoryArea(tpl, categories, filterContainerDiv)
+    populateCategoryArea(tpl, categories, filterContainerDiv);
+
+    const AIBtn = document.querySelector(".btn-ai-trend-of-category") as HTMLElement;
+    AIBtn.addEventListener('click', grokConversation)
 }
 
 function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], container: HTMLElement) {
@@ -158,7 +164,7 @@ export function onVideoDownloadStart(total: number, filename: string, controller
 
     (processBar.querySelector(".dpi-name") as HTMLSpanElement).innerText = filename;
     const cancelBtn = processBar.querySelector(".dpi-cancel") as HTMLButtonElement;
-    cancelBtn.innerText=t('cancel');
+    cancelBtn.innerText = t('cancel');
     cancelBtn.addEventListener('click', () => {
         try {
             controller.abort();
@@ -221,4 +227,63 @@ export function onVideoDownloadAbort(filename: string) {
 
 export function onVideoDownloadSuccess(filename: string) {
     finalize(filename);
+}
+
+
+function showAITrendBtn(catId: number) {
+    const AIBtn = document.querySelector(".ai-trend-by-grok") as HTMLElement;
+    if (!AIBtn) {
+        console.warn("AIBtn not found");
+        return;
+    }
+
+    if (catId === defaultAllCategoryID) AIBtn.style.display = 'none';
+    else AIBtn.style.display = 'block';
+}
+
+async function grokConversation() {
+    const gwo = document.getElementById("global-wait-overlay") as HTMLElement;
+    const detail = document.getElementById("global-wait-detail") as HTMLElement;
+
+    gwo.style.display = "block";
+    detail.innerText = t("wait_start_grok");
+
+    const killer = setTimeout(() => {
+        gwo.style.display = "none";
+        showToastMsg(t("failed_grok_result"));
+    }, 30_000);
+
+    try {
+        const conversationID = await createGrokConversation();
+        console.log("convId:", conversationID);
+        const prompt = `
+        你是推特的内容搜索引擎，你作为 grok ，和 x 平台是同一家公司旗下的产品，你是可以拿到 x 平台的数据进行学习和加工的，
+        现在需要你做的是：
+        @0xAA_Science, @0xSunNFT, @0x_Allending, @BTCdayu, @BillGates, @Joylou1209, @NFTfafafa, @Phyrex_Ni, @WutalkWu,
+         @_FORAB, @ai_9684xtpa, @bitfish1, @evilcos, @hexiecs, @huahuayjy, @lanhubiji, @realDonaldTrump, @tmel0211, @tweetCatOrg。
+        以上这些推特账号在最近24小时内讨论最多最热的三个话题是什么？按照总互动 40% + ER 30% + Views 20% + Mentions 10%的权重来定义最热
+        `
+
+        // const prompt ="24小时内，web3领域最新的最热的话题，列出 3 个";
+
+        const { text, meta } = await addGrokResponse(conversationID, prompt, {
+            keepOnlyFinal: true,                         // 只要最终答案片段
+            stripXaiTags: true,                          // 去掉 <xai:...> 标签
+            onToken: (t) => {                            // 流式追加
+                detail.textContent += t;
+            },
+            onEvent: (e) => {},
+        });
+
+        console.log("final:", text);
+        console.log("meta:", meta);
+        clearTimeout(killer);
+        // 你可以在此把 detail 替换成最终文本，或直接展示
+        gwo.style.display = "none";
+    } catch (e) {
+        clearTimeout(killer);
+        gwo.style.display = "none";
+        console.error(e);
+        showToastMsg(t("failed_grok_result"));
+    }
 }

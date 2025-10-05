@@ -45,6 +45,10 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     let imageScaleDiv = tpl.content.getElementById("tcqPhotoLightbox")!.cloneNode(true) as HTMLElement;
     document.body.appendChild(imageScaleDiv);
 
+    let waitingOverlay = tpl.content.getElementById("global-wait-overlay")!.cloneNode(true) as HTMLElement;
+    (waitingOverlay.querySelector(".wait-title") as HTMLElement).innerText = t('wait_title');
+    document.body.appendChild(waitingOverlay);
+
     const originalArea = main.firstChild as HTMLElement;
 
     const homeBtn = menuList.children[0];
