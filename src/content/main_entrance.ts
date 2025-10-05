@@ -28,6 +28,10 @@ function setBgMode(mode: ThemeMode): void {
 
 /** 用 computedStyle 读真实背景色；不要用 .style（那是 inline） */
 function detectTwitterTheme(): ThemeMode {
+    if (!document.body) {
+        setTimeout(detectTwitterTheme, 200);
+        return "lightsout"; // 临时返回一个默认值
+    }
     const bg = getComputedStyle(document.body).backgroundColor || "";
     // 亮色
     if (bg.includes("255, 255, 255")) return "default";
