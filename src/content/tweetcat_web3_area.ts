@@ -66,6 +66,7 @@ export function resetNewestTweet() {
 export async function resetCategories() {
     await switchCategory(defaultAllCategoryID);
     setSelectedCategory(defaultAllCategoryID);
+    showAITrendBtn(defaultAllCategoryID);
 }
 
 export async function changeFilterType(catId: number) {
@@ -95,6 +96,7 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
 
     const AIBtn = document.querySelector(".btn-ai-trend-of-category") as HTMLElement;
     AIBtn.addEventListener('click', grokConversation)
+    AIBtn.querySelector("span").innerText = t('ai_trend_btn');
 }
 
 function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], container: HTMLElement) {
@@ -122,8 +124,10 @@ function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], 
 
     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
     container.appendChild(moreBtn);
-    logTPR("✅ ------>>> add filter container success")
-    setSelectedCategory(getSessCatID());
+    const savedCatID = getSessCatID();
+    logTPR("✅ ------>>> add filter container success, category id is:", savedCatID)
+    setSelectedCategory(savedCatID);
+    showAITrendBtn(savedCatID);
 }
 
 export async function reloadCategoryContainer(categories: Category[]) {
@@ -256,29 +260,64 @@ async function grokConversation() {
     try {
         const conversationID = await createGrokConversation();
         console.log("convId:", conversationID);
-        const prompt = `
-        你是推特的内容搜索引擎，你作为 grok ，和 x 平台是同一家公司旗下的产品，你是可以拿到 x 平台的数据进行学习和加工的，
-        现在需要你做的是：
-        @0xAA_Science, @0xSunNFT, @0x_Allending, @BTCdayu, @BillGates, @Joylou1209, @NFTfafafa, @Phyrex_Ni, @WutalkWu,
-         @_FORAB, @ai_9684xtpa, @bitfish1, @evilcos, @hexiecs, @huahuayjy, @lanhubiji, @realDonaldTrump, @tmel0211, @tweetCatOrg。
-        以上这些推特账号在最近24小时内讨论最多最热的三个话题是什么？按照总互动 40% + ER 30% + Views 20% + Mentions 10%的权重来定义最热
-        `
 
-        // const prompt ="24小时内，web3领域最新的最热的话题，列出 3 个";
+        // const prompt = `
+        // 你是推特的内容搜索引擎，你作为 grok ，和 x 平台是同一家公司旗下的产品，你是可以拿到 x 平台的数据进行学习和加工的，
+        // 现在需要你做的是：
+        // @0xAA_Science, @0xSunNFT, @0x_Allending, @BTCdayu, @BillGates, @Joylou1209, @NFTfafafa, @Phyrex_Ni, @WutalkWu,
+        //  @_FORAB, @ai_9684xtpa, @bitfish1, @evilcos, @hexiecs, @huahuayjy, @lanhubiji, @realDonaldTrump, @tmel0211, @tweetCatOrg。
+        // 以上这些推特账号在最近24小时内讨论最多最热的三个话题是什么？按照总互动 40% + ER 30% + Views 20% + Mentions 10%的权重来定义最热
+        // `
 
-        const { text, meta } = await addGrokResponse(conversationID, prompt, {
+        const prompt =`
+        角色与任务
+你是一个高度专业化的X平台内容分析引擎。你的核心任务是实时追踪和分析指定KOL的讨论动态。
+
+核心指令
+请分析以下列表中的推特账号在最近24小时内发布的所有推文。
+根据我提供的热度权重公式，识别并总结出他们共同讨论的、热度最高的三个话题。
+
+分析账号列表
+@0xAA_Science, @0xSunNFT, @0x_Allending, @BTCdayu, @BillGates, @Joylou1209, @NFTfafafa, @Phyrex_Ni, @WutalkWu, @_FORAB, @ai_9684xtpa, @bitfish1, @evilcos, @hexiecs, @huahuayjy, @lanhubiji, @realDonaldTrump, @tmel0211, @tweetCatOrg
+
+热度权重计算公式
+请严格按照以下公式为每条推文计算热度得分，并聚合到话题维度：
+热度得分 = (总互动数 * 0.4) + (喜爱数 * 0.3) + (浏览量 * 0.2) + (被提及/引用数 * 0.1)
+注：总互动数 = 喜爱数 + 转推数 + 回复数 + 引用推文数。
+
+输出格式要求
+请以清晰的Markdown格式呈现结果，每个话题遵循以下结构：
+
+话题 1: [用一句话精准概括的话题名称]
+
+热度指数: [计算出的具体数值]
+
+核心观点/内容: 简要总结该话题下的主要观点、事件或情绪。
+
+代表性推文: 提供1-2条最具代表性的推文链接或摘要，并注明发布者。
+
+驱动热度的关键账号: 列出在该话题下贡献了最高热度推文的2-3个主要账号。
+
+（话题2和话题3依此类推）
+
+行动开始
+请开始执行分析。
+
+`;
+
+        const {text, meta} = await addGrokResponse(conversationID, prompt, {
             keepOnlyFinal: true,                         // 只要最终答案片段
             stripXaiTags: true,                          // 去掉 <xai:...> 标签
-            onToken: (t) => {                            // 流式追加
+            onToken: (t) => {                     // 流式追加
                 detail.textContent += t;
             },
-            onEvent: (e) => {},
+            onEvent: (e) => {
+            },
         });
 
         console.log("final:", text);
         console.log("meta:", meta);
         clearTimeout(killer);
-        // 你可以在此把 detail 替换成最终文本，或直接展示
         gwo.style.display = "none";
     } catch (e) {
         clearTimeout(killer);

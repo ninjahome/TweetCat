@@ -51,5 +51,6 @@
   "failed_grok_result": {"message": "创建 AI 对话失败"},
   "wait_title": {"message": "正在处理......"},
   "wait_start_grok": {"message": "启动 AI 对话"},
-  "conversation_start": {"message": "你好"}
+  "conversation_start": {"message": "你好"},
+  "ai_trend_btn": {"message": "24小时分类趋势(AI)"}
 }

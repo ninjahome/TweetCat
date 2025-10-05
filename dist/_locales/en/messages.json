@@ -51,5 +51,6 @@
   "failed_grok_result": {"message": "Failed to create AI conversation"},
   "wait_title": {"message": "Processing......"},
   "wait_start_grok": {"message": "Starting AI conversation"},
-  "conversation_start": {"message": "Hello"}
+  "conversation_start": {"message": "Hello"},
+  "ai_trend_btn": {"message": "24-hour Category trend (AI)"}
 }
