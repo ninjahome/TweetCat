@@ -1368,9 +1368,15 @@ html[data-bg="lightsout"] {
 }
 
 .account-name {
+    color: #1d9bf0; /* Twitter 蓝 */
+    text-decoration: underline;
+    cursor: pointer;
     font-weight: bold;
     margin-right: 6px;
-    color: #222;
+}
+
+.account-name:hover {
+    color: #0d8ddb;
 }
 
 .account-post {

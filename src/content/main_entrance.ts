@@ -73,7 +73,7 @@ async function onDocumentLoaded() {
 
     setTimeout(()=>{
         installThemeObserverOnce();
-    },3_000);
+    },2_000);
 
     await parseUserInfo(async (userName) => {
         logTPR("------->>>>tweet user name:", userName);

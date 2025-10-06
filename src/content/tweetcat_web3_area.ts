@@ -97,7 +97,7 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
     populateCategoryArea(tpl, categories, filterContainerDiv);
 
     const AIBtn = document.querySelector(".btn-ai-trend-of-category") as HTMLElement;
-    AIBtn.addEventListener('click', (e) => {
+    AIBtn.addEventListener('click', () => {
         grokConversation();
     })
     AIBtn.querySelector("span").innerText = t('ai_trend_btn');
@@ -356,8 +356,8 @@ ${kolNames}
             onToken: (t) => {                     // 流式追加
                 detail.textContent += t;
             },
-            onEvent: (e) => {
-            },
+            // onEvent: (e) => {
+            // },
         });
 
         console.log("meta:", meta);
@@ -416,8 +416,14 @@ function showResult(text: string) {
 
         topic.accounts.forEach((acc: any) => {
             const accountClone = accountItem.cloneNode(true) as HTMLElement;
-            (accountClone.querySelector(".account-name") as HTMLElement).innerText = acc.account;
-            (accountClone.querySelector(".account-post") as HTMLElement).innerText = acc.post;
+            const accountName = accountClone.querySelector(".account-name") as HTMLAnchorElement;
+            accountName.textContent =acc.account;
+            const handle = acc.account.startsWith("@") ? acc.account.slice(1) : acc.account;
+            accountName.href = `https://twitter.com/${handle}`;
+
+            const accountPost = accountClone.querySelector(".account-post") as HTMLAnchorElement;
+            accountPost.textContent = acc.post; // 可以直接显示 ID，或者写成 "查看推文"
+            accountPost.href = `https://twitter.com/${handle}/status/${acc.post}`;
             accountDiv.appendChild(accountClone);
         });
 
