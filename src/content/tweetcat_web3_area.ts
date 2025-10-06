@@ -138,7 +138,7 @@ export async function reloadCategoryContainer(categories: Category[]) {
     const container = document.querySelector(".category-filter-container") as HTMLElement
     if (!container) {
         console.warn("🚨------>>> failed to find tweet cat filter area");
-        return
+        return;
     }
     container.innerHTML = '';
     const tpl = await parseContentHtml("html/content.html");
@@ -272,7 +272,6 @@ async function grokConversation() {
 
     console.log(kolNames);
 
-
     // ====== 缓存检查 ======
     const now = Date.now();
     const cacheEntry = grokCache[catID];
@@ -282,7 +281,6 @@ async function grokConversation() {
         now - cacheEntry.timestamp <= 60 * 60 * 1000
     ) {
         console.log("命中缓存:", cacheEntry);
-        // 直接用旧结果
         showResult(cacheEntry.text);
         return;
     }

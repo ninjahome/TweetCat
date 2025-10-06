@@ -44,7 +44,9 @@ function detectTwitterTheme(): ThemeMode {
 }
 
 export function syncTwitterTheme(): void {
-    setBgMode(detectTwitterTheme());
+    const themeMod = detectTwitterTheme();
+    console.log("------>>>selected mode is:", themeMod);
+    setBgMode(themeMod);
 }
 
 let __themeObserver: MutationObserver | null = null;
@@ -68,7 +70,11 @@ async function onDocumentLoaded() {
     addCustomStyles('css/content.css');
     addCustomStyles('css/tweet_render.css');
     await initObserver();
-    installThemeObserverOnce();
+
+    setTimeout(()=>{
+        installThemeObserverOnce();
+    },3_000);
+
     await parseUserInfo(async (userName) => {
         logTPR("------->>>>tweet user name:", userName);
     });
