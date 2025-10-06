@@ -30,14 +30,7 @@ function bindTweetCatMenu(menuItem: HTMLElement, area: HTMLElement, originalArea
     });
 }
 
-let mounted = false;
-
-export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTemplateElement, main: HTMLElement) {
-    const menuItem = tpl.content.getElementById('tweetCatMenuItem')!.cloneNode(true) as HTMLElement;
-    const area = tpl.content.getElementById('tweetCatArea')!.cloneNode(true) as HTMLElement;
-    area.style.display = 'none';
-    area.querySelector<HTMLElement>(".tweet-title")!.innerText = t('web3_coming');
-
+function prepareElementOfWeb3(tpl: HTMLTemplateElement){
     const toastForFavorite = tpl.content.getElementById('tweet-toast')!.cloneNode(true) as HTMLElement;
     document.body.appendChild(toastForFavorite);
     toastForFavorite.style.display = 'none';
@@ -58,6 +51,25 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     (waitingOverlay.querySelector(".wait-title") as HTMLElement).innerText = t('wait_title');
     document.body.appendChild(waitingOverlay);
 
+    let aiTrend = tpl.content.getElementById("ai-trend-result")!.cloneNode(true) as HTMLElement;
+    aiTrend.style.display='none';
+    (aiTrend.querySelector(".topic-factor-title") as HTMLElement).innerText = t('topic_factor_title');
+    (aiTrend.querySelector(".topic-participation-title") as HTMLElement).innerText = t('topic_participation_title');
+
+    document.body.appendChild(aiTrend);
+}
+
+let mounted = false;
+
+export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTemplateElement, main: HTMLElement) {
+
+    prepareElementOfWeb3(tpl);
+
+    const menuItem = tpl.content.getElementById('tweetCatMenuItem')!.cloneNode(true) as HTMLElement;
+    const area = tpl.content.getElementById('tweetCatArea')!.cloneNode(true) as HTMLElement;
+    area.style.display = 'none';
+    area.querySelector<HTMLElement>(".tweet-title")!.innerText = t('web3_coming');
+
     const originalArea = main.firstChild as HTMLElement;
 
     const homeBtn = menuList.children[0];
@@ -69,7 +81,6 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     menuList.insertBefore(menuItem, menuList.children[1]);
     main.insertBefore(area, originalArea);
 
-    /* ---------- 生命周期 ----------------------------- */
     window.addEventListener(MsgType.RouterTCMount, () => {
         tcMount(area, originalArea, tpl);
         menuItem.classList.add("tc-selected")

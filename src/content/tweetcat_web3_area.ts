@@ -251,6 +251,9 @@ function showAITrendBtn(catId: number) {
     else AIBtn.style.display = 'block';
 }
 
+
+const grokCache: Record<number, { kolNames: string; text: string; timestamp: number }> = {};
+
 async function grokConversation() {
 
     const AIBtn = document.querySelector(".ai-trend-by-grok") as HTMLElement;
@@ -262,11 +265,27 @@ async function grokConversation() {
         return;
     }
 
-    const kolNames = Array.from(kolMaps.values()) // 拿到所有 TweetKol 对象
-        .map(kol => `@${kol.kolName}`)            // 每个名字加上@
-        .join(", ");                               // 用逗号拼接
+    const kolNames = Array.from(kolMaps.values())
+        .map((kol) => `@${kol.kolName}`)
+        .sort()
+        .join(", ");
 
     console.log(kolNames);
+
+
+    // ====== 缓存检查 ======
+    const now = Date.now();
+    const cacheEntry = grokCache[catID];
+    if (
+        cacheEntry &&
+        kolNames === cacheEntry.kolNames &&
+        now - cacheEntry.timestamp <= 60 * 60 * 1000
+    ) {
+        console.log("命中缓存:", cacheEntry);
+        // 直接用旧结果
+        showResult(cacheEntry.text);
+        return;
+    }
 
     const gwo = document.getElementById("global-wait-overlay") as HTMLElement;
     const detail = document.getElementById("global-wait-detail") as HTMLElement;
@@ -283,71 +302,56 @@ async function grokConversation() {
         const conversationID = await createGrokConversation();
         console.log("convId:", conversationID);
 
-        const language = t('ai_output_language');
         const prompt = `
-请分析以下X账号在最近24小时内讨论的最热三个话题，并严格输出为 JSON 数据。
+请分析以下 X 平台账号在最近 24 小时的发帖内容，找出最热的三个话题，并严格以 JSON 格式输出。
 
 账号列表：
+
 ${kolNames}
 
-【话题热度定义规则】
-- 总互动（40%）：点赞、转推、回复、收藏总数，log10 标准化后归一化到 [0,1]。
-- ER（25%）：总互动 / 浏览量，经 log10 标准化 + 归一化。
-- 浏览量（20%）：log10 标准化 + 归一化。
-- 提及账号比例（15%）：提及该话题的账号数 / 总账号数。
+【话题热度计算规则】
+- **总互动 (40%)**：点赞、转推、回复、收藏总数。为避免单一大号主导，先对每个账号数据做 log10(互动数+1) 标准化并归一化到 [0,1]，再跨账号求和。
+- **ER 互动率 (25%)**：总互动数 ÷ 浏览量。取 log10(ER+0.0001)，再归一化到 [0,1]。
+- **浏览量 (20%)**：对浏览量 log10(浏览量+1)，归一化到 [0,1]，跨账号求和。
+- **提及账号比例 (15%)**：参与该话题的账号数 ÷ 总账号数，直接取值 [0,1]。
 
-热度分数 = 0.4 × 互动 + 0.25 × ER + 0.2 × 浏览量 + 0.15 × 提及比例。  
-按分数降序排列，输出前三个话题。
+热度分数计算公式：
+热度分数 = 0.4 × 总互动 + 0.25 × ER + 0.2 × 浏览量 + 0.15 × 提及账号比例
 
-【输出要求】
-- 严格输出 JSON 对象，不要任何解释或额外文字。
-- JSON 顶层为 "topics"，其值是一个数组，包含三个对象。
-- 每个对象字段如下：
-  - "name": 话题名称 (string)
-  - "description": 简要描述 (<= 50字)
-  - "score": 热度分数 (0-100，四舍五入整数)
-  - "main_factor": 主要驱动因素 (string)
-  - "accounts": 数组，每个元素包含：
-      - "account": 账号名 (string)
-      - "post": 示例帖子ID或内容 (string)
-  - "participation": "X/Y" 格式，X为提及该话题账号数，Y为总账号数
+【分析与输出要求】
+1. 按热度分数降序，输出前三个话题。  
+2. 所有字段必须与提问语言一致：如果问题是中文，则输出中文；如果是英文，则输出英文。  
+3. 每个话题对象必须包含以下字段：
+   - "name": 话题名称 (string)
+   - "description": 简要描述 (≤ 50字，自然语言，不允许拼接无空格的单词)
+   - "score": 热度分数 (0–100 的整数，归一化后乘 100)
+   - "main_factor": 主要驱动因素 (string，指贡献最大的指标)
+   - "accounts": 数组，包含 1–2 个示例账号（仅限输入列表内），每个元素包含：
+       - "account": 账号名 (string)
+       - "post": 推文的唯一 ID (string)，禁止输出推文内容。
+   - "participation": "X/Y" 格式，X 为参与该话题的账号数，Y 为总账号数
 
-【示例输出】
+【特殊处理规则】
+- 若部分账号 24 小时内无活跃帖子，应注明，并基于可用数据分析。  
+- 若某个账号发帖量少但互动极高，需在结果中标注其对热度的潜在影响。  
+- 若话题内容高度相似，应合并为一个主题，避免重复。  
+
+【输出格式示例】
 {
   "topics": [
     {
-      "name": "Topic1",
-      "description": "简要描述...",
+      "name": "示例话题",
+      "description": "简要描述…",
       "score": 87,
       "main_factor": "总互动",
       "accounts": [
-        {"account": "@Alice", "post": "post123"},
-        {"account": "@Bob", "post": "post456"}
+        {"account": "@Alice", "post": "post id"}
       ],
       "participation": "5/20"
-    },
-    {
-      "name": "Topic2",
-      "description": "简要描述...",
-      "score": 75,
-      "main_factor": "ER",
-      "accounts": [
-        {"account": "@Charlie", "post": "post789"}
-      ],
-      "participation": "3/20"
-    },
-    {
-      "name": "Topic3",
-      "description": "简要描述...",
-      "score": 65,
-      "main_factor": "浏览量",
-      "accounts": [],
-      "participation": "2/20"
     }
   ]
 }
-`;
-
+`
         const {text, meta} = await addGrokResponse(conversationID, prompt, {
             keepOnlyFinal: true,                         // 只要最终答案片段
             stripXaiTags: true,                          // 去掉 <xai:...> 标签
@@ -358,14 +362,80 @@ ${kolNames}
             },
         });
 
-        console.log("final:", text);
         console.log("meta:", meta);
+
         clearTimeout(killer);
         gwo.style.display = "none";
+
+        showResult(text);
+
+        grokCache[catID] = {
+            kolNames,
+            text,
+            timestamp: Date.now(),
+        };
     } catch (e) {
         clearTimeout(killer);
         gwo.style.display = "none";
         console.error(e);
         showToastMsg(t("failed_grok_result"));
     }
+}
+
+const aiTrendDivID = 'aiTrendDivID'
+function showResult(text: string) {
+    const data = JSON.parse(text);
+    if (!data.topics || data.topics.length === 0) throw new Error("Invalid Result");
+
+    // 克隆模板
+    const aiTrendTemplate = document.getElementById("ai-trend-result")!;
+    const aiTrendResult = aiTrendTemplate.cloneNode(true) as HTMLElement;
+    aiTrendResult.style.display = 'flex';
+    aiTrendResult.id = aiTrendDivID;
+
+    console.log("最终结果:", data);
+
+    // 拿到模板中的 topicCard 和 actions
+    const topicCard = aiTrendTemplate.querySelector(".topic-card") as HTMLElement;
+    const actions = aiTrendTemplate.querySelector(".ai-trend-actions") as HTMLElement;
+
+    // 清空克隆容器
+    aiTrendResult.innerHTML = '';
+
+    // 渲染话题卡片
+    data.topics.forEach((topic: any) => {
+        const clone = topicCard.cloneNode(true) as HTMLElement;
+
+        (clone.querySelector(".topic-name") as HTMLElement).innerText = topic.name;
+        (clone.querySelector(".topic-score") as HTMLElement).innerText = topic.score + " 分";
+        (clone.querySelector(".topic-desc") as HTMLElement).innerText = topic.description;
+        (clone.querySelector(".topic-main-factor") as HTMLElement).innerText = topic.main_factor;
+        (clone.querySelector(".topic-participation") as HTMLElement).innerText = topic.participation;
+
+        const accountDiv = clone.querySelector(".topic-accounts") as HTMLElement;
+        const accountItem = accountDiv.querySelector(".account") as HTMLElement;
+        accountDiv.innerHTML = '';
+
+        topic.accounts.forEach((acc: any) => {
+            const accountClone = accountItem.cloneNode(true) as HTMLElement;
+            (accountClone.querySelector(".account-name") as HTMLElement).innerText = acc.account;
+            (accountClone.querySelector(".account-post") as HTMLElement).innerText = acc.post;
+            accountDiv.appendChild(accountClone);
+        });
+
+        aiTrendResult.appendChild(clone);
+    });
+
+    // 把 actions 区域加回去
+    const actionsClone = actions.cloneNode(true) as HTMLElement;
+    const confirmBtn = actionsClone.querySelector(".ai-trend-confirm-btn") as HTMLButtonElement;
+    confirmBtn.innerText = "确定";
+    confirmBtn.addEventListener('click', () => {
+        aiTrendResult.remove();
+    });
+
+    aiTrendResult.appendChild(actionsClone);
+
+    // 显示在 body 最上方
+    document.body.prepend(aiTrendResult);
 }

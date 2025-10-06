@@ -3,58 +3,169 @@
     "message": "TweetCat",
     "description": "TweetCat"
   },
-  "bookmark_add": {"message": "Bookmark"},
-  "bookmark_remove": {"message": "Remove Bookmark"},
-  "bookmark_success": {"message": "Bookmark saved"},
-  "bookmark_failed": {"message": "Bookmark failed: $1"},
-  "quality": {"message": "Quality"},
-  "quality_low": {"message": "Low"},
-  "quality_high": {"message": "High"},
-  "quality_mid": {"message": "Medium"},
-  "tips_title": {"message": "Tips"},
-  "max_category_reached": {"message": "You can create up to 4 categories for now. We'll support more soon!"},
-  "invalid_category_name": {"message": "Invalid category name"},
-  "add_category_failed": {"message": "Failed to add new category: $1"},
-  "save_success": {"message": "Save Success"},
-  "update_success": {"message": "Update Success"},
-  "category_delete_confirm": {"message": "Delete this Category?"},
-  "cancel": {"message": "Cancel"},
-  "confirm": {"message": "Confirm"},
-  "ok": {"message": "OK"},
-  "add_category": {"message": "+ Add Category"},
-  "block_ads": {"message": "Block Ads"},
-  "category_label": {"message": "Category:"},
-  "remove": {"message": "Remove"},
-  "save": {"message": "Save"},
-  "add_new_category": {"message": "Add New Category"},
-  "enter_category_name": {"message": "Enter category name"},
-  "confirm_message": {"message": "Message..."},
-  "alert_title": {"message": "Alert"},
-  "alert_message": {"message": "This is a custom alert message!"},
-  "loading": {"message": "Processing, please wait..."},
-  "priority_follow": {"message": "Priority Follow"},
-  "welcome_title": {"message": "Welcome to TweetCat"},
-  "welcome_subtitle": {"message": "Categorize and manage Twitter content your way"},
-  "alt_add_category": {"message": "Add Category"},
-  "alt_add_kol": {"message": "Add KOL to Category"},
-  "alt_use_category": {"message": "Use Category"},
-  "alt_manage_category": {"message": "Manage Category"},
-  "alt_manage_kol": {"message": "Manage KOL"},
-  "footer_text": {"message": "© 2025 TweetCat Team. All rights reserved."},
-  "favorite": {"message": "Favorite"},
-  "all": {"message": "All"},
-  "download_video": {"message": "Download Video"},
-  "favorite_author": {"message": "Favorite this author"},
-  "remove_category": {"message": "Remove Category"},
-  "web3_coming": {"message": "Web3 is coming......"},
-  "show_more": {"message": "Show more"},
-  "failed_grok_result": {"message": "Failed to create AI conversation"},
-  "wait_title": {"message": "Processing......"},
-  "wait_start_grok": {"message": "Starting AI conversation"},
-  "conversation_start": {"message": "Hello"},
-  "ai_trend_btn": {"message": "24-hour Category trend (AI)"},
-  "ai_output_language": {"message": "英语"},
-  "warning": {"message": "Warning"},
-  "no_kol_in_category": {"message": "No KOL in this category"},
-  "confirm": {"message": "Confirm"}
+  "bookmark_add": {
+    "message": "Bookmark"
+  },
+  "bookmark_remove": {
+    "message": "Remove Bookmark"
+  },
+  "bookmark_success": {
+    "message": "Bookmark saved"
+  },
+  "bookmark_failed": {
+    "message": "Bookmark failed: $1"
+  },
+  "quality": {
+    "message": "Quality"
+  },
+  "quality_low": {
+    "message": "Low"
+  },
+  "quality_high": {
+    "message": "High"
+  },
+  "quality_mid": {
+    "message": "Medium"
+  },
+  "tips_title": {
+    "message": "Tips"
+  },
+  "max_category_reached": {
+    "message": "You can create up to 4 categories for now. We'll support more soon!"
+  },
+  "invalid_category_name": {
+    "message": "Invalid category name"
+  },
+  "add_category_failed": {
+    "message": "Failed to add new category: $1"
+  },
+  "save_success": {
+    "message": "Save Success"
+  },
+  "update_success": {
+    "message": "Update Success"
+  },
+  "category_delete_confirm": {
+    "message": "Delete this Category?"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "confirm": {
+    "message": "Confirm"
+  },
+  "ok": {
+    "message": "OK"
+  },
+  "add_category": {
+    "message": "+ Add Category"
+  },
+  "block_ads": {
+    "message": "Block Ads"
+  },
+  "category_label": {
+    "message": "Category:"
+  },
+  "remove": {
+    "message": "Remove"
+  },
+  "save": {
+    "message": "Save"
+  },
+  "add_new_category": {
+    "message": "Add New Category"
+  },
+  "enter_category_name": {
+    "message": "Enter category name"
+  },
+  "confirm_message": {
+    "message": "Message..."
+  },
+  "alert_title": {
+    "message": "Alert"
+  },
+  "alert_message": {
+    "message": "This is a custom alert message!"
+  },
+  "loading": {
+    "message": "Processing, please wait..."
+  },
+  "priority_follow": {
+    "message": "Priority Follow"
+  },
+  "welcome_title": {
+    "message": "Welcome to TweetCat"
+  },
+  "welcome_subtitle": {
+    "message": "Categorize and manage Twitter content your way"
+  },
+  "alt_add_category": {
+    "message": "Add Category"
+  },
+  "alt_add_kol": {
+    "message": "Add KOL to Category"
+  },
+  "alt_use_category": {
+    "message": "Use Category"
+  },
+  "alt_manage_category": {
+    "message": "Manage Category"
+  },
+  "alt_manage_kol": {
+    "message": "Manage KOL"
+  },
+  "footer_text": {
+    "message": "© 2025 TweetCat Team. All rights reserved."
+  },
+  "favorite": {
+    "message": "Favorite"
+  },
+  "all": {
+    "message": "All"
+  },
+  "download_video": {
+    "message": "Download Video"
+  },
+  "favorite_author": {
+    "message": "Favorite this author"
+  },
+  "remove_category": {
+    "message": "Remove Category"
+  },
+  "web3_coming": {
+    "message": "Web3 is coming......"
+  },
+  "show_more": {
+    "message": "Show more"
+  },
+  "failed_grok_result": {
+    "message": "Failed to create AI conversation"
+  },
+  "wait_title": {
+    "message": "Processing......"
+  },
+  "wait_start_grok": {
+    "message": "Starting AI conversation"
+  },
+  "conversation_start": {
+    "message": "Hello"
+  },
+  "ai_trend_btn": {
+    "message": "24-hour Category trend (AI)"
+  },
+  "ai_output_language": {
+    "message": "英语"
+  },
+  "warning": {
+    "message": "Warning"
+  },
+  "no_kol_in_category": {
+    "message": "No KOL in this category"
+  },
+  "topic_factor_title": {
+    "message": "Main driving factors"
+  },
+  "topic_participation_title": {
+    "message": "participation"
+  }
 }

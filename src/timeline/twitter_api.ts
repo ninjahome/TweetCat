@@ -16,6 +16,7 @@ import {
     TweetResult
 } from "./tweet_entry";
 import {getTransactionIdFor} from "../content/txid";
+import {logATA} from "../common/debug_flags";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(
@@ -717,8 +718,6 @@ export async function addGrokResponse(
         keepOnlyFinal = false,
         stripXaiTags = true,
     } = opts;
-    const log = (...a: any[]) => debug && console.log("[grok:add_response]", ...a);
-
     if (!conversationId) throw new Error("Missing conversationId");
     if (!message) throw new Error("Missing message");
 
@@ -753,7 +752,7 @@ export async function addGrokResponse(
     };
 
     const timeLabel = `[grok:add_response] total ${txid.slice(0,8)}`;
-    log("POST", url, "txid=", txid);
+    logATA("POST", url, "txid=", txid);
     console.time?.(timeLabel);
 
     const resp = await fetch(url, {
@@ -766,10 +765,10 @@ export async function addGrokResponse(
         referrerPolicy: "origin-when-cross-origin",
     });
 
-    log("status", resp.status, resp.statusText);
+    logATA("status", resp.status, resp.statusText);
     if (!resp.ok) {
         const text = await resp.text().catch(() => "");
-        log("error body (first 500):", text.slice(0, 500));
+        logATA("error body (first 500):", text.slice(0, 500));
         throw new Error(`add_response failed: ${resp.status} ${text}`);
     }
 
@@ -788,7 +787,7 @@ export async function addGrokResponse(
         if (!line) return;
 
         lines++;
-        if (lines <= 5) log(`line[${lines}] head:`, line.slice(0, 140));
+        if (lines <= 5) logATA(`line[${lines}] head:`, line.slice(0, 140));
 
         try {
             const evt = JSON.parse(line);
@@ -799,13 +798,13 @@ export async function addGrokResponse(
                 meta.userChatItemId = evt.userChatItemId;
                 meta.agentChatItemId = evt.agentChatItemId;
                 targetAgentId = evt.agentChatItemId;
-                log("meta ids:", meta);
+                logATA("meta ids:", meta);
             }
 
             if (sampleEventsLeft-- > 0) {
                 const keys = Object.keys(evt);
                 const rKeys = evt?.result ? Object.keys(evt.result) : [];
-                log("evt keys:", keys, "result keys:", rKeys);
+                logATA("evt keys:", keys, "result keys:", rKeys);
             }
 
             // —— 过滤条件 ——
@@ -827,14 +826,14 @@ export async function addGrokResponse(
                     tokenPieces++;
                     finalText += token;
                     onToken?.(token);
-                    if (tokenPieces <= 10) log("token+", JSON.stringify(token), "tag=", tagLc);
+                    if (tokenPieces <= 10) logATA("token+", JSON.stringify(token), "tag=", tagLc);
                 }
             }
 
-            if (evt?.result?.isSoftStop) log("soft stop received");
+            if (evt?.result?.isSoftStop) logATA("soft stop received");
         } catch {
             parseErrors++;
-            if (parseErrors <= 5) log("JSON parse error head:", line.slice(0, 160));
+            if (parseErrors <= 5) logATA("JSON parse error head:", line.slice(0, 160));
         }
     };
 
@@ -862,7 +861,7 @@ export async function addGrokResponse(
         for (const line of all.split(/\r?\n/)) handleLine(line);
     }
 
-    log("stats:", { bytes, chunks, lines, parsed, tokenPieces, parseErrors });
+    logATA("stats:", { bytes, chunks, lines, parsed, tokenPieces, parseErrors });
     console.timeEnd?.(timeLabel);
 
     return { text: finalText, meta };
