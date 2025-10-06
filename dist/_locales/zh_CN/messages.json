@@ -167,5 +167,8 @@
   },
   "topic_participation_title": {
     "message": "参与度"
+  },
+  "ai_base_prompt_ln": {
+    "message": "chinese"
   }
 }

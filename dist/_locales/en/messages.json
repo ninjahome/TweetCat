@@ -167,5 +167,8 @@
   },
   "topic_participation_title": {
     "message": "participation"
+  },
+  "ai_base_prompt_ln": {
+    "message": "english"
   }
 }
