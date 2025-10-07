@@ -62,11 +62,11 @@ export async function initObserver() {
     _contentTemplate = tpl;
 }
 
-function prepareVideoForTweetDetail(divNode: HTMLDivElement, mainTweetID: string) {
+function addVideoDownloadBtnForTweet(divNode: HTMLDivElement, mainTweetID: string) {
     const videoViews = divNode.querySelector('.css-175oi2r.r-1d09ksm.r-18u37iz.r-1wbh5a2.r-1471scf');
     if (!videoViews) {
         logAD("[Tweet Details] mainTweetID:", mainTweetID, " find video in tweet detail list");
-        prepareVideoForTweetDiv(divNode);
+        addVideoDownloadBtnForHomeOrProfile(divNode);
         return;
     }
 
@@ -123,7 +123,7 @@ function findTweetIDOfTweetDiv(divNode: HTMLDivElement) {
     return statusId;
 }
 
-function prepareVideoForTweetDiv(divNode: HTMLDivElement) {
+function addVideoDownloadBtnForHomeOrProfile(divNode: HTMLDivElement) {
 
     const statusId = findTweetIDOfTweetDiv(divNode);
     if (!statusId) return;
@@ -161,14 +161,17 @@ function filterTweets(nodes: NodeList) {
 
         if (linkInfo.kind === "home") {
             const user = parseNameFromTweetCell(divNode);
-            appendCategoryMenuOnTweet(divNode, user).then();
+            catMenuForTweetOfHome(divNode, user).then();
         }
         if (linkInfo.kind === "home" || linkInfo.kind === "profile") {
-            prepareVideoForTweetDiv(divNode);
+            addVideoDownloadBtnForHomeOrProfile(divNode);
         }
 
         if (linkInfo.kind === "tweet") {
-            prepareVideoForTweetDetail(divNode, linkInfo.tweetId);
+            addVideoDownloadBtnForTweet(divNode, linkInfo.tweetId);
+        }
+        if (linkInfo.kind === "followersPage") {
+            catMenuForFlowerPage(divNode).then();
         }
     });
 }
@@ -210,7 +213,7 @@ async function setCatMenu(kolName: string, clone: HTMLElement) {
 }
 
 
-async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: TweetKol | null) {
+async function catMenuForTweetOfHome(tweetCellDiv: HTMLElement, rawKol: TweetKol | null) {
     if (!rawKol) return;
     const menuAreaDiv = tweetCellDiv.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep") as HTMLElement
     if (!menuAreaDiv) {
@@ -376,4 +379,72 @@ function getKolAvatarLink(tweetNode: HTMLElement): string | null {
 
     // 3. 读取头像链接
     return avatarImg.getAttribute('src');
+}
+
+
+async function catMenuForFlowerPage(divNode: HTMLDivElement) {
+
+    const toolDiv = divNode.querySelector(".css-175oi2r.r-11yx9uu") as HTMLDivElement;
+    if (!toolDiv) {
+        console.warn("tool div not found for follower page!", divNode)
+        return;
+    }
+
+    if (!!toolDiv.querySelector(".filter-menu-on-main")) {
+        console.log("------>>> duplicate menu addition", toolDiv);
+        return;
+    }
+
+    const kolNameDiv = divNode.querySelector('.css-175oi2r.r-1wbh5a2.r-dnmrzs.r-1ny4l3l.r-1loqt21') as HTMLElement;
+    if (!kolNameDiv) {
+        console.warn("-------->>> kol name div not found for follower page!")
+        return null;
+    }
+
+    const nameSpan = kolNameDiv.querySelector(".css-1jxf684.r-bcqeeo.r-1ttztb7.r-qvutc0.r-poiln3") as HTMLElement
+    const displayName = nameSpan?.textContent || 'imageName';
+    const kolHref = kolNameDiv?.getAttribute('href') || '';
+    const kolName = kolHref.startsWith('/') ? kolHref.substring(1) : kolHref;
+
+    if (!kolName || !displayName) {
+        console.warn("-------->>> kol name or displayName not found for follower page!")
+        return;
+    }
+
+    const rawKol = new TweetKol(kolName, displayName);
+
+    const clone = __menuBtnDiv.cloneNode(true) as HTMLElement;
+    clone.setAttribute('id', "");
+    setCatMenu(kolName, clone).then();
+    toolDiv.insertBefore(clone, toolDiv.firstChild);
+
+    clone.onclick = async (e) => {
+        const categories = await queryCategoriesFromBG();
+        if (categories.length === 0) {
+            showDialog(t("warning"), t('no_valid_categories'))
+            return;
+        }
+
+        let kol = await queryKolDetailByName(kolName);
+        if (!kol) {
+            kol = new TweetKol(rawKol.kolName, rawKol.displayName);
+        }
+        let needUpDateKolData = false;
+        if (!kol.avatarUrl) {
+            needUpDateKolData = true;
+            const imgEl = divNode.querySelector("img.css-9pa8cd") as HTMLImageElement
+            if (!imgEl) return;
+            console.log("------>>>image el", imgEl.src)
+            kol.avatarUrl = imgEl.src;
+        }
+
+        if (!kol.kolUserId) {
+            needUpDateKolData = true
+            kol.kolUserId = await getUserIdByUsername(kol.kolName) ?? "";
+        }
+
+        if (needUpDateKolData) await updateKolIdToSw(kol);
+
+        showPopupMenu(e, clone, categories, kol, setCatMenu);
+    };
 }
