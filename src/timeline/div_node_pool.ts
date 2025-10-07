@@ -32,8 +32,10 @@ export class NodePool {
                 const [oldestId, oldestNode] = oldestEntry;
                 this.pool.delete(oldestId);
                 logPool(`[NodePool] Discard oldest node id=${oldestId}`);
-                oldestNode.remove();
-                oldestNode.innerHTML = "";
+                if(oldestNode){
+                    oldestNode.remove();
+                    oldestNode.innerHTML = "";
+                }
             }
         }
 
