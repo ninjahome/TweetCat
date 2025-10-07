@@ -2,7 +2,7 @@ import {sendMsgToService} from "../common/utils";
 import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
 import {EntryObj} from "../timeline/tweet_entry";
 import {switchCategory} from "./tweetcat_timeline";
-import {Category, queryCategoriesFromBG} from "../object/category";
+import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {parseContentHtml} from "./main_entrance";
@@ -34,7 +34,7 @@ const onNewestNotificationClick = async (ev: Event) => {
     notificationContainer.style.display = "none";
     await switchCategory(defaultAllCategoryID);
     setSelectedCategory(defaultAllCategoryID);
-    showAITrendBtn(defaultAllCategoryID);
+    await showAITrendBtn(defaultAllCategoryID);
 };
 
 export async function showNewestTweets(tweets: EntryObj[]) {
@@ -66,13 +66,13 @@ export function resetNewestTweet() {
 export async function resetCategories() {
     await switchCategory(defaultAllCategoryID);
     setSelectedCategory(defaultAllCategoryID);
-    showAITrendBtn(defaultAllCategoryID);
+    await showAITrendBtn(defaultAllCategoryID);
 }
 
 export async function changeFilterType(catId: number) {
     await switchCategory(catId);
     setSelectedCategory(catId);
-    showAITrendBtn(catId);
+    await showAITrendBtn(catId);
 }
 
 export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main: HTMLElement) {
@@ -98,7 +98,6 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
     AIBtn.addEventListener('click', () => {
         grokConversation();
     })
-    AIBtn.querySelector("span").innerText = t('ai_trend_btn');
 }
 
 function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], container: HTMLElement) {
@@ -129,7 +128,7 @@ function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], 
     const savedCatID = getSessCatID();
     logTPR("✅ ------>>> add filter container success, category id is:", savedCatID)
     setSelectedCategory(savedCatID);
-    showAITrendBtn(savedCatID);
+    showAITrendBtn(savedCatID).then();
 }
 
 export async function reloadCategoryContainer(categories: Category[]) {
@@ -146,7 +145,7 @@ export async function reloadCategoryContainer(categories: Category[]) {
     if (!target) {
         await switchCategory(defaultAllCategoryID);
         setSelectedCategory(defaultAllCategoryID);
-        showAITrendBtn(defaultAllCategoryID);
+        await showAITrendBtn(defaultAllCategoryID);
     }
 }
 
@@ -237,7 +236,7 @@ export function onVideoDownloadSuccess(filename: string) {
 }
 
 
-function showAITrendBtn(catId: number) {
+async function showAITrendBtn(catId: number) {
     const AIBtn = document.querySelector(".ai-trend-by-grok") as HTMLElement;
     if (!AIBtn) {
         console.warn("AIBtn not found");
@@ -246,6 +245,12 @@ function showAITrendBtn(catId: number) {
 
     AIBtn.dataset.currentID = catId + '';
     if (catId === defaultAllCategoryID) AIBtn.style.display = 'none';
-    else AIBtn.style.display = 'block';
+    else {
+        AIBtn.style.display = 'block';
+        const category = await queryCategoryById(catId);
+        const AIBtnText = AIBtn.querySelector(".btn-ai-trend-of-category span") as HTMLSpanElement;
+        AIBtnText.innerText = t('ai_trend_btn') + `(${category.catName})`;
+    }
+
 }
 

@@ -151,7 +151,7 @@
     "message": "Hello"
   },
   "ai_trend_btn": {
-    "message": "24-hour Category trend (AI)"
+    "message": "24-hour Category trend By AI"
   },
   "ai_output_language": {
     "message": "英语"
@@ -170,5 +170,11 @@
   },
   "ai_base_prompt_ln": {
     "message": "english"
+  },
+  "no_valid_categories": {
+    "message": "no valid categories"
+  },
+  "sccore": {
+    "message": "Points"
   }
 }

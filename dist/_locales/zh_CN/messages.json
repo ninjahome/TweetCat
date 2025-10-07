@@ -151,7 +151,7 @@
     "message": "你好"
   },
   "ai_trend_btn": {
-    "message": "24小时分类趋势(AI)"
+    "message": "AI24小时分类趋势"
   },
   "ai_output_language": {
     "message": "中文"
@@ -170,5 +170,11 @@
   },
   "ai_base_prompt_ln": {
     "message": "chinese"
+  },
+  "no_valid_categories": {
+    "message": "没有分类内容"
+  },
+  "sccore": {
+    "message": "分"
   }
 }

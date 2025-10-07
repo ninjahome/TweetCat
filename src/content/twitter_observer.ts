@@ -10,6 +10,7 @@ import {logAD} from "../common/debug_flags";
 import {blockedAdNumIncrease} from "../object/system_setting";
 import {prepareDownloadBtn} from "../timeline/render_action";
 import {t} from "../common/i18n";
+import {showDialog} from "../timeline/render_common";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -87,8 +88,8 @@ function bindDownLoadBtn(actionMenuList: HTMLElement, fileName: string, mp4List:
 
     const downDiv = _contentTemplate.content.querySelector(".action-button.download")?.cloneNode(true) as HTMLElement;
     if (!downDiv) return;
-    const btnTxt = downDiv.querySelector(".download-txt") as HTMLSpanElement
-    btnTxt.innerText = "";
+    const btn = downDiv.querySelector(".downloadVideo") as HTMLSpanElement
+    btn.style.display = 'none';
     prepareDownloadBtn(downDiv, fileName, mp4List, hostDiv);
     actionMenuList.appendChild(downDiv);
 }
@@ -230,7 +231,7 @@ async function appendCategoryMenuOnTweet(tweetCellDiv: HTMLElement, rawKol: Twee
     clone.onclick = async (e) => {
         const categories = await queryCategoriesFromBG();
         if (categories.length === 0) {
-            alert("no valid categories");//TODO::
+            showDialog(t("warning"), t('no_valid_categories'))
             return;
         }
 

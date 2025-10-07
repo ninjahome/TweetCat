@@ -228,7 +228,7 @@ function showResult(text: string) {
 
         (clone.querySelector(".topic-name") as HTMLElement).innerText = topicName;
         (clone.querySelector(".topic-desc") as HTMLElement).innerText = topicDesc;
-        (clone.querySelector(".topic-score") as HTMLElement).innerText = topic.score + " 分";
+        (clone.querySelector(".topic-score") as HTMLElement).innerText = topic.score + " "+t('sccore');
         (clone.querySelector(".topic-main-factor") as HTMLElement).innerText = topic.main_factor;
         (clone.querySelector(".topic-participation") as HTMLElement).innerText = topic.participation;
 
