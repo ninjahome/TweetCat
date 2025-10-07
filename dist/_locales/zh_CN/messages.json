@@ -141,6 +141,9 @@
   "failed_grok_result": {
     "message": "创建 AI 对话失败"
   },
+  "grok_timeout": {
+    "message": "创建 AI 会话超时"
+  },
   "wait_title": {
     "message": "正在处理......"
   },

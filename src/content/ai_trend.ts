@@ -3,6 +3,8 @@ import {t} from "../common/i18n";
 import {showDialog, showToastMsg} from "../timeline/render_common";
 import {addGrokResponse, createGrokConversation} from "../timeline/twitter_api";
 import {defaultAllCategoryID} from "../common/consts";
+import {logATA} from "../common/debug_flags";
+import {sleep} from "../common/utils";
 
 const basePrompts = {
     chinese: `
@@ -75,7 +77,11 @@ Each topic object must include ALL of the following fields:
 - "main_factor": EXACTLY one of: "Total Interactions", "ER", "Views", "Account Mention Ratio".
 - "accounts": Array of 1–2 objects, each with:
     - "account": Account name from the input list (string).
-    - "post": The tweet’s original ID from the input data (string). Do not output content.
+    - "post": The original tweet ID (string), copied exactly from the input data. 
+          Each tweet ID corresponds to the last numeric segment of a Twitter URL. 
+          For example: https://twitter.com/elonmusk/status/1701234567890123456 → "1701234567890123456".
+          Do not invent or generate numbers. Always copy the real ID.
+          
 - "participation": String "X/Y" where X = number of accounts in the topic, Y = total accounts.
 
 [SCORING]
@@ -100,7 +106,10 @@ Heat Score = 0.4 × Total Interactions + 0.25 × ER + 0.2 × Views + 0.15 × Acc
       "score": 87,
       "main_factor": "Total Interactions",
       "accounts": [
-        {"account": "@Alice", "post": "1975123456789012345"}
+        {
+            "account": "@Alice", 
+            "post": "1701234567890123456"  // corresponds to https://twitter.com/Alice/status/1701234567890123456
+        }
       ],
       "participation": "5/20"
     }
@@ -128,7 +137,7 @@ export async function grokConversation() {
         .sort()
         .join(", ");
 
-    console.log(kolNames);
+    logATA(kolNames);
 
     // ====== 缓存检查 ======
     const now = Date.now();
@@ -138,7 +147,7 @@ export async function grokConversation() {
         kolNames === cacheEntry.kolNames &&
         now - cacheEntry.timestamp <= 60 * 60 * 1000
     ) {
-        console.log("命中缓存:", cacheEntry);
+        logATA("命中缓存:", cacheEntry);
         showResult(cacheEntry.text);
         return;
     }
@@ -151,12 +160,12 @@ export async function grokConversation() {
 
     const killer = setTimeout(() => {
         gwo.style.display = "none";
-        showToastMsg(t("failed_grok_result"));
-    }, 50_000);
+        showToastMsg(t("grok_timeout"));
+    }, 70_000);
 
     try {
         const conversationID = await createGrokConversation();
-        console.log("convId:", conversationID);
+        logATA("convId:", conversationID);
         detail.innerText += ":" + conversationID;
 
         const promptKey = t('ai_base_prompt_ln')
@@ -166,6 +175,7 @@ export async function grokConversation() {
         } else {
             basePrompt = basePrompts.english;
         }
+        await sleep(500);
         const prompt = basePrompt.replace("%s", kolNames);
         const {text, meta} = await addGrokResponse(conversationID, prompt, {
             keepOnlyFinal: true,                         // 只要最终答案片段
@@ -175,7 +185,7 @@ export async function grokConversation() {
             },
         });
 
-        console.log("meta:", meta);
+        logATA("meta:", meta);
 
         clearTimeout(killer);
         gwo.style.display = "none";
@@ -201,23 +211,17 @@ function showResult(text: string) {
 
     const data = JSON.parse(text);
     if (!data.topics || data.topics.length === 0) throw new Error("Invalid Result");
-    console.log("最终text结果:", data);
+    logATA("最终text结果:",text," \n转换为结构体：", data);
 
-    // 克隆模板
     const aiTrendTemplate = document.getElementById("ai-trend-result")!;
     const aiTrendResult = aiTrendTemplate.cloneNode(true) as HTMLElement;
     aiTrendResult.style.display = 'flex';
     aiTrendResult.id = aiTrendDivID;
 
-
-    // 拿到模板中的 topicCard 和 actions
     const topicCard = aiTrendTemplate.querySelector(".topic-card") as HTMLElement;
     const actions = aiTrendTemplate.querySelector(".ai-trend-actions") as HTMLElement;
-
-    // 清空克隆容器
     aiTrendResult.innerHTML = '';
 
-    // 渲染话题卡片
     data.topics.forEach((topic: any) => {
         const clone = topicCard.cloneNode(true) as HTMLElement;
 
@@ -228,7 +232,7 @@ function showResult(text: string) {
 
         (clone.querySelector(".topic-name") as HTMLElement).innerText = topicName;
         (clone.querySelector(".topic-desc") as HTMLElement).innerText = topicDesc;
-        (clone.querySelector(".topic-score") as HTMLElement).innerText = topic.score + " "+t('sccore');
+        (clone.querySelector(".topic-score") as HTMLElement).innerText = topic.score + " " + t('sccore');
         (clone.querySelector(".topic-main-factor") as HTMLElement).innerText = topic.main_factor;
         (clone.querySelector(".topic-participation") as HTMLElement).innerText = topic.participation;
 
@@ -252,7 +256,6 @@ function showResult(text: string) {
         aiTrendResult.appendChild(clone);
     });
 
-    // 把 actions 区域加回去
     const actionsClone = actions.cloneNode(true) as HTMLElement;
     const confirmBtn = actionsClone.querySelector(".ai-trend-confirm-btn") as HTMLButtonElement;
     confirmBtn.innerText = "确定";
@@ -262,6 +265,5 @@ function showResult(text: string) {
 
     aiTrendResult.appendChild(actionsClone);
 
-    // 显示在 body 最上方
     document.body.prepend(aiTrendResult);
 }

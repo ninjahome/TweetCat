@@ -141,6 +141,9 @@
   "failed_grok_result": {
     "message": "Failed to create AI conversation"
   },
+  "grok_timeout": {
+    "message": "Timeout to create AI conversation"
+  },
   "wait_title": {
     "message": "Processing......"
   },
