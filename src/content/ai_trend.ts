@@ -56,32 +56,29 @@ const basePrompts = {
 `,
 
     english: `
-    Please analyze the posting activity of the following X platform accounts in the past 24 hours, identify the top three trending topics, and STRICTLY output one single JSON object only.
+  Please analyze the posting activity of the following X platform accounts in the past 24 hours, identify the top three trending topics, and STRICTLY output one single JSON object only.
 
 Account list:
 %s
 
-### ABSOLUTE OUTPUT RULES
+[ABSOLUTE OUTPUT RULES]
 - The reply must be ONLY a valid JSON object. It must start with "{" and end with "}".
-- No explanations, no comments, no markdown, no code fences, no safety notes, no extra text before or after the JSON.
-- Use only standard ASCII double quotes (") for all strings.
-- No trailing commas. No newlines inside string values.
-- Do not include emojis, hashtags-only text, URLs, markdown, HTML or XML tags inside any field.
+- Do NOT include any explanations, comments, headers, markdown, code fences, safety notes, or any text outside the JSON.
+- Use ASCII double quotes (") for all strings. No trailing commas. No newlines inside string values.
+- The top-level JSON MUST have exactly one key: "topics", whose value is an array with exactly 3 topic objects.
 
-### FIELD REQUIREMENTS
-Top-level object: {"topics":[ ... ]}
-
-Each topic must include:
-- "name": Topic name (string). Must be natural language. **Words must be separated by spaces.** No concatenated words, no CamelCase joins (e.g., use "Crypto Market Rally", NOT "CryptoMarketRally"). User handles (e.g. @Alice) or tickers ($BTC) are allowed as-is.
-- "description": Short description (≤ 50 words). Must be natural language with spaces between words. No concatenated words, no CamelCase, no hashtags-only, no raw URLs. Must read like a proper sentence fragment.
-- "score": Integer 0–100 (normalized heat score × 100, rounded).
-- "main_factor": One of "Total Interactions", "ER", "Views", "Account Mention Ratio" — whichever contributed most.
+[FIELD REQUIREMENTS]
+Each topic object must include ALL of the following fields:
+- "name_words": An array of strings. Each word of the topic title must be a separate element, properly capitalized. Example: ["US", "Government", "Shutdown"].
+- "description_words": An array of strings. Each word of the description must be a separate element in natural English. Example: ["The", "United", "States", "government", "shutdown", "entered", "its", "second", "week", "."].
+- "score": Integer 0–100 (normalized heat × 100, rounded).
+- "main_factor": EXACTLY one of: "Total Interactions", "ER", "Views", "Account Mention Ratio".
 - "accounts": Array of 1–2 objects, each with:
-   - "account": Account name from the input list (string).
-   - "post": Unique post ID (string). DO NOT output post content.
-- "participation": String in "X/Y" format, where X = number of accounts in this topic, Y = total accounts.
+    - "account": Account name from the input list (string).
+    - "post": The tweet’s original ID from the input data (string). Do not output content.
+- "participation": String "X/Y" where X = number of accounts in the topic, Y = total accounts.
 
-### SCORING
+[SCORING]
 Heat Score = 0.4 × Total Interactions + 0.25 × ER + 0.2 × Views + 0.15 × Account Mention Ratio.
 - Total Interactions: log10(interactions + 1), normalized to [0,1], summed across accounts.
 - ER: log10(ER + 0.0001), normalized to [0,1].
@@ -89,29 +86,27 @@ Heat Score = 0.4 × Total Interactions + 0.25 × ER + 0.2 × Views + 0.15 × Acc
 - Account Mention Ratio: ratio in [0,1].
 - Output the top 3 topics sorted by heat score descending. If tie: (a) higher Total Interactions, (b) higher Views, (c) alphabetical "name".
 
-### MERGING & SPECIAL CASES
+[MERGING & SPECIAL CASES]
 - Merge highly similar topics to avoid duplicates.
-- If some accounts have no active posts in the last 24 hours, proceed with available data.
+- If some accounts have no active posts, proceed with available data.
 - If an account has very few posts but extremely high engagement, reflect its influence in the description.
 
-### SELF-CHECK
-If the output contains ANYTHING outside the JSON object, or if "name"/"description" contain concatenated words without spaces, you must DISCARD that output and regenerate until it is correct JSON only.
-
-### OUTPUT FORMAT EXAMPLE
+[OUTPUT FORMAT EXAMPLE — FOR SHAPE ONLY]
 {
   "topics": [
     {
-      "name": "Example Topic",
-      "description": "Short natural language summary with spaces between words.",
+      "name_words": ["US", "Government", "Shutdown"],
+      "description_words": ["The", "United", "States", "government", "shutdown", "entered", "its", "second", "week", "."],
       "score": 87,
       "main_factor": "Total Interactions",
       "accounts": [
-        {"account": "@Alice", "post": "post id"}
+        {"account": "@Alice", "post": "1975123456789012345"}
       ],
       "participation": "5/20"
     }
   ]
 }
+
 `
 };
 
@@ -162,7 +157,7 @@ export async function grokConversation() {
     try {
         const conversationID = await createGrokConversation();
         console.log("convId:", conversationID);
-        detail.innerText += conversationID;
+        detail.innerText += ":" + conversationID;
 
         const promptKey = t('ai_base_prompt_ln')
         let basePrompt: string
@@ -177,8 +172,6 @@ export async function grokConversation() {
             stripXaiTags: true,                          // 去掉 <xai:...> 标签
             onToken: (t) => {                     // 流式追加
                 detail.textContent += t;
-            },
-            onEvent: (e) => {
             },
         });
 
@@ -205,10 +198,10 @@ export async function grokConversation() {
 const aiTrendDivID = 'aiTrendDivID'
 
 function showResult(text: string) {
-    console.log("最终text结果:", text);
 
     const data = JSON.parse(text);
     if (!data.topics || data.topics.length === 0) throw new Error("Invalid Result");
+    console.log("最终text结果:", data);
 
     // 克隆模板
     const aiTrendTemplate = document.getElementById("ai-trend-result")!;
@@ -228,9 +221,14 @@ function showResult(text: string) {
     data.topics.forEach((topic: any) => {
         const clone = topicCard.cloneNode(true) as HTMLElement;
 
-        (clone.querySelector(".topic-name") as HTMLElement).innerText = topic.name;
+        let topicName = topic.name;
+        if (!topicName && topic.name_words) topicName = (topic.name_words || []).join(" ");
+        let topicDesc = topic.description;
+        if (!topicDesc && topic.description_words) topicDesc = (topic.description_words || []).join(" ");
+
+        (clone.querySelector(".topic-name") as HTMLElement).innerText = topicName;
+        (clone.querySelector(".topic-desc") as HTMLElement).innerText = topicDesc;
         (clone.querySelector(".topic-score") as HTMLElement).innerText = topic.score + " 分";
-        (clone.querySelector(".topic-desc") as HTMLElement).innerText = topic.description;
         (clone.querySelector(".topic-main-factor") as HTMLElement).innerText = topic.main_factor;
         (clone.querySelector(".topic-participation") as HTMLElement).innerText = topic.participation;
 

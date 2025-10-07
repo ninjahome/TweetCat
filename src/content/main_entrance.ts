@@ -106,7 +106,6 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     switch (request.action) {
         case MsgType.NaviUrlChanged: {
-
             const linkInfo = parseTwitterPath(window.location.href)
             logTPR("------>>> link info:", linkInfo)
             if (linkInfo.kind === "profile") {
@@ -215,7 +214,6 @@ window.addEventListener('message', (e) => {
         switch (msg.action) {
             case MsgType.IJLocationChange: {
                 handleLocationChange();
-                syncTwitterTheme();
                 break;
             }
             case MsgType.IJUserTweetsCaptured: {
