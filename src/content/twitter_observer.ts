@@ -384,7 +384,7 @@ function getKolAvatarLink(tweetNode: HTMLElement): string | null {
 
 async function catMenuForFlowerPage(divNode: HTMLDivElement) {
 
-    const toolDiv = divNode.querySelector(".css-175oi2r.r-11yx9uu") as HTMLDivElement;
+    const toolDiv = divNode.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1wtj0ep button").parentElement as HTMLDivElement;
     if (!toolDiv) {
         console.warn("tool div not found for follower page!", divNode)
         return;
