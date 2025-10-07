@@ -5,7 +5,6 @@ import {addGrokResponse, createGrokConversation} from "../timeline/twitter_api";
 import {defaultAllCategoryID} from "../common/consts";
 import {logATA} from "../common/debug_flags";
 import {sleep} from "../common/utils";
-
 const basePrompts = {
     chinese: `
 请分析以下 X 平台账号在最近 24 小时的发帖内容，找出最热的三个话题，并严格以 JSON 格式输出。
@@ -32,7 +31,7 @@ const basePrompts = {
    - "main_factor": 主要驱动因素 (string，指贡献最大的指标)
    - "accounts": 数组，包含 1–2 个示例账号（仅限输入列表内），每个元素包含：
        - "account": 账号名 (string)
-       - "post": 推文的唯一 ID (string)，禁止输出推文内容。
+       - "post": 推文内容片段 (string)，建议截取前 10–15 个词，禁止总结或改写。
    - "participation": "X/Y" 格式，X 为参与该话题的账号数，Y 为总账号数
 
 【特殊处理规则】
@@ -49,7 +48,7 @@ const basePrompts = {
       "score": 87,
       "main_factor": "总互动",
       "accounts": [
-        {"account": "@Alice", "post": "post id"}
+        {"account": "@Alice", "post": "This is the beginning of Alice's tweet ..."}
       ],
       "participation": "5/20"
     }
@@ -58,7 +57,7 @@ const basePrompts = {
 `,
 
     english: `
-  Please analyze the posting activity of the following X platform accounts in the past 24 hours, identify the top three trending topics, and STRICTLY output one single JSON object only.
+Please analyze the posting activity of the following X platform accounts in the past 24 hours, identify the top three trending topics, and STRICTLY output one single JSON object only.
 
 Account list:
 %s
@@ -72,16 +71,14 @@ Account list:
 [FIELD REQUIREMENTS]
 Each topic object must include ALL of the following fields:
 - "name_words": An array of strings. Each word of the topic title must be a separate element, properly capitalized. Example: ["US", "Government", "Shutdown"].
-- "description_words": An array of strings. Each word of the description must be a separate element in natural English. Example: ["The", "United", "States", "government", "shutdown", "entered", "its", "second", "week", "."].
+- "description_words": An array of strings. Each word of the description must be a separate element in natural English. Example: ["The", "United", "States", "government", "shutdown", "entered", "its", "second", "week", "." ].
 - "score": Integer 0–100 (normalized heat × 100, rounded).
 - "main_factor": EXACTLY one of: "Total Interactions", "ER", "Views", "Account Mention Ratio".
 - "accounts": Array of 1–2 objects, each with:
     - "account": Account name from the input list (string).
-    - "post": The original tweet ID (string), copied exactly from the input data. 
-          Each tweet ID corresponds to the last numeric segment of a Twitter URL. 
-          For example: https://twitter.com/elonmusk/status/1701234567890123456 → "1701234567890123456".
-          Do not invent or generate numbers. Always copy the real ID.
-          
+    - "post_words": An array of strings, where each element is one word (or token) from the tweet content. 
+                    Example: ["Breaking", "news", ":", "US", "Government", "Shutdown", "continues", "."]
+                    Do NOT merge words together. Each word must remain a separate array element.
 - "participation": String "X/Y" where X = number of accounts in the topic, Y = total accounts.
 
 [SCORING]
@@ -107,15 +104,14 @@ Heat Score = 0.4 × Total Interactions + 0.25 × ER + 0.2 × Views + 0.15 × Acc
       "main_factor": "Total Interactions",
       "accounts": [
         {
-            "account": "@Alice", 
-            "post": "1701234567890123456"  // corresponds to https://twitter.com/Alice/status/1701234567890123456
+          "account": "@Alice", 
+          "post_words": ["Breaking", "news", ":", "US", "Government", "Shutdown", "continues", "."]
         }
       ],
       "participation": "5/20"
     }
   ]
 }
-
 `
 };
 
@@ -175,7 +171,7 @@ export async function grokConversation() {
         } else {
             basePrompt = basePrompts.english;
         }
-        await sleep(500);
+        await sleep(800);
         const prompt = basePrompt.replace("%s", kolNames);
         const {text, meta} = await addGrokResponse(conversationID, prompt, {
             keepOnlyFinal: true,                         // 只要最终答案片段
@@ -211,7 +207,7 @@ function showResult(text: string) {
 
     const data = JSON.parse(text);
     if (!data.topics || data.topics.length === 0) throw new Error("Invalid Result");
-    logATA("最终text结果:",text," \n转换为结构体：", data);
+    console.log("最终text结果:",text," \n转换为结构体：", data);
 
     const aiTrendTemplate = document.getElementById("ai-trend-result")!;
     const aiTrendResult = aiTrendTemplate.cloneNode(true) as HTMLElement;
@@ -247,9 +243,11 @@ function showResult(text: string) {
             const handle = acc.account.startsWith("@") ? acc.account.slice(1) : acc.account;
             accountName.href = `https://twitter.com/${handle}`;
 
+            let postContent = acc.post;
+            if (!postContent && acc.post_words) postContent = (acc.post_words || []).join(" ");
+
             const accountPost = accountClone.querySelector(".account-post") as HTMLAnchorElement;
-            accountPost.textContent = acc.post; // 可以直接显示 ID，或者写成 "查看推文"
-            accountPost.href = `https://twitter.com/${handle}/status/${acc.post}`;
+            accountPost.textContent = postContent;
             accountDiv.appendChild(accountClone);
         });
 
