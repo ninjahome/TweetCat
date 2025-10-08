@@ -1294,13 +1294,18 @@ html[data-bg="lightsout"] {
     z-index: 9999;                /* 确保在最前 */
 }
 .topic-card-background {
-    background-color: white;
-    max-width: 800px;
+    background-color: var(--bg-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    border-radius: 16px;
+    padding: 32px 24px;
 }
+
 .topic-card {
-    background: #fff;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
     padding: 16px;
     transition: transform 0.2s ease;
     max-width: 600px;             /* 限制宽度 */
@@ -1311,7 +1316,7 @@ html[data-bg="lightsout"] {
 }
 
 .topic-card:hover {
-    transform: translateY(-3px);
+    background-color: var(--bg-hover);
 }
 
 .topic-header {
@@ -1391,16 +1396,18 @@ html[data-bg="lightsout"] {
 .ai-trend-actions {
     display: flex;
     justify-content: center;
-    margin-top: 20px;
 }
 
 .ai-trend-confirm-btn {
-    padding: 10px 24px;
-    background-color: #007bff;
-    color: #fff;
+    background-color: rgb(29, 155, 240);
+    border-radius: 999px;
+    align-content: center;
+    justify-content: center;
+    padding: 12px 32px;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
     border: none;
-    border-radius: 6px;
-    font-size: 16px;
     cursor: pointer;
     transition: background 0.2s ease;
 }
