@@ -149,7 +149,7 @@
                     </span>
             </div>
 
-            <div class="ai-trend-by-grok" style="display: none">
+            <div class="ai-trend-by-grok each-tweet-rightBox" style="display: none">
                 <div class="btn-ai-trend-of-category">
                     <span>Category Trend By AI</span>
                 </div>
@@ -486,14 +486,12 @@
         <div class="global-wait-overlay-inner">
 
             <div style="display:flex; justify-content:center; margin-top:6px;">
-                <div aria-hidden="true" style="width:56px; height:56px;">
-                    <svg viewBox="0 0 50 50"
-                         style="width:100%; height:100%; transform-origin:50% 50%; animation: gwait-spin 0.9s linear infinite;">
-                        <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-opacity=".18" stroke-width="6"
-                                fill="none"/>
-                        <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="6" fill="none"
-                                stroke-linecap="round" style="stroke-dasharray: 88 188;"/>
-                    </svg>
+                <div class="ai-loading-container">
+                    <div class="ai-loading-dot ai-loading-dot1"></div>
+                    <div class="ai-loading-dot ai-loading-dot2"></div>
+                    <div class="ai-loading-dot ai-loading-dot3"></div>
+                    <div class="ai-loading-dot ai-loading-dot4"></div>
+                    <div class="ai-loading-dot ai-loading-dot5"></div>
                 </div>
             </div>
 
@@ -507,37 +505,41 @@
 
 <div class="ai-trend-result" id="ai-trend-result">
     <!-- 每个话题卡片 -->
-    <div class="topic-card">
-        <div class="topic-header">
-            <h3 class="topic-name">美国政府停摆</h3>
-            <span class="topic-score">92 分</span>
-        </div>
-        <p class="topic-desc"></p>
+    <div class="topic-card-background">
+        <div class="topic-card">
+            <div class="topic-header">
+                <h3 class="topic-name">美国政府停摆</h3>
+                <div>
+                    <span class="topic-score">92</span>
+                    <span style="font-size: 14px; font-weight: 400; color: #555">分</span>
+                </div>
+            </div>
+            <p class="topic-desc"></p>
 
-        <div class="topic-meta">
+            <div class="topic-meta">
 
             <span class="topic-factor">
                 <span class="topic-factor-title">主要驱动因素</span>：
                 <b class="topic-main-factor"></b>
             </span>
 
-            <span>
+                <span>
                 <span class="topic-participation-title">参与度</span>：
                 <span class="topic-participation">12/72</span>
             </span>
 
-        </div>
+            </div>
 
-        <div class="topic-accounts">
-            <div class="account">
-                <a class="account-name" target="_blank" rel="noopener noreferrer">@ABC</a>
-                <span class="account-post">123</span>
+            <div class="topic-accounts">
+                <div class="account">
+                    <a class="account-name" target="_blank" rel="noopener noreferrer">@ABC</a>
+                    <span class="account-post">123</span>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div class="ai-trend-actions">
-        <button class="ai-trend-confirm-btn">确定</button>
+        <div class="ai-trend-actions">
+            <button class="ai-trend-confirm-btn">确定</button>
+        </div>
     </div>
 
 </div>

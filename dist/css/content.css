@@ -1325,12 +1325,9 @@ html[data-bg="lightsout"] {
 }
 
 .topic-score {
-    background: #007bff;
-    color: #fff;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 0.9em;
+    color: #007bff;
+    font-size: 32px;
+   font-weight: 700;
 }
 
 .topic-desc {
@@ -1414,5 +1411,31 @@ html[data-bg="lightsout"] {
     from { opacity: 0; transform: translateY(-20px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+.ai-loading-container {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    animation: ai-loading-spin 1.2s linear infinite;
+}
 
+.ai-loading-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    margin: -6px; /* 一半尺寸，保证中心对齐 */
+    border-radius: 50%;
+}
 
+.ai-loading-dot1 { background: #ff6b91; transform: rotate(0deg) translate(18px); }
+.ai-loading-dot2 { background: #46adff; transform: rotate(72deg) translate(18px); }
+.ai-loading-dot3 { background: #7d65f3; transform: rotate(144deg) translate(18px); }
+.ai-loading-dot4 { background: #ffdb3a; transform: rotate(216deg) translate(18px); }
+.ai-loading-dot5 { background: #1dd6c6; transform: rotate(288deg) translate(18px); }
+
+@keyframes ai-loading-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+}

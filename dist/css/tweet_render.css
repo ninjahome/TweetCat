@@ -295,10 +295,18 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     font-weight: 700;
 }
 
-.new-tweet-notification {
+.new-tweet-notification,
+.ai-trend-by-grok {
     padding: 16px;
 }
-
+.ai-trend-by-grok{
+    background-color: #1D9BF0;
+}
+.btn-ai-trend-of-category {
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+}
 /* ===== TweetCat Quoted (tcq-) 基础骨架：阶段0 ===== */
 
 .tcq-quoted-root {
