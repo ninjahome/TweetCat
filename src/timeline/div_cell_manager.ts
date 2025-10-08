@@ -140,13 +140,15 @@ export class TweetManager {
 
         let result: MountResult;
         if (centerIdx === null) result = await this.fastMountBatch(viewStart);
-        else result = await this.normalMountBatch(centerIdx);
+        else{
+            result = await this.normalMountBatch(centerIdx);
 
-        const needAdjustBottom = this.checkBoundaryAdjust();
+            const needAdjustBottom = this.checkBoundaryAdjust();
 
-        if (needAdjustBottom) {
-            console.log("--------->>>bottom needs adjust");
-            result = await this.appendBottomTweets();
+            if (needAdjustBottom) {
+                console.log("--------->>>bottom needs adjust");
+                result = await this.appendBottomTweets();
+            }
         }
 
         return result;
