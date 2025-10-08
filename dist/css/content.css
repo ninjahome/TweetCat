@@ -1422,8 +1422,13 @@ html[data-bg="lightsout"] {
 }
 .filter-menu-on-main {
     position: absolute;
-    left: -32px;
+    right: calc(100% + 24px);
     top: 3px;
+}
+.filter-menu-on-main::after {
+    content: "";
+    display: inline-block;
+    width: 4px;   /* 固定间距 */
 }
 
 /* 弹出动画 */
