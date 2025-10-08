@@ -260,7 +260,7 @@ function showResult(text: string) {
 
     const actionsClone = actions.cloneNode(true) as HTMLElement;
     const confirmBtn = actionsClone.querySelector(".ai-trend-confirm-btn") as HTMLButtonElement;
-    confirmBtn.innerText = "确定";
+    confirmBtn.innerText = t('confirm')//"确定";
     confirmBtn.addEventListener('click', () => {
         aiTrendResult.remove();
     });
