@@ -892,6 +892,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     border: 1px solid var(--border-subtle);
     border-radius: var(--card-radius);
     box-shadow: var(--tweet-toast-shadow);
+    min-width: 260px;
 }
 
 .tw-dialog-header {
@@ -948,7 +949,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     transition: background var(--tweet-toast-speed);
 }
 .tw-dialog-btn-confirm {
-    border-color: transparent;
+    borde: none;
     background: var(--accent);
     color: #fff;
 }

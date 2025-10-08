@@ -1418,7 +1418,8 @@ html[data-bg="lightsout"] {
 }
 
 .ai-trend-confirm-btn:hover {
-    background-color: #0056b3;
+    background: var(--accent-subtle);
+    color: var(--accent);
 }
 .filter-menu-on-main {
     position: absolute;
