@@ -1256,8 +1256,8 @@ html[data-bg="lightsout"] {
     min-width: 260px;
     max-width: min(92vw, 520px);
     border-radius: 16px;
-    background: rgba(255,255,255,0.95);
-    color: #111;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     box-shadow: 0 10px 40px rgba(0,0,0,0.25);
     padding: 20px 24px;
     text-align: center;
@@ -1271,7 +1271,7 @@ html[data-bg="lightsout"] {
     line-height: 1.55;
     max-height: 40vh;
     overflow: auto;
-    background: rgba(0,0,0,0.04);
+    background-color: var(--bg-hover);
     padding: 10px 12px;
     border-radius: 10px;
     white-space: pre-wrap;
@@ -1300,7 +1300,7 @@ html[data-bg="lightsout"] {
     align-items: center;
     gap: 12px;
     border-radius: 16px;
-    padding: 32px 24px;
+    padding: 32px 0;
 }
 
 .topic-card {
@@ -1340,7 +1340,7 @@ html[data-bg="lightsout"] {
 
 .topic-desc {
     margin: 6px 0 10px;
-    color: #333;
+    color: var(--text-primary);
     line-height: 1.4;
 }
 
@@ -1360,7 +1360,7 @@ html[data-bg="lightsout"] {
 .topic-participation {
     font-weight: bold;
     color: #007bff;
-    background: #eaf2ff;
+    background: var(--bg-hover);
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.85em;
@@ -1368,10 +1368,15 @@ html[data-bg="lightsout"] {
 }
 
 .topic-accounts {
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border-subtle);
     padding-top: 8px;
 }
 
+.topic-factor,
+.topic-participation-title,
+.account-post {
+    color: var(--text-secondary);
+}
 .account {
     margin-top: 6px;
 }
@@ -1453,4 +1458,9 @@ html[data-bg="lightsout"] {
     from { transform: rotate(0deg); }
     to   { transform: rotate(360deg); }
 }
+
+@media (prefers-color-scheme: dark) {
+    .ai-trend-result {
+        background-color: rgba(255, 255, 255, 0.5); /* 夜间模式反色 */
+    }
 }
