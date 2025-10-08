@@ -1293,7 +1293,10 @@ html[data-bg="lightsout"] {
     padding: 12px;
     z-index: 9999;                /* 确保在最前 */
 }
-
+.topic-card-background {
+    background-color: white;
+    max-width: 800px;
+}
 .topic-card {
     background: #fff;
     border-radius: 10px;
