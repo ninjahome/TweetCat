@@ -357,21 +357,6 @@ export class TweetManager {
         return {needScroll: needScroll, targetTop: window.scrollY + anchorDelta};
     }
 
-    async insertTopTweets(): Promise<MountResult> {
-        const endIdx = this.lastWindow!.s;
-        let startIdx = Math.max(0, endIdx - TweetManager.MIN_TWEETS_COUNT);
-        let offset = this.offsets[endIdx];
-        if (!offset) return {needScroll: false};
-
-        let anchorOffset = offset
-        this.mountCells(startIdx, endIdx, offset);
-        const anchorDelta = this.offsets[endIdx] - anchorOffset;
-        logTweetMgn(`[insertTopTweets] done, listHeight=${this.listHeight}, scrollTop=${window.scrollY} anchorDelta=${anchorDelta}`);
-        const needScroll = Math.abs(anchorDelta) >= 10;
-
-        return {needScroll: needScroll, targetTop: window.scrollY + anchorDelta};
-    }
-
     private reorderMountedNodes(startIdx: number, endIndex: number) {
         const fragment = document.createDocumentFragment();
         for (let i = startIdx; i < endIndex; i++) {

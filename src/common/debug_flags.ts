@@ -3,9 +3,9 @@ const __DEV__ = process.env.NODE_ENV !== 'production'
 
 export const DBG = {
     MOUNT: false,
-    VIS: false,
+    VIS: true,
     PAGER: false,
-    TWEET_MANAGER: false,
+    TWEET_MANAGER: true,
     NODE_POOL: false,
     ROUTE: false,
     GUARD: false,
