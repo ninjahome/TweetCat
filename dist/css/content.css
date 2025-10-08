@@ -2,6 +2,10 @@ img, video {
     border-radius: 16px;
 }
 
+a {
+    text-decoration:none;
+}
+
 .tweetCatMenuItem-contain:hover {
     background-color: #e7e7e8;
     border-radius: 9999px;
