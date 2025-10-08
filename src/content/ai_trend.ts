@@ -217,7 +217,9 @@ function showResult(text: string) {
 
     const topicCard = aiTrendTemplate.querySelector(".topic-card") as HTMLElement;
     const actions = aiTrendTemplate.querySelector(".ai-trend-actions") as HTMLElement;
-    aiTrendResult.querySelector(".topic-card-background").innerHTML = '';
+
+    const backgroundDiv = aiTrendResult.querySelector(".topic-card-background");
+    backgroundDiv.innerHTML = '';
 
     data.topics.forEach((topic: any) => {
         const clone = topicCard.cloneNode(true) as HTMLElement;
@@ -253,7 +255,7 @@ function showResult(text: string) {
             accountDiv.appendChild(accountClone);
         });
 
-        aiTrendResult.appendChild(clone);
+        backgroundDiv.appendChild(clone);
     });
 
     const actionsClone = actions.cloneNode(true) as HTMLElement;
@@ -263,7 +265,7 @@ function showResult(text: string) {
         aiTrendResult.remove();
     });
 
-    aiTrendResult.appendChild(actionsClone);
+    backgroundDiv.appendChild(actionsClone);
 
     document.body.prepend(aiTrendResult);
 }
