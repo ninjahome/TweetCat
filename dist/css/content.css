@@ -1421,12 +1421,14 @@ html[data-bg="lightsout"] {
     background: var(--accent-subtle);
     color: var(--accent);
 }
-.filter-menu-on-main {
+
+.filter-menu-on-follow {
     position: absolute;
     right: calc(100% + 24px);
     top: 3px;
 }
-.filter-menu-on-main::after {
+
+.filter-menu-on-follow ::after {
     content: "";
     display: inline-block;
     width: 4px;   /* 固定间距 */
