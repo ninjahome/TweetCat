@@ -1415,6 +1415,11 @@ html[data-bg="lightsout"] {
 .ai-trend-confirm-btn:hover {
     background-color: #0056b3;
 }
+.filter-menu-on-main {
+    position: absolute;
+    left: -32px;
+    top: 3px;
+}
 
 /* 弹出动画 */
 @keyframes fadeIn {
