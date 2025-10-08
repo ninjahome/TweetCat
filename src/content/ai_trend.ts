@@ -5,6 +5,7 @@ import {addGrokResponse, createGrokConversation} from "../timeline/twitter_api";
 import {defaultAllCategoryID} from "../common/consts";
 import {logATA} from "../common/debug_flags";
 import {sleep} from "../common/utils";
+
 const basePrompts = {
     chinese: `
 请分析以下 X 平台账号在最近 24 小时的发帖内容，找出最热的三个话题，并严格以 JSON 格式输出。
@@ -207,7 +208,7 @@ function showResult(text: string) {
 
     const data = JSON.parse(text);
     if (!data.topics || data.topics.length === 0) throw new Error("Invalid Result");
-    console.log("最终text结果:",text," \n转换为结构体：", data);
+    console.log("最终text结果:", text, " \n转换为结构体：", data);
 
     const aiTrendTemplate = document.getElementById("ai-trend-result")!;
     const aiTrendResult = aiTrendTemplate.cloneNode(true) as HTMLElement;
@@ -216,7 +217,7 @@ function showResult(text: string) {
 
     const topicCard = aiTrendTemplate.querySelector(".topic-card") as HTMLElement;
     const actions = aiTrendTemplate.querySelector(".ai-trend-actions") as HTMLElement;
-    aiTrendResult.innerHTML = '';
+    aiTrendResult.querySelector(".topic-card-background").innerHTML = '';
 
     data.topics.forEach((topic: any) => {
         const clone = topicCard.cloneNode(true) as HTMLElement;
@@ -228,7 +229,8 @@ function showResult(text: string) {
 
         (clone.querySelector(".topic-name") as HTMLElement).innerText = topicName;
         (clone.querySelector(".topic-desc") as HTMLElement).innerText = topicDesc;
-        (clone.querySelector(".topic-score") as HTMLElement).innerText = topic.score + " " + t('sccore');
+        (clone.querySelector(".topic-score") as HTMLElement).innerText = topic.score;
+        (clone.querySelector(".topic-score-score") as HTMLElement).innerText = t('sccore');
         (clone.querySelector(".topic-main-factor") as HTMLElement).innerText = topic.main_factor;
         (clone.querySelector(".topic-participation") as HTMLElement).innerText = topic.participation;
 
