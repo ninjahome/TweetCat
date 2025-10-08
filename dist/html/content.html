@@ -136,7 +136,7 @@
 
             <div class="trending-tweet each-tweet-rightBox">
                 <div>
-            <span class="tweet-title">__MSG_web3_coming__</span>
+                    <span class="tweet-title">__MSG_web3_coming__</span>
                 </div>
             </div>
 
@@ -147,6 +147,12 @@
                     <span class="tweet-no-wrapper">
                         You have <span class="tweet-no"></span> new tweets
                     </span>
+            </div>
+
+            <div class="ai-trend-by-grok" style="display: none">
+                <div class="btn-ai-trend-of-category">
+                    <span>Category Trend By AI</span>
+                </div>
             </div>
 
             <div class="download-progress-item" style="display: none" data-filename="">
@@ -288,7 +294,8 @@
                                           fill="#A9A9A9" p-id="1480"></path>
                                 </svg>
                             </div>
-                            <button class="downloadVideo" type="button" title="" style="border: none; background: none;">
+                            <button class="downloadVideo" type="button" title=""
+                                    style="border: none; background: none;">
                                 <span class="download-txt">下载视频</span>
                             </button>
                         </div>
@@ -453,7 +460,7 @@
     <span class="tweet-toast__msg">已添加到你的书签</span>
 </div>
 
-<div class="tw-dialog-overlay">
+<div class="tw-dialog-overlay" id="tw-dialog-overlay">
     <div class="tw-dialog-panel">
         <div class="tw-dialog-header">
             <h2 class="tw-dialog-title">这是标题</h2>
@@ -464,10 +471,73 @@
             </button>
         </div>
         <div class="tw-dialog-content">
-            <p class="tw-dialog-text">这里是文本内容。这里是文本内容。这里是文本内容。这里是文本内容。这里是文本内容。这里是文本内容。这里是文本内容。</p>
+            <p class="tw-dialog-text">这里是文本内容。</p>
         </div>
         <div class="tw-dialog-buttons">
             <button class="tw-dialog-btn tw-dialog-btn-confirm">确认</button>
         </div>
     </div>
+</div>
+
+
+<div id="global-wait-overlay" role="dialog" aria-modal="true" aria-labelledby="wait-title"
+     aria-describedby="wait-desc" aria-busy="true" tabindex="-1" class="global-wait-overlay-background">
+    <div class="global-wait-overlay-outer">
+        <div class="global-wait-overlay-inner">
+
+            <div style="display:flex; justify-content:center; margin-top:6px;">
+                <div aria-hidden="true" style="width:56px; height:56px;">
+                    <svg viewBox="0 0 50 50"
+                         style="width:100%; height:100%; transform-origin:50% 50%; animation: gwait-spin 0.9s linear infinite;">
+                        <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-opacity=".18" stroke-width="6"
+                                fill="none"/>
+                        <circle cx="25" cy="25" r="20" stroke="currentColor" stroke-width="6" fill="none"
+                                stroke-linecap="round" style="stroke-dasharray: 88 188;"/>
+                    </svg>
+                </div>
+            </div>
+
+            <h2 id="wait-title" class="wait-title" style="margin: 12px 0 4px; font-size: 16px; font-weight: 700;">
+                正在处理… </h2>
+            <div id="global-wait-detail" class="global-wait-detail" aria-live="polite">初始化中…</div>
+
+        </div>
+    </div>
+</div>
+
+<div class="ai-trend-result" id="ai-trend-result">
+    <!-- 每个话题卡片 -->
+    <div class="topic-card">
+        <div class="topic-header">
+            <h3 class="topic-name">美国政府停摆</h3>
+            <span class="topic-score">92 分</span>
+        </div>
+        <p class="topic-desc"></p>
+
+        <div class="topic-meta">
+
+            <span class="topic-factor">
+                <span class="topic-factor-title">主要驱动因素</span>：
+                <b class="topic-main-factor"></b>
+            </span>
+
+            <span>
+                <span class="topic-participation-title">参与度</span>：
+                <span class="topic-participation">12/72</span>
+            </span>
+
+        </div>
+
+        <div class="topic-accounts">
+            <div class="account">
+                <a class="account-name" target="_blank" rel="noopener noreferrer">@ABC</a>
+                <span class="account-post">123</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="ai-trend-actions">
+        <button class="ai-trend-confirm-btn">确定</button>
+    </div>
+
 </div>

@@ -2,11 +2,12 @@ import {sendMsgToService} from "../common/utils";
 import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
 import {EntryObj} from "../timeline/tweet_entry";
 import {switchCategory} from "./tweetcat_timeline";
-import {Category, queryCategoriesFromBG} from "../object/category";
+import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {parseContentHtml} from "./main_entrance";
 import {t} from "../common/i18n";
+import {grokConversation} from "./ai_trend";
 
 const defaultCatPointColor = '#B9CAD3';
 
@@ -33,6 +34,7 @@ const onNewestNotificationClick = async (ev: Event) => {
     notificationContainer.style.display = "none";
     await switchCategory(defaultAllCategoryID);
     setSelectedCategory(defaultAllCategoryID);
+    await showAITrendBtn(defaultAllCategoryID);
 };
 
 export async function showNewestTweets(tweets: EntryObj[]) {
@@ -64,11 +66,13 @@ export function resetNewestTweet() {
 export async function resetCategories() {
     await switchCategory(defaultAllCategoryID);
     setSelectedCategory(defaultAllCategoryID);
+    await showAITrendBtn(defaultAllCategoryID);
 }
 
 export async function changeFilterType(catId: number) {
     await switchCategory(catId);
     setSelectedCategory(catId);
+    await showAITrendBtn(catId);
 }
 
 export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main: HTMLElement) {
@@ -88,7 +92,12 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
     container.appendChild(filterContainerDiv);
 
     const categories = await queryCategoriesFromBG();
-    populateCategoryArea(tpl, categories, filterContainerDiv)
+    populateCategoryArea(tpl, categories, filterContainerDiv);
+
+    const AIBtn = document.querySelector(".btn-ai-trend-of-category") as HTMLElement;
+    AIBtn.addEventListener('click', () => {
+        grokConversation();
+    })
 }
 
 function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], container: HTMLElement) {
@@ -116,15 +125,17 @@ function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], 
 
     moreBtn.querySelector(".category-filter-more-btn")!.addEventListener('click', addMoreCategory);
     container.appendChild(moreBtn);
-    logTPR("✅ ------>>> add filter container success")
-    setSelectedCategory(getSessCatID());
+    const savedCatID = getSessCatID();
+    logTPR("✅ ------>>> add filter container success, category id is:", savedCatID)
+    setSelectedCategory(savedCatID);
+    showAITrendBtn(savedCatID).then();
 }
 
 export async function reloadCategoryContainer(categories: Category[]) {
     const container = document.querySelector(".category-filter-container") as HTMLElement
     if (!container) {
         console.warn("🚨------>>> failed to find tweet cat filter area");
-        return
+        return;
     }
     container.innerHTML = '';
     const tpl = await parseContentHtml("html/content.html");
@@ -134,6 +145,7 @@ export async function reloadCategoryContainer(categories: Category[]) {
     if (!target) {
         await switchCategory(defaultAllCategoryID);
         setSelectedCategory(defaultAllCategoryID);
+        await showAITrendBtn(defaultAllCategoryID);
     }
 }
 
@@ -158,7 +170,7 @@ export function onVideoDownloadStart(total: number, filename: string, controller
 
     (processBar.querySelector(".dpi-name") as HTMLSpanElement).innerText = filename;
     const cancelBtn = processBar.querySelector(".dpi-cancel") as HTMLButtonElement;
-    cancelBtn.innerText=t('cancel');
+    cancelBtn.innerText = t('cancel');
     cancelBtn.addEventListener('click', () => {
         try {
             controller.abort();
@@ -222,3 +234,23 @@ export function onVideoDownloadAbort(filename: string) {
 export function onVideoDownloadSuccess(filename: string) {
     finalize(filename);
 }
+
+
+async function showAITrendBtn(catId: number) {
+    const AIBtn = document.querySelector(".ai-trend-by-grok") as HTMLElement;
+    if (!AIBtn) {
+        console.warn("AIBtn not found");
+        return;
+    }
+
+    AIBtn.dataset.currentID = catId + '';
+    if (catId === defaultAllCategoryID) AIBtn.style.display = 'none';
+    else {
+        AIBtn.style.display = 'block';
+        const category = await queryCategoryById(catId);
+        const AIBtnText = AIBtn.querySelector(".btn-ai-trend-of-category span") as HTMLSpanElement;
+        AIBtnText.innerText = t('ai_trend_btn') + `(${category.catName})`;
+    }
+
+}
+

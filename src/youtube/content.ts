@@ -21,7 +21,7 @@ import {logYT} from "../common/debug_flags";
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
 async function onDocumentLoaded() {
-    watchMicroformat();
+    // watchMicroformat();
 }
 
 

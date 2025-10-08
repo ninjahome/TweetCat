@@ -30,20 +30,45 @@ function bindTweetCatMenu(menuItem: HTMLElement, area: HTMLElement, originalArea
     });
 }
 
-let mounted = false;
-
-export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTemplateElement, main: HTMLElement) {
-    const menuItem = tpl.content.getElementById('tweetCatMenuItem')!.cloneNode(true) as HTMLElement;
-    const area = tpl.content.getElementById('tweetCatArea')!.cloneNode(true) as HTMLElement;
-    area.style.display = 'none';
-    area.querySelector<HTMLElement>(".tweet-title")!.innerText = t('web3_coming');
-
+function prepareElementOfWeb3(tpl: HTMLTemplateElement){
     const toastForFavorite = tpl.content.getElementById('tweet-toast')!.cloneNode(true) as HTMLElement;
     document.body.appendChild(toastForFavorite);
     toastForFavorite.style.display = 'none';
 
     let imageScaleDiv = tpl.content.getElementById("tcqPhotoLightbox")!.cloneNode(true) as HTMLElement;
     document.body.appendChild(imageScaleDiv);
+
+    let dialogDiv = tpl.content.getElementById("tw-dialog-overlay")!.cloneNode(true) as HTMLElement;
+    document.body.appendChild(dialogDiv);
+    (dialogDiv.querySelector(".tw-dialog-btn-confirm") as HTMLElement).innerText = t('confirm');
+    dialogDiv.style.setProperty('display', 'none', 'important');
+    const dialogClose = dialogDiv.querySelector(".tw-dialog-close") as HTMLButtonElement;
+    dialogClose.addEventListener('click', () => {
+        dialogDiv.style.setProperty('display', 'none', 'important');
+    })
+
+    let waitingOverlay = tpl.content.getElementById("global-wait-overlay")!.cloneNode(true) as HTMLElement;
+    (waitingOverlay.querySelector(".wait-title") as HTMLElement).innerText = t('wait_title');
+    document.body.appendChild(waitingOverlay);
+
+    let aiTrend = tpl.content.getElementById("ai-trend-result")!.cloneNode(true) as HTMLElement;
+    aiTrend.style.display='none';
+    (aiTrend.querySelector(".topic-factor-title") as HTMLElement).innerText = t('topic_factor_title');
+    (aiTrend.querySelector(".topic-participation-title") as HTMLElement).innerText = t('topic_participation_title');
+
+    document.body.appendChild(aiTrend);
+}
+
+let mounted = false;
+
+export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTemplateElement, main: HTMLElement) {
+
+    prepareElementOfWeb3(tpl);
+
+    const menuItem = tpl.content.getElementById('tweetCatMenuItem')!.cloneNode(true) as HTMLElement;
+    const area = tpl.content.getElementById('tweetCatArea')!.cloneNode(true) as HTMLElement;
+    area.style.display = 'none';
+    area.querySelector<HTMLElement>(".tweet-title")!.innerText = t('web3_coming');
 
     const originalArea = main.firstChild as HTMLElement;
 
@@ -56,7 +81,6 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     menuList.insertBefore(menuItem, menuList.children[1]);
     main.insertBefore(area, originalArea);
 
-    /* ---------- 生命周期 ----------------------------- */
     window.addEventListener(MsgType.RouterTCMount, () => {
         tcMount(area, originalArea, tpl);
         menuItem.classList.add("tc-selected")
@@ -94,7 +118,7 @@ function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplate
     showTweetCatArea(area);
     logGuard('<< tc-tcMount >>');
 
-    deferByFrames(()=>{
+    deferByFrames(() => {
         swapSvgToNormal();
         demoteGrokFont();
     }, 2);
@@ -201,9 +225,9 @@ function showTweetCatArea(el: HTMLElement) {
 }
 
 
- /* ------------------------------------------------------------
- * Grok 字体细体 / 粗体切换工具
- * ------------------------------------------------------------ */
+/* ------------------------------------------------------------
+* Grok 字体细体 / 粗体切换工具
+* ------------------------------------------------------------ */
 const GROK_LINK_SELECTOR = 'a[href="/i/grok"]';
 const GROK_TEXT_CONTAINER_SEL = 'div[dir="ltr"]';
 const GROK_BOLD_CLASS = 'r-b88u0q';

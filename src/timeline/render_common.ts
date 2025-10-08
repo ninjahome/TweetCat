@@ -1,5 +1,5 @@
 import {setTweetCatFlag} from "./route_helper";
-import { t } from "../common/i18n";
+import {t} from "../common/i18n";
 
 export function isTwitterStatusUrl(href: string | undefined): boolean {
     if (!href) return false;
@@ -105,4 +105,24 @@ export function indexToGrade(idx: number, total: number): string {
     if (idx === 0) return t('quality_low');
     if (idx === total - 1) return t('quality_high');
     return t('quality_mid');
+}
+
+type DialogCallback = () => void | Promise<void>;
+
+export function showDialog(title: string, content: string, callback?: DialogCallback) {
+
+    const dialog = document.getElementById("tw-dialog-overlay") as HTMLElement;
+    if (!dialog) return;
+
+    (dialog.querySelector(".tw-dialog-title") as HTMLElement).innerText = title;
+    (dialog.querySelector(".tw-dialog-text") as HTMLElement).innerText = content;
+
+    dialog.style.setProperty('display', 'flex', 'important');
+
+    const dialogConfirm = dialog.querySelector(".tw-dialog-btn-confirm") as HTMLButtonElement;
+    dialogConfirm.addEventListener('click', async () => {
+        dialog.style.setProperty('display', 'none', 'important');
+        await callback?.()
+    }, {once: true});
+
 }

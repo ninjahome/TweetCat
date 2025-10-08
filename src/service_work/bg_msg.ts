@@ -20,7 +20,7 @@ import {timerKolInQueueImmediate} from "./bg_timer";
 import {tweetFM} from "./tweet_fetch_manager";
 import {penalize429, useTokenByUser} from "./api_bucket_state";
 import {addBlockedAdsNumber} from "../object/system_setting";
-import {checkLocalApp, openLocalApp, videoMetaGot} from "./local_app";
+import {checkLocalApp, openLocalApp} from "./local_app";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -149,11 +149,6 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.AdsBlockSuccess: {
             await addBlockedAdsNumber()
-            return {success: true};
-        }
-
-        case MsgType.YTVideoMetaGot: {
-            await videoMetaGot(request.data);
             return {success: true};
         }
 
