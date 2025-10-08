@@ -415,6 +415,8 @@ async function catMenuForFlowerPage(divNode: HTMLDivElement) {
 
     const clone = __menuBtnDiv.cloneNode(true) as HTMLElement;
     clone.setAttribute('id', "");
+    clone.classList.remove("filter-menu-on-main");
+    clone.classList.add("filter-menu-on-follow");
     setCatMenu(kolName, clone).then();
     toolDiv.insertBefore(clone, toolDiv.firstChild);
 
