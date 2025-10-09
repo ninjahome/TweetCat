@@ -94,7 +94,6 @@ async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): 
         payments_enabled: false,
     }));
 
-
     const fieldToggles = encodeURIComponent(JSON.stringify({
         "withArticlePlainText": false
     }));
