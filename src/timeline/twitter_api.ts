@@ -1,5 +1,5 @@
-import {extractMissingFeature, getBearerToken} from "../common/utils";
-import {localGet} from "../common/local_storage";
+import {getBearerToken} from "../common/utils";
+import {localGet, localSet} from "../common/local_storage";
 import {
     __DBK_query_id_map,
     BlueVerifiedFollowers, Bookmarks, CreateBookmark, CreateGrokConversation, DeleteBookmark,
@@ -17,6 +17,7 @@ import {
 } from "./tweet_entry";
 import {getTransactionIdFor} from "../content/txid";
 import {logATA} from "../common/debug_flags";
+import {buildFeatures, extractMissingFeature} from "./feature_manager";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(
@@ -48,52 +49,12 @@ async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): 
         withVoice: true
     };
 
-    // 添加 cursor 参数（如果存在）
     if (cursor) {
         variablesObj.cursor = cursor;
     }
 
     const variables = encodeURIComponent(JSON.stringify(variablesObj));
-
-    const features = encodeURIComponent(JSON.stringify({
-        responsive_web_grok_imagine_annotation_enabled: true,
-        rweb_xchat_enabled: false,
-        rweb_video_screen_enabled: false,
-        profile_label_improvements_pcf_label_in_post_enabled: true,
-        rweb_tipjar_consumption_enabled: true,
-        responsive_web_graphql_exclude_directive_enabled: true,
-        verified_phone_label_enabled: false,
-        creator_subscriptions_tweet_preview_api_enabled: true,
-        responsive_web_graphql_timeline_navigation_enabled: true,
-        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        premium_content_api_read_enabled: false,
-        communities_web_enable_tweet_community_results_fetch: true,
-        c9s_tweet_anatomy_moderator_badge_enabled: true,
-        responsive_web_grok_analyze_button_fetch_trends_enabled: false,
-        responsive_web_grok_analyze_post_followups_enabled: true,
-        responsive_web_jetfuel_frame: false,
-        responsive_web_grok_share_attachment_enabled: true,
-        articles_preview_enabled: true,
-        responsive_web_edit_tweet_api_enabled: true,
-        graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
-        view_counts_everywhere_api_enabled: true,
-        longform_notetweets_consumption_enabled: true,
-        responsive_web_twitter_article_tweet_consumption_enabled: true,
-        tweet_awards_web_tipping_enabled: false,
-        responsive_web_grok_show_grok_translated_post: false,
-        responsive_web_grok_analysis_button_from_backend: true,
-        creator_subscriptions_quote_tweet_preview_enabled: false,
-        freedom_of_speech_not_reach_fetch_enabled: true,
-        standardized_nudges_misinfo: true,
-        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
-        longform_notetweets_rich_text_read_enabled: true,
-        longform_notetweets_inline_media_enabled: true,
-        responsive_web_grok_image_annotation_enabled: true,
-        responsive_web_enhance_cards_enabled: false,
-        responsive_web_grok_community_note_auto_translation_is_enabled: true,
-        payments_enabled: false,
-    }));
-
+    const features = encodeURIComponent(JSON.stringify(await buildFeatures("tweets")));
     const fieldToggles = encodeURIComponent(JSON.stringify({
         "withArticlePlainText": false
     }));
@@ -138,23 +99,7 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
         screen_name: username,
     };
 
-    const features = {
-        responsive_web_grok_bio_auto_translation_is_enabled: false,
-        hidden_profile_subscriptions_enabled: true,
-        payments_enabled: false,
-        profile_label_improvements_pcf_label_in_post_enabled: true,
-        rweb_tipjar_consumption_enabled: true,
-        verified_phone_label_enabled: false,
-        subscriptions_verification_info_is_identity_verified_enabled: true,
-        subscriptions_verification_info_verified_since_enabled: true,
-        highlights_tweets_tab_ui_enabled: true,
-        responsive_web_twitter_article_notes_tab_enabled: true,
-        subscriptions_feature_can_gift_premium: true,
-        creator_subscriptions_tweet_preview_api_enabled: true,
-        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        responsive_web_graphql_timeline_navigation_enabled: true,
-        rweb_xchat_enabled: false,
-    };
+    const features = await buildFeatures("user");
 
     const fieldToggles = {
         withAuxiliaryUserLabels: true,
@@ -199,8 +144,8 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
 
     if (!response.ok) {
         const errorText = await response.text();
-        const missing_param = extractMissingFeature(errorText);
-        console.log("------>>> missing param:", missing_param)
+        const missing_param = await extractMissingFeature(errorText);
+        console.log("------>>> fetchTweets missing param:", missing_param);
         throw new Error(`HTTP error ${response.status}: ${errorText}`);
     }
     const result = await response.json();
@@ -225,45 +170,7 @@ async function buildFollowingURL(params: {
     };
     if (params.cursor) variables.cursor = params.cursor;
 
-    // features 建议与页面抓到的保持一致；这里给出一个稳定子集即可
-    const features = {
-        rweb_video_screen_enabled: false,
-        payments_enabled: false,
-        rweb_xchat_enabled: false,
-        profile_label_improvements_pcf_label_in_post_enabled: true,
-        rweb_tipjar_consumption_enabled: true,
-        verified_phone_label_enabled: false,
-        creator_subscriptions_tweet_preview_api_enabled: true,
-        responsive_web_graphql_timeline_navigation_enabled: true,
-        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        premium_content_api_read_enabled: false,
-        communities_web_enable_tweet_community_results_fetch: true,
-        c9s_tweet_anatomy_moderator_badge_enabled: true,
-        responsive_web_grok_analyze_button_fetch_trends_enabled: false,
-        responsive_web_grok_analyze_post_followups_enabled: true,
-        responsive_web_jetfuel_frame: true,
-        responsive_web_grok_share_attachment_enabled: true,
-        articles_preview_enabled: true,
-        responsive_web_edit_tweet_api_enabled: true,
-        graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
-        view_counts_everywhere_api_enabled: true,
-        longform_notetweets_consumption_enabled: true,
-        responsive_web_twitter_article_tweet_consumption_enabled: true,
-        tweet_awards_web_tipping_enabled: false,
-        responsive_web_grok_show_grok_translated_post: false,
-        responsive_web_grok_analysis_button_from_backend: true,
-        creator_subscriptions_quote_tweet_preview_enabled: false,
-        freedom_of_speech_not_reach_fetch_enabled: true,
-        standardized_nudges_misinfo: true,
-        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
-        longform_notetweets_rich_text_read_enabled: true,
-        longform_notetweets_inline_media_enabled: true,
-        responsive_web_grok_image_annotation_enabled: true,
-        responsive_web_grok_imagine_annotation_enabled: true,
-        responsive_web_grok_community_note_auto_translation_is_enabled: false,
-        responsive_web_enhance_cards_enabled: false,
-    };
-
+    const features = encodeURIComponent(JSON.stringify(await buildFeatures("follow")));
     return `${bp.url}?variables=${encodeURIComponent(JSON.stringify(variables))}`
         + `&features=${encodeURIComponent(JSON.stringify(features))}`;
 }
@@ -292,7 +199,7 @@ export async function fetchFollowingPage(
 /**
  * 构造 Followers 请求 URL
  */
-function buildFollowersUrl(userId: string, count = 20, cursor?: string): string {
+async function buildFollowersUrl(userId: string, count = 20, cursor?: string): Promise<string> {
     const variablesObj: any = {
         userId,
         count,
@@ -302,45 +209,7 @@ function buildFollowersUrl(userId: string, count = 20, cursor?: string): string 
     if (cursor) variablesObj.cursor = cursor;
     const variables = encodeURIComponent(JSON.stringify(variablesObj));
 
-    const featuresObj = {
-        rweb_video_screen_enabled: false,
-        payments_enabled: false,
-        rweb_xchat_enabled: false,
-        profile_label_improvements_pcf_label_in_post_enabled: true,
-        rweb_tipjar_consumption_enabled: true,
-        verified_phone_label_enabled: false,
-        creator_subscriptions_tweet_preview_api_enabled: true,
-        responsive_web_graphql_timeline_navigation_enabled: true,
-        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        premium_content_api_read_enabled: false,
-        communities_web_enable_tweet_community_results_fetch: true,
-        c9s_tweet_anatomy_moderator_badge_enabled: true,
-        responsive_web_grok_analyze_button_fetch_trends_enabled: false,
-        responsive_web_grok_analyze_post_followups_enabled: true,
-        responsive_web_jetfuel_frame: true,
-        responsive_web_grok_share_attachment_enabled: true,
-        articles_preview_enabled: true,
-        responsive_web_edit_tweet_api_enabled: true,
-        graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
-        view_counts_everywhere_api_enabled: true,
-        longform_notetweets_consumption_enabled: true,
-        responsive_web_twitter_article_tweet_consumption_enabled: true,
-        tweet_awards_web_tipping_enabled: false,
-        responsive_web_grok_show_grok_translated_post: false,
-        responsive_web_grok_analysis_button_from_backend: false,
-        creator_subscriptions_quote_tweet_preview_enabled: false,
-        freedom_of_speech_not_reach_fetch_enabled: true,
-        standardized_nudges_misinfo: true,
-        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
-        longform_notetweets_rich_text_read_enabled: true,
-        longform_notetweets_inline_media_enabled: true,
-        responsive_web_grok_image_annotation_enabled: true,
-        responsive_web_grok_imagine_annotation_enabled: true,
-        responsive_web_grok_community_note_auto_translation_is_enabled: false,
-        responsive_web_enhance_cards_enabled: false,
-    };
-
-    const features = encodeURIComponent(JSON.stringify(featuresObj));
+    const features = encodeURIComponent(JSON.stringify(await buildFeatures("follow")));
 
     return `?variables=${variables}&features=${features}`;
 }
@@ -390,7 +259,8 @@ export async function _followApi(
     if (!res.ok) {
         if (res.status === 400 || res.status === 403) {
             const text = await res.text().catch(() => "");
-            extractMissingFeature?.(text);
+            const missing_param = await extractMissingFeature?.(text);
+            console.log("------>>> _followApi missing param:", missing_param);
         }
         throw new Error(`Followers request failed: ${res.status} ${res.statusText}`);
     }
@@ -429,7 +299,8 @@ export async function bookmarkApi(
 
     if (!resp.ok) {
         const text = await resp.text().catch(() => "");
-        extractMissingFeature?.(text);
+        const missing = await extractMissingFeature?.(text);
+        console.log("------>>> bookmarkApi missing feature:", missing);
         throw new Error(`HTTP ${resp.status}: ${text}`);
     }
 
@@ -447,9 +318,7 @@ export async function bookmarkApi(
     throw new Error(message);
 }
 
-
 // ========== HomeTimeline ==========
-
 /**
  * 生成 HomeTimeline GraphQL 请求 URL（只需要 count + cursor）
  */
@@ -468,45 +337,7 @@ async function buildHomeTimelineURL(count: number = 40, cursor?: string): Promis
     if (cursor) variablesObj.cursor = cursor;
 
     const variables = encodeURIComponent(JSON.stringify(variablesObj));
-
-    const features = encodeURIComponent(JSON.stringify({
-        rweb_video_screen_enabled: false,
-        payments_enabled: false,
-        rweb_xchat_enabled: false,
-        profile_label_improvements_pcf_label_in_post_enabled: true,
-        rweb_tipjar_consumption_enabled: true,
-        verified_phone_label_enabled: false,
-        creator_subscriptions_tweet_preview_api_enabled: true,
-        responsive_web_graphql_timeline_navigation_enabled: true,
-        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        premium_content_api_read_enabled: false,
-        communities_web_enable_tweet_community_results_fetch: true,
-        c9s_tweet_anatomy_moderator_badge_enabled: true,
-        responsive_web_grok_analyze_button_fetch_trends_enabled: false,
-        responsive_web_grok_analyze_post_followups_enabled: true,
-        responsive_web_jetfuel_frame: true,
-        responsive_web_grok_share_attachment_enabled: true,
-        articles_preview_enabled: true,
-        responsive_web_edit_tweet_api_enabled: true,
-        graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
-        view_counts_everywhere_api_enabled: true,
-        longform_notetweets_consumption_enabled: true,
-        responsive_web_twitter_article_tweet_consumption_enabled: true,
-        tweet_awards_web_tipping_enabled: false,
-        responsive_web_grok_show_grok_translated_post: false,
-        responsive_web_grok_analysis_button_from_backend: false,
-        creator_subscriptions_quote_tweet_preview_enabled: false,
-        freedom_of_speech_not_reach_fetch_enabled: true,
-        standardized_nudges_misinfo: true,
-        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
-        longform_notetweets_rich_text_read_enabled: true,
-        longform_notetweets_inline_media_enabled: true,
-        responsive_web_grok_image_annotation_enabled: true,
-        responsive_web_grok_imagine_annotation_enabled: true,
-        responsive_web_grok_community_note_auto_translation_is_enabled: false,
-        responsive_web_enhance_cards_enabled: false,
-    }));
-
+    const features = encodeURIComponent(JSON.stringify(await buildFeatures("timeline")));
     return `${bp.url}?variables=${variables}&features=${features}`;
 }
 
@@ -548,45 +379,7 @@ async function buildBookmarksURL(count: number = 20, cursor?: string): Promise<s
     if (cursor) variablesObj.cursor = cursor;
 
     const variables = encodeURIComponent(JSON.stringify(variablesObj));
-
-    // features：与你刚才通过的特性集保持一致，避免 400（必含 verified_phone_label_enabled / creator_subscriptions_tweet_preview_api_enabled）
-    const features = encodeURIComponent(JSON.stringify({
-        rweb_video_screen_enabled: false,
-        payments_enabled: false,
-        rweb_xchat_enabled: false,
-        profile_label_improvements_pcf_label_in_post_enabled: true,
-        rweb_tipjar_consumption_enabled: true,
-        verified_phone_label_enabled: false,
-        creator_subscriptions_tweet_preview_api_enabled: true,
-        responsive_web_graphql_timeline_navigation_enabled: true,
-        responsive_web_graphql_skip_user_profile_image_extensions_enabled: false,
-        premium_content_api_read_enabled: false,
-        communities_web_enable_tweet_community_results_fetch: true,
-        c9s_tweet_anatomy_moderator_badge_enabled: true,
-        responsive_web_grok_analyze_button_fetch_trends_enabled: false,
-        responsive_web_grok_analyze_post_followups_enabled: true,
-        responsive_web_jetfuel_frame: true,
-        responsive_web_grok_share_attachment_enabled: true,
-        articles_preview_enabled: true,
-        responsive_web_edit_tweet_api_enabled: true,
-        graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
-        view_counts_everywhere_api_enabled: true,
-        longform_notetweets_consumption_enabled: true,
-        responsive_web_twitter_article_tweet_consumption_enabled: true,
-        tweet_awards_web_tipping_enabled: false,
-        responsive_web_grok_show_grok_translated_post: false,
-        responsive_web_grok_analysis_button_from_backend: false,
-        creator_subscriptions_quote_tweet_preview_enabled: false,
-        freedom_of_speech_not_reach_fetch_enabled: true,
-        standardized_nudges_misinfo: true,
-        tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
-        longform_notetweets_rich_text_read_enabled: true,
-        longform_notetweets_inline_media_enabled: true,
-        responsive_web_grok_image_annotation_enabled: true,
-        responsive_web_grok_imagine_annotation_enabled: true,
-        responsive_web_grok_community_note_auto_translation_is_enabled: false,
-        responsive_web_enhance_cards_enabled: false,
-    }));
+    const features = encodeURIComponent(JSON.stringify(await buildFeatures("bookmarks")));
 
     return `${bp.url}?variables=${variables}&features=${features}`;
 }
@@ -635,7 +428,7 @@ export async function createGrokConversation(
     headers["x-client-transaction-id"] = txid;
 
     // 注意：queryId 已在 URL 中，不要放进 body
-    const body = JSON.stringify({ variables });
+    const body = JSON.stringify({variables});
 
     const resp = await fetch(bp.url, {
         method: "POST",
@@ -646,7 +439,8 @@ export async function createGrokConversation(
 
     if (!resp.ok) {
         const text = await resp.text().catch(() => "");
-        extractMissingFeature?.(text);
+        const missing_param = extractMissingFeature?.(text);
+        console.log("------>>> _followApi missing param:", missing_param);
         throw new Error(`CreateGrokConversation failed: ${resp.status} ${text}`);
     }
 
@@ -732,23 +526,23 @@ export async function addGrokResponse(
         headers["x-twitter-client-language"] || (navigator.language?.toLowerCase() || "en");
 
     const payload = {
-        responses: [{ message, sender: 1, promptSource: "", fileAttachments: [] }],
+        responses: [{message, sender: 1, promptSource: "", fileAttachments: []}],
         systemPromptName: "",
         grokModelOptionId: "grok-3-latest",
         modelMode: "MODEL_MODE_FAST",
         conversationId,
         returnSearchResults: true,
         returnCitations: true,
-        promptMetadata: { promptSource: "NATURAL", action: "INPUT" },
+        promptMetadata: {promptSource: "NATURAL", action: "INPUT"},
         imageGenerationCount: 4,
-        requestFeatures: { eagerTweets: true, serverHistory: true },
+        requestFeatures: {eagerTweets: true, serverHistory: true},
         enableSideBySide: true,
         toolOverrides: {},
         modelConfigOverride: {},
         isTemporaryChat: false,
     };
 
-    const timeLabel = `[grok:add_response] total ${txid.slice(0,8)}`;
+    const timeLabel = `[grok:add_response] total ${txid.slice(0, 8)}`;
     logATA("POST", url, "txid=", txid);
     console.time?.(timeLabel);
 
@@ -836,11 +630,11 @@ export async function addGrokResponse(
 
     if (reader) {
         while (true) {
-            const { value, done } = await reader.read();
+            const {value, done} = await reader.read();
             if (done) break;
             chunks++;
             bytes += value.byteLength;
-            buf += decoder.decode(value, { stream: true });
+            buf += decoder.decode(value, {stream: true});
 
             let idx: number;
             while ((idx = buf.indexOf("\n")) >= 0) {
@@ -858,8 +652,8 @@ export async function addGrokResponse(
         for (const line of all.split(/\r?\n/)) handleLine(line);
     }
 
-    logATA("stats:", { bytes, chunks, lines, parsed, tokenPieces, parseErrors });
+    logATA("stats:", {bytes, chunks, lines, parsed, tokenPieces, parseErrors});
     console.timeEnd?.(timeLabel);
 
-    return { text: finalText, meta };
+    return {text: finalText, meta};
 }

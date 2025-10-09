@@ -208,12 +208,6 @@ export function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export function extractMissingFeature(body: string): string | null {
-    // e.g. "The following features cannot be null: responsive_web_grok_imagine_annotation_enabled"
-    const m = body.match(/cannot be null:\s*([a-zA-Z0-9_]+)/);
-    return m ? m[1] : null;
-}
-
 export type ParsedTwitterLink =
     | { kind: "tweet"; url: URL; tweetId: string; username?: string }
     | { kind: "profile"; url: URL; username: string }
