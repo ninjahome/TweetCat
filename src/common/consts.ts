@@ -90,6 +90,7 @@ export const Followers = "Followers"
 export const BlueVerifiedFollowers = "BlueVerifiedFollowers"
 export const Bookmarks = "Bookmarks"
 export const CreateGrokConversation = "CreateGrokConversation"
+export const ConversationItem_DeleteConversationMutation = "ConversationItem_DeleteConversationMutation"
 
 export const watchedOps = [
     UserByScreenName,
@@ -106,6 +107,7 @@ export const watchedOps = [
     HomeTimeline,
     Bookmarks,
     CreateGrokConversation,
+    ConversationItem_DeleteConversationMutation,
 ];
 
 export const defaultQueryKeyMap: Record<string, string> = {
@@ -123,4 +125,5 @@ export const defaultQueryKeyMap: Record<string, string> = {
     BlueVerifiedFollowers: "fxEl9kp1Tgolqkq8_Lo3sg",
     Bookmarks: "pLtjrO4ubNh996M_Cubwsg",
     CreateGrokConversation: "vvC5uy7pWWHXS2aDi1FZeA",
+    ConversationItem_DeleteConversationMutation: "TlKHSWVMVeaa-i7dqQqFQA",
 }

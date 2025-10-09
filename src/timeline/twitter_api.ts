@@ -2,7 +2,7 @@ import {getBearerToken} from "../common/utils";
 import {localGet, localSet} from "../common/local_storage";
 import {
     __DBK_query_id_map,
-    BlueVerifiedFollowers, Bookmarks, CreateBookmark, CreateGrokConversation, DeleteBookmark,
+    BlueVerifiedFollowers, Bookmarks, CreateBookmark, CreateGrokConversation, DeleteBookmark, ConversationItem_DeleteConversationMutation,
     Followers,
     Following, HomeTimeline,
     UserByScreenName,
@@ -657,3 +657,50 @@ export async function addGrokResponse(
 
     return {text: finalText, meta};
 }
+
+
+export async function deleteGrokConversation(conversationId: string): Promise<boolean> {
+    if (!conversationId) throw new Error("Missing conversationId");
+
+    // 1) 通过 queryId 映射拿 URL 与 path（与 createGrokConversation 同逻辑）
+    const bp = await getUrlWithQueryID(ConversationItem_DeleteConversationMutation);
+    if (!bp) {
+        throw new Error("Missing queryId for 'ConversationItem_DeleteConversationMutation'");
+    }
+
+    // 2) 生成 headers（与 createGrokConversation 同逻辑）
+    const txid = await getTransactionIdFor("POST", bp.path);
+
+    const headers = await generateHeaders();
+    headers["content-type"] = "application/json";
+    headers["x-client-transaction-id"] = txid;
+
+    // 3) 只传 variables；不要把 queryId 放到 body 里
+    const body = JSON.stringify({
+        variables: { conversationId },
+    });
+
+    // 4) 发请求
+    const resp = await fetch(bp.url, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body,
+    });
+
+    // 5) 错误处理（尽量保留原始文本便于提取 missing feature）
+    if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        await extractMissingFeature?.(text); // 以防后端要求 feature
+        throw new Error(`deleteGrokConversation failed: ${resp.status} ${text}`);
+    }
+
+    // 6) GraphQL 层错误
+    const json = await resp.json().catch(() => ({} as any));
+    if (json?.errors?.length) {
+        throw new Error(`GraphQL error: ${JSON.stringify(json.errors[0])}`);
+    }
+
+    return true;
+}
+

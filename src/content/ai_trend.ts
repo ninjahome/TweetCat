@@ -1,7 +1,7 @@
 import {queryFilterFromBG} from "../object/tweet_kol";
 import {t} from "../common/i18n";
 import {showDialog, showToastMsg} from "../timeline/render_common";
-import {addGrokResponse, createGrokConversation} from "../timeline/twitter_api";
+import {addGrokResponse, createGrokConversation, deleteGrokConversation} from "../timeline/twitter_api";
 import {defaultAllCategoryID} from "../common/consts";
 import {logATA} from "../common/debug_flags";
 import {sleep} from "../common/utils";
@@ -160,8 +160,9 @@ export async function grokConversation() {
         showToastMsg(t("grok_timeout"));
     }, 70_000);
 
+    let conversationID = "";
     try {
-        const conversationID = await createGrokConversation();
+        conversationID = await createGrokConversation();
         logATA("convId:", conversationID);
         detail.innerText += ":" + conversationID;
 
@@ -199,6 +200,8 @@ export async function grokConversation() {
         gwo.style.display = "none";
         console.error(e);
         showToastMsg(t("failed_grok_result"));
+    } finally {
+        deleteGrokConversation(conversationID).catch(err => console.warn(err));
     }
 }
 
