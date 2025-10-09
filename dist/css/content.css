@@ -42,7 +42,9 @@ a {
     font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-weight: 400;
     font-size: 15px;
-    white-space: nowrap;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;  /* 保证长单词能换行 */
 }
 
 .category-filter-item:hover {
@@ -71,7 +73,7 @@ a {
     display: inline-block;
     margin-right: 4px;
     font-size: 0.6em;
-    color: #B9CAD3; /* 默认灰色 */
+    color: var(--border-subtle); /* 默认灰色 */
     transition: color 0.3s;
 }
 
@@ -979,7 +981,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 .tweet-card-area a.tc-card-large__media {
-    border: 1px solid rgb(207, 217, 222);
+    border: 1px solid var(--border-subtle);
 }
 
 
@@ -1308,6 +1310,9 @@ html[data-bg="lightsout"] {
     gap: 12px;
     border-radius: 16px;
     padding: 32px 0;
+    max-height: 80vh;      /* 弹框最大高度，占屏幕80% */
+    overflow-y: auto;      /* 内容超过时显示滚动条 */
+    overflow-x: hidden;    /* 横向不要出现滚动条 */
 }
 
 .topic-card {
@@ -1317,8 +1322,6 @@ html[data-bg="lightsout"] {
     transition: transform 0.2s ease;
     max-width: 600px;             /* 限制宽度 */
     width: 90%;
-    max-height: 80%;
-    overflow-y: auto;             /* 内容过多时可滚动 */
     animation: fadeIn 0.3s ease;
 }
 
@@ -1403,6 +1406,9 @@ html[data-bg="lightsout"] {
 .account-post {
     color: #666;
     font-size: 0.9em;
+    white-space: normal;       /* 正常换行 */
+    word-break: break-word;    /* 超长单词/字符串也能换行 */
+    overflow-wrap: break-word; /* 新标准写法，保证兼容性 */
 }
 
 .ai-trend-actions {

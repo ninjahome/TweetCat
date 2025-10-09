@@ -68,14 +68,6 @@
         background-color: #16181c !important;
     }
 
-    .tweet-card-area a.tc-card-large__media {
-        border: 1px solid #2F3336;
-    }
-
-    .category-filter-btn::before,
-    .category-filter-clear-btn::before{
-        color: #2f3336;
-    }
 }
 
 /* Optional manual override via data-theme on <html> */
@@ -943,7 +935,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     appearance:none;
     border-radius:9999px;
     padding:8px 24px;
-    border:1px solid;
+    border: none;
     cursor:pointer;
     font-weight:700;
     transition: background var(--tweet-toast-speed);
