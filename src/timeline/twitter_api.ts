@@ -1,5 +1,5 @@
 import {getBearerToken} from "../common/utils";
-import {localGet, localSet} from "../common/local_storage";
+import {localGet} from "../common/local_storage";
 import {
     __DBK_query_id_map,
     BlueVerifiedFollowers, Bookmarks, CreateBookmark, CreateGrokConversation, DeleteBookmark, ConversationItem_DeleteConversationMutation,
