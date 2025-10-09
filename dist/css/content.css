@@ -151,32 +151,39 @@ a {
     border-radius: 9999px;
     padding: 0 8px;
 }
-
+.hasCategorylabel{
+    border-radius: 9999px;
+}
 .hasCategorylabel:hover {
     background-color: rgba(15, 20, 25, 0.1);
     border-radius: 9999px;
 }
-
-.hasCategorylabel .tweet-category-label {
-    font-weight: 800;
-    padding: 7px 16px;
-}
-
-.hover-chat:hover {
-    background-color: rgba(74, 153, 233, 0.1);
+.hover-chat {
+    width: 32px;
+    height: 32px;display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 9999px;
 }
 
+.hover-chat:hover {
+    background-color: var(--accent-subtle) !important;
+}
+
 .tweet-category-label {
-    padding: 7px 8px;
+    padding: 0 16px;
     border-radius: 999px;
-    background-color: rgba(69, 146, 239, 0.1);
+    background-color:  var(--accent-subtle);
+    font-weight: 800;
 }
 
 .tweet-category-label:hover {
     background-color: transparent;
 }
-
+.menu-item-category-name{
+    line-height: 32px;
+    text-align: center;
+}
 .category-name {
     font-weight: 1000;
 }
@@ -1424,15 +1431,17 @@ html[data-bg="lightsout"] {
 
 .filter-menu-on-follow {
     position: absolute;
-    right: calc(100% + 24px);
-    top: 3px;
+    right: 100%;          /* 紧贴 */
+    margin-right: 4px;    /* 控制间距 */
+    max-width: 300px;     /* 限制菜单最大宽度，避免过长 */
+    white-space: nowrap;  /* 不要自动换行 */
 }
 
-.filter-menu-on-follow ::after {
-    content: "";
-    display: inline-block;
-    width: 4px;   /* 固定间距 */
+.hasCategory {
+    align-items: center;
+    justify-content: center;
 }
+
 
 /* 弹出动画 */
 @keyframes fadeIn {

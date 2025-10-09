@@ -222,12 +222,21 @@ img, video {
     border-radius: 999px;
     align-content: center;
     justify-content: center;
-    padding: 6px 24px;
+    padding: 0 16px;
     color: white;
     font-size: 15px;
     font-weight: 700;
 }
-
+.action-button-download-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px;
+    height: 32px;
+}
+.downloadVideo {
+    padding: 0;
+}
 .tweet-actions .bookMarked {
     display: flex;
     align-items: center;
@@ -258,15 +267,6 @@ img, video {
     fill: rgb(29,155,240); /* Twitter 蓝 */
 }
 
-/* ---------- Accents (hover chips, labels, tabs) ---------- */
-.hover-chat:hover,
-.tweet-category-label {
-    background-color: var(--accent-subtle) !important;
-}
-
-.tweet-category-label:hover {
-    background-color: transparent !important;
-}
 
 /* Selected tab like Twitter */
 a.tweetCatMenuItem.tc-selected svg path {
