@@ -671,7 +671,6 @@ export async function createGrokConversation(
 
 // 1) 新增可选项：只收 final 分片、是否清理 xai 标签
 type GrokStreamOptions = {
-    debug?: boolean;
     onToken?: (t: string) => void;
     onEvent?: (e: any) => void;
     signal?: AbortSignal;
@@ -709,7 +708,6 @@ export async function addGrokResponse(
     opts: GrokStreamOptions = {}
 ): Promise<{ text: string; meta: GrokMeta }> {
     const {
-        debug = false,
         onToken,
         onEvent,
         signal,
