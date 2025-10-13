@@ -726,7 +726,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 
 .inline-link-card .title {
     font-size: 15px;
-    color: rgb(15, 20, 25);
+    color: var(--text-primary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
