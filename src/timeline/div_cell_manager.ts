@@ -41,7 +41,7 @@ export class TweetManager {
     private lastWindow?: { s: number; e: number };
     private static readonly EXTRA_BUFFER_COUNT = 6;
     private static readonly MIN_TWEETS_COUNT = 6;
-    private static readonly TWEET_LIME_HEIGHT = 20400;
+    private static readonly TWEET_LIME_HEIGHT =10240;
 
     constructor(
         public readonly timelineEl: HTMLElement,
