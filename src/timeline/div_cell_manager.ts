@@ -166,12 +166,15 @@ export class TweetManager {
             const prevHeight = this.heights[i];
             const needsUpdate = offset !== prevOffset || realH !== prevHeight;
 
-            if (needsUpdate) {
+            if (needsUpdate || !cell.node.style.transform) {
                 cell.height = realH;
                 this.heights[i] = realH;
                 this.offsets[i] = offset;
                 cell.node.style.transform = `translateY(${offset}px)`;
                 logTweetMgn(`[mountCells] cell[${i}] mounted at offset=${offset}, height=${realH}`);
+            } else if (!cell.node.style.transform) {
+                // fallback：某些浏览器在 unmount/remount 时可能丢 transform
+                cell.node.style.transform = `translateY(${offset}px)`;
             }
 
             cell.node.style.visibility = 'visible';

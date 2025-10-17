@@ -199,7 +199,7 @@ export async function grokConversation() {
         clearTimeout(killer);
         gwo.style.display = "none";
         console.error(e);
-        showToastMsg(t("failed_grok_result"));
+        showToastMsg(t("failed_grok_result"), 5);
     } finally {
         deleteGrokConversation(conversationID).catch(err => console.warn(err));
     }

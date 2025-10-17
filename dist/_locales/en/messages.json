@@ -139,7 +139,7 @@
     "message": "Show more"
   },
   "failed_grok_result": {
-    "message": "Failed to create AI conversation"
+    "message": "Failed to create AI conversation, please reload this page and try again"
   },
   "grok_timeout": {
     "message": "Timeout to create AI conversation"

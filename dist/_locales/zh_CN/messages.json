@@ -139,7 +139,7 @@
     "message": "显示更多"
   },
   "failed_grok_result": {
-    "message": "创建 AI 对话失败"
+    "message": "创建 AI 对话失败,请刷新页面重新尝试"
   },
   "grok_timeout": {
     "message": "创建 AI 会话超时"
