@@ -15,6 +15,10 @@ export class VirtualScroller {
     private static readonly MAX_TRIES = 5;
 
     public scrollToTop(res: MountResult) {
+        setTimeout(()=>{
+            document.documentElement.style.overflow = '';
+        },1500);
+
         if (res.needScroll && typeof res.targetTop === 'number') {
             const pos = res.targetTop
             window.scrollTo(0, pos);
@@ -62,22 +66,28 @@ export class VirtualScroller {
     }
 
     private onScroll(): void {
-        // logVS(`------------------->>>>>>>>[onScroll]current scroll lastTop=${this.lastTop}, scrollY=${window.scrollY}`);
-        if (this.isRendering || this.isPause) {
+        if (this.isPause) return; // 保留暂停逻辑
+        const { needUpdate, curTop, isBottom } = this.scrollStatusCheck();
+        if (!needUpdate) return;
+        // ===== 原有逻辑保持不动 =====
+        if (this.isRendering) {
+            if (!isBottom) return;
+            const html = document.documentElement;
+            html.style.overflow = 'hidden';
+            logVS(`[触底检测] scrollTop=${curTop}`);
             return;
         }
-
-        const {needUpdate, curTop} = this.scrollStatusCheck();
-        if (!needUpdate) return;
 
         logVS(`[onScroll]need to update curTop=${curTop}, lastTop=${this.lastTop}, maxDelta=${this.lastTop - curTop}`);
 
         this.isRendering = true;
         this.lastTop = curTop;
+
         requestAnimationFrame(async () => {
             this.scheduleMountAtStablePosition(curTop);
-        })
+        });
     }
+
 
 
     dispose() {
@@ -97,12 +107,23 @@ export class VirtualScroller {
 
     }
 
-    private scrollStatusCheck(): { needUpdate: boolean; curTop: number } {
+    private scrollStatusCheck(): { needUpdate: boolean; curTop: number; isBottom: boolean } {
+        // === 原始滚动检测逻辑 ===
         const curTop = window.scrollY || document.documentElement.scrollTop;
-        const delta = Math.abs(curTop - this.lastTop) //Math.max(...this.scrollPositions.map(t => ));
+        const delta = Math.abs(curTop - this.lastTop);
         const threshold = TweetManager.EST_HEIGHT;
         const needUpdate = delta >= threshold;
-        return {needUpdate, curTop};
+
+        // === 新增：滚动边界检测 ===
+        const html = document.documentElement;
+        const scrollHeight = html.scrollHeight;
+        const clientHeight = html.clientHeight;
+        const distanceToBottom = scrollHeight - (curTop + clientHeight);
+        const isBottom = distanceToBottom === 0;
+
+        logVS(`[VirtualScroller] [scrollStatusCheck] curTop=${curTop}, scrollHeight=${scrollHeight}, clientHeight=${clientHeight}, distanceToBottom=${distanceToBottom}, isBottom=${isBottom}`);
+
+        return { needUpdate, curTop, isBottom };
     }
 
     private scheduleMountAtStablePosition(startTop: number) {
@@ -131,7 +152,7 @@ export class VirtualScroller {
             } else {
                 logVS(`[scheduleMountAtStablePosition] give up after ${tries} tries (delta=${delta})`);
                 this.unstableTries = 0;
-                this.isRendering = false;
+                this.scrollToTop({needScroll:true,targetTop:this.lastDetectedTop})
             }
 
         }, delay);
