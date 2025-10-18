@@ -61,6 +61,7 @@ export class TweetManager {
 
     public async switchCategory(cat: number) {
         logTweetMgn("------>>> tweet category switch to:", cat);
+        document.documentElement.style.overflow = '';
         this.cleanTimeLineContent();
         tweetPager.switchCategory(cat);
         tweetFetcher.resetNotifications();

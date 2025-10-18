@@ -15,10 +15,6 @@ export class VirtualScroller {
     private static readonly MAX_TRIES = 5;
 
     public scrollToTop(res: MountResult) {
-        setTimeout(()=>{
-            document.documentElement.style.overflow = '';
-        },1500);
-
         if (res.needScroll && typeof res.targetTop === 'number') {
             const pos = res.targetTop
             window.scrollTo(0, pos);
@@ -38,7 +34,6 @@ export class VirtualScroller {
     }
 
     public async initFirstPage() {
-        document.documentElement.style.overflow = '';
         this.isRendering = true;
         await this.manager.mountBatch(0);
         this.isRendering = false;
@@ -75,6 +70,9 @@ export class VirtualScroller {
             if (!isBottom) return;
             const html = document.documentElement;
             html.style.overflow = 'hidden';
+            setTimeout(()=>{
+                document.documentElement.style.overflow = '';
+            },1500);
             logVS(`[触底检测] scrollTop=${curTop}`);
             return;
         }
@@ -103,8 +101,6 @@ export class VirtualScroller {
         this.isRendering = false;
         this.lastTop = 0;
         this.isPause = false;
-
-        document.documentElement.style.overflow = '';
     }
 
     private scrollStatusCheck(): { needUpdate: boolean; curTop: number; isBottom: boolean } {
