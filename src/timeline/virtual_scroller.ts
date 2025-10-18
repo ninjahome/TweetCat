@@ -38,6 +38,7 @@ export class VirtualScroller {
     }
 
     public async initFirstPage() {
+        document.documentElement.style.overflow = '';
         this.isRendering = true;
         await this.manager.mountBatch(0);
         this.isRendering = false;
@@ -87,8 +88,6 @@ export class VirtualScroller {
             this.scheduleMountAtStablePosition(curTop);
         });
     }
-
-
 
     dispose() {
         if (this.onScrollBound) {
