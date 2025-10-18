@@ -143,7 +143,7 @@ function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplate
 }
 
 export async function switchCategory(catID: number) {
-    manager?.switchCategory(catID);
+    await manager?.switchCategory(catID);
 }
 
 function tcUnmount(area: HTMLElement, originalArea: HTMLElement) {

@@ -39,6 +39,8 @@ export class VirtualScroller {
         this.isRendering = false;
         window.scrollTo(0, 0);
         this.lastTop = 0;
+        document.documentElement.style.overflow = '';
+        console.log("-----------?????>>>>>>>overflow :1")
     }
 
     pause(): void {
@@ -72,6 +74,7 @@ export class VirtualScroller {
             html.style.overflow = 'hidden';
             setTimeout(()=>{
                 document.documentElement.style.overflow = '';
+                console.log("----------->>overflow :2")
             },1500);
             logVS(`[触底检测] scrollTop=${curTop}`);
             return;
