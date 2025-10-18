@@ -105,6 +105,7 @@ export class VirtualScroller {
         this.lastTop = 0;
         this.isPause = false;
 
+        document.documentElement.style.overflow = '';
     }
 
     private scrollStatusCheck(): { needUpdate: boolean; curTop: number; isBottom: boolean } {
