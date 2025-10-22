@@ -15,6 +15,7 @@
     --bg-elevated: #ffffff;
     --bg-hover: rgba(15, 20, 25, 0.03);
     --bg-subtle: #f7f9f9;
+    --thumb-bg: #f7f9f9;
 
     --text-primary: rgb(15, 20, 25);
     --text-secondary: rgb(83, 100, 113);
@@ -48,6 +49,7 @@
         --bg-elevated: transparent;
         --bg-hover: rgba(231, 233, 234, 0.08);
         --bg-subtle: #0a0a0a;
+        --thumb-bg: #1E2732;
 
         --text-primary: rgb(231, 233, 234);
         --text-secondary: rgb(113, 118, 123);
@@ -76,6 +78,7 @@ html[data-theme="dark"] {
     --bg-elevated: #16181c;
     --bg-hover: rgba(231, 233, 234, 0.08);
     --bg-subtle: #0a0a0a;
+    --thumb-bg: #1E2732;
 
     --text-primary: rgb(231, 233, 234);
     --text-secondary: rgb(113, 118, 123);
@@ -93,6 +96,7 @@ html[data-theme="light"] {
     --bg-elevated: #ffffff;
     --bg-hover: rgba(15, 20, 25, 0.03);
     --bg-subtle: #f7f9f9;
+    --thumb-bg: #f7f9f9;
 
     --text-primary: rgb(15, 20, 25);
     --text-secondary: rgb(83, 100, 113);

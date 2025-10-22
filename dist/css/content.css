@@ -838,7 +838,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     height: auto !important;
     position: relative; /* 为绝对定位的 img / 播放浮层提供定位上下文 */
     overflow: hidden; /* 不让图片溢出 */
-    background-color: #f7f9f9; /* 图未加载时的底色 */
+    background-color: var(--thumb-bg)!important; /* 图未加载时的底色 */
 }
 
 /* 统一图片铺满策略 + 左侧 12px 圆角 / 右侧直角 */
@@ -894,7 +894,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     min-width: 0; /* 允许省略/换行 */
     box-sizing: border-box;
     padding: 12px;
-    border-left: 1px solid #cfd9de;
+    border-left: 1px solid var(--border-strong);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1186,6 +1186,7 @@ html[style*="color-scheme: dark"] {
     --bg-elevated: #16181c;
     --bg-hover: rgba(231, 233, 234, 0.08);
     --bg-subtle: #0a0a0a;
+    --thumb-bg: #1E2732;
 
     --text-primary: rgb(231, 233, 234);
     --text-secondary: rgb(113, 118, 123);
@@ -1203,6 +1204,7 @@ html[style*="color-scheme: light"] {
     --bg-elevated: #ffffff;
     --bg-hover: rgba(15, 20, 25, 0.03);
     --bg-subtle: #f7f9f9;
+    --thumb-bg: #f7f9f9;
 
     --text-primary: rgb(15, 20, 25);
     --text-secondary: rgb(83, 100, 113);
