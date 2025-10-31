@@ -17,6 +17,7 @@ import {getTweetCatFlag, handleLocationChange, navigateToTweetCat} from "../time
 import {logTPR} from "../common/debug_flags";
 import {reloadCategoryContainer, setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
+import {confirmUsrInfo} from "./tweet_user_info";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
@@ -79,6 +80,7 @@ async function onDocumentLoaded() {
         logTPR("------->>>>tweet user name:", userName);
     });
     appendTweetCatMenuItem();
+    confirmUsrInfo();
     logTPR('------>>>TweetCat content script success ✨');
 }
 
