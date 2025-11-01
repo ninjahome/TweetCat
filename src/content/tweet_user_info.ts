@@ -1,9 +1,9 @@
-import {observeSimple, sendMsgToService} from "../common/utils";
-import {MsgType} from "../common/consts";
+import {observeSimple} from "../common/utils";
 import {getUserByUsername} from "../timeline/twitter_api";
-import {calculateLevel, calculateLevelBreakdown} from "../object/user_info";
+import {calculateLevelBreakdown, LevelScoreBreakdown} from "../object/user_info";
 
-export function confirmUsrInfo() {
+export var scoreOfTwitterOwner :LevelScoreBreakdown = null;
+export function queryProfileOfTwitterOwner() {
     observeSimple(
         document.body,
         () => document.querySelector("header nav[role='navigation']") as HTMLElement,
@@ -13,16 +13,11 @@ export function confirmUsrInfo() {
             const [displayName = '', userName = ''] = userInfoArea.textContent.split('@');
             console.log("------->>> displayName:", displayName, "userName:", userName);
             getUserByUsername(userName).then(data => {
-                console.log("------>>> user data:", data, " \n score:", calculateLevelBreakdown(data));
-            });
-
-            sendMsgToService({}, MsgType.UserUpdateInfo).then(rsp => {
-                if (!rsp.success || !rsp.data) {
-                    return
-                }
-                //TODO::query user's tweet info
+                scoreOfTwitterOwner = calculateLevelBreakdown(data);
+                console.log("------>>> user data:", data, " \n score:", scoreOfTwitterOwner);
             });
             return true;
         }
     );
 }
+

@@ -1,4 +1,4 @@
-import {HomeLatestTimeline, HomeTimeline, MsgType, TweetDetail, UserTweets} from "./common/consts";
+import {HomeLatestTimeline, HomeTimeline, MsgType, TweetDetail, UserByScreenName, UserTweets} from "./common/consts";
 import {logIC} from "./common/debug_flags";
 import {postWindowMsg} from "./common/msg_obj";
 
@@ -30,6 +30,10 @@ function __tc_isTargetTimelineUrl__(input: any): string | null {
 
         if (url.includes("/" + TweetDetail)) {
             return TweetDetail;
+        }
+
+        if (url.includes("/" + UserByScreenName)) {
+            return UserByScreenName;
         }
 
         return null;
@@ -107,6 +111,11 @@ function __tc_installFetch__(): void {
                 postWindowMsg(MsgType.IJHomeLatestCaptured, result);
             } else if (timeType === TweetDetail) {
                 postWindowMsg(MsgType.IJTweetDetailCaptured, result);
+            }else if (timeType === UserByScreenName) {
+                const vars = __tc_parseVarsFromUrl__(url);
+                const screenName = vars?.screen_name ?? vars?.screenName ?? "(unknown)";
+                logIC(`[F#${reqId}] userByScreenName result for @${screenName}`, result);
+                postWindowMsg(MsgType.IJUserByScreenNameCaptured, { profile: result, screenName });
             }
 
             return response;
@@ -135,6 +144,7 @@ function __tc_installXHR__(): void {
         private __tc_url__: string | null = null;
         private __tc_req_id__: number | null = null;
         private __tc_user_id__: string | null = null;
+        private __tc_screen_name__: string | null = null;
 
         open(method: string, url: string, async?: boolean, user?: string | null, password?: string | null) {
             this.__tc_url__ = url;
@@ -142,7 +152,10 @@ function __tc_installXHR__(): void {
             if (__tc_isTargetTimelineUrl__(url)) {
                 this.__tc_req_id__ = ++__tc_req_seq__;
                 const vars = __tc_parseVarsFromUrl__(url);
-                if (vars) this.__tc_user_id__ = vars.userId;
+                if (vars) {
+                    this.__tc_user_id__ = vars.userId ?? null;
+                    this.__tc_screen_name__ = vars.screen_name ?? vars.screenName ?? null; // + 新增
+                }
                 logIC(`[X] ${method} ${url}`);
             }
             return super.open(method, url, async ?? true, user ?? null, password ?? null);
@@ -151,7 +164,10 @@ function __tc_installXHR__(): void {
         send(...args: any[]): void {
             const timeType = __tc_isTargetTimelineUrl__(this.__tc_url__);
             if (!timeType || (timeType !== HomeLatestTimeline
-                && timeType !== UserTweets && timeType !== HomeTimeline && timeType !== TweetDetail)) {
+                && timeType !== UserTweets
+                && timeType !== HomeTimeline
+                && timeType !== TweetDetail
+                && timeType !== UserByScreenName)) {
                 return (OriginalXHR.prototype.send as any).apply(this, args);
             }
 
@@ -192,6 +208,13 @@ function __tc_installXHR__(): void {
                         postWindowMsg(MsgType.IJHomeLatestCaptured, result);
                     } else if (timeType === TweetDetail) {
                         postWindowMsg(MsgType.IJTweetDetailCaptured, result);
+                    } else if (timeType === UserByScreenName) {
+                        const screenName = this.__tc_screen_name__ ?? "(unknown)";
+                        logIC(`[X#${reqId}] userByScreenName result for @${screenName}`, result);
+                        postWindowMsg(MsgType.IJUserByScreenNameCaptured, {
+                            profile: result,
+                            screenName,
+                        });
                     }
 
                 } catch (err) {

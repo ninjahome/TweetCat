@@ -59,6 +59,7 @@ export enum MsgType {
     IJHomeLatestCaptured = 'IJHomeLatestCaptured',
     IJLocationChange = 'IJLocationChange',
     IJTweetDetailCaptured = 'IJTweetDetailCaptured',
+    IJUserByScreenNameCaptured = "IJUserByScreenNameCaptured",
 
     TokenUsedByUser = 'TokenUsedByUser',
     TokenFreeze = 'TokenFreeze',
@@ -73,7 +74,6 @@ export enum MsgType {
     StartLocalApp = 'StartLocalApp',
 
 
-    UserUpdateInfo = "UserUpdateInfo",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

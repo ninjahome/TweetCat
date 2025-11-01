@@ -30,7 +30,7 @@ function bindTweetCatMenu(menuItem: HTMLElement, area: HTMLElement, originalArea
     });
 }
 
-function prepareElementOfWeb3(tpl: HTMLTemplateElement){
+function prepareElementOfWeb3(tpl: HTMLTemplateElement) {
     const toastForFavorite = tpl.content.getElementById('tweet-toast')!.cloneNode(true) as HTMLElement;
     document.body.appendChild(toastForFavorite);
     toastForFavorite.style.display = 'none';
@@ -40,6 +40,7 @@ function prepareElementOfWeb3(tpl: HTMLTemplateElement){
 
     let dialogDiv = tpl.content.getElementById("tw-dialog-overlay")!.cloneNode(true) as HTMLElement;
     document.body.appendChild(dialogDiv);
+
     (dialogDiv.querySelector(".tw-dialog-btn-confirm") as HTMLElement).innerText = t('confirm');
     dialogDiv.style.setProperty('display', 'none', 'important');
     const dialogClose = dialogDiv.querySelector(".tw-dialog-close") as HTMLButtonElement;
@@ -52,11 +53,19 @@ function prepareElementOfWeb3(tpl: HTMLTemplateElement){
     document.body.appendChild(waitingOverlay);
 
     let aiTrend = tpl.content.getElementById("ai-trend-result")!.cloneNode(true) as HTMLElement;
-    aiTrend.style.display='none';
+    aiTrend.style.display = 'none';
     (aiTrend.querySelector(".topic-factor-title") as HTMLElement).innerText = t('topic_factor_title');
     (aiTrend.querySelector(".topic-participation-title") as HTMLElement).innerText = t('topic_participation_title');
 
     document.body.appendChild(aiTrend);
+
+    let scoreDetailDiv = tpl.content.getElementById("user-profile-score-details")!.cloneNode(true) as HTMLElement;
+    (scoreDetailDiv.querySelector(".scale-score-title") as HTMLSpanElement).innerText = t("scale_score_title")
+    (scoreDetailDiv.querySelector(".activity-score-title") as HTMLSpanElement).innerText = t("activity_score_title")
+    (scoreDetailDiv.querySelector(".trust-score-title") as HTMLSpanElement).innerText = t("trust_score_title")
+    (scoreDetailDiv.querySelector(".brand-score-title") as HTMLSpanElement).innerText = t("brand_score_title")
+    (scoreDetailDiv.querySelector(".growth-score-title") as HTMLSpanElement).innerText = t("growth_score_title")
+    document.body.appendChild(scoreDetailDiv);
 }
 
 let mounted = false;

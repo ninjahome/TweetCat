@@ -6,10 +6,11 @@ import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {logTPR} from "../common/debug_flags";
+import {calculateLevelBreakdown, LevelScoreBreakdown, UserProfile} from "../object/user_info";
 
 let observing = false;
 
-export async function appendFilterOnKolProfileHome(kolName: string) {
+export async function appendFilterOnKolProfilePage(kolName: string) {
     if (observing) {
         return;
     }
@@ -20,11 +21,60 @@ export async function appendFilterOnKolProfileHome(kolName: string) {
     }, async (profileToolBarDiv) => {
         const oldFilterBtn = profileToolBarDiv.querySelectorAll(".filter-btn-on-profile");
         oldFilterBtn.forEach(item => item.remove());
-        await _appendFilterBtn(profileToolBarDiv, kolName)
+        await _appendFilterBtn(profileToolBarDiv, kolName);
         observing = false;
     }, false);
 }
 
+const kolScoreCache = new Map<string, LevelScoreBreakdown>();
+
+export async function appendScoreInfoToProfilePage(profileData: any, userName: string) {
+
+    console.log("[injection fetched data]------>>>screen name：", userName, "\n raw data:", profileData);
+    try {
+        const usrProfile = new UserProfile(profileData);
+        const scoreData = calculateLevelBreakdown(usrProfile);
+        console.log("------>>> score data:", scoreData);
+        kolScoreCache.set(userName, scoreData);
+
+        const avatarArea = document.querySelector(`div[data-testid="UserAvatar-Container-${usrProfile.userName}"]`)
+
+        let scoreDiv = document.getElementById("user-profile-score") as HTMLElement;
+        if (scoreDiv){
+
+        }else{
+           const tpl =  await parseContentHtml("html/content.html") ;
+            scoreDiv = tpl.content.getElementById("user-profile-score")?.cloneNode(true) as HTMLElement;
+            avatarArea?.insertAdjacentElement('afterend', scoreDiv);
+        }
+
+        (scoreDiv.querySelector(".total-score-value") as HTMLElement).innerText = "" + scoreData.total;
+
+        const scoreDetailDiv = document.getElementById("user-profile-score-details") as HTMLElement;
+        if(!scoreDetailDiv)return;
+
+        scoreDiv.addEventListener("mouseenter", () => {
+            scoreDetailDiv.style.display = "block";
+            const rect = scoreDiv.getBoundingClientRect();
+            scoreDetailDiv.style.position = "absolute";
+            scoreDetailDiv.style.top = rect.top + window.scrollY - scoreDetailDiv.offsetHeight - 8 + "px";
+            scoreDetailDiv.style.left = rect.left + window.scrollX + "px";
+        });
+
+        scoreDiv.addEventListener("mouseleave", () => {
+            scoreDetailDiv.style.display = "none";
+        });
+
+        (scoreDetailDiv.querySelector(".scale-score-value") as HTMLElement).innerText = scoreData.scale.toFixed(3);
+        (scoreDetailDiv.querySelector(".activity-score-value") as HTMLElement).innerText = scoreData.activity.toFixed(3);
+        (scoreDetailDiv.querySelector(".trust-score-value") as HTMLElement).innerText = scoreData.trust.toFixed(3);
+        (scoreDetailDiv.querySelector(".brand-score-value") as HTMLElement).innerText = scoreData.brand.toFixed(3);
+        (scoreDetailDiv.querySelector(".growth-score-value") as HTMLElement).innerText = scoreData.growth.toFixed(3);
+
+    } catch (e) {
+        console.warn("failed to append score data to profile page.", e, userName);
+    }
+}
 
 async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
     const contentTemplate = await parseContentHtml('html/content.html');

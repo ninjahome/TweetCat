@@ -182,5 +182,20 @@
   },
   "mgn_following": {
     "message": "My Followings"
+  },
+  "scale_score_title": {
+    "message": "Scale Score (Followers, Follow Ratio, Listed Count)"
+  },
+  "activity_score_title": {
+    "message": "Activity Score (Tweets, Likes, Media, Creator Subscriptions)"
+  },
+  "trust_score_title": {
+    "message": "Trust Score (Blue Verification, Highlighted Tweets, Affiliate Label)"
+  },
+  "brand_score_title": {
+    "message": "Brand Score (Profile Banner, Professional Account, Hidden Subscriptions, Description)"
+  },
+  "growth_score_title": {
+    "message": "Growth Score (Account Age)"
   }
 }

@@ -1,7 +1,7 @@
 import browser, {Runtime} from "webextension-polyfill";
 import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./twitter_observer";
 import {
-    appendFilterOnKolProfileHome,
+    appendFilterOnKolProfilePage, appendScoreInfoToProfilePage,
 } from "./twitter_ui";
 import {maxElmFindTryTimes, MsgType} from "../common/consts";
 import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
@@ -17,7 +17,7 @@ import {getTweetCatFlag, handleLocationChange, navigateToTweetCat} from "../time
 import {logTPR} from "../common/debug_flags";
 import {reloadCategoryContainer, setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
-import {confirmUsrInfo} from "./tweet_user_info";
+import {queryProfileOfTwitterOwner} from "./tweet_user_info";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
@@ -72,15 +72,15 @@ async function onDocumentLoaded() {
     addCustomStyles('css/tweet_render.css');
     await initObserver();
 
-    setTimeout(()=>{
+    setTimeout(() => {
         installThemeObserverOnce();
-    },2_000);
+    }, 2_000);
 
     await parseUserInfo(async (userName) => {
         logTPR("------->>>>tweet user name:", userName);
     });
     appendTweetCatMenuItem();
-    confirmUsrInfo();
+    queryProfileOfTwitterOwner();
     logTPR('------>>>TweetCat content script success ✨');
 }
 
@@ -111,7 +111,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             const linkInfo = parseTwitterPath(window.location.href)
             logTPR("------>>> link info:", linkInfo)
             if (linkInfo.kind === "profile") {
-                appendFilterOnKolProfileHome(linkInfo.username).then();
+                appendFilterOnKolProfilePage(linkInfo.username).then();
             } else if (linkInfo.kind === "home" || linkInfo.kind === "explore") {
                 if (getTweetCatFlag()) {
                     navigateToTweetCat();
@@ -229,6 +229,11 @@ window.addEventListener('message', (e) => {
             }
             case MsgType.IJTweetDetailCaptured: {
                 processCapturedTweetDetail(msg.data).then()
+                break;
+            }
+            case MsgType.IJUserByScreenNameCaptured: {
+                const data = msg.data;
+                appendScoreInfoToProfilePage(data.profile, data.screenName);
                 break;
             }
             default: {

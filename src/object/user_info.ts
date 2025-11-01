@@ -152,10 +152,6 @@ export class UserProfile implements IUserScoreData {
     }
 }
 
-export async function updateUserInfo(data: any): Promise<boolean> {
-    return false;
-}
-
 /* ====================== 评分常量（可调） ====================== */
 // 各分项权重 / Weights
 const W = {

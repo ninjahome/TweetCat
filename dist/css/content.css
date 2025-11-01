@@ -1489,3 +1489,57 @@ html[data-bg="lightsout"] {
         background-color: rgba(255, 255, 255, 0.5); /* 夜间模式反色 */
     }
 }
+
+
+
+/* ========== 用户评分详细浮层样式 ========== */
+.user-profile-score-details {
+    position: absolute;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    border-radius: 8px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    font-size: 13px;
+    line-height: 1.5;
+    max-width: 280px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+}
+
+/* 当显示时（JS 设置 display:block 或添加 .show 类） */
+.user-profile-score-details.show {
+    display: block;
+    opacity: 1;
+}
+
+/* 每一行 */
+.user-profile-score-details .score-detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 2px 0;
+}
+
+/* 标签名 */
+.user-profile-score-details .score-label {
+    font-weight: 600;
+    margin-right: 6px;
+    color: #ffd36b;
+    white-space: nowrap;
+}
+
+/* 数值 */
+.user-profile-score-details .score-value {
+    font-family: "Courier New", monospace;
+    color: #fff;
+}
+
+/* 不同分项可配色区分 */
+.user-profile-score-details .scale-score-title { color: #f39c12; }
+.user-profile-score-details .activity-score-title { color: #27ae60; }
+.user-profile-score-details .trust-score-title { color: #3498db; }
+.user-profile-score-details .brand-score-title { color: #9b59b6; }
+.user-profile-score-details .growth-score-title { color: #e67e22; }
