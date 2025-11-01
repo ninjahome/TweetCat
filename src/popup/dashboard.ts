@@ -25,6 +25,7 @@ async function initDashBoard(): Promise<void> {
     }
 
     initNewCatBtn();
+    initManageFollowingBtn();
     initNewCatModalDialog();
     initSettings();
 }
@@ -49,6 +50,16 @@ function initNewCatBtn() {
         }
         const modalDialog = document.getElementById("modal-add-category") as HTMLElement
         modalDialog.style.display = 'block';
+    }
+}
+
+function initManageFollowingBtn() {
+    const mgnBtn = document.getElementById("btn-manager-following") as HTMLElement;
+    mgnBtn.innerText = t('mgn_following');
+    mgnBtn.onclick = async () => {
+        browser.tabs.create({
+            url: browser.runtime.getURL("html/following_mgm.html"),
+        }).then();
     }
 }
 

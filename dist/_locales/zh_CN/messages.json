@@ -179,5 +179,8 @@
   },
   "sccore": {
     "message": "分"
+  },
+  "mgn_following": {
+    "message": "我的关注"
   }
 }
