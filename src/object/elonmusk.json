@@ -1,0 +1,134 @@
+{
+  "data": {
+    "user": {
+      "result": {
+        "__typename": "User",
+        "id": "VXNlcjo0NDE5NjM5Nw==",
+        "rest_id": "44196397",
+        "affiliates_highlighted_label": {
+          "label": {
+            "url": {
+              "url": "https://twitter.com/X",
+              "urlType": "DeepLink"
+            },
+            "badge": {
+              "url": "https://pbs.twimg.com/profile_images/1955359038532653056/OSHY3ewP_bigger.jpg"
+            },
+            "description": "X",
+            "userLabelType": "BusinessLabel",
+            "userLabelDisplayType": "Badge"
+          }
+        },
+        "avatar": {
+          "image_url": "https://pbs.twimg.com/profile_images/1983681414370619392/oTT3nm5Z_normal.jpg"
+        },
+        "core": {
+          "created_at": "Tue Jun 02 20:12:29 +0000 2009",
+          "name": "Elon Musk",
+          "screen_name": "elonmusk"
+        },
+        "dm_permissions": {
+          "can_dm": false
+        },
+        "follow_request_sent": false,
+        "has_graduated_access": true,
+        "is_blue_verified": true,
+        "legacy": {
+          "default_profile": false,
+          "default_profile_image": false,
+          "description": "",
+          "entities": {
+            "description": {
+              "urls": []
+            }
+          },
+          "fast_followers_count": 0,
+          "favourites_count": 180444,
+          "followers_count": 228582708,
+          "friends_count": 1224,
+          "has_custom_timelines": true,
+          "is_translator": false,
+          "listed_count": 165775,
+          "media_count": 4207,
+          "normal_followers_count": 228582708,
+          "pinned_tweet_ids_str": [],
+          "possibly_sensitive": false,
+          "profile_banner_url": "https://pbs.twimg.com/profile_banners/44196397/1739948056",
+          "profile_interstitial_type": "",
+          "statuses_count": 88505,
+          "translator_type": "none",
+          "want_retweets": true,
+          "withheld_in_countries": []
+        },
+        "location": {
+          "location": ""
+        },
+        "media_permissions": {
+          "can_media_tag": false
+        },
+        "parody_commentary_fan_label": "None",
+        "profile_image_shape": "Circle",
+        "professional": {
+          "rest_id": "1679729435447275522",
+          "professional_type": "Creator",
+          "category": []
+        },
+        "profile_bio": {
+          "description": ""
+        },
+        "privacy": {
+          "protected": false
+        },
+        "relationship_perspectives": {
+          "following": true
+        },
+        "tipjar_settings": {
+          "is_enabled": false
+        },
+        "super_follow_eligible": true,
+        "verification": {
+          "verified": false
+        },
+        "legacy_extended_profile": {},
+        "is_profile_translatable": false,
+        "has_hidden_subscriptions_on_profile": true,
+        "verification_info": {
+          "is_identity_verified": false,
+          "reason": {
+            "description": {
+              "text": "这个账号通过了认证，因为它是 X 上 @X 的附属账号。了解更多",
+              "entities": [
+                {
+                  "from_index": 19,
+                  "to_index": 21,
+                  "ref": {
+                    "url": "https://twitter.com/X",
+                    "url_type": "ExternalUrl"
+                  }
+                },
+                {
+                  "from_index": 28,
+                  "to_index": 32,
+                  "ref": {
+                    "url": "https://help.twitter.com/en/rules-and-policies/profile-labels",
+                    "url_type": "ExternalUrl"
+                  }
+                }
+              ]
+            },
+            "verified_since_msec": "-156836000000000",
+            "override_verified_year": -3000
+          }
+        },
+        "highlights_info": {
+          "can_highlight_tweets": true,
+          "highlighted_tweets": "787"
+        },
+        "user_seed_tweet_count": 0,
+        "premium_gifting_eligible": false,
+        "business_account": {},
+        "creator_subscriptions_count": 228
+      }
+    }
+  }
+}

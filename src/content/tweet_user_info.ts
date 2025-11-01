@@ -1,22 +1,25 @@
 import {observeSimple, sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
+import {getUserByUsername} from "../timeline/twitter_api";
+import {calculateLevel, calculateLevelBreakdown} from "../object/user_info";
 
 export function confirmUsrInfo() {
     observeSimple(
         document.body,
         () => document.querySelector("header nav[role='navigation']") as HTMLElement,
-        (nav) => {
+        () => {
             const userInfoArea = document.body.querySelector("button[data-testid='SideNav_AccountSwitcher_Button']") as HTMLElement
-            const imgElm = userInfoArea?.querySelector("div[data-testid='UserAvatar-Container-TweetCatOrg'] img") as HTMLImageElement;
-            if (!userInfoArea || !imgElm) return false;
+            if (!userInfoArea) return false;
+            const [displayName = '', userName = ''] = userInfoArea.textContent.split('@');
+            console.log("------->>> displayName:", displayName, "userName:", userName);
+            getUserByUsername(userName).then(data => {
+                console.log("------>>> user data:", data, " \n score:", calculateLevelBreakdown(data));
+            });
 
-            console.log("------->>> user info:", userInfoArea.textContent, imgElm.src);
-
-            sendMsgToService({}, MsgType.KolCursorLoadAll).then(rsp=>{
+            sendMsgToService({}, MsgType.UserUpdateInfo).then(rsp => {
                 if (!rsp.success || !rsp.data) {
                     return
                 }
-
                 //TODO::query user's tweet info
             });
             return true;

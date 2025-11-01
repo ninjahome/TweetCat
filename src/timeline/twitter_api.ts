@@ -2,9 +2,15 @@ import {getBearerToken} from "../common/utils";
 import {localGet} from "../common/local_storage";
 import {
     __DBK_query_id_map,
-    BlueVerifiedFollowers, Bookmarks, CreateBookmark, CreateGrokConversation, DeleteBookmark, ConversationItem_DeleteConversationMutation,
+    BlueVerifiedFollowers,
+    Bookmarks,
+    CreateBookmark,
+    CreateGrokConversation,
+    DeleteBookmark,
+    ConversationItem_DeleteConversationMutation,
     Followers,
-    Following, HomeTimeline,
+    Following,
+    HomeTimeline,
     UserByScreenName,
     UserTweets
 } from "../common/consts";
@@ -18,6 +24,7 @@ import {
 import {getTransactionIdFor} from "../content/txid";
 import {logATA} from "../common/debug_flags";
 import {buildFeatures, extractMissingFeature} from "./feature_manager";
+import {UserProfile} from "../object/user_info";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
 async function getUrlWithQueryID(
@@ -89,6 +96,12 @@ async function generateHeaders(): Promise<Record<string, string>> {
 }
 
 export async function getUserIdByUsername(username: string): Promise<string | null> {
+    const userProfile = await getUserByUsername(username);
+    const userId = userProfile?.userId ?? null;
+    return userId;
+}
+
+export async function getUserByUsername(username: string): Promise<UserProfile | null> {
     const bp = await getUrlWithQueryID(UserByScreenName); // 保持不变
     if (!bp) {
         console.warn("------>>> failed to load base url for UserByScreenName");
@@ -128,9 +141,8 @@ export async function getUserIdByUsername(username: string): Promise<string | nu
     }
 
     const result = await response.json();
-    const userId = result?.data?.user?.result?.rest_id;
-    // console.log("--------------->>>>>userID:", userId, " name=", username)
-    return userId ?? null;
+    console.log("--------------->>>>>user profile raw data:", result)
+    return new UserProfile(result);
 }
 
 export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string): Promise<TweetResult> {
@@ -677,7 +689,7 @@ export async function deleteGrokConversation(conversationId: string): Promise<bo
 
     // 3) 只传 variables；不要把 queryId 放到 body 里
     const body = JSON.stringify({
-        variables: { conversationId },
+        variables: {conversationId},
     });
 
     // 4) 发请求
