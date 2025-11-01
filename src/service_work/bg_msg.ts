@@ -21,6 +21,7 @@ import {tweetFM} from "./tweet_fetch_manager";
 import {penalize429, useTokenByUser} from "./api_bucket_state";
 import {addBlockedAdsNumber} from "../object/system_setting";
 import {checkLocalApp, openLocalApp} from "./local_app";
+import {updateUserInfo} from "../object/user_info";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -158,6 +159,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.StartLocalApp:{
             return {success:await openLocalApp()}
+        }
+
+        case MsgType.UserUpdateInfo:{
+            const needQueryID= await updateUserInfo(request.data)
+            return {success: true,data:needQueryID};
         }
 
         default:

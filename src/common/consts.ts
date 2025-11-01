@@ -71,6 +71,9 @@ export enum MsgType {
     IJYTVideoParamGot = 'IJYTVideoParamGot',
     CheckIfLocalAppInstalled = 'CheckIfLocalAppInstalled',
     StartLocalApp = 'StartLocalApp',
+
+
+    UserUpdateInfo = "UserUpdateInfo",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

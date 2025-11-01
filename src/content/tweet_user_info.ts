@@ -1,4 +1,5 @@
-import {observeSimple} from "../common/utils";
+import {observeSimple, sendMsgToService} from "../common/utils";
+import {MsgType} from "../common/consts";
 
 export function confirmUsrInfo() {
     observeSimple(
@@ -11,6 +12,13 @@ export function confirmUsrInfo() {
 
             console.log("------->>> user info:", userInfoArea.textContent, imgElm.src);
 
+            sendMsgToService({}, MsgType.KolCursorLoadAll).then(rsp=>{
+                if (!rsp.success || !rsp.data) {
+                    return
+                }
+
+                //TODO::query user's tweet info
+            });
             return true;
         }
     );
