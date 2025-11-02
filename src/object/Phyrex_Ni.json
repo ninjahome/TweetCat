@@ -1,0 +1,150 @@
+{
+  "data": {
+    "user": {
+      "result": {
+        "__typename": "User",
+        "id": "VXNlcjo1NTU2MzQ3NDA=",
+        "rest_id": "555634740",
+        "affiliates_highlighted_label": {},
+        "avatar": {
+          "image_url": "https://pbs.twimg.com/profile_images/1596374669824696320/MGne6qLH_normal.jpg"
+        },
+        "core": {
+          "created_at": "Tue Apr 17 00:56:17 +0000 2012",
+          "name": "Phyrex",
+          "screen_name": "Phyrex_Ni"
+        },
+        "dm_permissions": {
+          "can_dm": true
+        },
+        "follow_request_sent": false,
+        "has_graduated_access": true,
+        "is_blue_verified": true,
+        "legacy": {
+          "default_profile": true,
+          "default_profile_image": false,
+          "description": "4XLABS 辅导全球Web3项目落地华语市场\n只是个搬砖的，偶尔恰饭\n不奢求，不浪费\nGlassNode 重度使用者\n没有群也不收费，所有分析回答均不构成投资建议\n近3亿用户共同选择Binance：https://t.co/JukzSnpfwD\nCrypto入口OKX就够了：https://t.co/vPOAfIjmpB\n做有温度的Bitget：https://t.co/VZ8RxZe5N7",
+          "entities": {
+            "description": {
+              "urls": [
+                {
+                  "display_url": "Binance.com",
+                  "expanded_url": "http://Binance.com",
+                  "url": "https://t.co/JukzSnpfwD",
+                  "indices": [
+                    100,
+                    123
+                  ]
+                },
+                {
+                  "display_url": "okx.com",
+                  "expanded_url": "http://okx.com",
+                  "url": "https://t.co/vPOAfIjmpB",
+                  "indices": [
+                    139,
+                    162
+                  ]
+                },
+                {
+                  "display_url": "Bitget.com",
+                  "expanded_url": "http://Bitget.com",
+                  "url": "https://t.co/VZ8RxZe5N7",
+                  "indices": [
+                    175,
+                    198
+                  ]
+                }
+              ]
+            }
+          },
+          "fast_followers_count": 0,
+          "favourites_count": 115717,
+          "followers_count": 360242,
+          "friends_count": 5360,
+          "has_custom_timelines": true,
+          "is_translator": false,
+          "listed_count": 5073,
+          "media_count": 15593,
+          "normal_followers_count": 360242,
+          "pinned_tweet_ids_str": [
+            "1984027885951443105"
+          ],
+          "possibly_sensitive": false,
+          "profile_banner_url": "https://pbs.twimg.com/profile_banners/555634740/1747377528",
+          "profile_interstitial_type": "",
+          "statuses_count": 247656,
+          "translator_type": "none",
+          "want_retweets": true,
+          "withheld_in_countries": []
+        },
+        "location": {
+          "location": "DeAgentAI体验官"
+        },
+        "media_permissions": {
+          "can_media_tag": true
+        },
+        "parody_commentary_fan_label": "None",
+        "profile_image_shape": "Circle",
+        "professional": {
+          "rest_id": "1462369876400644097",
+          "professional_type": "Creator",
+          "category": [
+            {
+              "id": 192,
+              "name": "金融服务",
+              "icon_name": "IconBriefcaseStroke"
+            }
+          ]
+        },
+        "profile_bio": {
+          "description": "4XLABS 辅导全球Web3项目落地华语市场\n只是个搬砖的，偶尔恰饭\n不奢求，不浪费\nGlassNode 重度使用者\n没有群也不收费，所有分析回答均不构成投资建议\n近3亿用户共同选择Binance：https://t.co/JukzSnpfwD\nCrypto入口OKX就够了：https://t.co/vPOAfIjmpB\n做有温度的Bitget：https://t.co/VZ8RxZe5N7"
+        },
+        "privacy": {
+          "protected": false
+        },
+        "relationship_perspectives": {
+          "following": true
+        },
+        "tipjar_settings": {
+          "is_enabled": true,
+          "bitcoin_handle": "39P5Jx48P4y9td6LaNmyAxqSTj2nQ1DMDX",
+          "ethereum_handle": "0xdDa424d9bB3140bE68b0AAadCaf7CADf7c36A046"
+        },
+        "verification": {
+          "verified": false
+        },
+        "profile_description_language": "zh",
+        "legacy_extended_profile": {},
+        "is_profile_translatable": false,
+        "has_hidden_subscriptions_on_profile": false,
+        "verification_info": {
+          "is_identity_verified": false,
+          "reason": {
+            "description": {
+              "text": "这个账号已通过认证。了解更多",
+              "entities": [
+                {
+                  "from_index": 10,
+                  "to_index": 14,
+                  "ref": {
+                    "url": "https://help.twitter.com/managing-your-account/about-twitter-verified-accounts",
+                    "url_type": "ExternalUrl"
+                  }
+                }
+              ]
+            },
+            "verified_since_msec": "1739556028550"
+          }
+        },
+        "highlights_info": {
+          "can_highlight_tweets": true,
+          "highlighted_tweets": "233"
+        },
+        "user_seed_tweet_count": 34,
+        "premium_gifting_eligible": false,
+        "business_account": {},
+        "creator_subscriptions_count": 0
+      }
+    }
+  }
+}

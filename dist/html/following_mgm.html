@@ -3,8 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <title>Following Management</title>
+    <link rel="stylesheet" href="../css/following_mgn.css" />
+    <script type="module" src="../js/following_mgn.js"></script>
+
 </head>
 <body>
+<body>
+<div id="app" class="follow-manager">
+    <!-- 左侧分组栏 -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>分类</h2>
+            <button id="add-category-btn">＋ 新建</button>
+        </div>
+        <ul id="category-list" class="category-list">
+            <li class="category-item active" data-id="uncategorized">未分类</li>
+            <!-- 动态插入 -->
+        </ul>
+    </aside>
 
+    <!-- 右侧主要内容 -->
+    <main class="content">
+        <div id="empty-state" class="empty-state">
+            <p>还没有同步关注列表</p>
+            <button id="sync-btn">同步关注列表</button>
+        </div>
+
+        <div id="user-list" class="user-list" style="display:none;">
+            <!-- 动态用户卡片 -->
+        </div>
+    </main>
+</div>
+
+</body>
 </body>
 </html>

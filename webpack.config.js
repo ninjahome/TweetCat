@@ -101,6 +101,7 @@ module.exports = (env, argv) => {
             dashboard: path.resolve(__dirname, './src/popup/dashboard.ts'),
             content: path.resolve(__dirname, './src/content/main_entrance.ts'),
             kol_mg: path.resolve(__dirname, './src/popup/kol_mg.ts'),
+            following_mgn: path.resolve(__dirname, './src/popup/following_mgn.ts'),
             yt_content: path.resolve(__dirname, './src/youtube/content.ts'),
             yt_inject: path.resolve(__dirname, './src/youtube/inject.ts'),
         },

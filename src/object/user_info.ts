@@ -1,5 +1,3 @@
-import {differenceInYears, parse} from 'date-fns';
-
 /* ====================== 1. 接口定义 ====================== */
 export interface IUserCore {
     userName: string;
