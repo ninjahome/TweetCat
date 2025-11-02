@@ -197,5 +197,8 @@
   },
   "growth_score_title": {
     "message": "成长分(账号年龄)"
+  },
+  "total_score_title": {
+    "message": "等级分"
   }
 }

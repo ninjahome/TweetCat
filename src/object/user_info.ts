@@ -192,7 +192,7 @@ const normLogTo = (x: number, refMax: number) =>
 function applyDifficulty(totalRaw: number): number {
     const t = clamp01(totalRaw / RAW_MAX); // 0..1
     const level = 100 * Math.pow(t, DIFFICULTY_BETA) * Math.pow(ANCHOR_T, 1 - DIFFICULTY_BETA);
-    return Math.max(0, Math.min(100, Number(level.toFixed(3))));
+    return Math.max(0, Math.min(100, Number(level.toFixed(2))));
 }
 
 /* ====================== 分项结构 / Breakdown ====================== */

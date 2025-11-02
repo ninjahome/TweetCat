@@ -7,6 +7,7 @@ import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {logTPR} from "../common/debug_flags";
 import {calculateLevelBreakdown, LevelScoreBreakdown, UserProfile} from "../object/user_info";
+import {t} from "../common/i18n";
 
 let observing = false;
 
@@ -49,6 +50,7 @@ export async function appendScoreInfoToProfilePage(profileData: any, userName: s
         }
 
         (scoreDiv.querySelector(".total-score-value") as HTMLElement).innerText = "" + scoreData.total;
+        (scoreDiv.querySelector(".total-score-title") as HTMLElement).innerText = t("total_score_title");
 
         const scoreDetailDiv = document.getElementById("user-profile-score-details") as HTMLElement;
         if(!scoreDetailDiv)return;
@@ -65,11 +67,11 @@ export async function appendScoreInfoToProfilePage(profileData: any, userName: s
             scoreDetailDiv.style.display = "none";
         });
 
-        (scoreDetailDiv.querySelector(".scale-score-value") as HTMLElement).innerText = scoreData.scale.toFixed(3);
-        (scoreDetailDiv.querySelector(".activity-score-value") as HTMLElement).innerText = scoreData.activity.toFixed(3);
-        (scoreDetailDiv.querySelector(".trust-score-value") as HTMLElement).innerText = scoreData.trust.toFixed(3);
-        (scoreDetailDiv.querySelector(".brand-score-value") as HTMLElement).innerText = scoreData.brand.toFixed(3);
-        (scoreDetailDiv.querySelector(".growth-score-value") as HTMLElement).innerText = scoreData.growth.toFixed(3);
+        (scoreDetailDiv.querySelector(".scale-score-value") as HTMLElement).innerText = scoreData.scale.toFixed(2);
+        (scoreDetailDiv.querySelector(".activity-score-value") as HTMLElement).innerText = scoreData.activity.toFixed(2);
+        (scoreDetailDiv.querySelector(".trust-score-value") as HTMLElement).innerText = scoreData.trust.toFixed(2);
+        (scoreDetailDiv.querySelector(".brand-score-value") as HTMLElement).innerText = scoreData.brand.toFixed(2);
+        (scoreDetailDiv.querySelector(".growth-score-value") as HTMLElement).innerText = scoreData.growth.toFixed(2);
 
     } catch (e) {
         console.warn("failed to append score data to profile page.", e, userName);

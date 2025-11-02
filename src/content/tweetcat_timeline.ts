@@ -60,11 +60,13 @@ function prepareElementOfWeb3(tpl: HTMLTemplateElement) {
     document.body.appendChild(aiTrend);
 
     let scoreDetailDiv = tpl.content.getElementById("user-profile-score-details")!.cloneNode(true) as HTMLElement;
-    (scoreDetailDiv.querySelector(".scale-score-title") as HTMLSpanElement).innerText = t("scale_score_title")
-    (scoreDetailDiv.querySelector(".activity-score-title") as HTMLSpanElement).innerText = t("activity_score_title")
-    (scoreDetailDiv.querySelector(".trust-score-title") as HTMLSpanElement).innerText = t("trust_score_title")
-    (scoreDetailDiv.querySelector(".brand-score-title") as HTMLSpanElement).innerText = t("brand_score_title")
-    (scoreDetailDiv.querySelector(".growth-score-title") as HTMLSpanElement).innerText = t("growth_score_title")
+
+    (scoreDetailDiv.querySelector(".scale-score-title") as HTMLElement).innerText = t("scale_score_title");
+    (scoreDetailDiv.querySelector(".activity-score-title") as HTMLElement).innerText = t("activity_score_title");
+    (scoreDetailDiv.querySelector(".trust-score-title") as HTMLElement).innerText = t("trust_score_title");
+    (scoreDetailDiv.querySelector(".brand-score-title") as HTMLElement).innerText = t("brand_score_title");
+    (scoreDetailDiv.querySelector(".growth-score-title") as HTMLElement).innerText = t("growth_score_title");
+
     document.body.appendChild(scoreDetailDiv);
 }
 
