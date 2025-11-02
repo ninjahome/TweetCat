@@ -165,13 +165,12 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
     return parseTimelineFromGraphQL(result, "tweets");
 }
 
-
 async function buildFollowingURL(params: {
     userId: string;
     count?: number;
     cursor?: string;
 }): Promise<string> {
-    const bp = await getUrlWithQueryID(Following); // 从本地 queryId 映射取
+    const bp = await getUrlWithQueryID(Following);
     if (!bp) throw new Error("Missing queryId for 'Following'");
 
     const variables: any = {
@@ -182,9 +181,12 @@ async function buildFollowingURL(params: {
     };
     if (params.cursor) variables.cursor = params.cursor;
 
-    const features = encodeURIComponent(JSON.stringify(await buildFeatures("follow")));
-    return `${bp.url}?variables=${encodeURIComponent(JSON.stringify(variables))}`
-        + `&features=${encodeURIComponent(JSON.stringify(features))}`;
+    // ✅ 只编码一次，不能再包引号
+    const variablesParam = encodeURIComponent(JSON.stringify(variables));
+    const featuresObj = await buildFeatures("follow");
+    const featuresParam = encodeURIComponent(JSON.stringify(featuresObj));
+
+    return `${bp.url}?variables=${variablesParam}&features=${featuresParam}`;
 }
 
 export async function fetchFollowingPage(

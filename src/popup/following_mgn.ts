@@ -139,14 +139,14 @@ function createCategoryElement(
     renameBtn.addEventListener("click", (ev) => {
         ev.stopPropagation();
         if (!category) return;
-        handleRenameCategory(category);
+        handleRenameCategory(category).then();
     });
 
     const deleteBtn = li.querySelector(".delete-btn") as HTMLButtonElement;
     deleteBtn.addEventListener("click", (ev) => {
         ev.stopPropagation();
         if (!category) return;
-        handleDeleteCategory(category);
+        handleDeleteCategory(category).then();
     });
 
     return li;
