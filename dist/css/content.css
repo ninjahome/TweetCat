@@ -1491,28 +1491,46 @@ html[data-bg="lightsout"] {
 }
 
 
+/* ========== 用户评分样式 ========== */
+.user-profile-score {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d9bf0; /* Twitter 蓝 */
+    background: rgba(29,155,240,0.08);
+    border-radius: 6px;
+    padding: 2px 6px;
+    cursor: default;
+    transition: background 0.2s ease;
+}
 
-/* ========== 用户评分详细浮层样式 ========== */
+.user-profile-score:hover {
+    background: rgba(29,155,240,0.15);
+}
 .user-profile-score-details {
     position: absolute;
     z-index: 99999;
     background: rgba(0, 0, 0, 0.85);
     color: #fff;
     border-radius: 8px;
-    padding: 10px 14px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    padding: 10px 16px 10px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
     font-size: 13px;
     line-height: 1.5;
     max-width: 280px;
-    pointer-events: none;
     opacity: 0;
-    transition: opacity 0.15s ease-in-out;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-/* 当显示时（JS 设置 display:block 或添加 .show 类） */
 .user-profile-score-details.show {
-    display: block;
     opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
 }
 
 /* 每一行 */

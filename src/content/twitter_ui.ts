@@ -38,34 +38,35 @@ export async function appendScoreInfoToProfilePage(profileData: any, userName: s
         console.log("------>>> score data:", scoreData);
         kolScoreCache.set(userName, scoreData);
 
-        const avatarArea = document.querySelector(`div[data-testid="UserAvatar-Container-${usrProfile.userName}"]`)
+        const userInfoArea = document.querySelector(`div[data-testid="UserName"]`)
 
         let scoreDiv = document.getElementById("user-profile-score") as HTMLElement;
-        if (scoreDiv){
-
-        }else{
-           const tpl =  await parseContentHtml("html/content.html") ;
+        if (!scoreDiv) {
+            const tpl = await parseContentHtml("html/content.html");
             scoreDiv = tpl.content.getElementById("user-profile-score")?.cloneNode(true) as HTMLElement;
-            avatarArea?.insertAdjacentElement('afterend', scoreDiv);
+            userInfoArea?.appendChild(scoreDiv);
         }
 
         (scoreDiv.querySelector(".total-score-value") as HTMLElement).innerText = "" + scoreData.total;
         (scoreDiv.querySelector(".total-score-title") as HTMLElement).innerText = t("total_score_title");
 
         const scoreDetailDiv = document.getElementById("user-profile-score-details") as HTMLElement;
-        if(!scoreDetailDiv)return;
+        if (!scoreDetailDiv) return;
 
         scoreDiv.addEventListener("mouseenter", () => {
-            scoreDetailDiv.style.display = "block";
-            const rect = scoreDiv.getBoundingClientRect();
-            scoreDetailDiv.style.position = "absolute";
-            scoreDetailDiv.style.top = rect.top + window.scrollY - scoreDetailDiv.offsetHeight - 8 + "px";
-            scoreDetailDiv.style.left = rect.left + window.scrollX + "px";
+            scoreDetailDiv.classList.add("show");
+            requestAnimationFrame(() => {
+                const rect = scoreDiv.getBoundingClientRect();
+                const detailHeight = scoreDetailDiv.offsetHeight;
+                scoreDetailDiv.style.top = rect.top + window.scrollY - detailHeight - 8 + "px";
+                scoreDetailDiv.style.left = rect.left + window.scrollX + "px";
+            });
         });
 
         scoreDiv.addEventListener("mouseleave", () => {
-            scoreDetailDiv.style.display = "none";
+            scoreDetailDiv.classList.remove("show");
         });
+
 
         (scoreDetailDiv.querySelector(".scale-score-value") as HTMLElement).innerText = scoreData.scale.toFixed(2);
         (scoreDetailDiv.querySelector(".activity-score-value") as HTMLElement).innerText = scoreData.activity.toFixed(2);

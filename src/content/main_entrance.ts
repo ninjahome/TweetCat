@@ -18,6 +18,7 @@ import {logTPR} from "../common/debug_flags";
 import {reloadCategoryContainer, setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 import {queryProfileOfTwitterOwner} from "./tweet_user_info";
+import {initI18n} from "../common/i18n";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
@@ -68,6 +69,7 @@ function installThemeObserverOnce(): void {
 
 
 async function onDocumentLoaded() {
+    initI18n();
     addCustomStyles('css/content.css');
     addCustomStyles('css/tweet_render.css');
     await initObserver();
