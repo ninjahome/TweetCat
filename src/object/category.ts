@@ -9,6 +9,7 @@ import {
     databaseUpdate
 } from "../common/database";
 import {TweetKol} from "./tweet_kol";
+import {clearCategoryForFollowings} from "./following";
 
 export class Category {
     id?: number;
@@ -95,6 +96,7 @@ export async function removeCategory(catID: number) {
         await databaseDeleteByFilter(__tableKolsInCategory, (item) => {
             return item.catID === catID;
         });
+        await clearCategoryForFollowings(catID);
     } catch (e) {
         console.log("------>>> remove category failed:", catID);
     }
