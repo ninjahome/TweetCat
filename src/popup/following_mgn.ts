@@ -1,17 +1,51 @@
 import browser from "webextension-polyfill";
 import {MsgType} from "../common/consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/database";
-import {Category, queryCategoriesFromBG, removeCategory, updateCategoryDetail} from "../object/category";
+import {
+    Category,
+    assignKolsToCategoryFromBG,
+    queryAllKolCategoryMapFromBG,
+    queryCategoriesFromBG,
+    removeCategory,
+    removeKolsFromCategoryFromBG,
+    updateCategoryDetail,
+} from "../object/category";
 import {FollowingUser} from "../object/following";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
 type CategoryFilter = typeof ALL_FILTER | typeof UNCATEGORIZED_FILTER | number;
 
+type UnifiedKOL = {
+    key: string;
+    screenName?: string;
+    displayName?: string;
+    userId?: string;
+    avatarUrl?: string;
+    categoryId?: number | null;
+    sources: Array<"following" | "kic">;
+};
+
+type UnifiedKOLView = {
+    categories: Category[];
+    unified: UnifiedKOL[];
+    byCategory: Map<number, UnifiedKOL[]>;
+    uncategorized: UnifiedKOL[];
+};
+
+type KolSnapshot = {
+    kolName: string;
+    displayName?: string;
+    avatarUrl?: string;
+    kolUserId?: string;
+};
+
 let categories: Category[] = [];
-let followings: FollowingUser[] = [];
+let unifiedView: UnifiedKOLView | null = null;
+let unifiedKols: UnifiedKOL[] = [];
+let unifiedByKey = new Map<string, UnifiedKOL>();
 let selectedFilter: CategoryFilter = ALL_FILTER;
-const selectedUserIds = new Set<string>();
+const selectedKeys = new Set<string>();
 
 const categoryList = document.getElementById("category-list") as HTMLUListElement;
 const userList = document.getElementById("user-list") as HTMLDivElement;
@@ -46,16 +80,29 @@ function bindEvents() {
     });
     assignBtn.addEventListener("click", handleAssignCategory);
     clearSelectionBtn.addEventListener("click", () => {
-        selectedUserIds.clear();
+        selectedKeys.clear();
         renderUserList();
     });
     addCategoryBtn.addEventListener("click", handleAddCategory);
 }
 
 async function refreshData() {
-    categories = await queryCategoriesFromBG();
-    followings = await fetchFollowings();
+    const view = await buildUnifiedKOLView();
+    applyUnifiedView(view);
     renderAll();
+}
+
+function applyUnifiedView(view: UnifiedKOLView) {
+    unifiedView = view;
+    categories = view.categories;
+    unifiedKols = view.unified;
+    unifiedByKey = new Map(view.unified.map((item) => [item.key, item]));
+    Array.from(selectedKeys).forEach((key) => {
+        if (!unifiedByKey.has(key)) {
+            selectedKeys.delete(key);
+        }
+    });
+    updateSelectionSummary();
 }
 
 async function fetchFollowings(): Promise<FollowingUser[]> {
@@ -176,16 +223,14 @@ function buildCategoryCountMap(): {
     perCategory: Map<number, number>;
 } {
     const counts = new Map<number, number>();
-    let uncategorized = 0;
-    for (const user of followings) {
-        if (user.categoryId === null || user.categoryId === undefined) {
-            uncategorized += 1;
-        } else {
-            counts.set(user.categoryId, (counts.get(user.categoryId) ?? 0) + 1);
+    let uncategorized = unifiedView?.uncategorized.length ?? 0;
+    if (unifiedView) {
+        for (const [catId, list] of unifiedView.byCategory.entries()) {
+            counts.set(catId, list.length);
         }
     }
     return {
-        total: followings.length,
+        total: unifiedKols.length,
         uncategorized,
         perCategory: counts,
     };
@@ -219,35 +264,39 @@ function renderUserList() {
     const filtered = getFilteredUsers();
 
     if (filtered.length === 0) {
-        noUsersMessage.style.display = followings.length === 0 ? "none" : "block";
+        noUsersMessage.style.display = unifiedKols.length === 0 ? "none" : "block";
     } else {
         noUsersMessage.style.display = "none";
     }
 
     filtered
         .slice()
-        .sort((a, b) => a.name.localeCompare(b.name))
+        .sort((a, b) => {
+            const nameA = (a.displayName ?? a.screenName ?? a.key).toLowerCase();
+            const nameB = (b.displayName ?? b.screenName ?? b.key).toLowerCase();
+            return nameA.localeCompare(nameB);
+        })
         .forEach((user) => {
             const card = userTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
             const checkbox = card.querySelector(".user-select") as HTMLInputElement;
-            checkbox.dataset.id = user.id;
-            checkbox.checked = selectedUserIds.has(user.id);
-            checkbox.addEventListener("change", () => toggleUserSelection(user.id, checkbox.checked));
+            checkbox.dataset.key = user.key;
+            checkbox.checked = selectedKeys.has(user.key);
+            checkbox.addEventListener("change", () => toggleUserSelection(user.key, checkbox.checked));
 
             const avatar = card.querySelector(".user-avatar") as HTMLImageElement;
             avatar.src = user.avatarUrl || "../images/logo_48.png";
-            avatar.alt = `${user.name}'s avatar`;
+            avatar.alt = `${user.displayName ?? user.screenName ?? user.key}'s avatar`;
 
             const nameElm = card.querySelector(".name") as HTMLElement;
-            nameElm.textContent = user.name || user.screenName;
+            nameElm.textContent = user.displayName ?? user.screenName ?? user.key;
 
             const handleElm = card.querySelector(".handle") as HTMLElement;
-            handleElm.textContent = `@${user.screenName}`;
+            handleElm.textContent = user.screenName ? `@${user.screenName}` : "";
 
             card.addEventListener("click", (ev) => {
                 if (ev.target instanceof HTMLInputElement) return;
                 checkbox.checked = !checkbox.checked;
-                toggleUserSelection(user.id, checkbox.checked);
+                toggleUserSelection(user.key, checkbox.checked);
             });
 
             userList.appendChild(card);
@@ -256,39 +305,42 @@ function renderUserList() {
     updateSelectionSummary();
 }
 
-function getFilteredUsers(): FollowingUser[] {
+function getFilteredUsers(): UnifiedKOL[] {
+    if (!unifiedView) {
+        return [];
+    }
     if (selectedFilter === ALL_FILTER) {
-        return followings;
+        return unifiedKols;
     }
     if (selectedFilter === UNCATEGORIZED_FILTER) {
-        return followings.filter((user) => user.categoryId === null || user.categoryId === undefined);
+        return unifiedView.uncategorized;
     }
-    return followings.filter((user) => user.categoryId === selectedFilter);
+    return unifiedView.byCategory.get(selectedFilter) ?? [];
 }
 
-function toggleUserSelection(userId: string, selected: boolean) {
+function toggleUserSelection(key: string, selected: boolean) {
     if (selected) {
-        selectedUserIds.add(userId);
+        selectedKeys.add(key);
     } else {
-        selectedUserIds.delete(userId);
+        selectedKeys.delete(key);
     }
     updateSelectionSummary();
 }
 
 function updateSelectionSummary() {
-    const count = selectedUserIds.size;
+    const count = selectedKeys.size;
     selectionCounter.textContent = `${count} selected`;
     assignBtn.disabled = count === 0;
     clearSelectionBtn.disabled = count === 0;
 }
 
 function updateEmptyState() {
-    const hasData = followings.length > 0;
+    const hasData = unifiedKols.length > 0;
     emptyState.style.display = hasData ? "none" : "flex";
     toolbar.style.display = hasData ? "flex" : "none";
     userList.style.display = hasData ? "grid" : "none";
     if (!hasData) {
-        selectedUserIds.clear();
+        selectedKeys.clear();
         updateSelectionSummary();
     }
 }
@@ -303,9 +355,8 @@ async function handleSyncClick() {
         }
         const count = rsp?.data?.count ?? 0;
         syncStatus.textContent = `Synced ${count} followings.`;
-        selectedUserIds.clear();
-        followings = await fetchFollowings();
-        renderAll();
+        selectedKeys.clear();
+        await refreshData();
     } catch (error) {
         const err = error as Error;
         alert(err.message);
@@ -322,28 +373,26 @@ function setSyncLoading(loading: boolean) {
     });
     if (loading) {
         syncStatus.textContent = "Syncing followings…";
-    } else if (followings.length === 0) {
+    } else if (unifiedKols.length === 0) {
         syncStatus.textContent = "";
     }
 }
 
 async function handleAssignCategory() {
-    const ids = Array.from(selectedUserIds);
-    if (ids.length === 0) return;
+    const keys = Array.from(selectedKeys);
+    if (keys.length === 0) return;
     const value = assignSelect.value;
-    const categoryId = value === UNCATEGORIZED_FILTER || value === "" ? null : Number(value);
+    if (value === "") return;
+    const categoryId = value === UNCATEGORIZED_FILTER ? null : Number(value);
+    if (categoryId !== null && Number.isNaN(categoryId)) {
+        alert("Please select a valid category.");
+        return;
+    }
     try {
-        await browser.runtime.sendMessage({
-            action: MsgType.FollowingAssignCategory,
-            data: {userIds: ids, categoryId},
-        });
-        followings = followings.map((user) =>
-            ids.includes(user.id)
-                ? {...user, categoryId: categoryId === null ? null : categoryId}
-                : user,
-        );
-        selectedUserIds.clear();
-        renderAll();
+        await bulkAssignCategory(keys, categoryId);
+        selectedKeys.clear();
+        assignSelect.value = "";
+        await refreshData();
     } catch (error) {
         const err = error as Error;
         alert(err.message);
@@ -397,16 +446,154 @@ async function handleDeleteCategory(category: Category) {
     if (!confirmed) return;
     try {
         await removeCategory(category.id!);
-        categories = categories.filter((cat) => cat.id !== category.id);
-        followings = followings.map((user) =>
-            user.categoryId === category.id ? {...user, categoryId: null} : user,
-        );
         if (selectedFilter === category.id) {
             selectedFilter = ALL_FILTER;
         }
-        renderAll();
+        selectedKeys.clear();
+        await refreshData();
     } catch (error) {
         console.warn("------>>> delete category failed", error);
         alert("Failed to delete category.");
+    }
+}
+
+async function buildUnifiedKOLView(): Promise<UnifiedKOLView> {
+    const [categoryList, followingsList, kolMap] = await Promise.all([
+        queryCategoriesFromBG(),
+        fetchFollowings(),
+        queryAllKolCategoryMapFromBG(),
+    ]);
+
+    const unifiedMap = new Map<string, UnifiedKOL>();
+
+    for (const user of followingsList) {
+        const screenName = user.screenName;
+        if (!screenName) {
+            continue;
+        }
+        const key = screenName.toLowerCase();
+        const kicEntry = kolMap.get(key);
+        const unified: UnifiedKOL = {
+            key,
+            screenName,
+            displayName: user.name ?? screenName,
+            userId: user.id,
+            avatarUrl: user.avatarUrl,
+            categoryId: kicEntry?.catID ?? null,
+            sources: kicEntry ? ["following", "kic"] : ["following"],
+        };
+        if (kicEntry) {
+            unified.displayName = kicEntry.displayName ?? unified.displayName;
+            unified.avatarUrl = kicEntry.avatarUrl ?? unified.avatarUrl;
+            if (kicEntry.kolUserId && !unified.userId) {
+                unified.userId = kicEntry.kolUserId;
+            }
+        }
+        unifiedMap.set(key, unified);
+    }
+
+    for (const [key, kol] of kolMap.entries()) {
+        const existing = unifiedMap.get(key);
+        if (existing) {
+            existing.categoryId = kol.catID ?? null;
+            if (!existing.sources.includes("kic")) {
+                existing.sources.push("kic");
+            }
+            if (!existing.displayName) {
+                existing.displayName = kol.displayName ?? kol.kolName ?? key;
+            }
+            if (!existing.screenName) {
+                existing.screenName = kol.kolName ?? key;
+            }
+            if (!existing.avatarUrl && kol.avatarUrl) {
+                existing.avatarUrl = kol.avatarUrl;
+            }
+            if (!existing.userId && kol.kolUserId) {
+                existing.userId = kol.kolUserId;
+            }
+            continue;
+        }
+
+        const screenName = kol.kolName ?? key;
+        unifiedMap.set(key, {
+            key,
+            screenName,
+            displayName: kol.displayName ?? screenName,
+            userId: kol.kolUserId,
+            avatarUrl: kol.avatarUrl,
+            categoryId: kol.catID ?? null,
+            sources: ["kic"],
+        });
+    }
+
+    const unified = Array.from(unifiedMap.values());
+    const byCategory = new Map<number, UnifiedKOL[]>();
+    const uncategorized: UnifiedKOL[] = [];
+
+    for (const item of unified) {
+        if (typeof item.categoryId === "number") {
+            const list = byCategory.get(item.categoryId) ?? [];
+            list.push(item);
+            byCategory.set(item.categoryId, list);
+        } else {
+            uncategorized.push(item);
+        }
+    }
+
+    return {
+        categories: categoryList,
+        unified,
+        byCategory,
+        uncategorized,
+    };
+}
+
+async function bulkAssignCategory(keys: string[], targetCatId: number | null): Promise<void> {
+    const uniqueKeys = Array.from(new Set(keys.map((key) => key.toLowerCase())));
+    const snapshots = new Map<string, KolSnapshot>();
+    const entries: UnifiedKOL[] = [];
+
+    for (const key of uniqueKeys) {
+        const entry = unifiedByKey.get(key);
+        if (!entry) continue;
+        entries.push(entry);
+        const kolName = entry.screenName ?? entry.displayName ?? key;
+        snapshots.set(key, {
+            kolName,
+            displayName: entry.displayName ?? entry.screenName ?? key,
+            avatarUrl: entry.avatarUrl,
+            kolUserId: entry.userId,
+        });
+    }
+
+    if (entries.length === 0) return;
+
+    if (targetCatId === null) {
+        const kolNames = Array.from(
+            new Set(
+                entries.map((item) => snapshots.get(item.key)?.kolName ?? item.screenName ?? item.key),
+            ),
+        );
+        await removeKolsFromCategoryFromBG(kolNames);
+    } else {
+        await assignKolsToCategoryFromBG(uniqueKeys, targetCatId, snapshots);
+    }
+
+    const followingIds = Array.from(
+        new Set(
+            entries
+                .filter((item) => item.sources.includes("following") && item.userId)
+                .map((item) => item.userId!),
+        ),
+    );
+
+    if (followingIds.length > 0) {
+        await browser.runtime.sendMessage({
+            action: MsgType.FollowingAssignCategory,
+            data: {
+                userIds: followingIds,
+                categoryId: targetCatId,
+            },
+        });
     }
 }

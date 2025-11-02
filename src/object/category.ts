@@ -127,3 +127,74 @@ export async function queryCategoryById(catID: number): Promise<Category | null>
     // console.log("------------------------->>>tmp ", rsp)
     return rsp.data as Category;
 }
+
+export type KolCategoryMapEntry = {
+    kolName: string;
+    displayName?: string;
+    avatarUrl?: string;
+    kolUserId?: string;
+    catID?: number | null;
+};
+
+export async function queryAllKolCategoryMapFromBG(): Promise<Map<string, KolCategoryMapEntry>> {
+    const rsp = await sendMsgToService({}, MsgType.KolQueryAll);
+    if (!rsp.success || !Array.isArray(rsp.data)) {
+        console.warn("------>>> load kol categories error:", rsp.data);
+        return new Map();
+    }
+
+    const map = new Map<string, KolCategoryMapEntry>();
+    for (const item of rsp.data as any[]) {
+        if (!item || !item.kolName) continue;
+        const key = String(item.kolName).toLowerCase();
+        const rawCatId = item.catID;
+        const catID = rawCatId === null || rawCatId === undefined ? null : Number(rawCatId);
+        map.set(key, {
+            kolName: item.kolName,
+            displayName: item.displayName,
+            avatarUrl: item.avatarUrl,
+            kolUserId: item.kolUserId,
+            catID,
+        });
+    }
+    return map;
+}
+
+export async function assignKolsToCategoryFromBG(
+    keys: string[],
+    targetCatId: number,
+    snapshots?: Map<string, KolCategoryMapEntry>,
+): Promise<void> {
+    if (keys.length === 0) return;
+    const updates = keys.map((rawKey) => {
+        const key = rawKey.toLowerCase();
+        const snapshot = snapshots?.get(key);
+        const kolName = snapshot?.kolName ?? rawKey;
+        return sendMsgToService(
+            {
+                kolName,
+                displayName: snapshot?.displayName ?? kolName,
+                avatarUrl: snapshot?.avatarUrl,
+                kolUserId: snapshot?.kolUserId,
+                catID: targetCatId,
+            },
+            MsgType.KolUpdate,
+        );
+    });
+
+    const results = await Promise.all(updates);
+    const failed = results.find((rsp) => !rsp?.success);
+    if (failed) {
+        throw new Error(failed?.data ?? "Failed to assign KOL category.");
+    }
+}
+
+export async function removeKolsFromCategoryFromBG(kolNames: string[]): Promise<void> {
+    const unique = Array.from(new Set(kolNames.filter((name) => !!name)));
+    if (unique.length === 0) return;
+    const results = await Promise.all(unique.map((name) => sendMsgToService(name, MsgType.KolRemove)));
+    const failed = results.find((rsp) => !rsp?.success);
+    if (failed) {
+        throw new Error(failed?.data ?? "Failed to remove KOL from category.");
+    }
+}
