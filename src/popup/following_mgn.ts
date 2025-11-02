@@ -63,7 +63,22 @@ const toolbar = document.getElementById("toolbar") as HTMLDivElement;
 const selectionCounter = document.getElementById("selection-counter") as HTMLSpanElement;
 const categoryTemplate = document.getElementById("category-item-template") as HTMLTemplateElement;
 const userTemplate = document.getElementById("user-card-template") as HTMLTemplateElement;
-const addCategoryBtn = document.getElementById("add-category-btn") as HTMLButtonElement;
+const newCategoryBtn = document.getElementById("btn-new-category") as HTMLButtonElement;
+const notificationBar = document.getElementById("notification") as HTMLDivElement | null;
+const addCategoryModal = document.getElementById("modal-add-category") as HTMLDivElement | null;
+const newCategoryInput = document.getElementById("new-category-input") as HTMLInputElement | null;
+const confirmNewCategoryBtn = document.getElementById("btn-confirm-new-category") as HTMLButtonElement | null;
+const cancelNewCategoryBtn = document.getElementById("btn-cancel-new-category") as HTMLButtonElement | null;
+const confirmModal = document.getElementById("modal-confirm") as HTMLDivElement | null;
+const confirmMessage = document.getElementById("confirm-message") as HTMLParagraphElement | null;
+const cancelConfirmBtn = document.getElementById("btn-cancel-confirm") as HTMLButtonElement | null;
+const confirmConfirmBtn = document.getElementById("btn-confirm-confirm") as HTMLButtonElement | null;
+
+type ConfirmCallback = () => void | Promise<void>;
+
+let activeModal: HTMLElement | null = null;
+let pendingConfirmHandler: ConfirmCallback | null = null;
+let notificationTimer: number | null = null;
 
 document.addEventListener("DOMContentLoaded", initFollowingManager as EventListener);
 
@@ -83,7 +98,177 @@ function bindEvents() {
         selectedKeys.clear();
         renderUserList();
     });
-    addCategoryBtn.addEventListener("click", handleAddCategory);
+    newCategoryBtn?.addEventListener("click", showAddCategoryModal);
+
+    cancelNewCategoryBtn?.addEventListener("click", hideAddCategoryModal);
+    confirmNewCategoryBtn?.addEventListener("click", () => {
+        void handleAddCategoryConfirm();
+    });
+    newCategoryInput?.addEventListener("input", handleAddCategoryInputChange);
+    newCategoryInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            void handleAddCategoryConfirm();
+        }
+    });
+    addCategoryModal?.addEventListener("click", (event) => {
+        if (event.target === addCategoryModal) {
+            hideAddCategoryModal();
+        }
+    });
+
+    cancelConfirmBtn?.addEventListener("click", hideConfirmModal);
+    confirmConfirmBtn?.addEventListener("click", () => {
+        void handleConfirmModalConfirm();
+    });
+    confirmModal?.addEventListener("click", (event) => {
+        if (event.target === confirmModal) {
+            hideConfirmModal();
+        }
+    });
+
+    document.addEventListener("keydown", handleGlobalKeydown);
+}
+
+function showNotification(message: string, type: "info" | "error" = "info", duration = 4000) {
+    if (!notificationBar) return;
+    notificationBar.textContent = message;
+    notificationBar.classList.remove("hidden", "info", "error");
+    notificationBar.classList.add(type);
+    if (notificationTimer) {
+        window.clearTimeout(notificationTimer);
+        notificationTimer = null;
+    }
+    if (duration > 0 && message) {
+        notificationTimer = window.setTimeout(() => {
+            hideNotification();
+        }, duration);
+    }
+}
+
+function hideNotification() {
+    if (!notificationBar) return;
+    notificationBar.textContent = "";
+    notificationBar.classList.add("hidden");
+    notificationBar.classList.remove("info", "error");
+    if (notificationTimer) {
+        window.clearTimeout(notificationTimer);
+        notificationTimer = null;
+    }
+}
+
+function openModal(modal: HTMLElement | null) {
+    if (!modal) return;
+    modal.classList.remove("hidden");
+    document.body.classList.add("modal-open");
+    activeModal = modal;
+}
+
+function closeModal(modal: HTMLElement | null) {
+    if (!modal) return;
+    modal.classList.add("hidden");
+    if (activeModal === modal) {
+        activeModal = null;
+    }
+    if (!document.querySelector(".modal:not(.hidden)")) {
+        document.body.classList.remove("modal-open");
+    }
+}
+
+function handleGlobalKeydown(event: KeyboardEvent) {
+    if (event.key !== "Escape" || !activeModal) {
+        return;
+    }
+    event.preventDefault();
+    if (activeModal === addCategoryModal) {
+        hideAddCategoryModal();
+    } else if (activeModal === confirmModal) {
+        hideConfirmModal();
+    }
+}
+
+function handleAddCategoryInputChange() {
+    if (!newCategoryInput || !confirmNewCategoryBtn) return;
+    const hasValue = newCategoryInput.value.trim().length > 0;
+    confirmNewCategoryBtn.disabled = !hasValue;
+}
+
+function resetAddCategoryModal() {
+    if (!newCategoryInput || !confirmNewCategoryBtn) return;
+    newCategoryInput.value = "";
+    confirmNewCategoryBtn.disabled = true;
+}
+
+function showAddCategoryModal() {
+    resetAddCategoryModal();
+    openModal(addCategoryModal);
+    window.setTimeout(() => {
+        newCategoryInput?.focus();
+    }, 0);
+}
+
+function hideAddCategoryModal() {
+    resetAddCategoryModal();
+    closeModal(addCategoryModal);
+}
+
+async function handleAddCategoryConfirm() {
+    if (!newCategoryInput || !confirmNewCategoryBtn) return;
+    const name = newCategoryInput.value.trim();
+    if (!name) return;
+    confirmNewCategoryBtn.disabled = true;
+    try {
+        await addNewCategory(name);
+        hideAddCategoryModal();
+    } catch (error) {
+        console.warn("------>>> add category failed", error);
+        confirmNewCategoryBtn.disabled = newCategoryInput.value.trim().length === 0;
+        confirmNewCategoryBtn.focus();
+    }
+}
+
+function hideConfirmModal() {
+    pendingConfirmHandler = null;
+    closeModal(confirmModal);
+}
+
+function determineConfirmLabel(message: string): string {
+    const lower = message.toLowerCase();
+    if (lower.includes("delete")) {
+        return "Delete";
+    }
+    if (lower.includes("remove")) {
+        return "Yes, Remove";
+    }
+    return "Confirm";
+}
+
+function showConfirmModal(message: string, onConfirm: ConfirmCallback) {
+    if (!confirmModal || !confirmMessage || !confirmConfirmBtn) return;
+    confirmMessage.textContent = message;
+    confirmConfirmBtn.textContent = determineConfirmLabel(message);
+    pendingConfirmHandler = onConfirm;
+    openModal(confirmModal);
+    window.setTimeout(() => {
+        confirmConfirmBtn.focus();
+    }, 0);
+}
+
+async function handleConfirmModalConfirm() {
+    if (!pendingConfirmHandler) {
+        hideConfirmModal();
+        return;
+    }
+    const handler = pendingConfirmHandler;
+    pendingConfirmHandler = null;
+    try {
+        await handler();
+    } catch (error) {
+        const err = error as Error;
+        showNotification(err?.message ?? "Operation failed.", "error");
+    } finally {
+        hideConfirmModal();
+    }
 }
 
 async function refreshData() {
@@ -186,14 +371,14 @@ function createCategoryElement(
     renameBtn.addEventListener("click", (ev) => {
         ev.stopPropagation();
         if (!category) return;
-        handleRenameCategory(category).then();
+        handleRenameCategory(category);
     });
 
     const deleteBtn = li.querySelector(".delete-btn") as HTMLButtonElement;
     deleteBtn.addEventListener("click", (ev) => {
         ev.stopPropagation();
         if (!category) return;
-        handleDeleteCategory(category).then();
+        handleDeleteCategory(category);
     });
 
     return li;
@@ -350,7 +535,8 @@ async function handleSyncClick() {
     try {
         const rsp = await browser.runtime.sendMessage({action: MsgType.FollowingSync});
         if (!rsp?.success) {
-            alert(rsp?.data ?? "Failed to sync followings.");
+            const message = typeof rsp?.data === "string" ? rsp.data : "Failed to sync followings.";
+            showNotification(message, "error");
             return;
         }
         const count = rsp?.data?.count ?? 0;
@@ -359,7 +545,7 @@ async function handleSyncClick() {
         await refreshData();
     } catch (error) {
         const err = error as Error;
-        alert(err.message);
+        showNotification(err.message ?? "Failed to sync followings.", "error");
     } finally {
         setSyncLoading(false);
     }
@@ -378,34 +564,50 @@ function setSyncLoading(loading: boolean) {
     }
 }
 
-async function handleAssignCategory() {
+function handleAssignCategory() {
     const keys = Array.from(selectedKeys);
     if (keys.length === 0) return;
     const value = assignSelect.value;
     if (value === "") return;
     const categoryId = value === UNCATEGORIZED_FILTER ? null : Number(value);
     if (categoryId !== null && Number.isNaN(categoryId)) {
-        alert("Please select a valid category.");
+        showNotification("Please select a valid category.", "error");
         return;
     }
+
+    const handler = async () => {
+        await applyCategoryAssignment(keys, categoryId);
+    };
+
+    if (categoryId === null) {
+        showConfirmModal("Remove selected KOLs from this category?", handler);
+    } else {
+        void handler();
+    }
+}
+
+async function applyCategoryAssignment(keys: string[], categoryId: number | null) {
     try {
         await bulkAssignCategory(keys, categoryId);
         selectedKeys.clear();
         assignSelect.value = "";
         await refreshData();
+        const message =
+            categoryId === null
+                ? "Removed selected KOLs from this category."
+                : "Assigned selected KOLs to the selected category.";
+        showNotification(message, "info");
     } catch (error) {
         const err = error as Error;
-        alert(err.message);
+        showNotification(err?.message ?? "Failed to update category assignment.", "error");
     }
 }
 
-async function handleAddCategory() {
-    const name = prompt("New category name");
-    if (!name) return;
+async function addNewCategory(name: string) {
     const trimmed = name.trim();
     if (!trimmed) {
-        alert("Category name cannot be empty.");
-        return;
+        showNotification("Category name cannot be empty.", "error");
+        throw new Error("Category name cannot be empty.");
     }
     const category = new Category(trimmed);
     delete category.id;
@@ -415,9 +617,11 @@ async function handleAddCategory() {
         categories.push(category);
         renderCategoryList();
         renderAssignSelect();
+        showNotification(`Created category "${category.catName}".`, "info");
     } catch (error) {
         console.warn("------>>> add category failed", error);
-        alert("Failed to create category.");
+        showNotification("Failed to create category.", "error");
+        throw error;
     }
 }
 
@@ -426,7 +630,7 @@ async function handleRenameCategory(category: Category) {
     if (!name) return;
     const trimmed = name.trim();
     if (!trimmed) {
-        alert("Category name cannot be empty.");
+        showNotification("Category name cannot be empty.", "error");
         return;
     }
     category.catName = trimmed;
@@ -435,26 +639,28 @@ async function handleRenameCategory(category: Category) {
         categories = categories.map((cat) => (cat.id === category.id ? category : cat));
         renderCategoryList();
         renderAssignSelect();
+        showNotification(`Renamed category to "${category.catName}".`, "info");
     } catch (error) {
         console.warn("------>>> rename category failed", error);
-        alert("Failed to rename category.");
+        showNotification("Failed to rename category.", "error");
     }
 }
 
-async function handleDeleteCategory(category: Category) {
-    const confirmed = confirm(`Delete category "${category.catName}"?`);
-    if (!confirmed) return;
-    try {
-        await removeCategory(category.id!);
-        if (selectedFilter === category.id) {
-            selectedFilter = ALL_FILTER;
+function handleDeleteCategory(category: Category) {
+    showConfirmModal(`Delete category "${category.catName}"?`, async () => {
+        try {
+            await removeCategory(category.id!);
+            if (selectedFilter === category.id) {
+                selectedFilter = ALL_FILTER;
+            }
+            selectedKeys.clear();
+            await refreshData();
+            showNotification("Category deleted.", "info");
+        } catch (error) {
+            console.warn("------>>> delete category failed", error);
+            showNotification("Failed to delete category.", "error");
         }
-        selectedKeys.clear();
-        await refreshData();
-    } catch (error) {
-        console.warn("------>>> delete category failed", error);
-        alert("Failed to delete category.");
-    }
+    });
 }
 
 async function buildUnifiedKOLView(): Promise<UnifiedKOLView> {
