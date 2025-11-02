@@ -4,13 +4,14 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 16;
+export const __currentDatabaseVersion = 17;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
 export const __tableSystemSetting = '__table_system_setting__';
 export const __tableCachedTweets = '__table_cached_tweets__'
 export const __tableKolCursor = '__table_kol_cursor__';
+export const __tableFollowings = '__table_followings__';
 export const idx_tweets_user_time = 'userId_timestamp_idx'
 export const idx_tweets_time_user = 'timestamp_userId_idx';
 export const idx_tweets_userid = 'userId_idx'
@@ -77,6 +78,7 @@ function initDatabase(): Promise<IDBDatabase> {
             initSystemSetting(request);
             initCachedTweetsTable(request);
             initKolCursorTable(request);
+            initFollowingsTable(request).then();
         };
     });
 }
@@ -179,6 +181,29 @@ async function initKolsInCategory(request: IDBOpenDBRequest) {
     });
 
     logDB("------>>>[Database]Create kols in category successfully.", __tableKolsInCategory, "Inserted initial categories.", initialKols);
+}
+
+async function initFollowingsTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+
+    if (!db.objectStoreNames.contains(__tableFollowings)) {
+        const store = db.createObjectStore(__tableFollowings, {keyPath: 'id'});
+        store.createIndex('idx_category', 'categoryId', {unique: false});
+        logDB("------>>>[Database] Created followings table successfully.");
+        return;
+    }
+
+    const txn = request.transaction;
+    if (!txn) {
+        console.warn("------>>>[Database] followings init transaction missing");
+        return;
+    }
+
+    const store = txn.objectStore(__tableFollowings);
+    if (!store.indexNames.contains('idx_category')) {
+        store.createIndex('idx_category', 'categoryId', {unique: false});
+        logDB("------>>>[Database] Added idx_category index on followings table.");
+    }
 }
 
 

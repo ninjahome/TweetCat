@@ -5,36 +5,60 @@
     <title>Following Management</title>
     <link rel="stylesheet" href="../css/following_mgn.css" />
     <script type="module" src="../js/following_mgn.js"></script>
-
 </head>
 <body>
-<body>
-<div id="app" class="follow-manager">
-    <!-- 左侧分组栏 -->
+<div class="follow-manager">
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h2>分类</h2>
-            <button id="add-category-btn">＋ 新建</button>
+            <h2>Categories</h2>
+            <button id="add-category-btn" class="primary">＋ New</button>
         </div>
-        <ul id="category-list" class="category-list">
-            <li class="category-item active" data-id="uncategorized">未分类</li>
-            <!-- 动态插入 -->
-        </ul>
+        <ul id="category-list" class="category-list"></ul>
     </aside>
-
-    <!-- 右侧主要内容 -->
     <main class="content">
+        <div id="toolbar" class="toolbar">
+            <div class="toolbar-left">
+                <button id="sync-btn" class="primary">Sync Followings</button>
+                <span id="sync-status" class="toolbar-status"></span>
+            </div>
+            <div class="batch-actions">
+                <span id="selection-counter">0 selected</span>
+                <select id="assign-category-select"></select>
+                <button id="assign-category-btn" disabled>Apply</button>
+                <button id="clear-selection-btn" disabled>Clear</button>
+            </div>
+        </div>
         <div id="empty-state" class="empty-state">
-            <p>还没有同步关注列表</p>
-            <button id="sync-btn">同步关注列表</button>
+            <p>Your followings have not been synced yet.</p>
+            <button id="empty-sync-btn" class="primary">Sync Followings</button>
         </div>
-
-        <div id="user-list" class="user-list" style="display:none;">
-            <!-- 动态用户卡片 -->
-        </div>
+        <div id="no-users-message" class="empty-hint" style="display:none;">No users in this category.</div>
+        <div id="user-list" class="user-list"></div>
     </main>
 </div>
 
-</body>
+<template id="category-item-template">
+    <li class="category-item">
+        <div class="category-content">
+            <span class="category-name"></span>
+            <span class="category-count"></span>
+        </div>
+        <div class="category-actions">
+            <button class="rename-btn" title="Rename category">✎</button>
+            <button class="delete-btn" title="Delete category">🗑</button>
+        </div>
+    </li>
+</template>
+
+<template id="user-card-template">
+    <div class="user-card">
+        <input type="checkbox" class="user-select" />
+        <img class="user-avatar" src="" alt="Avatar" />
+        <div class="info">
+            <div class="name"></div>
+            <div class="handle"></div>
+        </div>
+    </div>
+</template>
 </body>
 </html>

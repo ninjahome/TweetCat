@@ -30,6 +30,10 @@ export enum MsgType {
     CategoryChanged = 'CategoryChanged',
     CategoryQueryById = 'CategoryQueryById',
 
+    FollowingQueryAll = 'FollowingQueryAll',
+    FollowingSync = 'FollowingSync',
+    FollowingAssignCategory = 'FollowingAssignCategory',
+
     KolQueryAll = 'KolQueryAll',
     KolQueryByID = 'KolQueryByID',
     KolQueryByCategoryId = 'KolQueryByCategoryId',

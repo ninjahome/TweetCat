@@ -21,6 +21,12 @@ import {tweetFM} from "./tweet_fetch_manager";
 import {penalize429, useTokenByUser} from "./api_bucket_state";
 import {addBlockedAdsNumber} from "../object/system_setting";
 import {checkLocalApp, openLocalApp} from "./local_app";
+import {
+    assignFollowingsToCategory,
+    loadAllFollowings,
+    replaceFollowingsPreservingCategories,
+    FollowingUser
+} from "../object/following";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -55,6 +61,44 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.CategoryQueryById: {
             const catData = await CategoryForId(request.data);
             return {success: true, data: catData};
+        }
+
+        case MsgType.FollowingQueryAll: {
+            const followings = await loadAllFollowings();
+            return {success: true, data: followings};
+        }
+
+        case MsgType.FollowingAssignCategory: {
+            const {userIds, categoryId} = request.data || {};
+            await assignFollowingsToCategory(userIds ?? [], typeof categoryId === 'number' ? categoryId : null);
+            return {success: true};
+        }
+
+        case MsgType.FollowingSync: {
+            const tabs = await browser.tabs.query({
+                url: ["*://x.com/*", "*://twitter.com/*"],
+            });
+            if (tabs.length === 0) {
+                return {success: false, data: "Please open x.com before syncing."};
+            }
+
+            try {
+                const response = await browser.tabs.sendMessage(tabs[0].id!, {
+                    action: MsgType.FollowingSync,
+                });
+
+                if (!response?.success) {
+                    return {success: false, data: response?.data ?? "Failed to fetch followings."};
+                }
+
+                const users = response.data as FollowingUser[] ?? [];
+                await replaceFollowingsPreservingCategories(users);
+                return {success: true, data: {count: users.length ?? 0}};
+            } catch (error) {
+                const err = error as Error;
+                console.warn("------>>> Following sync failed", err);
+                return {success: false, data: err.message};
+            }
         }
 
         case MsgType.KolUpdate: {

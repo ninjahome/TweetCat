@@ -19,6 +19,8 @@ import {reloadCategoryContainer, setupFilterItemsOnWeb3Area} from "./tweetcat_we
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 import {queryProfileOfTwitterOwner} from "./tweet_user_info";
 import {initI18n} from "../common/i18n";
+import {fetchFollowingPage, getUserByUsername} from "../timeline/twitter_api";
+import {FollowingUser} from "../object/following";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
@@ -147,6 +149,19 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             break;
         }
 
+        case MsgType.FollowingSync: {
+            (async () => {
+                try {
+                    const followings = await syncFollowingsFromPage();
+                    sendResponse({success: true, data: followings});
+                } catch (e) {
+                    const err = e as Error;
+                    sendResponse({success: false, data: err.message});
+                }
+            })();
+            return true;
+        }
+
         default:
             sendResponse({success: true});
     }
@@ -210,6 +225,75 @@ export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null 
 
 function checkFilterStatusAfterUrlChanged() {
     hidePopupMenu();
+}
+
+async function syncFollowingsFromPage(): Promise<FollowingUser[]> {
+    const screenName = await resolveViewerScreenName();
+    if (!screenName) {
+        throw new Error('Unable to determine current user. Please open your Twitter profile.');
+    }
+
+    const profile = await getUserByUsername(screenName);
+    const userId = profile?.userId;
+    if (!userId) {
+        throw new Error('Failed to resolve user id for current account.');
+    }
+
+    const collected: FollowingUser[] = [];
+    const visited = new Set<string>();
+    let cursor: string | undefined = undefined;
+    let pageCount = 0;
+
+    while (true) {
+        const page = await fetchFollowingPage(userId, 100, cursor);
+        for (const user of page.users) {
+            if (visited.has(user.userID)) continue;
+            visited.add(user.userID);
+            collected.push({
+                id: user.userID,
+                name: user.name,
+                screenName: user.screen_name,
+                avatarUrl: user.avatarUrl,
+            });
+        }
+
+        if (!page.nextCursor || page.terminatedBottom) {
+            break;
+        }
+
+        cursor = page.nextCursor;
+        pageCount += 1;
+        if (pageCount > 200) { // safety guard
+            console.warn('------>>> Following sync reached page limit, stopping early.');
+            break;
+        }
+        await delay(350); // avoid hitting rate limits
+    }
+
+    return collected;
+}
+
+async function resolveViewerScreenName(maxRetries: number = 10): Promise<string | null> {
+    for (let i = 0; i < maxRetries; i++) {
+        const profileLink = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]') as HTMLAnchorElement | null;
+        if (profileLink?.href) {
+            try {
+                const url = new URL(profileLink.href);
+                const username = url.pathname.replace(/^\//, '').trim();
+                if (username) {
+                    return username;
+                }
+            } catch {
+                // ignore parse errors
+            }
+        }
+        await delay(500);
+    }
+    return null;
+}
+
+function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 window.addEventListener('message', (e) => {
