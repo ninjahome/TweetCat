@@ -345,6 +345,13 @@ body.modal-open {
     min-width: 0;
 }
 
+.user-card .name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .user-card .name {
     font-weight: 600;
     color: #0f1419;
@@ -356,6 +363,38 @@ body.modal-open {
 .user-card .handle {
     font-size: 13px;
     color: #657786;
+    margin-top: 2px;
+}
+
+.user-card .category-badge {
+    font-size: 12px;
+    background: rgba(29, 155, 240, 0.12);
+    color: #1d9bf0;
+    border-radius: 999px;
+    padding: 2px 8px;
+    line-height: 1.2;
+}
+
+.user-card .bio {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #0f1419;
+    white-space: pre-line;
+}
+
+.user-card .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #536471;
+}
+
+.user-card .meta > div {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 button {

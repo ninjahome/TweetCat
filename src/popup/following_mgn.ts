@@ -23,6 +23,12 @@ type UnifiedKOL = {
     userId?: string;
     avatarUrl?: string;
     categoryId?: number | null;
+    categoryName?: string | null;
+    bio?: string;
+    location?: string;
+    followersCount?: number;
+    friendsCount?: number;
+    statusesCount?: number;
     sources: Array<"following" | "kic">;
 };
 
@@ -46,6 +52,27 @@ let unifiedKols: UnifiedKOL[] = [];
 let unifiedByKey = new Map<string, UnifiedKOL>();
 let selectedFilter: CategoryFilter = ALL_FILTER;
 const selectedKeys = new Set<string>();
+
+const numberFormatter = new Intl.NumberFormat();
+
+function setTextContentOrHide(element: HTMLElement | null, text?: string | null) {
+    if (!element) return;
+    const trimmed = typeof text === "string" ? text.trim() : "";
+    if (trimmed) {
+        element.textContent = trimmed;
+        element.classList.remove("hidden");
+    } else {
+        element.textContent = "";
+        element.classList.add("hidden");
+    }
+}
+
+function formatStat(value: number | undefined, label: string): string | null {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+        return null;
+    }
+    return `${numberFormatter.format(value)} ${label}`;
+}
 
 const categoryList = document.getElementById("category-list") as HTMLUListElement;
 const userList = document.getElementById("user-list") as HTMLDivElement;
@@ -367,8 +394,8 @@ function createCategoryElement(
     };
     li.addEventListener("click", selectHandler);
 
-    const renameBtn = li.querySelector(".rename-btn") as HTMLButtonElement;
-    renameBtn.addEventListener("click", (ev) => {
+    const renameBtn = li.querySelector<HTMLButtonElement>(".rename-btn, .edit-btn");
+    renameBtn?.addEventListener("click", (ev) => {
         ev.stopPropagation();
         if (!category) return;
         handleRenameCategory(category);
@@ -477,6 +504,51 @@ function renderUserList() {
 
             const handleElm = card.querySelector(".handle") as HTMLElement;
             handleElm.textContent = user.screenName ? `@${user.screenName}` : "";
+
+            const categoryElm = card.querySelector(".category-badge") as HTMLElement | null;
+            if (categoryElm) {
+                if (selectedFilter === ALL_FILTER && user.categoryName) {
+                    categoryElm.textContent = user.categoryName;
+                    categoryElm.classList.remove("hidden");
+                } else {
+                    categoryElm.textContent = "";
+                    categoryElm.classList.add("hidden");
+                }
+            }
+
+            const bioElm = card.querySelector(".bio") as HTMLElement | null;
+            setTextContentOrHide(bioElm, user.bio);
+
+            const locationElm = card.querySelector(".location") as HTMLElement | null;
+            const locationText = user.location ? `📍 ${user.location}` : undefined;
+            setTextContentOrHide(locationElm, locationText);
+
+            const statsElm = card.querySelector(".stats") as HTMLElement | null;
+            if (statsElm) {
+                const statsParts = [
+                    formatStat(user.followersCount, "Followers"),
+                    formatStat(user.friendsCount, "Following"),
+                    formatStat(user.statusesCount, "Tweets"),
+                ].filter((part): part is string => typeof part === "string" && part.length > 0);
+                if (statsParts.length > 0) {
+                    statsElm.textContent = statsParts.join(" • ");
+                    statsElm.classList.remove("hidden");
+                } else {
+                    statsElm.textContent = "";
+                    statsElm.classList.add("hidden");
+                }
+            }
+
+            const metaElm = card.querySelector(".meta") as HTMLElement | null;
+            if (metaElm) {
+                const hasLocation = locationElm ? !locationElm.classList.contains("hidden") : false;
+                const hasStats = statsElm ? !statsElm.classList.contains("hidden") : false;
+                if (!hasLocation && !hasStats) {
+                    metaElm.classList.add("hidden");
+                } else {
+                    metaElm.classList.remove("hidden");
+                }
+            }
 
             card.addEventListener("click", (ev) => {
                 if (ev.target instanceof HTMLInputElement) return;
@@ -670,6 +742,28 @@ async function buildUnifiedKOLView(): Promise<UnifiedKOLView> {
         queryAllKolCategoryMapFromBG(),
     ]);
 
+    const normalizeCategoryId = (value: unknown): number | null => {
+        if (typeof value === "number" && Number.isFinite(value)) {
+            return value;
+        }
+        if (typeof value === "string" && value.trim().length > 0) {
+            const parsed = Number(value);
+            if (Number.isFinite(parsed)) {
+                return parsed;
+            }
+        }
+        return null;
+    };
+
+    const categoryNameMap = new Map<number, string>();
+    for (const category of categoryList) {
+        if (typeof category.id === "number") {
+            categoryNameMap.set(category.id, category.catName);
+        }
+    }
+    const resolveCategoryName = (id: number | null | undefined) =>
+        typeof id === "number" ? categoryNameMap.get(id) ?? null : null;
+
     const unifiedMap = new Map<string, UnifiedKOL>();
 
     for (const user of followingsList) {
@@ -679,13 +773,21 @@ async function buildUnifiedKOLView(): Promise<UnifiedKOLView> {
         }
         const key = screenName.toLowerCase();
         const kicEntry = kolMap.get(key);
+        const initialCategoryId = normalizeCategoryId(user.categoryId);
+        const initialCategoryName = resolveCategoryName(initialCategoryId);
         const unified: UnifiedKOL = {
             key,
             screenName,
             displayName: user.name ?? screenName,
             userId: user.id,
             avatarUrl: user.avatarUrl,
-            categoryId: kicEntry?.catID ?? null,
+            categoryId: initialCategoryId,
+            categoryName: initialCategoryName,
+            bio: user.bio,
+            location: user.location,
+            followersCount: user.followersCount,
+            friendsCount: user.friendsCount,
+            statusesCount: user.statusesCount,
             sources: kicEntry ? ["following", "kic"] : ["following"],
         };
         if (kicEntry) {
@@ -694,6 +796,9 @@ async function buildUnifiedKOLView(): Promise<UnifiedKOLView> {
             if (kicEntry.kolUserId && !unified.userId) {
                 unified.userId = kicEntry.kolUserId;
             }
+            const kolCategoryId = normalizeCategoryId(kicEntry.catID);
+            unified.categoryId = kolCategoryId;
+            unified.categoryName = resolveCategoryName(kolCategoryId);
         }
         unifiedMap.set(key, unified);
     }
@@ -701,7 +806,9 @@ async function buildUnifiedKOLView(): Promise<UnifiedKOLView> {
     for (const [key, kol] of kolMap.entries()) {
         const existing = unifiedMap.get(key);
         if (existing) {
-            existing.categoryId = kol.catID ?? null;
+            const kolCategoryId = normalizeCategoryId(kol.catID);
+            existing.categoryId = kolCategoryId;
+            existing.categoryName = resolveCategoryName(kolCategoryId);
             if (!existing.sources.includes("kic")) {
                 existing.sources.push("kic");
             }
@@ -721,13 +828,15 @@ async function buildUnifiedKOLView(): Promise<UnifiedKOLView> {
         }
 
         const screenName = kol.kolName ?? key;
+        const kolCategoryId = normalizeCategoryId(kol.catID);
         unifiedMap.set(key, {
             key,
             screenName,
             displayName: kol.displayName ?? screenName,
             userId: kol.kolUserId,
             avatarUrl: kol.avatarUrl,
-            categoryId: kol.catID ?? null,
+            categoryId: kolCategoryId,
+            categoryName: resolveCategoryName(kolCategoryId),
             sources: ["kic"],
         });
     }
