@@ -718,3 +718,79 @@ export async function deleteGrokConversation(conversationId: string): Promise<bo
     return true;
 }
 
+
+/**
+ * 取消关注指定用户（REST 版）
+ * @param userId 目标用户的 numeric user_id（字符串）
+ * @returns Promise<boolean> true = 成功取关
+ */
+export async function unfollowUser(userId: string): Promise<boolean> {
+    if (!userId) throw new Error("userId is required");
+
+    // 1. 固定 REST 端点
+    const url = "https://x.com/i/api/1.1/friendships/destroy.json";
+    const path = new URL(url).pathname; // "/i/api/1.1/friendships/destroy.json"
+
+    // 2. 生成 transaction-id（与你其它 GraphQL 请求保持一致）
+    const txid = await getTransactionIdFor("POST", path);
+
+    // 3. 构造完整的 form body（和网页端完全一致）
+    const bodyParams = new URLSearchParams();
+    const params = [
+        "include_profile_interstitial_type=1",
+        "include_blocking=1",
+        "include_blocked_by=1",
+        "include_followed_by=1",
+        "include_want_retweets=1",
+        "include_mute_edge=1",
+        "include_can_dm=1",
+        "include_can_media_tag=1",
+        "include_ext_is_blue_verified=1",
+        "include_ext_verified_type=1",
+        "include_ext_profile_image_shape=1",
+        "skip_status=1",
+        `user_id=${userId}`,
+    ];
+    params.forEach(p => bodyParams.append(p.split("=")[0], p.split("=")[1] ?? ""));
+
+    // 4. 统一的 headers（模仿你网页端第 2 个请求）
+    const headers = await generateHeaders(); // 你已经有的函数
+    Object.assign(headers, {
+        "content-type": "application/x-www-form-urlencoded",
+        "x-client-transaction-id": txid,
+        // 下面的字段可以省略，保留兼容性
+        "accept": "*/*",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-origin",
+        "priority": "u=1, i",
+    });
+
+    // 5. 发起请求
+    const resp = await fetch(url, {
+        method: "POST",
+        headers,
+        body: bodyParams,
+        credentials: "include",   // 必须带 cookie（auth_token + ct0）
+    });
+
+    // 6. 错误处理（统一风格）
+    if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        const missing = await extractMissingFeature?.(text);
+        console.log("------>>> unfollowUser missing feature:", missing);
+        throw new Error(`Unfollow failed: ${resp.status} ${text}`);
+    }
+
+    // 7. 成功响应（通常返回被取关用户对象）
+    const json = await resp.json().catch(() => ({}));
+    if (json?.id_str === userId) {
+        return true;
+    }
+
+    // 8. 兜底：只要 200 且没有 errors 就认为成功（幂等接口）
+    if (json?.errors?.length) {
+        throw new Error(`GraphQL error: ${JSON.stringify(json.errors[0])}`);
+    }
+    return true;
+}
