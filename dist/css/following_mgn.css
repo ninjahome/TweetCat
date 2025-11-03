@@ -480,3 +480,18 @@ button:disabled {
         padding: 12px;
     }
 }
+
+
+.user-card.is-local-only {
+    background-color: rgba(255, 255, 255, 0.05); /* 淡灰底 */
+    border-left: 3px solid #888;
+    opacity: 0.85;
+}
+.user-card.is-following {
+    background-color: transparent;
+    border-left: 3px solid #2ecc71; /* 绿色边代表真实 follow */
+}
+html[style*="color-scheme: dark"] .user-card.is-local-only {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-left-color: #666;
+}

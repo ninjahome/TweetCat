@@ -560,6 +560,7 @@ function renderUserList() {
                 toggleUserSelection(user.key, checkbox.checked);
             });
 
+            card.classList.add(user.sources.includes("following") ? "is-following" : "is-local-only");
             userList.appendChild(card);
         });
 
@@ -647,21 +648,24 @@ type UnfollowTarget = {key: string; userId: string};
 
 function getUnfollowTargets(): UnfollowTarget[] {
     const targets: UnfollowTarget[] = [];
+
     selectedKeys.forEach((key) => {
         const user = unifiedByKey.get(key);
         if (!user) return;
-        if (!user.sources.includes("following")) return;
-        const userId = user.userId?.trim();
-        if (!userId) return;
-        targets.push({key, userId});
+
+        if (user.sources.includes("following") && user.userId) {
+            targets.push({key, userId: user.userId});
+        }
     });
+
     return targets;
 }
+
 
 function handleUnfollowSelected() {
     const targets = getUnfollowTargets();
     if (targets.length === 0) {
-        showNotification("Only followings with valid accounts can be unfollowed.", "info");
+        showNotification("No real followings to unfollow.", "info");
         return;
     }
     const message =
@@ -732,8 +736,13 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
         const successCount = typeof result?.succeeded === "number" ? result.succeeded : 0;
         const failureCount = typeof result?.failed === "number" ? result.failed : Math.max(0, total - successCount);
 
+        console.warn("------>>> performBatchUnfollow completed, removing unfollowed users locally...");
+
+
         selectedKeys.clear();
-        await refreshData();
+        removeUnfollowedFromView(userIds)
+
+        console.warn("------>>> local unfollow cache updated, skip refreshData()");
 
         if (failureCount === 0) {
             showNotification(
@@ -1033,4 +1042,34 @@ async function bulkAssignCategory(keys: string[], targetCatId: number | null): P
             },
         });
     }
+}
+
+function removeUnfollowedFromView(userIds: string[]) {
+    const keysToDelete: string[] = [];
+
+    for (const [key, user] of unifiedByKey.entries()) {
+        if (user && userIds.includes(user.userId!)) {
+            keysToDelete.push(key);
+        }
+    }
+
+    for (const key of keysToDelete) {
+        const user = unifiedByKey.get(key);
+        if (!user) continue;
+        unifiedByKey.delete(key);
+
+        unifiedKols = unifiedKols.filter((u) => u.userId !== user.userId);
+
+        if (unifiedView?.byCategory) {
+            for (const [catId, arr] of unifiedView.byCategory.entries()) {
+                unifiedView.byCategory.set(catId, arr.filter((u) => u.userId !== user.userId));
+            }
+        }
+
+        if (unifiedView?.uncategorized) {
+            unifiedView.uncategorized = unifiedView.uncategorized.filter((u) => u.userId !== user.userId);
+        }
+    }
+
+    renderAll(); // 一次性刷新所有 UI
 }
