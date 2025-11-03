@@ -4,7 +4,7 @@ import {
     appendFilterOnKolProfilePage, appendScoreInfoToProfilePage,
 } from "./twitter_ui";
 import {maxElmFindTryTimes, MsgType} from "../common/consts";
-import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
+import {addCustomStyles, observeSimple, parseTwitterPath, sleep} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
 import {
@@ -19,8 +19,7 @@ import {reloadCategoryContainer, setupFilterItemsOnWeb3Area} from "./tweetcat_we
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 import {queryProfileOfTwitterOwner} from "./tweet_user_info";
 import {initI18n} from "../common/i18n";
-import {fetchFollowingPage, getUserByUsername} from "../timeline/twitter_api";
-import {FollowingUser} from "../object/following";
+import {syncFollowingsFromPage} from "../object/following";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
@@ -227,96 +226,6 @@ function checkFilterStatusAfterUrlChanged() {
     hidePopupMenu();
 }
 
-async function syncFollowingsFromPage(): Promise<FollowingUser[]> {
-    const screenName = await resolveViewerScreenName();
-    if (!screenName) {
-        throw new Error('Unable to determine current user. Please open your Twitter profile.');
-    }
-
-    const profile = await getUserByUsername(screenName);
-    const userId = profile?.userId;
-    if (!userId) {
-        throw new Error('Failed to resolve user id for current account.');
-    }
-
-    const collected: FollowingUser[] = [];
-    const visited = new Set<string>();
-    let cursor: string | undefined = undefined;
-    let pageCount = 0;
-
-    while (true) {
-        const page = await fetchFollowingPage(userId, 100, cursor);
-        for (const user of page.users) {
-            if (visited.has(user.userID)) continue;
-            visited.add(user.userID);
-            const raw = user.rawData ?? {};
-            const legacy = raw?.legacy ?? {};
-            const profileBio = raw?.profile_bio ?? {};
-            const locationObj = raw?.location ?? {};
-            const bioCandidate = typeof legacy?.description === "string" && legacy.description.trim().length > 0
-                ? legacy.description
-                : typeof profileBio?.description?.text === "string" && profileBio.description.text.trim().length > 0
-                    ? profileBio.description.text
-                    : undefined;
-            const locationCandidate = typeof legacy?.location === "string" && legacy.location.trim().length > 0
-                ? legacy.location
-                : typeof locationObj?.location === "string" && locationObj.location.trim().length > 0
-                    ? locationObj.location
-                    : undefined;
-            const followersCount = typeof legacy?.followers_count === "number" ? legacy.followers_count : undefined;
-            const friendsCount = typeof legacy?.friends_count === "number" ? legacy.friends_count : undefined;
-            const statusesCount = typeof legacy?.statuses_count === "number" ? legacy.statuses_count : undefined;
-            collected.push({
-                id: user.userID,
-                name: user.name,
-                screenName: user.screen_name,
-                avatarUrl: user.avatarUrl,
-                bio: bioCandidate,
-                location: locationCandidate,
-                followersCount,
-                friendsCount,
-                statusesCount,
-            });
-        }
-
-        if (!page.nextCursor || page.terminatedBottom) {
-            break;
-        }
-
-        cursor = page.nextCursor;
-        pageCount += 1;
-        if (pageCount > 200) { // safety guard
-            console.warn('------>>> Following sync reached page limit, stopping early.');
-            break;
-        }
-        await delay(350); // avoid hitting rate limits
-    }
-
-    return collected;
-}
-
-async function resolveViewerScreenName(maxRetries: number = 10): Promise<string | null> {
-    for (let i = 0; i < maxRetries; i++) {
-        const profileLink = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]') as HTMLAnchorElement | null;
-        if (profileLink?.href) {
-            try {
-                const url = new URL(profileLink.href);
-                const username = url.pathname.replace(/^\//, '').trim();
-                if (username) {
-                    return username;
-                }
-            } catch {
-                // ignore parse errors
-            }
-        }
-        await delay(500);
-    }
-    return null;
-}
-
-function delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 window.addEventListener('message', (e) => {
     const msg = e.data as TcMessage;
@@ -341,7 +250,7 @@ window.addEventListener('message', (e) => {
             }
             case MsgType.IJUserByScreenNameCaptured: {
                 const data = msg.data;
-                appendScoreInfoToProfilePage(data.profile, data.screenName);
+                appendScoreInfoToProfilePage(data.profile, data.screenName).then();
                 break;
             }
             default: {

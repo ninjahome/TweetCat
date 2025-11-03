@@ -12,6 +12,7 @@ import {
 } from "../object/category";
 import {FollowingUser} from "../object/following";
 import {unfollowUser} from "../timeline/twitter_api";
+import {sleep} from "../common/utils";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -685,7 +686,7 @@ function hideProcessingOverlay() {
     processingOverlay.classList.add("hidden");
     document.body.classList.remove("processing-blocked");
 }
-
+const UNFOLLOW_REQUEST_DELAY_MS = 1100;
 async function performBatchUnfollow(targets: UnfollowTarget[]) {
     if (targets.length === 0) return;
     isProcessingUnfollow = true;
@@ -708,6 +709,7 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
                 console.warn("------>>> failed to unfollow", target.userId, error);
                 failureCount += 1;
             }
+            await sleep(UNFOLLOW_REQUEST_DELAY_MS);
         }
 
         selectedKeys.clear();
