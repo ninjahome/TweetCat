@@ -1,9 +1,4 @@
 import {__tableFollowings, checkAndInitDatabase, databaseDeleteByFilter, databaseQueryAll, databaseQueryByFilter, databaseUpdateFields, databaseUpdateOrAddItem} from "../common/database";
-import {isTcMessage, TcMessage} from "../common/msg_obj";
-import {MsgType} from "../common/consts";
-import {handleLocationChange} from "../timeline/route_helper";
-import {processCapturedHomeLatest, processCapturedTweetDetail, processCapturedTweets} from "../timeline/tweet_fetcher";
-import {appendScoreInfoToProfilePage} from "../content/twitter_ui";
 import {fetchFollowingPage, getUserByUsername} from "../timeline/twitter_api";
 import {sleep} from "../common/utils";
 
