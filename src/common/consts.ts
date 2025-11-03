@@ -34,6 +34,7 @@ export enum MsgType {
     FollowingSync = 'FollowingSync',
     FollowingAssignCategory = 'FollowingAssignCategory',
     FollowingBulkUnfollow = 'FollowingBulkUnfollow',
+    FollowingBulkUnfollowResult = 'FollowingBulkUnfollowResult',
 
     KolQueryAll = 'KolQueryAll',
     KolQueryByID = 'KolQueryByID',
