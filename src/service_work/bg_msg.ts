@@ -101,6 +101,50 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             }
         }
 
+        case MsgType.FollowingBulkUnfollow: {
+            const data = request?.data ?? {};
+            const rawUserIds = Array.isArray(data?.userIds) ? data.userIds : [];
+            const throttleMs = typeof data?.throttleMs === "number" && data.throttleMs >= 0 ? data.throttleMs : undefined;
+
+            const tabs = await browser.tabs.query({
+                url: ["*://x.com/*", "*://twitter.com/*"],
+            });
+
+            if (tabs.length === 0) {
+                return {success: false, data: "Please open x.com before unfollowing."};
+            }
+
+            const tabId = tabs[0]?.id;
+            if (typeof tabId !== "number") {
+                return {success: false, data: "Active Twitter tab not found."};
+            }
+
+            try {
+                const response = await browser.tabs.sendMessage(tabId, {
+                    action: MsgType.FollowingBulkUnfollow,
+                    payload: {
+                        userIds: rawUserIds,
+                        throttleMs,
+                    },
+                });
+
+                if (!response) {
+                    return {success: false, data: "No response from Twitter tab."};
+                }
+
+                if (response?.error) {
+                    const errorMessage = typeof response.error === "string" ? response.error : "Failed to unfollow selected accounts.";
+                    return {success: false, data: errorMessage};
+                }
+
+                return {success: true, data: response};
+            } catch (error) {
+                const err = error as Error;
+                console.warn("------>>> Following bulk unfollow failed", err);
+                return {success: false, data: err?.message ?? "Failed to unfollow selected accounts."};
+            }
+        }
+
         case MsgType.KolUpdate: {
             await updateKolsCategory(request.data as TweetKol);
             return {success: true};
