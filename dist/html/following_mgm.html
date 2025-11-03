@@ -27,6 +27,7 @@
                 <select id="assign-category-select"></select>
                 <button id="assign-category-btn" disabled>Apply</button>
                 <button id="clear-selection-btn" disabled>Clear</button>
+                <button id="unfollow-selected-btn" class="danger" disabled>Unfollow Selected</button>
             </div>
         </div>
         <div id="empty-state" class="empty-state">
@@ -89,6 +90,13 @@
             <button id="btn-cancel-confirm" class="btn-cancel" type="button">Cancel</button>
             <button id="btn-confirm-confirm" class="btn-confirm" type="button">Confirm</button>
         </div>
+    </div>
+</div>
+
+<div id="unfollow-processing-overlay" class="processing-overlay hidden" role="status" aria-live="assertive">
+    <div class="processing-overlay__content">
+        <div class="processing-overlay__spinner" aria-hidden="true"></div>
+        <span class="processing-overlay__text">Processing…</span>
     </div>
 </div>
 </body>
