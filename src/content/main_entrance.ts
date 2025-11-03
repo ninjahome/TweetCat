@@ -249,11 +249,33 @@ async function syncFollowingsFromPage(): Promise<FollowingUser[]> {
         for (const user of page.users) {
             if (visited.has(user.userID)) continue;
             visited.add(user.userID);
+            const raw = user.rawData ?? {};
+            const legacy = raw?.legacy ?? {};
+            const profileBio = raw?.profile_bio ?? {};
+            const locationObj = raw?.location ?? {};
+            const bioCandidate = typeof legacy?.description === "string" && legacy.description.trim().length > 0
+                ? legacy.description
+                : typeof profileBio?.description?.text === "string" && profileBio.description.text.trim().length > 0
+                    ? profileBio.description.text
+                    : undefined;
+            const locationCandidate = typeof legacy?.location === "string" && legacy.location.trim().length > 0
+                ? legacy.location
+                : typeof locationObj?.location === "string" && locationObj.location.trim().length > 0
+                    ? locationObj.location
+                    : undefined;
+            const followersCount = typeof legacy?.followers_count === "number" ? legacy.followers_count : undefined;
+            const friendsCount = typeof legacy?.friends_count === "number" ? legacy.friends_count : undefined;
+            const statusesCount = typeof legacy?.statuses_count === "number" ? legacy.statuses_count : undefined;
             collected.push({
                 id: user.userID,
                 name: user.name,
                 screenName: user.screen_name,
                 avatarUrl: user.avatarUrl,
+                bio: bioCandidate,
+                location: locationCandidate,
+                followersCount,
+                friendsCount,
+                statusesCount,
             });
         }
 

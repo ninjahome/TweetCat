@@ -7,6 +7,11 @@ export interface FollowingUser {
     avatarUrl: string;
     categoryId?: number | null;
     lastSyncedAt?: number;
+    bio?: string;
+    location?: string;
+    followersCount?: number;
+    friendsCount?: number;
+    statusesCount?: number;
 }
 
 export async function loadAllFollowings(): Promise<FollowingUser[]> {
