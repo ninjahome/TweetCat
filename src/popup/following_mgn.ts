@@ -1044,32 +1044,59 @@ async function bulkAssignCategory(keys: string[], targetCatId: number | null): P
     }
 }
 
-function removeUnfollowedFromView(userIds: string[]) {
-    const keysToDelete: string[] = [];
+async function removeUnfollowedFromView(userIds: string[]) {
+    if (!userIds || userIds.length === 0) return;
 
+    const keysToDelete: string[] = [];
+    const localRemoveIds: string[] = [];
+
+    // 第一轮：区分要删除的用户与保留用户
     for (const [key, user] of unifiedByKey.entries()) {
-        if (user && userIds.includes(user.userId!)) {
-            keysToDelete.push(key);
+        if (!user || !user.userId) continue;
+
+        if (userIds.includes(user.userId)) {
+            const isUnassigned = user.categoryId == null;
+
+            if (isUnassigned) {
+                // ✅ Unassigned：彻底删除
+                keysToDelete.push(key);
+                localRemoveIds.push(user.userId);
+            } else {
+                // ✅ 已分类：保留，但去掉 following 来源
+                user.sources = user.sources.filter((s) => s !== "following");
+            }
         }
     }
 
+    // 第二轮：删除所有未分类的（彻底从 UI 移除）
     for (const key of keysToDelete) {
         const user = unifiedByKey.get(key);
         if (!user) continue;
-        unifiedByKey.delete(key);
 
+        unifiedByKey.delete(key);
         unifiedKols = unifiedKols.filter((u) => u.userId !== user.userId);
 
-        if (unifiedView?.byCategory) {
-            for (const [catId, arr] of unifiedView.byCategory.entries()) {
-                unifiedView.byCategory.set(catId, arr.filter((u) => u.userId !== user.userId));
-            }
+        if (unifiedView?.uncategorized) {
+            unifiedView.uncategorized = unifiedView.uncategorized.filter(
+                (u) => u.userId !== user.userId,
+            );
         }
 
-        if (unifiedView?.uncategorized) {
-            unifiedView.uncategorized = unifiedView.uncategorized.filter((u) => u.userId !== user.userId);
+        // 分类数据不动
+    }
+
+    // ✅ 同步后台删除（防止刷新恢复）
+    if (localRemoveIds.length > 0) {
+        try {
+            await browser.runtime.sendMessage({
+                action: MsgType.FollowingRemoveLocal,
+                data: { userIds: localRemoveIds },
+            });
+        } catch (err) {
+            console.warn("------>>> removeUnfollowedFromView: failed to remove locally", err);
         }
     }
 
-    renderAll(); // 一次性刷新所有 UI
+    // 刷新前端展示
+    renderAll();
 }

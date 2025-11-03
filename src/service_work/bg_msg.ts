@@ -25,7 +25,7 @@ import {
     assignFollowingsToCategory,
     loadAllFollowings,
     replaceFollowingsPreservingCategories,
-    FollowingUser
+    FollowingUser, removeLocalFollowings
 } from "../object/following";
 
 
@@ -104,6 +104,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.FollowingQueryAll: {
             const followings = await loadAllFollowings();
             return {success: true, data: followings};
+        }
+
+        case MsgType.FollowingRemoveLocal: {
+            const { userIds } = request.data || {};
+            return await removeLocalFollowings(userIds);
         }
 
         case MsgType.FollowingAssignCategory: {

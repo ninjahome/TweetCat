@@ -22,14 +22,6 @@ export async function loadAllFollowings(): Promise<FollowingUser[]> {
     return data ?? [];
 }
 
-export async function loadFollowingsByCategory(categoryId: number | null): Promise<FollowingUser[]> {
-    await checkAndInitDatabase();
-    if (categoryId === null) {
-        return await databaseQueryByFilter(__tableFollowings, (item) => !item.categoryId) as FollowingUser[];
-    }
-    return await databaseQueryByFilter(__tableFollowings, (item) => item.categoryId === categoryId) as FollowingUser[];
-}
-
 export async function replaceFollowingsPreservingCategories(users: FollowingUser[]): Promise<void> {
     await checkAndInitDatabase();
     const existing = await loadAllFollowings();
@@ -61,14 +53,6 @@ export async function clearCategoryForFollowings(catId: number): Promise<void> {
     const matches = await databaseQueryByFilter(__tableFollowings, (item) => item.categoryId === catId) as FollowingUser[];
     await Promise.all(matches.map((item) => databaseUpdateFields(__tableFollowings, item.id, {categoryId: null})));
 }
-
-export async function hasFollowingsData(): Promise<boolean> {
-    const list = await loadAllFollowings();
-    return list.length > 0;
-}
-
-
-
 export async function syncFollowingsFromPage(): Promise<FollowingUser[]> {
     const screenName = await resolveViewerScreenName();
     if (!screenName) {
@@ -154,5 +138,36 @@ async function resolveViewerScreenName(maxRetries: number = 10): Promise<string 
         await sleep(500);
     }
     return null;
+}
+
+
+/**
+ * 批量从本地数据库中删除已取消关注的账号
+ * @param userIds 要删除的用户 ID 列表
+ * @returns 删除结果 { success, removed, error? }
+ */
+export async function removeLocalFollowings(userIds: string[]): Promise<{
+    success: boolean;
+    removed?: number;
+    error?: string;
+}> {
+    try {
+        if (!Array.isArray(userIds) || userIds.length === 0) {
+            return { success: false, error: "No userIds provided" };
+        }
+
+        // 强制转换为字符串比较，避免 number/string 不一致
+        const normalizedIds = userIds.map(String);
+
+        await databaseDeleteByFilter(__tableFollowings, (row) =>
+            normalizedIds.includes(String(row.id))
+        );
+
+        console.warn(`[removeLocalFollowings] ✅ Deleted ${normalizedIds.length} items from followings table`);
+        return { success: true, removed: normalizedIds.length };
+    } catch (err) {
+        console.error("[removeLocalFollowings] ❌ Failed:", err);
+        return { success: false, error: String(err) };
+    }
 }
 
