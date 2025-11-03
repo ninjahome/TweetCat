@@ -42,6 +42,44 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
     switch (request.action) {
 
+        case MsgType.FollowingBulkUnfollow: {
+            const payload = request?.payload ?? {};
+            const rawUserIds = Array.isArray(payload?.userIds) ? payload.userIds : [];
+            const throttleMsRaw = payload?.throttleMs;
+            const throttleMs =
+                typeof throttleMsRaw === "number" && throttleMsRaw >= 0 ? throttleMsRaw : 1100;
+
+            const targetTab = await findActiveXTab();
+            if (!targetTab?.id) {
+                return {success: false, data: "Please open x.com before unfollowing."};
+            }
+
+            try {
+                const response = await browser.tabs.sendMessage(targetTab.id, {
+                    action: MsgType.FollowingBulkUnfollow,
+                    payload: {
+                        userIds: rawUserIds,
+                        throttleMs,
+                    },
+                });
+
+                if (!response) {
+                    return {success: false, data: "No response from the Twitter tab."};
+                }
+
+                if (response?.error) {
+                    const errorMessage = typeof response.error === "string" ? response.error : "Failed to unfollow selected accounts.";
+                    return {success: false, data: errorMessage};
+                }
+
+                return {success: true, data: response};
+            } catch (error) {
+                const err = error as Error;
+                console.warn("------>>> Following bulk unfollow failed", err);
+                return {success: false, data: err?.message ?? "Failed to unfollow selected accounts."};
+            }
+        }
+
         case MsgType.OpenPlugin: {
             await openPlugin();
             return {success: true};
@@ -207,6 +245,33 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         default:
             return {success: false, data: "unsupportable message type"};
     }
+}
+
+function isXUrl(url: string | undefined | null): boolean {
+    if (!url) return false;
+    try {
+        const parsed = new URL(url);
+        return parsed.hostname.endsWith("x.com") || parsed.hostname.endsWith("twitter.com");
+    } catch (error) {
+        return false;
+    }
+}
+
+async function findActiveXTab(): Promise<browser.Tabs.Tab | null> {
+    const [activeTab] = await browser.tabs.query({active: true, currentWindow: true});
+    if (activeTab && isXUrl(activeTab.url)) {
+        return activeTab;
+    }
+
+    const tabs = await browser.tabs.query({
+        url: ["*://x.com/*", "*://twitter.com/*"],
+    });
+
+    if (tabs.length > 0) {
+        return tabs[0];
+    }
+
+    return null;
 }
 
 async function openPlugin() {
