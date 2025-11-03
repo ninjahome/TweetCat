@@ -11,8 +11,6 @@ import {
     updateCategoryDetail,
 } from "../object/category";
 import {FollowingUser} from "../object/following";
-import {unfollowUser} from "../timeline/twitter_api";
-import {sleep} from "../common/utils";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -693,24 +691,45 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
     updateSelectionSummary();
     showProcessingOverlay();
 
-    let successCount = 0;
-    let failureCount = 0;
-
     try {
-        for (const target of targets) {
-            try {
-                const ok = await unfollowUser(target.userId);
-                if (ok) {
-                    successCount += 1;
-                } else {
-                    failureCount += 1;
-                }
-            } catch (error) {
-                console.warn("------>>> failed to unfollow", target.userId, error);
-                failureCount += 1;
-            }
-            await sleep(UNFOLLOW_REQUEST_DELAY_MS);
+        const userIds = Array.from(
+            new Set(
+                targets
+                    .map((target) => target.userId?.trim())
+                    .filter((userId): userId is string => Boolean(userId)),
+            ),
+        );
+
+        if (userIds.length === 0) {
+            throw new Error("No valid accounts to unfollow.");
         }
+
+        const [activeTab] = await browser.tabs.query({active: true, currentWindow: true});
+        const tabId = activeTab?.id;
+        if (typeof tabId !== "number") {
+            throw new Error("Active Twitter tab not found. Open x.com and try again.");
+        }
+
+        const response = await browser.tabs.sendMessage(tabId, {
+            type: MsgType.FollowingBulkUnfollow,
+            payload: {
+                userIds,
+                throttleMs: UNFOLLOW_REQUEST_DELAY_MS,
+            },
+        });
+
+        if (!response) {
+            throw new Error("No response from Twitter tab. Please refresh the page and try again.");
+        }
+
+        if (response?.error) {
+            const errorMessage = typeof response.error === "string" ? response.error : "Failed to unfollow selected accounts.";
+            throw new Error(errorMessage);
+        }
+
+        const total = typeof response.total === "number" ? response.total : userIds.length;
+        const successCount = typeof response.succeeded === "number" ? response.succeeded : 0;
+        const failureCount = typeof response.failed === "number" ? response.failed : Math.max(0, total - successCount);
 
         selectedKeys.clear();
         await refreshData();
