@@ -190,6 +190,15 @@ body.modal-open {
     cursor: pointer;
 }
 
+.batch-actions button.danger {
+    background: #f4212e;
+    color: #ffffff;
+}
+
+.batch-actions button.danger:hover:not(:disabled) {
+    background: #dc1e29;
+}
+
 .batch-actions button:disabled {
     opacity: 0.5;
     cursor: default;
@@ -284,6 +293,56 @@ body.modal-open {
 .btn-confirm:disabled {
     opacity: 0.6;
     cursor: default;
+}
+
+.processing-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 20, 25, 0.55);
+    z-index: 1400;
+}
+
+.processing-overlay__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 32px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(15, 20, 25, 0.25);
+    min-width: 220px;
+}
+
+.processing-overlay__spinner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 4px solid rgba(29, 155, 240, 0.2);
+    border-top-color: #1d9bf0;
+    animation: processing-spin 0.9s linear infinite;
+}
+
+.processing-overlay__text {
+    font-size: 16px;
+    font-weight: 500;
+    color: #0f1419;
+}
+
+@keyframes processing-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+body.processing-blocked {
+    overflow: hidden;
 }
 
 .empty-state {

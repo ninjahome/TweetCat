@@ -11,6 +11,7 @@ import {
     updateCategoryDetail,
 } from "../object/category";
 import {FollowingUser} from "../object/following";
+import {unfollowUser} from "../timeline/twitter_api";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -86,6 +87,7 @@ const syncStatus = document.getElementById("sync-status") as HTMLSpanElement;
 const assignSelect = document.getElementById("assign-category-select") as HTMLSelectElement;
 const assignBtn = document.getElementById("assign-category-btn") as HTMLButtonElement;
 const clearSelectionBtn = document.getElementById("clear-selection-btn") as HTMLButtonElement;
+const unfollowSelectedBtn = document.getElementById("unfollow-selected-btn") as HTMLButtonElement | null;
 const toolbar = document.getElementById("toolbar") as HTMLDivElement;
 const selectionCounter = document.getElementById("selection-counter") as HTMLSpanElement;
 const categoryTemplate = document.getElementById("category-item-template") as HTMLTemplateElement;
@@ -100,12 +102,14 @@ const confirmModal = document.getElementById("modal-confirm") as HTMLDivElement 
 const confirmMessage = document.getElementById("confirm-message") as HTMLParagraphElement | null;
 const cancelConfirmBtn = document.getElementById("btn-cancel-confirm") as HTMLButtonElement | null;
 const confirmConfirmBtn = document.getElementById("btn-confirm-confirm") as HTMLButtonElement | null;
+const processingOverlay = document.getElementById("unfollow-processing-overlay") as HTMLDivElement | null;
 
 type ConfirmCallback = () => void | Promise<void>;
 
 let activeModal: HTMLElement | null = null;
 let pendingConfirmHandler: ConfirmCallback | null = null;
 let notificationTimer: number | null = null;
+let isProcessingUnfollow = false;
 
 document.addEventListener("DOMContentLoaded", initFollowingManager as EventListener);
 
@@ -125,6 +129,7 @@ function bindEvents() {
         selectedKeys.clear();
         renderUserList();
     });
+    unfollowSelectedBtn?.addEventListener("click", handleUnfollowSelected);
     newCategoryBtn?.addEventListener("click", showAddCategoryModal);
 
     cancelNewCategoryBtn?.addEventListener("click", hideAddCategoryModal);
@@ -587,8 +592,11 @@ function toggleUserSelection(key: string, selected: boolean) {
 function updateSelectionSummary() {
     const count = selectedKeys.size;
     selectionCounter.textContent = `${count} selected`;
-    assignBtn.disabled = count === 0;
-    clearSelectionBtn.disabled = count === 0;
+    assignBtn.disabled = isProcessingUnfollow || count === 0;
+    clearSelectionBtn.disabled = isProcessingUnfollow || count === 0;
+    if (unfollowSelectedBtn) {
+        unfollowSelectedBtn.disabled = isProcessingUnfollow || count === 0;
+    }
 }
 
 function updateEmptyState() {
@@ -633,6 +641,98 @@ function setSyncLoading(loading: boolean) {
         syncStatus.textContent = "Syncing followings…";
     } else if (unifiedKols.length === 0) {
         syncStatus.textContent = "";
+    }
+}
+
+type UnfollowTarget = {key: string; userId: string};
+
+function getUnfollowTargets(): UnfollowTarget[] {
+    const targets: UnfollowTarget[] = [];
+    selectedKeys.forEach((key) => {
+        const user = unifiedByKey.get(key);
+        if (!user) return;
+        if (!user.sources.includes("following")) return;
+        const userId = user.userId?.trim();
+        if (!userId) return;
+        targets.push({key, userId});
+    });
+    return targets;
+}
+
+function handleUnfollowSelected() {
+    const targets = getUnfollowTargets();
+    if (targets.length === 0) {
+        showNotification("Only followings with valid accounts can be unfollowed.", "info");
+        return;
+    }
+    const message =
+        targets.length === 1
+            ? "Unfollow the selected account?"
+            : `Unfollow ${targets.length} selected accounts?`;
+    showConfirmModal(message, async () => {
+        await performBatchUnfollow(targets);
+    });
+}
+
+function showProcessingOverlay() {
+    if (!processingOverlay) return;
+    processingOverlay.classList.remove("hidden");
+    document.body.classList.add("processing-blocked");
+}
+
+function hideProcessingOverlay() {
+    if (!processingOverlay) return;
+    processingOverlay.classList.add("hidden");
+    document.body.classList.remove("processing-blocked");
+}
+
+async function performBatchUnfollow(targets: UnfollowTarget[]) {
+    if (targets.length === 0) return;
+    isProcessingUnfollow = true;
+    updateSelectionSummary();
+    showProcessingOverlay();
+
+    let successCount = 0;
+    let failureCount = 0;
+
+    try {
+        for (const target of targets) {
+            try {
+                const ok = await unfollowUser(target.userId);
+                if (ok) {
+                    successCount += 1;
+                } else {
+                    failureCount += 1;
+                }
+            } catch (error) {
+                console.warn("------>>> failed to unfollow", target.userId, error);
+                failureCount += 1;
+            }
+        }
+
+        selectedKeys.clear();
+        await refreshData();
+
+        if (failureCount === 0) {
+            showNotification(
+                `Unfollowed ${successCount} account${successCount === 1 ? "" : "s"}.`,
+                "info",
+            );
+        } else if (successCount === 0) {
+            showNotification("Failed to unfollow selected accounts.", "error");
+        } else {
+            showNotification(
+                `Unfollowed ${successCount} account${successCount === 1 ? "" : "s"}. ${failureCount} failed.`,
+                "error",
+            );
+        }
+    } catch (error) {
+        const err = error as Error;
+        showNotification(err?.message ?? "Failed to unfollow selected accounts.", "error");
+    } finally {
+        isProcessingUnfollow = false;
+        hideProcessingOverlay();
+        updateSelectionSummary();
     }
 }
 
