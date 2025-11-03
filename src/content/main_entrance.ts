@@ -4,7 +4,7 @@ import {
     appendFilterOnKolProfilePage, appendScoreInfoToProfilePage,
 } from "./twitter_ui";
 import {maxElmFindTryTimes, MsgType} from "../common/consts";
-import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
+import {addCustomStyles, observeSimple, parseTwitterPath, sleep} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
 import {
@@ -20,6 +20,7 @@ import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 import {queryProfileOfTwitterOwner} from "./tweet_user_info";
 import {initI18n} from "../common/i18n";
 import {syncFollowingsFromPage} from "../object/following";
+import {unfollowUser} from "../timeline/twitter_api";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
@@ -109,7 +110,9 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
 
 function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true {
 
-    switch (request.action) {
+    const type = request?.action ?? request?.type;
+
+    switch (type) {
         case MsgType.NaviUrlChanged: {
             const linkInfo = parseTwitterPath(window.location.href)
             logTPR("------>>> link info:", linkInfo)
@@ -156,6 +159,54 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
                 } catch (e) {
                     const err = e as Error;
                     sendResponse({success: false, data: err.message});
+                }
+            })();
+            return true;
+        }
+
+        case MsgType.FollowingBulkUnfollow: {
+            (async () => {
+                try {
+                    const payload = request?.payload ?? {};
+                    const rawUserIds = Array.isArray(payload?.userIds) ? payload.userIds : [];
+                    const throttleMsRaw = payload?.throttleMs;
+                    const throttleMs =
+                        typeof throttleMsRaw === "number" && throttleMsRaw >= 0 ? throttleMsRaw : 1100;
+
+                    const userIds = rawUserIds
+                        .map((userId) => (typeof userId === "string" ? userId.trim() : ""))
+                        .filter((userId): userId is string => Boolean(userId));
+
+                    const total = userIds.length;
+                    let succeeded = 0;
+                    let failed = 0;
+                    const errors: Array<{userId: string; err: string}> = [];
+
+                    for (let index = 0; index < userIds.length; index += 1) {
+                        const userId = userIds[index];
+                        try {
+                            const ok = await unfollowUser(userId);
+                            if (ok) {
+                                succeeded += 1;
+                            } else {
+                                failed += 1;
+                                errors.push({userId, err: "Request failed"});
+                            }
+                        } catch (error) {
+                            failed += 1;
+                            const err = error as Error;
+                            errors.push({userId, err: err?.message ?? String(error)});
+                        }
+
+                        if (index < userIds.length - 1) {
+                            await sleep(throttleMs);
+                        }
+                    }
+
+                    sendResponse({total, succeeded, failed, errors});
+                } catch (error) {
+                    const err = error as Error;
+                    sendResponse({error: err?.message ?? "Failed to unfollow selected accounts."});
                 }
             })();
             return true;
