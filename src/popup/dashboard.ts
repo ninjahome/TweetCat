@@ -104,29 +104,6 @@ async function setHomeStatus() {
     adNumber.innerText = "" + setting.adsBlocked
 }
 
-function _cloneCatItem(clone: HTMLElement, category: Category) {
-    clone.setAttribute('id', "category-item-" + category.id);
-    clone.style.display = 'flex';
-    clone.dataset.categoryID = "" + category.id;
-    clone.querySelector(".category-name")!.textContent = category.catName;
-
-    const editBtn = clone.querySelector(".category-edit-btn") as HTMLElement;
-    editBtn.onclick = () => {
-        editCategory(category);
-    }
-
-    kolsForCategory(category.id!).then((result => {
-        const kolSize = clone.querySelector(".kol-size-val") as HTMLElement;
-        kolSize.textContent = "" + result.size;
-        kolSize.onclick = () => {
-            browser.tabs.create({
-                url: browser.runtime.getURL("html/kolManage.html?catID=" + category.id + "&&catName=" + category.catName),
-            }).then();
-        }
-        kolSize.style.color = choseColorByID(category.id!)
-    }));
-}
-
 function editCategory(cat: Category) {
     const mgmDvi = document.getElementById("view-category-manager") as HTMLDivElement;
     (mgmDvi.querySelector(".msg-category-label") as HTMLElement).innerText = t('category_label');
