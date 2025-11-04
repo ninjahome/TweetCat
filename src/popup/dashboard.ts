@@ -1,13 +1,12 @@
 import browser from "webextension-polyfill";
-import {__DBK_AD_Block_Key, choseColorByID, MsgType} from "../common/consts";
+import {__DBK_AD_Block_Key, MsgType} from "../common/consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/database";
 import {showView} from "../common/utils";
-import {loadCategories, removeCategory, updateCategoryDetail} from "../object/category";
+import {loadCategories} from "../object/category";
 import {hideLoading, showAlert, showConfirmPopup, showLoading} from "./dash_common";
 import {sendMessageToX} from "../service_work/bg_msg";
 import {localGet, localSet} from "../common/local_storage";
 import {Category} from "../object/category";
-import {kolsForCategory} from "../object/tweet_kol";
 import {getSystemSetting, switchAdOn} from "../object/system_setting";
 import {t} from "../common/i18n";
 
@@ -104,60 +103,6 @@ async function setHomeStatus() {
     adNumber.innerText = "" + setting.adsBlocked
 }
 
-function editCategory(cat: Category) {
-    const mgmDvi = document.getElementById("view-category-manager") as HTMLDivElement;
-    (mgmDvi.querySelector(".msg-category-label") as HTMLElement).innerText = t('category_label');
-
-    const catIdDiv = mgmDvi.querySelector(".category-id") as HTMLDivElement
-    catIdDiv.innerText = "" + cat.id;
-
-    const catNameDiv = mgmDvi.querySelector(".category-name-val") as HTMLInputElement
-    catNameDiv.value = cat.catName;
-
-    const nameEditBtn = mgmDvi.querySelector(".name-edit") as HTMLElement;
-    nameEditBtn.innerText = t('save');
-    nameEditBtn.onclick = async () => {
-        await editCateName(cat, mgmDvi)
-    }
-
-    const rmBtn = mgmDvi.querySelector(".category-remove-btn") as HTMLElement;
-    rmBtn.innerText = t('remove');
-    rmBtn.onclick = () => {
-        removeCatById(cat.id!);
-    }
-
-    const backBtn = mgmDvi.querySelector(".button-back") as HTMLElement;
-    backBtn.onclick = () => {
-        showView('#onboarding/main-home', dashRouter);
-    }
-
-    showView('#onboarding/category-manager', dashRouter);
-}
-
-async function editCateName(cat: Category, parent: HTMLElement) {
-    const inputArea = parent.querySelector(".category-name-val") as HTMLInputElement;
-    const newCatName = inputArea.value;
-    if (!newCatName) {
-        showAlert(t('tips_title'), t('invalid_category_name'));
-        return;
-    }
-    cat.catName = inputArea.value;
-    showLoading();
-    await updateCategoryDetail(cat);
-    await sendMessageToX(MsgType.CategoryChanged, await loadCategories());
-    hideLoading();
-    showAlert(t('tips_title'), t('update_success'));
-}
-
-function removeCatById(catId: number) {
-    showConfirmPopup(t('category_delete_confirm'), async () => {
-        showLoading();
-        await removeCategory(catId);
-        await sendMessageToX(MsgType.CategoryChanged, await loadCategories());
-        hideLoading();
-        showView('#onboarding/main-home', dashRouter);
-    });
-}
 
 function initSettings() {
     const blockAdsToggle = document.getElementById('ad-block-toggle') as HTMLInputElement;
