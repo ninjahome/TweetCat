@@ -165,7 +165,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             const userIds = Array.isArray(payload?.userIds) ? payload.userIds.map(String) : [];
             const throttleMs = typeof payload?.throttleMs === "number" ? payload.throttleMs : 1100;
             performBulkUnfollow(userIds, throttleMs)
-                .then((result) => sendResponse({ success: true, data: result }))
+                .then((result) => sendResponse({success: true, data: result}))
                 .catch((err) =>
                     sendResponse({
                         success: false,
@@ -181,7 +181,6 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     return true;
 }
-
 
 
 let userInfoTryTime = 0;

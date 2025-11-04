@@ -645,7 +645,7 @@ function setSyncLoading(loading: boolean) {
     }
 }
 
-type UnfollowTarget = {key: string; userId: string};
+type UnfollowTarget = { key: string; userId: string };
 
 function getUnfollowTargets(): UnfollowTarget[] {
     const targets: UnfollowTarget[] = [];
@@ -691,6 +691,7 @@ function hideProcessingOverlay() {
 }
 
 const UNFOLLOW_REQUEST_DELAY_MS = 1100;
+
 async function performBatchUnfollow(targets: UnfollowTarget[]) {
     if (targets.length === 0) return;
     isProcessingUnfollow = true;
@@ -1033,7 +1034,7 @@ async function bulkAssignCategory(keys: string[], targetCatId: number | null): P
         for (const uid of idsToClear) {
             await browser.runtime.sendMessage({
                 action: MsgType.TweetRemoveByKolID,
-                data: { userId: uid },
+                data: {userId: uid},
             });
         }
 
@@ -1106,7 +1107,7 @@ async function removeUnfollowedFromView(userIds: string[]) {
         try {
             await browser.runtime.sendMessage({
                 action: MsgType.FollowingRemoveLocal,
-                data: { userIds: localRemoveIds },
+                data: {userIds: localRemoveIds},
             });
         } catch (err) {
             console.warn("------>>> removeUnfollowedFromView: failed to remove locally", err);
