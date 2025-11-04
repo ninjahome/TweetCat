@@ -55,18 +55,23 @@
 <template id="user-card-template">
     <div class="user-card">
         <input type="checkbox" class="user-select" />
-        <img class="user-avatar" src="" alt="Avatar" />
-        <div class="info">
-            <div class="name-row">
-                <div class="name"></div>
-                <span class="category-badge hidden"></span>
-            </div>
+        <button class="sync-btn hidden" title="同步账号信息">⟳</button>
+        <img class="user-avatar" src="" alt="" />
+        <div class="name-row">
+            <div class="name"></div>
             <div class="handle"></div>
-            <div class="bio hidden"></div>
-            <div class="meta">
-                <div class="location hidden"></div>
-                <div class="stats hidden"></div>
-            </div>
+        </div>
+        <div class="category-badge hidden">
+            <span class="category-dot"></span>
+            <span class="category-name"></span>
+        </div>
+        <div class="bio-wrapper hidden">
+            <div class="bio-text"></div>
+            <div class="bio-tooltip hidden"></div>
+        </div>
+        <div class="meta">
+            <div class="location hidden"></div>
+            <div class="stats hidden"></div>
         </div>
     </div>
 </template>

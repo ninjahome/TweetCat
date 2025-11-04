@@ -19,7 +19,7 @@ import {reloadCategoryContainer, setupFilterItemsOnWeb3Area} from "./tweetcat_we
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 import {queryProfileOfTwitterOwner} from "./tweet_user_info";
 import {initI18n} from "../common/i18n";
-import {performBulkUnfollow, syncFollowingsFromPage} from "../object/following";
+import {performBulkUnfollow, syncFollowingsFromPage, syncOneFollowingsByScreenName} from "../object/following";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
@@ -160,16 +160,26 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
                 });
             return true;
         }
+
         case MsgType.FollowingBulkUnfollow: {
-            const payload = request?.payload ?? {};
-            const userIds = Array.isArray(payload?.userIds) ? payload.userIds.map(String) : [];
-            const throttleMs = typeof payload?.throttleMs === "number" ? payload.throttleMs : 1100;
-            performBulkUnfollow(userIds, throttleMs)
+            performBulkUnfollow(request.data)
                 .then((result) => sendResponse({success: true, data: result}))
                 .catch((err) =>
                     sendResponse({
                         success: false,
                         error: err?.message ?? "Failed to unfollow selected accounts.",
+                    }),
+                );
+            return true;
+        }
+
+        case MsgType.FollowingFetchOne:{
+            syncOneFollowingsByScreenName(request.data as string)
+                .then((result) => sendResponse({success: true, data: result}))
+                .catch((err) =>
+                    sendResponse({
+                        success: false,
+                        error: err?.message ?? "Failed to fetch selected accounts.",
                     }),
                 );
             return true;

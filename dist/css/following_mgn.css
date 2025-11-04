@@ -369,9 +369,11 @@ body.processing-blocked {
     gap: 12px;
     overflow-y: auto;
     padding-bottom: 16px;
+    overflow: visible;
 }
 
 .user-card {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -434,13 +436,6 @@ body.processing-blocked {
     line-height: 1.2;
 }
 
-.user-card .bio {
-    margin-top: 6px;
-    font-size: 13px;
-    color: #0f1419;
-    white-space: pre-line;
-}
-
 .user-card .meta {
     display: flex;
     flex-wrap: wrap;
@@ -494,4 +489,100 @@ button:disabled {
 html[style*="color-scheme: dark"] .user-card.is-local-only {
     background-color: rgba(255, 255, 255, 0.06);
     border-left-color: #666;
+}
+
+
+/* ============ Bio 统一高度 + 悬浮显示完整文本 ============ */
+.bio-wrapper {
+    position: relative;
+    margin-top: 6px;
+    height: 36px;                 /* 统一高度（两行） */
+    overflow: hidden;
+}
+
+.bio-text {
+    font-size: 13px;
+    color: #0f1419;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;        /* 最多两行 */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+}
+
+/* 悬浮提示框显示完整 Bio */
+.bio-tooltip {
+    position: absolute;
+    left: 0;
+    bottom: 110%;
+    padding: 6px 8px;
+    max-width: 280px;
+    background: rgba(15,20,25,0.94);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.4;
+    border-radius: 6px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+    z-index: 30;
+    display: none;
+    white-space: normal;
+}
+
+.user-card:hover .bio-tooltip {
+    display: block;
+}
+
+/* ============ 单卡片同步按钮（本地账号可见） ============ */
+.sync-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: #657786;
+    cursor: pointer;
+    opacity: 0.65;
+    font-size: 14px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 6px;
+    transition: opacity 0.2s, color 0.2s, background-color 0.2s;
+}
+
+.user-card:hover .sync-btn {
+    opacity: 1;
+    color: #1d9bf0;
+    background-color: rgba(29,155,240,0.08);
+}
+
+/* ============ 分类颜色与关注状态融合 ============ */
+/* 改造后的分类徽标容器 */
+.category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    border-radius: 999px;
+    padding: 2px 10px;
+    line-height: 1.2;
+    margin-top: 6px;
+    background: rgba(29,155,240,0.12);  /* 淡底色，随主题可再调整 */
+    color: #1d9bf0;
+}
+.category-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #1d9bf0;   /* 实际渲染时由 JS 设置具体色值 */
+}
+
+/* 左侧彩条区分是否关注；与你现有的绿色/灰色逻辑对齐 */
+.user-card.is-following {
+    background-color: rgba(46, 204, 113, 0.06);
+    border-left: 3px solid #2ecc71;
+}
+.user-card.is-local-only {
+    background-color: rgba(120, 120, 120, 0.08);
+    border-left: 3px solid #888;
 }

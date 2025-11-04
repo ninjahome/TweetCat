@@ -1,6 +1,12 @@
 import browser from "webextension-polyfill";
-import {MsgType} from "../common/consts";
-import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/database";
+import {choseColorByID, MsgType} from "../common/consts";
+import {
+    __tableCategory,
+    __tableFollowings,
+    checkAndInitDatabase,
+    databaseAddItem,
+    databaseUpdateOrAddItem
+} from "../common/database";
 import {
     Category,
     assignKolsToCategoryFromBG,
@@ -10,8 +16,9 @@ import {
     removeKolsFromCategoryFromBG,
     updateCategoryDetail,
 } from "../object/category";
-import {FollowingUser} from "../object/following";
+import {FollowingUser, replaceFollowingsPreservingCategories} from "../object/following";
 import {logFM} from "../common/debug_flags";
+import {sendMsgToService} from "../common/utils";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -510,19 +517,79 @@ function renderUserList() {
             const handleElm = card.querySelector(".handle") as HTMLElement;
             handleElm.textContent = user.screenName ? `@${user.screenName}` : "";
 
-            const categoryElm = card.querySelector(".category-badge") as HTMLElement | null;
-            if (categoryElm) {
-                if (selectedFilter === ALL_FILTER && user.categoryName) {
-                    categoryElm.textContent = user.categoryName;
-                    categoryElm.classList.remove("hidden");
+            // ---- 分类徽标（圆点 + 名称）----
+            const badge = card.querySelector(".category-badge") as HTMLElement | null;
+            const dot = card.querySelector(".category-dot") as HTMLElement | null;
+            const catName = card.querySelector(".category-name") as HTMLElement | null;
+
+            if (badge && dot && catName) {
+                if (selectedFilter === ALL_FILTER && user.categoryName && user.categoryId != null) {
+                    badge.classList.remove("hidden");
+                    catName.textContent = user.categoryName;
+                    dot.style.backgroundColor = choseColorByID(user.categoryId, 1);
                 } else {
-                    categoryElm.textContent = "";
-                    categoryElm.classList.add("hidden");
+                    badge.classList.add("hidden");
                 }
             }
 
-            const bioElm = card.querySelector(".bio") as HTMLElement | null;
-            setTextContentOrHide(bioElm, user.bio);
+// ---- Bio 统一高度 + 悬浮完整显示 ----
+            const bioWrapper = card.querySelector(".bio-wrapper") as HTMLElement | null;
+            const bioText = card.querySelector(".bio-text") as HTMLElement | null;
+            const bioTooltip = card.querySelector(".bio-tooltip") as HTMLElement | null;
+
+            if (bioWrapper && bioText && bioTooltip) {
+                if (user.bio && user.bio.trim().length > 0) {
+                    bioText.textContent = user.bio.trim();
+                    bioTooltip.textContent = user.bio.trim();
+                    bioWrapper.classList.remove("hidden");
+                } else {
+                    bioWrapper.classList.add("hidden");
+                }
+            }
+
+// ---- 本地账号同步按钮 ----
+            const syncBtn = card.querySelector(".sync-btn") as HTMLButtonElement | null;
+            if (syncBtn) {
+                const isLocalOnly = !user.sources.includes("following");
+
+                // ✅ 1. 只有本地账号才显示同步按钮
+                if (isLocalOnly) {
+                    syncBtn.classList.remove("hidden");
+
+                    syncBtn.addEventListener("click", async (ev) => {
+                        ev.stopPropagation();
+
+                        try {
+                            showNotification(`正在同步 ${user.displayName ?? user.screenName ?? user.key} ...`);
+
+                            // 2️⃣ 发送请求获取账号最新信息
+                            const resp = await sendMsgToService(user.screenName ?? user.key, MsgType.FollowingFetchOne);
+
+                            if (resp?.success && resp.data) {
+                                // 3️⃣ 合并数据：避免覆盖 categoryId、sources、key 等本地字段
+                                const updated = {
+                                    ...user,          // 保留现有字段（包括 categoryId、sources）
+                                    ...resp.data,     // 用远程数据覆盖补全字段（bio、followersCount 等）
+                                    categoryId: user.categoryId ?? null,
+                                    lastSyncedAt: Date.now(),
+                                };
+
+                                await databaseUpdateOrAddItem(__tableFollowings, updated);
+
+                                showNotification("账号信息已更新。", "info");
+                                await refreshData();
+                            } else {
+                                showNotification("未找到该账号或同步失败。", "error");
+                            }
+                        } catch (err) {
+                            showNotification("同步失败：" + (err as Error).message, "error");
+                        }
+                    });
+                } else {
+                    syncBtn.classList.add("hidden");
+                }
+            }
+
 
             const locationElm = card.querySelector(".location") as HTMLElement | null;
             const locationText = user.location ? `📍 ${user.location}` : undefined;
@@ -614,14 +681,16 @@ function updateEmptyState() {
 async function handleSyncClick() {
     setSyncLoading(true);
     try {
-        const rsp = await browser.runtime.sendMessage({action: MsgType.FollowingSync});
+        const rsp = await sendMsgToService({}, MsgType.FollowingSync)// browser.runtime.sendMessage({action: MsgType.FollowingSync});
         if (!rsp?.success) {
             const message = typeof rsp?.data === "string" ? rsp.data : "Failed to sync followings.";
             showNotification(message, "error");
             return;
         }
-        const count = rsp?.data?.count ?? 0;
-        syncStatus.textContent = `Synced ${count} followings.`;
+
+        const users = rsp.data as FollowingUser[] ?? [];
+        await replaceFollowingsPreservingCategories(users);
+        syncStatus.textContent = `Synced ${users.length} followings.`;
         selectedKeys.clear();
         await refreshData();
     } catch (error) {
@@ -712,14 +781,10 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
             return;
         }
 
-        const response = await browser.runtime.sendMessage({
-            action: MsgType.FollowingBulkUnfollow,
-            type: MsgType.FollowingBulkUnfollow,
-            payload: {
-                userIds,
-                throttleMs: UNFOLLOW_REQUEST_DELAY_MS,
-            },
-        });
+        const response = await sendMsgToService({
+            userIds,
+            throttleMs: UNFOLLOW_REQUEST_DELAY_MS,
+        }, MsgType.FollowingBulkUnfollow)
 
         if (!response) {
             showNotification("No response from background script. Please try again.", "error");
@@ -743,7 +808,6 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
         const failureCount = typeof result?.failed === "number" ? result.failed : Math.max(0, total - successCount);
 
         logFM("------>>> performBatchUnfollow completed, removing unfollowed users locally...");
-
 
         selectedKeys.clear();
         await removeUnfollowedFromView(userIds)

@@ -27,6 +27,7 @@ import {
     replaceFollowingsPreservingCategories,
     FollowingUser, removeLocalFollowings
 } from "../object/following";
+import {__tableFollowings, databaseUpdateOrAddItem} from "../common/database";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -38,46 +39,10 @@ export async function checkIfXIsOpen(): Promise<boolean> {
 }
 
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
-    // console.log("-----------bgMsgDispatch-------------->>>_sender is: ", request)
-
     switch (request.action) {
 
         case MsgType.FollowingBulkUnfollow: {
-            const payload = request?.payload ?? {};
-            const rawUserIds = Array.isArray(payload?.userIds) ? payload.userIds : [];
-            const throttleMsRaw = payload?.throttleMs;
-            const throttleMs =
-                typeof throttleMsRaw === "number" && throttleMsRaw >= 0 ? throttleMsRaw : 1100;
-
-            const targetTab = await findActiveXTab();
-            if (!targetTab?.id) {
-                return {success: false, data: "Please open x.com before unfollowing."};
-            }
-
-            try {
-                const response = await browser.tabs.sendMessage(targetTab.id, {
-                    action: MsgType.FollowingBulkUnfollow,
-                    payload: {
-                        userIds: rawUserIds,
-                        throttleMs,
-                    },
-                });
-
-                if (!response) {
-                    return {success: false, data: "No response from the Twitter tab."};
-                }
-
-                if (response?.error) {
-                    const errorMessage = typeof response.error === "string" ? response.error : "Failed to unfollow selected accounts.";
-                    return {success: false, data: errorMessage};
-                }
-
-                return {success: true, data: response};
-            } catch (error) {
-                const err = error as Error;
-                console.warn("------>>> Following bulk unfollow failed", err);
-                return {success: false, data: err?.message ?? "Failed to unfollow selected accounts."};
-            }
+                return  await sendMessageToX( MsgType.FollowingBulkUnfollow,  request.data);
         }
 
         case MsgType.OpenPlugin: {
@@ -92,7 +57,6 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.CategoryQueryAll: {
             const catData = await loadCategories();
-            // console.log("------------------------->>>catData is: ", catData)
             return {success: true, data: catData};
         }
 
@@ -117,31 +81,12 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
+        case MsgType.FollowingFetchOne: {
+            return await sendMessageToX( MsgType.FollowingFetchOne,  request.data);;
+        }
+
         case MsgType.FollowingSync: {
-            const tabs = await browser.tabs.query({
-                url: ["*://x.com/*", "*://twitter.com/*"],
-            });
-            if (tabs.length === 0) {
-                return {success: false, data: "Please open x.com before syncing."};
-            }
-
-            try {
-                const response = await browser.tabs.sendMessage(tabs[0].id!, {
-                    action: MsgType.FollowingSync,
-                });
-
-                if (!response?.success) {
-                    return {success: false, data: response?.data ?? "Failed to fetch followings."};
-                }
-
-                const users = response.data as FollowingUser[] ?? [];
-                await replaceFollowingsPreservingCategories(users);
-                return {success: true, data: {count: users.length ?? 0}};
-            } catch (error) {
-                const err = error as Error;
-                console.warn("------>>> Following sync failed", err);
-                return {success: false, data: err.message};
-            }
+            return await sendMessageToX( MsgType.FollowingSync,  request.data);
         }
 
         case MsgType.KolUpdate: {
@@ -283,7 +228,7 @@ async function openPlugin() {
     await browser.action.openPopup();
 }
 
-export async function sendMessageToX(action: string, data: any, onlyFirstTab: boolean = true, url = '*://x.com/*'): Promise<boolean> {
+export async function sendMessageToX(action: string, data: any, onlyFirstTab: boolean = true, url = '*://x.com/*'): Promise<any> {
     const tabs = await browser.tabs.query({
         url: url
     });
@@ -296,17 +241,18 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
     for (let i = 0; i < tabs.length; i++) {
         const tab = tabs[i];
         try {
-            await browser.tabs.sendMessage(tab.id!, {
+            const resp = await browser.tabs.sendMessage(tab.id!, {
                 action: action,
                 data: data
             });
 
-            if (onlyFirstTab) return true;
+            if (onlyFirstTab) return resp;
 
         } catch (err) {
             console.warn("------>>> 发送消息失败", err);
-            return false;
+            return null;
         }
     }
+
     return true;
 }

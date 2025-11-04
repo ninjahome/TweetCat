@@ -5,8 +5,6 @@ export const maxElmFindTryTimes = 5;
 export const defaultCatID = 1;
 export const defaultAllCategoryID = -1;
 export const itemColorGroup = ['#f6cd01', '#866afb', '#fe466c', '#06cbad', '#4592ef']
-export const MaxCategorySize = 12;
-
 function addOpacityToHex(hex: string, opacity: number): string {
     const clampedOpacity = Math.min(1, Math.max(0, opacity));
     const alpha = Math.round(clampedOpacity * 255).toString(16).padStart(2, '0');
@@ -35,7 +33,7 @@ export enum MsgType {
     FollowingAssignCategory = 'FollowingAssignCategory',
     FollowingBulkUnfollow = 'FollowingBulkUnfollow',
     FollowingRemoveLocal = 'FollowingRemoveLocal',
-
+    FollowingFetchOne = 'FollowingFetchOne',
 
     KolQueryAll = 'KolQueryAll',
     KolQueryByID = 'KolQueryByID',

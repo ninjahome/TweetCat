@@ -131,6 +131,41 @@ export async function syncFollowingsFromPage(): Promise<FollowingUser[]> {
     return collected;
 }
 
+/**
+ * 从 Twitter API 拉取单个用户信息，并转换为 FollowingUser 结构返回。
+ * 注意：此函数不进行数据库写入，结果由 popup 或 background 处理。
+ */
+export async function syncOneFollowingsByScreenName(screenName?: string): Promise<FollowingUser> {
+    if (!screenName || !screenName.trim()) {
+        throw new Error("screenName is required");
+    }
+
+    // 1️⃣ 获取用户档案
+    const userProfile = await getUserByUsername(screenName.trim());
+    if (!userProfile) {
+        throw new Error(`Failed to fetch profile for @${screenName}`);
+    }
+
+    const following: FollowingUser = {
+        id: userProfile.userId,
+        name: userProfile.displayName || userProfile.userName || screenName,
+        screenName: userProfile.userName || screenName,
+        avatarUrl: userProfile.avatar || "",
+        categoryId: null,
+        lastSyncedAt: Date.now(),
+
+        // 以下字段从 UserProfile 映射
+        bio: userProfile.hasDescription ? "" : undefined, // 若需要真实简介可后续补入
+        location: undefined, // UserProfile 没有位置信息，可在 getUserByUsername 内扩展
+        followersCount: userProfile.followersCount,
+        friendsCount: userProfile.friendsCount,
+        statusesCount: userProfile.statusesCount,
+    };
+
+    return following;
+}
+
+
 async function resolveViewerScreenName(maxRetries: number = 10): Promise<string | null> {
     for (let i = 0; i < maxRetries; i++) {
         const profileLink = document.querySelector('a[data-testid="AppTabBar_Profile_Link"]') as HTMLAnchorElement | null;
@@ -206,7 +241,11 @@ function isRateLimitError(message: string): boolean {
     return false;
 }
 
-export async function performBulkUnfollow(userIds: string[], throttleMs: number) {
+export async function performBulkUnfollow(data:any) {
+
+    const userIds = Array.isArray(data?.userIds) ? data.userIds.map(String) : [];
+    const throttleMs = typeof data?.throttleMs === "number" ? data.throttleMs : 1100;
+
     const total = userIds.length;
     let succeeded = 0;
     let failed = 0;
