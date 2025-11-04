@@ -403,7 +403,7 @@ function createCategoryElement(
     renameBtn?.addEventListener("click", (ev) => {
         ev.stopPropagation();
         if (!category) return;
-        handleRenameCategory(category);
+        handleRenameCategory(category).then();
     });
 
     const deleteBtn = li.querySelector(".delete-btn") as HTMLButtonElement;
@@ -707,7 +707,8 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
         );
 
         if (userIds.length === 0) {
-            throw new Error("No valid accounts to unfollow.");
+            showNotification("No valid accounts to unfollow.", "error");
+            return;
         }
 
         const response = await browser.runtime.sendMessage({
@@ -720,12 +721,14 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
         });
 
         if (!response) {
-            throw new Error("No response from background script. Please try again.");
+            showNotification("No response from background script. Please try again.", "error");
+            return;
         }
 
         if (response?.success === false) {
             const message = typeof response?.data === "string" ? response.data : response?.error;
-            throw new Error(message || "Failed to unfollow selected accounts.");
+            showNotification(message || "Failed to unfollow selected accounts.", "error");
+            return;
         }
 
         const result = (response?.data ?? response) as {

@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import {__DBK_AD_Block_Key, choseColorByID, MaxCategorySize, MsgType} from "../common/consts";
+import {__DBK_AD_Block_Key, choseColorByID, MsgType} from "../common/consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/database";
 import {showView} from "../common/utils";
 import {loadCategories, removeCategory, updateCategoryDetail} from "../object/category";
