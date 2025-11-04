@@ -3,7 +3,7 @@ import {__DBK_AD_Block_Key, MsgType} from "../common/consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/database";
 import {showView} from "../common/utils";
 import {loadCategories} from "../object/category";
-import {hideLoading, showAlert, showConfirmPopup, showLoading} from "./dash_common";
+import {hideLoading, showAlert, showLoading} from "./dash_common";
 import {sendMessageToX} from "../service_work/bg_msg";
 import {localGet, localSet} from "../common/local_storage";
 import {Category} from "../object/category";
