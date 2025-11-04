@@ -513,6 +513,14 @@ function renderUserList() {
 
             const nameElm = card.querySelector(".name") as HTMLElement;
             nameElm.textContent = user.displayName ?? user.screenName ?? user.key;
+            if (user.screenName) {
+                nameElm.style.cursor = "pointer";
+                nameElm.title = `Open @${user.screenName} on X`;
+                nameElm.addEventListener("click", (ev) => {
+                    ev.stopPropagation();
+                    window.open(`https://x.com/${user.screenName}`, "_blank");
+                });
+            }
 
             const handleElm = card.querySelector(".handle") as HTMLElement;
             handleElm.textContent = user.screenName ? `@${user.screenName}` : "";

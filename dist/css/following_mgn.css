@@ -362,17 +362,26 @@ body.processing-blocked {
     text-align: center;
 }
 
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    overflow-y: auto; /* ✅ 把滚动放到 content 层 */
+}
+
 .user-list {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); /* 卡片更宽一点 */
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 16px;
     flex: 1;
     display: grid;
-    overflow-y: auto;
+    overflow: visible; /* ✅ tooltip 不再被裁切 */
     padding-bottom: 16px;
 }
 
-.user-card {
 
+.user-card {
+    position: relative;
     box-shadow: 0 2px 6px rgba(15, 20, 25, 0.06);
     border: 1px solid #e5e7eb;
 
@@ -383,7 +392,6 @@ body.processing-blocked {
     gap: 6px;
     min-height: 160px; /* 统一高度，防止错位 */
 
-    position: relative;
     display: flex;
     background: #ffffff;
     border-radius: 10px;
@@ -501,19 +509,6 @@ button:disabled {
     }
 }
 
-
-.user-card.is-local-only {
-    background-color: rgba(120, 120, 120, 0.05);
-    border-left: 3px solid #888;
-    opacity: 0.85;
-}
-
-.user-card.is-following {
-
-    background-color: rgba(46, 204, 113, 0.05);
-    border-left: 3px solid #2ecc71;
-}
-
 html[style*="color-scheme: dark"] .user-card.is-local-only {
     background-color: rgba(255, 255, 255, 0.06);
     border-left-color: #666;
@@ -523,10 +518,9 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 /* ============ Bio 统一高度 + 悬浮显示完整文本 ============ */
 .bio-wrapper {
     margin-top: 4px;
-    height: 34px;
+    height: 38px;
     line-height: 1.4;
     width: 100%;
-
     position: relative;
     overflow: hidden;
 }
@@ -546,23 +540,26 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 
 /* 悬浮提示框显示完整 Bio */
 .bio-tooltip {
+    bottom: 110%;
+    transform: translateY(-2px);
+    pointer-events: none;
+    word-wrap: break-word;
     position: absolute;
     left: 0;
-    bottom: 110%;
-    padding: 6px 8px;
-    max-width: 280px;
-    background: rgba(15, 20, 25, 0.94);
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.85);
     color: #fff;
-    font-size: 12px;
-    line-height: 1.4;
+    padding: 6px 8px;
     border-radius: 6px;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
-    z-index: 30;
+    font-size: 13px;
+    line-height: 1.4;
+    max-width: 280px;
     display: none;
-    white-space: normal;
+    white-space: pre-line;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
-.user-card:hover .bio-tooltip {
+.bio-wrapper:hover .bio-tooltip {
     display: block;
 }
 
