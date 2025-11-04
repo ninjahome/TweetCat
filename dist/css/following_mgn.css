@@ -363,31 +363,44 @@ body.processing-blocked {
 }
 
 .user-list {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); /* 卡片更宽一点 */
+    gap: 16px;
     flex: 1;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 12px;
     overflow-y: auto;
     padding-bottom: 16px;
-    overflow: visible;
 }
 
 .user-card {
+
+    box-shadow: 0 2px 6px rgba(15, 20, 25, 0.06);
+    border: 1px solid #e5e7eb;
+
+    flex-direction: column; /* 改为纵向排列 */
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 12px 14px;
+    gap: 6px;
+    min-height: 160px; /* 统一高度，防止错位 */
+
     position: relative;
     display: flex;
-    align-items: center;
-    gap: 12px;
     background: #ffffff;
     border-radius: 10px;
-    padding: 10px 12px;
-    box-shadow: 0 1px 3px rgba(15, 20, 25, 0.08);
-    border: 1px solid transparent;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .user-card:hover {
     border-color: #1d9bf0;
-    box-shadow: 0 2px 6px rgba(29, 155, 240, 0.18);
+    box-shadow: 0 4px 10px rgba(29,155,240,0.15);
+}
+
+/* 头像+名称行 */
+.user-card .header-row {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
 }
 
 .user-card .user-select {
@@ -395,15 +408,17 @@ body.processing-blocked {
 }
 
 .user-avatar {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     object-fit: cover;
 }
 
 .user-card .info {
     flex: 1;
-    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .user-card .name-row {
@@ -414,8 +429,12 @@ body.processing-blocked {
 }
 
 .user-card .name {
+
+
     font-weight: 600;
+    font-size: 15px;
     color: #0f1419;
+
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -428,21 +447,27 @@ body.processing-blocked {
 }
 
 .user-card .category-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
     font-size: 12px;
     background: rgba(29, 155, 240, 0.12);
-    color: #1d9bf0;
-    border-radius: 999px;
     padding: 2px 8px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #1d9bf0;
     line-height: 1.2;
 }
 
 .user-card .meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 6px;
+    margin-top: 4px;
     font-size: 12px;
     color: #536471;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 .user-card .meta > div {
@@ -478,14 +503,17 @@ button:disabled {
 
 
 .user-card.is-local-only {
-    background-color: rgba(255, 255, 255, 0.05); /* 淡灰底 */
+    background-color: rgba(120, 120, 120, 0.05);
     border-left: 3px solid #888;
     opacity: 0.85;
 }
+
 .user-card.is-following {
-    background-color: transparent;
-    border-left: 3px solid #2ecc71; /* 绿色边代表真实 follow */
+
+    background-color: rgba(46, 204, 113, 0.05);
+    border-left: 3px solid #2ecc71;
 }
+
 html[style*="color-scheme: dark"] .user-card.is-local-only {
     background-color: rgba(255, 255, 255, 0.06);
     border-left-color: #666;
@@ -494,17 +522,22 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 
 /* ============ Bio 统一高度 + 悬浮显示完整文本 ============ */
 .bio-wrapper {
+    margin-top: 4px;
+    height: 34px;
+    line-height: 1.4;
+    width: 100%;
+
     position: relative;
-    margin-top: 6px;
-    height: 36px;                 /* 统一高度（两行） */
     overflow: hidden;
 }
 
 .bio-text {
+
     font-size: 13px;
     color: #0f1419;
+
     display: -webkit-box;
-    -webkit-line-clamp: 2;        /* 最多两行 */
+    -webkit-line-clamp: 2; /* 最多两行 */
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -518,12 +551,12 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     bottom: 110%;
     padding: 6px 8px;
     max-width: 280px;
-    background: rgba(15,20,25,0.94);
+    background: rgba(15, 20, 25, 0.94);
     color: #fff;
     font-size: 12px;
     line-height: 1.4;
     border-radius: 6px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.18);
     z-index: 30;
     display: none;
     white-space: normal;
@@ -535,25 +568,27 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 
 /* ============ 单卡片同步按钮（本地账号可见） ============ */
 .sync-btn {
-    position: absolute;
+
     top: 8px;
     right: 8px;
-    background: transparent;
-    border: none;
-    color: #657786;
-    cursor: pointer;
-    opacity: 0.65;
-    font-size: 14px;
-    line-height: 1;
-    padding: 2px 4px;
+    background: #fff;
+    border: 1px solid #d0d7de;
+    color: #1d9bf0;
+    padding: 3px 8px;
+    font-size: 12px;
     border-radius: 6px;
-    transition: opacity 0.2s, color 0.2s, background-color 0.2s;
+    opacity: 0.85;
+    transition: all 0.2s ease;
+
+    position: absolute;
+    cursor: pointer;
+    line-height: 1;
 }
 
 .user-card:hover .sync-btn {
     opacity: 1;
-    color: #1d9bf0;
-    background-color: rgba(29,155,240,0.08);
+    background: #1d9bf0;
+    color: #fff;
 }
 
 /* ============ 分类颜色与关注状态融合 ============ */
@@ -567,14 +602,15 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     padding: 2px 10px;
     line-height: 1.2;
     margin-top: 6px;
-    background: rgba(29,155,240,0.12);  /* 淡底色，随主题可再调整 */
+    background: rgba(29, 155, 240, 0.12); /* 淡底色，随主题可再调整 */
     color: #1d9bf0;
 }
+
 .category-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #1d9bf0;   /* 实际渲染时由 JS 设置具体色值 */
+    background: #1d9bf0; /* 实际渲染时由 JS 设置具体色值 */
 }
 
 /* 左侧彩条区分是否关注；与你现有的绿色/灰色逻辑对齐 */
@@ -582,6 +618,7 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     background-color: rgba(46, 204, 113, 0.06);
     border-left: 3px solid #2ecc71;
 }
+
 .user-card.is-local-only {
     background-color: rgba(120, 120, 120, 0.08);
     border-left: 3px solid #888;

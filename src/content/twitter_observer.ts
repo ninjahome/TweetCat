@@ -6,7 +6,7 @@ import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {getUserIdByUsername} from "../timeline/twitter_api";
 import {fetchImmediateInNextRound, videoParamForTweets} from "../timeline/tweet_fetcher";
-import {logAD} from "../common/debug_flags";
+import {logAD, logTPR} from "../common/debug_flags";
 import {blockedAdNumIncrease} from "../object/system_setting";
 import {prepareDownloadBtn} from "../timeline/render_action";
 import {t} from "../common/i18n";
@@ -201,7 +201,7 @@ async function setCatMenu(kolName: string, clone: HTMLElement) {
         // 分类被删除或无效 → 也当作未分类
         catBtn.style.display = 'block';
         catName.style.display = 'none';
-        console.log("category not found or invalid for kol", kol);
+        logTPR("category not found or invalid for kol", kol);
         return;
     }
 
@@ -217,12 +217,12 @@ async function catMenuForTweetOfHome(tweetCellDiv: HTMLElement, rawKol: TweetKol
     if (!rawKol) return;
     const menuAreaDiv = tweetCellDiv.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep") as HTMLElement
     if (!menuAreaDiv) {
-        console.log("------>>> no menu area in this tweet cell:", tweetCellDiv);
+        logTPR("------>>> no menu area in this tweet cell:", tweetCellDiv);
         return;
     }
 
     if (!!menuAreaDiv.querySelector(".filter-menu-on-main")) {
-        console.log("------>>> duplicate menu addition", menuAreaDiv);
+        logTPR("------>>> duplicate menu addition", menuAreaDiv);
         return;
     }
 
@@ -265,7 +265,7 @@ async function _kolCompletion(kol: TweetKol, tweetCellDiv: HTMLElement) {
         return;
     }
     await updateKolIdToSw(kol);
-    console.log("------>>> update kol data success", kol)
+    logTPR("------>>> update kol data success", kol)
 }
 
 export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, categories: Category[], kol: TweetKol, callback?: (kolName: string, clone: HTMLElement) => Promise<void>) {
@@ -389,18 +389,18 @@ async function catMenuForFlowerPage(divNode: HTMLDivElement) {
 
     const toolDiv = divNode.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1wtj0ep button")?.parentElement as HTMLDivElement;
     if (!toolDiv) {
-        console.warn("tool div not found for follower page!", divNode)
+        logTPR("tool div not found for follower page!", divNode)
         return;
     }
 
     if (!!toolDiv.querySelector(".filter-menu-on-main")) {
-        console.log("------>>> duplicate menu addition", toolDiv);
+        logTPR("------>>> duplicate menu addition", toolDiv);
         return;
     }
 
     const kolNameDiv = divNode.querySelector('.css-175oi2r.r-1wbh5a2.r-dnmrzs.r-1ny4l3l.r-1loqt21') as HTMLElement;
     if (!kolNameDiv) {
-        console.warn("-------->>> kol name div not found for follower page!")
+        logTPR("-------->>> kol name div not found for follower page!")
         return null;
     }
 
@@ -410,7 +410,7 @@ async function catMenuForFlowerPage(divNode: HTMLDivElement) {
     const kolName = kolHref.startsWith('/') ? kolHref.substring(1) : kolHref;
 
     if (!kolName || !displayName) {
-        console.warn("-------->>> kol name or displayName not found for follower page!")
+        logTPR("-------->>> kol name or displayName not found for follower page!")
         return;
     }
 
@@ -439,7 +439,7 @@ async function catMenuForFlowerPage(divNode: HTMLDivElement) {
             needUpDateKolData = true;
             const imgEl = divNode.querySelector("img.css-9pa8cd") as HTMLImageElement
             if (!imgEl) return;
-            console.log("------>>>image el", imgEl.src)
+            logTPR("------>>>image el", imgEl.src)
             kol.avatarUrl = imgEl.src;
         }
 
