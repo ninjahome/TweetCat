@@ -301,7 +301,10 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
             if (callback) {
                 await callback(kol.kolName, buttonElement);
             }
-            if (kol.kolUserId) sendMsgToService(kol.kolUserId, MsgType.TweetRemoveByKolID).then()
+            if (kol.kolUserId) {
+                sendMsgToService(kol.kolUserId, MsgType.TweetRemoveByKolID).then()
+                sendMsgToService({userIds: [kol.kolUserId], categoryId: null}, MsgType.FollowingAssignCategory).then()
+            }
         });
     }
 

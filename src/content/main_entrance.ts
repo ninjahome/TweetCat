@@ -4,7 +4,7 @@ import {
     appendFilterOnKolProfilePage, appendScoreInfoToProfilePage,
 } from "./twitter_ui";
 import {maxElmFindTryTimes, MsgType} from "../common/consts";
-import {addCustomStyles, observeSimple, parseTwitterPath, sleep} from "../common/utils";
+import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
 import {
@@ -20,7 +20,6 @@ import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 import {queryProfileOfTwitterOwner} from "./tweet_user_info";
 import {initI18n} from "../common/i18n";
 import {performBulkUnfollow, syncFollowingsFromPage} from "../object/following";
-import {unfollowUser} from "../timeline/twitter_api";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 

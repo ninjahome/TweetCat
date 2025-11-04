@@ -1023,6 +1023,17 @@ async function bulkAssignCategory(keys: string[], targetCatId: number | null): P
             ),
         );
         await removeKolsFromCategoryFromBG(kolNames);
+
+        const idsToClear = Array.from(new Set(
+            entries.map(e => e.userId).filter((x): x is string => !!x)
+        ));
+        for (const uid of idsToClear) {
+            await browser.runtime.sendMessage({
+                action: MsgType.TweetRemoveByKolID,
+                data: { userId: uid },
+            });
+        }
+
     } else {
         await assignKolsToCategoryFromBG(uniqueKeys, targetCatId, snapshots);
     }

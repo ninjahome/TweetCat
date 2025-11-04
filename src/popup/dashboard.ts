@@ -24,8 +24,7 @@ async function initDashBoard(): Promise<void> {
         showView('#onboarding/main-home', dashRouter);
     }
 
-    initNewCatBtn();
-    initManageFollowingBtn();
+    initCatMgmBtn();
     initNewCatModalDialog();
     initSettings();
 }
@@ -39,24 +38,10 @@ function dashRouter(path: string): void {
     }
 }
 
-function initNewCatBtn() {
-    const newCategoryBtn = document.getElementById("btn-add-category") as HTMLElement;
-    newCategoryBtn.innerText = t('add_category');
-    newCategoryBtn.onclick = async () => {
-        const categories = await loadCategories();
-        if (categories.length >= MaxCategorySize) {
-            showAlert(t('tips_title'), t('max_category_reached'));
-            return;
-        }
-        const modalDialog = document.getElementById("modal-add-category") as HTMLElement
-        modalDialog.style.display = 'block';
-    }
-}
-
-function initManageFollowingBtn() {
-    const mgnBtn = document.getElementById("btn-manager-following") as HTMLElement;
-    mgnBtn.innerText = t('mgn_following');
-    mgnBtn.onclick = async () => {
+function initCatMgmBtn() {
+    const mgnCategoryBtn = document.getElementById("btn-mgn-category") as HTMLElement;
+    mgnCategoryBtn.innerText = t('manage_category');
+    mgnCategoryBtn.onclick = async () => {
         browser.tabs.create({
             url: browser.runtime.getURL("html/following_mgm.html"),
         }).then();

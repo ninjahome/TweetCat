@@ -33,7 +33,7 @@ h3 {
     overflow: hidden;
 }
 
-#btn-add-category {
+.btn-mgn-category {
     padding: 16px;
     width: 100%;
     border-radius: 9999px;
@@ -45,7 +45,7 @@ h3 {
     cursor: pointer;
 }
 
-#btn-add-category:hover {
+.btn-mgn-category:hover {
     background-color: #428ad2;
 }
 
