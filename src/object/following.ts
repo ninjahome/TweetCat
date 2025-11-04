@@ -7,7 +7,7 @@ import {
     databaseUpdateFields,
     databaseUpdateOrAddItem
 } from "../common/database";
-import {fetchFollowingPage, getUserByUsername} from "../timeline/twitter_api";
+import {fetchFollowingPage, getUserByUsername, unfollowUser} from "../timeline/twitter_api";
 import {sleep} from "../common/utils";
 import {logFM} from "../common/debug_flags";
 
@@ -186,3 +186,90 @@ export async function removeLocalFollowings(userIds: string[]): Promise<{
     }
 }
 
+
+const RATE_LIMIT_BACKOFF_MS = 5_000;
+const RATE_LIMIT_CODE_REGEX = /"code"\s*:\s*(\d+)/i;
+
+function isRateLimitError(message: string): boolean {
+    if (!message) return false;
+    const normalized = message.toLowerCase();
+    if (normalized.includes("429")) return true;
+    if (normalized.includes("rate limit")) return true;
+    if (normalized.includes("too many requests")) return true;
+
+    const codeMatch = message.match(RATE_LIMIT_CODE_REGEX);
+    if (codeMatch) {
+        const code = Number.parseInt(codeMatch[1] ?? "", 10);
+        return code === 88;
+    }
+
+    return false;
+}
+
+export async function performBulkUnfollow(userIds: string[], throttleMs: number) {
+    const total = userIds.length;
+    let succeeded = 0;
+    let failed = 0;
+    const errors: Array<{ userId: string; err: string }> = [];
+
+    let rateLimitFailures = 0;
+    let abortRemaining = false;
+    let abortReason = "";
+
+    for (let index = 0; index < userIds.length; index++) {
+        const userId = userIds[index];
+        if (abortRemaining) {
+            failed++;
+            errors.push({ userId, err: abortReason || "Skipped due to rate limits." });
+            continue;
+        }
+
+        let handled = false;
+        for (let attempt = 0; attempt < 2; attempt++) {
+            try {
+                const ok = await unfollowUser(userId);
+                if (ok) {
+                    succeeded++;
+                } else {
+                    failed++;
+                    errors.push({ userId, err: "Request failed" });
+                }
+                handled = true;
+                break;
+            } catch (error) {
+                const message = (error as Error)?.message ?? String(error);
+                const isRateLimit = isRateLimitError(message);
+                const shouldRetry = isRateLimit && attempt === 0;
+
+                if (shouldRetry) {
+                    await sleep(RATE_LIMIT_BACKOFF_MS);
+                    continue;
+                }
+
+                failed++;
+                errors.push({ userId, err: message });
+
+                if (isRateLimit) {
+                    rateLimitFailures++;
+                    if (rateLimitFailures >= 2) {
+                        abortRemaining = true;
+                        abortReason = message || "Rate limit exceeded. Remaining requests skipped.";
+                    }
+                }
+                handled = true;
+                break;
+            }
+        }
+
+        if (!handled) {
+            failed++;
+            errors.push({ userId, err: "Failed to unfollow user after retries." });
+        }
+
+        if (!abortRemaining && index < userIds.length - 1) {
+            await sleep(throttleMs);
+        }
+    }
+
+    return { total, succeeded, failed, errors };
+}

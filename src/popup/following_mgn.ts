@@ -11,6 +11,7 @@ import {
     updateCategoryDetail,
 } from "../object/category";
 import {FollowingUser} from "../object/following";
+import {logFM} from "../common/debug_flags";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -688,6 +689,7 @@ function hideProcessingOverlay() {
     processingOverlay.classList.add("hidden");
     document.body.classList.remove("processing-blocked");
 }
+
 const UNFOLLOW_REQUEST_DELAY_MS = 1100;
 async function performBatchUnfollow(targets: UnfollowTarget[]) {
     if (targets.length === 0) return;
@@ -736,13 +738,13 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
         const successCount = typeof result?.succeeded === "number" ? result.succeeded : 0;
         const failureCount = typeof result?.failed === "number" ? result.failed : Math.max(0, total - successCount);
 
-        console.warn("------>>> performBatchUnfollow completed, removing unfollowed users locally...");
+        logFM("------>>> performBatchUnfollow completed, removing unfollowed users locally...");
 
 
         selectedKeys.clear();
-        removeUnfollowedFromView(userIds)
+        await removeUnfollowedFromView(userIds)
 
-        console.warn("------>>> local unfollow cache updated, skip refreshData()");
+        logFM("------>>> local unfollow cache updated, skip refreshData()");
 
         if (failureCount === 0) {
             showNotification(

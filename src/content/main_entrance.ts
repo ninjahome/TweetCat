@@ -19,7 +19,7 @@ import {reloadCategoryContainer, setupFilterItemsOnWeb3Area} from "./tweetcat_we
 import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 import {queryProfileOfTwitterOwner} from "./tweet_user_info";
 import {initI18n} from "../common/i18n";
-import {syncFollowingsFromPage} from "../object/following";
+import {performBulkUnfollow, syncFollowingsFromPage} from "../object/following";
 import {unfollowUser} from "../timeline/twitter_api";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
@@ -152,105 +152,27 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
         }
 
         case MsgType.FollowingSync: {
-            (async () => {
-                try {
-                    const followings = await syncFollowingsFromPage();
+            syncFollowingsFromPage()
+                .then((followings) => {
                     sendResponse({success: true, data: followings});
-                } catch (e) {
-                    const err = e as Error;
-                    sendResponse({success: false, data: err.message});
-                }
-            })();
+                })
+                .catch((err: Error) => {
+                    sendResponse({success: false, data: err?.message ?? "Failed to sync followings."});
+                });
             return true;
         }
-
         case MsgType.FollowingBulkUnfollow: {
-            (async () => {
-                try {
-                    const payload = request?.payload ?? {};
-                    const rawUserIds = Array.isArray(payload?.userIds) ? payload.userIds : [];
-                    const throttleMsRaw = payload?.throttleMs;
-                    const throttleMs =
-                        typeof throttleMsRaw === "number" && throttleMsRaw >= 0 ? throttleMsRaw : 1100;
-
-                    const userIds = rawUserIds
-                        .map((userId) => (typeof userId === "string" ? userId.trim() : ""))
-                        .filter((userId): userId is string => Boolean(userId));
-
-                    const total = userIds.length;
-                    let succeeded = 0;
-                    let failed = 0;
-                    const errors: Array<{userId: string; err: string}> = [];
-                    let rateLimitFailures = 0;
-                    let abortRemaining = false;
-                    let abortReason = "";
-
-                    for (let index = 0; index < userIds.length; index += 1) {
-                        const userId = userIds[index];
-
-                        if (abortRemaining) {
-                            failed += 1;
-                            errors.push({userId, err: abortReason || "Skipped due to rate limits."});
-                            continue;
-                        }
-
-                        const maxAttempts = 2;
-                        let handled = false;
-
-                        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-                            try {
-                                const ok = await unfollowUser(userId);
-                                if (ok) {
-                                    succeeded += 1;
-                                } else {
-                                    failed += 1;
-                                    errors.push({userId, err: "Request failed"});
-                                }
-                                handled = true;
-                                break;
-                            } catch (error) {
-                                const err = error as Error;
-                                const message = err?.message ?? String(error);
-                                const isRateLimit = isRateLimitError(message);
-                                const shouldRetry = isRateLimit && attempt === 0;
-
-                                if (shouldRetry) {
-                                    await sleep(RATE_LIMIT_BACKOFF_MS);
-                                    continue;
-                                }
-
-                                failed += 1;
-                                errors.push({userId, err: message});
-
-                                if (isRateLimit) {
-                                    rateLimitFailures += 1;
-                                    if (rateLimitFailures >= 2) {
-                                        abortRemaining = true;
-                                        abortReason = message || "Rate limit exceeded. Remaining requests skipped.";
-                                    }
-                                }
-
-                                handled = true;
-                                break;
-                            }
-                        }
-
-                        if (!handled) {
-                            failed += 1;
-                            errors.push({userId, err: "Failed to unfollow user after retries."});
-                        }
-
-                        if (!abortRemaining && index < userIds.length - 1) {
-                            await sleep(throttleMs);
-                        }
-                    }
-
-                    sendResponse({total, succeeded, failed, errors});
-                } catch (error) {
-                    const err = error as Error;
-                    sendResponse({error: err?.message ?? "Failed to unfollow selected accounts."});
-                }
-            })();
+            const payload = request?.payload ?? {};
+            const userIds = Array.isArray(payload?.userIds) ? payload.userIds.map(String) : [];
+            const throttleMs = typeof payload?.throttleMs === "number" ? payload.throttleMs : 1100;
+            performBulkUnfollow(userIds, throttleMs)
+                .then((result) => sendResponse({ success: true, data: result }))
+                .catch((err) =>
+                    sendResponse({
+                        success: false,
+                        error: err?.message ?? "Failed to unfollow selected accounts.",
+                    }),
+                );
             return true;
         }
 
@@ -261,24 +183,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
     return true;
 }
 
-const RATE_LIMIT_BACKOFF_MS = 5_000;
-const RATE_LIMIT_CODE_REGEX = /"code"\s*:\s*(\d+)/i;
 
-function isRateLimitError(message: string): boolean {
-    if (!message) return false;
-    const normalized = message.toLowerCase();
-    if (normalized.includes("429")) return true;
-    if (normalized.includes("rate limit")) return true;
-    if (normalized.includes("too many requests")) return true;
-
-    const codeMatch = message.match(RATE_LIMIT_CODE_REGEX);
-    if (codeMatch) {
-        const code = Number.parseInt(codeMatch[1] ?? "", 10);
-        return code === 88;
-    }
-
-    return false;
-}
 
 let userInfoTryTime = 0;
 

@@ -142,10 +142,6 @@ async function handleNavigation(details: any) {
     lastDetails = rest;
     lastTimeStamp = timeStamp;
 
-
-    console.log("------------------->>>>>", lastTimeStamp, JSON.stringify(details))
-    console.log('Main frame navigation:', details.url, 'TransitionType:', details.transitionType || 'undefined');
-
     try {
         await browser.tabs.sendMessage(details.tabId, {
             action: MsgType.NaviUrlChanged
