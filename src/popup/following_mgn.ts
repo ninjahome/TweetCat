@@ -1348,7 +1348,7 @@ function fillUserSyncButton(card: HTMLElement, user: UnifiedKOL) {
                 showNotification("账号信息已更新。", "info");
                 await refreshData();
             } else {
-                handleSyncError(resp, user);
+                handleSyncError(resp);
             }
         } catch (err) {
             showNotification("同步失败：" + (err as Error).message, "error");
@@ -1356,7 +1356,7 @@ function fillUserSyncButton(card: HTMLElement, user: UnifiedKOL) {
     });
 }
 
-function handleSyncError(resp: any, user: UnifiedKOL) {
+function handleSyncError(resp: any) {
     showNotification("未找到该账号或同步失败。", "error");
     const message = typeof resp?.data === "string" ? resp.data : resp?.error;
     if (message?.includes(noXTabError)) {
