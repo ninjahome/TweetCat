@@ -94,18 +94,6 @@ async function addNewCategory() {
 }
 
 async function setHomeStatus() {
-    const listDiv = document.getElementById("categories-list") as HTMLElement;
-    const catItem = document.getElementById("category-item-template") as HTMLElement;
-    const categories = await loadCategories();
-
-    listDiv.innerHTML = '';
-
-    categories.forEach((category) => {
-        const clone = catItem.cloneNode(true) as HTMLElement;
-        _cloneCatItem(clone, category);
-        listDiv.append(clone);
-    });
-
     const isEnabled: boolean = await localGet(__DBK_AD_Block_Key) as boolean ?? false//TODO:: refactor __DBK_AD_Block_Key logic
     const blockAdsToggle = document.getElementById('ad-block-toggle') as HTMLInputElement;
     blockAdsToggle.checked = isEnabled;
