@@ -4,6 +4,7 @@ export const defaultCategoryName = "Main"
 export const maxElmFindTryTimes = 5;
 export const defaultCatID = 1;
 export const defaultAllCategoryID = -1;
+export const noXTabError = "no_x_tab"
 export const itemColorGroup = ['#f6cd01', '#866afb', '#fe466c', '#06cbad', '#4592ef']
 function addOpacityToHex(hex: string, opacity: number): string {
     const clampedOpacity = Math.min(1, Math.max(0, opacity));

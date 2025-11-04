@@ -1,5 +1,5 @@
 import browser, {Runtime} from "webextension-polyfill";
-import {MsgType} from "../common/consts";
+import {MsgType, noXTabError} from "../common/consts";
 import {
     CategoryForId,
     loadCategories,
@@ -40,7 +40,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
     switch (request.action) {
 
         case MsgType.FollowingBulkUnfollow: {
-                return  await sendMessageToX( MsgType.FollowingBulkUnfollow,  request.data);
+            return await sendMessageToX(MsgType.FollowingBulkUnfollow, request.data);
         }
 
         case MsgType.OpenPlugin: {
@@ -69,7 +69,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.FollowingRemoveLocal: {
-            const { userIds } = request.data || {};
+            const {userIds} = request.data || {};
             return await removeLocalFollowings(userIds);
         }
 
@@ -80,11 +80,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.FollowingFetchOne: {
-            return await sendMessageToX( MsgType.FollowingFetchOne,  request.data);;
+            return await sendMessageToX(MsgType.FollowingFetchOne, request.data);
         }
 
         case MsgType.FollowingSync: {
-            return await sendMessageToX( MsgType.FollowingSync,  request.data);
+            return await sendMessageToX(MsgType.FollowingSync, request.data);
         }
 
         case MsgType.KolUpdate: {
@@ -182,26 +182,16 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
-        case MsgType.CheckIfLocalAppInstalled:{
-            return {success:await checkLocalApp()}
+        case MsgType.CheckIfLocalAppInstalled: {
+            return {success: await checkLocalApp()}
         }
 
-        case MsgType.StartLocalApp:{
-            return {success:await openLocalApp()}
+        case MsgType.StartLocalApp: {
+            return {success: await openLocalApp()}
         }
 
         default:
             return {success: false, data: "unsupportable message type"};
-    }
-}
-
-function isXUrl(url: string | undefined | null): boolean {
-    if (!url) return false;
-    try {
-        const parsed = new URL(url);
-        return parsed.hostname.endsWith("x.com") || parsed.hostname.endsWith("twitter.com");
-    } catch (error) {
-        return false;
     }
 }
 
@@ -216,7 +206,7 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
 
     if (tabs.length === 0) {
         console.log(`------>>> x is not open!`);
-        return false;
+        return {success: false, data: noXTabError}
     }
 
     for (let i = 0; i < tabs.length; i++) {
@@ -231,9 +221,9 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
 
         } catch (err) {
             console.warn("------>>> 发送消息失败", err);
-            return null;
+            return {success: false, data: (err as Error).message};
         }
     }
 
-    return true;
+    return {success: true};
 }

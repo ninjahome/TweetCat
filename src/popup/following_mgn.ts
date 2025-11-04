@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import {choseColorByID, MsgType} from "../common/consts";
+import {choseColorByID, MsgType, noXTabError} from "../common/consts";
 import {
     __tableCategory,
     __tableFollowings,
@@ -580,6 +580,18 @@ function renderUserList() {
                                 await refreshData();
                             } else {
                                 showNotification("未找到该账号或同步失败。", "error");
+
+                                const message = typeof resp?.data === "string" ? resp.data : resp?.error;
+                                if (message.includes(noXTabError)) {
+                                    showConfirmModal(
+                                        "SignIn Twitter（x.com）first please!",
+                                        () => {
+                                            window.open("https://x.com", "_blank")
+                                        }
+                                    );
+                                } else {
+                                    showNotification(message || "Failed to unfollow selected accounts.", "error");
+                                }
                             }
                         } catch (err) {
                             showNotification("同步失败：" + (err as Error).message, "error");
@@ -684,7 +696,16 @@ async function handleSyncClick() {
         const rsp = await sendMsgToService({}, MsgType.FollowingSync)// browser.runtime.sendMessage({action: MsgType.FollowingSync});
         if (!rsp?.success) {
             const message = typeof rsp?.data === "string" ? rsp.data : "Failed to sync followings.";
-            showNotification(message, "error");
+            if (typeof message === "string" && message.includes(noXTabError)) {
+                showConfirmModal(
+                    "Please sign in to Twitter (x.com) first!",
+                    () => {
+                        window.open("https://x.com", "_blank");
+                    }
+                );
+            } else {
+                showNotification(message || "Failed to unfollow selected accounts.", "error");
+            }
             return;
         }
 
@@ -742,8 +763,8 @@ function handleUnfollowSelected() {
         targets.length === 1
             ? "Unfollow the selected account?"
             : `Unfollow ${targets.length} selected accounts?`;
-    showConfirmModal(message, async () => {
-        await performBatchUnfollow(targets);
+    showConfirmModal(message, () => {
+         performBatchUnfollow(targets).then();
     });
 }
 
@@ -793,7 +814,16 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
 
         if (response?.success === false) {
             const message = typeof response?.data === "string" ? response.data : response?.error;
-            showNotification(message || "Failed to unfollow selected accounts.", "error");
+            if (typeof message === "string" && message.includes("no_x_tab")) {
+                showConfirmModal(
+                    "Please sign in to Twitter (x.com) first!",
+                    () => {
+                        window.open("https://x.com", "_blank");
+                    }
+                );
+            } else {
+                showNotification(message || "Failed to unfollow selected accounts.", "error");
+            }
             return;
         }
 

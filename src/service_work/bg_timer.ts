@@ -76,7 +76,7 @@ async function alarmTweetsProc() {
             return;
         }
         const canAccess = await useTokenByTimer();
-        if(!canAccess){
+        if (!canAccess) {
             logBGT("------>>> no enough api tokens, fetch tweets in next round");
             return;
         }
@@ -101,9 +101,7 @@ async function alarmUerIdCheck() {
             return;
         }
 
-        const sendSuccess = await sendMessageToX(MsgType.StartKolIdCheck, invalid);
-        logBGT("------>>> kol check request sent result:", sendSuccess, invalid);
-
+        await sendMessageToX(MsgType.StartKolIdCheck, invalid);
     } catch (e) {
         console.error("------>>> Error in alarmUerIdCheck:", e);
     }

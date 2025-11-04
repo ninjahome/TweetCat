@@ -148,11 +148,7 @@ export class TweetFetcherManager {
         }
 
         const param = new tweetFetchParam(cursorToFetch, newest);
-        const sendSuccess = await sendMessageToX(MsgType.StartTweetsFetch, param)
-        if (!sendSuccess) {
-            logBGT(`[fetchTweetsPeriodic] 😭 send fetch message failed   ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex}`);
-            return
-        }
+        await sendMessageToX(MsgType.StartTweetsFetch, param)
         logBGT(`[fetchTweetsPeriodic] ♻️ Starting ${newest ? "[Newest]" : "[History]"} round ${newest ? this.currentNewGroupIndex : this.currentOldGroupIndex} at ${new Date().toISOString()}`);
     }
 
