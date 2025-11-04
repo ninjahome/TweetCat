@@ -25,6 +25,8 @@ export const DBG = {
     InjectCapture:false,
     Youtube:false,
     AiTrendApi:false,
+    FollowMgn:false,
+    UserIfo:false,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -58,3 +60,5 @@ export const logAD = makeLogger('AdBlock', 'AdBlock');
 export const logIC = makeLogger('InjectCapture', 'InjectCapture');
 export const logYT = makeLogger('Youtube', 'Youtube');
 export const logATA = makeLogger('AiTrendApi', 'AiTrendApi');
+export const logFM = makeLogger('FollowMgn', 'FollowMgn');
+export const logUI = makeLogger('UserIfo', 'UserIfo');

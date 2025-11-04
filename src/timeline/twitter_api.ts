@@ -141,7 +141,7 @@ export async function getUserByUsername(username: string): Promise<UserProfile |
     }
 
     const result = await response.json();
-    console.log("--------------->>>>>user profile raw data:", result)
+    logATA("--------------->>>>>user profile raw data:", result)
     return new UserProfile(result);
 }
 
@@ -157,11 +157,11 @@ export async function fetchTweets(userId: string, maxCount: number = 20, cursor?
     if (!response.ok) {
         const errorText = await response.text();
         const missing_param = await extractMissingFeature(errorText);
-        console.log("------>>> fetchTweets missing param:", missing_param);
+        logATA("------>>> fetchTweets missing param:", missing_param);
         throw new Error(`HTTP error ${response.status}: ${errorText}`);
     }
     const result = await response.json();
-    // console.log("---------------->>>\n", result);
+    // logATA("---------------->>>\n", result);
     return parseTimelineFromGraphQL(result, "tweets");
 }
 
@@ -274,7 +274,7 @@ export async function _followApi(
         if (res.status === 400 || res.status === 403) {
             const text = await res.text().catch(() => "");
             const missing_param = await extractMissingFeature?.(text);
-            console.log("------>>> _followApi missing param:", missing_param);
+            logATA("------>>> _followApi missing param:", missing_param);
         }
         throw new Error(`Followers request failed: ${res.status} ${res.statusText}`);
     }
@@ -314,12 +314,12 @@ export async function bookmarkApi(
     if (!resp.ok) {
         const text = await resp.text().catch(() => "");
         const missing = await extractMissingFeature?.(text);
-        console.log("------>>> bookmarkApi missing feature:", missing);
+        logATA("------>>> bookmarkApi missing feature:", missing);
         throw new Error(`HTTP ${resp.status}: ${text}`);
     }
 
     const json = await resp.json();
-    // console.log("------>>>", json);
+    // logATA("------>>>", json);
 
     const fieldName = isCreate ? "tweet_bookmark_put" : "tweet_bookmark_delete";
 
@@ -371,7 +371,7 @@ export async function fetchHomeTimeline(
     if (!resp.ok) {
         const text = await resp.text();
         const missing = extractMissingFeature(text);
-        console.log("------>>> HomeTimeline missing feature:", missing);
+        logATA("------>>> HomeTimeline missing feature:", missing);
         throw new Error(`HTTP error ${resp.status}: ${text}`);
     }
 
@@ -417,12 +417,12 @@ export async function fetchBookmarks(
     if (!resp.ok) {
         const text = await resp.text();
         const missing = extractMissingFeature(text);
-        console.log("------>>> Bookmarks missing feature:", missing);
+        logATA("------>>> Bookmarks missing feature:", missing);
         throw new Error(`HTTP error ${resp.status}: ${text}`);
     }
 
     const json = await resp.json();
-    // console.log("--------------json------------>>>", json);
+    // logATA("--------------json------------>>>", json);
     return parseTimelineFromGraphQL(json, "bookmarked");
 }
 
@@ -454,7 +454,7 @@ export async function createGrokConversation(
     if (!resp.ok) {
         const text = await resp.text().catch(() => "");
         const missing_param = extractMissingFeature?.(text);
-        console.log("------>>> _followApi missing param:", missing_param);
+        logATA("------>>> _followApi missing param:", missing_param);
         throw new Error(`CreateGrokConversation failed: ${resp.status} ${text}`);
     }
 
@@ -778,7 +778,7 @@ export async function unfollowUser(userId: string): Promise<boolean> {
     if (!resp.ok) {
         const text = await resp.text().catch(() => "");
         const missing = await extractMissingFeature?.(text);
-        console.log("------>>> unfollowUser missing feature:", missing);
+        logATA("------>>> unfollowUser missing feature:", missing);
         throw new Error(`Unfollow failed: ${resp.status} ${text}`);
     }
 

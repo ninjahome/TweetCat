@@ -1,6 +1,15 @@
-import {__tableFollowings, checkAndInitDatabase, databaseDeleteByFilter, databaseQueryAll, databaseQueryByFilter, databaseUpdateFields, databaseUpdateOrAddItem} from "../common/database";
+import {
+    __tableFollowings,
+    checkAndInitDatabase,
+    databaseDeleteByFilter,
+    databaseQueryAll,
+    databaseQueryByFilter,
+    databaseUpdateFields,
+    databaseUpdateOrAddItem
+} from "../common/database";
 import {fetchFollowingPage, getUserByUsername} from "../timeline/twitter_api";
 import {sleep} from "../common/utils";
+import {logFM} from "../common/debug_flags";
 
 export interface FollowingUser {
     id: string;
@@ -53,6 +62,7 @@ export async function clearCategoryForFollowings(catId: number): Promise<void> {
     const matches = await databaseQueryByFilter(__tableFollowings, (item) => item.categoryId === catId) as FollowingUser[];
     await Promise.all(matches.map((item) => databaseUpdateFields(__tableFollowings, item.id, {categoryId: null})));
 }
+
 export async function syncFollowingsFromPage(): Promise<FollowingUser[]> {
     const screenName = await resolveViewerScreenName();
     if (!screenName) {
@@ -153,21 +163,26 @@ export async function removeLocalFollowings(userIds: string[]): Promise<{
 }> {
     try {
         if (!Array.isArray(userIds) || userIds.length === 0) {
-            return { success: false, error: "No userIds provided" };
+            return {success: false, error: "No userIds provided"};
         }
-
-        // 强制转换为字符串比较，避免 number/string 不一致
         const normalizedIds = userIds.map(String);
+        logFM("[removeLocalFollowings] 🧩 incoming userIds:", userIds, "normalizedIds:, normalizedIds");
+        let matchedCount = 0;
+        await databaseDeleteByFilter(__tableFollowings, (row) => {
+            const hit = normalizedIds.includes(String(row.id));
+            if (hit) {
+                matchedCount++;
+                logFM("[removeLocalFollowings] ✅ match", row.id, typeof row.id);
+            }
+            return hit;
+        });
 
-        await databaseDeleteByFilter(__tableFollowings, (row) =>
-            normalizedIds.includes(String(row.id))
-        );
+        logFM(`[removeLocalFollowings] ✅ matched ${matchedCount} of ${normalizedIds.length}`);
 
-        console.warn(`[removeLocalFollowings] ✅ Deleted ${normalizedIds.length} items from followings table`);
-        return { success: true, removed: normalizedIds.length };
+        return {success: true, removed: normalizedIds.length};
     } catch (err) {
         console.error("[removeLocalFollowings] ❌ Failed:", err);
-        return { success: false, error: String(err) };
+        return {success: false, error: String(err)};
     }
 }
 
