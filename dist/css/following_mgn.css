@@ -437,12 +437,9 @@ body.processing-blocked {
 }
 
 .user-card .name {
-
-
     font-weight: 600;
     font-size: 15px;
     color: #0f1419;
-
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -565,8 +562,8 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 
 /* ============ 单卡片同步按钮（本地账号可见） ============ */
 .sync-btn {
-
-    top: 8px;
+    top: 32px;
+    z-index: 3;
     right: 8px;
     background: #fff;
     border: 1px solid #d0d7de;
@@ -576,7 +573,6 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     border-radius: 6px;
     opacity: 0.85;
     transition: all 0.2s ease;
-
     position: absolute;
     cursor: pointer;
     line-height: 1;
@@ -591,6 +587,9 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 /* ============ 分类颜色与关注状态融合 ============ */
 /* 改造后的分类徽标容器 */
 .category-badge {
+    top: 8px;
+    right: 8px;
+    z-index: 4;
     display: inline-flex;
     align-items: center;
     gap: 6px;

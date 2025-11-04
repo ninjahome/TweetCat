@@ -483,177 +483,177 @@ function renderAssignSelect() {
         });
 }
 
-function renderUserList() {
-    userList.innerHTML = "";
-    const filtered = getFilteredUsers();
-
-    if (filtered.length === 0) {
-        noUsersMessage.style.display = unifiedKols.length === 0 ? "none" : "block";
-    } else {
-        noUsersMessage.style.display = "none";
-    }
-
-    filtered
-        .slice()
-        .sort((a, b) => {
-            const nameA = (a.displayName ?? a.screenName ?? a.key).toLowerCase();
-            const nameB = (b.displayName ?? b.screenName ?? b.key).toLowerCase();
-            return nameA.localeCompare(nameB);
-        })
-        .forEach((user) => {
-            const card = userTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
-            const checkbox = card.querySelector(".user-select") as HTMLInputElement;
-            checkbox.dataset.key = user.key;
-            checkbox.checked = selectedKeys.has(user.key);
-            checkbox.addEventListener("change", () => toggleUserSelection(user.key, checkbox.checked));
-
-            const avatar = card.querySelector(".user-avatar") as HTMLImageElement;
-            avatar.src = user.avatarUrl || "../images/logo_48.png";
-            avatar.alt = `${user.displayName ?? user.screenName ?? user.key}'s avatar`;
-
-            const nameElm = card.querySelector(".name") as HTMLElement;
-            nameElm.textContent = user.displayName ?? user.screenName ?? user.key;
-            if (user.screenName) {
-                nameElm.style.cursor = "pointer";
-                nameElm.title = `Open @${user.screenName} on X`;
-                nameElm.addEventListener("click", (ev) => {
-                    ev.stopPropagation();
-                    window.open(`https://x.com/${user.screenName}`, "_blank");
-                });
-            }
-
-            const handleElm = card.querySelector(".handle") as HTMLElement;
-            handleElm.textContent = user.screenName ? `@${user.screenName}` : "";
-
-            // ---- 分类徽标（圆点 + 名称）----
-            const badge = card.querySelector(".category-badge") as HTMLElement | null;
-            const dot = card.querySelector(".category-dot") as HTMLElement | null;
-            const catName = card.querySelector(".category-name") as HTMLElement | null;
-
-            if (badge && dot && catName) {
-                if (selectedFilter === ALL_FILTER && user.categoryName && user.categoryId != null) {
-                    badge.classList.remove("hidden");
-                    catName.textContent = user.categoryName;
-                    dot.style.backgroundColor = choseColorByID(user.categoryId, 1);
-                } else {
-                    badge.classList.add("hidden");
-                }
-            }
-
-// ---- Bio 统一高度 + 悬浮完整显示 ----
-            const bioWrapper = card.querySelector(".bio-wrapper") as HTMLElement | null;
-            const bioText = card.querySelector(".bio-text") as HTMLElement | null;
-            const bioTooltip = card.querySelector(".bio-tooltip") as HTMLElement | null;
-
-            if (bioWrapper && bioText && bioTooltip) {
-                if (user.bio && user.bio.trim().length > 0) {
-                    bioText.textContent = user.bio.trim();
-                    bioTooltip.textContent = user.bio.trim();
-                    bioWrapper.classList.remove("hidden");
-                } else {
-                    bioWrapper.classList.add("hidden");
-                }
-            }
-
-// ---- 本地账号同步按钮 ----
-            const syncBtn = card.querySelector(".sync-btn") as HTMLButtonElement | null;
-            if (syncBtn) {
-                const isLocalOnly = !user.sources.includes("following");
-
-                // ✅ 1. 只有本地账号才显示同步按钮
-                if (isLocalOnly) {
-                    syncBtn.classList.remove("hidden");
-
-                    syncBtn.addEventListener("click", async (ev) => {
-                        ev.stopPropagation();
-
-                        try {
-                            showNotification(`正在同步 ${user.displayName ?? user.screenName ?? user.key} ...`);
-
-                            // 2️⃣ 发送请求获取账号最新信息
-                            const resp = await sendMsgToService(user.screenName ?? user.key, MsgType.FollowingFetchOne);
-
-                            if (resp?.success && resp.data) {
-                                // 3️⃣ 合并数据：避免覆盖 categoryId、sources、key 等本地字段
-                                const updated = {
-                                    ...user,          // 保留现有字段（包括 categoryId、sources）
-                                    ...resp.data,     // 用远程数据覆盖补全字段（bio、followersCount 等）
-                                    categoryId: user.categoryId ?? null,
-                                    lastSyncedAt: Date.now(),
-                                };
-
-                                await databaseUpdateOrAddItem(__tableFollowings, updated);
-
-                                showNotification("账号信息已更新。", "info");
-                                await refreshData();
-                            } else {
-                                showNotification("未找到该账号或同步失败。", "error");
-
-                                const message = typeof resp?.data === "string" ? resp.data : resp?.error;
-                                if (message.includes(noXTabError)) {
-                                    showConfirmModal(
-                                        "SignIn Twitter（x.com）first please!",
-                                        () => {
-                                            window.open("https://x.com", "_blank")
-                                        }
-                                    );
-                                } else {
-                                    showNotification(message || "Failed to unfollow selected accounts.", "error");
-                                }
-                            }
-                        } catch (err) {
-                            showNotification("同步失败：" + (err as Error).message, "error");
-                        }
-                    });
-                } else {
-                    syncBtn.classList.add("hidden");
-                }
-            }
-
-
-            const locationElm = card.querySelector(".location") as HTMLElement | null;
-            const locationText = user.location ? `📍 ${user.location}` : undefined;
-            setTextContentOrHide(locationElm, locationText);
-
-            const statsElm = card.querySelector(".stats") as HTMLElement | null;
-            if (statsElm) {
-                const statsParts = [
-                    formatStat(user.followersCount, "Followers"),
-                    formatStat(user.friendsCount, "Following"),
-                    formatStat(user.statusesCount, "Tweets"),
-                ].filter((part): part is string => typeof part === "string" && part.length > 0);
-                if (statsParts.length > 0) {
-                    statsElm.textContent = statsParts.join(" • ");
-                    statsElm.classList.remove("hidden");
-                } else {
-                    statsElm.textContent = "";
-                    statsElm.classList.add("hidden");
-                }
-            }
-
-            const metaElm = card.querySelector(".meta") as HTMLElement | null;
-            if (metaElm) {
-                const hasLocation = locationElm ? !locationElm.classList.contains("hidden") : false;
-                const hasStats = statsElm ? !statsElm.classList.contains("hidden") : false;
-                if (!hasLocation && !hasStats) {
-                    metaElm.classList.add("hidden");
-                } else {
-                    metaElm.classList.remove("hidden");
-                }
-            }
-
-            card.addEventListener("click", (ev) => {
-                if (ev.target instanceof HTMLInputElement) return;
-                checkbox.checked = !checkbox.checked;
-                toggleUserSelection(user.key, checkbox.checked);
-            });
-
-            card.classList.add(user.sources.includes("following") ? "is-following" : "is-local-only");
-            userList.appendChild(card);
-        });
-
-    updateSelectionSummary();
-}
+// function renderUserList() {
+//     userList.innerHTML = "";
+//     const filtered = getFilteredUsers();
+//
+//     if (filtered.length === 0) {
+//         noUsersMessage.style.display = unifiedKols.length === 0 ? "none" : "block";
+//     } else {
+//         noUsersMessage.style.display = "none";
+//     }
+//
+//     filtered
+//         .slice()
+//         .sort((a, b) => {
+//             const nameA = (a.displayName ?? a.screenName ?? a.key).toLowerCase();
+//             const nameB = (b.displayName ?? b.screenName ?? b.key).toLowerCase();
+//             return nameA.localeCompare(nameB);
+//         })
+//         .forEach((user) => {
+//             const card = userTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
+//             const checkbox = card.querySelector(".user-select") as HTMLInputElement;
+//             checkbox.dataset.key = user.key;
+//             checkbox.checked = selectedKeys.has(user.key);
+//             checkbox.addEventListener("change", () => toggleUserSelection(user.key, checkbox.checked));
+//
+//             const avatar = card.querySelector(".user-avatar") as HTMLImageElement;
+//             avatar.src = user.avatarUrl || "../images/logo_48.png";
+//             avatar.alt = `${user.displayName ?? user.screenName ?? user.key}'s avatar`;
+//
+//             const nameElm = card.querySelector(".name") as HTMLElement;
+//             nameElm.textContent = user.displayName ?? user.screenName ?? user.key;
+//             if (user.screenName) {
+//                 nameElm.style.cursor = "pointer";
+//                 nameElm.title = `Open @${user.screenName} on X`;
+//                 nameElm.addEventListener("click", (ev) => {
+//                     ev.stopPropagation();
+//                     window.open(`https://x.com/${user.screenName}`, "_blank");
+//                 });
+//             }
+//
+//             const handleElm = card.querySelector(".handle") as HTMLElement;
+//             handleElm.textContent = user.screenName ? `@${user.screenName}` : "";
+//
+//             // ---- 分类徽标（圆点 + 名称）----
+//             const badge = card.querySelector(".category-badge") as HTMLElement | null;
+//             const dot = card.querySelector(".category-dot") as HTMLElement | null;
+//             const catName = card.querySelector(".category-name") as HTMLElement | null;
+//
+//             if (badge && dot && catName) {
+//                 if (selectedFilter === ALL_FILTER && user.categoryName && user.categoryId != null) {
+//                     badge.classList.remove("hidden");
+//                     catName.textContent = user.categoryName;
+//                     dot.style.backgroundColor = choseColorByID(user.categoryId, 1);
+//                 } else {
+//                     badge.classList.add("hidden");
+//                 }
+//             }
+//
+// // ---- Bio 统一高度 + 悬浮完整显示 ----
+//             const bioWrapper = card.querySelector(".bio-wrapper") as HTMLElement | null;
+//             const bioText = card.querySelector(".bio-text") as HTMLElement | null;
+//             const bioTooltip = card.querySelector(".bio-tooltip") as HTMLElement | null;
+//
+//             if (bioWrapper && bioText && bioTooltip) {
+//                 if (user.bio && user.bio.trim().length > 0) {
+//                     bioText.textContent = user.bio.trim();
+//                     bioTooltip.textContent = user.bio.trim();
+//                     bioWrapper.classList.remove("hidden");
+//                 } else {
+//                     bioWrapper.classList.add("hidden");
+//                 }
+//             }
+//
+// // ---- 本地账号同步按钮 ----
+//             const syncBtn = card.querySelector(".sync-btn") as HTMLButtonElement | null;
+//             if (syncBtn) {
+//                 const isLocalOnly = !user.sources.includes("following");
+//
+//                 // ✅ 1. 只有本地账号才显示同步按钮
+//                 if (isLocalOnly) {
+//                     syncBtn.classList.remove("hidden");
+//
+//                     syncBtn.addEventListener("click", async (ev) => {
+//                         ev.stopPropagation();
+//
+//                         try {
+//                             showNotification(`正在同步 ${user.displayName ?? user.screenName ?? user.key} ...`);
+//
+//                             // 2️⃣ 发送请求获取账号最新信息
+//                             const resp = await sendMsgToService(user.screenName ?? user.key, MsgType.FollowingFetchOne);
+//
+//                             if (resp?.success && resp.data) {
+//                                 // 3️⃣ 合并数据：避免覆盖 categoryId、sources、key 等本地字段
+//                                 const updated = {
+//                                     ...user,          // 保留现有字段（包括 categoryId、sources）
+//                                     ...resp.data,     // 用远程数据覆盖补全字段（bio、followersCount 等）
+//                                     categoryId: user.categoryId ?? null,
+//                                     lastSyncedAt: Date.now(),
+//                                 };
+//
+//                                 await databaseUpdateOrAddItem(__tableFollowings, updated);
+//
+//                                 showNotification("账号信息已更新。", "info");
+//                                 await refreshData();
+//                             } else {
+//                                 showNotification("未找到该账号或同步失败。", "error");
+//
+//                                 const message = typeof resp?.data === "string" ? resp.data : resp?.error;
+//                                 if (message.includes(noXTabError)) {
+//                                     showConfirmModal(
+//                                         "SignIn Twitter（x.com）first please!",
+//                                         () => {
+//                                             window.open("https://x.com", "_blank")
+//                                         }
+//                                     );
+//                                 } else {
+//                                     showNotification(message || "Failed to unfollow selected accounts.", "error");
+//                                 }
+//                             }
+//                         } catch (err) {
+//                             showNotification("同步失败：" + (err as Error).message, "error");
+//                         }
+//                     });
+//                 } else {
+//                     syncBtn.classList.add("hidden");
+//                 }
+//             }
+//
+//
+//             const locationElm = card.querySelector(".location") as HTMLElement | null;
+//             const locationText = user.location ? `📍 ${user.location}` : undefined;
+//             setTextContentOrHide(locationElm, locationText);
+//
+//             const statsElm = card.querySelector(".stats") as HTMLElement | null;
+//             if (statsElm) {
+//                 const statsParts = [
+//                     formatStat(user.followersCount, "Followers"),
+//                     formatStat(user.friendsCount, "Following"),
+//                     formatStat(user.statusesCount, "Tweets"),
+//                 ].filter((part): part is string => typeof part === "string" && part.length > 0);
+//                 if (statsParts.length > 0) {
+//                     statsElm.textContent = statsParts.join(" • ");
+//                     statsElm.classList.remove("hidden");
+//                 } else {
+//                     statsElm.textContent = "";
+//                     statsElm.classList.add("hidden");
+//                 }
+//             }
+//
+//             const metaElm = card.querySelector(".meta") as HTMLElement | null;
+//             if (metaElm) {
+//                 const hasLocation = locationElm ? !locationElm.classList.contains("hidden") : false;
+//                 const hasStats = statsElm ? !statsElm.classList.contains("hidden") : false;
+//                 if (!hasLocation && !hasStats) {
+//                     metaElm.classList.add("hidden");
+//                 } else {
+//                     metaElm.classList.remove("hidden");
+//                 }
+//             }
+//
+//             card.addEventListener("click", (ev) => {
+//                 if (ev.target instanceof HTMLInputElement) return;
+//                 checkbox.checked = !checkbox.checked;
+//                 toggleUserSelection(user.key, checkbox.checked);
+//             });
+//
+//             card.classList.add(user.sources.includes("following") ? "is-following" : "is-local-only");
+//             userList.appendChild(card);
+//         });
+//
+//     updateSelectionSummary();
+// }
 
 function getFilteredUsers(): UnifiedKOL[] {
     if (!unifiedView) {
@@ -1218,4 +1218,188 @@ async function removeUnfollowedFromView(userIds: string[]) {
 
     // 刷新前端展示
     renderAll();
+}
+
+
+function renderUserList() {
+    userList.innerHTML = "";
+
+    const filtered = getFilteredUsers();
+    updateNoUsersMessage(filtered);
+
+    const sorted = sortUsers(filtered);
+
+    for (const user of sorted) {
+        const card = buildUserCard(user);
+        userList.appendChild(card);
+    }
+
+    updateSelectionSummary();
+}
+
+function updateNoUsersMessage(filtered: UnifiedKOL[]) {
+    if (filtered.length === 0) {
+        noUsersMessage.style.display = unifiedKols.length === 0 ? "none" : "block";
+    } else {
+        noUsersMessage.style.display = "none";
+    }
+}
+
+function sortUsers(users: UnifiedKOL[]): UnifiedKOL[] {
+    return users.slice().sort((a, b) => {
+        const nameA = (a.displayName ?? a.screenName ?? a.key).toLowerCase();
+        const nameB = (b.displayName ?? b.screenName ?? b.key).toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
+}
+
+function buildUserCard(user: UnifiedKOL): HTMLElement {
+    const card = userTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
+
+    fillUserBaseInfo(card, user);
+    fillUserCategoryBadge(card, user);
+    fillUserBio(card, user);
+    fillUserSyncButton(card, user);
+    fillUserMeta(card, user);
+    attachUserCardEvents(card, user);
+
+    card.classList.add(user.sources.includes("following") ? "is-following" : "is-local-only");
+    return card;
+}
+
+function fillUserBaseInfo(card: HTMLElement, user: UnifiedKOL) {
+    const checkbox = card.querySelector(".user-select") as HTMLInputElement;
+    checkbox.dataset.key = user.key;
+    checkbox.checked = selectedKeys.has(user.key);
+    checkbox.addEventListener("change", () => toggleUserSelection(user.key, checkbox.checked));
+
+    const avatar = card.querySelector(".user-avatar") as HTMLImageElement;
+    avatar.src = user.avatarUrl || "../images/logo_48.png";
+    avatar.alt = `${user.displayName ?? user.screenName ?? user.key}'s avatar`;
+
+    const nameElm = card.querySelector(".name") as HTMLElement;
+    nameElm.textContent = user.displayName ?? user.screenName ?? user.key;
+    if (user.screenName) {
+        nameElm.style.cursor = "pointer";
+        nameElm.title = `Open @${user.screenName} on X`;
+        nameElm.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            window.open(`https://x.com/${user.screenName}`, "_blank");
+        });
+    }
+
+    const handleElm = card.querySelector(".handle") as HTMLElement;
+    handleElm.textContent = user.screenName ? `@${user.screenName}` : "";
+}
+
+function fillUserCategoryBadge(card: HTMLElement, user: UnifiedKOL) {
+    const badge = card.querySelector(".category-badge") as HTMLElement | null;
+    const dot = card.querySelector(".category-dot") as HTMLElement | null;
+    const catName = card.querySelector(".category-name") as HTMLElement | null;
+
+    if (badge && dot && catName) {
+        if (selectedFilter === ALL_FILTER && user.categoryName && user.categoryId != null) {
+            badge.classList.remove("hidden");
+            catName.textContent = user.categoryName;
+            dot.style.backgroundColor = choseColorByID(user.categoryId, 1);
+        } else {
+            badge.classList.add("hidden");
+        }
+    }
+}
+
+function fillUserBio(card: HTMLElement, user: UnifiedKOL) {
+    const bioWrapper = card.querySelector(".bio-wrapper") as HTMLElement | null;
+    const bioText = card.querySelector(".bio-text") as HTMLElement | null;
+    const bioTooltip = card.querySelector(".bio-tooltip") as HTMLElement | null;
+
+    if (!bioWrapper || !bioText || !bioTooltip) return;
+
+    if (user.bio?.trim()) {
+        const bio = user.bio.trim();
+        bioText.textContent = bio;
+        bioTooltip.textContent = bio;
+        bioWrapper.classList.remove("hidden");
+    } else {
+        bioWrapper.classList.add("hidden");
+    }
+}
+function fillUserSyncButton(card: HTMLElement, user: UnifiedKOL) {
+    const syncBtn = card.querySelector(".sync-btn") as HTMLButtonElement | null;
+    if (!syncBtn) return;
+
+    const isLocalOnly = !user.sources.includes("following");
+
+    if (!isLocalOnly) {
+        syncBtn.classList.add("hidden");
+        return;
+    }
+
+    syncBtn.classList.remove("hidden");
+    syncBtn.addEventListener("click", async (ev) => {
+        ev.stopPropagation();
+        try {
+            showNotification(`正在同步 ${user.displayName ?? user.screenName ?? user.key} ...`);
+            const resp = await sendMsgToService(user.screenName ?? user.key, MsgType.FollowingFetchOne);
+
+            if (resp?.success && resp.data) {
+                const updated = { ...user, ...resp.data, categoryId: user.categoryId ?? null, lastSyncedAt: Date.now() };
+                await databaseUpdateOrAddItem(__tableFollowings, updated);
+                showNotification("账号信息已更新。", "info");
+                await refreshData();
+            } else {
+                handleSyncError(resp, user);
+            }
+        } catch (err) {
+            showNotification("同步失败：" + (err as Error).message, "error");
+        }
+    });
+}
+
+function handleSyncError(resp: any, user: UnifiedKOL) {
+    showNotification("未找到该账号或同步失败。", "error");
+    const message = typeof resp?.data === "string" ? resp.data : resp?.error;
+    if (message?.includes(noXTabError)) {
+        showConfirmModal("SignIn Twitter（x.com）first please!", () => {window.open("https://x.com", "_blank")});
+    } else {
+        showNotification(message || "Failed to unfollow selected accounts.", "error");
+    }
+}
+
+function fillUserMeta(card: HTMLElement, user: UnifiedKOL) {
+    const locationElm = card.querySelector(".location") as HTMLElement | null;
+    const locationText = user.location ? `📍 ${user.location}` : undefined;
+    setTextContentOrHide(locationElm, locationText);
+
+    const statsElm = card.querySelector(".stats") as HTMLElement | null;
+    if (statsElm) {
+        const parts = [
+            formatStat(user.followersCount, "Followers"),
+            formatStat(user.friendsCount, "Following"),
+            formatStat(user.statusesCount, "Tweets"),
+        ].filter(Boolean);
+        if (parts.length > 0) {
+            statsElm.textContent = parts.join(" • ");
+            statsElm.classList.remove("hidden");
+        } else {
+            statsElm.textContent = "";
+            statsElm.classList.add("hidden");
+        }
+    }
+
+    const metaElm = card.querySelector(".meta") as HTMLElement | null;
+    if (metaElm) {
+        const hasLocation = locationElm && !locationElm.classList.contains("hidden");
+        const hasStats = statsElm && !statsElm.classList.contains("hidden");
+        metaElm.classList.toggle("hidden", !hasLocation && !hasStats);
+    }
+}
+
+function attachUserCardEvents(card: HTMLElement, user: UnifiedKOL) {
+    const checkbox = card.querySelector(".user-select") as HTMLInputElement;
+    card.addEventListener("click", (ev) => {
+        if (ev.target instanceof HTMLInputElement) return;
+        checkbox.checked = !checkbox.checked;
+        toggleUserSelection(user.key, checkbox.checked);
+    });
 }
