@@ -24,10 +24,8 @@ import {checkLocalApp, openLocalApp} from "./local_app";
 import {
     assignFollowingsToCategory,
     loadAllFollowings,
-    replaceFollowingsPreservingCategories,
-    FollowingUser, removeLocalFollowings
+    removeLocalFollowings
 } from "../object/following";
-import {__tableFollowings, databaseUpdateOrAddItem} from "../common/database";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -205,23 +203,6 @@ function isXUrl(url: string | undefined | null): boolean {
     } catch (error) {
         return false;
     }
-}
-
-async function findActiveXTab(): Promise<browser.Tabs.Tab | null> {
-    const [activeTab] = await browser.tabs.query({active: true, currentWindow: true});
-    if (activeTab && isXUrl(activeTab.url)) {
-        return activeTab;
-    }
-
-    const tabs = await browser.tabs.query({
-        url: ["*://x.com/*", "*://twitter.com/*"],
-    });
-
-    if (tabs.length > 0) {
-        return tabs[0];
-    }
-
-    return null;
 }
 
 async function openPlugin() {

@@ -146,7 +146,7 @@ export async function syncOneFollowingsByScreenName(screenName?: string): Promis
         throw new Error(`Failed to fetch profile for @${screenName}`);
     }
 
-    const following: FollowingUser = {
+    return {
         id: userProfile.userId,
         name: userProfile.displayName || userProfile.userName || screenName,
         screenName: userProfile.userName || screenName,
@@ -161,8 +161,6 @@ export async function syncOneFollowingsByScreenName(screenName?: string): Promis
         friendsCount: userProfile.friendsCount,
         statusesCount: userProfile.statusesCount,
     };
-
-    return following;
 }
 
 
