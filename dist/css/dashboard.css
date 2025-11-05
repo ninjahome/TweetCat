@@ -55,6 +55,145 @@ h3 {
     object-fit: cover;
 }
 
+.wallet-info-area {
+    display: none;
+    background-color: #f5f8fa;
+    border-radius: 16px;
+    padding: 16px;
+    margin-top: 16px;
+    text-align: left;
+    box-shadow: inset 0 0 0 1px rgba(15, 20, 25, 0.05);
+}
+
+.wallet-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.wallet-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.wallet-label {
+    color: #5b7083;
+    font-weight: 600;
+}
+
+.wallet-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.wallet-actions button {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(29, 155, 240, 0.25);
+    background-color: #ffffff;
+    color: #1d9bf0;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.wallet-actions button:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+    transform: translateY(-1px);
+}
+
+.wallet-status-message {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #1d9bf0;
+    word-break: break-word;
+}
+
+.wallet-status-message.error {
+    color: #f4212e;
+}
+
+.wallet-settings {
+    margin-top: 16px;
+    border-top: 1px solid rgba(15, 20, 25, 0.08);
+    padding-top: 16px;
+    display: none;
+}
+
+.wallet-settings.open {
+    display: block;
+}
+
+.wallet-settings.hidden {
+    display: none;
+}
+
+.settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.settings-group input[type="text"] {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(15, 20, 25, 0.2);
+    font-size: 13px;
+}
+
+.settings-group input[type="text"]:focus {
+    outline: none;
+    border-color: #1d9bf0;
+    box-shadow: 0 0 0 2px rgba(29, 155, 240, 0.2);
+}
+
+.rpc-mode-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.settings-actions button {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    background-color: #1d9bf0;
+    color: #ffffff;
+}
+
+.settings-actions button:last-child {
+    background-color: rgba(29, 155, 240, 0.12);
+    color: #1d9bf0;
+}
+
+.settings-actions button:hover:first-child {
+    background-color: #1871c3;
+}
+
+.settings-actions button:last-child:hover {
+    background-color: rgba(29, 155, 240, 0.2);
+}
+
+.selectable {
+    word-break: break-all;
+}
+
 .modal-new-category {
     display: none;
     position: fixed;

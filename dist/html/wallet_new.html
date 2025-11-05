@@ -6,5 +6,43 @@
     <link href="../css/new_wallet.css" rel="stylesheet">
 </head>
 <body>
+<div class="wallet-new-container">
+    <h1>钱包创建 / 导入</h1>
+    <p class="wallet-new-subtitle">请妥善备份助记词并设置口令</p>
+    <div class="mode-switch">
+        <button id="mode-create" class="active">创建新钱包</button>
+        <button id="mode-import">导入助记词</button>
+    </div>
+
+    <div id="mnemonic-display-section" class="panel">
+        <label for="mnemonic-display">生成的助记词</label>
+        <textarea id="mnemonic-display" readonly></textarea>
+        <label for="mnemonic-confirm">请再次输入助记词确认</label>
+        <textarea id="mnemonic-confirm" placeholder="请完整输入助记词，以空格分隔"></textarea>
+        <button id="btn-regenerate" class="secondary-action">重新生成助记词</button>
+    </div>
+
+    <div id="mnemonic-import-section" class="panel hidden">
+        <label for="mnemonic-import">请输入要导入的助记词</label>
+        <textarea id="mnemonic-import" placeholder="粘贴 12/24 个助记词单词，以空格分隔"></textarea>
+    </div>
+
+    <div class="panel">
+        <label for="password-input">设置钱包口令</label>
+        <input type="password" id="password-input" placeholder="至少 8 位，建议包含数字与符号">
+        <label for="password-confirm-input">确认口令</label>
+        <input type="password" id="password-confirm-input" placeholder="再次输入口令">
+    </div>
+
+    <label class="backup-confirmation">
+        <input type="checkbox" id="backup-confirmation">
+        我已离线安全备份助记词
+    </label>
+
+    <button id="btn-save-wallet" class="primary-action">创建并保存</button>
+    <div id="wallet-new-status" class="status-message"></div>
+</div>
+
+<script src="../js/wallet_new.js"></script>
 </body>
 </html>

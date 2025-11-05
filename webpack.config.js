@@ -103,6 +103,7 @@ module.exports = (env, argv) => {
             following_mgn: path.resolve(__dirname, './src/popup/following_mgn.ts'),
             yt_content: path.resolve(__dirname, './src/youtube/content.ts'),
             yt_inject: path.resolve(__dirname, './src/youtube/inject.ts'),
+            wallet_new: path.resolve(__dirname, './src/popup/wallet_new.ts'),
         },
         target: 'web',
     };
