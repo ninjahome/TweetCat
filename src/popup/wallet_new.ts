@@ -1,193 +1,117 @@
-import {ethers} from "ethers";
+// src/popup/wallet_new.ts
 import browser from "webextension-polyfill";
-import {saveWallet} from "../wallet/wallet_api";
+import { generateMnemonic, saveFromMnemonic } from "../wallet/wallet_api";
 
-const DERIVATION_PATH = "m/44'/60'/0'/0/0";
+type Mode = "create" | "import" | null;
 
-type Mode = "create" | "import";
+let currentMode: Mode = null;
+let generated = "";
 
-let currentMode: Mode = "create";
-let generatedMnemonic = "";
-
-const modeCreateBtn = document.getElementById("mode-create") as HTMLButtonElement | null;
-const modeImportBtn = document.getElementById("mode-import") as HTMLButtonElement | null;
-const regenerateBtn = document.getElementById("btn-regenerate") as HTMLButtonElement | null;
-const saveBtn = document.getElementById("btn-save-wallet") as HTMLButtonElement | null;
-const mnemonicDisplay = document.getElementById("mnemonic-display") as HTMLTextAreaElement | null;
-const mnemonicConfirmInput = document.getElementById("mnemonic-confirm") as HTMLTextAreaElement | null;
-const mnemonicImportInput = document.getElementById("mnemonic-import") as HTMLTextAreaElement | null;
-const passwordInput = document.getElementById("password-input") as HTMLInputElement | null;
-const passwordConfirmInput = document.getElementById("password-confirm-input") as HTMLInputElement | null;
-const backupCheckbox = document.getElementById("backup-confirmation") as HTMLInputElement | null;
-const modeCreateSection = document.getElementById("mnemonic-display-section") as HTMLDivElement | null;
-const modeImportSection = document.getElementById("mnemonic-import-section") as HTMLDivElement | null;
-const statusMessage = document.getElementById("wallet-new-status") as HTMLDivElement | null;
-
-function setStatus(message: string, isError = false) {
-    if (!statusMessage) return;
-    statusMessage.textContent = message;
-    statusMessage.classList.toggle("error", isError);
+function qs<T extends HTMLElement = HTMLElement>(sel: string): T {
+    const el = document.querySelector(sel) as T | null;
+    if (!el) throw new Error(`Missing element: ${sel}`);
+    return el;
 }
+function hide(...ids: string[]) { ids.forEach(id => qs(id).classList.add("hidden")); }
+function show(...ids: string[]) { ids.forEach(id => qs(id).classList.remove("hidden")); }
 
-async function generateMnemonic(): Promise<void> {
-    generatedMnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
-    if (mnemonicDisplay) {
-        mnemonicDisplay.value = generatedMnemonic;
-    }
-    if (mnemonicConfirmInput) {
-        mnemonicConfirmInput.value = "";
-    }
-}
+async function onLoad() {
+    goIntro();
 
-function updateMode(mode: Mode) {
-    currentMode = mode;
+    // 选择模式
+    qs<HTMLButtonElement>("#btn-go-create").addEventListener("click", async () => {
+        currentMode = "create";
+        hide("#step-intro"); show("#step-generate");
+        await regenerate();
+    });
+    qs<HTMLButtonElement>("#btn-go-import").addEventListener("click", () => {
+        currentMode = "import";
+        hide("#step-intro"); show("#step-import");
+    });
 
-    modeCreateBtn?.classList.toggle("active", mode === "create");
-    modeImportBtn?.classList.toggle("active", mode === "import");
+    // 生成/显示隐藏
+    qs<HTMLButtonElement>("#btn-regenerate").addEventListener("click", regenerate);
+    let hiddenFlag = false;
+    qs<HTMLButtonElement>("#btn-toggle-mnemonic").addEventListener("click", () => {
+        const el = qs<HTMLTextAreaElement>("#mnemonic-generated");
+        hiddenFlag = !hiddenFlag;
+        el.style.filter = hiddenFlag ? "blur(6px)" : "none";
+        qs("#btn-toggle-mnemonic").textContent = hiddenFlag ? "显示" : "隐藏";
+    });
 
-    if (modeCreateSection) {
-        modeCreateSection.style.display = mode === "create" ? "block" : "none";
-    }
-    if (modeImportSection) {
-        modeImportSection.style.display = mode === "import" ? "block" : "none";
-    }
-    if (saveBtn) {
-        saveBtn.textContent = mode === "create" ? "创建并保存" : "导入并保存";
-    }
-    setStatus("");
-}
+    // 步进
+    qs<HTMLButtonElement>("#btn-next-to-create-confirm").addEventListener("click", () => {
+        hide("#step-generate"); show("#step-create-confirm");
+    });
+    qs<HTMLButtonElement>("#btn-back-from-generate").addEventListener("click", goIntro);
 
-async function ensureGeneratedMnemonic(): Promise<void> {
-    if (!generatedMnemonic) {
-        await generateMnemonic();
-    }
-}
+    qs<HTMLButtonElement>("#btn-next-to-password").addEventListener("click", () => {
+        const input = qs<HTMLTextAreaElement>("#mnemonic-confirm").value.trim().replace(/\s+/g, " ");
+        const backed = (qs<HTMLInputElement>("#checkbox-backed-up")).checked;
+        const s = qs("#confirm-status"); s.textContent = ""; s.classList.remove("error");
+        if (!input) { s.textContent = "请完整输入助记词"; s.classList.add("error"); return; }
+        if (input !== generated.trim().replace(/\s+/g, " ")) { s.textContent = "两次助记词不一致"; s.classList.add("error"); return; }
+        if (!backed) { s.textContent = "请勾选已线下安全备份"; s.classList.add("error"); return; }
+        hide("#step-create-confirm"); show("#step-password");
+    });
+    qs<HTMLButtonElement>("#btn-back-from-confirm").addEventListener("click", () => {
+        hide("#step-create-confirm"); show("#step-generate");
+    });
 
-async function handleSave(): Promise<void> {
-    if (!passwordInput || !passwordConfirmInput || !backupCheckbox) return;
+    qs<HTMLButtonElement>("#btn-next-import-password").addEventListener("click", () => {
+        const m = qs<HTMLTextAreaElement>("#mnemonic-import").value.trim().replace(/\s+/g, " ");
+        const s = qs("#import-status"); s.textContent = ""; s.classList.remove("error");
+        if (!m) { s.textContent = "请输入助记词"; s.classList.add("error"); return; }
+        generated = m;
+        hide("#step-import"); show("#step-password");
+    });
+    qs<HTMLButtonElement>("#btn-back-from-import").addEventListener("click", goIntro);
 
-    if (saveBtn) {
-        saveBtn.disabled = true;
-    }
-    setStatus("处理中，请稍候...");
+    qs<HTMLButtonElement>("#btn-save-wallet").addEventListener("click", saveWalletFlow);
+    qs<HTMLButtonElement>("#btn-back-from-password").addEventListener("click", () => {
+        hide("#step-password"); show(currentMode === "create" ? "#step-create-confirm" : "#step-import");
+    });
 
-    try {
-        const password = passwordInput.value;
-        const confirmPassword = passwordConfirmInput.value;
-
-        if (!password || password.length < 8) {
-            throw new Error("请输入至少 8 位的口令");
-        }
-        if (password !== confirmPassword) {
-            throw new Error("两次输入的口令不一致");
-        }
-        if (!backupCheckbox.checked) {
-            throw new Error("请先确认已备份助记词");
-        }
-
-        let mnemonic: string;
-        if (currentMode === "create") {
-            await ensureGeneratedMnemonic();
-            mnemonic = generatedMnemonic;
-            const confirmation = mnemonicConfirmInput?.value ?? "";
-            const normalizedMnemonic = normalizeMnemonic(mnemonic);
-            const normalizedConfirmation = normalizeMnemonic(confirmation);
-            if (normalizedMnemonic !== normalizedConfirmation) {
-                throw new Error("确认助记词与生成的不一致");
-            }
-            mnemonic = normalizedMnemonic;
+    qs<HTMLButtonElement>("#btn-go-dashboard").addEventListener("click", () => {
+        if (browser.runtime?.getURL) {
+            window.location.href = browser.runtime.getURL("html/dashboard.html");
         } else {
-            mnemonic = mnemonicImportInput?.value?.trim() ?? "";
-            if (!mnemonic) {
-                throw new Error("请输入有效的助记词");
-            }
-            if (!ethers.utils.isValidMnemonic(mnemonic)) {
-                throw new Error("助记词格式不正确");
-            }
-            mnemonic = normalizeMnemonic(mnemonic);
+            history.back();
         }
-
-        const wallet = ethers.Wallet.fromMnemonic(mnemonic, DERIVATION_PATH);
-        const keystoreJson = await wallet.encrypt(password);
-
-        await saveWallet({
-            address: wallet.address,
-            keystoreJson,
-            createdAt: Date.now(),
-        });
-
-        const address = wallet.address;
-
-        mnemonic = "";
-        generatedMnemonic = "";
-        destroySensitiveWalletData(wallet);
-
-        passwordInput.value = "";
-        passwordConfirmInput.value = "";
-        mnemonicConfirmInput && (mnemonicConfirmInput.value = "");
-        mnemonicImportInput && (mnemonicImportInput.value = "");
-        backupCheckbox.checked = false;
-
-        if (mnemonicDisplay) {
-            mnemonicDisplay.value = "";
-        }
-
-        setStatus(`钱包已保存：${address}`);
-
-        if (typeof chrome !== "undefined" && chrome?.runtime?.sendMessage) {
-            chrome.runtime.sendMessage({type: "wallet:created", address});
-        } else if (browser?.runtime?.sendMessage) {
-            browser.runtime.sendMessage({type: "wallet:created", address});
-        }
-    } catch (error) {
-        const message = (error as Error).message ?? "保存钱包时发生错误";
-        setStatus(message, true);
-    } finally {
-        if (saveBtn) {
-            saveBtn.disabled = false;
-        }
-    }
-}
-
-async function init() {
-    await ensureGeneratedMnemonic();
-    updateMode("create");
-
-    modeCreateBtn?.addEventListener("click", async () => {
-        await ensureGeneratedMnemonic();
-        updateMode("create");
-    });
-    modeImportBtn?.addEventListener("click", () => updateMode("import"));
-    regenerateBtn?.addEventListener("click", () => generateMnemonic());
-    saveBtn?.addEventListener("click", () => {
-        handleSave().then();
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    init().then();
-});
-
-function normalizeMnemonic(phrase: string): string {
-    if (!phrase) {
-        return "";
+async function regenerate() {
+    const out = qs<HTMLTextAreaElement>("#mnemonic-generated");
+    const s = qs("#gen-status"); s.textContent = ""; s.classList.remove("error");
+    try {
+        generated = await generateMnemonic(12);
+        out.value = generated;
+    } catch (e: any) {
+        s.textContent = e?.message || "生成失败"; s.classList.add("error");
     }
-    return phrase.trim().split(/\s+/).join(" ");
 }
 
-function destroySensitiveWalletData(wallet: ethers.Wallet) {
-    try {
-        const signingKey = (wallet as any)._signingKey?.();
-        if (signingKey && typeof signingKey === "object" && "privateKey" in signingKey) {
-            signingKey.privateKey = "";
-        }
-    } catch (err) {
-        // ignore cleanup errors silently
-    }
+async function saveWalletFlow() {
+    const p1 = (qs<HTMLInputElement>("#password-input")).value || "";
+    const p2 = (qs<HTMLInputElement>("#password-confirm-input")).value || "";
+    const s = qs("#password-status"); s.textContent = ""; s.classList.remove("error");
+    if (p1.length < 8) { s.textContent = "口令至少 8 位"; s.classList.add("error"); return; }
+    if (p1 !== p2) { s.textContent = "两次口令不一致"; s.classList.add("error"); return; }
 
     try {
-        (wallet as any)._mnemonic = null;
-    } catch (err) {
-        // ignore cleanup errors silently
+        await saveFromMnemonic(generated, p1);
+        hide("#step-password"); show("#step-success");
+    } catch (e: any) {
+        s.textContent = e?.message || "保存失败"; s.classList.add("error");
     }
 }
+
+function goIntro() {
+    ["#step-intro","#step-generate","#step-create-confirm","#step-password","#step-import","#step-success"]
+        .forEach(h => qs(h).classList.add("hidden"));
+    show("#step-intro");
+    currentMode = null;
+}
+
+document.addEventListener("DOMContentLoaded", onLoad);

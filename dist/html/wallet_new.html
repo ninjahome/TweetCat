@@ -1,48 +1,88 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>New Web3 ID</title>
-    <link href="../css/new_wallet.css" rel="stylesheet">
+    <link href="../css/new_wallet.css" rel="stylesheet" />
 </head>
 <body>
-<div class="wallet-new-container">
-    <h1>钱包创建 / 导入</h1>
-    <p class="wallet-new-subtitle">请妥善备份助记词并设置口令</p>
-    <div class="mode-switch">
-        <button id="mode-create" class="active">创建新钱包</button>
-        <button id="mode-import">导入助记词</button>
-    </div>
+<div class="wallet-new-container step">
+    <!-- Step 0: 介绍与选择 -->
+    <section id="step-intro">
+        <h1 class="title">钱包创建 / 导入</h1>
+        <p class="subtitle">钱包以助记词生成，仅保存<strong>加密后的</strong> keystore 至本地 IndexedDB；请务必线下备份助记词。</p>
+        <div class="btn-row">
+            <button id="btn-go-create" class="btn btn-primary">创建新钱包</button>
+            <button id="btn-go-import" class="btn btn-secondary">导入助记词</button>
+        </div>
+    </section>
 
-    <div id="mnemonic-display-section" class="panel">
-        <label for="mnemonic-display">生成的助记词</label>
-        <textarea id="mnemonic-display" readonly></textarea>
-        <label for="mnemonic-confirm">请再次输入助记词确认</label>
-        <textarea id="mnemonic-confirm" placeholder="请完整输入助记词，以空格分隔"></textarea>
-        <button id="btn-regenerate" class="secondary-action">重新生成助记词</button>
-    </div>
+    <!-- Step 1A: 生成助记词 -->
+    <section id="step-generate" class="hidden">
+        <h2 class="title">生成助记词</h2>
+        <p class="hint">请在安全环境下抄写助记词，勿截屏或在线存储。</p>
+        <div class="mnemonic-box">
+            <textarea id="mnemonic-generated" readonly rows="3"></textarea>
+            <button id="btn-toggle-mnemonic" class="toggle-eye">隐藏</button>
+        </div>
+        <div class="btn-row">
+            <button id="btn-regenerate" class="btn btn-secondary">重新生成助记词</button>
+            <button id="btn-next-to-create-confirm" class="btn btn-primary">下一步</button>
+            <button id="btn-back-from-generate" class="btn btn-ghost">返回</button>
+        </div>
+        <div id="gen-status" class="status"></div>
+    </section>
 
-    <div id="mnemonic-import-section" class="panel hidden">
-        <label for="mnemonic-import">请输入要导入的助记词</label>
-        <textarea id="mnemonic-import" placeholder="粘贴 12/24 个助记词单词，以空格分隔"></textarea>
-    </div>
+    <!-- Step 1B: 二次输入确认 -->
+    <section id="step-create-confirm" class="hidden">
+        <h2 class="title">确认助记词</h2>
+        <p class="hint">请将上一步的助记词完整输入（空格分隔）。</p>
+        <textarea id="mnemonic-confirm" rows="3" placeholder="逐词输入…"></textarea>
+        <label class="checkbox">
+            <input id="checkbox-backed-up" type="checkbox" />
+            <span>我已线下安全备份助记词</span>
+        </label>
+        <div class="btn-row">
+            <button id="btn-next-to-password" class="btn btn-primary">下一步</button>
+            <button id="btn-back-from-confirm" class="btn btn-ghost">返回</button>
+        </div>
+        <div id="confirm-status" class="status"></div>
+    </section>
 
-    <div class="panel">
-        <label for="password-input">设置钱包口令</label>
-        <input type="password" id="password-input" placeholder="至少 8 位，建议包含数字与符号">
-        <label for="password-confirm-input">确认口令</label>
-        <input type="password" id="password-confirm-input" placeholder="再次输入口令">
-    </div>
+    <!-- Step 2: 口令设置（创建/导入共用） -->
+    <section id="step-password" class="hidden">
+        <h2 class="title">设置口令</h2>
+        <input type="password" id="password-input" placeholder="至少 8 位，建议包含数字与符号" />
+        <input type="password" id="password-confirm-input" placeholder="再次输入口令" />
+        <div class="btn-row">
+            <button id="btn-save-wallet" class="btn btn-primary">创建并保存</button>
+            <button id="btn-back-from-password" class="btn btn-ghost">返回</button>
+        </div>
+        <div id="password-status" class="status"></div>
+    </section>
 
-    <label class="backup-confirmation">
-        <input type="checkbox" id="backup-confirmation">
-        我已离线安全备份助记词
-    </label>
+    <!-- Step 1C: 导入助记词 -->
+    <section id="step-import" class="hidden">
+        <h2 class="title">导入助记词</h2>
+        <textarea id="mnemonic-import" rows="3" placeholder="粘贴 12/24 个英文助记词，空格分隔"></textarea>
+        <div class="btn-row">
+            <button id="btn-next-import-password" class="btn btn-primary">下一步</button>
+            <button id="btn-back-from-import" class="btn btn-ghost">返回</button>
+        </div>
+        <div id="import-status" class="status"></div>
+    </section>
 
-    <button id="btn-save-wallet" class="primary-action">创建并保存</button>
-    <div id="wallet-new-status" class="status-message"></div>
+    <!-- Step 3: 成功页 -->
+    <section id="step-success" class="hidden">
+        <h2 class="title">完成</h2>
+        <p class="subtitle">钱包已创建/导入成功，返回 Dashboard 查看地址与余额。</p>
+        <div class="btn-row">
+            <button id="btn-go-dashboard" class="btn btn-primary">返回 Dashboard</button>
+        </div>
+    </section>
 </div>
 
+<!-- 只引用编译产物（由上面的 TS 构建为 js/wallet_new.js） -->
 <script src="../js/wallet_new.js"></script>
 </body>
 </html>
