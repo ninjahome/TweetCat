@@ -1047,11 +1047,8 @@ async function bulkAssignCategory(keys: string[], targetCatId: number | null): P
 
 async function removeUnfollowedFromView(userIds: string[]) {
     if (!userIds || userIds.length === 0) return;
-
     const keysToDelete: string[] = [];
-    const localRemoveIds: string[] = [];
 
-    // 第一轮：区分要删除的用户与保留用户
     for (const [key, user] of unifiedByKey.entries()) {
         if (!user || !user.userId) continue;
 
@@ -1059,17 +1056,13 @@ async function removeUnfollowedFromView(userIds: string[]) {
             const isUnassigned = user.categoryId == null;
 
             if (isUnassigned) {
-                // ✅ Unassigned：彻底删除
                 keysToDelete.push(key);
-                localRemoveIds.push(user.userId);
             } else {
-                // ✅ 已分类：保留，但去掉 following 来源
                 user.sources = user.sources.filter((s) => s !== "following");
             }
         }
     }
 
-    // 第二轮：删除所有未分类的（彻底从 UI 移除）
     for (const key of keysToDelete) {
         const user = unifiedByKey.get(key);
         if (!user) continue;
