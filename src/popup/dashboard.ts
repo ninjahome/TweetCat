@@ -17,7 +17,7 @@ import {
     saveWalletSettings,
     TCWallet,
     WalletSettings
-} from "../wallet/obj";
+} from "../wallet/wallet_api";
 
 const ARBITRUM_CHAIN_ID = 42161;
 const DEFAULT_RPC_URL = "https://arb1.arbitrum.io/rpc";
@@ -608,8 +608,8 @@ interface SignMessageParams {
 }
 
 interface TypedDataPayload {
-    domain: ethers.utils.TypedDataDomain;
-    types: Record<string, ethers.utils.TypedDataField[]>;
+    domain: ethers.TypedDataDomain;
+    types: Record<string, Array<ethers.TypedDataField>>;
     value: Record<string, any>;
 }
 

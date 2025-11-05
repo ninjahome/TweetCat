@@ -1,6 +1,6 @@
 import {ethers} from "ethers";
 import browser from "webextension-polyfill";
-import {saveWallet} from "../wallet/obj";
+import {saveWallet} from "../wallet/wallet_api";
 
 const DERIVATION_PATH = "m/44'/60'/0'/0/0";
 
