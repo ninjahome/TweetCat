@@ -17,9 +17,49 @@
         <div>---------------------</div>
         <button id="btn-create-wallet" class="btn-create-wallet">New Web3 Account</button>
         <div id="wallet-info-area" class="wallet-info-area">
-                <span class="wallet-address-title">Address</span>:<span class="wallet-address-value"></span>
-                <span class="wallet-usdt-title">USDT</span>:<span class="wallet-usdt-value"></span>
-                <span class="wallet-gas-title">Gas</span>:<span class="wallet-gas-value"></span>
+            <div class="wallet-summary">
+                <div class="wallet-row">
+                    <span class="wallet-label">Address</span>
+                    <span class="wallet-address-value selectable"></span>
+                </div>
+                <div class="wallet-row">
+                    <span class="wallet-label">ETH</span>
+                    <span class="wallet-eth-value">--</span>
+                </div>
+                <div class="wallet-row">
+                    <span class="wallet-label">USDT</span>
+                    <span class="wallet-usdt-value">--</span>
+                </div>
+            </div>
+            <div class="wallet-actions">
+                <button id="btn-refresh-balance">刷新余额</button>
+                <button id="btn-export-private-key">导出私钥</button>
+                <button id="btn-transfer-eth">转账 ETH</button>
+                <button id="btn-transfer-token">转账代币</button>
+                <button id="btn-sign-message">签名消息</button>
+                <button id="btn-sign-typed-data">签名 TypedData</button>
+                <button id="btn-verify-signature">验签</button>
+                <button id="btn-open-settings">节点设置</button>
+            </div>
+            <div id="wallet-status-message" class="wallet-status-message"></div>
+            <div id="settings-panel" class="wallet-settings hidden">
+                <div class="settings-group">
+                    <label for="infura-project-id">Infura Project ID（可选）</label>
+                    <input type="text" id="infura-project-id" placeholder="示例：123abc456def" />
+                </div>
+                <div class="settings-group">
+                    <label for="custom-rpc-url">自定义 RPC URL（可选）</label>
+                    <input type="text" id="custom-rpc-url" placeholder="https://example.com/rpc" />
+                </div>
+                <div class="settings-group rpc-mode-group">
+                    <label><input type="radio" name="rpc-mode" value="default" checked /> 使用默认公共 RPC</label>
+                    <label><input type="radio" name="rpc-mode" value="custom" /> 使用自定义 RPC</label>
+                </div>
+                <div class="settings-actions">
+                    <button id="btn-save-settings">保存</button>
+                    <button id="btn-reset-settings">恢复默认</button>
+                </div>
+            </div>
         </div>
         <div>---------------------</div>
         <button id="btn-mgn-category" class="btn-mgn-category"></button>

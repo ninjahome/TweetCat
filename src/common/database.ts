@@ -4,7 +4,7 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 19;
+export const __currentDatabaseVersion = 20;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -12,6 +12,8 @@ export const __tableSystemSetting = '__table_system_setting__';
 export const __tableCachedTweets = '__table_cached_tweets__'
 export const __tableKolCursor = '__table_kol_cursor__';
 export const __tableFollowings = '__table_followings__';
+export const __tableWallets = '__table_wallets__';
+export const __tableWalletSettings = '__table_wallet_settings__';
 export const idx_tweets_user_time = 'userId_timestamp_idx'
 export const idx_tweets_time_user = 'timestamp_userId_idx';
 export const idx_tweets_userid = 'userId_idx'
@@ -79,6 +81,8 @@ function initDatabase(): Promise<IDBDatabase> {
             initCachedTweetsTable(request);
             initKolCursorTable(request);
             initFollowingsTable(request).then();
+            initWalletTable(request);
+            initWalletSettingsTable(request);
         };
     });
 }
@@ -204,6 +208,28 @@ async function initFollowingsTable(request: IDBOpenDBRequest) {
         store.createIndex('idx_category', 'categoryId', {unique: false});
         logDB("------>>>[Database] Added idx_category index on followings table.");
     }
+}
+
+function initWalletTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+
+    if (db.objectStoreNames.contains(__tableWallets)) {
+        return;
+    }
+
+    db.createObjectStore(__tableWallets, {keyPath: 'address'});
+    logDB("------>>>[Database]Created wallet table successfully.");
+}
+
+function initWalletSettingsTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+
+    if (db.objectStoreNames.contains(__tableWalletSettings)) {
+        return;
+    }
+
+    db.createObjectStore(__tableWalletSettings, {keyPath: 'id'});
+    logDB("------>>>[Database]Created wallet settings table successfully.");
 }
 
 

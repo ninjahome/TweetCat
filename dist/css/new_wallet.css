@@ -1,0 +1,135 @@
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f5f8fa;
+    color: #0f1419;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+}
+
+.wallet-new-container {
+    width: 360px;
+    background-color: #ffffff;
+    border-radius: 16px;
+    margin: 32px auto;
+    padding: 24px;
+    box-shadow: 0 12px 32px rgba(15, 20, 25, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.wallet-new-container h1 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.wallet-new-subtitle {
+    margin: 0;
+    color: #5b7083;
+    font-size: 13px;
+}
+
+.mode-switch {
+    display: flex;
+    gap: 12px;
+}
+
+.mode-switch button {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(29, 155, 240, 0.25);
+    background: #ffffff;
+    color: #1d9bf0;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.mode-switch button.active {
+    background-color: #1d9bf0;
+    color: #ffffff;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.panel textarea {
+    min-height: 96px;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 20, 25, 0.2);
+    padding: 10px 12px;
+    font-size: 13px;
+    resize: vertical;
+}
+
+.panel input[type="password"] {
+    border-radius: 12px;
+    border: 1px solid rgba(15, 20, 25, 0.2);
+    padding: 10px 12px;
+    font-size: 13px;
+}
+
+.panel textarea:focus,
+.panel input[type="password"]:focus {
+    outline: none;
+    border-color: #1d9bf0;
+    box-shadow: 0 0 0 2px rgba(29, 155, 240, 0.2);
+}
+
+.secondary-action {
+    align-self: flex-end;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(29, 155, 240, 0.12);
+    color: #1d9bf0;
+    cursor: pointer;
+}
+
+.secondary-action:hover {
+    background: rgba(29, 155, 240, 0.2);
+}
+
+.backup-confirmation {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.primary-action {
+    padding: 12px;
+    border-radius: 999px;
+    border: none;
+    background-color: #1d9bf0;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.primary-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.status-message {
+    min-height: 20px;
+    font-size: 13px;
+    color: #1d9bf0;
+}
+
+.status-message.error {
+    color: #f4212e;
+}
+
+.hidden {
+    display: none;
+}
