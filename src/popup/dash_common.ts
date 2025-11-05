@@ -1,39 +1,6 @@
 
 import { t } from "../common/i18n";
 
-// 显示确认弹窗
-export function showConfirmPopup(message: string, onConfirm: () => void): void {
-    const popup = document.getElementById('confirm-popup') as HTMLDivElement;
-    const msgSpan = document.getElementById('confirm-message') as HTMLParagraphElement;
-    const btnCancel = document.getElementById('btn-cancel') as HTMLButtonElement;
-    const btnOk = document.getElementById('btn-ok') as HTMLButtonElement;
-
-    if (!popup || !msgSpan || !btnCancel || !btnOk) {
-        console.error('confirm popup elements not found');
-        return;
-    }
-
-    // 设置提示消息
-    msgSpan.textContent = message;
-
-    btnCancel.textContent = t('cancel');
-    btnOk.textContent = t('confirm');
-
-    // 显示弹窗
-    popup.style.display = 'block';
-
-    // 取消按钮
-    btnCancel.onclick = () => {
-        popup.style.display = 'none';
-    };
-
-    // 确定按钮
-    btnOk.onclick = () => {
-        popup.style.display = 'none';
-        onConfirm();
-    };
-}
-
 export function showAlert(title:string, message:string) {
     const alertBox = document.getElementById('custom-alert');
     const alertTitle = document.getElementById('alert-title');

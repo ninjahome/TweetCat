@@ -9,6 +9,7 @@ import {localGet, localSet} from "../common/local_storage";
 import {Category} from "../object/category";
 import {getSystemSetting, switchAdOn} from "../object/system_setting";
 import {initI18n, t} from "../common/i18n";
+import {loadWallet, TCWallet} from "../wallet/obj";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -27,6 +28,7 @@ async function initDashBoard(): Promise<void> {
     initCatMgmBtn();
     initNewCatModalDialog();
     initSettings();
+    initWalletOrCreate();
 }
 
 function dashRouter(path: string): void {
@@ -41,9 +43,9 @@ function initCatMgmBtn() {
     const mgnCategoryBtn = document.getElementById("btn-mgn-category") as HTMLElement;
     mgnCategoryBtn.innerText = t('manage_category');
     mgnCategoryBtn.onclick = async () => {
-        browser.tabs.create({
+        await browser.tabs.create({
             url: browser.runtime.getURL("html/following_mgm.html"),
-        }).then();
+        })
     }
 }
 
@@ -114,4 +116,35 @@ function initSettings() {
         console.log("------>>>Ad blocking is now", isEnabled ? "enabled" : "disabled");
         await sendMessageToX(MsgType.AdsBlockChanged, isEnabled);
     };
+}
+
+
+function initWalletOrCreate() {
+    const w = loadWallet()
+    const walletCreateBtn = document.getElementById("btn-create-wallet") as HTMLButtonElement;
+    const walletInfoDiv = document.getElementById("wallet-info-area") as HTMLDivElement;
+    if (!w) {
+        walletCreateBtn.style.display = 'block';
+        walletInfoDiv.style.display = 'none';
+        walletCreateBtn.onclick = async () => {
+            await browser.tabs.create({
+                url: browser.runtime.getURL("html/wallet_new.html"),
+            })
+        }
+        return;
+    }
+    walletCreateBtn.style.display = 'none';
+    walletInfoDiv.style.display = 'block';
+    populateWalletInfo(walletInfoDiv, w);
+}
+
+function populateWalletInfo(wiDiv: HTMLDivElement, wallet: TCWallet) {
+    // wiDiv.querySelector(".wallet-address-title").textContent=t("wallet_address_title");
+    // wiDiv.querySelector(".wallet-usdt-title").textContent=t("wallet_usdt_title");
+    // wiDiv.querySelector(".wallet-gas-title").textContent=t("wallet_gas_title");
+    wiDiv.querySelector(".wallet-address-value").textContent = wallet.Address;
+    //TODO::query infura for address balance.
+    const usdt = 0.0, eth = 0.0;
+    wiDiv.querySelector(".wallet-usdt-value").textContent = "" + usdt;
+    wiDiv.querySelector(".wallet-gas-value").textContent = "" + eth;
 }
