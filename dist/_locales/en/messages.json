@@ -75,9 +75,6 @@
   "add_new_category": {
     "message": "Add New Category"
   },
-  "enter_category_name": {
-    "message": "Enter category name"
-  },
   "confirm_message": {
     "message": "Message..."
   },
@@ -107,9 +104,6 @@
   },
   "alt_use_category": {
     "message": "Use Category"
-  },
-  "alt_manage_category": {
-    "message": "Manage Category"
   },
   "alt_manage_kol": {
     "message": "Manage KOL"
@@ -200,5 +194,146 @@
   },
   "total_score_title": {
     "message": "Level"
+  },
+  "categories_title": {
+    "message": "Categories"
+  },
+  "new_category": {
+    "message": "New"
+  },
+  "sync_followings": {
+    "message": "Sync Followings"
+  },
+  "selected_count": {
+    "message": "$1 selected"
+  },
+  "apply": {
+    "message": "Apply"
+  },
+  "clear": {
+    "message": "Clear"
+  },
+  "unfollow_selected": {
+    "message": "Unfollow Selected"
+  },
+  "empty_hint_no_sync": {
+    "message": "Your followings have not been synced yet."
+  },
+  "no_users_in_category": {
+    "message": "No users in this category."
+  },
+  "create_new_category": {
+    "message": "Create New Category"
+  },
+  "enter_category_name": {
+    "message": "Enter category name..."
+  },
+  "confirm_action": {
+    "message": "Confirm Action"
+  },
+  "processing": {
+    "message": "Processing..."
+  },
+  "category_all": {
+    "message": "All"
+  },
+  "category_uncategorized": {
+    "message": "Unassigned"
+  },
+  "assign_to_category": {
+    "message": "Assign to category…"
+  },
+  "remove_from_category": {
+    "message": "Remove from category"
+  },
+  "no_real_followings_to_unfollow": {
+    "message": "No real followings to unfollow."
+  },
+  "confirm_unfollow_selected_one": {
+    "message": "Unfollow the selected account?"
+  },
+  "confirm_unfollow_selected": {
+    "message": "Unfollow $1 selected accounts?"
+  },
+  "confirm_remove_from_category": {
+    "message": "Remove selected accounts from this category?"
+  },
+  "confirm_delete_category": {
+    "message": "Delete category \"$1\"?"
+  },
+  "confirm_signin_x_first": {
+    "message": "Please sign in to Twitter (x.com) first!"
+  },
+  "operation_failed": {
+    "message": "Operation failed."
+  },
+  "failed_to_sync_followings": {
+    "message": "Failed to sync followings."
+  },
+  "failed_to_unfollow_selected": {
+    "message": "Failed to unfollow selected accounts."
+  },
+  "synced_followings_count": {
+    "message": "Synced $1 followings."
+  },
+  "syncing": {
+    "message": "Syncing…"
+  },
+  "syncing_followings": {
+    "message": "Syncing followings…"
+  },
+  "no_valid_accounts_to_unfollow": {
+    "message": "No valid accounts to unfollow."
+  },
+  "no_response_from_background": {
+    "message": "No response from background script. Please try again."
+  },
+  "please_select_valid_category": {
+    "message": "Please select a valid category."
+  },
+  "removed_from_category_success": {
+    "message": "Removed selected accounts from this category."
+  },
+  "assigned_to_category_success": {
+    "message": "Assigned selected accounts to the selected category."
+  },
+  "failed_to_update_category_assignment": {
+    "message": "Failed to update category assignment."
+  },
+  "category_name_empty": {
+    "message": "Category name cannot be empty."
+  },
+  "created_category": {
+    "message": "Created category \"$1\"."
+  },
+  "failed_to_create_category": {
+    "message": "Failed to create category."
+  },
+  "rename_category_prompt": {
+    "message": "Rename category"
+  },
+  "renamed_category": {
+    "message": "Renamed category to \"$1\"."
+  },
+  "failed_to_rename_category": {
+    "message": "Failed to rename category."
+  },
+  "category_deleted": {
+    "message": "Category deleted."
+  },
+  "failed_to_delete_category": {
+    "message": "Failed to delete category."
+  },
+  "syncing_user": {
+    "message": "Syncing $1 ..."
+  },
+  "account_updated": {
+    "message": "Account updated."
+  },
+  "sync_failed_with_error": {
+    "message": "Sync failed: $1"
+  },
+  "sync_user_not_found": {
+    "message": "User not found or sync failed."
   }
 }

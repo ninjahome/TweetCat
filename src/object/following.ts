@@ -12,7 +12,7 @@ import {sleep} from "../common/utils";
 import {logFM} from "../common/debug_flags";
 
 export interface FollowingUser {
-    id: string;
+    userId: string;
     name: string;
     screenName: string;
     avatarUrl: string;
@@ -36,12 +36,12 @@ export async function replaceFollowingsPreservingCategories(users: FollowingUser
     const existing = await loadAllFollowings();
     const categoryMap = new Map<string, number | null | undefined>();
     for (const item of existing) {
-        categoryMap.set(item.id, item.categoryId);
+        categoryMap.set(item.userId, item.categoryId);
     }
     const timestamp = Date.now();
     await databaseDeleteByFilter(__tableFollowings, () => true);
     for (const user of users) {
-        const categoryId = categoryMap.has(user.id) ? categoryMap.get(user.id)! : user.categoryId ?? null;
+        const categoryId = categoryMap.has(user.userId) ? categoryMap.get(user.userId)! : user.categoryId ?? null;
         await databaseUpdateOrAddItem(__tableFollowings, {
             ...user,
             categoryId,
@@ -60,7 +60,7 @@ export async function assignFollowingsToCategory(userIds: string[], categoryId: 
 export async function clearCategoryForFollowings(catId: number): Promise<void> {
     await checkAndInitDatabase();
     const matches = await databaseQueryByFilter(__tableFollowings, (item) => item.categoryId === catId) as FollowingUser[];
-    await Promise.all(matches.map((item) => databaseUpdateFields(__tableFollowings, item.id, {categoryId: null})));
+    await Promise.all(matches.map((item) => databaseUpdateFields(__tableFollowings, item.userId, {categoryId: null})));
 }
 
 export async function syncFollowingsFromPage(): Promise<FollowingUser[]> {
@@ -103,7 +103,7 @@ export async function syncFollowingsFromPage(): Promise<FollowingUser[]> {
             const friendsCount = typeof legacy?.friends_count === "number" ? legacy.friends_count : undefined;
             const statusesCount = typeof legacy?.statuses_count === "number" ? legacy.statuses_count : undefined;
             collected.push({
-                id: user.userID,
+                userId: user.userID,
                 name: user.name,
                 screenName: user.screen_name,
                 avatarUrl: user.avatarUrl,
@@ -147,7 +147,7 @@ export async function syncOneFollowingsByScreenName(screenName?: string): Promis
     }
 
     return {
-        id: userProfile.userId,
+        userId: userProfile.userId,
         name: userProfile.displayName || userProfile.userName || screenName,
         screenName: userProfile.userName || screenName,
         avatarUrl: userProfile.avatar || "",
@@ -199,13 +199,13 @@ export async function removeLocalFollowings(userIds: string[]): Promise<{
             return {success: false, error: "No userIds provided"};
         }
         const normalizedIds = userIds.map(String);
-        logFM("[removeLocalFollowings] 🧩 incoming userIds:", userIds, "normalizedIds:, normalizedIds");
+        logFM("[removeLocalFollowings] 🧩 incoming userIds:", userIds, "normalizedIds:",normalizedIds);
         let matchedCount = 0;
         await databaseDeleteByFilter(__tableFollowings, (row) => {
-            const hit = normalizedIds.includes(String(row.id));
+            const hit = normalizedIds.includes(String(row.userId));
             if (hit) {
                 matchedCount++;
-                logFM("[removeLocalFollowings] ✅ match", row.id, typeof row.id);
+                logFM("[removeLocalFollowings] ✅ match", row.userId, typeof row.userId);
             }
             return hit;
         });

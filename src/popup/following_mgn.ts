@@ -16,9 +16,10 @@ import {
     removeKolsFromCategoryFromBG,
     updateCategoryDetail,
 } from "../object/category";
-import {FollowingUser, replaceFollowingsPreservingCategories} from "../object/following";
+import {FollowingUser, removeLocalFollowings, replaceFollowingsPreservingCategories} from "../object/following";
 import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
+import {initI18n, t} from "../common/i18n";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -82,34 +83,96 @@ function formatStat(value: number | undefined, label: string): string | null {
     return `${numberFormatter.format(value)} ${label}`;
 }
 
-const categoryList = document.getElementById("category-list") as HTMLUListElement;
-const userList = document.getElementById("user-list") as HTMLDivElement;
-const emptyState = document.getElementById("empty-state") as HTMLDivElement;
-const noUsersMessage = document.getElementById("no-users-message") as HTMLDivElement;
-const syncButtons = [
-    document.getElementById("sync-btn") as HTMLButtonElement,
-    document.getElementById("empty-sync-btn") as HTMLButtonElement,
-];
-const syncStatus = document.getElementById("sync-status") as HTMLSpanElement;
-const assignSelect = document.getElementById("assign-category-select") as HTMLSelectElement;
-const assignBtn = document.getElementById("assign-category-btn") as HTMLButtonElement;
-const clearSelectionBtn = document.getElementById("clear-selection-btn") as HTMLButtonElement;
-const unfollowSelectedBtn = document.getElementById("unfollow-selected-btn") as HTMLButtonElement | null;
-const toolbar = document.getElementById("toolbar") as HTMLDivElement;
-const selectionCounter = document.getElementById("selection-counter") as HTMLSpanElement;
-const categoryTemplate = document.getElementById("category-item-template") as HTMLTemplateElement;
-const userTemplate = document.getElementById("user-card-template") as HTMLTemplateElement;
-const newCategoryBtn = document.getElementById("btn-new-category") as HTMLButtonElement;
-const notificationBar = document.getElementById("notification") as HTMLDivElement | null;
-const addCategoryModal = document.getElementById("modal-add-category") as HTMLDivElement | null;
-const newCategoryInput = document.getElementById("new-category-input") as HTMLInputElement | null;
-const confirmNewCategoryBtn = document.getElementById("btn-confirm-new-category") as HTMLButtonElement | null;
-const cancelNewCategoryBtn = document.getElementById("btn-cancel-new-category") as HTMLButtonElement | null;
-const confirmModal = document.getElementById("modal-confirm") as HTMLDivElement | null;
-const confirmMessage = document.getElementById("confirm-message") as HTMLParagraphElement | null;
-const cancelConfirmBtn = document.getElementById("btn-cancel-confirm") as HTMLButtonElement | null;
-const confirmConfirmBtn = document.getElementById("btn-confirm-confirm") as HTMLButtonElement | null;
-const processingOverlay = document.getElementById("unfollow-processing-overlay") as HTMLDivElement | null;
+// ===== 安全声明区 =====
+let categoryList: HTMLUListElement;
+let userList: HTMLDivElement;
+let emptyState: HTMLDivElement;
+let noUsersMessage: HTMLDivElement;
+let syncButtons: HTMLButtonElement[];
+let syncStatus: HTMLSpanElement;
+let assignSelect: HTMLSelectElement;
+let assignBtn: HTMLButtonElement;
+let clearSelectionBtn: HTMLButtonElement;
+let unfollowSelectedBtn: HTMLButtonElement | null;
+let toolbar: HTMLDivElement;
+let selectionCounter: HTMLSpanElement;
+let categoryTemplate: HTMLTemplateElement;
+let userTemplate: HTMLTemplateElement;
+let newCategoryBtn: HTMLButtonElement;
+let notificationBar: HTMLDivElement | null;
+let addCategoryModal: HTMLDivElement | null;
+let newCategoryInput: HTMLInputElement | null;
+let confirmNewCategoryBtn: HTMLButtonElement | null;
+let cancelNewCategoryBtn: HTMLButtonElement | null;
+let confirmModal: HTMLDivElement | null;
+let confirmMessage: HTMLParagraphElement | null;
+let cancelConfirmBtn: HTMLButtonElement | null;
+let confirmConfirmBtn: HTMLButtonElement | null;
+let processingOverlay: HTMLDivElement | null;
+
+// ===== DOM 初始化封装 =====
+function initDomRefs(): void {
+    initI18n();
+    categoryList = document.getElementById("category-list") as HTMLUListElement;
+    userList = document.getElementById("user-list") as HTMLDivElement;
+    emptyState = document.getElementById("empty-state") as HTMLDivElement;
+    noUsersMessage = document.getElementById("no-users-message") as HTMLDivElement;
+
+    syncButtons = [
+        document.getElementById("sync-btn") as HTMLButtonElement,
+        document.getElementById("empty-sync-btn") as HTMLButtonElement,
+    ];
+    syncStatus = document.getElementById("sync-status") as HTMLSpanElement;
+
+    assignSelect = document.getElementById("assign-category-select") as HTMLSelectElement;
+    assignBtn = document.getElementById("assign-category-btn") as HTMLButtonElement;
+    clearSelectionBtn = document.getElementById("clear-selection-btn") as HTMLButtonElement;
+    unfollowSelectedBtn = document.getElementById("unfollow-selected-btn") as HTMLButtonElement | null;
+
+    toolbar = document.getElementById("toolbar") as HTMLDivElement;
+    selectionCounter = document.getElementById("selection-counter") as HTMLSpanElement;
+
+    categoryTemplate = document.getElementById("category-item-template") as HTMLTemplateElement;
+    userTemplate = document.getElementById("user-card-template") as HTMLTemplateElement;
+
+    newCategoryBtn = document.getElementById("btn-new-category") as HTMLButtonElement;
+    notificationBar = document.getElementById("notification") as HTMLDivElement | null;
+
+    addCategoryModal = document.getElementById("modal-add-category") as HTMLDivElement | null;
+    newCategoryInput = document.getElementById("new-category-input") as HTMLInputElement | null;
+    confirmNewCategoryBtn = document.getElementById("btn-confirm-new-category") as HTMLButtonElement | null;
+    cancelNewCategoryBtn = document.getElementById("btn-cancel-new-category") as HTMLButtonElement | null;
+
+    confirmModal = document.getElementById("modal-confirm") as HTMLDivElement | null;
+    confirmMessage = document.getElementById("confirm-message") as HTMLParagraphElement | null;
+    cancelConfirmBtn = document.getElementById("btn-cancel-confirm") as HTMLButtonElement | null;
+    confirmConfirmBtn = document.getElementById("btn-confirm-confirm") as HTMLButtonElement | null;
+
+    processingOverlay = document.getElementById("unfollow-processing-overlay") as HTMLDivElement | null;
+
+    // ===== 🌍 初始化翻译（整合 applyTranslations） =====
+    document.querySelector(".sidebar-header h2")!.textContent = t("categories_title");
+    newCategoryBtn.textContent = "＋ " + t("new_category");
+
+    syncButtons[0].textContent = t("sync_followings");
+    syncButtons[1].textContent = t("sync_followings");
+    assignBtn.textContent = t("apply");
+    clearSelectionBtn.textContent = t("clear");
+    unfollowSelectedBtn!.textContent = t("unfollow_selected");
+
+    emptyState.querySelector("p")!.textContent = t("empty_hint_no_sync");
+    noUsersMessage.textContent = t("no_users_in_category");
+
+    const input = newCategoryInput!;
+    input.placeholder = t("enter_category_name");
+    document.getElementById("modal-add-category-title")!.textContent = t("create_new_category");
+    cancelNewCategoryBtn!.textContent = t("cancel");
+    confirmNewCategoryBtn!.textContent = t("confirm");
+
+    document.getElementById("modal-confirm-title")!.textContent = t("confirm_action");
+    cancelConfirmBtn!.textContent = t("cancel");
+    confirmConfirmBtn!.textContent = t("confirm");
+}
 
 type ConfirmCallback = () => void | Promise<void>;
 
@@ -121,6 +184,7 @@ let isProcessingUnfollow = false;
 document.addEventListener("DOMContentLoaded", initFollowingManager as EventListener);
 
 async function initFollowingManager() {
+    initDomRefs();
     await checkAndInitDatabase();
     bindEvents();
     await refreshData();
@@ -271,21 +335,9 @@ function hideConfirmModal() {
     closeModal(confirmModal);
 }
 
-function determineConfirmLabel(message: string): string {
-    const lower = message.toLowerCase();
-    if (lower.includes("delete")) {
-        return "Delete";
-    }
-    if (lower.includes("remove")) {
-        return "Yes, Remove";
-    }
-    return "Confirm";
-}
-
 function showConfirmModal(message: string, onConfirm: ConfirmCallback) {
     if (!confirmModal || !confirmMessage || !confirmConfirmBtn) return;
     confirmMessage.textContent = message;
-    confirmConfirmBtn.textContent = determineConfirmLabel(message);
     pendingConfirmHandler = onConfirm;
     openModal(confirmModal);
     window.setTimeout(() => {
@@ -304,7 +356,7 @@ async function handleConfirmModalConfirm() {
         await handler();
     } catch (error) {
         const err = error as Error;
-        showNotification(err?.message ?? "Operation failed.", "error");
+        showNotification(err?.message ?? t("operation_failed"), "error");
     } finally {
         hideConfirmModal();
     }
@@ -355,10 +407,11 @@ function renderCategoryList() {
 
     const counts = buildCategoryCountMap();
 
-    const allItem = createCategoryElement(ALL_FILTER, `All (${counts.total})`, true, counts);
+    const allLabel = `${t("category_all")} (${counts.total})`;
+    const allItem = createCategoryElement(ALL_FILTER, allLabel, true, counts);
     categoryList.appendChild(allItem);
 
-    const uncategorizedLabel = `Unassigned (${counts.uncategorized})`;
+    const uncategorizedLabel = `${t("category_uncategorized")} (${counts.uncategorized})`;
     const uncategorizedItem = createCategoryElement(UNCATEGORIZED_FILTER, uncategorizedLabel, true, counts);
     categoryList.appendChild(uncategorizedItem);
 
@@ -464,12 +517,12 @@ function renderAssignSelect() {
     assignSelect.innerHTML = "";
     const defaultOption = document.createElement("option");
     defaultOption.value = "";
-    defaultOption.textContent = "Assign to category…";
+    defaultOption.textContent = t("assign_to_category");
     assignSelect.appendChild(defaultOption);
 
     const removeOption = document.createElement("option");
     removeOption.value = UNCATEGORIZED_FILTER;
-    removeOption.textContent = "Remove from category";
+    removeOption.textContent = t("remove_from_category");
     assignSelect.appendChild(removeOption);
 
     categories
@@ -482,178 +535,6 @@ function renderAssignSelect() {
             assignSelect.appendChild(option);
         });
 }
-
-// function renderUserList() {
-//     userList.innerHTML = "";
-//     const filtered = getFilteredUsers();
-//
-//     if (filtered.length === 0) {
-//         noUsersMessage.style.display = unifiedKols.length === 0 ? "none" : "block";
-//     } else {
-//         noUsersMessage.style.display = "none";
-//     }
-//
-//     filtered
-//         .slice()
-//         .sort((a, b) => {
-//             const nameA = (a.displayName ?? a.screenName ?? a.key).toLowerCase();
-//             const nameB = (b.displayName ?? b.screenName ?? b.key).toLowerCase();
-//             return nameA.localeCompare(nameB);
-//         })
-//         .forEach((user) => {
-//             const card = userTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
-//             const checkbox = card.querySelector(".user-select") as HTMLInputElement;
-//             checkbox.dataset.key = user.key;
-//             checkbox.checked = selectedKeys.has(user.key);
-//             checkbox.addEventListener("change", () => toggleUserSelection(user.key, checkbox.checked));
-//
-//             const avatar = card.querySelector(".user-avatar") as HTMLImageElement;
-//             avatar.src = user.avatarUrl || "../images/logo_48.png";
-//             avatar.alt = `${user.displayName ?? user.screenName ?? user.key}'s avatar`;
-//
-//             const nameElm = card.querySelector(".name") as HTMLElement;
-//             nameElm.textContent = user.displayName ?? user.screenName ?? user.key;
-//             if (user.screenName) {
-//                 nameElm.style.cursor = "pointer";
-//                 nameElm.title = `Open @${user.screenName} on X`;
-//                 nameElm.addEventListener("click", (ev) => {
-//                     ev.stopPropagation();
-//                     window.open(`https://x.com/${user.screenName}`, "_blank");
-//                 });
-//             }
-//
-//             const handleElm = card.querySelector(".handle") as HTMLElement;
-//             handleElm.textContent = user.screenName ? `@${user.screenName}` : "";
-//
-//             // ---- 分类徽标（圆点 + 名称）----
-//             const badge = card.querySelector(".category-badge") as HTMLElement | null;
-//             const dot = card.querySelector(".category-dot") as HTMLElement | null;
-//             const catName = card.querySelector(".category-name") as HTMLElement | null;
-//
-//             if (badge && dot && catName) {
-//                 if (selectedFilter === ALL_FILTER && user.categoryName && user.categoryId != null) {
-//                     badge.classList.remove("hidden");
-//                     catName.textContent = user.categoryName;
-//                     dot.style.backgroundColor = choseColorByID(user.categoryId, 1);
-//                 } else {
-//                     badge.classList.add("hidden");
-//                 }
-//             }
-//
-// // ---- Bio 统一高度 + 悬浮完整显示 ----
-//             const bioWrapper = card.querySelector(".bio-wrapper") as HTMLElement | null;
-//             const bioText = card.querySelector(".bio-text") as HTMLElement | null;
-//             const bioTooltip = card.querySelector(".bio-tooltip") as HTMLElement | null;
-//
-//             if (bioWrapper && bioText && bioTooltip) {
-//                 if (user.bio && user.bio.trim().length > 0) {
-//                     bioText.textContent = user.bio.trim();
-//                     bioTooltip.textContent = user.bio.trim();
-//                     bioWrapper.classList.remove("hidden");
-//                 } else {
-//                     bioWrapper.classList.add("hidden");
-//                 }
-//             }
-//
-// // ---- 本地账号同步按钮 ----
-//             const syncBtn = card.querySelector(".sync-btn") as HTMLButtonElement | null;
-//             if (syncBtn) {
-//                 const isLocalOnly = !user.sources.includes("following");
-//
-//                 // ✅ 1. 只有本地账号才显示同步按钮
-//                 if (isLocalOnly) {
-//                     syncBtn.classList.remove("hidden");
-//
-//                     syncBtn.addEventListener("click", async (ev) => {
-//                         ev.stopPropagation();
-//
-//                         try {
-//                             showNotification(`正在同步 ${user.displayName ?? user.screenName ?? user.key} ...`);
-//
-//                             // 2️⃣ 发送请求获取账号最新信息
-//                             const resp = await sendMsgToService(user.screenName ?? user.key, MsgType.FollowingFetchOne);
-//
-//                             if (resp?.success && resp.data) {
-//                                 // 3️⃣ 合并数据：避免覆盖 categoryId、sources、key 等本地字段
-//                                 const updated = {
-//                                     ...user,          // 保留现有字段（包括 categoryId、sources）
-//                                     ...resp.data,     // 用远程数据覆盖补全字段（bio、followersCount 等）
-//                                     categoryId: user.categoryId ?? null,
-//                                     lastSyncedAt: Date.now(),
-//                                 };
-//
-//                                 await databaseUpdateOrAddItem(__tableFollowings, updated);
-//
-//                                 showNotification("账号信息已更新。", "info");
-//                                 await refreshData();
-//                             } else {
-//                                 showNotification("未找到该账号或同步失败。", "error");
-//
-//                                 const message = typeof resp?.data === "string" ? resp.data : resp?.error;
-//                                 if (message.includes(noXTabError)) {
-//                                     showConfirmModal(
-//                                         "SignIn Twitter（x.com）first please!",
-//                                         () => {
-//                                             window.open("https://x.com", "_blank")
-//                                         }
-//                                     );
-//                                 } else {
-//                                     showNotification(message || "Failed to unfollow selected accounts.", "error");
-//                                 }
-//                             }
-//                         } catch (err) {
-//                             showNotification("同步失败：" + (err as Error).message, "error");
-//                         }
-//                     });
-//                 } else {
-//                     syncBtn.classList.add("hidden");
-//                 }
-//             }
-//
-//
-//             const locationElm = card.querySelector(".location") as HTMLElement | null;
-//             const locationText = user.location ? `📍 ${user.location}` : undefined;
-//             setTextContentOrHide(locationElm, locationText);
-//
-//             const statsElm = card.querySelector(".stats") as HTMLElement | null;
-//             if (statsElm) {
-//                 const statsParts = [
-//                     formatStat(user.followersCount, "Followers"),
-//                     formatStat(user.friendsCount, "Following"),
-//                     formatStat(user.statusesCount, "Tweets"),
-//                 ].filter((part): part is string => typeof part === "string" && part.length > 0);
-//                 if (statsParts.length > 0) {
-//                     statsElm.textContent = statsParts.join(" • ");
-//                     statsElm.classList.remove("hidden");
-//                 } else {
-//                     statsElm.textContent = "";
-//                     statsElm.classList.add("hidden");
-//                 }
-//             }
-//
-//             const metaElm = card.querySelector(".meta") as HTMLElement | null;
-//             if (metaElm) {
-//                 const hasLocation = locationElm ? !locationElm.classList.contains("hidden") : false;
-//                 const hasStats = statsElm ? !statsElm.classList.contains("hidden") : false;
-//                 if (!hasLocation && !hasStats) {
-//                     metaElm.classList.add("hidden");
-//                 } else {
-//                     metaElm.classList.remove("hidden");
-//                 }
-//             }
-//
-//             card.addEventListener("click", (ev) => {
-//                 if (ev.target instanceof HTMLInputElement) return;
-//                 checkbox.checked = !checkbox.checked;
-//                 toggleUserSelection(user.key, checkbox.checked);
-//             });
-//
-//             card.classList.add(user.sources.includes("following") ? "is-following" : "is-local-only");
-//             userList.appendChild(card);
-//         });
-//
-//     updateSelectionSummary();
-// }
 
 function getFilteredUsers(): UnifiedKOL[] {
     if (!unifiedView) {
@@ -679,7 +560,8 @@ function toggleUserSelection(key: string, selected: boolean) {
 
 function updateSelectionSummary() {
     const count = selectedKeys.size;
-    selectionCounter.textContent = `${count} selected`;
+    // selectionCounter.textContent = `${count} selected`;
+    selectionCounter.textContent = t("selected_count", selectedKeys.size.toString());
     assignBtn.disabled = isProcessingUnfollow || count === 0;
     clearSelectionBtn.disabled = isProcessingUnfollow || count === 0;
     if (unfollowSelectedBtn) {
@@ -703,23 +585,23 @@ async function handleSyncClick() {
     try {
         const rsp = await sendMsgToService({}, MsgType.FollowingSync)// browser.runtime.sendMessage({action: MsgType.FollowingSync});
         if (!rsp?.success) {
-            const message = typeof rsp?.data === "string" ? rsp.data : "Failed to sync followings.";
+            const message = typeof rsp?.data === "string" ? rsp.data : t("failed_to_sync_followings");
             if (typeof message === "string" && message.includes(noXTabError)) {
                 showConfirmModal(
-                    "Please sign in to Twitter (x.com) first!",
+                    t("confirm_signin_x_first"),
                     () => {
                         window.open("https://x.com", "_blank");
                     }
                 );
             } else {
-                showNotification(message || "Failed to unfollow selected accounts.", "error");
+                showNotification(message || t("failed_to_unfollow_selected"), "error");
             }
             return;
         }
 
         const users = rsp.data as FollowingUser[] ?? [];
         await replaceFollowingsPreservingCategories(users);
-        syncStatus.textContent = `Synced ${users.length} followings.`;
+        syncStatus.textContent = t("synced_followings_count", users.length.toString());
         selectedKeys.clear();
         await refreshData();
     } catch (error) {
@@ -734,11 +616,11 @@ function setSyncLoading(loading: boolean) {
     syncButtons.forEach((btn) => {
         if (!btn) return;
         btn.disabled = loading;
-        btn.textContent = loading ? "Syncing…" : "Sync Followings";
+        btn.textContent = loading ? t("syncing") : t("sync_followings");
     });
     if (loading) {
-        syncStatus.textContent = "Syncing followings…";
-    } else if (unifiedKols.length === 0) {
+        syncStatus.textContent = t("syncing_followings");
+    } else {
         syncStatus.textContent = "";
     }
 }
@@ -764,15 +646,15 @@ function getUnfollowTargets(): UnfollowTarget[] {
 function handleUnfollowSelected() {
     const targets = getUnfollowTargets();
     if (targets.length === 0) {
-        showNotification("No real followings to unfollow.", "info");
+        showNotification(t("no_real_followings_to_unfollow"), "info");
         return;
     }
     const message =
         targets.length === 1
-            ? "Unfollow the selected account?"
-            : `Unfollow ${targets.length} selected accounts?`;
+            ? t("confirm_unfollow_selected_one")
+            : t("confirm_unfollow_selected", targets.length.toString());
     showConfirmModal(message, () => {
-         performBatchUnfollow(targets).then();
+        performBatchUnfollow(targets).then();
     });
 }
 
@@ -806,7 +688,7 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
         );
 
         if (userIds.length === 0) {
-            showNotification("No valid accounts to unfollow.", "error");
+            showNotification(t("no_valid_accounts_to_unfollow"), "error");
             return;
         }
 
@@ -816,7 +698,7 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
         }, MsgType.FollowingBulkUnfollow)
 
         if (!response) {
-            showNotification("No response from background script. Please try again.", "error");
+            showNotification(t("no_response_from_background"), "error");
             return;
         }
 
@@ -824,13 +706,13 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
             const message = typeof response?.data === "string" ? response.data : response?.error;
             if (typeof message === "string" && message.includes("no_x_tab")) {
                 showConfirmModal(
-                    "Please sign in to Twitter (x.com) first!",
+                    t('confirm_signin_x_first'),
                     () => {
                         window.open("https://x.com", "_blank");
                     }
                 );
             } else {
-                showNotification(message || "Failed to unfollow selected accounts.", "error");
+                showNotification(message || t("failed_to_unfollow_selected"), "error");
             }
             return;
         }
@@ -858,7 +740,7 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
                 "info",
             );
         } else if (successCount === 0) {
-            showNotification("Failed to unfollow selected accounts.", "error");
+            showNotification(t("failed_to_unfollow_selected"), "error");
         } else {
             showNotification(
                 `Unfollowed ${successCount} account${successCount === 1 ? "" : "s"}. ${failureCount} failed.`,
@@ -867,7 +749,7 @@ async function performBatchUnfollow(targets: UnfollowTarget[]) {
         }
     } catch (error) {
         const err = error as Error;
-        showNotification(err?.message ?? "Failed to unfollow selected accounts.", "error");
+        showNotification(err?.message ?? t("failed_to_unfollow_selected"), "error");
     } finally {
         isProcessingUnfollow = false;
         hideProcessingOverlay();
@@ -882,7 +764,7 @@ function handleAssignCategory() {
     if (value === "") return;
     const categoryId = value === UNCATEGORIZED_FILTER ? null : Number(value);
     if (categoryId !== null && Number.isNaN(categoryId)) {
-        showNotification("Please select a valid category.", "error");
+        showNotification(t("please_select_valid_category"), "error");
         return;
     }
 
@@ -891,7 +773,7 @@ function handleAssignCategory() {
     };
 
     if (categoryId === null) {
-        showConfirmModal("Remove selected KOLs from this category?", handler);
+        showConfirmModal(t("confirm_remove_from_category"), handler);
     } else {
         void handler();
     }
@@ -905,20 +787,20 @@ async function applyCategoryAssignment(keys: string[], categoryId: number | null
         await refreshData();
         const message =
             categoryId === null
-                ? "Removed selected KOLs from this category."
-                : "Assigned selected KOLs to the selected category.";
+                ? t("removed_from_category_success")
+                : t("assigned_to_category_success");
         showNotification(message, "info");
     } catch (error) {
         const err = error as Error;
-        showNotification(err?.message ?? "Failed to update category assignment.", "error");
+        showNotification(err?.message ?? t("failed_to_update_category_assignment"), "error");
     }
 }
 
 async function addNewCategory(name: string) {
     const trimmed = name.trim();
     if (!trimmed) {
-        showNotification("Category name cannot be empty.", "error");
-        throw new Error("Category name cannot be empty.");
+        showNotification(t("category_name_empty"), "error");
+        throw new Error(t("category_name_empty"));
     }
     const category = new Category(trimmed);
     delete category.id;
@@ -928,20 +810,20 @@ async function addNewCategory(name: string) {
         categories.push(category);
         renderCategoryList();
         renderAssignSelect();
-        showNotification(`Created category "${category.catName}".`, "info");
+        showNotification(t("created_category", category.catName), "info");
     } catch (error) {
         console.warn("------>>> add category failed", error);
-        showNotification("Failed to create category.", "error");
+        showNotification(t("failed_to_create_category"), "error");
         throw error;
     }
 }
 
 async function handleRenameCategory(category: Category) {
-    const name = prompt("Rename category", category.catName);
+    const name = prompt(t("rename_category_prompt"), category.catName);
     if (!name) return;
     const trimmed = name.trim();
     if (!trimmed) {
-        showNotification("Category name cannot be empty.", "error");
+        showNotification(t("category_name_empty"), "error");
         return;
     }
     category.catName = trimmed;
@@ -950,15 +832,15 @@ async function handleRenameCategory(category: Category) {
         categories = categories.map((cat) => (cat.id === category.id ? category : cat));
         renderCategoryList();
         renderAssignSelect();
-        showNotification(`Renamed category to "${category.catName}".`, "info");
+        showNotification(t("renamed_category", category.catName), "info");
     } catch (error) {
         console.warn("------>>> rename category failed", error);
-        showNotification("Failed to rename category.", "error");
+        showNotification(t("failed_to_rename_category"), "error");
     }
 }
 
 function handleDeleteCategory(category: Category) {
-    showConfirmModal(`Delete category "${category.catName}"?`, async () => {
+    showConfirmModal(t("confirm_delete_category", category.catName), async () => {
         try {
             await removeCategory(category.id!);
             if (selectedFilter === category.id) {
@@ -966,10 +848,10 @@ function handleDeleteCategory(category: Category) {
             }
             selectedKeys.clear();
             await refreshData();
-            showNotification("Category deleted.", "info");
+            showNotification(t("category_deleted"), "info");
         } catch (error) {
             console.warn("------>>> delete category failed", error);
-            showNotification("Failed to delete category.", "error");
+            showNotification(t("failed_to_delete_category"), "error");
         }
     });
 }
@@ -1018,7 +900,7 @@ async function buildUnifiedKOLView(): Promise<UnifiedKOLView> {
             key,
             screenName,
             displayName: user.name ?? screenName,
-            userId: user.id,
+            userId: user.userId,
             avatarUrl: user.avatarUrl,
             categoryId: initialCategoryId,
             categoryName: initialCategoryName,
@@ -1200,23 +1082,9 @@ async function removeUnfollowedFromView(userIds: string[]) {
                 (u) => u.userId !== user.userId,
             );
         }
-
-        // 分类数据不动
     }
 
-    // ✅ 同步后台删除（防止刷新恢复）
-    if (localRemoveIds.length > 0) {
-        try {
-            await browser.runtime.sendMessage({
-                action: MsgType.FollowingRemoveLocal,
-                data: {userIds: localRemoveIds},
-            });
-        } catch (err) {
-            console.warn("------>>> removeUnfollowedFromView: failed to remove locally", err);
-        }
-    }
-
-    // 刷新前端展示
+    await removeLocalFollowings(userIds);
     renderAll();
 }
 
@@ -1324,6 +1192,7 @@ function fillUserBio(card: HTMLElement, user: UnifiedKOL) {
         bioWrapper.classList.add("hidden");
     }
 }
+
 function fillUserSyncButton(card: HTMLElement, user: UnifiedKOL) {
     const syncBtn = card.querySelector(".sync-btn") as HTMLButtonElement | null;
     if (!syncBtn) return;
@@ -1339,30 +1208,32 @@ function fillUserSyncButton(card: HTMLElement, user: UnifiedKOL) {
     syncBtn.addEventListener("click", async (ev) => {
         ev.stopPropagation();
         try {
-            showNotification(`正在同步 ${user.displayName ?? user.screenName ?? user.key} ...`);
+            showNotification(t("syncing_user", user.displayName ?? user.screenName ?? user.key));
             const resp = await sendMsgToService(user.screenName ?? user.key, MsgType.FollowingFetchOne);
 
             if (resp?.success && resp.data) {
-                const updated = { ...user, ...resp.data, categoryId: user.categoryId ?? null, lastSyncedAt: Date.now() };
+                const updated = {...user, ...resp.data, categoryId: user.categoryId ?? null, lastSyncedAt: Date.now()};
                 await databaseUpdateOrAddItem(__tableFollowings, updated);
-                showNotification("账号信息已更新。", "info");
+                showNotification(t("account_updated"), "info");
                 await refreshData();
             } else {
                 handleSyncError(resp);
             }
         } catch (err) {
-            showNotification("同步失败：" + (err as Error).message, "error");
+            showNotification(t("sync_failed_with_error", (err as Error).message), "error");
         }
     });
 }
 
 function handleSyncError(resp: any) {
-    showNotification("未找到该账号或同步失败。", "error");
+    showNotification(t("sync_user_not_found"), "error");
     const message = typeof resp?.data === "string" ? resp.data : resp?.error;
     if (message?.includes(noXTabError)) {
-        showConfirmModal("SignIn Twitter（x.com）first please!", () => {window.open("https://x.com", "_blank")});
+        showConfirmModal(t("confirm_signin_x_first"), () => {
+            window.open("https://x.com", "_blank")
+        });
     } else {
-        showNotification(message || "Failed to unfollow selected accounts.", "error");
+        showNotification(message || t('failed_to_unfollow_selected'), "error");
     }
 }
 
@@ -1403,3 +1274,4 @@ function attachUserCardEvents(card: HTMLElement, user: UnifiedKOL) {
         toggleUserSelection(user.key, checkbox.checked);
     });
 }
+

@@ -26,7 +26,7 @@ export function setSelectedCategory(catID: number = defaultAllCategoryID) {
 }
 
 export async function addMoreCategory() {
-    await sendMsgToService("#onboarding/main-home", MsgType.OpenPlugin);
+    await sendMsgToService("#onboarding/main-home", MsgType.OpenCategoryManagement);
 }
 
 const onNewestNotificationClick = async (ev: Event) => {

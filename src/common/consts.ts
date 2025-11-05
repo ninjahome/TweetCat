@@ -20,7 +20,7 @@ export function choseColorByID(id: number, opacity: number = 1): string {
 export const __DBK_AD_Block_Key = "__DBK_AD_Block_Key";
 
 export enum MsgType {
-    OpenPlugin = 'OpenPlugin',
+    OpenCategoryManagement = 'OpenCategoryManagement',
     NaviUrlChanged = 'NaviUrlChanged',
     StartTweetsFetch = 'StartTweetsFetch',
     StartKolIdCheck = 'StartKolIdCheck',
@@ -33,7 +33,6 @@ export enum MsgType {
     FollowingSync = 'FollowingSync',
     FollowingAssignCategory = 'FollowingAssignCategory',
     FollowingBulkUnfollow = 'FollowingBulkUnfollow',
-    FollowingRemoveLocal = 'FollowingRemoveLocal',
     FollowingFetchOne = 'FollowingFetchOne',
 
     KolQueryAll = 'KolQueryAll',

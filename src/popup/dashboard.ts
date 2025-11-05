@@ -8,7 +8,7 @@ import {sendMessageToX} from "../service_work/bg_msg";
 import {localGet, localSet} from "../common/local_storage";
 import {Category} from "../object/category";
 import {getSystemSetting, switchAdOn} from "../object/system_setting";
-import {t} from "../common/i18n";
+import {initI18n, t} from "../common/i18n";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
 let routeTarget = "";
 
 async function initDashBoard(): Promise<void> {
+    initI18n();
     await checkAndInitDatabase();
     if (routeTarget) {
         showView(routeTarget, dashRouter);
@@ -32,7 +33,6 @@ function dashRouter(path: string): void {
     // console.log("------>>> show view for path:", path);
     if (path === '#onboarding/main-home') {
         setHomeStatus().then();
-
     } else if (path === '#onboarding/category-manager') {
     }
 }

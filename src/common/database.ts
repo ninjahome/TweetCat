@@ -4,7 +4,7 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 17;
+export const __currentDatabaseVersion = 19;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -187,7 +187,7 @@ async function initFollowingsTable(request: IDBOpenDBRequest) {
     const db = request.result;
 
     if (!db.objectStoreNames.contains(__tableFollowings)) {
-        const store = db.createObjectStore(__tableFollowings, {keyPath: 'id'});
+        const store = db.createObjectStore(__tableFollowings, {keyPath: 'userId'});
         store.createIndex('idx_category', 'categoryId', {unique: false});
         logDB("------>>>[Database] Created followings table successfully.");
         return;

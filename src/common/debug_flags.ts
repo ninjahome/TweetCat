@@ -25,7 +25,7 @@ export const DBG = {
     InjectCapture:false,
     Youtube:false,
     AiTrendApi:false,
-    FollowMgn:false,
+    FollowMgn:true,
     UserIfo:false,
 } as const;
 

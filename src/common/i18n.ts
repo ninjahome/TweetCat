@@ -56,7 +56,12 @@ export function t(key: string, substitutions?: string | string[]): string {
 /**
  * 初始化语言环境（建议在 content script 启动时调用）
  */
+
 export function initI18n(): void {
-    const detected = detectTwitterLang();
-    console.log(`[i18n] initialized with locale: ${detected}`);
+    if (window.location.protocol.startsWith("chrome-extension")) {
+        currentLocale = navigator.language.toLowerCase();
+    } else {
+        currentLocale = detectTwitterLang();
+    }
+    console.log(`[i18n] initialized with locale: ${currentLocale}`);
 }

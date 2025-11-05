@@ -23,8 +23,7 @@ import {addBlockedAdsNumber} from "../object/system_setting";
 import {checkLocalApp, openLocalApp} from "./local_app";
 import {
     assignFollowingsToCategory,
-    loadAllFollowings,
-    removeLocalFollowings
+    loadAllFollowings
 } from "../object/following";
 
 
@@ -43,8 +42,10 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return await sendMessageToX(MsgType.FollowingBulkUnfollow, request.data);
         }
 
-        case MsgType.OpenPlugin: {
-            await openPlugin();
+        case MsgType.OpenCategoryManagement: {
+            await browser.tabs.create({
+                url: browser.runtime.getURL("html/following_mgm.html"),
+            });
             return {success: true};
         }
 
@@ -66,11 +67,6 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.FollowingQueryAll: {
             const followings = await loadAllFollowings();
             return {success: true, data: followings};
-        }
-
-        case MsgType.FollowingRemoveLocal: {
-            const {userIds} = request.data || {};
-            return await removeLocalFollowings(userIds);
         }
 
         case MsgType.FollowingAssignCategory: {
@@ -195,9 +191,6 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
     }
 }
 
-async function openPlugin() {
-    await browser.action.openPopup();
-}
 
 export async function sendMessageToX(action: string, data: any, onlyFirstTab: boolean = true, url = '*://x.com/*'): Promise<any> {
     const tabs = await browser.tabs.query({

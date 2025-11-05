@@ -75,9 +75,6 @@
   "add_new_category": {
     "message": "新增分类"
   },
-  "enter_category_name": {
-    "message": "输入分类名称"
-  },
   "confirm_message": {
     "message": "提示信息..."
   },
@@ -107,9 +104,6 @@
   },
   "alt_use_category": {
     "message": "使用分类"
-  },
-  "alt_manage_category": {
-    "message": "管理分类"
   },
   "alt_manage_kol": {
     "message": "管理 KOL"
@@ -200,5 +194,146 @@
   },
   "total_score_title": {
     "message": "等级分"
+  },
+  "categories_title": {
+    "message": "分类"
+  },
+  "new_category": {
+    "message": "新建"
+  },
+  "sync_followings": {
+    "message": "同步关注列表"
+  },
+  "selected_count": {
+    "message": "已选择 $1 个"
+  },
+  "apply": {
+    "message": "应用"
+  },
+  "clear": {
+    "message": "清除"
+  },
+  "unfollow_selected": {
+    "message": "取消关注选中项"
+  },
+  "empty_hint_no_sync": {
+    "message": "你还没有同步关注列表。"
+  },
+  "no_users_in_category": {
+    "message": "此分类下没有用户。"
+  },
+  "create_new_category": {
+    "message": "创建新分类"
+  },
+  "enter_category_name": {
+    "message": "输入分类名称..."
+  },
+  "confirm_action": {
+    "message": "确认操作"
+  },
+  "processing": {
+    "message": "处理中..."
+  },
+  "category_all": {
+    "message": "全部"
+  },
+  "category_uncategorized": {
+    "message": "未分配"
+  },
+  "assign_to_category": {
+    "message": "分配到分类…"
+  },
+  "remove_from_category": {
+    "message": "从分类中移除"
+  },
+  "no_real_followings_to_unfollow": {
+    "message": "没有可取消关注的账号。"
+  },
+  "confirm_unfollow_selected_one": {
+    "message": "确定取消关注所选账号？"
+  },
+  "confirm_unfollow_selected": {
+    "message": "确定取消关注已选的 $1 个账号？"
+  },
+  "confirm_remove_from_category": {
+    "message": "确定要将所选账号从此分类中移除？"
+  },
+  "confirm_delete_category": {
+    "message": "确定要删除分类「$1」吗？"
+  },
+  "confirm_signin_x_first": {
+    "message": "请先登录 Twitter（x.com）账号！"
+  },
+  "operation_failed": {
+    "message": "操作失败。"
+  },
+  "failed_to_sync_followings": {
+    "message": "同步关注列表失败。"
+  },
+  "failed_to_unfollow_selected": {
+    "message": "取消关注失败。"
+  },
+  "synced_followings_count": {
+    "message": "已同步 $1 个关注账号。"
+  },
+  "syncing": {
+    "message": "正在同步…"
+  },
+  "syncing_followings": {
+    "message": "正在同步关注列表…"
+  },
+  "no_valid_accounts_to_unfollow": {
+    "message": "没有可取消关注的账号。"
+  },
+  "no_response_from_background": {
+    "message": "后台无响应，请重试。"
+  },
+  "please_select_valid_category": {
+    "message": "请选择有效的分类。"
+  },
+  "removed_from_category_success": {
+    "message": "已将所选账号从分类中移除。"
+  },
+  "assigned_to_category_success": {
+    "message": "已将所选账号加入所选分类。"
+  },
+  "failed_to_update_category_assignment": {
+    "message": "更新分类分配失败。"
+  },
+  "category_name_empty": {
+    "message": "分类名称不能为空。"
+  },
+  "created_category": {
+    "message": "已创建分类「$1」。"
+  },
+  "failed_to_create_category": {
+    "message": "创建分类失败。"
+  },
+  "rename_category_prompt": {
+    "message": "重命名分类"
+  },
+  "renamed_category": {
+    "message": "已将分类重命名为「$1」。"
+  },
+  "failed_to_rename_category": {
+    "message": "重命名分类失败。"
+  },
+  "category_deleted": {
+    "message": "分类已删除。"
+  },
+  "failed_to_delete_category": {
+    "message": "删除分类失败。"
+  },
+  "syncing_user": {
+    "message": "正在同步 $1 ..."
+  },
+  "account_updated": {
+    "message": "账号信息已更新。"
+  },
+  "sync_failed_with_error": {
+    "message": "同步失败：$1"
+  },
+  "sync_user_not_found": {
+    "message": "未找到该账号或同步失败。"
   }
 }
