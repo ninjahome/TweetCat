@@ -20,6 +20,7 @@ import {FollowingUser, removeLocalFollowings, replaceFollowingsPreservingCategor
 import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
+import {showNotification} from "./common";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -99,7 +100,6 @@ let selectionCounter: HTMLSpanElement;
 let categoryTemplate: HTMLTemplateElement;
 let userTemplate: HTMLTemplateElement;
 let newCategoryBtn: HTMLButtonElement;
-let notificationBar: HTMLDivElement | null;
 let addCategoryModal: HTMLDivElement | null;
 let newCategoryInput: HTMLInputElement | null;
 let confirmNewCategoryBtn: HTMLButtonElement | null;
@@ -136,7 +136,6 @@ function initDomRefs(): void {
     userTemplate = document.getElementById("user-card-template") as HTMLTemplateElement;
 
     newCategoryBtn = document.getElementById("btn-new-category") as HTMLButtonElement;
-    notificationBar = document.getElementById("notification") as HTMLDivElement | null;
 
     addCategoryModal = document.getElementById("modal-add-category") as HTMLDivElement | null;
     newCategoryInput = document.getElementById("new-category-input") as HTMLInputElement | null;
@@ -178,7 +177,6 @@ type ConfirmCallback = () => void | Promise<void>;
 
 let activeModal: HTMLElement | null = null;
 let pendingConfirmHandler: ConfirmCallback | null = null;
-let notificationTimer: number | null = null;
 let isProcessingUnfollow = false;
 
 document.addEventListener("DOMContentLoaded", initFollowingManager as EventListener);
@@ -231,33 +229,6 @@ function bindEvents() {
     });
 
     document.addEventListener("keydown", handleGlobalKeydown);
-}
-
-function showNotification(message: string, type: "info" | "error" = "info", duration = 4000) {
-    if (!notificationBar) return;
-    notificationBar.textContent = message;
-    notificationBar.classList.remove("hidden", "info", "error");
-    notificationBar.classList.add(type);
-    if (notificationTimer) {
-        window.clearTimeout(notificationTimer);
-        notificationTimer = null;
-    }
-    if (duration > 0 && message) {
-        notificationTimer = window.setTimeout(() => {
-            hideNotification();
-        }, duration);
-    }
-}
-
-function hideNotification() {
-    if (!notificationBar) return;
-    notificationBar.textContent = "";
-    notificationBar.classList.add("hidden");
-    notificationBar.classList.remove("info", "error");
-    if (notificationTimer) {
-        window.clearTimeout(notificationTimer);
-        notificationTimer = null;
-    }
 }
 
 function openModal(modal: HTMLElement | null) {

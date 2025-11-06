@@ -13,31 +13,6 @@ body.modal-open {
     overflow: hidden;
 }
 
-.notification {
-    position: fixed;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 12px 20px;
-    border-radius: 999px;
-    background: rgba(29, 155, 240, 0.1);
-    color: #0f1419;
-    box-shadow: 0 10px 30px rgba(15, 20, 25, 0.12);
-    z-index: 1200;
-    font-size: 14px;
-    transition: opacity 0.2s ease;
-}
-
-.notification.info {
-    background: rgba(29, 155, 240, 0.12);
-    color: #0f1419;
-}
-
-.notification.error {
-    background: rgba(244, 33, 46, 0.12);
-    color: #f4212e;
-}
-
 .follow-manager {
     display: flex;
     height: 100vh;

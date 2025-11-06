@@ -4,7 +4,6 @@ import {__DBK_AD_Block_Key, MsgType} from "../common/consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/database";
 import {showView} from "../common/utils";
 import {loadCategories} from "../object/category";
-import {hideLoading, showAlert, showLoading} from "./dash_common";
 import {sendMessageToX} from "../service_work/bg_msg";
 import {localGet, localSet} from "../common/local_storage";
 import {Category} from "../object/category";
@@ -18,6 +17,7 @@ import {
     TCWallet,
     WalletSettings
 } from "../wallet/wallet_api";
+import {hideLoading, showLoading, showNotification} from "./common";
 
 const ARBITRUM_CHAIN_ID = 42161;
 const DEFAULT_RPC_URL = "https://arb1.arbitrum.io/rpc";
@@ -31,7 +31,6 @@ type PasswordPrompt = () => Promise<string>;
 
 let currentWallet: TCWallet | null = null;
 let currentSettings: WalletSettings = {...defaultWalletSettings};
-let walletControlsInitialized = false;
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -142,34 +141,28 @@ function initSettings() {
 
 
 async function initWalletOrCreate(): Promise<void> {
-    const walletCreateBtn = document.getElementById("btn-create-wallet") as HTMLButtonElement;
+    const walletCreateDiv = document.getElementById("wallet-create-div") as HTMLButtonElement;//btn-create-wallet
     const walletInfoDiv = document.getElementById("wallet-info-area") as HTMLDivElement;
     const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
+    const walletSettingBtn = document.getElementById("wallet-settings-btn") as HTMLButtonElement;
 
     currentWallet = await loadWallet();
     currentSettings = await loadWalletSettings();
 
     if (!currentWallet) {
-        walletCreateBtn.style.display = "block";
+        walletCreateDiv.style.display = "block";
         walletInfoDiv.style.display = "none";
-        walletCreateBtn.onclick = async () => {
+        (walletCreateDiv.querySelector(".btn-create-wallet") as HTMLButtonElement).onclick = async () => {
             await browser.tabs.create({
                 url: browser.runtime.getURL("html/wallet_new.html"),
             });
         };
-    } else {
-        walletCreateBtn.style.display = "none";
-        walletInfoDiv.style.display = "block";
-        await populateWalletInfo(walletInfoDiv, currentWallet);
+        return;
     }
-
-    if (!walletControlsInitialized) {
-        setupWalletActionButtons();
-        walletControlsInitialized = true;
-    }
-
+    walletCreateDiv.style.display = "none";
+    walletInfoDiv.style.display = "block";
+    await populateWalletInfo(walletInfoDiv, currentWallet);
     updateSettingsUI(currentSettings);
-    updateWalletStatus(walletStatus, currentWallet ? "钱包已准备就绪" : "请先创建或导入钱包");
 }
 
 async function populateWalletInfo(container: HTMLDivElement, wallet: TCWallet): Promise<void> {
@@ -274,7 +267,7 @@ async function handleSaveSettings(): Promise<void> {
 
     await saveWalletSettings(newSettings);
     currentSettings = newSettings;
-    updateWalletStatus(walletStatus, "节点配置已保存");
+    showNotification("节点配置已保存");
     notifySettingsChanged();
     await refreshBalances();
 }
@@ -284,7 +277,7 @@ async function handleResetSettings(): Promise<void> {
     currentSettings = {...defaultWalletSettings};
     updateSettingsUI(currentSettings);
     await saveWalletSettings(currentSettings);
-    updateWalletStatus(walletStatus, "已恢复默认节点配置");
+    showNotification("已恢复默认节点配置");
     notifySettingsChanged();
     await refreshBalances();
 }
@@ -305,12 +298,12 @@ async function refreshBalances(showStatus = true): Promise<void> {
     if (!currentWallet) {
         if (ethSpan) ethSpan.textContent = "--";
         if (usdtSpan) usdtSpan.textContent = "--";
-        if (showStatus) updateWalletStatus(walletStatus, "请先创建或导入钱包", true);
+        if (showStatus) showNotification("请先创建或导入钱包", "error");
         return;
     }
 
     try {
-        if (showStatus) updateWalletStatus(walletStatus, "正在刷新余额...");
+        if (showStatus) showNotification("正在刷新余额...");
         const provider = createProvider(currentSettings);
         const usdtContract = new ethers.Contract(USDT_CONTRACT_ADDRESS, ERC20_ABI, provider);
 
@@ -326,19 +319,14 @@ async function refreshBalances(showStatus = true): Promise<void> {
             usdtSpan.textContent = formatTokenAmount(usdtBalance, 6);
         }
 
-        if (showStatus) updateWalletStatus(walletStatus, "余额已刷新");
+        if (showStatus) showNotification("余额已刷新");
     } catch (error) {
         if (showStatus) {
-            updateWalletStatus(walletStatus, (error as Error).message ?? "刷新余额失败", true);
+            showNotification((error as Error).message ?? "刷新余额失败", "error");
         }
     }
 }
 
-function updateWalletStatus(element: HTMLDivElement | null, message: string, isError = false): void {
-    if (!element) return;
-    element.textContent = message;
-    element.classList.toggle("error", isError);
-}
 
 function getRpcEndpoint(settings: WalletSettings): string {
     const infuraId = settings.infuraProjectId?.trim();
@@ -369,7 +357,7 @@ function formatTokenAmount(value: ethers.BigNumber, decimals: number): string {
 async function handleExportPrivateKey(): Promise<void> {
     const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     if (!currentWallet) {
-        updateWalletStatus(walletStatus, "请先创建或导入钱包", true);
+        showNotification("请先创建或导入钱包", "info");
         return;
     }
 
@@ -379,10 +367,10 @@ async function handleExportPrivateKey(): Promise<void> {
             () => requestPassword("请输入钱包口令以导出私钥"),
             async wallet => wallet.privateKey
         );
-        updateWalletStatus(walletStatus, "私钥仅一次性展示，请妥善保管");
+        showNotification("私钥仅一次性展示，请妥善保管");
         window.alert(`私钥：${privateKey}`);
     } catch (error) {
-        updateWalletStatus(walletStatus, (error as Error).message ?? "导出私钥失败", true);
+        showNotification((error as Error).message ?? "导出私钥失败", "error");
     } finally {
         privateKey = "";
     }
@@ -391,7 +379,7 @@ async function handleExportPrivateKey(): Promise<void> {
 async function handleTransferEth(): Promise<void> {
     const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     if (!currentWallet) {
-        updateWalletStatus(walletStatus, "请先创建或导入钱包", true);
+        showNotification("请先创建或导入钱包", "info");
         return;
     }
 
@@ -408,17 +396,17 @@ async function handleTransferEth(): Promise<void> {
             gas: gasInput?.trim() ? gasInput.trim() : undefined,
             passwordPrompt: () => requestPassword("请输入钱包口令以发送 ETH")
         });
-        updateWalletStatus(walletStatus, `交易已发送：${txHash}`);
+        showNotification(`交易已发送：${txHash}`);
         await refreshBalances();
     } catch (error) {
-        updateWalletStatus(walletStatus, (error as Error).message ?? "转账失败", true);
+        showNotification((error as Error).message ?? "转账失败", "error");
     }
 }
 
 async function handleTransferToken(): Promise<void> {
     const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     if (!currentWallet) {
-        updateWalletStatus(walletStatus, "请先创建或导入钱包", true);
+        showNotification("请先创建或导入钱包", "info");
         return;
     }
 
@@ -442,17 +430,17 @@ async function handleTransferToken(): Promise<void> {
             gas: gasInput?.trim() ? gasInput.trim() : undefined,
             passwordPrompt: () => requestPassword("请输入钱包口令以发送代币")
         });
-        updateWalletStatus(walletStatus, `代币转账已发送：${txHash}`);
+        showNotification(`代币转账已发送：${txHash}`);
         await refreshBalances();
     } catch (error) {
-        updateWalletStatus(walletStatus, (error as Error).message ?? "代币转账失败", true);
+        showNotification((error as Error).message ?? "代币转账失败", "error");
     }
 }
 
 async function handleSignMessage(): Promise<void> {
     const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     if (!currentWallet) {
-        updateWalletStatus(walletStatus, "请先创建或导入钱包", true);
+        showNotification("请先创建或导入钱包", "info");
         return;
     }
 
@@ -464,17 +452,17 @@ async function handleSignMessage(): Promise<void> {
             message,
             passwordPrompt: () => requestPassword("请输入钱包口令以签名消息")
         });
-        updateWalletStatus(walletStatus, "消息签名已生成");
+        showNotification("消息签名已生成");
         window.alert(`签名：${signature}`);
     } catch (error) {
-        updateWalletStatus(walletStatus, (error as Error).message ?? "签名失败", true);
+        showNotification((error as Error).message ?? "签名失败", "error");
     }
 }
 
 async function handleSignTypedData(): Promise<void> {
     const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     if (!currentWallet) {
-        updateWalletStatus(walletStatus, "请先创建或导入钱包", true);
+        showNotification("请先创建或导入钱包", "info");
         return;
     }
 
@@ -492,11 +480,11 @@ async function handleSignTypedData(): Promise<void> {
             value: parsed.value,
             passwordPrompt: () => requestPassword("请输入钱包口令以签名数据")
         });
-        updateWalletStatus(walletStatus, "TypedData 签名已生成");
+        showNotification("TypedData 签名已生成");
         window.alert(`签名：${signature}`);
     } catch (error) {
         const message = error instanceof SyntaxError ? "JSON 解析失败" : (error as Error).message;
-        updateWalletStatus(walletStatus, message ?? "签名失败", true);
+        showNotification(message ?? "签名失败", "error");
     }
 }
 
@@ -528,14 +516,14 @@ async function handleVerifySignature(): Promise<void> {
         }
 
         if (typeof result === "boolean") {
-            updateWalletStatus(walletStatus, result ? "签名验证通过" : "签名验证失败", !result);
+            showNotification(result ? "签名验证通过" : "签名验证失败", "error");
         } else {
-            updateWalletStatus(walletStatus, "签名者地址已解析");
+            showNotification("签名者地址已解析");
             window.alert(`签名者：${result}`);
         }
     } catch (error) {
         const message = error instanceof SyntaxError ? "JSON 解析失败" : (error as Error).message;
-        updateWalletStatus(walletStatus, message ?? "验签失败", true);
+        showNotification(message ?? "验签失败", "error");
     }
 }
 
@@ -647,7 +635,14 @@ export async function transferEth({to, amountEther, gas, passwordPrompt}: Transf
     });
 }
 
-export async function transferErc20({tokenAddress, to, amount, decimals, gas, passwordPrompt}: TransferErc20Params): Promise<string> {
+export async function transferErc20({
+                                        tokenAddress,
+                                        to,
+                                        amount,
+                                        decimals,
+                                        gas,
+                                        passwordPrompt
+                                    }: TransferErc20Params): Promise<string> {
     if (!ethers.utils.isAddress(tokenAddress)) {
         throw new Error("代币合约地址无效");
     }
@@ -683,7 +678,12 @@ export async function signTypedData({domain, types, value, passwordPrompt}: Sign
     return withDecryptedWallet(passwordPrompt, wallet => wallet._signTypedData(domain, types, value));
 }
 
-export async function verifySignature({message, typed, signature, expectedAddress}: VerifySignatureParams): Promise<boolean | string> {
+export async function verifySignature({
+                                          message,
+                                          typed,
+                                          signature,
+                                          expectedAddress
+                                      }: VerifySignatureParams): Promise<boolean | string> {
     if (!signature) {
         throw new Error("缺少签名");
     }
@@ -701,4 +701,29 @@ export async function verifySignature({message, typed, signature, expectedAddres
         return recovered.toLowerCase() === expectedAddress.toLowerCase();
     }
     return recovered;
+}
+
+function showAlert(title:string, message:string) {
+    const alertBox = document.getElementById('custom-alert');
+    const alertTitle = document.getElementById('alert-title');
+    const alertMessage = document.getElementById('alert-message');
+    const alertOk = document.getElementById('alert-ok');
+
+    if (!alertBox || !alertTitle || !alertMessage || !alertOk) {
+        console.error('Alert elements not found.');
+        return;
+    }
+
+    // 设置标题和消息
+    alertTitle.textContent = title;
+    alertMessage.textContent = message;
+    alertOk.textContent = t('ok');
+
+    // 显示弹窗
+    alertBox.style.display = 'block';
+
+    // 按下 OK 按钮后隐藏
+    alertOk.onclick = () => {
+        alertBox.style.display = 'none';
+    };
 }
