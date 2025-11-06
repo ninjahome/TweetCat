@@ -53,34 +53,56 @@
 </div>
 
 <div id="view-wallet-setting" class="view-wallet-setting page_view">
-    <div class="wallet-actions">
-        <button id="btn-refresh-balance">刷新余额</button>
-        <button id="btn-export-private-key">导出私钥</button>
-        <button id="btn-transfer-eth">转账 ETH</button>
-        <button id="btn-transfer-token">转账代币</button>
-        <button id="btn-sign-message">签名消息</button>
-        <button id="btn-sign-typed-data">签名 TypedData</button>
-        <button id="btn-verify-signature">验签</button>
-        <button id="btn-open-settings">节点设置</button>
+    <!-- 顶部页头：返回 + 标题 -->
+    <div class="subpage-header">
+        <button id="wallet-back-btn" class="button-back" aria-label="返回">
+            <div>
+                <!-- 复用你在分类管理页使用的同款箭头 SVG，以保持风格统一 -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                    <polygon fill="#191e24" points="15.97 6.75 3.88 6.75 9.32 1.31 7.9 0 0 7.9 7.9 15.8 9.21 14.49 3.94 9.22 15.97 9.22 15.97 6.75"/>
+                </svg>
+            </div>
+        </button>
+        <div class="subpage-title">钱包设置</div>
     </div>
-    <div id="settings-panel" class="wallet-settings hidden">
-        <div class="settings-group">
-            <label for="infura-project-id">Infura Project ID（可选）</label>
-            <input type="text" id="infura-project-id" placeholder="示例：123abc456def" />
+
+    <!-- 常用操作区：两列网格按钮 -->
+    <section class="wallet-section">
+        <h3 class="section-title">常用操作</h3>
+        <div class="wallet-actions">
+            <button id="btn-refresh-balance">刷新余额</button>
+            <button id="btn-export-private-key">导出私钥</button>
+            <button id="btn-transfer-eth">转账 ETH</button>
+            <button id="btn-transfer-token">转账代币</button>
+            <button id="btn-sign-message">签名消息</button>
+            <button id="btn-sign-typed-data">签名 TypedData</button>
+            <button id="btn-verify-signature">验签</button>
+            <button id="btn-open-settings">节点设置</button>
         </div>
-        <div class="settings-group">
-            <label for="custom-rpc-url">自定义 RPC URL（可选）</label>
-            <input type="text" id="custom-rpc-url" placeholder="https://example.com/rpc" />
+    </section>
+
+    <!-- 节点设置区：默认折叠，由“节点设置”按钮控制 -->
+    <section class="wallet-section">
+        <div id="settings-panel" class="wallet-settings hidden">
+            <h3 class="section-title">节点与 RPC</h3>
+            <div class="settings-group">
+                <label for="infura-project-id">Infura Project ID（可选）</label>
+                <input type="text" id="infura-project-id" placeholder="示例：123abc456def" />
+            </div>
+            <div class="settings-group">
+                <label for="custom-rpc-url">自定义 RPC URL（可选）</label>
+                <input type="text" id="custom-rpc-url" placeholder="https://example.com/rpc" />
+            </div>
+            <div class="settings-group rpc-mode-group">
+                <label><input type="radio" name="rpc-mode" value="default" checked /> 使用默认公共 RPC</label>
+                <label><input type="radio" name="rpc-mode" value="custom" /> 使用自定义 RPC</label>
+            </div>
+            <div class="settings-actions">
+                <button id="btn-save-settings">保存</button>
+                <button id="btn-reset-settings">恢复默认</button>
+            </div>
         </div>
-        <div class="settings-group rpc-mode-group">
-            <label><input type="radio" name="rpc-mode" value="default" checked /> 使用默认公共 RPC</label>
-            <label><input type="radio" name="rpc-mode" value="custom" /> 使用自定义 RPC</label>
-        </div>
-        <div class="settings-actions">
-            <button id="btn-save-settings">保存</button>
-            <button id="btn-reset-settings">恢复默认</button>
-        </div>
-    </div>
+    </section>
 </div>
 
 <div id="view-category-manager" class="view-category-manager page_view">

@@ -198,6 +198,8 @@ function setupWalletActionButtons(): void {
     const openSettingsBtn = document.getElementById("btn-open-settings") as HTMLButtonElement | null;
     const saveSettingsBtn = document.getElementById("btn-save-settings") as HTMLButtonElement | null;
     const resetSettingsBtn = document.getElementById("btn-reset-settings") as HTMLButtonElement | null;
+    const backBtn = document.getElementById("wallet-back-btn") as HTMLButtonElement | null;
+
 
     refreshBtn?.addEventListener("click", () => {
         refreshBalances().then();
@@ -226,6 +228,10 @@ function setupWalletActionButtons(): void {
     });
     resetSettingsBtn?.addEventListener("click", () => {
         handleResetSettings().then();
+    });
+    backBtn?.addEventListener("click", () => {
+        // 返回主面板
+        showView('#onboarding/main-home', dashRouter);
     });
 }
 
