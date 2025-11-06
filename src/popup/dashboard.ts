@@ -53,7 +53,6 @@ async function initDashBoard(): Promise<void> {
 }
 
 function dashRouter(path: string): void {
-    // console.log("------>>> show view for path:", path);
     if (path === '#onboarding/main-home') {
         setHomeStatus().then();
     } else if (path === '#onboarding/category-manager') {
@@ -84,7 +83,6 @@ function initNewCatModalDialog() {
 }
 
 async function addNewCategory() {
-
     const modalDialog = document.getElementById("modal-add-category") as HTMLElement;
     const newCatInput = modalDialog.querySelector(".new-category-name") as HTMLInputElement;
 
@@ -126,7 +124,6 @@ async function setHomeStatus() {
     adNumber.innerText = "" + setting.adsBlocked
 }
 
-
 function initSettings() {
     const blockAdsToggle = document.getElementById('ad-block-toggle') as HTMLInputElement;
 
@@ -143,7 +140,6 @@ function initSettings() {
 async function initWalletOrCreate(): Promise<void> {
     const walletCreateDiv = document.getElementById("wallet-create-div") as HTMLButtonElement;//btn-create-wallet
     const walletInfoDiv = document.getElementById("wallet-info-area") as HTMLDivElement;
-    const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     const walletSettingBtn = document.getElementById("wallet-settings-btn") as HTMLButtonElement;
 
     currentWallet = await loadWallet();
@@ -159,9 +155,17 @@ async function initWalletOrCreate(): Promise<void> {
         };
         return;
     }
+
     walletCreateDiv.style.display = "none";
     walletInfoDiv.style.display = "block";
+
     await populateWalletInfo(walletInfoDiv, currentWallet);
+
+    walletSettingBtn.onclick = () => {
+        showView('#onboarding/wallet-setting', dashRouter);
+    }
+
+    setupWalletActionButtons();
     updateSettingsUI(currentSettings);
 }
 
@@ -257,7 +261,6 @@ async function handleSaveSettings(): Promise<void> {
     const infuraInput = document.getElementById("infura-project-id") as HTMLInputElement | null;
     const customInput = document.getElementById("custom-rpc-url") as HTMLInputElement | null;
     const customRadio = document.querySelector('input[name="rpc-mode"][value="custom"]') as HTMLInputElement | null;
-    const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
 
     const newSettings: WalletSettings = {
         infuraProjectId: infuraInput?.value.trim() ?? "",
@@ -273,7 +276,6 @@ async function handleSaveSettings(): Promise<void> {
 }
 
 async function handleResetSettings(): Promise<void> {
-    const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     currentSettings = {...defaultWalletSettings};
     updateSettingsUI(currentSettings);
     await saveWalletSettings(currentSettings);
@@ -283,15 +285,10 @@ async function handleResetSettings(): Promise<void> {
 }
 
 function notifySettingsChanged(): void {
-    if (typeof chrome !== "undefined" && chrome?.runtime?.sendMessage) {
-        chrome.runtime.sendMessage({type: "settings:changed"});
-    } else if (browser?.runtime?.sendMessage) {
-        browser.runtime.sendMessage({type: "settings:changed"});
-    }
+    console.log("------>>> infura setting changed.....")
 }
 
 async function refreshBalances(showStatus = true): Promise<void> {
-    const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     const ethSpan = document.querySelector(".wallet-eth-value") as HTMLSpanElement | null;
     const usdtSpan = document.querySelector(".wallet-usdt-value") as HTMLSpanElement | null;
 
@@ -327,7 +324,6 @@ async function refreshBalances(showStatus = true): Promise<void> {
     }
 }
 
-
 function getRpcEndpoint(settings: WalletSettings): string {
     const infuraId = settings.infuraProjectId?.trim();
     if (infuraId) {
@@ -355,7 +351,6 @@ function formatTokenAmount(value: ethers.BigNumber, decimals: number): string {
 }
 
 async function handleExportPrivateKey(): Promise<void> {
-    const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     if (!currentWallet) {
         showNotification("请先创建或导入钱包", "info");
         return;
@@ -377,7 +372,6 @@ async function handleExportPrivateKey(): Promise<void> {
 }
 
 async function handleTransferEth(): Promise<void> {
-    const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     if (!currentWallet) {
         showNotification("请先创建或导入钱包", "info");
         return;
@@ -404,7 +398,6 @@ async function handleTransferEth(): Promise<void> {
 }
 
 async function handleTransferToken(): Promise<void> {
-    const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     if (!currentWallet) {
         showNotification("请先创建或导入钱包", "info");
         return;
@@ -438,7 +431,6 @@ async function handleTransferToken(): Promise<void> {
 }
 
 async function handleSignMessage(): Promise<void> {
-    const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     if (!currentWallet) {
         showNotification("请先创建或导入钱包", "info");
         return;
@@ -460,7 +452,6 @@ async function handleSignMessage(): Promise<void> {
 }
 
 async function handleSignTypedData(): Promise<void> {
-    const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     if (!currentWallet) {
         showNotification("请先创建或导入钱包", "info");
         return;
@@ -489,7 +480,6 @@ async function handleSignTypedData(): Promise<void> {
 }
 
 async function handleVerifySignature(): Promise<void> {
-    const walletStatus = document.getElementById("wallet-status-message") as HTMLDivElement | null;
     const signature = window.prompt("请输入签名字符串", "");
     if (!signature) return;
 
@@ -703,7 +693,7 @@ export async function verifySignature({
     return recovered;
 }
 
-function showAlert(title:string, message:string) {
+function showAlert(title: string, message: string) {
     const alertBox = document.getElementById('custom-alert');
     const alertTitle = document.getElementById('alert-title');
     const alertMessage = document.getElementById('alert-message');
