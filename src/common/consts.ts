@@ -6,6 +6,7 @@ export const defaultCatID = 1;
 export const defaultAllCategoryID = -1;
 export const noXTabError = "no_x_tab"
 export const itemColorGroup = ['#f6cd01', '#866afb', '#fe466c', '#06cbad', '#4592ef']
+
 function addOpacityToHex(hex: string, opacity: number): string {
     const clampedOpacity = Math.min(1, Math.max(0, opacity));
     const alpha = Math.round(clampedOpacity * 255).toString(16).padStart(2, '0');
@@ -78,7 +79,7 @@ export enum MsgType {
     CheckIfLocalAppInstalled = 'CheckIfLocalAppInstalled',
     StartLocalApp = 'StartLocalApp',
 
-
+    WalletInfoQuery = "WalletInfoQuery",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

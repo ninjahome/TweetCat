@@ -79,7 +79,6 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     const menuItem = tpl.content.getElementById('tweetCatMenuItem')!.cloneNode(true) as HTMLElement;
     const area = tpl.content.getElementById('tweetCatArea')!.cloneNode(true) as HTMLElement;
     area.style.display = 'none';
-    area.querySelector<HTMLElement>(".tweet-title")!.innerText = t('web3_coming');
 
     const originalArea = main.firstChild as HTMLElement;
 

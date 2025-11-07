@@ -335,5 +335,26 @@
   },
   "sync_user_not_found": {
     "message": "未找到该账号或同步失败。"
+  },
+  "refresh": {
+    "message": "刷新"
+  },
+  "copy": {
+    "message": "复制"
+  },
+  "gas_balance": {
+    "message": "Gas 费"
+  },
+  "usdt_balance": {
+    "message": "USDT 余额"
+  },
+  "web3_id_tittle": {
+    "message": "Web3身份信息"
+  },
+  "copy_success": {
+    "message": "复制成功"
+  },
+  "new_web3_id": {
+    "message": "创建 Web3 身份"
   }
 }

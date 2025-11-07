@@ -25,6 +25,7 @@ import {
     assignFollowingsToCategory,
     loadAllFollowings
 } from "../object/following";
+import {getEthBalance, getTokenBalance, loadWallet} from "../wallet/wallet_api";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -184,6 +185,18 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.StartLocalApp: {
             return {success: await openLocalApp()}
+        }
+
+        case MsgType.WalletInfoQuery: {
+            const wallet = await loadWallet(); // 来自 wallet_api.ts
+            if (!wallet) {
+                return {success: true, data: {unlocked: false}};     // content 收到后显示“未解锁”
+            }
+
+            const address = wallet.address;
+            const gas = await getEthBalance(address);
+            const usdt = await getTokenBalance(address, "USDT");
+            return {success: true, data: {address, gas, usdt}};
         }
 
         default:

@@ -27,7 +27,7 @@
             </label>
         </div>
         <div id="wallet-create-div" class="wallet-create-div">
-            <button id="btn-create-wallet" class="btn-create-wallet">New Web3 Account</button>
+            <button id="btn-create-wallet" class="btn-create-wallet">New Web3 ID</button>
         </div>
         <div id="wallet-info-area" class="wallet-info-area">
             <div class="wallet-summary">
@@ -47,13 +47,24 @@
             <div class="wallet-action-div">
                 <button id="wallet-settings-btn" class="wallet-settings-btn">settings</button>
             </div>
+            <div class="ipfs-area" id="ipfs-area" style="display:none">
+                <div class="ipfs-summary" id="ipfs-summary" hidden>
+                    <div class="row">
+                        <span class="label">IPFS PeerID</span>
+                        <span class="value" id="ipfs-peerid"></span>
+                        <button class="copy-btn" id="btn-copy-peerid">复制</button>
+                    </div>
+                </div>
+                <div class="ipfs-create" id="ipfs-create" hidden>
+                    <button class="primary" id="btn-create-ipfs-id">创建 IPFS 身份</button>
+                </div>
+            </div>
         </div>
     </div>
 
 </div>
 
 <div id="view-wallet-setting" class="view-wallet-setting page_view">
-    <!-- 顶部页头：返回 + 标题 -->
     <div class="subpage-header">
         <button id="wallet-back-btn" class="button-back" aria-label="返回">
             <div>
@@ -65,8 +76,6 @@
         </button>
         <div class="subpage-title">钱包设置</div>
     </div>
-
-    <!-- 常用操作区：两列网格按钮 -->
     <section class="wallet-section">
         <h3 class="section-title">常用操作</h3>
         <div class="wallet-actions">
@@ -80,8 +89,6 @@
             <button id="btn-open-settings">节点设置</button>
         </div>
     </section>
-
-    <!-- 节点设置区：默认折叠，由“节点设置”按钮控制 -->
     <section class="wallet-section">
         <div id="settings-panel" class="wallet-settings hidden">
             <h3 class="section-title">节点与 RPC</h3>

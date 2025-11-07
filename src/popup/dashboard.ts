@@ -3,21 +3,22 @@ import {ethers} from "ethers";
 import {__DBK_AD_Block_Key, MsgType} from "../common/consts";
 import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/database";
 import {showView} from "../common/utils";
-import {loadCategories} from "../object/category";
+import {Category, loadCategories} from "../object/category";
 import {sendMessageToX} from "../service_work/bg_msg";
 import {localGet, localSet} from "../common/local_storage";
-import {Category} from "../object/category";
 import {getSystemSetting, switchAdOn} from "../object/system_setting";
 import {initI18n, t} from "../common/i18n";
 import {
     defaultWalletSettings,
     loadWallet,
     loadWalletSettings,
+    saveWallet,
     saveWalletSettings,
     TCWallet,
     WalletSettings
 } from "../wallet/wallet_api";
 import {hideLoading, showLoading, showNotification} from "./common";
+import {ensureIpfsPeerId} from "../wallet/ipfs_api";
 
 const ARBITRUM_CHAIN_ID = 42161;
 const DEFAULT_RPC_URL = "https://arb1.arbitrum.io/rpc";
@@ -145,10 +146,12 @@ async function initWalletOrCreate(): Promise<void> {
     currentWallet = await loadWallet();
     currentSettings = await loadWalletSettings();
 
+    const walletNewBtn = (walletCreateDiv.querySelector(".btn-create-wallet") as HTMLButtonElement);
+    walletNewBtn.textContent = t('new_web3_id');
     if (!currentWallet) {
         walletCreateDiv.style.display = "block";
         walletInfoDiv.style.display = "none";
-        (walletCreateDiv.querySelector(".btn-create-wallet") as HTMLButtonElement).onclick = async () => {
+        walletNewBtn.onclick = async () => {
             await browser.tabs.create({
                 url: browser.runtime.getURL("html/wallet_new.html"),
             });
@@ -160,7 +163,7 @@ async function initWalletOrCreate(): Promise<void> {
     walletInfoDiv.style.display = "block";
 
     await populateWalletInfo(walletInfoDiv, currentWallet);
-
+    await renderIpfsArea();
     walletSettingBtn.onclick = () => {
         showView('#onboarding/wallet-setting', dashRouter);
     }
@@ -186,6 +189,72 @@ async function populateWalletInfo(container: HTMLDivElement, wallet: TCWallet): 
 
     await refreshBalances(false);
 }
+
+/** 渲染 IPFS 区域（钱包存在才显示） */
+async function renderIpfsArea(): Promise<void> {
+    const area = document.getElementById("ipfs-area") as HTMLDivElement | null;
+    if (!area) return;
+
+    // 没有钱包：整个 ipfs-area 不显示
+    if (!currentWallet) {
+        area.style.display = "none";
+        return;
+    }
+
+    // 有钱包：显示 ipfs-area，根据 peerId 决定子块
+    area.style.display = "";
+
+    const sumEl = document.getElementById("ipfs-summary") as HTMLElement | null;
+    const createEl = document.getElementById("ipfs-create") as HTMLElement | null;
+    const peerEl = document.getElementById("ipfs-peerid") as HTMLElement | null;
+    const copyBtn = document.getElementById("btn-copy-peerid") as HTMLButtonElement | null;
+    const createBtn = document.getElementById("btn-create-ipfs-id") as HTMLButtonElement | null;
+
+    const hasPeer = !!currentWallet.peerId;
+
+    if (sumEl) sumEl.hidden = !hasPeer;
+    if (createEl) createEl.hidden = hasPeer;
+
+    if (hasPeer) {
+        if (peerEl) peerEl.textContent = currentWallet.peerId!;
+        copyBtn?.addEventListener("click", async () => {
+            try {
+                await navigator.clipboard.writeText(currentWallet!.peerId!);
+                showNotification(t('copy_success'), "info");
+            } catch {
+            }
+        });
+    } else {
+        if (createBtn) {
+            createBtn.onclick = async () => {
+                await handleCreateIpfsId();
+            };
+        }
+    }
+}
+
+async function handleCreateIpfsId(): Promise<void> {
+    if (!currentWallet) {
+        showNotification("请先创建或导入钱包", "info");
+        return;
+    }
+
+    const password = await requestPassword("请输入钱包口令以创建 IPFS 身份");
+    showLoading("Creating ipfs id.....")
+    try {
+        currentWallet.peerId = await ensureIpfsPeerId(password);
+
+        await saveWallet(currentWallet);
+        await renderIpfsArea();
+        showNotification("已创建 IPFS 身份", "info");
+    } catch (e) {
+        console.warn("------>>> ipfs failed:", e);
+        showNotification("创建 IPFS 身份失败:" + e.toString(), "error");
+    } finally {
+        hideLoading();
+    }
+}
+
 
 function setupWalletActionButtons(): void {
     const refreshBtn = document.getElementById("btn-refresh-balance") as HTMLButtonElement | null;

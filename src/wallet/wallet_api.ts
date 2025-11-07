@@ -1,5 +1,5 @@
 // src/wallet/wallet_api.ts
-import { ethers } from "ethers";
+import {ethers} from "ethers";
 import {
     __tableWalletSettings,
     __tableWallets,
@@ -14,6 +14,7 @@ export interface TCWallet {
     address: string;
     keystoreJson: string;
     createdAt: number;
+    peerId?: string;
 }
 
 export interface WalletSettings {
@@ -39,6 +40,7 @@ export async function saveWallet(record: TCWallet): Promise<void> {
         address: normalizedAddress,
         keystoreJson: record.keystoreJson,
         createdAt: record.createdAt ?? Date.now(),
+        peerId: record.peerId ?? undefined,
     };
 
     const existing = await databaseQueryAll(__tableWallets);
@@ -81,7 +83,7 @@ export async function loadWalletSettings(): Promise<WalletSettings> {
 
     const records = (await databaseQueryAll(__tableWalletSettings)) as Array<WalletSettings & { id: string }>;
     const stored = records.find((item) => item.id === WALLET_SETTINGS_KEY);
-    if (!stored) return { ...defaultWalletSettings };
+    if (!stored) return {...defaultWalletSettings};
 
     return {
         useDefaultRpc: stored.useDefaultRpc ?? defaultWalletSettings.useDefaultRpc,
@@ -127,7 +129,7 @@ export async function saveFromMnemonic(mnemonic: string, password: string): Prom
     const wallet = fromPhrase(phrase);
     // v5/v6 都兼容的 encrypt
     const keystoreJson = await wallet.encrypt(password, {
-        scrypt: { N: 1 << 18, r: 8, p: 1 },
+        scrypt: {N: 1 << 18, r: 8, p: 1},
     });
 
     const record: TCWallet = {
@@ -169,10 +171,12 @@ async function withDecryptedWallet<T>(
         try {
             const sk = (w as any)._signingKey?.();
             if (sk && typeof sk === "object" && "privateKey" in sk) sk.privateKey = "";
-        } catch {}
+        } catch {
+        }
         try {
             (w as any)._mnemonic = null;
-        } catch {}
+        } catch {
+        }
     }
 }
 
@@ -213,6 +217,10 @@ export async function getEthBalance(address: string, settings?: WalletSettings):
     return formatUnits(raw, 18);
 }
 
+export async function getTokenBalance(address: string, token: string): Promise<string> {
+    return "0.00"
+}
+
 export async function transferEth(params: {
     to: string;
     amountEther: string;
@@ -220,7 +228,7 @@ export async function transferEth(params: {
     gasLimitWei?: string;
     settings?: WalletSettings;
 }): Promise<string /* txHash */> {
-    const { to, amountEther, password, gasLimitWei, settings } = params;
+    const {to, amountEther, password, gasLimitWei, settings} = params;
     if (!to) throw new Error("接收地址无效");
     if (!amountEther) throw new Error("请输入转账金额");
 
@@ -229,7 +237,7 @@ export async function transferEth(params: {
 
     return withDecryptedWallet(password, async (wallet) => {
         const connected = wallet.connect(provider);
-        const req: any = { to, value: parseEther(amountEther) };
+        const req: any = {to, value: parseEther(amountEther)};
         if (gasLimitWei) req.gasLimit = (ethers as any).BigNumber?.from?.(gasLimitWei) ?? gasLimitWei;
         const tx = await connected.sendTransaction(req);
         return tx.hash as string;
@@ -245,7 +253,7 @@ export async function transferErc20(params: {
     gasLimitWei?: string;
     settings?: WalletSettings;
 }): Promise<string> {
-    const { tokenAddress, to, amount, decimals, password, gasLimitWei, settings } = params;
+    const {tokenAddress, to, amount, decimals, password, gasLimitWei, settings} = params;
     if (!tokenAddress) throw new Error("代币合约地址无效");
     if (!to) throw new Error("接收地址无效");
     if (!amount) throw new Error("请输入转账数量");
@@ -258,13 +266,13 @@ export async function transferErc20(params: {
         const abi = ["function transfer(address to, uint256 amount) returns (bool)"];
         const contract = new (ethers as any).Contract(tokenAddress, abi, connected);
         const value = parseUnits(amount, decimals);
-        const tx = await contract.transfer(to, value, gasLimitWei ? { gasLimit: gasLimitWei } : {});
+        const tx = await contract.transfer(to, value, gasLimitWei ? {gasLimit: gasLimitWei} : {});
         return tx.hash as string;
     });
 }
 
 export async function signMessage(params: { message: string; password: string }): Promise<string> {
-    const { message, password } = params;
+    const {message, password} = params;
     if (!message) throw new Error("消息不能为空");
     return withDecryptedWallet(password, async (wallet) => wallet.signMessage(message));
 }
@@ -272,7 +280,7 @@ export async function signMessage(params: { message: string; password: string })
 export async function signTypedData(params: {
     domain: any; types: any; value: any; password: string;
 }): Promise<string> {
-    const { domain, types, value, password } = params;
+    const {domain, types, value, password} = params;
     return withDecryptedWallet(password, async (wallet) => {
         const fn = (wallet as any)._signTypedData || (wallet as any).signTypedData;
         return fn.call(wallet, domain, types, value);
@@ -285,7 +293,7 @@ export async function verifySignature(params: {
     signature: string;
     expectedAddress?: string;
 }): Promise<boolean | string> {
-    const { message, typed, signature, expectedAddress } = params;
+    const {message, typed, signature, expectedAddress} = params;
     if (!signature) throw new Error("缺少签名");
 
     const recovered = message !== undefined

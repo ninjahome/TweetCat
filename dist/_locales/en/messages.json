@@ -335,5 +335,26 @@
   },
   "sync_user_not_found": {
     "message": "User not found or sync failed."
+  },
+  "refresh": {
+    "message": "Refresh"
+  },
+  "copy": {
+    "message": "Copy"
+  },
+  "gas_balance": {
+    "message": "Gas Fee"
+  },
+  "usdt_balance": {
+    "message": "USDT Balance"
+  },
+  "web3_id_tittle": {
+    "message": "Web3 ID Infos"
+  },
+  "copy_success": {
+    "message": "Copy Success"
+  },
+  "new_web3_id": {
+    "message": "New Web3 ID"
   }
 }

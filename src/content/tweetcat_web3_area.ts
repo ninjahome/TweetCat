@@ -8,6 +8,7 @@ import {getSessCatID} from "../timeline/tweet_pager";
 import {parseContentHtml} from "./main_entrance";
 import {t} from "../common/i18n";
 import {grokConversation} from "./ai_trend";
+import {showToastMsg} from "../timeline/render_common";
 
 const defaultCatPointColor = '#B9CAD3';
 
@@ -97,7 +98,9 @@ export async function setupFilterItemsOnWeb3Area(tpl: HTMLTemplateElement, main:
     const AIBtn = document.querySelector(".btn-ai-trend-of-category") as HTMLElement;
     AIBtn.addEventListener('click', () => {
         grokConversation();
-    })
+    });
+
+    await initWeb3IdentityArea();
 }
 
 function populateCategoryArea(tpl: HTMLTemplateElement, categories: Category[], container: HTMLElement) {
@@ -251,6 +254,64 @@ async function showAITrendBtn(catId: number) {
         const AIBtnText = AIBtn.querySelector(".btn-ai-trend-of-category span") as HTMLSpanElement;
         AIBtnText.innerText = t('ai_trend_btn') + `(${category.catName})`;
     }
-
 }
 
+
+export async function initWeb3IdentityArea(): Promise<void> {
+    const host = document.getElementById("web3-identity") as HTMLDivElement | null;
+    if (!host) return;
+    host.querySelector("#web3-refresh-btn")?.addEventListener("click", fetchWeb3Identity);
+
+    host.querySelector("#web3-copy")?.addEventListener("click", async () => {
+        const addr = (host.querySelector("#web3-address") as HTMLElement)?.textContent || "";
+        if (!addr) return;
+        try {
+            await navigator.clipboard.writeText(addr);
+            showToastMsg(t('copy_success'));
+        } catch {
+        }
+    });
+
+    host.querySelector(".web3-title-text").textContent = t('web3_id_tittle');
+    host.querySelector("#web3-refresh-btn").textContent = t('refresh');
+    host.querySelector("#web3-copy").textContent = t('copy');
+    host.querySelector(".web3-gas-balance-hint").textContent = t('gas_balance');
+    host.querySelector(".web3-usdt-balance-hint").textContent = t('usdt_balance');
+
+    await fetchWeb3Identity();
+}
+
+async function fetchWeb3Identity() {
+    const host = document.getElementById("web3-identity") as HTMLDivElement | null;
+    if (!host) return;
+    const state = host.querySelector("#web3-state") as HTMLElement;
+    const card = host.querySelector("#web3-wallet-card") as HTMLElement;
+
+    state.style.display = "block";
+    card.style.display = "none";
+
+    try {
+        const resp = await sendMsgToService({}, MsgType.WalletInfoQuery)
+        if (!resp || resp.success === false || !resp.data) {
+            state.style.display = "none";
+            return;
+        }
+
+        const data = resp.data;
+
+        const addrEl = host.querySelector("#web3-address") as HTMLSpanElement;
+        const gasEl = host.querySelector("#web3-gas") as HTMLDivElement;
+        const usdtEl = host.querySelector("#web3-usdt") as HTMLDivElement;
+
+        addrEl.textContent = data.address ?? "--";
+        addrEl.title = data.address ?? "";
+        gasEl.textContent = data.gas ?? "--";
+        usdtEl.textContent = data.usdt ?? "--";
+
+        state.style.display = "none";
+        card.style.display = "block";
+    } catch (e) {
+        state.style.display = "none";
+        card.style.display = "none";
+    }
+}
