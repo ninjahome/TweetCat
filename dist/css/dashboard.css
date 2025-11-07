@@ -463,3 +463,159 @@ input.category-input:focus{
     border-radius: 12px;
     padding: 12px;
 }
+
+
+
+/* ── IPFS 设置视图：容器 ─────────────────────────────────────────── */
+#view-ipfs-settings.view-ipfs-settings.page_view{
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: var(--surface, #fff);
+    color: var(--text-primary, #111827);
+}
+
+/* ── 头部：返回 + 标题 ─────────────────────────────────────────── */
+#view-ipfs-settings .view-header{
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--surface, #fff);
+    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+}
+
+#view-ipfs-settings .view-header h2{
+    flex: 1;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary, #111827);
+}
+
+#view-ipfs-settings .view-back-btn{
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle, #e5e7eb);
+    background: var(--surface-2, #f8fafc);
+    color: var(--text-secondary, #374151);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+#view-ipfs-settings .view-back-btn:hover{
+    background: var(--surface-3, #f3f4f6);
+    border-color: var(--border, #d1d5db);
+}
+
+/* ── 主体内容 ──────────────────────────────────────────────────── */
+#view-ipfs-settings .view-content{
+    padding: 14px 16px 6px;
+    overflow-y: auto;
+}
+
+/* 顶部“使用系统默认”行 */
+#view-ipfs-settings .row{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-secondary, #4b5563);
+    margin-bottom: 14px;
+}
+
+/* 表单网格：小屏 1 列，大屏 2 列 */
+#view-ipfs-settings .grid{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px 14px;
+}
+@media (min-width: 560px){
+    #view-ipfs-settings .grid{ grid-template-columns: 1fr 1fr; }
+}
+
+/* 每个 label 块：标题在上，输入在下 */
+#view-ipfs-settings .grid > label{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary, #6b7280);
+}
+
+/* 输入框通用样式 */
+#view-ipfs-settings input[type="text"],
+#view-ipfs-settings input[type="password"]{
+    width: 100%;
+    height: 36px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle, #e5e7eb);
+    background: var(--surface, #fff);
+    color: var(--text-primary, #111827);
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+    box-sizing: border-box;
+}
+#view-ipfs-settings input[type="text"]::placeholder,
+#view-ipfs-settings input[type="password"]::placeholder{
+    color: var(--text-tertiary, #9ca3af);
+}
+
+/* 聚焦态：轻微高亮 */
+#view-ipfs-settings input[type="text"]:focus,
+#view-ipfs-settings input[type="password"]:focus{
+    border-color: var(--brand, #2563eb);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand, #2563eb) 20%, transparent);
+}
+
+/* 禁用态（勾选“使用系统默认”时） */
+#view-ipfs-settings input:disabled{
+    background: var(--surface-2, #f8fafc);
+    color: var(--text-tertiary, #9ca3af);
+    border-color: var(--border-subtle, #e5e7eb);
+    opacity: .85;
+    cursor: not-allowed;
+}
+
+/* URL 类输入用等宽字体，便于校对 */
+#view-ipfs-settings #ipfs-api-url,
+#view-ipfs-settings #ipfs-gateway-url{
+    font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    font-size: 12px;
+}
+
+/* ── 底部按钮区 ──────────────────────────────────────────────── */
+#view-ipfs-settings .view-footer{
+    margin-top: auto;
+    padding: 10px 16px 14px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid var(--border-subtle, #e5e7eb);
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--surface, #fff) 85%, transparent), var(--surface, #fff));
+}
+
+/* 主按钮（如果你已有 .primary 样式，可忽略这一段） */
+#view-ipfs-settings .view-footer .primary{
+    min-width: 96px;
+    height: 34px;
+    padding: 0 14px;
+    border: 1px solid color-mix(in srgb, var(--brand, #2563eb) 80%, #0000);
+    border-radius: 10px;
+    background: var(--brand, #2563eb);
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter .15s ease, transform .02s ease;
+}
+#view-ipfs-settings .view-footer .primary:hover{ filter: brightness(1.05); }
+#view-ipfs-settings .view-footer .primary:active{ transform: translateY(1px); }
+#view-ipfs-settings .view-footer .primary:disabled{
+    opacity: .6; cursor: not-allowed; filter: none;
+}
+
