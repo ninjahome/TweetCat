@@ -65,6 +65,7 @@ export async function loadWallet(): Promise<TCWallet | null> {
         address: latest.address,
         keystoreJson: latest.keystoreJson,
         createdAt: latest.createdAt ?? Date.now(),
+        peerId: latest.peerId,
     };
 }
 
@@ -127,9 +128,8 @@ export async function saveFromMnemonic(mnemonic: string, password: string): Prom
     if (!password || password.length < 8) throw new Error("口令至少 8 位");
 
     const wallet = fromPhrase(phrase);
-    // v5/v6 都兼容的 encrypt
     const keystoreJson = await wallet.encrypt(password, {
-        scrypt: {N: 1 << 18, r: 8, p: 1},
+        kdf: "pbkdf2", pbkdf2: {c: 65536, dklen: 32, prf: "hmac-sha256"}
     });
 
     const record: TCWallet = {
@@ -153,36 +153,6 @@ export function getRpcEndpoint(settings: WalletSettings): string {
 export function createProvider(settings: WalletSettings) {
     const url = getRpcEndpoint(settings);
     return new ethers.providers.JsonRpcProvider(url, 42161);
-}
-
-/** ====== 实用方法：解密当前钱包 / 导出私钥 ====== */
-async function withDecryptedWallet<T>(
-    password: string,
-    action: (w: any) => Promise<T>
-): Promise<T> {
-    const current = await loadWallet();
-    if (!current) throw new Error("未找到钱包，请先创建或导入");
-
-    const WalletCtor: any = (ethers as any).Wallet;
-    const w = await WalletCtor.fromEncryptedJson(current.keystoreJson, password);
-    try {
-        return await action(w);
-    } finally {
-        try {
-            const sk = (w as any)._signingKey?.();
-            if (sk && typeof sk === "object" && "privateKey" in sk) sk.privateKey = "";
-        } catch {
-        }
-        try {
-            (w as any)._mnemonic = null;
-        } catch {
-        }
-    }
-}
-
-export async function exportPrivateKey(password: string): Promise<string> {
-    if (!password) throw new Error("口令不能为空");
-    return withDecryptedWallet(password, async (w) => w.privateKey as string);
 }
 
 /** ====== 余额 & 转账 & 签名 API（可直接给 dashboard 调用） ====== */
@@ -304,5 +274,75 @@ export async function verifySignature(params: {
         return recovered.toLowerCase() === expectedAddress.toLowerCase();
     }
     return recovered;
+}
+
+// 1. 定义缓存对象和有效期
+const CACHE_LIFETIME_MS = 15 * 60 * 1000; // 15 分钟
+interface DecryptedWalletCache {
+    wallet: ethers.Wallet;
+    expires: number;
+    address: string;
+}
+
+let decryptedWalletCache: DecryptedWalletCache | null = null;
+
+
+/**
+ * 2. 新增核心解密函数，包含缓存逻辑
+ * @param {string} password - 钱包密码。
+ * @param {function(ethers.Wallet): Promise<T>} action - 要执行的操作。
+ * @returns {Promise<T>} - 操作结果。
+ */
+export async function withDecryptedWallet<T>(
+    password: string,
+    action: (wallet: ethers.Wallet) => Promise<T>
+): Promise<T> {
+    const record = await loadWallet();
+    if (!record) throw new Error("未找到本地钱包记录");
+
+    const normalizedAddress = record.address.toLowerCase();
+
+    // --- 缓存检查 ---
+    const now = Date.now();
+    if (decryptedWalletCache &&
+        decryptedWalletCache.address === normalizedAddress &&
+        decryptedWalletCache.expires > now
+    ) {
+        console.log("[Wallet] 使用缓存的钱包对象 (Expires:", new Date(decryptedWalletCache.expires).toLocaleTimeString(), ")");
+        return action(decryptedWalletCache.wallet);
+    }
+    // --- 缓存检查结束 ---
+
+    console.log("[Wallet] 缓存过期或未命中，开始执行耗时的 fromEncryptedJson...");
+
+    let wallet: ethers.Wallet;
+    try {
+        // 耗时的解密步骤
+        wallet = await ethers.Wallet.fromEncryptedJson(record.keystoreJson, password);
+    } catch (error) {
+        // 密码错误也会抛出错误
+        throw new Error("密码错误或解密失败: " + (error as Error).message);
+    }
+
+    // --- 缓存更新 ---
+    decryptedWalletCache = {
+        wallet,
+        expires: now + CACHE_LIFETIME_MS,
+        address: normalizedAddress,
+    };
+    console.log("[Wallet] 钱包对象已解密并缓存，有效期至:", new Date(decryptedWalletCache.expires).toLocaleTimeString());
+
+    return action(wallet);
+}
+
+// 导出私钥（利用 withDecryptedWallet 自动获取缓存或解密的钱包）
+export async function exportPrivateKey(password: string): Promise<string> {
+    return withDecryptedWallet(password, async (wallet) => wallet.privateKey);
+}
+
+// 登出/清理时清除缓存
+export function clearDecryptedWalletCache(): void {
+    decryptedWalletCache = null;
+    console.log("[Wallet] 已清除解密钱包缓存");
 }
 

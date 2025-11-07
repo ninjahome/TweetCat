@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>New Web3 ID</title>
+    <link href="../css/common_utils.css" rel="stylesheet" />
     <link href="../css/new_wallet.css" rel="stylesheet" />
 </head>
 <body>
@@ -80,6 +81,13 @@
             <button id="btn-go-dashboard" class="btn btn-primary">返回 Dashboard</button>
         </div>
     </section>
+</div>
+
+<div id="loading-overlay">
+    <div id="loading-content">
+        <div class="spinner"></div>
+        <div class="loading-message"></div>
+    </div>
 </div>
 
 <!-- 只引用编译产物（由上面的 TS 构建为 js/wallet_new.js） -->
