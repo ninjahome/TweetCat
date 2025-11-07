@@ -196,7 +196,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             const address = wallet.address;
             const gas = await getEthBalance(address);
             const usdt = await getTokenBalance(address, "USDT");
-            return {success: true, data: {address, gas, usdt}};
+            return {success: true, data: {address, gas, usdt, peerId: wallet?.peerId ?? null,}};
         }
 
         default:

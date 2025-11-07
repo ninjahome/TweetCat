@@ -1808,3 +1808,45 @@ html[data-bg="lightsout"] {
 .user-profile-score-details .growth-score-title {
     color: #e67e22;
 }
+
+/* --- 我的推特分数（Web3 卡片里的紧凑展示） --- */
+.tw-score-card {
+    border-top: 1px solid var(--border-subtle);
+    margin-top: 10px;
+    padding-top: 10px;
+}
+
+.tw-score-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 4px 0 8px;
+}
+
+.tw-score-title {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.tw-score-total {
+    font-size: 20px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text-primary);
+}
+
+.tw-score-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 10px;
+}
+
+.tw-score-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.tw-score-label { color: var(--text-secondary); }
+.tw-score-value { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace; }

@@ -48,6 +48,10 @@ export async function ensureIpfsPeerId(password: string): Promise<string> {
     const wallet = await loadWallet();
     if (!wallet) throw new Error('未找到本地钱包');
 
+    if (wallet.peerId) {            // ① 已有则复用
+        return wallet.peerId;
+    }
+
     const privKeyHex = await exportPrivateKey(password); // 返回 "0x..." 或 hex string
 
     const privKeyBytes = ethers.utils.arrayify(privKeyHex);

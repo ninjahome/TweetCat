@@ -2,6 +2,7 @@ import {observeSimple} from "../common/utils";
 import {getUserByUsername} from "../timeline/twitter_api";
 import {calculateLevelBreakdown, LevelScoreBreakdown} from "../object/user_info";
 import {logUI} from "../common/debug_flags";
+import {setOwnerScoreInWeb3Area} from "./tweetcat_web3_area";
 
 export var scoreOfTwitterOwner: LevelScoreBreakdown = null;
 
@@ -17,6 +18,7 @@ export function queryProfileOfTwitterOwner() {
             getUserByUsername(userName).then(data => {
                 scoreOfTwitterOwner = calculateLevelBreakdown(data);
                 logUI("------>>> user data:", data, " \n score:", scoreOfTwitterOwner);
+                setOwnerScoreInWeb3Area(scoreOfTwitterOwner);
             });
             return true;
         }
