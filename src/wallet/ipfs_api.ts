@@ -3,23 +3,78 @@ import {loadWallet, exportPrivateKey} from "./wallet_api";
 import {create} from 'kubo-rpc-client'
 import {privateKeyFromRaw} from '@libp2p/crypto/keys'
 import {peerIdFromPrivateKey} from "@libp2p/peer-id"
+import {__tableIpfsSettings, checkAndInitDatabase, databaseQueryAll, databaseUpdateOrAddItem} from "../common/database";
+
+
+export interface IPFSSettings {
+    useDefault: boolean;          // 勾选后忽略下列自定义项
+    apiUrl?: string;              // 例如 https://ipfs.infura.io:5001/api/v0
+    projectId?: string;           // Infura Project ID
+    projectSecret?: string;       // Infura Project Secret
+    gatewayUrl?: string;          // 例如 https://ipfs.io/ipfs
+}
+
+const IPFS_SETTINGS_KEY = "default";
+
+export const DEFAULT_IPFS_SETTINGS: IPFSSettings = {
+    useDefault: true,
+    apiUrl: "https://ipfs.infura.io:5001/api/v0",
+    gatewayUrl: "https://ipfs.io/ipfs",
+};
+
+export async function loadIpfsSettings(): Promise<IPFSSettings> {
+    await checkAndInitDatabase();
+    const rows = (await databaseQueryAll(__tableIpfsSettings)) as Array<IPFSSettings & { id: string }>;
+    const found = rows.find(r => r.id === IPFS_SETTINGS_KEY);
+    return found ? { ...DEFAULT_IPFS_SETTINGS, ...found } : { ...DEFAULT_IPFS_SETTINGS };
+}
+
+export async function saveIpfsSettings(s: IPFSSettings): Promise<void> {
+    await checkAndInitDatabase();
+    const payload = {
+        id: IPFS_SETTINGS_KEY,
+        useDefault: !!s.useDefault,
+        apiUrl: (s.apiUrl ?? "").trim() || DEFAULT_IPFS_SETTINGS.apiUrl,
+        projectId: (s.projectId ?? "").trim(),
+        projectSecret: (s.projectSecret ?? "").trim(),
+        gatewayUrl: (s.gatewayUrl ?? "").trim() || DEFAULT_IPFS_SETTINGS.gatewayUrl,
+    };
+    await databaseUpdateOrAddItem(__tableIpfsSettings, payload);
+    resetIpfsClient(); // 保存后让下次 getIpfs() 重新按新配置初始化
+}
+
+
 
 let ipfsClient: any | null = null
+export function resetIpfsClient() {
+    ipfsClient = null;
+}
 
-export function getIpfs() {
+export async function getIpfs() {
     if (!ipfsClient) {
+        const s = await loadIpfsSettings();
+        const url = (s.useDefault || !s.apiUrl) ? DEFAULT_IPFS_SETTINGS.apiUrl! : s.apiUrl!;
+        const headers: Record<string, string> = {};
+
+        // 若填了 Infura 认证，就加 Basic Auth
+        if (!s.useDefault && s.projectId && s.projectSecret) {
+            const token = btoa(`${s.projectId}:${s.projectSecret}`);
+            headers["Authorization"] = `Basic ${token}`;
+        }
+
         ipfsClient = create({
-            url: 'https://ipfs.infura.io:5001/api/v0'
-        })
-        console.log('[IPFS] client initialized')
+            url,
+            headers: Object.keys(headers).length ? headers : undefined,
+        });
+        console.log(`[IPFS] client initialized @ ${url}${headers.Authorization ? " (auth)" : ""}`);
     }
-    return ipfsClient
+    return ipfsClient;
 }
 
 // ==================== 上传字符串 ====================
 
 export async function uploadString(content: string): Promise<string> {
-    const ipfs = getIpfs()
+    const ipfs = await getIpfs()
     const {cid} = await ipfs.add(content)
     return cid.toString()
 }
@@ -27,7 +82,7 @@ export async function uploadString(content: string): Promise<string> {
 // ==================== 上传 JSON ====================
 
 export async function uploadJson(obj: any): Promise<string> {
-    const ipfs = getIpfs()
+    const ipfs =await getIpfs()
     const jsonStr = JSON.stringify(obj)
     const {cid} = await ipfs.add(jsonStr)
     return cid.toString()
@@ -36,7 +91,7 @@ export async function uploadJson(obj: any): Promise<string> {
 // ==================== 上传文件（浏览器 File） ====================
 
 export async function uploadFile(file: File): Promise<string> {
-    const ipfs = getIpfs()
+    const ipfs = await getIpfs()
     const bytes = new Uint8Array(await file.arrayBuffer())
     const {cid} = await ipfs.add(bytes, {wrapWithDirectory: false})
     return cid.toString()
@@ -68,7 +123,7 @@ export async function ensureIpfsPeerId(password: string): Promise<string> {
 }
 
 export async function publishToMyIPNS(ipnsName: string, cid: string): Promise<string> {
-    const ipfs = getIpfs()
+    const ipfs = await getIpfs()
 
     console.log(`[IPNS] 尝试将 CID ${cid} 发布到 IPNS 名称: ${ipnsName}`);
 

@@ -4,7 +4,7 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 20;
+export const __currentDatabaseVersion = 21;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -14,6 +14,8 @@ export const __tableKolCursor = '__table_kol_cursor__';
 export const __tableFollowings = '__table_followings__';
 export const __tableWallets = '__table_wallets__';
 export const __tableWalletSettings = '__table_wallet_settings__';
+export const __tableIpfsSettings = '__table_ipfs_settings__';
+
 export const idx_tweets_user_time = 'userId_timestamp_idx'
 export const idx_tweets_time_user = 'timestamp_userId_idx';
 export const idx_tweets_userid = 'userId_idx'
@@ -83,6 +85,7 @@ function initDatabase(): Promise<IDBDatabase> {
             initFollowingsTable(request).then();
             initWalletTable(request);
             initWalletSettingsTable(request);
+            initIpfsSettingsTable(request);
         };
     });
 }
@@ -230,6 +233,13 @@ function initWalletSettingsTable(request: IDBOpenDBRequest) {
 
     db.createObjectStore(__tableWalletSettings, {keyPath: 'id'});
     logDB("------>>>[Database]Created wallet settings table successfully.");
+}
+
+function initIpfsSettingsTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+    if (db.objectStoreNames.contains(__tableIpfsSettings)) return;
+    db.createObjectStore(__tableIpfsSettings, { keyPath: 'id' });
+    logDB("------>>>[Database]Created ipfs settings table successfully.");
 }
 
 

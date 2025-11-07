@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>TweetCat</title>
-    <link rel="stylesheet" href="../css/common_utils.css" />
+    <link rel="stylesheet" href="../css/common_utils.css"/>
     <link href="../css/dashboard.css" rel="stylesheet">
     <script src="../js/dashboard.js"></script>
 </head>
@@ -21,7 +21,8 @@
             <label style="display: flex; align-items: center; justify-content: space-between;">
                 <div>
                     <span class="ads-blocked-tips">__MSG_block_ads__</span>
-                    <span class="number-blocked-txt" style="color:rgb(29, 155, 240); background-color: rgba(29, 155, 240,0.2);border-radius: 999px; line-height: 20px;padding: 4px 12px; margin-left: 4px">0</span>
+                    <span class="number-blocked-txt"
+                          style="color:rgb(29, 155, 240); background-color: rgba(29, 155, 240,0.2);border-radius: 999px; line-height: 20px;padding: 4px 12px; margin-left: 4px">0</span>
                 </div>
                 <input type="checkbox" id="ad-block-toggle"/>
             </label>
@@ -54,6 +55,7 @@
                         <span class="value" id="ipfs-peerid"></span>
                         <button class="copy-btn" id="btn-copy-peerid">复制</button>
                     </div>
+                    <button class="ipfs-settings-btn" type="button" title="IPFS 设置">IPFS AP</button>
                 </div>
                 <div class="ipfs-create" id="ipfs-create" hidden>
                     <button class="primary" id="btn-create-ipfs-id">创建 IPFS 身份</button>
@@ -70,7 +72,8 @@
             <div>
                 <!-- 复用你在分类管理页使用的同款箭头 SVG，以保持风格统一 -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-                    <polygon fill="#191e24" points="15.97 6.75 3.88 6.75 9.32 1.31 7.9 0 0 7.9 7.9 15.8 9.21 14.49 3.94 9.22 15.97 9.22 15.97 6.75"/>
+                    <polygon fill="#191e24"
+                             points="15.97 6.75 3.88 6.75 9.32 1.31 7.9 0 0 7.9 7.9 15.8 9.21 14.49 3.94 9.22 15.97 9.22 15.97 6.75"/>
                 </svg>
             </div>
         </button>
@@ -94,15 +97,15 @@
             <h3 class="section-title">节点与 RPC</h3>
             <div class="settings-group">
                 <label for="infura-project-id">Infura Project ID（可选）</label>
-                <input type="text" id="infura-project-id" placeholder="示例：123abc456def" />
+                <input type="text" id="infura-project-id" placeholder="示例：123abc456def"/>
             </div>
             <div class="settings-group">
                 <label for="custom-rpc-url">自定义 RPC URL（可选）</label>
-                <input type="text" id="custom-rpc-url" placeholder="https://example.com/rpc" />
+                <input type="text" id="custom-rpc-url" placeholder="https://example.com/rpc"/>
             </div>
             <div class="settings-group rpc-mode-group">
-                <label><input type="radio" name="rpc-mode" value="default" checked /> 使用默认公共 RPC</label>
-                <label><input type="radio" name="rpc-mode" value="custom" /> 使用自定义 RPC</label>
+                <label><input type="radio" name="rpc-mode" value="default" checked/> 使用默认公共 RPC</label>
+                <label><input type="radio" name="rpc-mode" value="custom"/> 使用自定义 RPC</label>
             </div>
             <div class="settings-actions">
                 <button id="btn-save-settings">保存</button>
@@ -111,6 +114,45 @@
         </div>
     </section>
 </div>
+
+<!-- IPFS 设置 View（默认隐藏） -->
+<div id="view-ipfs-settings" class="view-ipfs-settings page_view">
+    <div class="view-header">
+        <button id="ipfs-back-btn" class="view-back-btn" type="button" aria-label="返回">← 返回</button>
+        <h2>IPFS 设置</h2>
+    </div>
+
+    <div class="view-content">
+        <label class="row">
+            <input type="checkbox" id="ipfs-use-default">
+            使用系统默认（Infura 公共端点）
+        </label>
+
+        <div class="grid">
+            <label>API URL
+                <input id="ipfs-api-url" type="text" placeholder="https://ipfs.infura.io:5001/api/v0">
+            </label>
+
+            <label>Infura Project ID
+                <input id="ipfs-project-id" type="text" placeholder="xxxxxxxxxxxxxxxxxxxxxx">
+            </label>
+
+            <label>Infura Project Secret
+                <input id="ipfs-project-secret" type="password" placeholder="****************">
+            </label>
+
+            <label>Gateway URL
+                <input id="ipfs-gateway-url" type="text" placeholder="https://ipfs.io/ipfs">
+            </label>
+
+        </div>
+    </div>
+
+    <div class="view-footer">
+        <button id="ipfs-settings-save" class="primary" type="button">保存</button>
+    </div>
+</div>
+
 
 <div id="view-category-manager" class="view-category-manager page_view">
     <div style="display: flex; align-items: center;justify-content: space-between;padding: 16px">

@@ -18,7 +18,7 @@ import {
     WalletSettings
 } from "../wallet/wallet_api";
 import {hideLoading, showLoading, showNotification} from "./common";
-import {ensureIpfsPeerId} from "../wallet/ipfs_api";
+import {ensureIpfsPeerId, IPFSSettings, loadIpfsSettings, resetIpfsClient, saveIpfsSettings} from "../wallet/ipfs_api";
 
 const ARBITRUM_CHAIN_ID = 42161;
 const DEFAULT_RPC_URL = "https://arb1.arbitrum.io/rpc";
@@ -51,6 +51,7 @@ async function initDashBoard(): Promise<void> {
     initNewCatModalDialog();
     initSettings();
     await initWalletOrCreate();
+    initIpfsSettingsView();
 }
 
 function dashRouter(path: string): void {
@@ -791,4 +792,71 @@ function showAlert(title: string, message: string) {
     alertOk.onclick = () => {
         alertBox.style.display = 'none';
     };
+}
+
+function $(sel: string) { return document.querySelector(sel) as HTMLElement | null; }
+function $input(sel: string) { return document.querySelector(sel) as HTMLInputElement | null; }
+async function fillIpfsForm() {
+    const s = await loadIpfsSettings();
+    if ($input("#ipfs-use-default")) $input("#ipfs-use-default")!.checked = !!s.useDefault;
+    if ($input("#ipfs-api-url")) $input("#ipfs-api-url")!.value = s.apiUrl ?? "";
+    if ($input("#ipfs-project-id")) $input("#ipfs-project-id")!.value = s.projectId ?? "";
+    if ($input("#ipfs-project-secret")) $input("#ipfs-project-secret")!.value = s.projectSecret ?? "";
+    if ($input("#ipfs-gateway-url")) $input("#ipfs-gateway-url")!.value = s.gatewayUrl ?? "";
+    toggleIpfsFields();
+}
+
+function toggleIpfsFields() {
+    const disabled = !!$input("#ipfs-use-default")?.checked;
+    ["#ipfs-api-url", "#ipfs-project-id", "#ipfs-project-secret", "#ipfs-gateway-url"].forEach(sel => {
+        const el = $input(sel);
+        if (el) el.disabled = disabled;
+    });
+}
+
+
+export function initIpfsSettingsView() {
+    // 进入设置页
+    $(".ipfs-settings-btn")?.addEventListener("click", async () => {
+        await fillIpfsForm();
+        showView('#onboarding/ipfs-settings', dashRouter);
+    });
+
+    // 返回主界面
+    $("#ipfs-back-btn")?.addEventListener("click", () => {
+        showView('#onboarding/main-home', dashRouter);
+    });
+
+    // 勾选“使用默认”时禁用/启用字段
+    $input("#ipfs-use-default")?.addEventListener("change", toggleIpfsFields);
+
+    // 保存
+    $("#ipfs-settings-save")?.addEventListener("click", async () => {
+        const useDefault = !!$input("#ipfs-use-default")?.checked;
+        const apiUrl     = $input("#ipfs-api-url")?.value?.trim();
+        const projectId  = $input("#ipfs-project-id")?.value?.trim();
+        const projectSecret = $input("#ipfs-project-secret")?.value?.trim();
+        const gatewayUrl = $input("#ipfs-gateway-url")?.value?.trim();
+
+        const payload: IPFSSettings = useDefault ? { useDefault } : {
+            useDefault,
+            apiUrl,
+            projectId,
+            projectSecret,
+            gatewayUrl,
+        };
+
+        // 基本校验：自定义模式至少需要 API URL
+        if (!useDefault && !apiUrl) {
+            alert("请填写 API URL，或勾选“使用系统默认”。");
+            return;
+        }
+
+        await saveIpfsSettings(payload);
+
+        // 让之后的 getIpfs() 用新配置
+        resetIpfsClient();
+
+        showView('#onboarding/main-home', dashRouter);
+    });
 }
