@@ -1,5 +1,5 @@
 body {
-    font: 15px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font: 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-weight: 700;
     margin: 0;
     width: 360px; /* 宽度为 360px */
@@ -118,7 +118,7 @@ h3 {
     display: block;
 }
 
-.wallet-settings.hidden {
+.hidden {
     display: none;
 }
 
@@ -219,12 +219,15 @@ h3 {
     line-height: 20px;
     border-radius: 9999px;
 }
+
 .category-item:hover {
     background-color: rgba(15, 20, 25, 0.1);
 }
+
 .categories-list {
     margin-top: 12px;
 }
+
 .category-edit-btn,
 .kol-size-val {
     width: 34px;
@@ -237,15 +240,17 @@ h3 {
     justify-content: center;
     align-items: center;
 }
+
 .kol-size-val {
     text-decoration: underline;
 }
-.category-edit-btn:hover{
-    background-color: rgba(0,0,0,0.2);
+
+.category-edit-btn:hover {
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 .kol-size-val:hover {
-    background-color: rgba(0,0,0,0.2);
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 .view-category-manager .category-id {
@@ -296,7 +301,7 @@ input.new-category-name {
     margin-top: 16px;
 }
 
-input.category-input:focus{
+input.category-input:focus {
     outline: none !important;
     border: 2px solid #428ad2 !important;
     box-shadow: 0 0 4px rgba(66, 138, 210, 0.3) !important;
@@ -310,7 +315,7 @@ input.category-input:focus{
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     display: none; /* 默认隐藏 */
     z-index: 9999;
 }
@@ -321,6 +326,7 @@ input.category-input:focus{
     font-size: 1.2em;
     font-weight: bold;
 }
+
 #alert-message {
     margin: 0 0 12px 0;
     padding: 0;
@@ -337,6 +343,7 @@ input.category-input:focus{
     background-color: transparent;
     border: none;
 }
+
 .button-back {
     display: flex;
     justify-content: center;
@@ -346,22 +353,33 @@ input.category-input:focus{
     width: 34px;
     height: 34px;
 }
+
 .button-back div {
     display: flex;
     justify-content: center;
     align-items: center;
 }
-.button-back:hover { background-color: rgba(0,0,0,0.08); }
-.button-back svg { display:block; }           /* 避免 inline-svg 的多余空隙 */
+
+.button-back:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.button-back svg {
+    display: block;
+}
+
+/* 避免 inline-svg 的多余空隙 */
 
 .category-remove-btn {
     color: rgba(0, 0, 0, 0.5);
     font-weight: 1000;
     font-size: 15px;
 }
+
 .category-remove-btn:hover {
     color: rgba(66, 138, 210, 1);
 }
+
 .category-name {
     display: flex;
     flex-direction: column;
@@ -370,8 +388,8 @@ input.category-input:focus{
 .category-name-val {
     padding: 12px 16px;
     box-sizing: border-box;
-    text-align: center;        /* 水平居中 */
-    vertical-align: middle;    /* 垂直居中（非 input 有效） */
+    text-align: center; /* 水平居中 */
+    vertical-align: middle; /* 垂直居中（非 input 有效） */
     max-width: 100%;
     width: 100%;
     border-radius: 9999px;
@@ -380,6 +398,7 @@ input.category-input:focus{
     transition: border 0.2s, box-shadow 0.2s;
     margin-top: 16px;
 }
+
 .name-edit,
 #btn-ok,
 #alert-ok,
@@ -392,35 +411,40 @@ input.category-input:focus{
     border-radius: 9999px;
     border: none;
 }
-#btn-confirm-new-category{
+
+#btn-confirm-new-category {
     margin-left: 8px;
 }
+
 .name-edit {
     margin: 16px auto;
 }
+
 .name-edit:hover,
 #btn-ok:hover,
 #btn-confirm-new-category:hover,
 #alert-ok:hover {
     background-color: #428ad2;
 }
+
 #btn-cancel-new-category,
 #btn-cancel {
     background-color: transparent;
     border-radius: 999px;
     border: 1px solid rgba(0, 0, 0, 0.1);
     padding: 12px 16px;
-    color:rgba(0, 0, 0, 0.5) ;
+    color: rgba(0, 0, 0, 0.5);
 }
+
 #btn-cancel-new-category:hover,
 #btn-cancel:hover {
     background-color: rgba(0, 0, 0, 0.2);
 
 }
+
 .popup-content p {
     margin: 0;
 }
-
 
 
 /* Wallet settings subpage */
@@ -467,9 +491,8 @@ input.category-input:focus{
 }
 
 
-
 /* ── IPFS 设置视图：容器 ─────────────────────────────────────────── */
-#view-ipfs-settings.view-ipfs-settings.page_view{
+#view-ipfs-settings.view-ipfs-settings.page_view {
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -478,7 +501,7 @@ input.category-input:focus{
 }
 
 /* ── 头部：返回 + 标题 ─────────────────────────────────────────── */
-#view-ipfs-settings .view-header{
+#view-ipfs-settings .view-header {
     position: sticky;
     top: 0;
     z-index: 10;
@@ -490,7 +513,7 @@ input.category-input:focus{
     border-bottom: 1px solid var(--border-subtle, #e5e7eb);
 }
 
-#view-ipfs-settings .view-header h2{
+#view-ipfs-settings .view-header h2 {
     flex: 1;
     text-align: center;
     font-size: 16px;
@@ -499,7 +522,7 @@ input.category-input:focus{
     color: var(--text-primary, #111827);
 }
 
-#view-ipfs-settings .view-back-btn{
+#view-ipfs-settings .view-back-btn {
     height: 28px;
     padding: 0 10px;
     border-radius: 10px;
@@ -509,13 +532,14 @@ input.category-input:focus{
     cursor: pointer;
     transition: background .15s ease, border-color .15s ease;
 }
-#view-ipfs-settings .view-back-btn:hover{
+
+#view-ipfs-settings .view-back-btn:hover {
     background: var(--surface-3, #f3f4f6);
     border-color: var(--border, #d1d5db);
 }
 
 /* ── 主体内容 ──────────────────────────────────────────────────── */
-#view-ipfs-settings .view-content{
+#view-ipfs-settings .view-content {
     padding: 14px 16px 6px;
     overflow-y: auto;
     display: flex;
@@ -523,7 +547,7 @@ input.category-input:focus{
     gap: 16px;
 }
 
-#view-ipfs-settings .provider-select{
+#view-ipfs-settings .provider-select {
     display: flex;
     flex-wrap: wrap;
     gap: 12px 18px;
@@ -531,31 +555,31 @@ input.category-input:focus{
     color: var(--text-secondary, #4b5563);
 }
 
-#view-ipfs-settings .provider-select label{
+#view-ipfs-settings .provider-select label {
     display: flex;
     align-items: center;
     gap: 6px;
     cursor: pointer;
 }
 
-#view-ipfs-settings .provider-select input[type="radio"]{
+#view-ipfs-settings .provider-select input[type="radio"] {
     accent-color: var(--brand, #2563eb);
 }
 
-#view-ipfs-settings .sensitive-hint{
+#view-ipfs-settings .sensitive-hint {
     margin: -6px 0 4px;
     font-size: 12px;
     color: var(--text-tertiary, #9ca3af);
 }
 
-#view-ipfs-settings .ipfs-provider-section{
+#view-ipfs-settings .ipfs-provider-section {
     border: 1px solid var(--border-subtle, #e5e7eb);
     border-radius: 14px;
     padding: 14px;
     background: var(--surface-2, #f9fafb);
 }
 
-#view-ipfs-settings .ipfs-provider-section h3{
+#view-ipfs-settings .ipfs-provider-section h3 {
     margin: 0 0 12px;
     font-size: 14px;
     font-weight: 600;
@@ -563,17 +587,20 @@ input.category-input:focus{
 }
 
 /* 表单网格：小屏 1 列，大屏 2 列 */
-#view-ipfs-settings .grid{
+#view-ipfs-settings .grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 12px 14px;
 }
-@media (min-width: 560px){
-    #view-ipfs-settings .grid{ grid-template-columns: 1fr 1fr; }
+
+@media (min-width: 560px) {
+    #view-ipfs-settings .grid {
+        grid-template-columns: 1fr 1fr;
+    }
 }
 
 /* 每个 label 块：标题在上，输入在下 */
-#view-ipfs-settings .grid > label{
+#view-ipfs-settings .grid > label {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -583,7 +610,7 @@ input.category-input:focus{
 
 /* 输入框通用样式 */
 #view-ipfs-settings input[type="text"],
-#view-ipfs-settings input[type="password"]{
+#view-ipfs-settings input[type="password"] {
     width: 100%;
     height: 36px;
     padding: 7px 10px;
@@ -595,37 +622,38 @@ input.category-input:focus{
     transition: border-color .15s ease, box-shadow .15s ease;
     box-sizing: border-box;
 }
+
 #view-ipfs-settings input[type="text"]::placeholder,
-#view-ipfs-settings input[type="password"]::placeholder{
+#view-ipfs-settings input[type="password"]::placeholder {
     color: var(--text-tertiary, #9ca3af);
 }
 
 /* 聚焦态：轻微高亮 */
 #view-ipfs-settings input[type="text"]:focus,
-#view-ipfs-settings input[type="password"]:focus{
+#view-ipfs-settings input[type="password"]:focus {
     border-color: var(--brand, #2563eb);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand, #2563eb) 20%, transparent);
 }
 
 /* URL 类输入用等宽字体，便于校对 */
 #view-ipfs-settings #custom-api-url,
-#view-ipfs-settings #custom-gateway-url{
-    font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+#view-ipfs-settings #custom-gateway-url {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 12px;
 }
 
-#view-ipfs-settings .has-secret{
+#view-ipfs-settings .has-secret {
     background: var(--surface, #fff);
 }
 
-#view-ipfs-settings .external-links{
+#view-ipfs-settings .external-links {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     margin-top: 4px;
 }
 
-#view-ipfs-settings .external-links button{
+#view-ipfs-settings .external-links button {
     border-radius: 8px;
     border: 1px solid var(--border-subtle, #e5e7eb);
     background: var(--surface, #fff);
@@ -636,13 +664,13 @@ input.category-input:focus{
     transition: background .15s ease, border-color .15s ease;
 }
 
-#view-ipfs-settings .external-links button:hover{
+#view-ipfs-settings .external-links button:hover {
     background: var(--surface-2, #f3f4f6);
     border-color: var(--border, #d1d5db);
 }
 
 /* ── 底部按钮区 ──────────────────────────────────────────────── */
-#view-ipfs-settings .view-footer{
+#view-ipfs-settings .view-footer {
     margin-top: auto;
     padding: 10px 16px 14px;
     display: flex;
@@ -652,7 +680,7 @@ input.category-input:focus{
     background: linear-gradient(to bottom, color-mix(in srgb, var(--surface, #fff) 85%, transparent), var(--surface, #fff));
 }
 
-#view-ipfs-settings .view-footer button{
+#view-ipfs-settings .view-footer button {
     min-width: 90px;
     height: 34px;
     padding: 0 14px;
@@ -664,13 +692,13 @@ input.category-input:focus{
     transition: background .15s ease, border-color .15s ease;
 }
 
-#view-ipfs-settings .view-footer button:hover{
+#view-ipfs-settings .view-footer button:hover {
     background: var(--surface-2, #f3f4f6);
     border-color: var(--border, #d1d5db);
 }
 
 /* 主按钮（如果你已有 .primary 样式，可忽略这一段） */
-#view-ipfs-settings .view-footer .primary{
+#view-ipfs-settings .view-footer .primary {
     min-width: 96px;
     height: 34px;
     padding: 0 14px;
@@ -682,9 +710,65 @@ input.category-input:focus{
     cursor: pointer;
     transition: filter .15s ease, transform .02s ease;
 }
-#view-ipfs-settings .view-footer .primary:hover{ filter: brightness(1.05); }
-#view-ipfs-settings .view-footer .primary:active{ transform: translateY(1px); }
-#view-ipfs-settings .view-footer .primary:disabled{
-    opacity: .6; cursor: not-allowed; filter: none;
+
+#view-ipfs-settings .view-footer .primary:hover {
+    filter: brightness(1.05);
 }
 
+#view-ipfs-settings .view-footer .primary:active {
+    transform: translateY(1px);
+}
+
+#view-ipfs-settings .view-footer .primary:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    filter: none;
+}
+
+
+.ipfs-revealed-panel {
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+}
+
+.ipfs-revealed-panel .panel-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.ipfs-revealed-panel .panel-toolbar .spacer {
+    flex: 1;
+}
+
+.ipfs-revealed-panel .panel-title {
+    font-weight: 600;
+}
+
+.ipfs-revealed-panel .panel-body {
+    max-height: 260px; /* 需要可滚动时再调高/低 */
+    overflow: auto;
+    display: grid;
+    gap: 10px;
+}
+
+.secret-item .secret-label {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.secret-item pre.secret-code {
+    white-space: pre; /* 不折行，支持横向滚动 */
+    word-break: normal;
+    overflow-x: auto;
+    margin: 0;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: #ffffff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    line-height: 1.4;
+}

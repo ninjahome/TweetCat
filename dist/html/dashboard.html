@@ -107,7 +107,6 @@
         <button id="ipfs-back-btn" class="view-back-btn" type="button" aria-label="返回">← 返回</button>
         <h2>IPFS 设置</h2>
     </div>
-
     <div class="view-content">
         <div class="provider-select">
             <label><input type="radio" name="ipfs-provider" value="pinata" checked> Pinata</label>
@@ -173,12 +172,22 @@
             <button type="button" data-ipfs-link="https://github.com/ipfs/ipfs-desktop">IPFS Desktop</button>
         </div>
     </div>
-
     <div class="view-footer">
         <button id="ipfs-settings-clear" type="button">清除设置</button>
         <button id="ipfs-settings-save" class="primary" type="button">保存</button>
         <button id="btn-ipfs-reveal" type="button">解密查看</button>
     </div>
+
+    <div id="ipfs-revealed-panel" class="ipfs-revealed-panel hidden" role="region" aria-label="解密后的配置">
+        <div class="panel-toolbar">
+            <span class="panel-title">已解密配置（仅本页临时显示）</span>
+            <div class="spacer"></div>
+            <button id="ipfs-revealed-copyall" type="button">复制全部</button>
+            <button id="ipfs-revealed-clear" type="button">清空</button>
+        </div>
+        <div class="panel-body" id="ipfs-revealed-body"></div>
+    </div>
+
 </div>
 
 <div id="view-category-manager" class="view-category-manager page_view">

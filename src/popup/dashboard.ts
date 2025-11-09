@@ -770,58 +770,63 @@ function updateProviderVisibility(): void {
 function toggleRevealButton(provider: IpfsProvider): void {
     const btn = document.getElementById('btn-ipfs-reveal') as HTMLButtonElement | null;
     if (!btn) return;
-    // 仅在 pinata / lighthouse / custom 显示；tweetcat 为只读说明，不展示
-    btn.hidden = !(provider === 'pinata' || provider === 'lighthouse' || provider === 'custom');
+    const visible = (provider === 'pinata' || provider === 'lighthouse' || provider === 'custom');
+    btn.hidden = !visible;
+    if (visible) {
+        const saved = currentIpfsSettings;
+        btn.disabled = !saved || !hasEncryptedSecretsFor(provider, saved);
+    }else {
+        btn.disabled = true;
+    }
 }
 
 async function handleIpfsReveal(): Promise<void> {
     try {
-        // 优先用内存里的 currentIpfsSettings；若为空再读一次
         const saved = currentIpfsSettings ?? await loadIpfsSettings();
         if (!saved) {
             showNotification('尚无已保存的 IPFS 设置', 'info');
             return;
         }
 
-        const provider = saved.provider;
-        if (provider === 'tweetcat') {
+        const selected = getSelectedProvider();     // ★ 使用“当前选择”的 Provider
+        if (selected === 'tweetcat') {
             showNotification('TweetCat 官方节点无敏感配置可解密', 'info');
             return;
         }
 
-        if (!hasEncryptedSecrets(saved)) {
-            showNotification('当前没有可解密的敏感字段', 'info');
+        if (!hasEncryptedSecretsFor(selected, saved)) {
+            showNotification('当前提供方没有可解密的敏感字段', 'info');
+            clearRevealPanel();
             return;
         }
 
         const password = await requestPassword('请输入用于解密查看的口令（仅用于临时查看，不会保存明文）');
         const dec = await decryptSettingsForUI(saved, password);
 
-        // 仅展示弹窗，不写回输入框，避免 scheduleSensitive 把“查看”当作“修改”
-        let lines: string[] = [];
-        if (dec.provider === 'pinata' && dec.pinata) {
-            if (dec.pinata.jwt) lines.push(`Pinata JWT:\n${dec.pinata.jwt}`);
-            if (dec.pinata.apiKey) lines.push(`Pinata API Key:\n${dec.pinata.apiKey}`);
-            if (dec.pinata.secret) lines.push(`Pinata API Secret:\n${dec.pinata.secret}`);
-        } else if (dec.provider === 'lighthouse' && dec.lighthouse) {
-            if (dec.lighthouse.jwt) lines.push(`Lighthouse JWT:\n${dec.lighthouse.jwt}`);
-            if (dec.lighthouse.apiKey) lines.push(`Lighthouse API Key:\n${dec.lighthouse.apiKey}`);
-        } else if (dec.provider === 'custom' && dec.custom) {
-            // apiUrl / gatewayUrl 本就明文；这里仅在存在 auth 时展示
-            if (dec.custom.auth) lines.push(`自建节点 Authorization:\n${dec.custom.auth}`);
+        const items: Array<{label: string; value: string}> = [];
+        if (selected === 'pinata' && dec.pinata) {
+            if (dec.pinata.jwt)    items.push({ label: 'Pinata JWT',       value: dec.pinata.jwt });
+            if (dec.pinata.apiKey) items.push({ label: 'Pinata API Key',   value: dec.pinata.apiKey });
+            if (dec.pinata.secret) items.push({ label: 'Pinata API Secret',value: dec.pinata.secret });
+        } else if (selected === 'lighthouse' && dec.lighthouse) {
+            if (dec.lighthouse.jwt)    items.push({ label: 'Lighthouse JWT',    value: dec.lighthouse.jwt });
+            if (dec.lighthouse.apiKey) items.push({ label: 'Lighthouse API Key',value: dec.lighthouse.apiKey });
+        } else if (selected === 'custom' && dec.custom) {
+            if (dec.custom.auth) items.push({ label: '自建节点 Authorization', value: dec.custom.auth });
         }
 
-        if (lines.length === 0) {
+        if (items.length === 0) {
             showNotification('已解密，但没有可展示的敏感字段', 'info');
+            clearRevealPanel();
             return;
         }
 
-        showAlert('当前已保存的配置（请妥善保密）', lines.join('\n\n'));
+        renderRevealItems(items);
+        showNotification('已在下方展示解密内容（仅临时显示，不参与保存）', 'info');
     } catch (e) {
         showNotification((e as Error).message ?? '解密失败', 'error');
     }
 }
-
 
 function setSensitiveState(input: HTMLInputElement | null, hasValue: boolean): void {
     if (!input) return;
@@ -1019,14 +1024,18 @@ async function handleClearIpfsSettings(): Promise<void> {
 export function initIpfsSettingsView() {
     providerRadios().forEach(radio => {
         radio.addEventListener('change', () => {
+            clearRevealPanel();
             updateProviderVisibility();
+            refreshSensitiveIndicators();
             toggleRevealButton(getSelectedProvider());
         });
     });
 
     $(".ipfs-settings-btn")?.addEventListener("click", async () => {
+        clearRevealPanel();
         await fillIpfsForm();
         showView('#onboarding/ipfs-settings', dashRouter);
+        bindRevealPanelButtons();
     });
 
     document.getElementById('btn-ipfs-reveal')?.addEventListener('click', () => {
@@ -1034,6 +1043,7 @@ export function initIpfsSettingsView() {
     });
 
     $("#ipfs-back-btn")?.addEventListener("click", () => {
+        clearRevealPanel();
         showView('#onboarding/main-home', dashRouter);
     });
 
@@ -1056,4 +1066,113 @@ export function initIpfsSettingsView() {
 
     updateProviderVisibility();
     toggleRevealButton(getSelectedProvider());
+}
+
+
+
+const REVEAL_AUTO_CLEAR_MS = 2 * 60 * 1000; // 2 分钟后自动清空
+let revealTimer: number | null = null;
+
+function getRevealEls() {
+    const panel = document.getElementById('ipfs-revealed-panel') as HTMLElement | null;
+    const body  = document.getElementById('ipfs-revealed-body') as HTMLElement | null;
+    const copyAllBtn = document.getElementById('ipfs-revealed-copyall') as HTMLButtonElement | null;
+    const clearBtn   = document.getElementById('ipfs-revealed-clear') as HTMLButtonElement | null;
+    return { panel, body, copyAllBtn, clearBtn };
+}
+
+function clearRevealPanel() {
+    const { panel, body } = getRevealEls();
+    if (panel && !panel.classList.contains('hidden')) panel.classList.add('hidden');
+    if (body) body.innerHTML = '';
+    if (revealTimer) { window.clearTimeout(revealTimer); revealTimer = null; }
+}
+
+function renderRevealItems(items: Array<{label: string; value: string}>) {
+    const { panel, body } = getRevealEls();
+    if (!panel || !body) return;
+
+    body.innerHTML = '';
+    if (items.length === 0) {
+        panel.classList.add('hidden');
+        return;
+    }
+
+    for (const it of items) {
+        const wrap = document.createElement('div');
+        wrap.className = 'secret-item';
+
+        const lab = document.createElement('div');
+        lab.className = 'secret-label';
+        lab.textContent = it.label;
+
+        const pre = document.createElement('pre');
+        pre.className = 'secret-code';
+        pre.textContent = it.value;
+
+        wrap.appendChild(lab);
+        wrap.appendChild(pre);
+        body.appendChild(wrap);
+    }
+
+    panel.classList.remove('hidden');
+    if (revealTimer) window.clearTimeout(revealTimer);
+    revealTimer = window.setTimeout(clearRevealPanel, REVEAL_AUTO_CLEAR_MS);
+}
+
+function bindRevealPanelButtons() {
+    const { copyAllBtn, clearBtn, body } = getRevealEls();
+    copyAllBtn?.addEventListener('click', async () => {
+        if (!body) return;
+        const blocks = Array.from(body.querySelectorAll('.secret-item'));
+        const text = blocks.map(b => {
+            const label = (b.querySelector('.secret-label') as HTMLElement | null)?.textContent ?? '';
+            const value = (b.querySelector('.secret-code') as HTMLElement | null)?.textContent ?? '';
+            return `${label}:\n${value}`;
+        }).join('\n\n');
+        try {
+            await navigator.clipboard.writeText(text);
+            showNotification('已复制');
+        } catch {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta);
+            showNotification('已复制');
+        }
+    });
+
+    clearBtn?.addEventListener('click', () => clearRevealPanel());
+}
+
+
+
+function refreshSensitiveIndicators(): void {
+    const pinata = currentIpfsSettings?.pinata;
+    setSensitiveState($input('#pinata-api-key'),   !!pinata?.apiKeyEnc);
+    setSensitiveState($input('#pinata-api-secret'),!!pinata?.secretEnc);
+    setSensitiveState($input('#pinata-jwt'),       !!pinata?.jwtEnc);
+
+    const lighthouse = currentIpfsSettings?.lighthouse;
+    setSensitiveState($input('#lighthouse-api-key'), !!lighthouse?.apiKeyEnc);
+    setSensitiveState($input('#lighthouse-jwt'),     !!lighthouse?.jwtEnc);
+
+    const custom = currentIpfsSettings?.custom;
+    // 注意：自建节点的 apiUrl / gatewayUrl 是明文，不在这里改，避免覆盖用户未保存的编辑
+    setSensitiveState($input('#custom-auth'), !!custom?.authEnc);
+}
+
+// 仅检查“指定 Provider”是否有加密字段（避免 Pinata 干扰 Lighthouse/Custom）
+function hasEncryptedSecretsFor(provider: IpfsProvider, saved: IpfsSettings): boolean {
+    if (provider === 'pinata') {
+        return !!(saved.pinata?.jwtEnc || saved.pinata?.apiKeyEnc || saved.pinata?.secretEnc);
+    }
+    if (provider === 'lighthouse') {
+        return !!(saved.lighthouse?.jwtEnc || saved.lighthouse?.apiKeyEnc);
+    }
+    if (provider === 'custom') {
+        return !!saved.custom?.authEnc;
+    }
+    return false;
 }
