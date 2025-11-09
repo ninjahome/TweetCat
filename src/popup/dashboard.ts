@@ -12,7 +12,6 @@ import {
     defaultWalletSettings,
     loadWallet,
     loadWalletSettings,
-    saveWallet,
     saveWalletSettings,
     TCWallet,
     WalletSettings
@@ -374,18 +373,15 @@ async function handleExportPrivateKey(): Promise<void> {
         return;
     }
 
-    let privateKey = "";
     try {
-        privateKey = await withDecryptedWallet(
+        const privateKey = await withDecryptedWallet(
             () => requestPassword("请输入钱包口令以导出私钥"),
             async wallet => wallet.privateKey
         );
         showNotification("私钥仅一次性展示，请妥善保管");
-        window.alert(`私钥：${privateKey}`);
+        window.alert(`私钥：${privateKey}`);//TODO::
     } catch (error) {
         showNotification((error as Error).message ?? "导出私钥失败", "error");
-    } finally {
-        privateKey = "";
     }
 }
 
@@ -481,7 +477,8 @@ async function handleSignTypedData(): Promise<void> {
     try {
         const parsed = JSON.parse(typedInput);
         if (!parsed.domain || !parsed.types || !parsed.value) {
-            throw new Error("JSON 缺少必要字段");
+            showNotification("JSON 缺少必要字段", "error");
+            return;
         }
         const signature = await signTypedData({
             domain: parsed.domain,
@@ -548,17 +545,15 @@ async function withDecryptedWallet<T>(passwordPrompt: PasswordPrompt, action: (w
         throw new Error("请先创建或导入钱包");
     }
 
-    let password = "";
     let wallet: ethers.Wallet | null = null;
     try {
-        password = await passwordPrompt();
+        const password = await passwordPrompt();
         if (!password) {
             throw new Error("口令不能为空");
         }
         wallet = await ethers.Wallet.fromEncryptedJson(currentWallet.keystoreJson, password);
         return await action(wallet);
     } finally {
-        password = "";
         if (wallet) {
             secureDisposeWallet(wallet);
         }
@@ -805,11 +800,11 @@ async function handleIpfsReveal(): Promise<void> {
         // 仅展示弹窗，不写回输入框，避免 scheduleSensitive 把“查看”当作“修改”
         let lines: string[] = [];
         if (dec.provider === 'pinata' && dec.pinata) {
-            if (dec.pinata.jwt)    lines.push(`Pinata JWT:\n${dec.pinata.jwt}`);
+            if (dec.pinata.jwt) lines.push(`Pinata JWT:\n${dec.pinata.jwt}`);
             if (dec.pinata.apiKey) lines.push(`Pinata API Key:\n${dec.pinata.apiKey}`);
             if (dec.pinata.secret) lines.push(`Pinata API Secret:\n${dec.pinata.secret}`);
         } else if (dec.provider === 'lighthouse' && dec.lighthouse) {
-            if (dec.lighthouse.jwt)    lines.push(`Lighthouse JWT:\n${dec.lighthouse.jwt}`);
+            if (dec.lighthouse.jwt) lines.push(`Lighthouse JWT:\n${dec.lighthouse.jwt}`);
             if (dec.lighthouse.apiKey) lines.push(`Lighthouse API Key:\n${dec.lighthouse.apiKey}`);
         } else if (dec.provider === 'custom' && dec.custom) {
             // apiUrl / gatewayUrl 本就明文；这里仅在存在 auth 时展示
@@ -948,7 +943,8 @@ async function handleIpfsSave(): Promise<void> {
         } else if (provider === 'custom') {
             const apiUrl = $input('#custom-api-url')?.value.trim() ?? '';
             if (!apiUrl) {
-                throw new Error('请填写自建节点 API URL');
+                showNotification('请填写自建节点 API URL', 'error');
+                return ;
             }
             const gatewayUrl = $input('#custom-gateway-url')?.value.trim() ?? '';
             const custom: NonNullable<IpfsSettings['custom']> = {
@@ -980,16 +976,19 @@ async function handleIpfsSave(): Promise<void> {
             const hasJwt = !!pinata.jwtEnc;
             const hasKeyPair = !!pinata.apiKeyEnc && !!pinata.secretEnc;
             if (!hasJwt && !hasKeyPair) {
-                throw new Error('请至少填写 Pinata JWT 或 API Key/Secret');
+                showNotification('请至少填写 Pinata JWT 或 API Key/Secret', 'error');
+                return ;
             }
         } else if (provider === 'lighthouse') {
             const lighthouse = next.lighthouse ?? {};
             if (!lighthouse.jwtEnc && !lighthouse.apiKeyEnc) {
-                throw new Error('请填写 Lighthouse API Key 或 JWT');
+                showNotification('请填写 Lighthouse API Key 或 JWT', 'error');
+                return ;
             }
         } else if (provider === 'custom') {
             if (!next.custom?.apiUrl) {
-                throw new Error('请填写自建节点 API URL');
+                showNotification('请填写自建节点 API URL', 'error');
+                return ;
             }
         }
 
@@ -1030,7 +1029,9 @@ export function initIpfsSettingsView() {
         showView('#onboarding/ipfs-settings', dashRouter);
     });
 
-    document.getElementById('btn-ipfs-reveal')?.addEventListener('click', () => { handleIpfsReveal().then(); });
+    document.getElementById('btn-ipfs-reveal')?.addEventListener('click', () => {
+        handleIpfsReveal().then();
+    });
 
     $("#ipfs-back-btn")?.addEventListener("click", () => {
         showView('#onboarding/main-home', dashRouter);
