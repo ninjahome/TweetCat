@@ -493,7 +493,6 @@ input.category-input:focus {
 
 /* ── IPFS 设置视图：容器 ─────────────────────────────────────────── */
 #view-ipfs-settings.view-ipfs-settings.page_view {
-    display: flex;
     flex-direction: column;
     height: 100%;
     background: var(--surface, #fff);
@@ -547,24 +546,6 @@ input.category-input:focus {
     gap: 16px;
 }
 
-#view-ipfs-settings .provider-select {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px 18px;
-    font-size: 14px;
-    color: var(--text-secondary, #4b5563);
-}
-
-#view-ipfs-settings .provider-select label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-}
-
-#view-ipfs-settings .provider-select input[type="radio"] {
-    accent-color: var(--brand, #2563eb);
-}
 
 #view-ipfs-settings .sensitive-hint {
     margin: -6px 0 4px;
@@ -669,106 +650,94 @@ input.category-input:focus {
     border-color: var(--border, #d1d5db);
 }
 
-/* ── 底部按钮区 ──────────────────────────────────────────────── */
-#view-ipfs-settings .view-footer {
-    margin-top: auto;
-    padding: 10px 16px 14px;
+#view-ipfs-settings .provider-row {
     display: flex;
-    justify-content: flex-end;
     gap: 10px;
-    border-top: 1px solid var(--border-subtle, #e5e7eb);
-    background: linear-gradient(to bottom, color-mix(in srgb, var(--surface, #fff) 85%, transparent), var(--surface, #fff));
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-#view-ipfs-settings .view-footer button {
-    min-width: 90px;
+#view-ipfs-settings #ipfs-provider-select {
     height: 34px;
-    padding: 0 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle, #e5e7eb);
+    background: var(--surface, #fff);
+    padding: 0 10px;
+}
+
+#view-ipfs-settings .provider-actions {
+    display: flex;
+    gap: 8px;
+}
+
+#view-ipfs-settings .provider-section-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+
+/* 一级：Provider 下拉 + 按钮行的按钮样式 */
+#view-ipfs-settings .provider-actions button {
+    height: 34px;
+    padding: 0 12px;
     border-radius: 10px;
     border: 1px solid var(--border-subtle, #e5e7eb);
     background: var(--surface, #fff);
     color: var(--text-secondary, #374151);
+    font-size: 13px;
     cursor: pointer;
-    transition: background .15s ease, border-color .15s ease;
+    transition: background .15s ease, border-color .15s ease, transform .1s ease;
 }
-
-#view-ipfs-settings .view-footer button:hover {
+#view-ipfs-settings .provider-actions button:hover {
     background: var(--surface-2, #f3f4f6);
     border-color: var(--border, #d1d5db);
+    transform: translateY(-1px);
 }
 
-/* 主按钮（如果你已有 .primary 样式，可忽略这一段） */
-#view-ipfs-settings .view-footer .primary {
-    min-width: 96px;
-    height: 34px;
-    padding: 0 14px;
-    border: 1px solid color-mix(in srgb, var(--brand, #2563eb) 80%, #0000);
+/* 二级：每个 Provider 操作栏的按钮样式 */
+#view-ipfs-settings .provider-section-actions button {
+    height: 32px;
+    padding: 0 10px;
     border-radius: 10px;
-    background: var(--brand, #2563eb);
-    color: #fff;
-    font-weight: 700;
+    border: 1px solid var(--border-subtle, #e5e7eb);
+    background: var(--surface, #fff);
+    color: var(--text-secondary, #374151);
+    font-size: 13px;
     cursor: pointer;
-    transition: filter .15s ease, transform .02s ease;
+    transition: background .15s ease, border-color .15s ease, transform .1s ease;
+}
+#view-ipfs-settings .provider-section-actions button:hover {
+    background: var(--surface-2, #f3f4f6);
+    border-color: var(--border, #d1d5db);
+    transform: translateY(-1px);
 }
 
-#view-ipfs-settings .view-footer .primary:hover {
-    filter: brightness(1.05);
+/* 主按钮（保存）——给带 .primary 的按钮更显眼的视觉 */
+#view-ipfs-settings .provider-section-actions .primary {
+    background: #1d9bf0;
+    color: #fff;
+    border: 1px solid rgba(29,155,240,0.25);
+}
+#view-ipfs-settings .provider-section-actions .primary:hover {
+    background: #1871c3;
+    border-color: rgba(29,155,240,0.35);
 }
 
-#view-ipfs-settings .view-footer .primary:active {
-    transform: translateY(1px);
+/* 危险按钮（清空）——可选：若你想强调清空是危险操作，可以给它加 .danger 类 */
+#view-ipfs-settings .provider-section-actions .danger {
+    background: #fff1f2;
+    color: #b91c1c;
+    border-color: #fecdd3;
+}
+#view-ipfs-settings .provider-section-actions .danger:hover {
+    background: #ffe4e6;
+    border-color: #fda4af;
 }
 
-#view-ipfs-settings .view-footer .primary:disabled {
-    opacity: .6;
+/* 通用禁用态（供 reveal 不可用等场景） */
+#view-ipfs-settings button:disabled {
+    opacity: .55;
     cursor: not-allowed;
-    filter: none;
-}
-
-
-.ipfs-revealed-panel {
-    margin-top: 12px;
-    padding: 10px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #f8fafc;
-}
-
-.ipfs-revealed-panel .panel-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.ipfs-revealed-panel .panel-toolbar .spacer {
-    flex: 1;
-}
-
-.ipfs-revealed-panel .panel-title {
-    font-weight: 600;
-}
-
-.ipfs-revealed-panel .panel-body {
-    max-height: 260px; /* 需要可滚动时再调高/低 */
-    overflow: auto;
-    display: grid;
-    gap: 10px;
-}
-
-.secret-item .secret-label {
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.secret-item pre.secret-code {
-    white-space: pre; /* 不折行，支持横向滚动 */
-    word-break: normal;
-    overflow-x: auto;
-    margin: 0;
-    padding: 6px 8px;
-    border-radius: 6px;
-    background: #ffffff;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    line-height: 1.4;
+    transform: none !important;
 }

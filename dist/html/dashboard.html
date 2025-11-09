@@ -108,42 +108,63 @@
         <h2>IPFS 设置</h2>
     </div>
     <div class="view-content">
-        <div class="provider-select">
-            <label><input type="radio" name="ipfs-provider" value="pinata" checked> Pinata</label>
-            <label><input type="radio" name="ipfs-provider" value="lighthouse"> Lighthouse</label>
-            <label><input type="radio" name="ipfs-provider" value="custom"> 自建节点</label>
-            <label><input type="radio" name="ipfs-provider" value="tweetcat"/>TweetCat 官方节点</label>
+
+        <div class="provider-row">
+            <select id="ipfs-provider-select">
+                <option value="pinata">Pinata</option>
+                <option value="lighthouse">Lighthouse</option>
+                <option value="custom">自建节点</option>
+                <option value="tweetcat">TweetCat 官方节点</option>
+            </select>
+            <div class="provider-actions">
+                <button id="ipfs-provider-save" type="button">保存为当前默认 Provider</button>
+                <button id="ipfs-provider-set-tweetcat" type="button">设为 TweetCat 默认</button>
+            </div>
         </div>
 
         <p class="sensitive-hint">敏感字段输入后将加密保存，留空则保留已有值。</p>
 
-        <div class="ipfs-provider-section" data-provider="pinata">
+        <div class="ipfs-provider-section" data-provider="tweetcat" >
+            <div>
+                使用 TweetCat 官方托管的 IPFS 网关和上传服务。本选项为只读，无法修改任何凭据或端点。
+                （可在此放入一小段富文本说明，例如：稳定性、速率限制、隐私说明、服务协议链接等）
+            </div>
+        </div>
+        <div class="ipfs-provider-section" data-provider="pinata" hidden>
             <h3>Pinata 凭据</h3>
             <div class="grid">
                 <label>API Key
-                    <input id="pinata-api-key" type="password" placeholder="请输入 Pinata API Key">
+                    <input id="pinata-api-key" type="password" autocomplete="off" placeholder="请输入 Pinata API Key">
                 </label>
                 <label>API Secret
-                    <input id="pinata-api-secret" type="password" placeholder="请输入 Pinata API Secret">
+                    <input id="pinata-api-secret" type="password" autocomplete="off" placeholder="请输入 Pinata API Secret">
                 </label>
                 <label>JWT Token
-                    <input id="pinata-jwt" type="password" placeholder="Bearer Token (可选)">
+                    <input id="pinata-jwt" type="password" autocomplete="off" placeholder="Bearer Token (可选)">
                 </label>
             </div>
+            <div class="provider-section-actions" data-provider="pinata">
+                <button id="pinata-reveal-fill" type="button">解密并回填</button>
+                <button id="pinata-save" class="primary" type="button">保存 Pinata</button>
+                <button id="pinata-clear" class="danger" type="button">清空 Pinata</button>
+            </div>
         </div>
-
         <div class="ipfs-provider-section" data-provider="lighthouse" hidden>
             <h3>Lighthouse 凭据</h3>
             <div class="grid">
                 <label>API Key
-                    <input id="lighthouse-api-key" type="password" placeholder="输入 API Key (可选)">
+                    <input id="lighthouse-api-key" type="password" autocomplete="off" placeholder="输入 API Key (可选)">
                 </label>
                 <label>JWT Token
-                    <input id="lighthouse-jwt" type="password" placeholder="输入 JWT Token (可选)">
+                    <input id="lighthouse-jwt" type="password" autocomplete="off" placeholder="输入 JWT Token (可选)">
                 </label>
             </div>
+            <div class="provider-section-actions" data-provider="lighthouse">
+                <button id="lighthouse-reveal-fill" type="button">解密并回填</button>
+                <button id="lighthouse-save" class="primary" type="button">保存 Lighthouse</button>
+                <button id="lighthouse-clear" class="danger" type="button">清空 Lighthouse</button>
+            </div>
         </div>
-
         <div class="ipfs-provider-section" data-provider="custom" hidden>
             <h3>自建节点</h3>
             <div class="grid">
@@ -154,15 +175,13 @@
                     <input id="custom-gateway-url" type="text" placeholder="https://ipfs.io/ipfs">
                 </label>
                 <label>Authorization (可选)
-                    <input id="custom-auth" type="password" placeholder="Basic xxx 或 Bearer yyy">
+                    <input id="custom-auth" type="password" autocomplete="off" placeholder="Basic xxx 或 Bearer yyy">
                 </label>
             </div>
-        </div>
-
-        <div class="ipfs-provider-section" data-provider="tweetcat" hidden>
-            <div class="muted">
-                使用 TweetCat 官方托管的 IPFS 网关和上传服务。本选项为只读，无法修改任何凭据或端点。
-                （可在此放入一小段富文本说明，例如：稳定性、速率限制、隐私说明、服务协议链接等）
+            <div class="provider-section-actions" data-provider="custom">
+                <button id="custom-reveal-fill" type="button">解密并回填</button>
+                <button id="custom-save" class="primary" type="button">保存 自建节点</button>
+                <button id="custom-clear" class="danger" type="button">清空 自建节点</button>
             </div>
         </div>
 
@@ -172,22 +191,6 @@
             <button type="button" data-ipfs-link="https://github.com/ipfs/ipfs-desktop">IPFS Desktop</button>
         </div>
     </div>
-    <div class="view-footer">
-        <button id="ipfs-settings-clear" type="button">清除设置</button>
-        <button id="ipfs-settings-save" class="primary" type="button">保存</button>
-        <button id="btn-ipfs-reveal" type="button">解密查看</button>
-    </div>
-
-    <div id="ipfs-revealed-panel" class="ipfs-revealed-panel hidden" role="region" aria-label="解密后的配置">
-        <div class="panel-toolbar">
-            <span class="panel-title">已解密配置（仅本页临时显示）</span>
-            <div class="spacer"></div>
-            <button id="ipfs-revealed-copyall" type="button">复制全部</button>
-            <button id="ipfs-revealed-clear" type="button">清空</button>
-        </div>
-        <div class="panel-body" id="ipfs-revealed-body"></div>
-    </div>
-
 </div>
 
 <div id="view-category-manager" class="view-category-manager page_view">

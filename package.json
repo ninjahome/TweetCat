@@ -26,5 +26,5 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
-  "version": "2.3.3"
+  "version": "2.3.6"
 }
