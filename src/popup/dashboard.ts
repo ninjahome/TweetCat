@@ -824,76 +824,49 @@ async function fillIpfsForm(): Promise<void> {
     setSensitiveState($input('#custom-auth'), !!custom?.authEnc);
 }
 
-async function handleIpfsSave(): Promise<void> {
+async function handleIpfsSave(): Promise<boolean> {
     try {
         const provider = getSelectedProvider();
         const pending: PendingField[] = [];
         const next: IpfsSettings = {
             id: 'ipfs',
             provider,
-            pinata: currentIpfsSettings?.pinata ? {...currentIpfsSettings.pinata} : undefined,
-            lighthouse: currentIpfsSettings?.lighthouse ? {...currentIpfsSettings.lighthouse} : undefined,
-            custom: currentIpfsSettings?.custom ? {...currentIpfsSettings.custom} : undefined,
+            pinata: currentIpfsSettings?.pinata ? { ...currentIpfsSettings.pinata } : undefined,
+            lighthouse: currentIpfsSettings?.lighthouse ? { ...currentIpfsSettings.lighthouse } : undefined,
+            custom: currentIpfsSettings?.custom ? { ...currentIpfsSettings.custom } : undefined,
         };
 
         if (provider === 'pinata') {
             const pinata: NonNullable<IpfsSettings['pinata']> = {};
             scheduleSensitive($input('#pinata-jwt'), currentIpfsSettings?.pinata?.jwtEnc, 'Pinata JWT', block => {
-                if (block) {
-                    pinata.jwtEnc = block;
-                } else {
-                    delete pinata.jwtEnc;
-                }
+                if (block) pinata.jwtEnc = block; else delete pinata.jwtEnc;
             }, pending);
             scheduleSensitive($input('#pinata-api-key'), currentIpfsSettings?.pinata?.apiKeyEnc, 'Pinata API Key', block => {
-                if (block) {
-                    pinata.apiKeyEnc = block;
-                } else {
-                    delete pinata.apiKeyEnc;
-                }
+                if (block) pinata.apiKeyEnc = block; else delete pinata.apiKeyEnc;
             }, pending);
             scheduleSensitive($input('#pinata-api-secret'), currentIpfsSettings?.pinata?.secretEnc, 'Pinata API Secret', block => {
-                if (block) {
-                    pinata.secretEnc = block;
-                } else {
-                    delete pinata.secretEnc;
-                }
+                if (block) pinata.secretEnc = block; else delete pinata.secretEnc;
             }, pending);
             next.pinata = pinata;
         } else if (provider === 'lighthouse') {
             const lighthouse: NonNullable<IpfsSettings['lighthouse']> = {};
             scheduleSensitive($input('#lighthouse-jwt'), currentIpfsSettings?.lighthouse?.jwtEnc, 'Lighthouse JWT', block => {
-                if (block) {
-                    lighthouse.jwtEnc = block;
-                } else {
-                    delete lighthouse.jwtEnc;
-                }
+                if (block) lighthouse.jwtEnc = block; else delete lighthouse.jwtEnc;
             }, pending);
             scheduleSensitive($input('#lighthouse-api-key'), currentIpfsSettings?.lighthouse?.apiKeyEnc, 'Lighthouse API Key', block => {
-                if (block) {
-                    lighthouse.apiKeyEnc = block;
-                } else {
-                    delete lighthouse.apiKeyEnc;
-                }
+                if (block) lighthouse.apiKeyEnc = block; else delete lighthouse.apiKeyEnc;
             }, pending);
             next.lighthouse = lighthouse;
         } else if (provider === 'custom') {
             const apiUrl = $input('#custom-api-url')?.value.trim() ?? '';
             if (!apiUrl) {
                 showNotification('请填写自建节点 API URL', 'error');
-                return ;
+                return false;
             }
             const gatewayUrl = $input('#custom-gateway-url')?.value.trim() ?? '';
-            const custom: NonNullable<IpfsSettings['custom']> = {
-                apiUrl,
-                gatewayUrl: gatewayUrl || undefined,
-            };
+            const custom: NonNullable<IpfsSettings['custom']> = { apiUrl, gatewayUrl: gatewayUrl || undefined };
             scheduleSensitive($input('#custom-auth'), currentIpfsSettings?.custom?.authEnc, '自建节点 Authorization', block => {
-                if (block) {
-                    custom.authEnc = block;
-                } else {
-                    delete custom.authEnc;
-                }
+                if (block) custom.authEnc = block; else delete custom.authEnc;
             }, pending);
             next.custom = custom;
         }
@@ -902,30 +875,29 @@ async function handleIpfsSave(): Promise<void> {
         if (pending.length > 0) {
             password = await requestPassword('请输入用于加密 IPFS 凭据的口令');
         }
-
         for (const task of pending) {
             const block = await encryptString(task.value, password);
             task.apply(block);
         }
 
         if (provider === 'pinata') {
-            const pinata = next.pinata ?? {};
-            const hasJwt = !!pinata.jwtEnc;
-            const hasKeyPair = !!pinata.apiKeyEnc && !!pinata.secretEnc;
+            const p = next.pinata ?? {};
+            const hasJwt = !!p.jwtEnc;
+            const hasKeyPair = !!p.apiKeyEnc && !!p.secretEnc;
             if (!hasJwt && !hasKeyPair) {
                 showNotification('请至少填写 Pinata JWT 或 API Key/Secret', 'error');
-                return ;
+                return false;
             }
         } else if (provider === 'lighthouse') {
-            const lighthouse = next.lighthouse ?? {};
-            if (!lighthouse.jwtEnc && !lighthouse.apiKeyEnc) {
+            const l = next.lighthouse ?? {};
+            if (!l.jwtEnc && !l.apiKeyEnc) {
                 showNotification('请填写 Lighthouse API Key 或 JWT', 'error');
-                return ;
+                return false;
             }
         } else if (provider === 'custom') {
             if (!next.custom?.apiUrl) {
                 showNotification('请填写自建节点 API URL', 'error');
-                return ;
+                return false;
             }
         }
 
@@ -933,10 +905,11 @@ async function handleIpfsSave(): Promise<void> {
         resetIpfsClient();
         currentIpfsSettings = next;
         showNotification('已保存（加密）', 'info');
-        showView('#onboarding/main-home', dashRouter);
+        return true;
     } catch (error) {
         const message = (error as Error).message ?? '保存失败';
         showNotification(message, 'error');
+        return false;
     }
 }
 
@@ -953,10 +926,7 @@ export function initIpfsSettingsView() {
         showView('#onboarding/ipfs-settings', dashRouter);
     });
 
-    // 顶部一级按钮
-    document.getElementById('ipfs-provider-save')?.addEventListener('click', () => {
-        saveProviderOnly().then();
-    });
+
     document.getElementById('ipfs-provider-set-tweetcat')?.addEventListener('click', () => {
         setTweetcatAsDefault().then();
     });
@@ -993,8 +963,11 @@ export function initIpfsSettingsView() {
     });
 
     // 返回按钮与外链保留
-    $("#ipfs-back-btn")?.addEventListener("click", () => {
-        showView('#onboarding/main-home', dashRouter);
+    $("#ipfs-back-btn")?.addEventListener("click", async () => {
+        const ok = await handleIpfsSave();
+        if (ok) {
+            showView('#onboarding/main-home', dashRouter);
+        }
     });
     document.querySelectorAll<HTMLElement>('[data-ipfs-link]').forEach(btn => {
         btn.addEventListener('click', (ev) => {
@@ -1034,22 +1007,6 @@ function hasEncryptedSecretsFor(provider: IpfsProvider, saved: IpfsSettings): bo
         return !!saved.custom?.authEnc;
     }
     return false;
-}
-
-
-async function saveProviderOnly(): Promise<void> {
-    const selected = getSelectedProvider();
-    const saved = currentIpfsSettings ?? await loadIpfsSettings();
-    const next: IpfsSettings = {
-        id: 'ipfs',
-        provider: selected,
-        pinata: saved?.pinata,
-        lighthouse: saved?.lighthouse,
-        custom: saved?.custom,
-    };
-    await saveIpfsSettings(next);
-    currentIpfsSettings = next;
-    showNotification('已保存默认 Provider');
 }
 
 async function setTweetcatAsDefault(): Promise<void> {
