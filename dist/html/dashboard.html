@@ -58,7 +58,6 @@
     <div class="subpage-header">
         <button id="wallet-back-btn" class="button-back" aria-label="返回">
             <div>
-                <!-- 复用你在分类管理页使用的同款箭头 SVG，以保持风格统一 -->
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
                     <polygon fill="#191e24"
                              points="15.97 6.75 3.88 6.75 9.32 1.31 7.9 0 0 7.9 7.9 15.8 9.21 14.49 3.94 9.22 15.97 9.22 15.97 6.75"/>
@@ -114,6 +113,7 @@
             <label><input type="radio" name="ipfs-provider" value="pinata" checked> Pinata</label>
             <label><input type="radio" name="ipfs-provider" value="lighthouse"> Lighthouse</label>
             <label><input type="radio" name="ipfs-provider" value="custom"> 自建节点</label>
+            <label><input type="radio" name="ipfs-provider" value="tweetcat"/>TweetCat 官方节点</label>
         </div>
 
         <p class="sensitive-hint">敏感字段输入后将加密保存，留空则保留已有值。</p>
@@ -160,6 +160,13 @@
             </div>
         </div>
 
+        <div class="ipfs-provider-section" data-provider="tweetcat" hidden>
+            <div class="muted">
+                使用 TweetCat 官方托管的 IPFS 网关和上传服务。本选项为只读，无法修改任何凭据或端点。
+                （可在此放入一小段富文本说明，例如：稳定性、速率限制、隐私说明、服务协议链接等）
+            </div>
+        </div>
+
         <div class="external-links">
             <button type="button" data-ipfs-link="https://pinata.cloud/">Pinata 官网</button>
             <button type="button" data-ipfs-link="https://www.lighthouse.storage/">Lighthouse 官网</button>
@@ -170,6 +177,7 @@
     <div class="view-footer">
         <button id="ipfs-settings-clear" type="button">清除设置</button>
         <button id="ipfs-settings-save" class="primary" type="button">保存</button>
+        <button id="btn-ipfs-reveal" type="button">解密查看</button>
     </div>
 </div>
 

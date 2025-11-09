@@ -6,9 +6,68 @@ import {
     databaseUpdateOrAddItem
 } from "../common/database";
 
-export type IpfsProvider = 'pinata' | 'lighthouse' | 'custom';
+export type IpfsProvider = 'pinata' | 'lighthouse' | 'custom' | 'tweetcat';
 
 export interface EncryptedBlock { iv: string; salt: string; cipher: string; }
+
+export type DecryptedSettings = {
+    provider: IpfsProvider;
+    pinata?: { apiKey?: string; secret?: string; jwt?: string };
+    lighthouse?: { apiKey?: string; jwt?: string };
+    custom?: { apiUrl?: string; gatewayUrl?: string; auth?: string };
+};
+
+export function hasEncryptedSecrets(s: IpfsSettings): boolean {
+    if (!s) return false;
+    switch (s.provider) {
+        case 'pinata':
+            return !!(s.pinata?.apiKeyEnc || s.pinata?.secretEnc || s.pinata?.jwtEnc);
+        case 'lighthouse':
+            return !!(s.lighthouse?.apiKeyEnc || s.lighthouse?.jwtEnc);
+        case 'custom':
+            return !!(s.custom?.authEnc);
+        default:
+            return false;
+    }
+}
+
+/**
+ * 统一解密：根据当前 provider 将已保存的敏感字段解密成明文，供 UI 临时展示
+ * 注意：仅返回解密后的值，不做持久化；调用方负责清理。
+ */
+export async function decryptSettingsForUI(
+    s: IpfsSettings,
+    password: string
+): Promise<DecryptedSettings> {
+    const out: DecryptedSettings = { provider: s.provider };
+
+    if (s.provider === 'pinata' && s.pinata) {
+        out.pinata = {
+            apiKey: s.pinata.apiKeyEnc ? await decryptString(s.pinata.apiKeyEnc, password) : undefined,
+            secret: s.pinata.secretEnc ? await decryptString(s.pinata.secretEnc, password) : undefined,
+            jwt:    s.pinata.jwtEnc    ? await decryptString(s.pinata.jwtEnc, password)    : undefined,
+        };
+    }
+
+    if (s.provider === 'lighthouse' && s.lighthouse) {
+        out.lighthouse = {
+            apiKey: s.lighthouse.apiKeyEnc ? await decryptString(s.lighthouse.apiKeyEnc, password) : undefined,
+            jwt:    s.lighthouse.jwtEnc    ? await decryptString(s.lighthouse.jwtEnc, password)    : undefined,
+        };
+    }
+
+    if (s.provider === 'custom' && s.custom) {
+        out.custom = {
+            apiUrl: s.custom.apiUrl,              // 非敏感
+            gatewayUrl: s.custom.gatewayUrl,      // 非敏感
+            auth:  s.custom.authEnc ? await decryptString(s.custom.authEnc, password) : undefined,
+        };
+    }
+
+    // tweetcat 无敏感字段，不需要解密
+    return out;
+}
+
 
 export interface IpfsSettings {
     id: 'ipfs';

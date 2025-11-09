@@ -25,7 +25,7 @@ import {
     loadIpfsSettings,
     saveIpfsSettings,
     deleteIpfsSettings,
-    EncryptedBlock
+    EncryptedBlock, hasEncryptedSecrets, decryptSettingsForUI
 } from "../wallet/ipfs_settings";
 import {resetIpfsClient} from "../wallet/ipfs_api";
 
@@ -736,8 +736,13 @@ function showAlert(title: string, message: string) {
     };
 }
 
-function $(sel: string) { return document.querySelector(sel) as HTMLElement | null; }
-function $input(sel: string) { return document.querySelector(sel) as HTMLInputElement | null; }
+function $(sel: string) {
+    return document.querySelector(sel) as HTMLElement | null;
+}
+
+function $input(sel: string) {
+    return document.querySelector(sel) as HTMLInputElement | null;
+}
 
 type PendingField = { label: string; value: string; apply: (block: EncryptedBlock) => void; };
 
@@ -749,7 +754,7 @@ function providerRadios(): HTMLInputElement[] {
 
 function getSelectedProvider(): IpfsProvider {
     const checked = providerRadios().find(r => r.checked);
-    return (checked?.value as IpfsProvider) || 'pinata';
+    return (checked?.value as IpfsProvider) || 'tweetcat';
 }
 
 function setSelectedProvider(provider: IpfsProvider): void {
@@ -764,7 +769,64 @@ function updateProviderVisibility(): void {
         const sectionProvider = section.dataset.provider as IpfsProvider | undefined;
         section.hidden = !!sectionProvider && sectionProvider !== provider;
     });
+    toggleRevealButton(provider);
 }
+
+function toggleRevealButton(provider: IpfsProvider): void {
+    const btn = document.getElementById('btn-ipfs-reveal') as HTMLButtonElement | null;
+    if (!btn) return;
+    // 仅在 pinata / lighthouse / custom 显示；tweetcat 为只读说明，不展示
+    btn.hidden = !(provider === 'pinata' || provider === 'lighthouse' || provider === 'custom');
+}
+
+async function handleIpfsReveal(): Promise<void> {
+    try {
+        // 优先用内存里的 currentIpfsSettings；若为空再读一次
+        const saved = currentIpfsSettings ?? await loadIpfsSettings();
+        if (!saved) {
+            showNotification('尚无已保存的 IPFS 设置', 'info');
+            return;
+        }
+
+        const provider = saved.provider;
+        if (provider === 'tweetcat') {
+            showNotification('TweetCat 官方节点无敏感配置可解密', 'info');
+            return;
+        }
+
+        if (!hasEncryptedSecrets(saved)) {
+            showNotification('当前没有可解密的敏感字段', 'info');
+            return;
+        }
+
+        const password = await requestPassword('请输入用于解密查看的口令（仅用于临时查看，不会保存明文）');
+        const dec = await decryptSettingsForUI(saved, password);
+
+        // 仅展示弹窗，不写回输入框，避免 scheduleSensitive 把“查看”当作“修改”
+        let lines: string[] = [];
+        if (dec.provider === 'pinata' && dec.pinata) {
+            if (dec.pinata.jwt)    lines.push(`Pinata JWT:\n${dec.pinata.jwt}`);
+            if (dec.pinata.apiKey) lines.push(`Pinata API Key:\n${dec.pinata.apiKey}`);
+            if (dec.pinata.secret) lines.push(`Pinata API Secret:\n${dec.pinata.secret}`);
+        } else if (dec.provider === 'lighthouse' && dec.lighthouse) {
+            if (dec.lighthouse.jwt)    lines.push(`Lighthouse JWT:\n${dec.lighthouse.jwt}`);
+            if (dec.lighthouse.apiKey) lines.push(`Lighthouse API Key:\n${dec.lighthouse.apiKey}`);
+        } else if (dec.provider === 'custom' && dec.custom) {
+            // apiUrl / gatewayUrl 本就明文；这里仅在存在 auth 时展示
+            if (dec.custom.auth) lines.push(`自建节点 Authorization:\n${dec.custom.auth}`);
+        }
+
+        if (lines.length === 0) {
+            showNotification('已解密，但没有可展示的敏感字段', 'info');
+            return;
+        }
+
+        showAlert('当前已保存的配置（请妥善保密）', lines.join('\n\n'));
+    } catch (e) {
+        showNotification((e as Error).message ?? '解密失败', 'error');
+    }
+}
+
 
 function setSensitiveState(input: HTMLInputElement | null, hasValue: boolean): void {
     if (!input) return;
@@ -805,9 +867,10 @@ function scheduleSensitive(
 
 async function fillIpfsForm(): Promise<void> {
     currentIpfsSettings = await loadIpfsSettings();
-    const provider = currentIpfsSettings?.provider ?? 'pinata';
+    const provider = currentIpfsSettings?.provider ?? 'tweetcat';
     setSelectedProvider(provider);
     updateProviderVisibility();
+    toggleRevealButton(provider);
 
     const pinata = currentIpfsSettings?.pinata;
     setSensitiveState($input('#pinata-api-key'), !!pinata?.apiKeyEnc);
@@ -956,13 +1019,18 @@ async function handleClearIpfsSettings(): Promise<void> {
 
 export function initIpfsSettingsView() {
     providerRadios().forEach(radio => {
-        radio.addEventListener('change', () => updateProviderVisibility());
+        radio.addEventListener('change', () => {
+            updateProviderVisibility();
+            toggleRevealButton(getSelectedProvider());
+        });
     });
 
     $(".ipfs-settings-btn")?.addEventListener("click", async () => {
         await fillIpfsForm();
         showView('#onboarding/ipfs-settings', dashRouter);
     });
+
+    document.getElementById('btn-ipfs-reveal')?.addEventListener('click', () => { handleIpfsReveal().then(); });
 
     $("#ipfs-back-btn")?.addEventListener("click", () => {
         showView('#onboarding/main-home', dashRouter);
@@ -986,4 +1054,5 @@ export function initIpfsSettingsView() {
     });
 
     updateProviderVisibility();
+    toggleRevealButton(getSelectedProvider());
 }

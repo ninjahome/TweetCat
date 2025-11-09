@@ -328,6 +328,8 @@ input.category-input:focus{
     font-size: 14px;
     font-weight: 500;
     color: rgba(0, 0, 0, 0.67);
+    white-space: pre-wrap;
+    word-break: break-all;
 }
 
 .category-remove-btn,
