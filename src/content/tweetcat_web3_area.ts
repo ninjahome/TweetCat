@@ -273,20 +273,9 @@ export async function initWeb3IdentityArea(): Promise<void> {
         }
     });
 
-    host.querySelector("#web3-peerid-copy")?.addEventListener("click", async () => {
-        const v = (host.querySelector("#web3-peerid") as HTMLElement)?.textContent || "";
-        if (!v || v === "--") return;
-        try {
-            await navigator.clipboard.writeText(v);
-            showToastMsg(t('copy_success'));
-        } catch {}
-    });
-
-
     host.querySelector(".web3-title-text").textContent = t('web3_id_tittle');
     host.querySelector("#web3-refresh-btn").textContent = t('refresh');
     host.querySelector("#web3-copy").textContent = t('copy');
-    host.querySelector("#web3-peerid-copy").textContent = t('copy');
     host.querySelector(".web3-gas-balance-hint").textContent = t('gas_balance');
     host.querySelector(".web3-usdt-balance-hint").textContent = t('usdt_balance');
 
@@ -319,24 +308,12 @@ async function fetchWeb3Identity() {
         addrEl.title = data.address ?? "";
         gasEl.textContent = data.gas ?? "--";
         usdtEl.textContent = data.usdt ?? "--";
-        setPeerIdOnWeb3Area(data.peerId ?? null);
-
         state.style.display = "none";
         card.style.display = "block";
     } catch (e) {
         state.style.display = "none";
         card.style.display = "none";
     }
-}
-
-export function setPeerIdOnWeb3Area(peerId?: string | null) {
-    const host = document.getElementById("web3-identity") as HTMLDivElement | null;
-    if (!host) return;
-    const el = host.querySelector("#web3-peerid") as HTMLElement | null;
-    if (!el) return;
-    const v = peerId ?? "--";
-    el.textContent = v;
-    el.setAttribute("title", v);
 }
 
 export function setOwnerScoreInWeb3Area(score: LevelScoreBreakdown | null) {

@@ -18,7 +18,16 @@ import {
     WalletSettings
 } from "../wallet/wallet_api";
 import {hideLoading, showLoading, showNotification} from "./common";
-import {ensureIpfsPeerId, IPFSSettings, loadIpfsSettings, resetIpfsClient, saveIpfsSettings} from "../wallet/ipfs_api";
+import {
+    encryptString,
+    IpfsProvider,
+    IpfsSettings,
+    loadIpfsSettings,
+    saveIpfsSettings,
+    deleteIpfsSettings,
+    EncryptedBlock
+} from "../wallet/ipfs_settings";
+import {resetIpfsClient} from "../wallet/ipfs_api";
 
 const ARBITRUM_CHAIN_ID = 42161;
 const DEFAULT_RPC_URL = "https://arb1.arbitrum.io/rpc";
@@ -164,7 +173,6 @@ async function initWalletOrCreate(): Promise<void> {
     walletInfoDiv.style.display = "block";
 
     await populateWalletInfo(walletInfoDiv, currentWallet);
-    await renderIpfsArea();
     walletSettingBtn.onclick = () => {
         showView('#onboarding/wallet-setting', dashRouter);
     }
@@ -190,72 +198,6 @@ async function populateWalletInfo(container: HTMLDivElement, wallet: TCWallet): 
 
     await refreshBalances(false);
 }
-
-/** 渲染 IPFS 区域（钱包存在才显示） */
-async function renderIpfsArea(): Promise<void> {
-    const area = document.getElementById("ipfs-area") as HTMLDivElement | null;
-    if (!area) return;
-
-    // 没有钱包：整个 ipfs-area 不显示
-    if (!currentWallet) {
-        area.style.display = "none";
-        return;
-    }
-
-    // 有钱包：显示 ipfs-area，根据 peerId 决定子块
-    area.style.display = "";
-
-    const sumEl = document.getElementById("ipfs-summary") as HTMLElement | null;
-    const createEl = document.getElementById("ipfs-create") as HTMLElement | null;
-    const peerEl = document.getElementById("ipfs-peerid") as HTMLElement | null;
-    const copyBtn = document.getElementById("btn-copy-peerid") as HTMLButtonElement | null;
-    const createBtn = document.getElementById("btn-create-ipfs-id") as HTMLButtonElement | null;
-
-    const hasPeer = !!currentWallet.peerId;
-
-    if (sumEl) sumEl.hidden = !hasPeer;
-    if (createEl) createEl.hidden = hasPeer;
-
-    if (hasPeer) {
-        if (peerEl) peerEl.textContent = currentWallet.peerId!;
-        copyBtn?.addEventListener("click", async () => {
-            try {
-                await navigator.clipboard.writeText(currentWallet!.peerId!);
-                showNotification(t('copy_success'), "info");
-            } catch {
-            }
-        });
-    } else {
-        if (createBtn) {
-            createBtn.onclick = async () => {
-                await handleCreateIpfsId();
-            };
-        }
-    }
-}
-
-async function handleCreateIpfsId(): Promise<void> {
-    if (!currentWallet) {
-        showNotification("请先创建或导入钱包", "info");
-        return;
-    }
-
-    const password = await requestPassword("请输入钱包口令以创建 IPFS 身份");
-    showLoading("Creating ipfs id.....")
-    try {
-        currentWallet.peerId = await ensureIpfsPeerId(password);
-
-        await saveWallet(currentWallet);
-        await renderIpfsArea();
-        showNotification("已创建 IPFS 身份", "info");
-    } catch (e) {
-        console.warn("------>>> ipfs failed:", e);
-        showNotification("创建 IPFS 身份失败:" + e.toString(), "error");
-    } finally {
-        hideLoading();
-    }
-}
-
 
 function setupWalletActionButtons(): void {
     const refreshBtn = document.getElementById("btn-refresh-balance") as HTMLButtonElement | null;
@@ -796,67 +738,252 @@ function showAlert(title: string, message: string) {
 
 function $(sel: string) { return document.querySelector(sel) as HTMLElement | null; }
 function $input(sel: string) { return document.querySelector(sel) as HTMLInputElement | null; }
-async function fillIpfsForm() {
-    const s = await loadIpfsSettings();
-    if ($input("#ipfs-use-default")) $input("#ipfs-use-default")!.checked = !!s.useDefault;
-    if ($input("#ipfs-api-url")) $input("#ipfs-api-url")!.value = s.apiUrl ?? "";
-    if ($input("#ipfs-project-id")) $input("#ipfs-project-id")!.value = s.projectId ?? "";
-    if ($input("#ipfs-project-secret")) $input("#ipfs-project-secret")!.value = s.projectSecret ?? "";
-    if ($input("#ipfs-gateway-url")) $input("#ipfs-gateway-url")!.value = s.gatewayUrl ?? "";
-    toggleIpfsFields();
+
+type PendingField = { label: string; value: string; apply: (block: EncryptedBlock) => void; };
+
+let currentIpfsSettings: IpfsSettings | null = null;
+
+function providerRadios(): HTMLInputElement[] {
+    return Array.from(document.querySelectorAll<HTMLInputElement>('input[name="ipfs-provider"]'));
 }
 
-function toggleIpfsFields() {
-    const disabled = !!$input("#ipfs-use-default")?.checked;
-    ["#ipfs-api-url", "#ipfs-project-id", "#ipfs-project-secret", "#ipfs-gateway-url"].forEach(sel => {
-        const el = $input(sel);
-        if (el) el.disabled = disabled;
+function getSelectedProvider(): IpfsProvider {
+    const checked = providerRadios().find(r => r.checked);
+    return (checked?.value as IpfsProvider) || 'pinata';
+}
+
+function setSelectedProvider(provider: IpfsProvider): void {
+    providerRadios().forEach(radio => {
+        radio.checked = radio.value === provider;
     });
 }
 
+function updateProviderVisibility(): void {
+    const provider = getSelectedProvider();
+    document.querySelectorAll<HTMLElement>('.ipfs-provider-section').forEach(section => {
+        const sectionProvider = section.dataset.provider as IpfsProvider | undefined;
+        section.hidden = !!sectionProvider && sectionProvider !== provider;
+    });
+}
+
+function setSensitiveState(input: HTMLInputElement | null, hasValue: boolean): void {
+    if (!input) return;
+    if (!input.dataset.defaultPlaceholder) {
+        input.dataset.defaultPlaceholder = input.placeholder ?? '';
+    }
+    input.value = '';
+    input.dataset.hasValue = hasValue ? '1' : '0';
+    input.placeholder = hasValue ? '已设置' : (input.dataset.defaultPlaceholder ?? '');
+    input.classList.toggle('has-secret', hasValue);
+}
+
+function scheduleSensitive(
+    input: HTMLInputElement | null,
+    existing: EncryptedBlock | undefined,
+    label: string,
+    assign: (block: EncryptedBlock | undefined) => void,
+    pending: PendingField[],
+): void {
+    if (!input) {
+        assign(existing);
+        return;
+    }
+    const value = input.value.trim();
+    const hasExisting = input.dataset.hasValue === '1' && !!existing;
+    if (value) {
+        pending.push({
+            label,
+            value,
+            apply: (block) => assign(block),
+        });
+    } else if (hasExisting) {
+        assign(existing);
+    } else {
+        assign(undefined);
+    }
+}
+
+async function fillIpfsForm(): Promise<void> {
+    currentIpfsSettings = await loadIpfsSettings();
+    const provider = currentIpfsSettings?.provider ?? 'pinata';
+    setSelectedProvider(provider);
+    updateProviderVisibility();
+
+    const pinata = currentIpfsSettings?.pinata;
+    setSensitiveState($input('#pinata-api-key'), !!pinata?.apiKeyEnc);
+    setSensitiveState($input('#pinata-api-secret'), !!pinata?.secretEnc);
+    setSensitiveState($input('#pinata-jwt'), !!pinata?.jwtEnc);
+
+    const lighthouse = currentIpfsSettings?.lighthouse;
+    setSensitiveState($input('#lighthouse-api-key'), !!lighthouse?.apiKeyEnc);
+    setSensitiveState($input('#lighthouse-jwt'), !!lighthouse?.jwtEnc);
+
+    const custom = currentIpfsSettings?.custom;
+    const apiUrlInput = $input('#custom-api-url');
+    if (apiUrlInput) apiUrlInput.value = custom?.apiUrl ?? '';
+    const gatewayInput = $input('#custom-gateway-url');
+    if (gatewayInput) gatewayInput.value = custom?.gatewayUrl ?? '';
+    setSensitiveState($input('#custom-auth'), !!custom?.authEnc);
+
+    const clearBtn = document.getElementById('ipfs-settings-clear') as HTMLButtonElement | null;
+    if (clearBtn) clearBtn.disabled = !currentIpfsSettings;
+}
+
+async function handleIpfsSave(): Promise<void> {
+    try {
+        const provider = getSelectedProvider();
+        const pending: PendingField[] = [];
+        const next: IpfsSettings = {
+            id: 'ipfs',
+            provider,
+            pinata: currentIpfsSettings?.pinata ? {...currentIpfsSettings.pinata} : undefined,
+            lighthouse: currentIpfsSettings?.lighthouse ? {...currentIpfsSettings.lighthouse} : undefined,
+            custom: currentIpfsSettings?.custom ? {...currentIpfsSettings.custom} : undefined,
+        };
+
+        if (provider === 'pinata') {
+            const pinata: NonNullable<IpfsSettings['pinata']> = {};
+            scheduleSensitive($input('#pinata-jwt'), currentIpfsSettings?.pinata?.jwtEnc, 'Pinata JWT', block => {
+                if (block) {
+                    pinata.jwtEnc = block;
+                } else {
+                    delete pinata.jwtEnc;
+                }
+            }, pending);
+            scheduleSensitive($input('#pinata-api-key'), currentIpfsSettings?.pinata?.apiKeyEnc, 'Pinata API Key', block => {
+                if (block) {
+                    pinata.apiKeyEnc = block;
+                } else {
+                    delete pinata.apiKeyEnc;
+                }
+            }, pending);
+            scheduleSensitive($input('#pinata-api-secret'), currentIpfsSettings?.pinata?.secretEnc, 'Pinata API Secret', block => {
+                if (block) {
+                    pinata.secretEnc = block;
+                } else {
+                    delete pinata.secretEnc;
+                }
+            }, pending);
+            next.pinata = pinata;
+        } else if (provider === 'lighthouse') {
+            const lighthouse: NonNullable<IpfsSettings['lighthouse']> = {};
+            scheduleSensitive($input('#lighthouse-jwt'), currentIpfsSettings?.lighthouse?.jwtEnc, 'Lighthouse JWT', block => {
+                if (block) {
+                    lighthouse.jwtEnc = block;
+                } else {
+                    delete lighthouse.jwtEnc;
+                }
+            }, pending);
+            scheduleSensitive($input('#lighthouse-api-key'), currentIpfsSettings?.lighthouse?.apiKeyEnc, 'Lighthouse API Key', block => {
+                if (block) {
+                    lighthouse.apiKeyEnc = block;
+                } else {
+                    delete lighthouse.apiKeyEnc;
+                }
+            }, pending);
+            next.lighthouse = lighthouse;
+        } else if (provider === 'custom') {
+            const apiUrl = $input('#custom-api-url')?.value.trim() ?? '';
+            if (!apiUrl) {
+                throw new Error('请填写自建节点 API URL');
+            }
+            const gatewayUrl = $input('#custom-gateway-url')?.value.trim() ?? '';
+            const custom: NonNullable<IpfsSettings['custom']> = {
+                apiUrl,
+                gatewayUrl: gatewayUrl || undefined,
+            };
+            scheduleSensitive($input('#custom-auth'), currentIpfsSettings?.custom?.authEnc, '自建节点 Authorization', block => {
+                if (block) {
+                    custom.authEnc = block;
+                } else {
+                    delete custom.authEnc;
+                }
+            }, pending);
+            next.custom = custom;
+        }
+
+        let password = '';
+        if (pending.length > 0) {
+            password = await requestPassword('请输入用于加密 IPFS 凭据的口令');
+        }
+
+        for (const task of pending) {
+            const block = await encryptString(task.value, password);
+            task.apply(block);
+        }
+
+        if (provider === 'pinata') {
+            const pinata = next.pinata ?? {};
+            const hasJwt = !!pinata.jwtEnc;
+            const hasKeyPair = !!pinata.apiKeyEnc && !!pinata.secretEnc;
+            if (!hasJwt && !hasKeyPair) {
+                throw new Error('请至少填写 Pinata JWT 或 API Key/Secret');
+            }
+        } else if (provider === 'lighthouse') {
+            const lighthouse = next.lighthouse ?? {};
+            if (!lighthouse.jwtEnc && !lighthouse.apiKeyEnc) {
+                throw new Error('请填写 Lighthouse API Key 或 JWT');
+            }
+        } else if (provider === 'custom') {
+            if (!next.custom?.apiUrl) {
+                throw new Error('请填写自建节点 API URL');
+            }
+        }
+
+        await saveIpfsSettings(next);
+        resetIpfsClient();
+        currentIpfsSettings = next;
+        showNotification('已保存（加密）', 'info');
+        showView('#onboarding/main-home', dashRouter);
+    } catch (error) {
+        const message = (error as Error).message ?? '保存失败';
+        showNotification(message, 'error');
+    }
+}
+
+async function handleClearIpfsSettings(): Promise<void> {
+    try {
+        await deleteIpfsSettings();
+        resetIpfsClient();
+        currentIpfsSettings = null;
+        showNotification('已清除 IPFS 设置', 'info');
+        await fillIpfsForm();
+    } catch (error) {
+        const message = (error as Error).message ?? '清除失败';
+        showNotification(message, 'error');
+    }
+}
 
 export function initIpfsSettingsView() {
-    // 进入设置页
+    providerRadios().forEach(radio => {
+        radio.addEventListener('change', () => updateProviderVisibility());
+    });
+
     $(".ipfs-settings-btn")?.addEventListener("click", async () => {
         await fillIpfsForm();
         showView('#onboarding/ipfs-settings', dashRouter);
     });
 
-    // 返回主界面
     $("#ipfs-back-btn")?.addEventListener("click", () => {
         showView('#onboarding/main-home', dashRouter);
     });
 
-    // 勾选“使用默认”时禁用/启用字段
-    $input("#ipfs-use-default")?.addEventListener("change", toggleIpfsFields);
-
-    // 保存
-    $("#ipfs-settings-save")?.addEventListener("click", async () => {
-        const useDefault = !!$input("#ipfs-use-default")?.checked;
-        const apiUrl     = $input("#ipfs-api-url")?.value?.trim();
-        const projectId  = $input("#ipfs-project-id")?.value?.trim();
-        const projectSecret = $input("#ipfs-project-secret")?.value?.trim();
-        const gatewayUrl = $input("#ipfs-gateway-url")?.value?.trim();
-
-        const payload: IPFSSettings = useDefault ? { useDefault } : {
-            useDefault,
-            apiUrl,
-            projectId,
-            projectSecret,
-            gatewayUrl,
-        };
-
-        // 基本校验：自定义模式至少需要 API URL
-        if (!useDefault && !apiUrl) {
-            alert("请填写 API URL，或勾选“使用系统默认”。");
-            return;
-        }
-
-        await saveIpfsSettings(payload);
-
-        // 让之后的 getIpfs() 用新配置
-        resetIpfsClient();
-
-        showView('#onboarding/main-home', dashRouter);
+    document.querySelectorAll<HTMLElement>('[data-ipfs-link]').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+            const url = (ev.currentTarget as HTMLElement).getAttribute('data-ipfs-link');
+            if (url) {
+                window.open(url, '_blank');
+            }
+        });
     });
+
+    $("#ipfs-settings-save")?.addEventListener("click", () => {
+        handleIpfsSave().then();
+    });
+
+    $("#ipfs-settings-clear")?.addEventListener("click", () => {
+        handleClearIpfsSettings().then();
+    });
+
+    updateProviderVisibility();
 }
