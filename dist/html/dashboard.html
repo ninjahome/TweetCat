@@ -47,19 +47,7 @@
             </div>
             <div class="wallet-action-div">
                 <button id="wallet-settings-btn" class="wallet-settings-btn">settings</button>
-            </div>
-            <div class="ipfs-area" id="ipfs-area" style="display:none">
-                <div class="ipfs-summary" id="ipfs-summary" hidden>
-                    <div class="row">
-                        <span class="label">IPFS PeerID</span>
-                        <span class="value" id="ipfs-peerid"></span>
-                        <button class="copy-btn" id="btn-copy-peerid">复制</button>
-                    </div>
-                    <button class="ipfs-settings-btn" type="button" title="IPFS 设置">IPFS AP</button>
-                </div>
-                <div class="ipfs-create" id="ipfs-create" hidden>
-                    <button class="primary" id="btn-create-ipfs-id">创建 IPFS 身份</button>
-                </div>
+                <button id="ipfs-settings-btn" class="wallet-settings-btn ipfs-settings-btn">IPFS 设置</button>
             </div>
         </div>
     </div>
@@ -122,32 +110,65 @@
     </div>
 
     <div class="view-content">
-        <label class="row">
-            <input type="checkbox" id="ipfs-use-default">
-            使用系统默认（Infura 公共端点）
-        </label>
+        <div class="provider-select">
+            <label><input type="radio" name="ipfs-provider" value="pinata" checked> Pinata</label>
+            <label><input type="radio" name="ipfs-provider" value="lighthouse"> Lighthouse</label>
+            <label><input type="radio" name="ipfs-provider" value="custom"> 自建节点</label>
+        </div>
 
-        <div class="grid">
-            <label>API URL
-                <input id="ipfs-api-url" type="text" placeholder="https://ipfs.infura.io:5001/api/v0">
-            </label>
+        <p class="sensitive-hint">敏感字段输入后将加密保存，留空则保留已有值。</p>
 
-            <label>Infura Project ID
-                <input id="ipfs-project-id" type="text" placeholder="xxxxxxxxxxxxxxxxxxxxxx">
-            </label>
+        <div class="ipfs-provider-section" data-provider="pinata">
+            <h3>Pinata 凭据</h3>
+            <div class="grid">
+                <label>API Key
+                    <input id="pinata-api-key" type="password" placeholder="请输入 Pinata API Key">
+                </label>
+                <label>API Secret
+                    <input id="pinata-api-secret" type="password" placeholder="请输入 Pinata API Secret">
+                </label>
+                <label>JWT Token
+                    <input id="pinata-jwt" type="password" placeholder="Bearer Token (可选)">
+                </label>
+            </div>
+        </div>
 
-            <label>Infura Project Secret
-                <input id="ipfs-project-secret" type="password" placeholder="****************">
-            </label>
+        <div class="ipfs-provider-section" data-provider="lighthouse" hidden>
+            <h3>Lighthouse 凭据</h3>
+            <div class="grid">
+                <label>API Key
+                    <input id="lighthouse-api-key" type="password" placeholder="输入 API Key (可选)">
+                </label>
+                <label>JWT Token
+                    <input id="lighthouse-jwt" type="password" placeholder="输入 JWT Token (可选)">
+                </label>
+            </div>
+        </div>
 
-            <label>Gateway URL
-                <input id="ipfs-gateway-url" type="text" placeholder="https://ipfs.io/ipfs">
-            </label>
+        <div class="ipfs-provider-section" data-provider="custom" hidden>
+            <h3>自建节点</h3>
+            <div class="grid">
+                <label>API URL
+                    <input id="custom-api-url" type="text" placeholder="http://127.0.0.1:5001/api/v0">
+                </label>
+                <label>Gateway URL (可选)
+                    <input id="custom-gateway-url" type="text" placeholder="https://ipfs.io/ipfs">
+                </label>
+                <label>Authorization (可选)
+                    <input id="custom-auth" type="password" placeholder="Basic xxx 或 Bearer yyy">
+                </label>
+            </div>
+        </div>
 
+        <div class="external-links">
+            <button type="button" data-ipfs-link="https://pinata.cloud/">Pinata 官网</button>
+            <button type="button" data-ipfs-link="https://www.lighthouse.storage/">Lighthouse 官网</button>
+            <button type="button" data-ipfs-link="https://github.com/ipfs/ipfs-desktop">IPFS Desktop</button>
         </div>
     </div>
 
     <div class="view-footer">
+        <button id="ipfs-settings-clear" type="button">清除设置</button>
         <button id="ipfs-settings-save" class="primary" type="button">保存</button>
     </div>
 </div>
