@@ -964,10 +964,8 @@ export function initIpfsSettingsView() {
 
     // 返回按钮与外链保留
     $("#ipfs-back-btn")?.addEventListener("click", async () => {
-        const ok = await handleIpfsSave();
-        if (ok) {
-            showView('#onboarding/main-home', dashRouter);
-        }
+        await saveProviderOnly();
+        showView('#onboarding/main-home', dashRouter);
     });
     document.querySelectorAll<HTMLElement>('[data-ipfs-link]').forEach(btn => {
         btn.addEventListener('click', (ev) => {
@@ -1104,4 +1102,19 @@ async function clearProviderSecrets(provider: IpfsProvider): Promise<void> {
 
     refreshSensitiveIndicators();
     showNotification('已清空该 Provider 的密文');
+}
+
+async function saveProviderOnly(): Promise<void> {
+    const selected = getSelectedProvider();
+    const saved = currentIpfsSettings ?? await loadIpfsSettings();
+    const next: IpfsSettings = {
+        id: 'ipfs',
+        provider: selected,       // 只改这个字段
+        pinata: saved?.pinata,    // 其余保持原样，不改动、不校验
+        lighthouse: saved?.lighthouse,
+        custom: saved?.custom,
+    };
+    await saveIpfsSettings(next);
+    currentIpfsSettings = next;
+    showNotification('已保存默认 Provider'); // 简短提示
 }
