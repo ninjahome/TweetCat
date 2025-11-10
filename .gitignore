@@ -59,3 +59,4 @@ bin-release/
 /local_app/lib_prepare/tweetcat_ydl/pyinstaller/
 /local_app/lib_prepare/tweetcat_ydl/dist/tweetcat_ydl_server_arm64.spec
 /local_app/lib_prepare/tweetcat_ydl/dist/
+/.env.example

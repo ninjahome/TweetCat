@@ -9,9 +9,10 @@
   },
   "description": "catch your favorite tweets",
   "devDependencies": {
-    "@types/node": "^24.2.1",
+    "@types/node": "^24.10.0",
     "@types/webextension-polyfill": "^0.12.3",
     "cross-env": "^7.0.3",
+    "dotenv-webpack": "^8.1.1",
     "ts-loader": "^9.5.2",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",

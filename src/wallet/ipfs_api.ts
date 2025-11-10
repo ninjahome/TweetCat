@@ -5,6 +5,7 @@ import {
     IpfsSettings,
     loadIpfsSettings,
 } from './ipfs_settings';
+import {TWEETCAT_PINATA} from "./ipfs_config";
 
 const DEFAULT_IPFS_API = 'https://ipfs.infura.io:5001/api/v0';
 const PINATA_JSON_ENDPOINT = 'https://api.pinata.cloud/pinning/pinJSONToIPFS';
@@ -24,15 +25,13 @@ let cachedClient: { key: string; client: any } | null = null;
 let cachedCustomAuthHeader: string | null = null;
 let settingsCache: IpfsSettings | null = null;
 
-// ⚠️ 建议使用构建变量注入，或在私有仓库管理
-export const TWEETCAT_PINATA = {
-    // 原生 JWT 字符串（不含 "Bearer " 前缀）
-    JWT: "<YOUR_PINATA_JWT>",
-    // 如你使用 Pinata 官方网关，也可以换成你自有网关
-    GATEWAY: "https://gateway.pinata.cloud/ipfs",
-    JSON_ENDPOINT: "https://api.pinata.cloud/pinning/pinJSONToIPFS",
-    FILE_ENDPOINT: "https://api.pinata.cloud/pinning/pinFileToIPFS",
-} as const;
+
+function tweetcatPinataHeaders(): Record<string, string> {
+    if (!TWEETCAT_PINATA.JWT) {
+        throw new Error('TweetCat Pinata JWT 未注入');
+    }
+    return {Authorization: `Bearer ${TWEETCAT_PINATA.JWT}`};
+}
 
 
 function sanitizeGateway(base: string, cid: string): string {
@@ -202,19 +201,9 @@ export async function uploadJson(obj: any, password?: string): Promise<string> {
     const provider = settings?.provider ?? 'custom';
 
     if (provider === 'tweetcat') {
-        const headers: Record<string, string> = {
-            Authorization: `Bearer ${TWEETCAT_PINATA.JWT}`,
-            'Content-Type': 'application/json',
-        };
-        const body = JSON.stringify({
-            pinataContent: obj,
-            pinataOptions: { cidVersion: 1 },
-        });
-        const resp = await fetchWithTimeout(TWEETCAT_PINATA.JSON_ENDPOINT, {
-            method: 'POST',
-            headers,
-            body,
-        });
+        const headers = {...tweetcatPinataHeaders(), 'Content-Type': 'application/json'};
+        const body = JSON.stringify({pinataContent: obj, pinataOptions: {cidVersion: 1}});
+        const resp = await fetchWithTimeout(TWEETCAT_PINATA.JSON_ENDPOINT, {method: 'POST', headers, body});
         if (!resp.ok) throw new Error(`Pinata 上传失败: HTTP ${resp.status}`);
         const data = await resp.json();
         const cid = data.IpfsHash || data.cid || data.Hash;
@@ -275,12 +264,10 @@ export async function uploadFile(file: File, password?: string): Promise<string>
     const provider = settings?.provider ?? 'custom';
 
     if (provider === 'tweetcat') {
-        const headers: Record<string, string> = {
-            Authorization: `Bearer ${TWEETCAT_PINATA.JWT}`, // 用 JWT 时，文件上传不要预设 Content-Type
-        };
+        const headers = tweetcatPinataHeaders();
         const form = new FormData();
         form.append('file', file, file.name);
-        form.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
+        form.append('pinataOptions', JSON.stringify({cidVersion: 1}));
 
         const resp = await fetchWithTimeout(TWEETCAT_PINATA.FILE_ENDPOINT, {
             method: 'POST',
@@ -385,11 +372,8 @@ export async function download(cid: string): Promise<Uint8Array> {
     };
 
     if (provider === 'tweetcat') {
-        try {
-            return await tryFetch(`${TWEETCAT_PINATA.GATEWAY}/${cid}`);
-        } catch (err) {
-            // 继续走后面的公共网关兜底
-        }
+        try { return await tryFetch(`${TWEETCAT_PINATA.GATEWAY}/${cid}`); }
+        catch (err) { pushError(err as Error); }
     }
 
     if (provider === 'pinata') {
@@ -443,11 +427,11 @@ export function buildGatewayUrls(cid: string): string[] {
     } else if (settings?.provider === 'custom' && settings.custom?.gatewayUrl) {
         urls.push(sanitizeGateway(settings.custom.gatewayUrl, cid));
     }
+
     for (const builder of PUBLIC_GATEWAYS) {
         const candidate = builder(cid);
-        if (!urls.includes(candidate)) {
-            urls.push(candidate);
-        }
+        if (!urls.includes(candidate)) urls.push(candidate);
     }
     return urls;
 }
+

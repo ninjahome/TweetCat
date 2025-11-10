@@ -16,21 +16,6 @@ export type DecryptedSettings = {
     lighthouse?: { apiKey?: string; jwt?: string };
     custom?: { apiUrl?: string; gatewayUrl?: string; auth?: string };
 };
-
-export function hasEncryptedSecrets(s: IpfsSettings): boolean {
-    if (!s) return false;
-    switch (s.provider) {
-        case 'pinata':
-            return !!(s.pinata?.apiKeyEnc || s.pinata?.secretEnc || s.pinata?.jwtEnc);
-        case 'lighthouse':
-            return !!(s.lighthouse?.apiKeyEnc || s.lighthouse?.jwtEnc);
-        case 'custom':
-            return !!(s.custom?.authEnc);
-        default:
-            return false;
-    }
-}
-
 /**
  * 统一解密：根据当前 provider 将已保存的敏感字段解密成明文，供 UI 临时展示
  * 注意：仅返回解密后的值，不做持久化；调用方负责清理。

@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const TerserPlugin = require('terser-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
 
 module.exports = (env, argv) => {
     const mode = argv.mode || 'development';
@@ -17,9 +18,13 @@ module.exports = (env, argv) => {
         new webpack.DefinePlugin({
             'process.env.NODE_ENV': JSON.stringify(mode),
         }),
+        new Dotenv({
+            systemvars: true,   // 允许从 CI 的 env 读取
+            // path: 默认会自动寻找 .env、.env.development、.env.production 等
+            // safe: true, // 如需与 .env.example 做键校验可打开
+        }),
     ];
 
-    // 公共配置片段
     const common = {
         mode,
         devtool: mode === 'development' ? 'inline-source-map' : false,
@@ -67,7 +72,6 @@ module.exports = (env, argv) => {
         },
     };
 
-    // background 专用配置：目标是 webworker
     const bgConfig = {
         ...common,
         entry: {
@@ -92,7 +96,6 @@ module.exports = (env, argv) => {
         },
     };
 
-    // 其他入口（popup / content / inject 等）保持 web 目标
     const webConfig = {
         ...common,
         entry: {
@@ -108,6 +111,5 @@ module.exports = (env, argv) => {
         target: 'web',
     };
 
-    // 返回两份配置
     return [bgConfig, webConfig];
 };
