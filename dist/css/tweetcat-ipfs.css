@@ -1,0 +1,106 @@
+:root{
+    --bg:#0f1724;
+    --panel:#0b1220;
+    --muted:#9aa6b2;
+    --accent:#4f9fff;
+    --success:#3bd671;
+    --danger:#ff6b6b;
+    --text:#e6eef6;
+    font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+}
+
+html,body{
+    height:100%;
+    margin:0;
+    background: linear-gradient(180deg,#071021 0%, #081827 100%);
+    color:var(--text);
+}
+
+.tc-root{
+    max-width:980px;
+    margin:22px auto;
+    padding:18px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(2,6,23,0.6);
+}
+
+.tc-header{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.tc-logo{ width:40px; height:40px; }
+
+.tc-header h1{
+    margin:0; font-size:18px; font-weight:600;
+}
+
+.tc-sub{ color:var(--muted); font-size:12px; margin-left:auto; }
+
+.tc-main{ margin-top:16px; }
+
+.tc-controls{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:12px;
+}
+
+.tc-btn{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.08);
+    color:var(--text);
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:pointer;
+    font-size:14px;
+}
+
+.tc-btn.primary{
+    background:linear-gradient(90deg,var(--accent), #6aa7ff);
+    border: none;
+    color:#04233b;
+    font-weight:600;
+}
+
+.tc-status{
+    margin-left:12px;
+    color:var(--muted);
+    font-size:13px;
+}
+
+.tc-json-preview{
+    margin-top:8px;
+}
+
+.tc-json-preview h2{ margin:6px 0 10px 0; font-size:14px; color:var(--muted); }
+
+.tc-json{
+    background: #02101a;
+    padding:12px;
+    border-radius:8px;
+    max-height:420px;
+    overflow:auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+    font-size:13px;
+    line-height:1.45;
+    color:#d4e6f7;
+    white-space:pre-wrap;
+    word-break:break-all;
+    border:1px solid rgba(255,255,255,0.02);
+}
+
+.tc-results{ margin-top:12px; padding:12px; background: rgba(255,255,255,0.01); border-radius:8px; }
+.hidden{ display:none !important; }
+
+.tc-small{
+    font-size:12px; padding:4px 8px; margin-left:8px;
+    background:transparent; border:1px solid rgba(255,255,255,0.04); border-radius:4px;
+    cursor:pointer;
+}
+
+.tc-gateway-links a{ display:inline-block; margin-right:8px; color:var(--accent); text-decoration:underline; }
+
+.tc-footer{ margin-top:18px; color:var(--muted); font-size:12px; }

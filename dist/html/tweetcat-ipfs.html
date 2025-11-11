@@ -1,0 +1,32 @@
+
+<div id="tc-root" class="tc-root">
+    <header class="tc-header">
+        <img src="" id='tc-logo' alt="TweetCat" class="tc-logo">
+        <h1>TweetCat — IPFS Snapshot</h1>
+        <div class="tc-sub">Snapshot v1 preview & local IPFS pinning</div>
+    </header>
+
+    <main class="tc-main">
+        <section class="tc-controls">
+            <button id="tc-refresh" class="tc-btn">从后台更新快照</button>
+            <button id="tc-upload" class="tc-btn primary">上传并 Pin 到本地 IPFS</button>
+            <span id="tc-status" class="tc-status" aria-live="polite"></span>
+        </section>
+
+        <section class="tc-json-preview">
+            <h2>SnapshotV1（只读）</h2>
+            <pre id="tc-json" class="tc-json" contenteditable="false" spellcheck="false"></pre>
+        </section>
+
+        <section class="tc-results hidden" id="tc-results">
+            <h3>上次上传结果</h3>
+            <div>CID: <a id="tc-cid-link" href="#" target="_blank" rel="noopener"></a> <button id="tc-copy-cid" class="tc-small">复制</button></div>
+            <div id="tc-gateway-links" class="tc-gateway-links"></div>
+        </section>
+
+        <footer class="tc-footer">
+            <small>若本地节点需要开启 CORS，请参考你的本地 IPFS 设置（extension 仅负责打开调试页面）。</small>
+        </footer>
+    </main>
+</div>
+

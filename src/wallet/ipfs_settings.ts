@@ -201,3 +201,31 @@ export async function deleteIpfsSettings(): Promise<void> {
     await databaseDelete(__tableIpfsSettings, SETTINGS_ID);
     cachedSettings = null;
 }
+
+
+
+export const ERR_LOCAL_IPFS_HANDOFF = '__LOCAL_IPFS_HANDOFF__';
+
+/** 若是 custom 且指向本地 Kubo API，则返回应打开的 WebUI URL；否则返回 null */
+export function localUiUrlIfCustom(settings?: IpfsSettings | null): string | null {
+    if (!settings || settings.provider !== 'custom') return null;
+    const api = settings.custom?.apiUrl?.trim();
+    if (!api) return null;
+    try {
+        const u = new URL(api);
+        const host = u.hostname;
+        const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+        if (!isLocal) return null;
+
+        // 不强制要求一定是 /api/v0；只要是同一个本地节点，我们取它的 origin 来打开 UI
+        const origin = `${u.protocol}//${u.host}`;
+        // 带上 hash 便于 content script 精确触发（可选）
+        return `${origin}/#tweetcat-ipfs`;
+    } catch {
+        return null;
+    }
+}
+
+export const IPFS_CORS_HELP_URL =
+    'https://docs.ipfs.tech/how-to/kubo-rpc-tls-auth/#configuring-cors-for-use-with-ipfs-web-ui';
+export const ipfs_snapshot_local_key="__IPFS_CATEGORY_SNAPSHOT_V1__";

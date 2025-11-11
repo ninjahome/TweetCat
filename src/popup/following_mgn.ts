@@ -20,7 +20,10 @@ import {FollowingUser, removeLocalFollowings, replaceFollowingsPreservingCategor
 import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
-import {showNotification} from "./common";
+import {hideLoading, showLoading, showNotification} from "./common";
+import {uploadJson} from "../wallet/ipfs_api";
+import {ERR_LOCAL_IPFS_HANDOFF, ipfs_snapshot_local_key} from "../wallet/ipfs_settings";
+import {SnapshotV1} from "../common/msg_obj";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -109,6 +112,7 @@ let confirmMessage: HTMLParagraphElement | null;
 let cancelConfirmBtn: HTMLButtonElement | null;
 let confirmConfirmBtn: HTMLButtonElement | null;
 let processingOverlay: HTMLDivElement | null;
+let exportIpfsBtn: HTMLButtonElement | null;
 
 // ===== DOM 初始化封装 =====
 function initDomRefs(): void {
@@ -171,6 +175,8 @@ function initDomRefs(): void {
     document.getElementById("modal-confirm-title")!.textContent = t("confirm_action");
     cancelConfirmBtn!.textContent = t("cancel");
     confirmConfirmBtn!.textContent = t("confirm");
+
+    exportIpfsBtn = document.getElementById("export-ipfs-btn") as HTMLButtonElement | null;
 }
 
 type ConfirmCallback = () => void | Promise<void>;
@@ -229,6 +235,10 @@ function bindEvents() {
     });
 
     document.addEventListener("keydown", handleGlobalKeydown);
+
+    exportIpfsBtn?.addEventListener("click", () => {
+        void handleExportSnapshotToIpfs();
+    });
 }
 
 function openModal(modal: HTMLElement | null) {
@@ -1237,5 +1247,48 @@ function attachUserCardEvents(card: HTMLElement, user: UnifiedKOL) {
         checkbox.checked = !checkbox.checked;
         toggleUserSelection(user.key, checkbox.checked);
     });
+}
+
+
+async function handleExportSnapshotToIpfs(): Promise<void> {
+    try {
+        showLoading("正在上传 IPFS 快照…");
+        // 1) 组装快照（直接用内存中的 categories / unifiedKols）
+        const cats = categories
+            .filter(c => typeof c.id === "number")
+            .map(c => ({id: c.id!, name: c.catName}));
+
+        const assigns = unifiedKols
+            .filter(u => typeof u.categoryId === "number")
+            .map(u => ({
+                screenName: u.screenName ?? u.key,
+                userId: u.userId,
+                categoryId: u.categoryId as number,
+            }));
+
+        const snapshot: SnapshotV1 = {
+            version: 1,
+            createdAt: new Date().toISOString(),
+            categories: cats,
+            assignments: assigns,
+        };
+
+        const cid = await uploadJson(snapshot);
+
+        await navigator.clipboard.writeText(cid);
+
+        localStorage.setItem(ipfs_snapshot_local_key,
+            JSON.stringify({cid, at: Date.now()})
+        );
+
+        showNotification(`已上传到 IPFS：${cid}（已复制）`, "info");
+    } catch (err) {
+        if (err instanceof Error && err.message === ERR_LOCAL_IPFS_HANDOFF) {
+            return; // 不做任何 UI 提示
+        }
+        showNotification((err as Error).message ?? "上传失败", "error");
+    } finally {
+        hideLoading();
+    }
 }
 

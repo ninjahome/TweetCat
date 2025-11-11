@@ -4,7 +4,7 @@ import {
     appendFilterOnKolProfilePage, appendScoreInfoToProfilePage,
 } from "./twitter_ui";
 import {maxElmFindTryTimes, MsgType} from "../common/consts";
-import {addCustomStyles, observeSimple, parseTwitterPath} from "../common/utils";
+import {addCustomStyles, observeSimple, parseContentHtml, parseTwitterPath} from "../common/utils";
 import {TweetKol} from "../object/tweet_kol";
 import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
 import {
@@ -214,17 +214,6 @@ async function parseUserInfo(callback: (userProfile: string) => Promise<void>) {
         return;
     }
     await callback(profileBtn.href);
-}
-
-export async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateElement> {
-    const response = await fetch(browser.runtime.getURL(htmlFilePath));
-    if (!response.ok) {
-        throw new Error(`Failed to fetch ${htmlFilePath}: ${response.statusText}`);
-    }
-    const htmlContent = await response.text();
-    const template = document.createElement('template');
-    template.innerHTML = htmlContent;
-    return template;
 }
 
 export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null {

@@ -594,3 +594,13 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     background-color: rgba(120, 120, 120, 0.08);
     border-left: 3px solid #888;
 }
+/* following_mgn.css（或同文件） */
+#export-ipfs-btn {
+    background: #eff3f4;
+    border: none;
+    color: #0f1419;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+#export-ipfs-btn:hover { background: #e6ebef; }

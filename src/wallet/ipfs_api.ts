@@ -1,11 +1,14 @@
 import {create} from 'kubo-rpc-client';
 import {
-    decryptString,
+    decryptString, ERR_LOCAL_IPFS_HANDOFF,
     getCachedIpfsSettings,
     IpfsSettings,
     loadIpfsSettings,
 } from './ipfs_settings';
 import {TWEETCAT_PINATA} from "./ipfs_config";
+import browser from "webextension-polyfill";
+import {openOrUpdateTab, sendMsgToService} from "../common/utils";
+import {MsgType} from "../common/consts";
 
 const DEFAULT_IPFS_API = 'https://ipfs.infura.io:5001/api/v0';
 const PINATA_JSON_ENDPOINT = 'https://api.pinata.cloud/pinning/pinJSONToIPFS';
@@ -196,8 +199,48 @@ async function ipfsAddBytes(bytes: Uint8Array, options?: any, authHeader?: strin
     return result.cid.toString();
 }
 
+
+/** 若是 custom 且指向本地 Kubo API，则返回应打开的 WebUI URL；否则返回 null */
+export function localUiUrlIfCustom(settings?: IpfsSettings | null): string | null {
+    if (!settings || settings.provider !== 'custom') return null;
+    const api = settings.custom?.apiUrl?.trim();
+    if (!api) return null;
+    try {
+        const u = new URL(api);
+        const isLocal = ['localhost', '127.0.0.1', '::1'].includes(u.hostname);
+        if (!isLocal) return null;
+        // 用用户配置的 origin，别写死端口；加个 hash 方便 content script 识别
+        return `${u.protocol}//${u.host}/#tweetcat-ipfs`;
+    } catch {
+        return null;
+    }
+}
+
+/** 在可用时直接用 tabs；否则让 SW 代开（content 环境会走这里） */
+async function openOrFocus(uiUrl: string): Promise<void> {
+    const canUseTabs =
+        !!(browser as any)?.tabs &&
+        typeof browser.tabs.query === 'function' &&
+        typeof browser.tabs.create === 'function' &&
+        typeof browser.tabs.update === 'function';
+
+    if (canUseTabs) {
+        await openOrUpdateTab(uiUrl);
+        return;
+    }
+    await sendMsgToService(uiUrl, MsgType.OpenOrFocusUrl);
+}
+
+
 export async function uploadJson(obj: any, password?: string): Promise<string> {
     const settings = await ensureSettings();
+
+    const localIpfsNode = localUiUrlIfCustom(settings);
+    if (localIpfsNode) {
+        await openOrFocus(localIpfsNode);
+        throw new Error(ERR_LOCAL_IPFS_HANDOFF);
+    }
+
     const provider = settings?.provider ?? 'custom';
 
     if (provider === 'tweetcat') {
@@ -372,8 +415,11 @@ export async function download(cid: string): Promise<Uint8Array> {
     };
 
     if (provider === 'tweetcat') {
-        try { return await tryFetch(`${TWEETCAT_PINATA.GATEWAY}/${cid}`); }
-        catch (err) { pushError(err as Error); }
+        try {
+            return await tryFetch(`${TWEETCAT_PINATA.GATEWAY}/${cid}`);
+        } catch (err) {
+            pushError(err as Error);
+        }
     }
 
     if (provider === 'pinata') {

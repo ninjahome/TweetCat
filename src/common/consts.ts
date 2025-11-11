@@ -80,6 +80,8 @@ export enum MsgType {
     StartLocalApp = 'StartLocalApp',
 
     WalletInfoQuery = "WalletInfoQuery",
+    OpenOrFocusUrl = "OpenOrFocusUrl",
+    SW_ACTION_GET_SNAPSHOT="SW_ACTION_GET_SNAPSHOT"
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

@@ -2,7 +2,7 @@ import browser, {Runtime} from "webextension-polyfill";
 import {MsgType, noXTabError} from "../common/consts";
 import {
     CategoryForId,
-    loadCategories,
+    loadCategories, loadCategorySnapshot,
     queryKolByName,
     removeKolsCategory,
     updateKolsCategory
@@ -26,6 +26,7 @@ import {
     loadAllFollowings
 } from "../object/following";
 import {getEthBalance, getTokenBalance, loadWallet} from "../wallet/wallet_api";
+import {openOrUpdateTab} from "../common/utils";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -198,6 +199,14 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             const usdt = await getTokenBalance(address, "USDT");
             return {success: true, data: {address, gas, usdt}};
         }
+
+        case MsgType.OpenOrFocusUrl:{
+            await openOrUpdateTab(request.data as string)
+            return {success: true};
+        }
+
+        case MsgType.SW_ACTION_GET_SNAPSHOT:
+            return {success: true, data: await loadCategorySnapshot()};
 
         default:
             return {success: false, data: "unsupportable message type"};

@@ -21,6 +21,7 @@
         <div id="toolbar" class="toolbar">
             <div class="toolbar-left">
                 <button id="sync-btn" class="primary">Sync Followings</button>
+                <button id="export-ipfs-btn" type="button" title="Export categories & KOLs to IPFS (v1)"> IPFS Snapshot</button>
                 <span id="sync-status" class="toolbar-status"></span>
             </div>
             <div class="batch-actions">
@@ -105,5 +106,13 @@
         <span class="processing-overlay__text">Processing…</span>
     </div>
 </div>
+
+<div id="loading-overlay">
+    <div id="loading-content">
+        <div class="spinner"></div>
+        <div class="loading-message"></div>
+    </div>
+</div>
+
 </body>
 </html>

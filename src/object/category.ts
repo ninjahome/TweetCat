@@ -10,6 +10,7 @@ import {
 } from "../common/database";
 import {TweetKol} from "./tweet_kol";
 import {clearCategoryForFollowings} from "./following";
+import {SnapshotV1} from "../common/msg_obj";
 
 export class Category {
     id?: number;
@@ -100,6 +101,35 @@ export async function removeCategory(catID: number) {
     } catch (e) {
         console.log("------>>> remove category failed:", catID);
     }
+}
+
+export async function loadCategorySnapshot(): Promise<SnapshotV1> {
+    const catsRaw = await databaseQueryAll(__tableCategory);
+    const categories = catsRaw
+        .filter(item => typeof item.id === "number" && !!item.catName)
+        .map(item => ({
+            id: Number(item.id),
+            name: String(item.catName)
+        }));
+
+    const kolRaw = await databaseQueryAll(__tableKolsInCategory);
+
+    const assignments = kolRaw
+        .filter(item => item && typeof item.catID === "number")
+        .map(item => ({
+            screenName: item.kolName,
+            userId: item.kolUserId,
+            categoryId: Number(item.catID),
+        }));
+
+    const snapshot: SnapshotV1 = {
+        version: 1,
+        createdAt: new Date().toISOString(),
+        categories,
+        assignments,
+    };
+
+    return snapshot;
 }
 
 

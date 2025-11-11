@@ -1,6 +1,30 @@
 import browser from "webextension-polyfill";
 import {localGet, localSet} from "./local_storage";
 import {__DBK_Bearer_Token, DEFAULT_BEARER} from "./consts";
+import {TweetKol} from "../object/tweet_kol";
+
+
+export function isLikelyCorsError(err: unknown): boolean {
+    const name = String((err as any)?.name ?? '').toLowerCase();
+    const msg  = String((err as any)?.message ?? err ?? '').toLowerCase();
+    return (
+        name === 'typeerror' && msg.includes('failed to fetch') ||   // 最常见：TypeError: Failed to fetch
+        msg.includes('blocked by') ||                                 // “blocked by CORS policy”
+        msg.includes('cors') ||                                       // 显式出现 “cors”
+        msg.includes('net::err_failed') ||                            // 控制台里经常能看到
+        msg.includes('403') || msg.includes('forbidden')              // 少数情况下会把 403 透出来
+    );
+}
+
+export async function openOrUpdateTab(uiUrl:string){
+    const base = uiUrl.split('#')[0];
+    const tabs = await browser.tabs.query({url: base + '*'});
+    if (tabs.length > 0 && tabs[0].id) {
+        await browser.tabs.update(tabs[0].id, {active: true, url: uiUrl});
+    } else {
+        await browser.tabs.create({url: uiUrl, active: true});
+    }
+}
 
 export async function sendMsgToService(data: any, actTyp: string): Promise<any> {
     try {
@@ -332,4 +356,16 @@ export function formatVideoDuration(totalSeconds: number): string {
     return h > 0
         ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
         : `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+
+export async function parseContentHtml(htmlFilePath: string): Promise<HTMLTemplateElement> {
+    const response = await fetch(browser.runtime.getURL(htmlFilePath));
+    if (!response.ok) {
+        throw new Error(`Failed to fetch ${htmlFilePath}: ${response.statusText}`);
+    }
+    const htmlContent = await response.text();
+    const template = document.createElement('template');
+    template.innerHTML = htmlContent;
+    return template;
 }

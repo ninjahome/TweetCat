@@ -32,3 +32,10 @@ export function postWindowMsg(action: string, data?: unknown): void {
     const msg = new TcMessage(action, true, data);
     window.postMessage(msg, '*'); // structured clone，安全传对象
 }
+
+export type SnapshotV1 = {
+    version: 1;
+    createdAt: string;
+    categories: { id: number; name: string }[];
+    assignments: { screenName: string; userId?: string; categoryId: number }[];
+};

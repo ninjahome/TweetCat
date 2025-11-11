@@ -1,6 +1,5 @@
-import {observeForElement} from "../common/utils";
+import {observeForElement, parseContentHtml} from "../common/utils";
 import {choseColorByID} from "../common/consts";
-import {parseContentHtml} from "./main_entrance";
 import {queryKolDetailByName, showPopupMenu} from "./twitter_observer";
 import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
