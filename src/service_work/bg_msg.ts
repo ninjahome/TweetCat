@@ -27,6 +27,7 @@ import {
 } from "../object/following";
 import {getEthBalance, getTokenBalance, loadWallet} from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
+import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -205,9 +206,12 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true};
         }
 
-        case MsgType.SW_ACTION_GET_SNAPSHOT:
+        case MsgType.SW_ACTION_GET_SNAPSHOT:{
             return {success: true, data: await loadCategorySnapshot()};
-
+        }
+        case MsgType.IPFS_GET_GATEWAY_BASE: {
+            return {success: true, data: await loadIpfsLocalCustomGateWay()};
+        }
         default:
             return {success: false, data: "unsupportable message type"};
     }

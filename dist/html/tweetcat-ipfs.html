@@ -20,12 +20,26 @@
 
         <section class="tc-results hidden" id="tc-results">
             <h3>上次上传结果</h3>
-            <div>CID: <a id="tc-cid-link" href="#" target="_blank" rel="noopener"></a> <button id="tc-copy-cid" class="tc-small">复制</button></div>
-            <div id="tc-gateway-links" class="tc-gateway-links"></div>
+            <div class="tc-cid-row">
+                <span>CID:</span>
+                <a id="tc-cid-link" href="#" target="_blank" rel="noopener"></a>
+                <button id="tc-copy-cid" class="tc-small">复制</button>
+            </div>
+
+            <div class="tc-gateway-links">
+                <div class="tc-link">
+                    <span>本地网关：</span>
+                    <a id="tc-link-local" href="#" target="_blank" rel="noopener">（未配置）</a>
+                </div>
+                <div class="tc-link">
+                    <span>公共网关：</span>
+                    <a id="tc-link-public" href="#" target="_blank" rel="noopener">ipfs.io</a>
+                </div>
+            </div>
         </section>
 
         <footer class="tc-footer">
-            <small>若本地节点需要开启 CORS，请参考你的本地 IPFS 设置（extension 仅负责打开调试页面）。</small>
+            <small>本系统完全开源，支持自主管理，分布式存储</small>
         </footer>
     </main>
 </div>

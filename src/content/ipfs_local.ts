@@ -3,16 +3,14 @@ import {addCustomStyles, parseContentHtml, sendMsgToService} from "../common/uti
 import {MsgType} from "../common/consts";
 import {SnapshotV1} from "../common/msg_obj";
 
-const IPFS_LOCAL_GATEWAY_PORTS = [8081, 8080]; // 打开CID页面优先尝试这些端口
-const SW_ACTION_GET_SNAPSHOT = 'GetSnapshotV1'; // 与 background 协议一致
-
+let gatewayBase: string = 'http://127.0.0.1:8080/ipfs'
 document.addEventListener('DOMContentLoaded', async () => {
     // --- 如果不是我们定义的特殊页面，则立即退出 ---
     if (location.hash !== '#tweetcat-ipfs') {
         return;
     }
 
-   await onTweetCatIpfsPageLoaded();
+    await onTweetCatIpfsPageLoaded();
 });
 
 async function onTweetCatIpfsPageLoaded() {
@@ -27,37 +25,42 @@ async function onTweetCatIpfsPageLoaded() {
     if (logo) {
         logo.src = browser.runtime.getURL('images/tweetcat.svg');
     }
-
+    gatewayBase = (await getGatewayBaseFromSW()) ?? gatewayBase;
     bindUI();
     await requestAndRenderSnapshot();
 }
 
+async function getGatewayBaseFromSW(): Promise<string | null> {
+    try {
+        const rsp = await sendMsgToService({}, MsgType.IPFS_GET_GATEWAY_BASE);
+        console.log("-------->>>>>local ipfs settings:",rsp);
+        if (rsp?.success && typeof rsp.data === 'string' && rsp.data.trim() !== '') {
+            return rsp.data.trim().replace(/\/+$/, ''); // 去尾斜杠
+        }
+    } catch (_) {}
+    // fallback
+    return 'http://127.0.0.1:8080/ipfs';
+}
 function bindUI() {
     const refreshBtn = document.getElementById('tc-refresh') as HTMLButtonElement | null;
-    const uploadBtn = document.getElementById('tc-upload') as HTMLButtonElement | null;
+    const uploadBtn  = document.getElementById('tc-upload')  as HTMLButtonElement | null;
     const copyCidBtn = document.getElementById('tc-copy-cid') as HTMLButtonElement | null;
 
-    refreshBtn?.addEventListener('click', async () => {
-        await requestAndRenderSnapshot(true);
-    });
-
-    uploadBtn?.addEventListener('click', async () => {
-        await handleUploadClick();
-    });
-
-    copyCidBtn?.addEventListener('click', () => {
-        const link = document.getElementById('tc-cid-link') as HTMLAnchorElement | null;
-        if (link && link.dataset.cid) {
-            navigator.clipboard?.writeText(link.dataset.cid).then(() => {
-                showStatus('CID 已复制到剪贴板');
-            }, () => {
-                showStatus('复制失败，请手动复制');
-            });
-        }
-    });
+    refreshBtn?.addEventListener('click', () => requestAndRenderSnapshot());
+    uploadBtn?.addEventListener('click', () => handleUploadClick());
+    copyCidBtn?.addEventListener('click', copyCid);
 }
 
-async function requestAndRenderSnapshot(forceRefresh = false) {
+function copyCid() {
+    const link = document.getElementById('tc-cid-link') as HTMLAnchorElement | null;
+    if (link?.dataset.cid) {
+        navigator.clipboard?.writeText(link.dataset.cid)
+            .then(() => showStatus('CID 已复制到剪贴板'))
+            .catch(() => showStatus('复制失败，请手动复制'));
+    }
+}
+
+async function requestAndRenderSnapshot() {
     setStatus('请求后台 Snapshot…');
     try {
         const rsp = await sendMsgToService({}, MsgType.SW_ACTION_GET_SNAPSHOT);
@@ -114,16 +117,10 @@ async function handleUploadClick() {
             return;
         }
         const snapshotText = pre.textContent;
-        let snapshotJson: SnapshotV1;
-        try {
-            snapshotJson = JSON.parse(snapshotText);
-        } catch (err) {
-            showStatus('快照内容不是有效 JSON，无法上传');
-            return;
-        }
+        let snapshotJson: SnapshotV1 = JSON.parse(snapshotText);
 
         // 2) 以 FormData 上传到本地 Kubo API （当前 tab 的 origin）
-        const apiBase = deriveKuboApiBaseFromLocation();
+        const apiBase = deriveApiFromLocation();
         if (!apiBase) {
             showStatus('无法推断本地 IPFS API 地址');
             return;
@@ -134,98 +131,60 @@ async function handleUploadClick() {
         await navigator.clipboard?.writeText(cid).catch(() => {
         });
         showUploadResult(cid);
-        // 3) 打开本地网关以展示（优先 8081）
-        const gwUrl = deriveLocalGatewayViewUrl(cid);
-        if (gwUrl) {
-            window.open(gwUrl, '_blank');
-        }
+        const gwUrl = `${gatewayBase}/${cid}`;
+        window.open(gwUrl, '_blank');
+
     } catch (err) {
         console.error('upload error', err);
         showStatus('上传失败：' + ((err as Error).message || String(err)));
     }
 }
-
 function showUploadResult(cid: string) {
     const results = document.getElementById('tc-results') as HTMLElement | null;
     const cidLink = document.getElementById('tc-cid-link') as HTMLAnchorElement | null;
-    const gatewayLinks = document.getElementById('tc-gateway-links') as HTMLElement | null;
-    if (!results || !cidLink || !gatewayLinks) return;
+    const localLink = document.getElementById('tc-link-local') as HTMLAnchorElement | null;
+    const publicLink = document.getElementById('tc-link-public') as HTMLAnchorElement | null;
+
+    if (!results || !cidLink || !localLink || !publicLink) return;
+
     results.classList.remove('hidden');
     cidLink.textContent = cid;
-    cidLink.href = '#';
     cidLink.dataset.cid = cid;
+    cidLink.href = `https://ipfs.io/ipfs/${cid}`;
 
-    // build some gateway candidates
-    gatewayLinks.innerHTML = '';
-    for (const port of IPFS_LOCAL_GATEWAY_PORTS) {
-        const a = document.createElement('a');
-        a.href = `http://127.0.0.1:${port}/ipfs/${cid}`;
-        a.textContent = `本地 ${port} 网关`;
-        a.target = '_blank';
-        a.rel = 'noopener';
-        gatewayLinks.appendChild(a);
-    }
-    // public fallback
-    const pub = document.createElement('a');
-    pub.href = `https://ipfs.io/ipfs/${cid}`;
-    pub.textContent = 'ipfs.io 网关';
-    pub.target = '_blank';
-    pub.rel = 'noopener';
-    gatewayLinks.appendChild(pub);
+    const localUrl = `${gatewayBase}/${cid}`;
+    localLink.href = localUrl;
+    localLink.textContent = localUrl;
+
+    const publicUrl = `https://ipfs.io/ipfs/${cid}`;
+    publicLink.href = publicUrl;
+    publicLink.textContent = publicUrl;
 }
 
-function deriveKuboApiBaseFromLocation(): string | null {
-    // 当 content script 被注入到 Kubo UI 页时，location.origin 通常是 http://127.0.0.1:5001
-    // 我们以当前 origin（如果看起来像 ip/localhost）为准
+function deriveApiFromLocation(): string | null {
     try {
         const o = new URL(location.origin);
-        if (o.hostname === '127.0.0.1' || o.hostname === 'localhost') {
-            return o.origin; // e.g. http://127.0.0.1:5001
-        }
-    } catch (_) {
-    }
-    // 若当前页不是 Kubo UI（例如页面是其他），尝试常见端口
-    // 但优先不猜测，返回 null 表示无法推断
+        if (['127.0.0.1', 'localhost'].includes(o.hostname)) return o.origin;
+    } catch {}
     return null;
 }
 
-function deriveLocalGatewayViewUrl(cid: string): string | null {
-    // prefer 8081 then 8080
-    for (const p of IPFS_LOCAL_GATEWAY_PORTS) {
-        return `http://127.0.0.1:${p}/ipfs/${cid}`;
-    }
-    return `https://ipfs.io/ipfs/${cid}`;
-}
-
-/** 将 JSON 上传为 file 到 /api/v0/add?pin=true，返回 CID */
 async function uploadJsonToLocalKubo(obj: any, apiBase: string): Promise<string> {
-    // apiBase 例如 "http://127.0.0.1:5001"
     const url = `${apiBase}/api/v0/add?pin=true&wrap-with-directory=false`;
-    const blob = new Blob([JSON.stringify(obj)], {type: 'application/json'});
+    const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
     const form = new FormData();
     form.append('file', blob, 'snapshot.json');
 
-    // Kubo 的 add API 会返回 NDJSON 或 JSON 行，我们解析最后一行的 JSON
-    const resp = await fetch(url, {
-        method: 'POST',
-        body: form,
-    });
+    const resp = await fetch(url, { method: 'POST', body: form });
+    const text = await resp.text();
     if (!resp.ok) {
-        const text = await resp.text().catch(() => '');
         throw new Error(`Kubo 上传失败: HTTP ${resp.status} ${text}`);
     }
-    const text = await resp.text();
-    // Kubo 有时候返回多行，最后一行包含 Hash 字段
     const lines = text.trim().split(/\r?\n/).filter(Boolean);
-    const last = lines[lines.length - 1];
-    try {
-        const parsed = JSON.parse(last);
-        const cid = parsed.Hash || parsed.IpfsHash || parsed.Hash;
-        if (!cid) throw new Error('未在返回值找到 CID');
-        return cid;
-    } catch (err) {
-        throw new Error('解析 Kubo 返回失败: ' + String(err));
-    }
+    const parsed = JSON.parse(lines.pop()!);
+    const cid = parsed.Hash || parsed.IpfsHash;
+    if (!cid) throw new Error('未在返回值找到 CID');
+    return cid;
 }
 
 function showStatus(s: string) {

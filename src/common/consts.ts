@@ -81,7 +81,8 @@ export enum MsgType {
 
     WalletInfoQuery = "WalletInfoQuery",
     OpenOrFocusUrl = "OpenOrFocusUrl",
-    SW_ACTION_GET_SNAPSHOT="SW_ACTION_GET_SNAPSHOT"
+    SW_ACTION_GET_SNAPSHOT = "SW_ACTION_GET_SNAPSHOT",
+    IPFS_GET_GATEWAY_BASE = "IPFS_GET_GATEWAY_BASE"
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

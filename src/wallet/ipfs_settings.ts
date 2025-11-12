@@ -8,7 +8,11 @@ import {
 
 export type IpfsProvider = 'pinata' | 'lighthouse' | 'custom' | 'tweetcat';
 
-export interface EncryptedBlock { iv: string; salt: string; cipher: string; }
+export interface EncryptedBlock {
+    iv: string;
+    salt: string;
+    cipher: string;
+}
 
 export type DecryptedSettings = {
     provider: IpfsProvider;
@@ -16,6 +20,7 @@ export type DecryptedSettings = {
     lighthouse?: { apiKey?: string; jwt?: string };
     custom?: { apiUrl?: string; gatewayUrl?: string; auth?: string };
 };
+
 /**
  * 统一解密：根据当前 provider 将已保存的敏感字段解密成明文，供 UI 临时展示
  * 注意：仅返回解密后的值，不做持久化；调用方负责清理。
@@ -24,20 +29,20 @@ export async function decryptSettingsForUI(
     s: IpfsSettings,
     password: string
 ): Promise<DecryptedSettings> {
-    const out: DecryptedSettings = { provider: s.provider };
+    const out: DecryptedSettings = {provider: s.provider};
 
     if (s.provider === 'pinata' && s.pinata) {
         out.pinata = {
             apiKey: s.pinata.apiKeyEnc ? await decryptString(s.pinata.apiKeyEnc, password) : undefined,
             secret: s.pinata.secretEnc ? await decryptString(s.pinata.secretEnc, password) : undefined,
-            jwt:    s.pinata.jwtEnc    ? await decryptString(s.pinata.jwtEnc, password)    : undefined,
+            jwt: s.pinata.jwtEnc ? await decryptString(s.pinata.jwtEnc, password) : undefined,
         };
     }
 
     if (s.provider === 'lighthouse' && s.lighthouse) {
         out.lighthouse = {
             apiKey: s.lighthouse.apiKeyEnc ? await decryptString(s.lighthouse.apiKeyEnc, password) : undefined,
-            jwt:    s.lighthouse.jwtEnc    ? await decryptString(s.lighthouse.jwtEnc, password)    : undefined,
+            jwt: s.lighthouse.jwtEnc ? await decryptString(s.lighthouse.jwtEnc, password) : undefined,
         };
     }
 
@@ -45,7 +50,7 @@ export async function decryptSettingsForUI(
         out.custom = {
             apiUrl: s.custom.apiUrl,              // 非敏感
             gatewayUrl: s.custom.gatewayUrl,      // 非敏感
-            auth:  s.custom.authEnc ? await decryptString(s.custom.authEnc, password) : undefined,
+            auth: s.custom.authEnc ? await decryptString(s.custom.authEnc, password) : undefined,
         };
     }
 
@@ -202,8 +207,6 @@ export async function deleteIpfsSettings(): Promise<void> {
     cachedSettings = null;
 }
 
-
-
 export const ERR_LOCAL_IPFS_HANDOFF = '__LOCAL_IPFS_HANDOFF__';
 
 /** 若是 custom 且指向本地 Kubo API，则返回应打开的 WebUI URL；否则返回 null */
@@ -228,4 +231,9 @@ export function localUiUrlIfCustom(settings?: IpfsSettings | null): string | nul
 
 export const IPFS_CORS_HELP_URL =
     'https://docs.ipfs.tech/how-to/kubo-rpc-tls-auth/#configuring-cors-for-use-with-ipfs-web-ui';
-export const ipfs_snapshot_local_key="__IPFS_CATEGORY_SNAPSHOT_V1__";
+export const ipfs_snapshot_local_key = "__IPFS_CATEGORY_SNAPSHOT_V1__";
+
+export async function loadIpfsLocalCustomGateWay(): Promise<string> {
+    const loaded = await loadIpfsSettings();
+    return loaded.custom.gatewayUrl ?? 'http://127.0.0.1:8080/ipfs';
+}

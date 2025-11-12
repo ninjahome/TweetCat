@@ -104,3 +104,22 @@ html,body{
 .tc-gateway-links a{ display:inline-block; margin-right:8px; color:var(--accent); text-decoration:underline; }
 
 .tc-footer{ margin-top:18px; color:var(--muted); font-size:12px; }
+
+.tc-cid-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.tc-gateway-links {
+    display: grid;
+    gap: 6px;
+}
+.tc-link span {
+    color: #666;
+    margin-right: 6px;
+}
+.tc-link a {
+    text-decoration: underline;
+    word-break: break-all;
+}
