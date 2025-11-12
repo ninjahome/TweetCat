@@ -114,19 +114,18 @@ function toArrayBuffer(view: Uint8Array): ArrayBuffer {
 
 async function importPasswordKey(password: string) {
     const encoder = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
+    return await crypto.subtle.importKey(
         'raw',
         encoder.encode(password),
         'PBKDF2',
         false,
         ['deriveKey']
     );
-    return keyMaterial;
 }
 
 async function deriveAesKey(password: string, salt: ArrayBuffer) {
     const keyMaterial = await importPasswordKey(password);
-    const key = await crypto.subtle.deriveKey(
+    return await crypto.subtle.deriveKey(
         {
             name: 'PBKDF2',
             salt,
@@ -141,7 +140,6 @@ async function deriveAesKey(password: string, salt: ArrayBuffer) {
         false,
         ['encrypt', 'decrypt']
     );
-    return key;
 }
 
 export async function encryptString(plain: string, password: string): Promise<EncryptedBlock> {

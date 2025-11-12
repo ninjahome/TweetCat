@@ -359,15 +359,11 @@ export async function uploadFile(file: File, password?: string): Promise<string>
 }
 
 async function tryFetch(url: string): Promise<Uint8Array> {
-    try {
-        const resp = await fetchWithTimeout(url, {}, 15_000);
-        if (!resp.ok) {
-            throw new Error(`HTTP ${resp.status}`);
-        }
-        return await readResponseAsBytes(resp);
-    } catch (err) {
-        throw new Error(`从网关 ${url} 下载失败: ${(err as Error).message}`);
+    const resp = await fetchWithTimeout(url, {}, 15_000);
+    if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}`);
     }
+    return await readResponseAsBytes(resp);
 }
 
 async function catFromNode(cid: string, settings: IpfsSettings | null): Promise<Uint8Array> {

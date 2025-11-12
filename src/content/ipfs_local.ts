@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 import {addCustomStyles, parseContentHtml, sendMsgToService} from "../common/utils";
-import {MsgType, SNAPSHOT_TYPE} from "../common/consts";
+import {MsgType} from "../common/consts";
 import {SnapshotV1} from "../common/msg_obj";
 import {getManifest, updateFollowingSnapshot} from "../wallet/ipfs_manifest";
 

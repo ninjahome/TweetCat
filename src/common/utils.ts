@@ -1,7 +1,6 @@
 import browser from "webextension-polyfill";
 import {localGet, localSet} from "./local_storage";
 import {__DBK_Bearer_Token, DEFAULT_BEARER} from "./consts";
-import {TweetKol} from "../object/tweet_kol";
 
 
 export function isLikelyCorsError(err: unknown): boolean {
@@ -375,8 +374,7 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
-        const resp = await fetch(url, {...options, signal: controller.signal});
-        return resp;
+        return await fetch(url, {...options, signal: controller.signal});
     } finally {
         clearTimeout(timer);
     }
