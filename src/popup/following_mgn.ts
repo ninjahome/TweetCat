@@ -22,7 +22,7 @@ import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
 import {hideLoading, showLoading, showNotification} from "./common";
 import {ensureSettings, uploadJson} from "../wallet/ipfs_api";
-import {ERR_LOCAL_IPFS_HANDOFF, getCachedIpfsSettings} from "../wallet/ipfs_settings";
+import {ERR_LOCAL_IPFS_HANDOFF} from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
 import {loadWallet} from "../wallet/wallet_api";
 import {updateFollowingSnapshot} from "../wallet/ipfs_manifest";
