@@ -103,6 +103,7 @@ export const BlueVerifiedFollowers = "BlueVerifiedFollowers"
 export const Bookmarks = "Bookmarks"
 export const CreateGrokConversation = "CreateGrokConversation"
 export const ConversationItem_DeleteConversationMutation = "ConversationItem_DeleteConversationMutation"
+export const SNAPSHOT_TYPE = 'following-snapshot';
 
 export const watchedOps = [
     UserByScreenName,

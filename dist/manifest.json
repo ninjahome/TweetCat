@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TweetCat",
-  "version": "2.3.10",
+  "version": "2.3.12",
   "default_locale": "en",
   "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {

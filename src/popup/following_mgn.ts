@@ -22,8 +22,10 @@ import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
 import {hideLoading, showLoading, showNotification} from "./common";
 import {uploadJson} from "../wallet/ipfs_api";
-import {ERR_LOCAL_IPFS_HANDOFF, ipfs_snapshot_local_key} from "../wallet/ipfs_settings";
+import {ERR_LOCAL_IPFS_HANDOFF} from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
+import {loadWallet} from "../wallet/wallet_api";
+import {updateFollowingSnapshot} from "../wallet/ipfs_manifest";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -236,8 +238,9 @@ function bindEvents() {
 
     document.addEventListener("keydown", handleGlobalKeydown);
 
-    exportIpfsBtn?.addEventListener("click", () => {
-        void handleExportSnapshotToIpfs();
+    exportIpfsBtn?.addEventListener("click", async () => {
+        const w = await loadWallet();
+        await handleExportSnapshotToIpfs(w.address);
     });
 }
 
@@ -1250,8 +1253,9 @@ function attachUserCardEvents(card: HTMLElement, user: UnifiedKOL) {
 }
 
 
-async function handleExportSnapshotToIpfs(): Promise<void> {
+async function handleExportSnapshotToIpfs(walletAddress: string, onSuccess?: (cid: string) => void): Promise<void> {
     try {
+        const wallet = walletAddress.toLowerCase();
         showLoading("正在上传 IPFS 快照…");
         // 1) 组装快照（直接用内存中的 categories / unifiedKols）
         const cats = categories
@@ -1273,18 +1277,15 @@ async function handleExportSnapshotToIpfs(): Promise<void> {
             assignments: assigns,
         };
 
-        const cid = await uploadJson(snapshot);
+        const snapshotCid = await uploadJson(snapshot, wallet);
+        showNotification(`已上传到 IPFS：${snapshotCid}（已复制）`, "info");
+        onSuccess?.(snapshotCid);
 
-        await navigator.clipboard.writeText(cid);
-
-        localStorage.setItem(ipfs_snapshot_local_key,
-            JSON.stringify({cid, at: Date.now()})
-        );
-
-        showNotification(`已上传到 IPFS：${cid}（已复制）`, "info");
+        const {manifest, cid} = await updateFollowingSnapshot(wallet, snapshotCid);
+        console.log("------>>> newest manifest:", manifest, cid)
     } catch (err) {
         if (err instanceof Error && err.message === ERR_LOCAL_IPFS_HANDOFF) {
-            return; // 不做任何 UI 提示
+            return;
         }
         showNotification((err as Error).message ?? "上传失败", "error");
     } finally {

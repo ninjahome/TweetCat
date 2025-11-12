@@ -3,11 +3,11 @@ import {
     decryptString, ERR_LOCAL_IPFS_HANDOFF,
     getCachedIpfsSettings,
     IpfsSettings,
-    loadIpfsSettings,
+    loadIpfsSettings, PROVIDER_TYPE_CUSTOM, PROVIDER_TYPE_LIGHTHOUSE, PROVIDER_TYPE_PINATA, PROVIDER_TYPE_TWEETCAT,
 } from './ipfs_settings';
 import {TWEETCAT_PINATA} from "./ipfs_config";
 import browser from "webextension-polyfill";
-import {openOrUpdateTab, sendMsgToService} from "../common/utils";
+import {fetchWithTimeout, openOrUpdateTab, sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 
 const DEFAULT_IPFS_API = 'https://ipfs.infura.io:5001/api/v0';
@@ -16,7 +16,6 @@ const PINATA_FILE_ENDPOINT = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
 const PINATA_GATEWAY = 'https://gateway.pinata.cloud/ipfs';
 const LIGHTHOUSE_UPLOAD_ENDPOINT = 'https://upload.lighthouse.storage/api/v0/add?cid-version=1&pin=true';
 const LIGHTHOUSE_GATEWAY = 'https://gateway.lighthouse.storage/ipfs';
-const DEFAULT_TIMEOUT = 20_000;
 
 const PUBLIC_GATEWAYS = [
     (cid: string) => `https://ipfs.io/ipfs/${cid}`,
@@ -29,7 +28,7 @@ let cachedCustomAuthHeader: string | null = null;
 let settingsCache: IpfsSettings | null = null;
 
 
-function tweetcatPinataHeaders(): Record<string, string> {
+export function tweetcatPinataHeaders(): Record<string, string> {
     if (!TWEETCAT_PINATA.JWT) {
         throw new Error('TweetCat Pinata JWT 未注入');
     }
@@ -50,7 +49,7 @@ async function ensureSettings(): Promise<IpfsSettings | null> {
     }
     const loaded = await loadIpfsSettings();
     settingsCache = loaded;
-    if (!loaded || loaded.provider !== 'custom') {
+    if (!loaded || loaded.provider !== PROVIDER_TYPE_CUSTOM) {
         cachedCustomAuthHeader = null;
     }
     return loaded;
@@ -59,17 +58,6 @@ async function ensureSettings(): Promise<IpfsSettings | null> {
 function assertPassword(password?: string): asserts password is string {
     if (!password) {
         throw new Error('需要输入口令以解密凭据');
-    }
-}
-
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = DEFAULT_TIMEOUT): Promise<Response> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeout);
-    try {
-        const resp = await fetch(url, {...options, signal: controller.signal});
-        return resp;
-    } finally {
-        clearTimeout(timer);
     }
 }
 
@@ -82,7 +70,7 @@ async function readResponseAsBytes(resp: Response): Promise<Uint8Array> {
 }
 
 async function pinataHeaders(settings: IpfsSettings | null, password?: string): Promise<Record<string, string>> {
-    if (!settings || settings.provider !== 'pinata' || !settings.pinata) {
+    if (!settings || settings.provider !== PROVIDER_TYPE_PINATA || !settings.pinata) {
         throw new Error('尚未配置 Pinata 凭据');
     }
 
@@ -119,7 +107,7 @@ async function pinataHeadersForFile(settings: IpfsSettings | null, password?: st
 }
 
 async function lighthouseToken(settings: IpfsSettings | null, password?: string): Promise<string> {
-    if (!settings || settings.provider !== 'lighthouse' || !settings.lighthouse) {
+    if (!settings || settings.provider !== PROVIDER_TYPE_LIGHTHOUSE || !settings.lighthouse) {
         throw new Error('尚未配置 Lighthouse 凭据');
     }
     const {jwtEnc, apiKeyEnc} = settings.lighthouse;
@@ -135,7 +123,7 @@ async function lighthouseToken(settings: IpfsSettings | null, password?: string)
 }
 
 async function resolveCustomAuth(settings: IpfsSettings | null, password?: string): Promise<string | undefined> {
-    if (!settings || settings.provider !== 'custom') {
+    if (!settings || settings.provider !== PROVIDER_TYPE_CUSTOM) {
         cachedCustomAuthHeader = null;
         return undefined;
     }
@@ -160,7 +148,7 @@ export function resetIpfsClient(): void {
 
 export async function prepareCustomClient(password: string): Promise<void> {
     const settings = await ensureSettings();
-    if (!settings || settings.provider !== 'custom') return;
+    if (!settings || settings.provider !== PROVIDER_TYPE_CUSTOM) return;
     const auth = await resolveCustomAuth(settings, password);
     await getIpfs(auth);
 }
@@ -170,7 +158,7 @@ export async function getIpfs(authHeader?: string) {
     let url = DEFAULT_IPFS_API;
     let header = authHeader;
 
-    if (settings && settings.provider === 'custom' && settings.custom?.apiUrl) {
+    if (settings && settings.provider === PROVIDER_TYPE_CUSTOM && settings.custom?.apiUrl) {
         url = settings.custom.apiUrl;
         if (!header && cachedCustomAuthHeader) {
             header = cachedCustomAuthHeader;
@@ -200,9 +188,8 @@ async function ipfsAddBytes(bytes: Uint8Array, options?: any, authHeader?: strin
 }
 
 
-/** 若是 custom 且指向本地 Kubo API，则返回应打开的 WebUI URL；否则返回 null */
 export function localUiUrlIfCustom(settings?: IpfsSettings | null): string | null {
-    if (!settings || settings.provider !== 'custom') return null;
+    if (!settings || settings.provider !== PROVIDER_TYPE_CUSTOM) return null;
     const api = settings.custom?.apiUrl?.trim();
     if (!api) return null;
     try {
@@ -232,18 +219,18 @@ async function openOrFocus(uiUrl: string): Promise<void> {
 }
 
 
-export async function uploadJson(obj: any, password?: string): Promise<string> {
+export async function uploadJson(obj: any, wallet: string, password?: string): Promise<string> {
     const settings = await ensureSettings();
 
     const localIpfsNode = localUiUrlIfCustom(settings);
     if (localIpfsNode) {
-        await openOrFocus(localIpfsNode);
+        await openOrFocus(localIpfsNode + "?wallet=" + wallet);
         throw new Error(ERR_LOCAL_IPFS_HANDOFF);
     }
 
-    const provider = settings?.provider ?? 'custom';
+    const provider = settings?.provider ?? PROVIDER_TYPE_CUSTOM;
 
-    if (provider === 'tweetcat') {
+    if (provider === PROVIDER_TYPE_TWEETCAT) {
         const headers = {...tweetcatPinataHeaders(), 'Content-Type': 'application/json'};
         const body = JSON.stringify({pinataContent: obj, pinataOptions: {cidVersion: 1}});
         const resp = await fetchWithTimeout(TWEETCAT_PINATA.JSON_ENDPOINT, {method: 'POST', headers, body});
@@ -254,7 +241,7 @@ export async function uploadJson(obj: any, password?: string): Promise<string> {
         return cid;
     }
 
-    if (provider === 'pinata') {
+    if (provider === PROVIDER_TYPE_PINATA) {
         const headers = await pinataHeaders(settings, password);
         const body = JSON.stringify({
             pinataContent: obj,
@@ -276,7 +263,7 @@ export async function uploadJson(obj: any, password?: string): Promise<string> {
         return cid;
     }
 
-    if (provider === 'lighthouse') {
+    if (provider === PROVIDER_TYPE_LIGHTHOUSE) {
         const token = await lighthouseToken(settings, password);
         const form = new FormData();
         const blob = new Blob([JSON.stringify(obj)], {type: 'application/json'});
@@ -304,9 +291,9 @@ export async function uploadJson(obj: any, password?: string): Promise<string> {
 
 export async function uploadFile(file: File, password?: string): Promise<string> {
     const settings = await ensureSettings();
-    const provider = settings?.provider ?? 'custom';
+    const provider = settings?.provider ?? PROVIDER_TYPE_CUSTOM;
 
-    if (provider === 'tweetcat') {
+    if (provider === PROVIDER_TYPE_TWEETCAT) {
         const headers = tweetcatPinataHeaders();
         const form = new FormData();
         form.append('file', file, file.name);
@@ -325,7 +312,7 @@ export async function uploadFile(file: File, password?: string): Promise<string>
     }
 
 
-    if (provider === 'pinata') {
+    if (provider === PROVIDER_TYPE_PINATA) {
         const headers = await pinataHeadersForFile(settings, password);
         const form = new FormData();
         form.append('file', file, file.name);
@@ -346,7 +333,7 @@ export async function uploadFile(file: File, password?: string): Promise<string>
         return cid;
     }
 
-    if (provider === 'lighthouse') {
+    if (provider === PROVIDER_TYPE_LIGHTHOUSE) {
         const token = await lighthouseToken(settings, password);
         const form = new FormData();
         form.append('file', file, file.name || 'file');
@@ -407,14 +394,14 @@ async function catFromNode(cid: string, settings: IpfsSettings | null): Promise<
 export async function download(cid: string): Promise<Uint8Array> {
     if (!cid) throw new Error('CID 不能为空');
     const settings = await ensureSettings();
-    const provider = settings?.provider ?? 'custom';
+    const provider = settings?.provider ?? PROVIDER_TYPE_CUSTOM;
     const triedErrors: string[] = [];
 
     const pushError = (err: Error) => {
         triedErrors.push(err.message);
     };
 
-    if (provider === 'tweetcat') {
+    if (provider === PROVIDER_TYPE_TWEETCAT) {
         try {
             return await tryFetch(`${TWEETCAT_PINATA.GATEWAY}/${cid}`);
         } catch (err) {
@@ -422,19 +409,19 @@ export async function download(cid: string): Promise<Uint8Array> {
         }
     }
 
-    if (provider === 'pinata') {
+    if (provider === PROVIDER_TYPE_PINATA) {
         try {
             return await tryFetch(`${PINATA_GATEWAY}/${cid}`);
         } catch (err) {
             pushError(err as Error);
         }
-    } else if (provider === 'lighthouse') {
+    } else if (provider === PROVIDER_TYPE_LIGHTHOUSE) {
         try {
             return await tryFetch(`${LIGHTHOUSE_GATEWAY}/${cid}`);
         } catch (err) {
             pushError(err as Error);
         }
-    } else if (provider === 'custom') {
+    } else if (provider === PROVIDER_TYPE_CUSTOM) {
         if (settings?.custom?.gatewayUrl) {
             try {
                 return await tryFetch(sanitizeGateway(settings.custom.gatewayUrl, cid));
@@ -464,13 +451,13 @@ export function buildGatewayUrls(cid: string): string[] {
     const urls: string[] = [];
     const settings = settingsCache ?? getCachedIpfsSettings();
 
-    if (settings?.provider === 'tweetcat') {
+    if (settings?.provider === PROVIDER_TYPE_TWEETCAT) {
         urls.push(`${TWEETCAT_PINATA.GATEWAY}/${cid}`);
-    } else if (settings?.provider === 'pinata') {
+    } else if (settings?.provider === PROVIDER_TYPE_PINATA) {
         urls.push(`${PINATA_GATEWAY}/${cid}`);
-    } else if (settings?.provider === 'lighthouse') {
+    } else if (settings?.provider === PROVIDER_TYPE_LIGHTHOUSE) {
         urls.push(`${LIGHTHOUSE_GATEWAY}/${cid}`);
-    } else if (settings?.provider === 'custom' && settings.custom?.gatewayUrl) {
+    } else if (settings?.provider === PROVIDER_TYPE_CUSTOM && settings.custom?.gatewayUrl) {
         urls.push(sanitizeGateway(settings.custom.gatewayUrl, cid));
     }
 

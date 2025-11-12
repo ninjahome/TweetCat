@@ -1,17 +1,62 @@
 import browser from "webextension-polyfill";
 import {addCustomStyles, parseContentHtml, sendMsgToService} from "../common/utils";
-import {MsgType} from "../common/consts";
+import {MsgType, SNAPSHOT_TYPE} from "../common/consts";
 import {SnapshotV1} from "../common/msg_obj";
+import {getManifest, updateFollowingSnapshot} from "../wallet/ipfs_manifest";
 
+const HASH_PREFIX = '#tweetcat-ipfs';
+
+let walletFromHash: string | null = null;
 let gatewayBase: string = 'http://127.0.0.1:8080/ipfs'
 document.addEventListener('DOMContentLoaded', async () => {
-    // --- 如果不是我们定义的特殊页面，则立即退出 ---
-    if (location.hash !== '#tweetcat-ipfs') {
+    if (!location.hash.startsWith(HASH_PREFIX)) {
         return;
     }
-
+    walletFromHash = parseWalletFromHash().toLowerCase(); // 解析钱包地址
+    getManifest(walletFromHash).then((mf) => {
+        console.log("-------->>>>>> mf:", mf);
+    });
     await onTweetCatIpfsPageLoaded();
 });
+
+function parseWalletFromHash(): string | null {
+    const raw = location.hash || '';
+    if (!raw.startsWith(HASH_PREFIX)) return null;
+
+    // 去掉开头的 '#'
+    const withoutHash = raw.slice(1); // 'tweetcat-ipfs[:<addr>]?[wallet=<addr>]'
+    const [route, query = ''] = withoutHash.split('?');
+
+    // 1) #tweetcat-ipfs:<addr>
+    const colonIdx = route.indexOf(':');
+    if (colonIdx >= 0) {
+        const addr = decodeURIComponent(route.slice(colonIdx + 1)).trim().toLowerCase();
+        return addr || null;
+    }
+
+    // 2) #tweetcat-ipfs?wallet=<addr>
+    if (query) {
+        const p = new URLSearchParams(query);
+        const addr = (p.get('wallet') || '').trim().toLowerCase();
+        if (addr) return addr;
+    }
+    return null;
+}
+
+async function updateManifestAfterLocalUpload(cid: string) {
+    if (!walletFromHash) {
+        showStatus('未获取到钱包地址，已跳过 Manifest 更新');
+        return;
+    }
+    try {
+        await updateFollowingSnapshot(walletFromHash, cid);
+        showStatus('已更新同步清单（Manifest）');
+    } catch (e) {
+        console.warn('appendManifestItem failed:', e);
+        showStatus('上传成功，但本地清单写入失败（不影响使用）');
+    }
+}
+
 
 async function onTweetCatIpfsPageLoaded() {
     addCustomStyles('css/tweetcat-ipfs.css');
@@ -33,17 +78,19 @@ async function onTweetCatIpfsPageLoaded() {
 async function getGatewayBaseFromSW(): Promise<string | null> {
     try {
         const rsp = await sendMsgToService({}, MsgType.IPFS_GET_GATEWAY_BASE);
-        console.log("-------->>>>>local ipfs settings:",rsp);
+        console.log("-------->>>>>local ipfs settings:", rsp);
         if (rsp?.success && typeof rsp.data === 'string' && rsp.data.trim() !== '') {
             return rsp.data.trim().replace(/\/+$/, ''); // 去尾斜杠
         }
-    } catch (_) {}
+    } catch (_) {
+    }
     // fallback
     return 'http://127.0.0.1:8080/ipfs';
 }
+
 function bindUI() {
     const refreshBtn = document.getElementById('tc-refresh') as HTMLButtonElement | null;
-    const uploadBtn  = document.getElementById('tc-upload')  as HTMLButtonElement | null;
+    const uploadBtn = document.getElementById('tc-upload') as HTMLButtonElement | null;
     const copyCidBtn = document.getElementById('tc-copy-cid') as HTMLButtonElement | null;
 
     refreshBtn?.addEventListener('click', () => requestAndRenderSnapshot());
@@ -131,6 +178,9 @@ async function handleUploadClick() {
         await navigator.clipboard?.writeText(cid).catch(() => {
         });
         showUploadResult(cid);
+
+        await updateManifestAfterLocalUpload(cid);
+
         const gwUrl = `${gatewayBase}/${cid}`;
         window.open(gwUrl, '_blank');
 
@@ -139,6 +189,7 @@ async function handleUploadClick() {
         showStatus('上传失败：' + ((err as Error).message || String(err)));
     }
 }
+
 function showUploadResult(cid: string) {
     const results = document.getElementById('tc-results') as HTMLElement | null;
     const cidLink = document.getElementById('tc-cid-link') as HTMLAnchorElement | null;
@@ -165,17 +216,18 @@ function deriveApiFromLocation(): string | null {
     try {
         const o = new URL(location.origin);
         if (['127.0.0.1', 'localhost'].includes(o.hostname)) return o.origin;
-    } catch {}
+    } catch {
+    }
     return null;
 }
 
 async function uploadJsonToLocalKubo(obj: any, apiBase: string): Promise<string> {
     const url = `${apiBase}/api/v0/add?pin=true&wrap-with-directory=false`;
-    const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(obj)], {type: 'application/json'});
     const form = new FormData();
     form.append('file', blob, 'snapshot.json');
 
-    const resp = await fetch(url, { method: 'POST', body: form });
+    const resp = await fetch(url, {method: 'POST', body: form});
     const text = await resp.text();
     if (!resp.ok) {
         throw new Error(`Kubo 上传失败: HTTP ${resp.status} ${text}`);

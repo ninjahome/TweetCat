@@ -6,7 +6,16 @@ import {
     databaseUpdateOrAddItem
 } from "../common/database";
 
-export type IpfsProvider = 'pinata' | 'lighthouse' | 'custom' | 'tweetcat';
+export const PROVIDER_TYPE_TWEETCAT = 'tweetcat'
+export const PROVIDER_TYPE_LIGHTHOUSE = 'lighthouse'
+export const PROVIDER_TYPE_PINATA = 'pinata'
+export const PROVIDER_TYPE_CUSTOM = 'custom'
+
+export type IpfsProvider =
+    | typeof PROVIDER_TYPE_PINATA
+    | typeof PROVIDER_TYPE_LIGHTHOUSE
+    | typeof PROVIDER_TYPE_CUSTOM
+    | typeof PROVIDER_TYPE_TWEETCAT;
 
 export interface EncryptedBlock {
     iv: string;
@@ -31,7 +40,7 @@ export async function decryptSettingsForUI(
 ): Promise<DecryptedSettings> {
     const out: DecryptedSettings = {provider: s.provider};
 
-    if (s.provider === 'pinata' && s.pinata) {
+    if (s.provider === PROVIDER_TYPE_PINATA && s.pinata) {
         out.pinata = {
             apiKey: s.pinata.apiKeyEnc ? await decryptString(s.pinata.apiKeyEnc, password) : undefined,
             secret: s.pinata.secretEnc ? await decryptString(s.pinata.secretEnc, password) : undefined,
@@ -39,14 +48,14 @@ export async function decryptSettingsForUI(
         };
     }
 
-    if (s.provider === 'lighthouse' && s.lighthouse) {
+    if (s.provider === PROVIDER_TYPE_LIGHTHOUSE && s.lighthouse) {
         out.lighthouse = {
             apiKey: s.lighthouse.apiKeyEnc ? await decryptString(s.lighthouse.apiKeyEnc, password) : undefined,
             jwt: s.lighthouse.jwtEnc ? await decryptString(s.lighthouse.jwtEnc, password) : undefined,
         };
     }
 
-    if (s.provider === 'custom' && s.custom) {
+    if (s.provider === PROVIDER_TYPE_CUSTOM && s.custom) {
         out.custom = {
             apiUrl: s.custom.apiUrl,              // 非敏感
             gatewayUrl: s.custom.gatewayUrl,      // 非敏感
@@ -228,10 +237,6 @@ export function localUiUrlIfCustom(settings?: IpfsSettings | null): string | nul
         return null;
     }
 }
-
-export const IPFS_CORS_HELP_URL =
-    'https://docs.ipfs.tech/how-to/kubo-rpc-tls-auth/#configuring-cors-for-use-with-ipfs-web-ui';
-export const ipfs_snapshot_local_key = "__IPFS_CATEGORY_SNAPSHOT_V1__";
 
 export async function loadIpfsLocalCustomGateWay(): Promise<string> {
     const loaded = await loadIpfsSettings();

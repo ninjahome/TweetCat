@@ -369,3 +369,15 @@ export async function parseContentHtml(htmlFilePath: string): Promise<HTMLTempla
     template.innerHTML = htmlContent;
     return template;
 }
+
+const DEFAULT_TIMEOUT = 20_000;
+export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout = DEFAULT_TIMEOUT): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+        const resp = await fetch(url, {...options, signal: controller.signal});
+        return resp;
+    } finally {
+        clearTimeout(timer);
+    }
+}
