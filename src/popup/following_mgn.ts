@@ -21,8 +21,8 @@ import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
 import {hideLoading, showLoading, showNotification} from "./common";
-import {uploadJson} from "../wallet/ipfs_api";
-import {ERR_LOCAL_IPFS_HANDOFF} from "../wallet/ipfs_settings";
+import {ensureSettings, uploadJson} from "../wallet/ipfs_api";
+import {ERR_LOCAL_IPFS_HANDOFF, getCachedIpfsSettings} from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
 import {loadWallet} from "../wallet/wallet_api";
 import {updateFollowingSnapshot} from "../wallet/ipfs_manifest";
@@ -1253,10 +1253,34 @@ function attachUserCardEvents(card: HTMLElement, user: UnifiedKOL) {
 }
 
 
+async function promptPasswordOnce(): Promise<string> {
+    const pwd = window.prompt("请输入解密口令（用于解密 Pinata/Lighthouse/自定义授权）") ?? "";
+    if (!pwd.trim()) throw new Error("已取消：未输入口令");
+    return pwd.trim();
+}
+
+// ★ 新增：根据设置判断是否需要口令
+function ipfsNeedsPassword(settings: any): boolean {
+    const provider = settings?.provider;
+    if (provider === "pinata" || provider === "lighthouse") return true;
+    if (provider === "custom") {
+        const auth = settings?.custom?.authorization ?? settings?.custom?.auth ?? "";
+        return typeof auth === "string" && auth.trim().length > 0;
+    }
+    return false; // tweetcat、本地节点都不需要
+}
+
+
 async function handleExportSnapshotToIpfs(walletAddress: string, onSuccess?: (cid: string) => void): Promise<void> {
     try {
         const wallet = walletAddress.toLowerCase();
         showLoading("正在上传 IPFS 快照…");
+
+        const settings = await ensureSettings();  // 不解密，仅拿配置判断
+        const needPassword = ipfsNeedsPassword(settings);
+        const password = needPassword ? await promptPasswordOnce() : undefined;
+
+
         // 1) 组装快照（直接用内存中的 categories / unifiedKols）
         const cats = categories
             .filter(c => typeof c.id === "number")
@@ -1277,7 +1301,7 @@ async function handleExportSnapshotToIpfs(walletAddress: string, onSuccess?: (ci
             assignments: assigns,
         };
 
-        const snapshotCid = await uploadJson(snapshot, wallet);
+        const snapshotCid = await uploadJson(settings, snapshot, wallet, password);
         showNotification(`已上传到 IPFS：${snapshotCid}（已复制）`, "info");
         onSuccess?.(snapshotCid);
 

@@ -25,7 +25,6 @@ const PUBLIC_GATEWAYS = [
 
 let cachedClient: { key: string; client: any } | null = null;
 let cachedCustomAuthHeader: string | null = null;
-let settingsCache: IpfsSettings | null = null;
 
 
 export function tweetcatPinataHeaders(): Record<string, string> {
@@ -41,19 +40,16 @@ function sanitizeGateway(base: string, cid: string): string {
     return `${trimmed}/${cid}`;
 }
 
-async function ensureSettings(): Promise<IpfsSettings | null> {
-    const cached = getCachedIpfsSettings();
-    if (cached) {
-        settingsCache = cached;
-        return cached;
-    }
-    const loaded = await loadIpfsSettings();
-    settingsCache = loaded;
-    if (!loaded || loaded.provider !== PROVIDER_TYPE_CUSTOM) {
+export async function ensureSettings(): Promise<IpfsSettings | null> {
+    let settings = await getCachedIpfsSettings();
+    if (!settings) settings = await loadIpfsSettings();
+
+    if (!settings || settings.provider !== PROVIDER_TYPE_CUSTOM) {
         cachedCustomAuthHeader = null;
     }
-    return loaded;
+    return settings;
 }
+
 
 function assertPassword(password?: string): asserts password is string {
     if (!password) {
@@ -219,9 +215,7 @@ async function openOrFocus(uiUrl: string): Promise<void> {
 }
 
 
-export async function uploadJson(obj: any, wallet: string, password?: string): Promise<string> {
-    const settings = await ensureSettings();
-
+export async function uploadJson(settings: IpfsSettings, obj: any, wallet: string, password?: string): Promise<string> {
     const localIpfsNode = localUiUrlIfCustom(settings);
     if (localIpfsNode) {
         await openOrFocus(localIpfsNode + "?wallet=" + wallet);
@@ -443,9 +437,9 @@ export async function download(cid: string): Promise<Uint8Array> {
     throw new Error(`下载失败：${triedErrors.join('；')}`);
 }
 
-export function buildGatewayUrls(cid: string): string[] {
+export async function buildGatewayUrls(cid: string): Promise<string[]> {
     const urls: string[] = [];
-    const settings = settingsCache ?? getCachedIpfsSettings();
+    const settings = await getCachedIpfsSettings();
 
     if (settings?.provider === PROVIDER_TYPE_TWEETCAT) {
         urls.push(`${TWEETCAT_PINATA.GATEWAY}/${cid}`);

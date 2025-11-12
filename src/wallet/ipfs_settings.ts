@@ -87,6 +87,7 @@ const SALT_LENGTH = 16;
 const IV_LENGTH = 12;
 
 let cachedSettings: IpfsSettings | null = null;
+let pendingSettingsLoad: Promise<IpfsSettings | null> | null = null;
 
 function toBase64(buffer: ArrayBuffer | Uint8Array): string {
     const bytes = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
@@ -193,8 +194,17 @@ export async function loadIpfsSettings(): Promise<IpfsSettings | null> {
     return found;
 }
 
-export function getCachedIpfsSettings(): IpfsSettings | null {
-    return cachedSettings;
+export async function getCachedIpfsSettings(): Promise<IpfsSettings | null> {
+    if (cachedSettings) return cachedSettings;
+
+    if (!pendingSettingsLoad) {
+        pendingSettingsLoad = loadIpfsSettings()
+            .catch((_e) => null)
+            .finally(() => { pendingSettingsLoad = null; });
+    }
+    // loadIpfsSettings 内部会同步刷新 cachedSettings，这里返回其结果即可
+    const loaded = await pendingSettingsLoad;
+    return cachedSettings ?? loaded;
 }
 
 export async function saveIpfsSettings(settings: IpfsSettings): Promise<void> {
