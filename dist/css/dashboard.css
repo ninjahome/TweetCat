@@ -741,3 +741,25 @@ input.category-input:focus {
     cursor: not-allowed;
     transform: none !important;
 }
+
+.secret-readonly {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.secret-input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.secret-input-row .secret-toggle {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.secret-input-row .secret-toggle.is-visible {
+    font-weight: bold;
+}
