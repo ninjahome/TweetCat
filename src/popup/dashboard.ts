@@ -1,9 +1,8 @@
 import browser from "webextension-polyfill";
 import {ethers} from "ethers";
 import {__DBK_AD_Block_Key, MsgType} from "../common/consts";
-import {__tableCategory, checkAndInitDatabase, databaseAddItem} from "../common/database";
+import {checkAndInitDatabase} from "../common/database";
 import {showView} from "../common/utils";
-import {Category, loadCategories} from "../object/category";
 import {sendMessageToX} from "../service_work/bg_msg";
 import {localGet, localSet} from "../common/local_storage";
 import {getSystemSetting, switchAdOn} from "../object/system_setting";
@@ -16,7 +15,7 @@ import {
     TCWallet,
     WalletSettings
 } from "../wallet/wallet_api";
-import {hideLoading, showLoading, showNotification} from "./common";
+import {showNotification} from "./common";
 import {
     encryptString,
     IpfsProvider,
@@ -56,7 +55,6 @@ async function initDashBoard(): Promise<void> {
     }
 
     initCatMgmBtn();
-    initNewCatModalDialog();
     initSettings();
     await initWalletOrCreate();
     initIpfsSettingsView();
@@ -79,50 +77,6 @@ function initCatMgmBtn() {
     }
 }
 
-function initNewCatModalDialog() {
-    const cancelBtn = document.getElementById("btn-cancel-new-category") as HTMLElement;
-    const confirmBtn = document.getElementById("btn-confirm-new-category") as HTMLElement;
-    const modalDialog = document.getElementById("modal-add-category") as HTMLElement
-    (modalDialog.querySelector("h3") as HTMLElement).innerText = t('add_new_category');
-    cancelBtn.innerText = t('cancel');
-    confirmBtn.innerText = t('confirm');
-    (modalDialog.querySelector(".new-category-name") as HTMLInputElement).placeholder = t('enter_category_name');
-
-    cancelBtn.addEventListener('click', () => modalDialog.style.display = 'none');
-    confirmBtn.addEventListener('click', addNewCategory);
-}
-
-async function addNewCategory() {
-    const modalDialog = document.getElementById("modal-add-category") as HTMLElement;
-    const newCatInput = modalDialog.querySelector(".new-category-name") as HTMLInputElement;
-
-    const newCatStr = newCatInput.value;
-    if (!newCatStr) {
-        showAlert(t('tips_title'), t('invalid_category_name'));
-        return;
-    }
-
-    showLoading()
-    const item = new Category(newCatStr);
-    delete item.id;
-    const newID = await databaseAddItem(__tableCategory, item);
-    if (!newID) {
-        showAlert(t('tips_title'), t('add_category_failed', newCatStr));
-        hideLoading();
-        return;
-    }
-
-    item.id = newID as number;
-    await setHomeStatus();
-    modalDialog.style.display = 'none'
-    newCatInput.value = '';
-
-    const changedCat = await loadCategories();
-    await sendMessageToX(MsgType.CategoryChanged, changedCat, false);
-    hideLoading();
-    showAlert(t('tips_title'), t('save_success'));
-}
-
 async function setHomeStatus() {
     const isEnabled: boolean = await localGet(__DBK_AD_Block_Key) as boolean ?? false//TODO:: refactor __DBK_AD_Block_Key logic
     const blockAdsToggle = document.getElementById('ad-block-toggle') as HTMLInputElement;
@@ -141,7 +95,6 @@ function initSettings() {
         const isEnabled = blockAdsToggle.checked;
         await localSet(__DBK_AD_Block_Key, isEnabled);
         await switchAdOn(isEnabled);
-        console.log("------>>>Ad blocking is now", isEnabled ? "enabled" : "disabled");
         await sendMessageToX(MsgType.AdsBlockChanged, isEnabled);
     };
 }

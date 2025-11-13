@@ -173,7 +173,8 @@ async function handleUploadClick() {
             return;
         }
         setStatus('正在上传测试数据到 IPFS...');
-        const cid = await uploadJsonToLocalKubo(snapshotJson, apiBase);
+        const { createdAt, ...snapshotCore } = snapshotJson as any;
+        const cid = await uploadJsonToLocalKubo(snapshotCore, apiBase);
         setStatus('上传成功！CID: ' + cid);
         await navigator.clipboard?.writeText(cid).catch(() => {
         });

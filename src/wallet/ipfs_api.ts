@@ -16,6 +16,8 @@ const PINATA_FILE_ENDPOINT = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
 const PINATA_GATEWAY = 'https://gateway.pinata.cloud/ipfs';
 const LIGHTHOUSE_UPLOAD_ENDPOINT = 'https://upload.lighthouse.storage/api/v0/add?cid-version=1&pin=true';
 const LIGHTHOUSE_GATEWAY = 'https://gateway.lighthouse.storage/ipfs';
+const PINATA_UNPIN_ENDPOINT = 'https://api.pinata.cloud/pinning/unpin';
+
 
 const PUBLIC_GATEWAYS = [
     (cid: string) => `https://ipfs.io/ipfs/${cid}`,
@@ -458,3 +460,111 @@ export async function buildGatewayUrls(cid: string): Promise<string[]> {
     return urls;
 }
 
+
+
+async function unpinFromTweetcatPinata(cid: string): Promise<void> {
+    if (!cid) return;
+
+    const origin = (() => {
+        try { return new URL(TWEETCAT_PINATA.JSON_ENDPOINT).origin; }
+        catch { return 'https://api.pinata.cloud'; }
+    })();
+
+    const url = `${origin}/pinning/unpin/${encodeURIComponent(cid)}`;
+    const headers = tweetcatPinataHeaders();
+
+    const resp = await fetchWithTimeout(url, {
+        method: 'DELETE',
+        headers,
+    }, 10_000);
+
+    if (!resp.ok) {
+        throw new Error(`TweetCat Pinata 取消固定失败: HTTP ${resp.status}`);
+    }
+}
+
+async function unpinFromPinata(settings: IpfsSettings | null, cid: string, password?: string): Promise<void> {
+    if (!cid) return;
+
+    const headers = await pinataHeaders(settings, password);
+    // DELETE 一般没有 body，不需要 Content-Type，顺便避免某些代理奇怪的问题
+    delete (headers as any)['Content-Type'];
+
+    const resp = await fetchWithTimeout(
+        `${PINATA_UNPIN_ENDPOINT}/${encodeURIComponent(cid)}`,
+        { method: 'DELETE', headers },
+        10_000,
+    );
+
+    if (!resp.ok) {
+        throw new Error(`Pinata 取消固定失败: HTTP ${resp.status}`);
+    }
+}
+
+
+async function unpinFromCustom(settings: IpfsSettings, cid: string, password?: string): Promise<void> {
+    if (!cid) return;
+
+    const apiUrl = settings.custom?.apiUrl?.trim();
+    if (!apiUrl) {
+        throw new Error('未配置自建节点 API URL');
+    }
+
+    const base = apiUrl.replace(/\/+$/, ''); // 去掉结尾多余的 /
+    const search = new URLSearchParams({
+        arg: cid,
+        recursive: 'true',
+    });
+    const url = `${base}/pin/rm?${search.toString()}`;
+
+    const headers: Record<string, string> = {};
+    const auth = await resolveCustomAuth(settings, password);
+    if (auth) {
+        headers['Authorization'] = auth;
+    }
+
+    const resp = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers,
+    }, 30_000);
+
+    if (!resp.ok) {
+        throw new Error(`自建节点取消固定失败: HTTP ${resp.status}`);
+    }
+}
+
+async function unpinFromLighthouse(_settings: IpfsSettings, _cid: string, _password?: string): Promise<void> {
+    // 注意：Lighthouse 的删除接口需要 fileId（UUID），而不是 CID。
+    // 目前系统只保存了 CID，没有保存 fileId，因此这里暂不实现。
+    // 如果以后在 manifest 里同时保存 fileId 和 cid，可以按下面步骤实现：
+    //   1）根据 cid 找到对应的 fileId（列表或在 manifest 里直接存）
+    //   2）DELETE https://api.lighthouse.storage/api/user/delete_file?id=FILE_ID
+    console.log('暂未实现 Lighthouse 的按 CID 删除：需要 fileId，请在保存时一并记录 fileId 后再实现。');
+}
+
+export async function unpinCid(settings: IpfsSettings | null, cid: string, password?: string): Promise<void> {
+    if (!cid) return;
+
+    // 如果没传 settings，就自己从缓存/存储中取一份
+    let effective = settings;
+    if (!effective) {
+        effective = await ensureSettings();
+    }
+    if (!effective) {
+        throw new Error('尚未配置 IPFS 设置，无法取消固定');
+    }
+
+    const provider = effective.provider ?? PROVIDER_TYPE_CUSTOM;
+
+    if (provider === PROVIDER_TYPE_TWEETCAT) {
+        await unpinFromTweetcatPinata(cid);
+    } else if (provider === PROVIDER_TYPE_PINATA) {
+        await unpinFromPinata(effective, cid, password);
+    } else if (provider === PROVIDER_TYPE_CUSTOM) {
+        await unpinFromCustom(effective, cid, password);
+    } else if (provider === PROVIDER_TYPE_LIGHTHOUSE) {
+        await unpinFromLighthouse(effective, cid, password);
+    } else {
+        console.warn('unpinCid: 未知 provider，忽略', provider);
+    }
+}

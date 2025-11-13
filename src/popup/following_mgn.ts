@@ -1301,7 +1301,8 @@ async function handleExportSnapshotToIpfs(walletAddress: string, onSuccess?: (ci
             assignments: assigns,
         };
 
-        const snapshotCid = await uploadJson(settings, snapshot, wallet, password);
+        const { createdAt, ...snapshotCore } = snapshot;
+        const snapshotCid = await uploadJson(settings, snapshotCore, wallet, password);
         showNotification(`已上传到 IPFS：${snapshotCid}（已复制）`, "info");
         onSuccess?.(snapshotCid);
 
