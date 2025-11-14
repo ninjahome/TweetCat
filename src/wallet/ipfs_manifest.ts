@@ -132,7 +132,6 @@ export async function putManifest(walletAddress: string, manifest: ManifestV1): 
     return newCid;
 }
 
-/** 便捷：更新“following-snapshot”并发布 */
 export async function updateFollowingSnapshot(
     walletAddress: string,
     snapshotCid: string

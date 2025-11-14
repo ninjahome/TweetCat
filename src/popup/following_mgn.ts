@@ -202,15 +202,12 @@ async function initFollowingManager() {
     await checkAndInitDatabase();
     bindEvents();
 
-    try {
-        const wallet = await loadWallet();
-        await loadLatestSnapshotCid(wallet.address);
-    } catch (e) {
-        console.warn("[IPFS] skip loading latest snapshot cid:", e);
-        updateIpfsLatestUI();   // 出错时至少把 UI 置成 None + disabled
-    }
-
-
+    loadWallet().then((wallet)=>{
+        loadLatestSnapshotCid(wallet.address).catch(e=>{
+            console.warn("[IPFS] skip loading latest snapshot cid:", e);
+            updateIpfsLatestUI();
+        });
+    });
     await refreshData();
 }
 
