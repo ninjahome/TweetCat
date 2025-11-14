@@ -10,14 +10,14 @@ import browser from "webextension-polyfill";
 import {fetchWithTimeout, openOrUpdateTab, sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 
-const DEFAULT_IPFS_API = 'https://ipfs.infura.io:5001/api/v0';
-const PINATA_JSON_ENDPOINT = 'https://api.pinata.cloud/pinning/pinJSONToIPFS';
-const PINATA_FILE_ENDPOINT = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
-const PINATA_GATEWAY = 'https://gateway.pinata.cloud/ipfs';
-const LIGHTHOUSE_UPLOAD_ENDPOINT = 'https://upload.lighthouse.storage/api/v0/add?cid-version=1&pin=true';
-const LIGHTHOUSE_GATEWAY = 'https://gateway.lighthouse.storage/ipfs';
-const PINATA_UNPIN_ENDPOINT = 'https://api.pinata.cloud/pinning/unpin';
-const LIGHTHOUSE_API_BASE = 'https://api.lighthouse.storage';
+export const DEFAULT_IPFS_API = 'https://ipfs.infura.io:5001/api/v0';
+export const PINATA_JSON_ENDPOINT = 'https://api.pinata.cloud/pinning/pinJSONToIPFS';
+export const PINATA_FILE_ENDPOINT = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
+export const PINATA_GATEWAY = 'https://gateway.pinata.cloud/ipfs';
+export const LIGHTHOUSE_UPLOAD_ENDPOINT = 'https://upload.lighthouse.storage/api/v0/add?cid-version=1&pin=true';
+export const LIGHTHOUSE_GATEWAY = 'https://gateway.lighthouse.storage/ipfs';
+export const PINATA_UNPIN_ENDPOINT = 'https://api.pinata.cloud/pinning/unpin';
+export const LIGHTHOUSE_API_BASE = 'https://api.lighthouse.storage';
 
 
 const PUBLIC_GATEWAYS = [

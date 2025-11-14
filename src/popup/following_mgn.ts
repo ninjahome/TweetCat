@@ -21,7 +21,7 @@ import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
 import {hideLoading, showLoading, showNotification} from "./common";
-import {buildGatewayUrls, ensureSettings, unpinCid, uploadJson} from "../wallet/ipfs_api";
+import {buildGatewayUrls, ensureSettings, LIGHTHOUSE_GATEWAY, unpinCid, uploadJson} from "../wallet/ipfs_api";
 import {ERR_LOCAL_IPFS_HANDOFF} from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
 import {loadWallet} from "../wallet/wallet_api";
@@ -1397,13 +1397,44 @@ function updateIpfsLatestUI(): void {
 
 async function openSnapshotInGateway(cid: string): Promise<void> {
     try {
-        const urls = await buildGatewayUrls(cid);
-        const target = urls[0] || `https://ipfs.io/ipfs/${cid}`;
-        window.open(target, "_blank");
+        showLoading("正在寻找 IPFS 快照…");
+        const canUseIpfsIo = await canReachViaIpfsIo(cid, 3000);
+
+        if (canUseIpfsIo) {
+            const url = `https://ipfs.io/ipfs/${cid}`;
+            window.open(url, "_blank");
+            return;
+        }
+        const lighthouseUrl = `${LIGHTHOUSE_GATEWAY}/${cid}`
+        window.open(lighthouseUrl, "_blank");
     } catch (err) {
         console.error("[IPFS] openSnapshotInGateway failed", err);
-        const fallback = `https://ipfs.io/ipfs/${cid}`;
-        window.open(fallback, "_blank");
+        const urls = await buildGatewayUrls(cid);
+        if(urls.length===0){
+            return ;
+        }
+        window.open(urls[0], "_blank");
+    }finally {
+        hideLoading();
+    }
+}
+
+
+/** 用 HEAD 简单测试这个 CID 是否能通过 ipfs.io 访问 */
+async function canReachViaIpfsIo(cid: string, timeoutMs: number = 3000): Promise<boolean> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        const resp = await fetch(`https://ipfs.io/ipfs/${cid}`, {
+            method: "HEAD",
+            signal: controller.signal,
+        });
+        return resp.ok;
+    } catch (_e) {
+        return false;
+    } finally {
+        clearTimeout(timer);
     }
 }
 
