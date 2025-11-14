@@ -21,7 +21,7 @@ import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
 import {hideLoading, showLoading, showNotification} from "./common";
-import {ensureSettings, uploadJson} from "../wallet/ipfs_api";
+import {ensureSettings, unpinCid, uploadJson} from "../wallet/ipfs_api";
 import {ERR_LOCAL_IPFS_HANDOFF} from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
 import {loadWallet} from "../wallet/wallet_api";
@@ -1301,13 +1301,16 @@ async function handleExportSnapshotToIpfs(walletAddress: string, onSuccess?: (ci
             assignments: assigns,
         };
 
-        const { createdAt, ...snapshotCore } = snapshot;
+        const {createdAt, ...snapshotCore} = snapshot;
         const snapshotCid = await uploadJson(settings, snapshotCore, wallet, password);
         showNotification(`已上传到 IPFS：${snapshotCid}（已复制）`, "info");
         onSuccess?.(snapshotCid);
 
-        const {manifest, cid} = await updateFollowingSnapshot(wallet, snapshotCid);
-        console.log("------>>> newest manifest:", manifest, cid)
+        const {manifest, cid, oldSnapshotCids} = await updateFollowingSnapshot(wallet, snapshotCid);
+        console.log("------>>> newest manifest:", manifest, cid, oldSnapshotCids)
+        for (const oldCid of oldSnapshotCids) {
+            await unpinCid(settings, oldCid, password);
+        }
     } catch (err) {
         if (err instanceof Error && err.message === ERR_LOCAL_IPFS_HANDOFF) {
             return;

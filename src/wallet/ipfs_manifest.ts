@@ -1,6 +1,6 @@
-import { fetchWithTimeout } from "../common/utils";
-import { TWEETCAT_PINATA } from "./ipfs_config";
-import { tweetcatPinataHeaders } from "./ipfs_api";
+import {fetchWithTimeout} from "../common/utils";
+import {TWEETCAT_PINATA} from "./ipfs_config";
+import {tweetcatPinataHeaders} from "./ipfs_api";
 import {SNAPSHOT_TYPE} from "../common/consts";
 
 // ---------- 类型 ----------
@@ -17,35 +17,39 @@ function isManifestV1(x: any): x is ManifestV1 {
 }
 
 function emptyManifest(): ManifestV1 {
-    return { version: 1, updatedAt: Date.now(), items: [] };
+    return {version: 1, updatedAt: Date.now(), items: []};
 }
 
 /** 覆盖同 type（只保留一条最新），并去重同 CID */
 export function buildNextManifest(prev: ManifestV1 | null | undefined, item: ManifestItem): ManifestV1 {
     const base = isManifestV1(prev) ? prev : emptyManifest();
     const filtered = base.items.filter(it => it.type !== item.type && it.cid !== item.cid);
-    return { version: 1, updatedAt: Date.now(), items: [item, ...filtered] };
+    return {version: 1, updatedAt: Date.now(), items: [item, ...filtered]};
 }
 
 // ---------- Pinata 端点（从你现有配置推导） ----------
 const PINATA_API_ORIGIN = (() => {
-    try { return new URL(TWEETCAT_PINATA.JSON_ENDPOINT).origin; } catch { return "https://api.pinata.cloud"; }
+    try {
+        return new URL(TWEETCAT_PINATA.JSON_ENDPOINT).origin;
+    } catch {
+        return "https://api.pinata.cloud";
+    }
 })();
 const JSON_ENDPOINT = TWEETCAT_PINATA.JSON_ENDPOINT || `${PINATA_API_ORIGIN}/pinning/pinJSONToIPFS`;
 const LIST_ENDPOINT = `${PINATA_API_ORIGIN}/data/pinList`;
-const UNPIN_BASE    = `${PINATA_API_ORIGIN}/pinning/unpin`;
-const GATEWAY_BASE  = (TWEETCAT_PINATA.GATEWAY || "https://gateway.pinata.cloud/ipfs").replace(/\/+$/, "");
+const UNPIN_BASE = `${PINATA_API_ORIGIN}/pinning/unpin`;
+const GATEWAY_BASE = (TWEETCAT_PINATA.GATEWAY || "https://gateway.pinata.cloud/ipfs").replace(/\/+$/, "");
 
 // ---------- 原子操作 ----------
 /** 上传 JSON（name=walletLower，带最小 keyvalues 标识） -> 返回新 CID */
 async function pinJSONForWallet(walletLower: string, manifest: ManifestV1): Promise<string> {
-    const headers = { ...tweetcatPinataHeaders(), "Content-Type": "application/json" };
+    const headers = {...tweetcatPinataHeaders(), "Content-Type": "application/json"};
     const body = JSON.stringify({
-        pinataMetadata: { name: walletLower, keyvalues: { kind: "wallet-manifest", schema: "v1" } },
-        pinataOptions: { cidVersion: 1 },
+        pinataMetadata: {name: walletLower, keyvalues: {kind: "wallet-manifest", schema: "v1"}},
+        pinataOptions: {cidVersion: 1},
         pinataContent: manifest,
     });
-    const resp = await fetchWithTimeout(JSON_ENDPOINT, { method: "POST", headers, body });
+    const resp = await fetchWithTimeout(JSON_ENDPOINT, {method: "POST", headers, body});
     if (!resp.ok) throw new Error(`Pinata 上传失败: HTTP ${resp.status}`);
     const data = await resp.json();
     const cid = data.IpfsHash || data.cid || data.Hash;
@@ -55,7 +59,7 @@ async function pinJSONForWallet(walletLower: string, manifest: ManifestV1): Prom
 
 /** 按 name=walletLower 查询“最新一条” -> CID 或 null */
 async function pinListLatestByName(walletLower: string): Promise<string | null> {
-    const headers = { ...tweetcatPinataHeaders() };
+    const headers = {...tweetcatPinataHeaders()};
     const q = new URLSearchParams();
     q.set("status", "pinned");
     q.set("metadata[name]", walletLower);
@@ -64,9 +68,9 @@ async function pinListLatestByName(walletLower: string): Promise<string | null> 
     q.set("sortBy", "PINNED_AT");
     q.set("order", "DESC");
     // 防止同名污染（可留可去）
-    q.set("metadata[keyvalues]", JSON.stringify({ kind: { value: "wallet-manifest", op: "eq" } }));
+    q.set("metadata[keyvalues]", JSON.stringify({kind: {value: "wallet-manifest", op: "eq"}}));
 
-    const resp = await fetchWithTimeout(`${LIST_ENDPOINT}?${q.toString()}`, { headers });
+    const resp = await fetchWithTimeout(`${LIST_ENDPOINT}?${q.toString()}`, {headers});
     if (!resp.ok) throw new Error(`Pinata 查询失败: HTTP ${resp.status}`);
     const data = await resp.json();
     return data?.rows?.[0]?.ipfs_pin_hash || null;
@@ -74,7 +78,7 @@ async function pinListLatestByName(walletLower: string): Promise<string | null> 
 
 /** 列出同名全部 CID（用于删旧） */
 async function pinListAllByName(walletLower: string): Promise<string[]> {
-    const headers = { ...tweetcatPinataHeaders() };
+    const headers = {...tweetcatPinataHeaders()};
     const q = new URLSearchParams();
     q.set("status", "pinned");
     q.set("metadata[name]", walletLower);
@@ -82,9 +86,9 @@ async function pinListAllByName(walletLower: string): Promise<string[]> {
     q.set("pageOffset", "0");
     q.set("sortBy", "PINNED_AT");
     q.set("order", "DESC");
-    q.set("metadata[keyvalues]", JSON.stringify({ kind: { value: "wallet-manifest", op: "eq" } }));
+    q.set("metadata[keyvalues]", JSON.stringify({kind: {value: "wallet-manifest", op: "eq"}}));
 
-    const resp = await fetchWithTimeout(`${LIST_ENDPOINT}?${q.toString()}`, { headers });
+    const resp = await fetchWithTimeout(`${LIST_ENDPOINT}?${q.toString()}`, {headers});
     if (!resp.ok) throw new Error(`Pinata 查询失败: HTTP ${resp.status}`);
     const data = await resp.json();
     return (data?.rows ?? []).map((r: any) => r?.ipfs_pin_hash).filter(Boolean);
@@ -92,13 +96,16 @@ async function pinListAllByName(walletLower: string): Promise<string[]> {
 
 /** 删除单个 CID（忽略失败） */
 async function unpin(cid: string): Promise<void> {
-    const headers = { ...tweetcatPinataHeaders() };
-    try { await fetchWithTimeout(`${UNPIN_BASE}/${cid}`, { method: "DELETE", headers }); } catch {}
+    const headers = {...tweetcatPinataHeaders()};
+    try {
+        await fetchWithTimeout(`${UNPIN_BASE}/${cid}`, {method: "DELETE", headers});
+    } catch {
+    }
 }
 
 /** 网关读 JSON */
 async function fetchJsonByCid<T = any>(cid: string): Promise<T> {
-    const resp = await fetchWithTimeout(`${GATEWAY_BASE}/${cid}`, { method: "GET" });
+    const resp = await fetchWithTimeout(`${GATEWAY_BASE}/${cid}`, {method: "GET"});
     if (!resp.ok) throw new Error(`Pinata 网关失败: HTTP ${resp.status}`);
     return (await resp.json()) as T;
 }
@@ -129,9 +136,25 @@ export async function putManifest(walletAddress: string, manifest: ManifestV1): 
 export async function updateFollowingSnapshot(
     walletAddress: string,
     snapshotCid: string
-): Promise<{ manifest: ManifestV1; cid: string }> {
+): Promise<{ manifest: ManifestV1; cid: string; oldSnapshotCids: string[] }> {
     const prev = await getManifest(walletAddress).catch(() => null);
-    const next = buildNextManifest(prev, { type: SNAPSHOT_TYPE, cid: snapshotCid });
+
+    if (isManifestV1(prev)) {
+        const existing = prev.items.find(it => it.type === SNAPSHOT_TYPE);
+        if (existing && existing.cid === snapshotCid) {
+            console.log("------>>> same cid, no need update ipfs node:", snapshotCid);
+            return {manifest: prev, cid: snapshotCid, oldSnapshotCids: []};
+        }
+    }
+
+    const oldSnapshotCids =
+        isManifestV1(prev)
+            ? prev.items
+                .filter(it => it.type === SNAPSHOT_TYPE && it.cid !== snapshotCid)
+                .map(it => it.cid)
+            : [];
+
+    const next = buildNextManifest(prev, {type: SNAPSHOT_TYPE, cid: snapshotCid});
     const cid = await putManifest(walletAddress, next);
-    return { manifest: next, cid };
+    return {manifest: next, cid, oldSnapshotCids};
 }

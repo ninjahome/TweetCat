@@ -17,6 +17,7 @@ const PINATA_GATEWAY = 'https://gateway.pinata.cloud/ipfs';
 const LIGHTHOUSE_UPLOAD_ENDPOINT = 'https://upload.lighthouse.storage/api/v0/add?cid-version=1&pin=true';
 const LIGHTHOUSE_GATEWAY = 'https://gateway.lighthouse.storage/ipfs';
 const PINATA_UNPIN_ENDPOINT = 'https://api.pinata.cloud/pinning/unpin';
+const LIGHTHOUSE_API_BASE = 'https://api.lighthouse.storage';
 
 
 const PUBLIC_GATEWAYS = [
@@ -144,13 +145,6 @@ export function resetIpfsClient(): void {
     cachedCustomAuthHeader = null;
 }
 
-export async function prepareCustomClient(password: string): Promise<void> {
-    const settings = await ensureSettings();
-    if (!settings || settings.provider !== PROVIDER_TYPE_CUSTOM) return;
-    const auth = await resolveCustomAuth(settings, password);
-    await getIpfs(auth);
-}
-
 export async function getIpfs(authHeader?: string) {
     const settings = await ensureSettings();
     let url = DEFAULT_IPFS_API;
@@ -273,6 +267,7 @@ export async function uploadJson(settings: IpfsSettings, obj: any, wallet: strin
             throw new Error(`Lighthouse 上传失败: HTTP ${resp.status}`);
         }
         const data = await resp.json();
+        console.log("------>>> light house upload json success:", data);
         const cid = data.Hash || data.cid || data.data?.Hash;
         if (!cid) {
             throw new Error('Lighthouse 上传成功但未返回 CID');
@@ -461,13 +456,15 @@ export async function buildGatewayUrls(cid: string): Promise<string[]> {
 }
 
 
-
 async function unpinFromTweetcatPinata(cid: string): Promise<void> {
     if (!cid) return;
 
     const origin = (() => {
-        try { return new URL(TWEETCAT_PINATA.JSON_ENDPOINT).origin; }
-        catch { return 'https://api.pinata.cloud'; }
+        try {
+            return new URL(TWEETCAT_PINATA.JSON_ENDPOINT).origin;
+        } catch {
+            return 'https://api.pinata.cloud';
+        }
     })();
 
     const url = `${origin}/pinning/unpin/${encodeURIComponent(cid)}`;
@@ -492,7 +489,7 @@ async function unpinFromPinata(settings: IpfsSettings | null, cid: string, passw
 
     const resp = await fetchWithTimeout(
         `${PINATA_UNPIN_ENDPOINT}/${encodeURIComponent(cid)}`,
-        { method: 'DELETE', headers },
+        {method: 'DELETE', headers},
         10_000,
     );
 
@@ -533,37 +530,103 @@ async function unpinFromCustom(settings: IpfsSettings, cid: string, password?: s
     }
 }
 
-async function unpinFromLighthouse(_settings: IpfsSettings, _cid: string, _password?: string): Promise<void> {
-    // 注意：Lighthouse 的删除接口需要 fileId（UUID），而不是 CID。
-    // 目前系统只保存了 CID，没有保存 fileId，因此这里暂不实现。
-    // 如果以后在 manifest 里同时保存 fileId 和 cid，可以按下面步骤实现：
-    //   1）根据 cid 找到对应的 fileId（列表或在 manifest 里直接存）
-    //   2）DELETE https://api.lighthouse.storage/api/user/delete_file?id=FILE_ID
-    console.log('暂未实现 Lighthouse 的按 CID 删除：需要 fileId，请在保存时一并记录 fileId 后再实现。');
+/** 根据 CID 遍历 files_uploaded 列表，找到所有匹配的 fileId */
+async function findLighthouseFileIdsByCid(token: string, cid: string): Promise<string[]> {
+    const ids: string[] = [];
+    let lastKey: string | null = null;
+
+    // 防御性限制最多翻 20 页，避免意外死循环
+    for (let page = 0; page < 20; page++) {
+        const params = new URLSearchParams({
+            lastKey: lastKey ?? 'null',
+        });
+
+        const resp = await fetchWithTimeout(
+            `${LIGHTHOUSE_API_BASE}/api/user/files_uploaded?${params.toString()}`,
+            {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            },
+            15_000,
+        );
+
+        if (!resp.ok) {
+            throw new Error(`Lighthouse 列表文件失败: HTTP ${resp.status}`);
+        }
+
+        const json: any = await resp.json();
+        const fileList: any[] = json?.fileList || json?.data?.fileList;
+        if (!Array.isArray(fileList) || fileList.length === 0) {
+            break;
+        }
+
+        console.log("---------light house files:", json, fileList);
+
+        for (const f of fileList) {
+            if (f && typeof f.cid === 'string' && f.cid === cid && typeof f.id === 'string') {
+                ids.push(f.id);
+            }
+        }
+
+        const last = fileList[fileList.length - 1];
+        if (!last || typeof last.id !== 'string') {
+            break;
+        }
+        lastKey = last.id;
+    }
+
+    return ids;
+}
+
+
+async function unpinFromLighthouse(settings: IpfsSettings | null, cid: string, password?: string): Promise<void> {
+    if (!cid) return;
+
+    // 复用现有的 lighthouseToken，拿到 API Key / JWT
+    const token = await lighthouseToken(settings, password);
+
+    // 先通过 files_uploaded 找到这个 CID 对应的所有 fileId
+    const fileIds = await findLighthouseFileIdsByCid(token, cid);
+    if (!fileIds.length) {
+        console.log('Lighthouse: 未在 files_uploaded 中找到匹配 CID，跳过删除', cid);
+        return;
+    }
+
+    for (const id of fileIds) {
+        const url = `${LIGHTHOUSE_API_BASE}/api/user/delete_file?id=${encodeURIComponent(id)}`;
+        const resp = await fetchWithTimeout(
+            url,
+            {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            },
+            15_000,
+        );
+
+        if (!resp.ok) {
+            // 不直接 throw，避免因为一条删不掉导致整个流程失败
+            console.warn('Lighthouse 删除文件失败:', {id, cid, status: resp.status});
+        }
+    }
 }
 
 export async function unpinCid(settings: IpfsSettings | null, cid: string, password?: string): Promise<void> {
     if (!cid) return;
 
-    // 如果没传 settings，就自己从缓存/存储中取一份
-    let effective = settings;
-    if (!effective) {
-        effective = await ensureSettings();
-    }
-    if (!effective) {
-        throw new Error('尚未配置 IPFS 设置，无法取消固定');
-    }
-
-    const provider = effective.provider ?? PROVIDER_TYPE_CUSTOM;
+    const provider = settings.provider ?? PROVIDER_TYPE_CUSTOM;
 
     if (provider === PROVIDER_TYPE_TWEETCAT) {
         await unpinFromTweetcatPinata(cid);
     } else if (provider === PROVIDER_TYPE_PINATA) {
-        await unpinFromPinata(effective, cid, password);
+        await unpinFromPinata(settings, cid, password);
     } else if (provider === PROVIDER_TYPE_CUSTOM) {
-        await unpinFromCustom(effective, cid, password);
+        await unpinFromCustom(settings, cid, password);
     } else if (provider === PROVIDER_TYPE_LIGHTHOUSE) {
-        await unpinFromLighthouse(effective, cid, password);
+        await unpinFromLighthouse(settings, cid, password);
     } else {
         console.warn('unpinCid: 未知 provider，忽略', provider);
     }

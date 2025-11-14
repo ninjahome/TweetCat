@@ -43,17 +43,32 @@ function parseWalletFromHash(): string | null {
     return null;
 }
 
-async function updateManifestAfterLocalUpload(cid: string) {
+async function updateManifestAfterLocalUpload(snapshotCid: string) {
     if (!walletFromHash) {
         showStatus('未获取到钱包地址，已跳过 Manifest 更新');
         return;
     }
     try {
-        await updateFollowingSnapshot(walletFromHash, cid);
+        const {manifest, cid, oldSnapshotCids} = await updateFollowingSnapshot(walletFromHash, snapshotCid);
+        for (const old of oldSnapshotCids) {
+            await unpinFromLocalKubo(old);
+        }
         showStatus('已更新同步清单（Manifest）');
+        console.log("----->>>", manifest, cid)
     } catch (e) {
         console.warn('appendManifestItem failed:', e);
         showStatus('上传成功，但本地清单写入失败（不影响使用）');
+    }
+}
+
+async function unpinFromLocalKubo(cid: string): Promise<void> {
+    const apiBase = deriveApiFromLocation();
+    if (!apiBase || !cid) return;
+
+    const url = `${apiBase}/api/v0/pin/rm?arg=${encodeURIComponent(cid)}&recursive=true`;
+    const resp = await fetch(url, {method: 'POST'});
+    if (!resp.ok) {
+        console.warn('本地 Kubo 取消 pin 失败:', cid, resp.status);
     }
 }
 
@@ -173,7 +188,7 @@ async function handleUploadClick() {
             return;
         }
         setStatus('正在上传测试数据到 IPFS...');
-        const { createdAt, ...snapshotCore } = snapshotJson as any;
+        const {createdAt, ...snapshotCore} = snapshotJson as any;
         const cid = await uploadJsonToLocalKubo(snapshotCore, apiBase);
         setStatus('上传成功！CID: ' + cid);
         await navigator.clipboard?.writeText(cid).catch(() => {
