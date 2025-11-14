@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import {choseColorByID, MsgType, noXTabError} from "../common/consts";
+import {choseColorByID, MsgType, noXTabError, SNAPSHOT_TYPE} from "../common/consts";
 import {
     __tableCategory,
     __tableFollowings,
@@ -21,11 +21,11 @@ import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
 import {hideLoading, showLoading, showNotification} from "./common";
-import {ensureSettings, unpinCid, uploadJson} from "../wallet/ipfs_api";
+import {buildGatewayUrls, ensureSettings, unpinCid, uploadJson} from "../wallet/ipfs_api";
 import {ERR_LOCAL_IPFS_HANDOFF} from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
 import {loadWallet} from "../wallet/wallet_api";
-import {updateFollowingSnapshot} from "../wallet/ipfs_manifest";
+import {getManifest, updateFollowingSnapshot} from "../wallet/ipfs_manifest";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -115,6 +115,10 @@ let cancelConfirmBtn: HTMLButtonElement | null;
 let confirmConfirmBtn: HTMLButtonElement | null;
 let processingOverlay: HTMLDivElement | null;
 let exportIpfsBtn: HTMLButtonElement | null;
+let ipfsLatestCidSpan: HTMLSpanElement | null;
+let ipfsLatestOpenBtn: HTMLButtonElement | null;
+let ipfsLatestCopyBtn: HTMLButtonElement | null;
+let latestSnapshotCid: string | null = null;
 
 // ===== DOM 初始化封装 =====
 function initDomRefs(): void {
@@ -179,6 +183,10 @@ function initDomRefs(): void {
     confirmConfirmBtn!.textContent = t("confirm");
 
     exportIpfsBtn = document.getElementById("export-ipfs-btn") as HTMLButtonElement | null;
+
+    ipfsLatestCidSpan = document.getElementById("ipfs-latest-cid") as HTMLSpanElement | null;
+    ipfsLatestOpenBtn = document.getElementById("ipfs-latest-open") as HTMLButtonElement | null;
+    ipfsLatestCopyBtn = document.getElementById("ipfs-latest-copy") as HTMLButtonElement | null;
 }
 
 type ConfirmCallback = () => void | Promise<void>;
@@ -193,6 +201,16 @@ async function initFollowingManager() {
     initDomRefs();
     await checkAndInitDatabase();
     bindEvents();
+
+    try {
+        const wallet = await loadWallet();
+        await loadLatestSnapshotCid(wallet.address);
+    } catch (e) {
+        console.warn("[IPFS] skip loading latest snapshot cid:", e);
+        updateIpfsLatestUI();   // 出错时至少把 UI 置成 None + disabled
+    }
+
+
     await refreshData();
 }
 
@@ -240,7 +258,22 @@ function bindEvents() {
 
     exportIpfsBtn?.addEventListener("click", async () => {
         const w = await loadWallet();
-        await handleExportSnapshotToIpfs(w.address);
+        await handleExportSnapshotToIpfs(w.address, (cid) => {
+            latestSnapshotCid = cid;
+            updateIpfsLatestUI();
+        });
+    });
+
+    ipfsLatestOpenBtn?.addEventListener("click", () => {
+        if (!latestSnapshotCid) return;
+        void openSnapshotInGateway(latestSnapshotCid);
+    });
+
+    ipfsLatestCopyBtn?.addEventListener("click", () => {
+        if (!latestSnapshotCid) return;
+        navigator.clipboard?.writeText(latestSnapshotCid)
+            .then(() => showNotification("CID 已复制到剪贴板", "info"))
+            .catch(() => showNotification("复制失败，请手动复制", "error"));
     });
 }
 
@@ -1270,6 +1303,23 @@ function ipfsNeedsPassword(settings: any): boolean {
     return false; // tweetcat、本地节点都不需要
 }
 
+/** 从 manifest 中加载最新快照 CID，写入 latestSnapshotCid 并刷新 UI */
+async function loadLatestSnapshotCid(walletAddress: string): Promise<void> {
+    try {
+        const manifest = await getManifest(walletAddress);
+        if (manifest && Array.isArray(manifest.items)) {
+            const item = manifest.items.find(it => it.type === SNAPSHOT_TYPE);
+            latestSnapshotCid = item ? item.cid : null;
+        } else {
+            latestSnapshotCid = null;
+        }
+    } catch (err) {
+        console.warn("[IPFS] loadLatestSnapshotCid failed", err);
+        latestSnapshotCid = null;
+    }
+    updateIpfsLatestUI();
+}
+
 
 async function handleExportSnapshotToIpfs(walletAddress: string, onSuccess?: (cid: string) => void): Promise<void> {
     try {
@@ -1318,6 +1368,42 @@ async function handleExportSnapshotToIpfs(walletAddress: string, onSuccess?: (ci
         showNotification((err as Error).message ?? "上传失败", "error");
     } finally {
         hideLoading();
+    }
+}
+
+/** 把 CID 截断成前后几位，方便展示 */
+function shortenCid(cid: string, visible: number = 6): string {
+    if (!cid) return "";
+    if (cid.length <= visible * 2 + 3) return cid;
+    return `${cid.slice(0, visible)}…${cid.slice(-visible)}`;
+}
+
+/** 根据 latestSnapshotCid 更新 UI */
+function updateIpfsLatestUI(): void {
+    const cid = latestSnapshotCid;
+    const hasCid = !!cid;
+
+    if (ipfsLatestCidSpan) {
+        ipfsLatestCidSpan.textContent = hasCid ? shortenCid(cid!) : "None";
+        ipfsLatestCidSpan.title = hasCid ? cid! : "";
+    }
+    if (ipfsLatestOpenBtn) {
+        ipfsLatestOpenBtn.disabled = !hasCid;
+    }
+    if (ipfsLatestCopyBtn) {
+        ipfsLatestCopyBtn.disabled = !hasCid;
+    }
+}
+
+async function openSnapshotInGateway(cid: string): Promise<void> {
+    try {
+        const urls = await buildGatewayUrls(cid);
+        const target = urls[0] || `https://ipfs.io/ipfs/${cid}`;
+        window.open(target, "_blank");
+    } catch (err) {
+        console.error("[IPFS] openSnapshotInGateway failed", err);
+        const fallback = `https://ipfs.io/ipfs/${cid}`;
+        window.open(fallback, "_blank");
     }
 }
 

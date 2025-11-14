@@ -124,15 +124,97 @@ body.modal-open {
 .toolbar {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: stretch;
     margin-bottom: 16px;
     gap: 12px;
 }
 
-.toolbar-left {
+/* 左侧两个母 div 的容器：竖着排 */
+.toolbar-ops {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+}
+
+.toolbar-section {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    justify-content: flex-start;
+    flex-wrap: wrap; /* 新增：小屏幕时一部分内容可以折到下一行 */
+}
+
+.toolbar-section-ipfs .ipfs-latest {
+    margin-left: auto;
+}
+
+.toolbar-section-x {
+    background: #eef7ff;
+}
+
+.toolbar-section-ipfs {
+    background: #f2f7f3;
+}
+
+.ipfs-latest {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.ipfs-latest-label {
+    color: #657786;
+}
+
+/* 显示 CID 的“药丸”按钮 */
+.ipfs-latest-pill {
+    border-radius: 999px;
+    border: 1px solid #d0d7de;
+    background: #ffffff;
+    font-size: 12px;
+    padding: 4px 10px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.ipfs-latest-pill:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+/* 复制按钮 */
+.ipfs-latest-copy-btn {
+    border: none;
+    background: transparent;
+    font-size: 12px;
+    cursor: pointer;
+    color: #1d9bf0;
+    padding: 4px 6px;
+    border-radius: 999px;
+}
+
+.ipfs-latest-copy-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* 小屏幕时 toolbar 竖排 */
+@media (max-width: 900px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .batch-actions {
+        align-self: flex-start;
+    }
 }
 
 .toolbar-status {
