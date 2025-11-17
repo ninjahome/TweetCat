@@ -5,16 +5,16 @@
 
 /* 全局样式 */
 :root {
-    --main-color: #7D72F6;
-    --main-color-light: #9e96f9;
+    --main-color: #4a99e9;
+    --main-color-light: #428ad2;
     --text-color: #222;
     --text-light: #666;
     --bg-light: #f4f5fb;
-    --card-bg: rgba(255, 255, 255, 0.8);
+    --card-bg: #fff;
     --border-color: rgba(255, 255, 255, 0.4);
-    --error-color: #e74c3c;
+    --error-color: #fe4747;
     --success-color: #27ae60;
-    --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    --shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -33,19 +33,28 @@ body {
     margin: 0;
     padding: 0;
     font-family: "Inter", "Noto Sans SC", sans-serif;
-    background: var(--bg-light);
+    background-color: #F1F2F5;
     color: var(--text-color);
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;       /* 这里从 flex-start 改成 center */
     min-height: 100vh;
 }
-
+.wallet-new-header{
+    display: flex;
+    align-items: center;
+    gap:4px;
+    margin-bottom: 32px;
+}
+.wallet-new-header >span{
+   font-size: 16px;
+    font-weight: 600;
+}
 /* 主容器 */
-#wallet-container {
-    margin-top: 6vh;
-    background: var(--card-bg);
-    border-radius: 20px;
+.wallet-new-container{
+    margin-top: 0;             /* 原来是 6vh，改成 0 */
+    border-radius: 12px;
+    background-color: var(--card-bg);
     box-shadow: var(--shadow);
     backdrop-filter: blur(20px);
     border: 1px solid var(--border-color);
@@ -55,18 +64,109 @@ body {
 }
 
 /* 标题 */
-h1, h2, h3 {
+h1 {
+    margin: 0;
     text-align: center;
-    color: var(--main-color);
-    margin-bottom: 0.8em;
+    font-size: 24px;
     font-weight: 600;
+    line-height: 24px;
 }
 
-/* 状态提示 */
+p{
+    font-size: 14px;
+    font-weight: 400;
+    margin: 0;
+}
+
+button {
+    padding: 16px 54px;
+    border-radius: 9999px;
+    background-color: #4a99e9;
+    font-size: 16px;
+    font-weight: 800;
+    color: white;
+    border: 0;
+    cursor: pointer;
+    line-height: 16px;
+}
+
+button:hover {
+    background: var(--main-color-light);
+    transform: translateY(-1px);
+}
+button:active {
+    transform: scale(0.97);
+}
+.btn-newcolor {
+    background-color: rgb(6, 203, 173);
+}
+.btn-newcolor:hover{
+    background-color: rgb(12, 174, 149);
+}
+.subtitle {
+    width: 398px;
+    text-align: center;
+    background-color: rgba(74, 153, 233, 0.1);
+    padding: 16px;
+    border-radius: 16px;
+}
+.btn-ghost {
+    background-color: transparent;
+    color: rgba(15, 20, 25, 0.5);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    position: absolute;
+    left: 0;
+}
+.btn-ghost:hover {
+    background-color: rgba(15, 20, 25, 0.1);
+}
+
+.mnemonic-editable,
+.mnemonic-confirm,
+.mnemonic-import {
+    min-height: 3em;               /* 对应 rows="3"，可按需要调大一点 */
+    padding: 8px 10px;
+    border: 1px solid var(--border-subtle, #e5e7eb);
+    background-color: var(--bg-subtle, #f9fafb);
+    color: var(--text-primary, #111827);
+    font-size: 14px;
+    line-height: 1.5;
+    outline: none;
+    resize: vertical;              /* div 不原生支持 resize，但可以保留，或者删掉 */
+    overflow-y: auto;
+    white-space: pre-wrap;         /* 保留换行 */
+    word-break: break-word;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.mnemonic-editable {
+    border-radius: 16px 16px 0 0;
+}
+.mnemonic-confirm,
+.mnemonic-import {
+    border-radius: 16px;
+    width: 398px;
+}
+.btn-refresh{
+    background-color: var(--main-color-light);
+    font-size: 14px;
+    color: var(--main-color);
+    padding: 6px;
+}
+/* 聚焦时边框高亮 */
+.mnemonic-editable:focus,
+.mnemonic-confirm:focus,
+.mnemonic-import:focus {
+    border-color: var(--main-color);
+}
+
+    /* 状态提示 */
 .status {
     text-align: center;
-    margin: 10px 0;
-    font-size: 0.95em;
+    font-size: 14px;
     color: var(--text-light);
 }
 .status.error {
@@ -82,7 +182,10 @@ section {
     animation: fadeIn 0.5s ease forwards;
 }
 section:not(.hidden) {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
 }
 
 @keyframes fadeIn {
@@ -90,42 +193,21 @@ section:not(.hidden) {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* 助记词框 */
-textarea.mnemonic-display,
-textarea.mnemonic-input {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    font-size: 1em;
-    line-height: 1.6em;
-    color: var(--text-color);
-    background: rgba(255, 255, 255, 0.4);
-    resize: none;
-    transition: all 0.2s ease;
-}
-textarea.mnemonic-display:focus,
-textarea.mnemonic-input:focus {
-    outline: none;
-    border-color: var(--main-color);
-    box-shadow: 0 0 0 3px rgba(125, 114, 246, 0.3);
-}
-
 /* 密码输入框 */
 input[type="password"] {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.4);
-    font-size: 1em;
+    width: 398px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--border-subtle, #e5e7eb);
+    background-color: var(--bg-subtle, #f9fafb);
+    font-size: 16px;
+    font-weight: 400;
     color: var(--text-color);
-    margin-bottom: 12px;
     transition: all 0.2s ease;
 }
+
 input[type="password"]:focus {
     border-color: var(--main-color);
-    box-shadow: 0 0 0 3px rgba(125, 114, 246, 0.3);
     outline: none;
 }
 
@@ -135,28 +217,26 @@ input[type="password"]:focus {
     justify-content: center;
     flex-wrap: wrap;
     gap: 14px;
-    margin-top: 20px;
+}
+/* 两个按钮均分 + 中间有间距 */
+.btn-row-even {
+    display: flex;    /* 如果 .btn-row 里已有 display:flex，这行可以省略 */
+    gap: 0;        /* 中间间距 */
+    width: 398px;
+
 }
 
-button {
-    background: var(--main-color);
-    color: white;
-    border: none;
-    padding: 10px 22px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-size: 1em;
-    font-weight: 500;
-    transition: all 0.25s ease;
-    min-width: 120px;
+.btn-row-even > button {
+    flex: 1 1 0;      /* 每个按钮占一半宽度 */
+    padding: 12px 0;
+    width: 100%;
+    font-size: 14px;
+    font-weight: 400;
+    background-color: #F9FAFB;
+    border-radius: 0;
+    color: var(--main-color) ;
 }
-button:hover {
-    background: var(--main-color-light);
-    transform: translateY(-1px);
-}
-button:active {
-    transform: scale(0.97);
-}
+
 button.secondary {
     background: transparent;
     color: var(--main-color);
@@ -169,13 +249,14 @@ button.secondary:hover {
 
 /* 复选框 */
 label.checkbox {
+    width: 398px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.95em;
+    gap: 2px;
+    font-size: 14px;
     color: var(--text-light);
-    margin-top: 16px;
 }
+
 label.checkbox input[type="checkbox"] {
     width: 18px;
     height: 18px;
@@ -203,4 +284,11 @@ label.checkbox input[type="checkbox"] {
         min-width: 100px;
         font-size: 0.95em;
     }
+}
+.password-input {
+    width: 398px;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle, #e5e7eb);
+    background-color: var(--bg-subtle, #f9fafb);
 }

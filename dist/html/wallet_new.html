@@ -8,74 +8,136 @@
 </head>
 <body>
 <div class="wallet-new-container step">
+    <div class="wallet-new-header">
+        <img src="../images/logo_128.png" alt="" style="width: 48px;height: 48px;" />
+        <span>Tweet Cat</span>
+    </div>
     <!-- Step 0: 介绍与选择 -->
     <section id="step-intro">
         <h1 class="title">钱包创建 / 导入</h1>
         <p class="subtitle">钱包以助记词生成，仅保存<strong>加密后的</strong> keystore 至本地 IndexedDB；请务必线下备份助记词。</p>
         <div class="btn-row">
             <button id="btn-go-create" class="btn btn-primary">创建新钱包</button>
-            <button id="btn-go-import" class="btn btn-secondary">导入助记词</button>
+            <button id="btn-go-import" class="btn btn-secondary btn-newcolor">导入助记词</button>
         </div>
     </section>
 
     <!-- Step 1A: 生成助记词 -->
     <section id="step-generate" class="hidden">
-        <h2 class="title">生成助记词</h2>
+        <div style="width: 100%;">
+            <button id="btn-back-from-generate" class="btn btn-ghost">
+                <svg
+                        class="icon"
+                        viewBox="0 0 1024 1024"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                >
+                    <path d="M600.8 659.1s0-0.1 0 0c-0.2-0.1-0.2-0.1 0 0m0 0z" fill="currentColor"></path>
+                    <path d="M189.2 552.9l262.3 262.3c22.6 22.6 59.2 22.6 81.7 0 22.6-22.5 22.6-59.1 0-81.7L369.6 569.8h424.3c31.9 0 57.8-25.9 57.8-57.8s-25.9-57.8-57.8-57.8H369.6l163.7-163.7c22.6-22.5 22.6-59.2 0-81.7-11.3-11.3-26.1-16.9-40.9-16.9-14.8 0-29.6 5.7-40.8 16.9L189.2 471.2c-22.6 22.5-22.6 59.1 0 81.7m0 0z" fill="currentColor"></path>
+                </svg>
+                返回
+            </button>
+        </div>
+        <h1 class="title">生成助记词</h1>
         <p class="hint">请在安全环境下抄写助记词，勿截屏或在线存储。</p>
-        <div class="mnemonic-box">
-            <textarea id="mnemonic-generated" readonly rows="3"></textarea>
-            <button id="btn-toggle-mnemonic" class="toggle-eye">隐藏</button>
+        <div>
+            <div class="mnemonic-box">
+                <textarea id="mnemonic-generated" class="mnemonic-editable" readonly rows="3"></textarea>
+            </div>
+            <div class="btn-row btn-row-even">
+                <button id="btn-regenerate" class="btn btn-secondary btn-refresh" style="border-radius: 0 0 0 16px;">重新生成助记词</button>
+                <button id="btn-toggle-mnemonic" class="toggle-eye" style="border-radius: 0 0 16px 0;">隐藏</button>
+            </div>
         </div>
-        <div class="btn-row">
-            <button id="btn-regenerate" class="btn btn-secondary">重新生成助记词</button>
-            <button id="btn-next-to-create-confirm" class="btn btn-primary">下一步</button>
-            <button id="btn-back-from-generate" class="btn btn-ghost">返回</button>
-        </div>
+        <button id="btn-next-to-create-confirm" class="btn btn-primary">下一步</button>
         <div id="gen-status" class="status"></div>
     </section>
 
     <!-- Step 1B: 二次输入确认 -->
     <section id="step-create-confirm" class="hidden">
-        <h2 class="title">确认助记词</h2>
+        <div style="width: 100%;">
+            <button id="btn-back-from-confirm" class="btn btn-ghost">
+                <svg
+                        class="icon"
+                        viewBox="0 0 1024 1024"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                >
+                    <path d="M600.8 659.1s0-0.1 0 0c-0.2-0.1-0.2-0.1 0 0m0 0z" fill="currentColor"></path>
+                    <path d="M189.2 552.9l262.3 262.3c22.6 22.6 59.2 22.6 81.7 0 22.6-22.5 22.6-59.1 0-81.7L369.6 569.8h424.3c31.9 0 57.8-25.9 57.8-57.8s-25.9-57.8-57.8-57.8H369.6l163.7-163.7c22.6-22.5 22.6-59.2 0-81.7-11.3-11.3-26.1-16.9-40.9-16.9-14.8 0-29.6 5.7-40.8 16.9L189.2 471.2c-22.6 22.5-22.6 59.1 0 81.7m0 0z" fill="currentColor"></path>
+                </svg>
+                返回
+            </button>
+        </div>
+        <h1 class="title">确认助记词</h1>
         <p class="hint">请将上一步的助记词完整输入（空格分隔）。</p>
-        <textarea id="mnemonic-confirm" rows="3" placeholder="逐词输入…"></textarea>
+        <textarea id="mnemonic-confirm" class="mnemonic-confirm" rows="3" placeholder="逐词输入…"></textarea>
         <label class="checkbox">
             <input id="checkbox-backed-up" type="checkbox" />
             <span>我已线下安全备份助记词</span>
         </label>
         <div class="btn-row">
             <button id="btn-next-to-password" class="btn btn-primary">下一步</button>
-            <button id="btn-back-from-confirm" class="btn btn-ghost">返回</button>
         </div>
         <div id="confirm-status" class="status"></div>
     </section>
 
     <!-- Step 2: 口令设置（创建/导入共用） -->
     <section id="step-password" class="hidden">
-        <h2 class="title">设置口令</h2>
-        <input type="password" id="password-input" placeholder="至少 8 位，建议包含数字与符号" />
-        <input type="password" id="password-confirm-input" placeholder="再次输入口令" />
+        <div style="width: 100%;">
+            <button id="btn-back-from-password" class="btn btn-ghost">
+                <svg
+                        class="icon"
+                        viewBox="0 0 1024 1024"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                >
+                    <path d="M600.8 659.1s0-0.1 0 0c-0.2-0.1-0.2-0.1 0 0m0 0z" fill="currentColor"></path>
+                    <path d="M189.2 552.9l262.3 262.3c22.6 22.6 59.2 22.6 81.7 0 22.6-22.5 22.6-59.1 0-81.7L369.6 569.8h424.3c31.9 0 57.8-25.9 57.8-57.8s-25.9-57.8-57.8-57.8H369.6l163.7-163.7c22.6-22.5 22.6-59.2 0-81.7-11.3-11.3-26.1-16.9-40.9-16.9-14.8 0-29.6 5.7-40.8 16.9L189.2 471.2c-22.6 22.5-22.6 59.1 0 81.7m0 0z" fill="currentColor"></path>
+                </svg>
+                返回
+            </button>
+        </div>
+        <h1 class="title">设置口令</h1>
+        <input type="password" id="password-input" class="password-input" placeholder="至少 8 位，建议包含数字与符号" />
+        <input type="password" id="password-confirm-input" class="password-input" placeholder="再次输入口令" />
         <div class="btn-row">
             <button id="btn-save-wallet" class="btn btn-primary">创建并保存</button>
-            <button id="btn-back-from-password" class="btn btn-ghost">返回</button>
         </div>
         <div id="password-status" class="status"></div>
     </section>
 
     <!-- Step 1C: 导入助记词 -->
     <section id="step-import" class="hidden">
-        <h2 class="title">导入助记词</h2>
-        <textarea id="mnemonic-import" rows="3" placeholder="粘贴 12/24 个英文助记词，空格分隔"></textarea>
+        <div style="width: 100%;">
+            <button id="btn-back-from-import" class="btn btn-ghost">
+                <svg
+                        class="icon"
+                        viewBox="0 0 1024 1024"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                >
+                    <path d="M600.8 659.1s0-0.1 0 0c-0.2-0.1-0.2-0.1 0 0m0 0z" fill="currentColor"></path>
+                    <path d="M189.2 552.9l262.3 262.3c22.6 22.6 59.2 22.6 81.7 0 22.6-22.5 22.6-59.1 0-81.7L369.6 569.8h424.3c31.9 0 57.8-25.9 57.8-57.8s-25.9-57.8-57.8-57.8H369.6l163.7-163.7c22.6-22.5 22.6-59.2 0-81.7-11.3-11.3-26.1-16.9-40.9-16.9-14.8 0-29.6 5.7-40.8 16.9L189.2 471.2c-22.6 22.5-22.6 59.1 0 81.7m0 0z" fill="currentColor"></path>
+                </svg>
+                返回
+            </button>
+        </div>
+        <h1 class="title">导入助记词</h1>
+        <textarea id="mnemonic-import"  class="mnemonic-import" rows="3" placeholder="粘贴 12/24 个英文助记词，空格分隔"></textarea>
         <div class="btn-row">
-            <button id="btn-next-import-password" class="btn btn-primary">下一步</button>
-            <button id="btn-back-from-import" class="btn btn-ghost">返回</button>
+            <button id="btn-next-import-password" class="btn btn-primary btn-newcolor">下一步</button>
         </div>
         <div id="import-status" class="status"></div>
     </section>
 
     <!-- Step 3: 成功页 -->
     <section id="step-success" class="hidden">
-        <h2 class="title">完成</h2>
+        <h1 class="title">完成</h1>
         <p class="subtitle">钱包已创建/导入成功，返回 Dashboard 查看地址与余额。</p>
         <div class="btn-row">
             <button id="btn-go-dashboard" class="btn btn-primary">返回 Dashboard</button>
