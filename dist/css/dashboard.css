@@ -62,9 +62,7 @@ h3 {
 
 .wallet-info-area {
     display: none;
-    background-color: rgba(74, 153, 233, 0.1);
     border-radius: 16px;
-    padding: 16px;
     margin-top: 16px;
     text-align: left;
 }
@@ -77,6 +75,7 @@ h3 {
 
 .wallet-row-summary {
     display: flex;
+    gap: 16px;
 }
 
 .wallet-row {
@@ -85,11 +84,19 @@ h3 {
     align-items: flex-start;
     font-size: 14px;
     gap: 4px;
-    flex: 1 1 0;
-    border-bottom: 1px solid rgba(107, 111, 113, 0.1);
-    padding-bottom: 16px;
-}
+    flex: 1;                /* 两个子项均分一行 */
+    min-width: 0;           /* 防止内容撑爆 */
+    border-radius: 16px;
 
+}
+.wallet-row-usdt{
+    background-color: rgba(6, 203, 173, 0.1);
+    padding: 16px;
+}
+.wallet-row-eth{
+    background-color: rgba(74, 153, 233, 0.1);
+    padding: 16px;
+}
 .wallet-label {
     color: #5b7083;
     font-weight: 400;
@@ -531,20 +538,25 @@ input.category-input:focus {
 }
 
 #view-ipfs-settings .view-header h2 {
-    flex: 1;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);  /* 水平 + 垂直居中 */
+    display: flex;
+    align-items: center; /* 垂直居中 */
     text-align: center;
     font-size: 16px;
     font-weight: 700;
     margin: 0;
+
     color: var(--text-primary, #111827);
 }
 
 #view-ipfs-settings .view-back-btn {
-    height: 28px;
-    padding: 0 10px;
-    border-radius: 10px;
-    border: 1px solid var(--border-subtle, #e5e7eb);
-    background: var(--surface-2, #f8fafc);
+    padding: 8px;
+    border-radius: 999px;
+    border: none;
+    background-color:transparent;
     color: var(--text-secondary, #374151);
     cursor: pointer;
     transition: background .15s ease, border-color .15s ease;
@@ -552,7 +564,6 @@ input.category-input:focus {
 
 #view-ipfs-settings .view-back-btn:hover {
     background: var(--surface-3, #f3f4f6);
-    border-color: var(--border, #d1d5db);
 }
 
 /* ── 主体内容 ──────────────────────────────────────────────────── */
@@ -572,16 +583,17 @@ input.category-input:focus {
 }
 
 #view-ipfs-settings .ipfs-provider-section {
-    border: 1px solid var(--border-subtle, #e5e7eb);
-    border-radius: 14px;
-    padding: 14px;
+    border-radius: 16px;
+    padding: 16px;
     background: var(--surface-2, #f9fafb);
+    font-size: 14px;
+    font-weight: 500;
 }
 
 #view-ipfs-settings .ipfs-provider-section h3 {
     margin: 0 0 12px;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 500;
     color: var(--text-primary, #111827);
 }
 
@@ -603,23 +615,30 @@ input.category-input:focus {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 500;
     color: var(--text-secondary, #6b7280);
+}
+/* IPFS 表单里的 label 做成定位容器 */
+#view-ipfs-settings .ipfs-provider-section label {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 /* 输入框通用样式 */
 #view-ipfs-settings input[type="text"],
 #view-ipfs-settings input[type="password"] {
     width: 100%;
-    height: 36px;
-    padding: 7px 10px;
-    border-radius: 10px;
+    border-radius: 16px;
     border: 1px solid var(--border-subtle, #e5e7eb);
     background: var(--surface, #fff);
     color: var(--text-primary, #111827);
     outline: none;
     transition: border-color .15s ease, box-shadow .15s ease;
     box-sizing: border-box;
+    padding: 12px 44px 12px 12px; /* 原来是 10px，这里多预留一点 */
 }
 
 #view-ipfs-settings input[type="text"]::placeholder,
@@ -634,6 +653,43 @@ input.category-input:focus {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand, #2563eb) 20%, transparent);
 }
 
+#view-ipfs-settings .ipfs-provider-section .secret-toggle:hover {
+    background: var(--surface-3, #f3f4f6);
+    color: var(--text-secondary, #4b5563);
+    transform: translateY(-0.5px);
+}
+
+/* SVG 统一缩放到 16x16，并用 currentColor 着色 */
+#view-ipfs-settings .ipfs-provider-section .secret-toggle svg {
+    width: 20px;
+    height: 20px;
+}
+
+#view-ipfs-settings .ipfs-provider-section .secret-toggle svg path {
+    fill: currentColor;
+}
+
+/* 默认只显示“闭眼”图标（不可见） */
+.secret-toggle .icon-secret-visible {
+    display: none;
+}
+.secret-toggle .icon-secret-hidden {
+    display: block;
+}
+
+/* 当按钮有 is-visible 类时，显示“开眼” */
+.secret-toggle.is-visible .icon-secret-visible {
+    display: block;
+}
+.secret-toggle.is-visible .icon-secret-hidden {
+    display: none;
+}
+
+/* 可见状态高亮一点 */
+#view-ipfs-settings .ipfs-provider-section .secret-toggle.is-visible {
+    color: var(--accent, #1d9bf0);
+    font-weight: 600;
+}
 /* URL 类输入用等宽字体，便于校对 */
 #view-ipfs-settings #custom-api-url,
 #view-ipfs-settings #custom-gateway-url {
@@ -648,42 +704,46 @@ input.category-input:focus {
 #view-ipfs-settings .external-links {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
     margin-top: 4px;
 }
 
 #view-ipfs-settings .external-links button {
-    border-radius: 8px;
-    border: 1px solid var(--border-subtle, #e5e7eb);
-    background: var(--surface, #fff);
-    padding: 6px 12px;
-    font-size: 13px;
+    width: 100%;
+    border: none;
+    background-color: transparent;
+    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
     color: var(--text-secondary, #374151);
     cursor: pointer;
     transition: background .15s ease, border-color .15s ease;
 }
 
 #view-ipfs-settings .external-links button:hover {
-    background: var(--surface-2, #f3f4f6);
-    border-color: var(--border, #d1d5db);
+    background-color: var(--surface-2, #f3f4f6);
 }
 
 #view-ipfs-settings .provider-row {
     display: flex;
-    gap: 10px;
+    flex-direction: column;
+    gap: 8px;
     align-items: center;
-    flex-wrap: wrap;
+    width: 100%;
 }
 
 #view-ipfs-settings #ipfs-provider-select {
-    height: 34px;
-    border-radius: 10px;
+    border-radius: 16px;
     border: 1px solid var(--border-subtle, #e5e7eb);
     background: var(--surface, #fff);
-    padding: 0 10px;
+    padding: 12px;
+    font-size: 16px;
+    width: 100%;
 }
 
 #view-ipfs-settings .provider-actions {
+    width: 100%;
     display: flex;
     gap: 8px;
 }
@@ -697,9 +757,9 @@ input.category-input:focus {
 
 /* 一级：Provider 下拉 + 按钮行的按钮样式 */
 #view-ipfs-settings .provider-actions button {
-    height: 34px;
-    padding: 0 12px;
-    border-radius: 10px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 16px;
     border: 1px solid var(--border-subtle, #e5e7eb);
     background: var(--surface, #fff);
     color: var(--text-secondary, #374151);
@@ -707,35 +767,100 @@ input.category-input:focus {
     cursor: pointer;
     transition: background .15s ease, border-color .15s ease, transform .1s ease;
 }
+
 #view-ipfs-settings .provider-actions button:hover {
     background: var(--surface-2, #f3f4f6);
     border-color: var(--border, #d1d5db);
     transform: translateY(-1px);
 }
+/* 顶部「设为 TweetCat 默认」按钮：默认状态 = 主题蓝色 */
+#view-ipfs-settings #ipfs-provider-set-tweetcat {
+    width: 100%;
+    background: #1d9bf0;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+#view-ipfs-settings #ipfs-provider-set-tweetcat:hover {
+    background: #1784d4;
+    transform: translateY(-1px);
+}
+
+/* 已设置为默认状态：背景灰色，样式更“关闭”一点 */
+#view-ipfs-settings #ipfs-provider-set-tweetcat.is-default {
+    background: #e5e7eb;
+    color: #374151;
+    cursor: default;
+    transform: none;
+}
+
+#view-ipfs-settings #ipfs-provider-set-tweetcat.is-default:hover {
+    background: #e5e7eb;
+    transform: none;
+}
 
 /* 二级：每个 Provider 操作栏的按钮样式 */
+/* 自建节点 / Pinata / Lighthouse 底部三个按钮样式 */
+#view-ipfs-settings .provider-section-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+/* 通用基底：用 padding 撑开高度，pill 形按钮 */
 #view-ipfs-settings .provider-section-actions button {
-    height: 32px;
-    padding: 0 10px;
-    border-radius: 10px;
+    padding: 12px 14px;                          /* 通过 padding 控制高度 */
+    border-radius: 999px;
     border: 1px solid var(--border-subtle, #e5e7eb);
     background: var(--surface, #fff);
     color: var(--text-secondary, #374151);
     font-size: 13px;
     cursor: pointer;
-    transition: background .15s ease, border-color .15s ease, transform .1s ease;
+    transition:
+            background .15s ease,
+            border-color .15s ease,
+            color .15s ease,
+            transform .1s ease;
 }
+
 #view-ipfs-settings .provider-section-actions button:hover {
     background: var(--surface-2, #f3f4f6);
     border-color: var(--border, #d1d5db);
     transform: translateY(-1px);
 }
 
+/* 第一个按钮：解密并回填 —— 次要操作，浅灰描边 */
+#view-ipfs-settings .provider-section-actions button:first-child {
+    background: transparent;
+    border-style: dashed;
+    color: var(--text-secondary, #4b5563);
+}
+
+/* 主按钮（保存 自建节点 / 保存 Pinata / 保存 Lighthouse） */
+
+#view-ipfs-settings .provider-section-actions .primary:hover {
+    background: #1871c3;
+    border-color: rgba(29,155,240,0.35);
+}
+
+/* 危险按钮（清空 自建节点 等） */
+#view-ipfs-settings .provider-section-actions .danger {
+    background: #fff1f2;
+    color: #b91c1c;
+    border-color: #fecdd3;
+}
+#view-ipfs-settings .provider-section-actions .danger:hover {
+    background: #ffe4e6;
+    border-color: #fda4af;
+}
+
+
 /* 主按钮（保存）——给带 .primary 的按钮更显眼的视觉 */
 #view-ipfs-settings .provider-section-actions .primary {
     background: #1d9bf0;
     color: #fff;
-    border: 1px solid rgba(29,155,240,0.25);
+    font-weight: 500;
 }
 #view-ipfs-settings .provider-section-actions .primary:hover {
     background: #1871c3;
@@ -771,15 +896,39 @@ input.category-input:focus {
     gap: 6px;
 }
 
-.secret-input-row .secret-toggle {
+/* IPFS 设置里的 👁 密码显示切换按钮 */
+#view-ipfs-settings .ipfs-provider-section .secret-toggle {
+    position: absolute;
+    right: 8px;
+    bottom: 7%; /* 贴着输入框下边缘，看起来居中一点 */
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border: none;
     background: transparent;
     cursor: pointer;
     font-size: 12px;
+    color: var(--text-tertiary, #9ca3af);
+    transition:
+            background .15s ease,
+            color .15s ease,
+            transform .1s ease;
 }
 
-.secret-input-row .secret-toggle.is-visible {
-    font-weight: bold;
+/* hover 效果：浅背景 + 颜色略变深 */
+#view-ipfs-settings .ipfs-provider-section .secret-toggle:hover {
+    background: var(--surface-3, #f3f4f6);
+    color: var(--text-secondary, #4b5563);
+    transform: translateY(-0.5px);
+}
+
+/* 明文状态（你 JS 里面会加 .is-visible）：高亮一点 */
+#view-ipfs-settings .ipfs-provider-section .secret-toggle.is-visible {
+    color: var(--accent, #1d9bf0);
+    font-weight: 600;
 }
 
 .wallet-action-div{
@@ -788,10 +937,33 @@ input.category-input:focus {
     align-items: center;
     gap: 6px;
 }
-.wallet-action-div>button{
+.wallet-action-div > button{
+    width: 32px;
+    height: 32px;
     border: none;
     background: transparent;
     cursor: pointer;
     font-size: 14px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* 顶部右侧两个 SVG 图标统一样式 */
+.wallet-action-div > button {
+    color: #374151; /* 默认图标颜色（深灰） */
+}
 
+/* 控制 SVG 的尺寸 */
+.wallet-action-div > button svg {
+    width: 22px;
+    height: 22px;
+    font-weight: 600;
+    display: block; /* 去掉内联 svg 默认的空隙 */
+}
+
+
+/* hover 高亮 */
+.wallet-action-div > button:hover {
+    background-color: rgba(15, 20, 25, 0.03);
 }
