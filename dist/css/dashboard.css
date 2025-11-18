@@ -62,12 +62,11 @@ h3 {
 
 .wallet-info-area {
     display: none;
-    background-color: #f5f8fa;
+    background-color: rgba(74, 153, 233, 0.1);
     border-radius: 16px;
     padding: 16px;
     margin-top: 16px;
     text-align: left;
-    box-shadow: inset 0 0 0 1px rgba(15, 20, 25, 0.05);
 }
 
 .wallet-summary {
@@ -76,18 +75,32 @@ h3 {
     gap: 8px;
 }
 
+.wallet-row-summary {
+    display: flex;
+}
+
 .wallet-row {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     font-size: 14px;
+    gap: 4px;
+    flex: 1 1 0;
+    border-bottom: 1px solid rgba(107, 111, 113, 0.1);
+    padding-bottom: 16px;
 }
 
 .wallet-label {
     color: #5b7083;
-    font-weight: 600;
+    font-weight: 400;
 }
 
+.wallet-usdt-value,
+.wallet-eth-value {
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: 4px;
+}
 .wallet-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -767,4 +780,18 @@ input.category-input:focus {
 
 .secret-input-row .secret-toggle.is-visible {
     font-weight: bold;
+}
+
+.wallet-action-div{
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+}
+.wallet-action-div>button{
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+
 }
