@@ -936,6 +936,8 @@ input.category-input:focus {
     justify-content: flex-end;
     align-items: center;
     gap: 6px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
 }
 .wallet-action-div > button{
     width: 32px;
