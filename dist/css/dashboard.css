@@ -43,7 +43,7 @@ button {
     padding: 16px;
     width: 100%;
     border-radius: 9999px;
-    background-color: #4a99e9;
+    background-color: #1d9bf0;
     font-size: 15px;
     font-weight: 1000;
     color: white;
@@ -196,6 +196,7 @@ button {
     font-size: 13px;
     background-color: #1d9bf0;
     color: #ffffff;
+    text-align: center;
 }
 
 .settings-actions button:last-child {
@@ -204,11 +205,11 @@ button {
 }
 
 .settings-actions button:hover:first-child {
-    background-color: #1871c3;
+    background-color: #428ad2;
 }
 
 .settings-actions button:last-child:hover {
-    background-color: rgba(29, 155, 240, 0.2);
+    background-color: rgba(66, 138, 210, 0.2);
 }
 
 .selectable {
@@ -335,9 +336,8 @@ input.new-category-name {
 
 input.category-input:focus {
     outline: none !important;
-    border: 2px solid #428ad2 !important;
-    box-shadow: 0 0 4px rgba(66, 138, 210, 0.3) !important;
-    font-weight: 1000 !important;
+    border: 2px solid #1d9bf0 !important;
+    font-weight: 700 !important;
 }
 
 /* 全屏遮罩 */
@@ -436,7 +436,7 @@ input.category-input:focus {
 #alert-ok,
 #btn-confirm-new-category {
     padding: 12px 16px;
-    background-color: #4a99e9;
+    background-color: #1d9bf0;
     font-size: 15px;
     font-weight: 1000;
     color: white;
@@ -695,7 +695,7 @@ input.category-input:focus {
 /* 聚焦态：轻微高亮 */
 #view-ipfs-settings input[type="text"]:focus,
 #view-ipfs-settings input[type="password"]:focus {
-    border-color: var(--brand, #2563eb);
+    border-color: #1d9bf0;
     outline: none;
 }
 
@@ -828,7 +828,7 @@ input.category-input:focus {
 }
 
 #view-ipfs-settings #ipfs-provider-set-tweetcat:hover {
-    background: #1784d4;
+    background: #428ad2;
     transform: translateY(-1px);
 }
 
@@ -886,7 +886,7 @@ input.category-input:focus {
 /* 主按钮（保存 自建节点 / 保存 Pinata / 保存 Lighthouse） */
 
 #view-ipfs-settings .provider-section-actions .primary:hover {
-    background: #1871c3;
+    background: #428ad2;
     border-color: rgba(29,155,240,0.35);
 }
 
@@ -909,8 +909,7 @@ input.category-input:focus {
     font-weight: 500;
 }
 #view-ipfs-settings .provider-section-actions .primary:hover {
-    background: #1871c3;
-    border-color: rgba(29,155,240,0.35);
+    background: #428ad2;
 }
 
 /* 危险按钮（清空）——可选：若你想强调清空是危险操作，可以给它加 .danger 类 */
@@ -1047,4 +1046,39 @@ input.category-input:focus {
 }
 .wallet-main-menu-list .main-actions li:hover {
     background-color: rgba(29, 155, 240, 0.1);
+}
+ .secret-select {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 2px solid #c6cad0; /* 未选中边框 */
+    background-color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+/* 选中状态：填充主题色 */
+.secret-select:checked {
+    background-color: #1d9bf0;   /* 你的主题蓝 */
+    border-color: #1d9bf0;
+}
+
+/* 选中时的对号 */
+.secret-select::after {
+    content: "";
+    width: 4px;
+    height: 8px;
+    border: 2px solid #fff;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+}
+
+.settings-group {
+    font-weight: 400;
 }

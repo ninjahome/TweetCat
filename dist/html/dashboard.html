@@ -113,7 +113,8 @@
     </div>
     <section class="wallet-section">
         <div class="wallet-actions">
-            <button id="btn-sign-message" class="btn-wallet-list">
+            <div id="btn-sign-message" class="btn-wallet-list hidden">
+                <div class="wallet-action-inner">
                 <span class="wallet-action-label">签名消息</span>
                 <span class="wallet-action-arrow">
                 <svg t="1763535639641" class="icon icon-arrow-right" viewBox="0 0 1024 1024"
@@ -121,9 +122,11 @@
                     <path d="M380.00271 802.681382c-7.782244 0-15.558347-3.007497-21.436218-9.005095-11.602246-11.836583-11.410887-30.838356 0.427742-42.439578l243.519246-238.665705-243.519246-238.665705c-11.838629-11.602246-12.029988-30.602995-0.427742-42.440601 11.602246-11.837606 30.602995-12.027941 42.439578-0.426719l265.388323 260.098853c5.760191 5.644557 9.005095 13.370519 9.005095 21.434172s-3.244904 15.789615-9.005095 21.434172L401.00607 794.103006C395.166061 799.826358 387.581316 802.681382 380.00271 802.681382z" fill="#272636" p-id="25429"></path>
                 </svg>
             </span>
-            </button>
+                </div>
+            </div>
 
-            <button id="btn-sign-typed-data" class="btn-wallet-list">
+            <div id="btn-sign-typed-data" class="btn-wallet-list hidden">
+                <div class="wallet-action-inner">
                 <span class="wallet-action-label">签名 TypedData</span>
                 <span class="wallet-action-arrow">
                 <svg t="1763535639641" class="icon icon-arrow-right" viewBox="0 0 1024 1024"
@@ -131,19 +134,22 @@
                     <path d="M380.00271 802.681382c-7.782244 0-15.558347-3.007497-21.436218-9.005095-11.602246-11.836583-11.410887-30.838356 0.427742-42.439578l243.519246-238.665705-243.519246-238.665705c-11.838629-11.602246-12.029988-30.602995-0.427742-42.440601 11.602246-11.837606 30.602995-12.027941 42.439578-0.426719l265.388323 260.098853c5.760191 5.644557 9.005095 13.370519 9.005095 21.434172s-3.244904 15.789615-9.005095 21.434172L401.00607 794.103006C395.166061 799.826358 387.581316 802.681382 380.00271 802.681382z" fill="#272636" p-id="25429"></path>
                 </svg>
             </span>
-            </button>
+                </div>
+            </div>
 
-            <button id="btn-verify-signature" class="btn-wallet-list">
+            <div id="btn-verify-signature" class="btn-wallet-list hidden">
+                <div class="wallet-action-inner">
                 <span class="wallet-action-label">验签</span>
                 <span class="wallet-action-arrow">
                 <svg t="1763535639641" class="icon icon-arrow-right" viewBox="0 0 1024 1024"
                      version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="25428">
                     <path d="M380.00271 802.681382c-7.782244 0-15.558347-3.007497-21.436218-9.005095-11.602246-11.836583-11.410887-30.838356 0.427742-42.439578l243.519246-238.665705-243.519246-238.665705c-11.838629-11.602246-12.029988-30.602995-0.427742-42.440601 11.602246-11.837606 30.602995-12.027941 42.439578-0.426719l265.388323 260.098853c5.760191 5.644557 9.005095 13.370519 9.005095 21.434172s-3.244904 15.789615-9.005095 21.434172L401.00607 794.103006C395.166061 799.826358 387.581316 802.681382 380.00271 802.681382z" fill="#272636" p-id="25429"></path>
                 </svg>
-            </span>
-            </button>
+                 </span>
+                </div>
+            </div>
 
-            <button id="btn-open-settings" class="btn-wallet-list">
+            <div id="btn-open-settings" class="btn-wallet-list">
                 <div class="wallet-action-inner">
                     <span class="wallet-action-label">节点设置</span>
                     <span class="wallet-action-arrow">
@@ -164,16 +170,15 @@
                         <input type="text" id="custom-rpc-url" placeholder="https://example.com/rpc"/>
                     </div>
                     <div class="settings-group rpc-mode-group">
-                        <label><input type="radio" name="rpc-mode" value="default" checked/> 使用默认公共 RPC</label>
-                        <label><input type="radio" name="rpc-mode" value="custom"/> 使用自定义 RPC</label>
+                        <label><input type="radio" name="rpc-mode" value="default" class="secret-select"  checked/> 使用默认公共 RPC</label>
+                        <label><input type="radio" name="rpc-mode" value="custom" class="secret-select" /> 使用自定义 RPC</label>
                     </div>
                     <div class="settings-actions">
                         <button id="btn-save-settings">保存</button>
                         <button id="btn-reset-settings">恢复默认</button>
                     </div>
                 </div>
-
-            </button>
+            </div>
         </div>
     </section>
 </div>
