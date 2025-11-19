@@ -48,3 +48,15 @@ export function hideLoading() {
         overlay.style.display = 'none';
     }
 }
+
+export function $Id(id: string) {
+    return document.getElementById(id) as HTMLElement | null;
+}
+
+export function $(sel: string) {
+    return document.querySelector(sel) as HTMLElement | null;
+}
+
+export function $input(sel: string) {
+    return document.querySelector(sel) as HTMLInputElement | null;
+}

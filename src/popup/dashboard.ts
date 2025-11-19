@@ -15,7 +15,7 @@ import {
     TCWallet,
     WalletSettings
 } from "../wallet/wallet_api";
-import {showNotification} from "./common";
+import {$, $Id, $input, showNotification} from "./common";
 import {
     encryptString,
     IpfsProvider,
@@ -68,7 +68,7 @@ function dashRouter(path: string): void {
 }
 
 function initCatMgmBtn() {
-    const mgnCategoryBtn = document.getElementById("btn-mgn-category") as HTMLElement;
+    const mgnCategoryBtn = $Id("btn-mgn-category") as HTMLElement;
     mgnCategoryBtn.innerText = t('manage_category');
     mgnCategoryBtn.onclick = async () => {
         await browser.tabs.create({
@@ -79,7 +79,7 @@ function initCatMgmBtn() {
 
 async function setHomeStatus() {
     const isEnabled: boolean = await localGet(__DBK_AD_Block_Key) as boolean ?? false//TODO:: refactor __DBK_AD_Block_Key logic
-    const blockAdsToggle = document.getElementById('ad-block-toggle') as HTMLInputElement;
+    const blockAdsToggle = $Id('ad-block-toggle') as HTMLInputElement;
     blockAdsToggle.checked = isEnabled;
 
     const adNumber = document.querySelector(".number-blocked-txt") as HTMLSpanElement;
@@ -89,7 +89,7 @@ async function setHomeStatus() {
 }
 
 function initSettings() {
-    const blockAdsToggle = document.getElementById('ad-block-toggle') as HTMLInputElement;
+    const blockAdsToggle = $Id('ad-block-toggle') as HTMLInputElement;
 
     blockAdsToggle.onchange = async () => {
         const isEnabled = blockAdsToggle.checked;
@@ -101,9 +101,9 @@ function initSettings() {
 
 
 async function initWalletOrCreate(): Promise<void> {
-    const walletCreateDiv = document.getElementById("wallet-create-div") as HTMLButtonElement;//btn-create-wallet
-    const walletInfoDiv = document.getElementById("wallet-info-area") as HTMLDivElement;
-    const walletSettingBtn = document.getElementById("wallet-settings-btn") as HTMLButtonElement;
+    const walletCreateDiv = $Id("wallet-create-div") as HTMLButtonElement;//btn-create-wallet
+    const walletInfoDiv = $Id("wallet-info-area") as HTMLDivElement;
+    const walletSettingBtn = $Id("wallet-settings-btn") as HTMLButtonElement;
 
     currentWallet = await loadWallet();
     currentSettings = await loadWalletSettings();
@@ -123,7 +123,7 @@ async function initWalletOrCreate(): Promise<void> {
 
     walletCreateDiv.style.display = "none";
     walletInfoDiv.style.display = "block";
-
+    (document.querySelector(".logo-container") as HTMLDivElement).style.display = 'none';
     await populateWalletInfo(walletInfoDiv, currentWallet);
     walletSettingBtn.onclick = () => {
         showView('#onboarding/wallet-setting', dashRouter);
@@ -152,17 +152,17 @@ async function populateWalletInfo(container: HTMLDivElement, wallet: TCWallet): 
 }
 
 function setupWalletActionButtons(): void {
-    const refreshBtn = document.getElementById("btn-refresh-balance") as HTMLButtonElement | null;
-    const exportBtn = document.getElementById("btn-export-private-key") as HTMLButtonElement | null;
-    const transferEthBtn = document.getElementById("btn-transfer-eth") as HTMLButtonElement | null;
-    const transferTokenBtn = document.getElementById("btn-transfer-token") as HTMLButtonElement | null;
-    const signMessageBtn = document.getElementById("btn-sign-message") as HTMLButtonElement | null;
-    const signTypedBtn = document.getElementById("btn-sign-typed-data") as HTMLButtonElement | null;
-    const verifyBtn = document.getElementById("btn-verify-signature") as HTMLButtonElement | null;
-    const openSettingsBtn = document.getElementById("btn-open-settings") as HTMLButtonElement | null;
-    const saveSettingsBtn = document.getElementById("btn-save-settings") as HTMLButtonElement | null;
-    const resetSettingsBtn = document.getElementById("btn-reset-settings") as HTMLButtonElement | null;
-    const backBtn = document.getElementById("wallet-back-btn") as HTMLButtonElement | null;
+    const refreshBtn = $Id("btn-refresh-balance") as HTMLButtonElement | null;
+    const exportBtn = $Id("btn-export-private-key") as HTMLButtonElement | null;
+    const transferEthBtn = $Id("btn-transfer-eth") as HTMLButtonElement | null;
+    const transferTokenBtn = $Id("btn-transfer-token") as HTMLButtonElement | null;
+    const signMessageBtn = $Id("btn-sign-message") as HTMLButtonElement | null;
+    const signTypedBtn = $Id("btn-sign-typed-data") as HTMLButtonElement | null;
+    const verifyBtn = $Id("btn-verify-signature") as HTMLButtonElement | null;
+    const openSettingsBtn = $Id("btn-open-settings") as HTMLButtonElement | null;
+    const saveSettingsBtn = $Id("btn-save-settings") as HTMLButtonElement | null;
+    const resetSettingsBtn = $Id("btn-reset-settings") as HTMLButtonElement | null;
+    const backBtn = $Id("wallet-back-btn") as HTMLButtonElement | null;
 
 
     refreshBtn?.addEventListener("click", () => {
@@ -200,8 +200,8 @@ function setupWalletActionButtons(): void {
 }
 
 function updateSettingsUI(settings: WalletSettings): void {
-    const infuraInput = document.getElementById("infura-project-id") as HTMLInputElement | null;
-    const customInput = document.getElementById("custom-rpc-url") as HTMLInputElement | null;
+    const infuraInput = $Id("infura-project-id") as HTMLInputElement | null;
+    const customInput = $Id("custom-rpc-url") as HTMLInputElement | null;
     const defaultRadio = document.querySelector('input[name="rpc-mode"][value="default"]') as HTMLInputElement | null;
     const customRadio = document.querySelector('input[name="rpc-mode"][value="custom"]') as HTMLInputElement | null;
 
@@ -220,7 +220,7 @@ function updateSettingsUI(settings: WalletSettings): void {
 }
 
 function toggleSettingsPanel(): void {
-    const panel = document.getElementById("settings-panel") as HTMLDivElement | null;
+    const panel = $Id("settings-panel") as HTMLDivElement | null;
     if (!panel) return;
     const willOpen = !panel.classList.contains("open");
     panel.classList.toggle("open", willOpen);
@@ -228,8 +228,8 @@ function toggleSettingsPanel(): void {
 }
 
 async function handleSaveSettings(): Promise<void> {
-    const infuraInput = document.getElementById("infura-project-id") as HTMLInputElement | null;
-    const customInput = document.getElementById("custom-rpc-url") as HTMLInputElement | null;
+    const infuraInput = $Id("infura-project-id") as HTMLInputElement | null;
+    const customInput = $Id("custom-rpc-url") as HTMLInputElement | null;
     const customRadio = document.querySelector('input[name="rpc-mode"][value="custom"]') as HTMLInputElement | null;
 
     const newSettings: WalletSettings = {
@@ -660,10 +660,10 @@ export async function verifySignature({
 }
 
 function showAlert(title: string, message: string) {
-    const alertBox = document.getElementById('custom-alert');
-    const alertTitle = document.getElementById('alert-title');
-    const alertMessage = document.getElementById('alert-message');
-    const alertOk = document.getElementById('alert-ok');
+    const alertBox = $Id('custom-alert');
+    const alertTitle = $Id('alert-title');
+    const alertMessage = $Id('alert-message');
+    const alertOk = $Id('alert-ok');
 
     if (!alertBox || !alertTitle || !alertMessage || !alertOk) {
         console.error('Alert elements not found.');
@@ -684,30 +684,21 @@ function showAlert(title: string, message: string) {
     };
 }
 
-function $(sel: string) {
-    return document.querySelector(sel) as HTMLElement | null;
-}
-
-function $input(sel: string) {
-    return document.querySelector(sel) as HTMLInputElement | null;
-}
-
 type PendingField = { label: string; value: string; apply: (block: EncryptedBlock) => void; };
 
 let currentIpfsSettings: IpfsSettings | null = null;
 
-function providerSelect(): HTMLSelectElement | null {
-    return document.getElementById('ipfs-provider-select') as HTMLSelectElement | null;
-}
 
 function getSelectedProvider(): IpfsProvider {
-    const sel = providerSelect();
+    const sel = $Id('ipfs-provider-select') as HTMLSelectElement;
     return (sel?.value as IpfsProvider) || PROVIDER_TYPE_TWEETCAT;
 }
 
 function setSelectedProvider(provider: IpfsProvider): void {
-    const sel = providerSelect();
-    if (sel) sel.value = provider;
+    const sel = $Id('ipfs-provider-select') as HTMLSelectElement;
+    if (sel) {
+        sel.value = provider;
+    }
 }
 
 function updateProviderVisibility(): void {
@@ -716,6 +707,13 @@ function updateProviderVisibility(): void {
         const sectionProvider = section.dataset.provider as IpfsProvider | undefined;
         section.hidden = !!sectionProvider && sectionProvider !== provider;
     });
+
+    const sel = $Id('ipfs-provider-set-tweetcat');
+    if (provider === PROVIDER_TYPE_TWEETCAT) {
+        sel.classList.add("is-default")
+    } else {
+        sel.classList.remove("is-default")
+    }
 }
 
 function setSensitiveState(input: HTMLInputElement | null, hasValue: boolean): void {
@@ -833,7 +831,10 @@ async function handleIpfsSave(): Promise<boolean> {
                 return false;
             }
             const gatewayUrl = $input('#custom-gateway-url')?.value.trim() ?? '';
-            const custom: NonNullable<IpfsSettings[typeof PROVIDER_TYPE_CUSTOM]> = {apiUrl, gatewayUrl: gatewayUrl || undefined};
+            const custom: NonNullable<IpfsSettings[typeof PROVIDER_TYPE_CUSTOM]> = {
+                apiUrl,
+                gatewayUrl: gatewayUrl || undefined
+            };
             scheduleSensitive($input('#custom-auth'), currentIpfsSettings?.custom?.authEnc, '自建节点 Authorization', block => {
                 if (block) custom.authEnc = block; else delete custom.authEnc;
             }, pending);
@@ -883,8 +884,9 @@ async function handleIpfsSave(): Promise<boolean> {
 }
 
 export function initIpfsSettingsView() {
-    // 一级：select 改变
-    providerSelect()?.addEventListener('change', () => {
+    // 一级：select 改变'
+    const sel = $Id('ipfs-provider-select') as HTMLSelectElement;
+    sel?.addEventListener('change', () => {
         updateProviderVisibility();
         refreshSensitiveIndicators();
     });
@@ -896,38 +898,37 @@ export function initIpfsSettingsView() {
     });
 
 
-    document.getElementById('ipfs-provider-set-tweetcat')?.addEventListener('click', () => {
+    $Id('ipfs-provider-set-tweetcat')?.addEventListener('click', () => {
         setTweetcatAsDefault().then();
     });
 
-    // 二级：各 Provider 操作
-    document.getElementById('pinata-reveal-fill')?.addEventListener('click', () => {
+    $Id('pinata-reveal-fill')?.addEventListener('click', () => {
         revealAndFill(PROVIDER_TYPE_PINATA).then();
     });
-    document.getElementById('pinata-save')?.addEventListener('click', () => {
+    $Id('pinata-save')?.addEventListener('click', () => {
         saveProviderSecrets(PROVIDER_TYPE_PINATA).then();
     });
-    document.getElementById('pinata-clear')?.addEventListener('click', () => {
+    $Id('pinata-clear')?.addEventListener('click', () => {
         clearProviderSecrets(PROVIDER_TYPE_PINATA).then();
     });
 
-    document.getElementById('lighthouse-reveal-fill')?.addEventListener('click', () => {
+    $Id('lighthouse-reveal-fill')?.addEventListener('click', () => {
         revealAndFill(PROVIDER_TYPE_LIGHTHOUSE).then();
     });
-    document.getElementById('lighthouse-save')?.addEventListener('click', () => {
+    $Id('lighthouse-save')?.addEventListener('click', () => {
         saveProviderSecrets(PROVIDER_TYPE_LIGHTHOUSE).then();
     });
-    document.getElementById('lighthouse-clear')?.addEventListener('click', () => {
+    $Id('lighthouse-clear')?.addEventListener('click', () => {
         clearProviderSecrets(PROVIDER_TYPE_LIGHTHOUSE).then();
     });
 
-    document.getElementById('custom-reveal-fill')?.addEventListener('click', () => {
+    $Id('custom-reveal-fill')?.addEventListener('click', () => {
         revealAndFill(PROVIDER_TYPE_CUSTOM).then();
     });
-    document.getElementById('custom-save')?.addEventListener('click', () => {
+    $Id('custom-save')?.addEventListener('click', () => {
         saveProviderSecrets(PROVIDER_TYPE_CUSTOM).then();
     });
-    document.getElementById('custom-clear')?.addEventListener('click', () => {
+    $Id('custom-clear')?.addEventListener('click', () => {
         clearProviderSecrets(PROVIDER_TYPE_CUSTOM).then();
     });
 
@@ -993,7 +994,8 @@ async function setTweetcatAsDefault(): Promise<void> {
     updateProviderVisibility();
     showNotification('已设为 TweetCat 默认');
 }
-function fillPlain(selector: string, value: string | undefined)  {
+
+function fillPlain(selector: string, value: string | undefined) {
     if (!value) return;
     const el = $input(selector);
     if (!el) return;
@@ -1024,12 +1026,12 @@ async function revealAndFill(provider: IpfsProvider): Promise<void> {
     const dec = await decryptSettingsForUI(saved, password);
 
     if (provider === PROVIDER_TYPE_PINATA && dec.pinata) {
-        fillPlain('#pinata-api-key',   dec.pinata.apiKey);
-        fillPlain('#pinata-api-secret',dec.pinata.secret);
-        fillPlain('#pinata-jwt',       dec.pinata.jwt);
+        fillPlain('#pinata-api-key', dec.pinata.apiKey);
+        fillPlain('#pinata-api-secret', dec.pinata.secret);
+        fillPlain('#pinata-jwt', dec.pinata.jwt);
     } else if (provider === PROVIDER_TYPE_LIGHTHOUSE && dec.lighthouse) {
         fillPlain('#lighthouse-api-key', dec.lighthouse.apiKey);
-        fillPlain('#lighthouse-jwt',     dec.lighthouse.jwt);
+        fillPlain('#lighthouse-jwt', dec.lighthouse.jwt);
     } else if (provider === PROVIDER_TYPE_CUSTOM && dec.custom) {
         fillPlain('#custom-auth', dec.custom.auth);
     }
