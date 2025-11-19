@@ -13,13 +13,18 @@ h3 {
     margin: 0;
 }
 
+button {
+    border: none;
+    background: none;
+}
+
 .page_view {
     display: none;
 }
 
 .view-main-home {
     text-align: center;
-    padding: 32px;
+    padding: 0 32px;
 }
 
 .logo-container {
@@ -46,6 +51,7 @@ h3 {
     cursor: pointer;
     margin-top: 16px;
 }
+
 .btn-create-wallet {
     background-color: rgb(6, 203, 173);
 }
@@ -83,19 +89,22 @@ h3 {
     flex-direction: column;
     align-items: flex-start;
     font-size: 14px;
+    font-weight: 400;
     gap: 4px;
     flex: 1;                /* 两个子项均分一行 */
     min-width: 0;           /* 防止内容撑爆 */
     border-radius: 16px;
-
+    padding: 16px;
+}
+.wallet-row-address{
+    background-color: rgba(161, 164, 168, 0.1);
 }
 .wallet-row-usdt{
     background-color: rgba(6, 203, 173, 0.1);
-    padding: 16px;
 }
+
 .wallet-row-eth{
     background-color: rgba(74, 153, 233, 0.1);
-    padding: 16px;
 }
 .wallet-label {
     color: #5b7083;
@@ -108,27 +117,21 @@ h3 {
     font-weight: 600;
     margin-top: 4px;
 }
-.wallet-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 16px;
-}
 
 .wallet-actions button {
-    padding: 8px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(29, 155, 240, 0.25);
+    width: 100%;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
     background-color: #ffffff;
-    color: #1d9bf0;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.1s ease;
+    text-align: left;
 }
 
 .wallet-actions button:hover {
-    background-color: rgba(29, 155, 240, 0.1);
+    background-color: #F7F7F7;
     transform: translateY(-1px);
 }
 
@@ -156,16 +159,20 @@ h3 {
 }
 
 .settings-group input[type="text"] {
-    padding: 8px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(15, 20, 25, 0.2);
-    font-size: 13px;
+    width: 100%;
+    border-radius: 16px;
+    border: 1px solid var(--border-subtle, #e5e7eb);
+    background: var(--surface, #fff);
+    color: var(--text-primary, #111827);
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+    box-sizing: border-box;
+    padding: 12px 44px 12px 12px; /* 原来是 10px，这里多预留一点 */
 }
 
 .settings-group input[type="text"]:focus {
     outline: none;
     border-color: #1d9bf0;
-    box-shadow: 0 0 0 2px rgba(29, 155, 240, 0.2);
 }
 
 .rpc-mode-group label {
@@ -486,6 +493,7 @@ input.category-input:focus {
     z-index: 5;
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 8px;
     padding: 8px 0 12px;
     border-bottom: 1px solid rgba(15, 20, 25, 0.08);
@@ -505,6 +513,43 @@ input.category-input:focus {
     font-size: 13px;
     font-weight: 700;
     color: #5b7083;
+}
+.wallet-actions .btn-wallet-list {
+    width: 100%;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-subtle, #e5e7eb);
+    background-color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    text-align: left;
+
+}
+
+.wallet-actions .wallet-action-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: 8px;
+}
+
+/* 左侧文字占满剩余空间，避免太挤（可选） */
+.wallet-actions .wallet-action-label {
+    flex: 1;
+}
+
+/* 右侧箭头尺寸、对齐 */
+.wallet-actions .wallet-action-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.wallet-actions .wallet-action-arrow .icon-arrow-right {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
 }
 
 /* 设置面板卡片化一点（复用你已有的 .wallet-settings.open 机制） */
@@ -537,7 +582,8 @@ input.category-input:focus {
     border-bottom: 1px solid var(--border-subtle, #e5e7eb);
 }
 
-#view-ipfs-settings .view-header h2 {
+#view-ipfs-settings .view-header h2,
+.subpage-title {
     position: absolute;
     left: 50%;
     top: 50%;
@@ -650,7 +696,7 @@ input.category-input:focus {
 #view-ipfs-settings input[type="text"]:focus,
 #view-ipfs-settings input[type="password"]:focus {
     border-color: var(--brand, #2563eb);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand, #2563eb) 20%, transparent);
+    outline: none;
 }
 
 #view-ipfs-settings .ipfs-provider-section .secret-toggle:hover {
@@ -939,6 +985,7 @@ input.category-input:focus {
     padding: 8px 0;
     border-bottom: 1px solid var(--border-subtle, #e5e7eb);
 }
+
 .wallet-action-div > button{
     width: 32px;
     height: 32px;
@@ -964,8 +1011,40 @@ input.category-input:focus {
     display: block; /* 去掉内联 svg 默认的空隙 */
 }
 
-
+.top-icon-btn .active {
+    color: var(--accent, #1d9bf0);
+    background-color: rgba(29, 155, 240, 0.1) ;
+}
 /* hover 高亮 */
 .wallet-action-div > button:hover {
     background-color: rgba(15, 20, 25, 0.03);
+}
+.wallet-main-menu-list {
+    background-color: #fff;
+    border-color: rgba(15, 20, 25, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    width: 60%;
+    border-radius: 16px;
+    position: absolute;
+    top: 48px;
+    right: 16px;
+}
+/* 主菜单列表：去掉默认的圆点和间距 */
+.wallet-main-menu-list .main-actions {
+    list-style: none;  /* 去掉 ul 的圆点 */
+    margin: 0;
+    padding: 12px;
+
+}
+
+.wallet-main-menu-list .main-actions li {
+    margin: 0;
+    padding: 14px 8px;
+    text-align: left;
+    border-radius: 16px;
+    font-size: 14px;
+    color: rgb(15, 20, 25);
+}
+.wallet-main-menu-list .main-actions li:hover {
+    background-color: rgba(29, 155, 240, 0.1);
 }
