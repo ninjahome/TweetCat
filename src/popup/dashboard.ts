@@ -159,7 +159,7 @@ function setupWalletActionButtons(): void {
     const signMessageBtn = $Id("btn-sign-message") as HTMLButtonElement | null;
     const signTypedBtn = $Id("btn-sign-typed-data") as HTMLButtonElement | null;
     const verifyBtn = $Id("btn-verify-signature") as HTMLButtonElement | null;
-    const openSettingsBtn = $Id("btn-open-settings") as HTMLButtonElement | null;
+    const openSettingsBtn = $Id("btn-open-settings") as HTMLElement | null;
     const saveSettingsBtn = $Id("btn-save-settings") as HTMLButtonElement | null;
     const resetSettingsBtn = $Id("btn-reset-settings") as HTMLButtonElement | null;
     const backBtn = $Id("wallet-back-btn") as HTMLButtonElement | null;
@@ -194,7 +194,6 @@ function setupWalletActionButtons(): void {
         handleResetSettings().then();
     });
     backBtn?.addEventListener("click", () => {
-        // 返回主面板
         showView('#onboarding/main-home', dashRouter);
     });
 }
@@ -219,13 +218,13 @@ function updateSettingsUI(settings: WalletSettings): void {
     }
 }
 
-function toggleSettingsPanel(): void {
-    const panel = $Id("settings-panel") as HTMLDivElement | null;
-    if (!panel) return;
-    const willOpen = !panel.classList.contains("open");
-    panel.classList.toggle("open", willOpen);
-    panel.classList.toggle("hidden", !willOpen);
-}
+    function toggleSettingsPanel(): void {
+        const panel = $Id("settings-panel") as HTMLDivElement | null;
+        if (!panel) return;
+        const willOpen = !panel.classList.contains("open");
+        panel.classList.toggle("open", willOpen);
+        panel.classList.toggle("hidden", !willOpen);
+    }
 
 async function handleSaveSettings(): Promise<void> {
     const infuraInput = $Id("infura-project-id") as HTMLInputElement | null;
@@ -688,7 +687,6 @@ type PendingField = { label: string; value: string; apply: (block: EncryptedBloc
 
 let currentIpfsSettings: IpfsSettings | null = null;
 
-
 function getSelectedProvider(): IpfsProvider {
     const sel = $Id('ipfs-provider-select') as HTMLSelectElement;
     return (sel?.value as IpfsProvider) || PROVIDER_TYPE_TWEETCAT;
@@ -740,7 +738,6 @@ function setSensitiveState(input: HTMLInputElement | null, hasValue: boolean): v
         input.classList.remove("secret-readonly");
     }
 }
-
 
 function scheduleSensitive(
     input: HTMLInputElement | null,
@@ -949,7 +946,6 @@ export function initIpfsSettingsView() {
     initSecretToggleButtons();
 }
 
-
 function refreshSensitiveIndicators(): void {
     const pinata = currentIpfsSettings?.pinata;
     setSensitiveState($input('#pinata-api-key'), !!pinata?.apiKeyEnc);
@@ -965,7 +961,6 @@ function refreshSensitiveIndicators(): void {
     setSensitiveState($input('#custom-auth'), !!custom?.authEnc);
 }
 
-// 仅检查“指定 Provider”是否有加密字段（避免 Pinata 干扰 Lighthouse/Custom）
 function hasEncryptedSecretsFor(provider: IpfsProvider, saved: IpfsSettings): boolean {
     if (provider === PROVIDER_TYPE_PINATA) {
         return !!(saved.pinata?.jwtEnc || saved.pinata?.apiKeyEnc || saved.pinata?.secretEnc);
@@ -1125,7 +1120,6 @@ async function saveProviderOnly(): Promise<void> {
     currentIpfsSettings = next;
     showNotification('已保存默认 Provider'); // 简短提示
 }
-
 
 function initSecretToggleButtons(): void {
     document.querySelectorAll<HTMLButtonElement>('.secret-toggle').forEach(btn => {
