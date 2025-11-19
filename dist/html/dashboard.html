@@ -176,27 +176,6 @@
             </button>
         </div>
     </section>
-    <section class="wallet-section">
-        <div id="settings-panel" class="wallet-settings hidden">
-            <h3 class="section-title">节点与 RPC</h3>
-            <div class="settings-group">
-                <label for="infura-project-id">Infura Project ID（可选）</label>
-                <input type="text" id="infura-project-id" placeholder="示例：123abc456def"/>
-            </div>
-            <div class="settings-group">
-                <label for="custom-rpc-url">自定义 RPC URL（可选）</label>
-                <input type="text" id="custom-rpc-url" placeholder="https://example.com/rpc"/>
-            </div>
-            <div class="settings-group rpc-mode-group">
-                <label><input type="radio" name="rpc-mode" value="default" checked/> 使用默认公共 RPC</label>
-                <label><input type="radio" name="rpc-mode" value="custom"/> 使用自定义 RPC</label>
-            </div>
-            <div class="settings-actions">
-                <button id="btn-save-settings">保存</button>
-                <button id="btn-reset-settings">恢复默认</button>
-            </div>
-        </div>
-    </section>
 </div>
 
 <div id="view-ipfs-settings" class="view-ipfs-settings page_view">
@@ -314,10 +293,10 @@
             </div>
             <div class="provider-section-actions" data-provider="pinata">
                 <div style="display: flex; align-items: center; gap: 16px; width: 100%">
-                    <button id="custom-clear" class="danger" type="button" style="flex: 1">清空 自建节点</button>
-                    <button id="custom-reveal-fill" type="button" style="flex: 1">解密并回填</button>
+                    <button id="pinata-clear" class="danger" type="button" style="flex: 1">清空配置</button>
+                    <button id="pinata-reveal-fill" type="button" style="flex: 1">解密并回填</button>
                 </div>
-                <button id="pinata-clear" class="danger" type="button">清空 Pinata</button>
+                <button id="pinata-save" class="danger" type="button">保存 Pinata</button>
             </div>
         </div>
         <div class="ipfs-provider-section" data-provider="lighthouse" hidden>
@@ -375,10 +354,10 @@
             </div>
             <div class="provider-section-actions" data-provider="lighthouse">
                 <div style="display: flex; align-items: center; gap: 16px; width: 100%">
-                    <button id="custom-clear" class="danger" type="button" style="flex: 1">清空 自建节点</button>
-                    <button id="custom-reveal-fill" type="button" style="flex: 1">解密并回填</button>
+                    <button id="lighthouse-clear" class="danger" type="button" style="flex: 1">清空配置</button>
+                    <button id="lighthouse-reveal-fill" type="button" style="flex: 1">解密并回填</button>
                 </div>
-                <button id="lighthouse-clear" class="danger" type="button">清空 Lighthouse</button>
+                <button id="lighthouse-save" class="danger" type="button">保存 Lighthouse</button>
             </div>
         </div>
         <div class="ipfs-provider-section" data-provider="custom" hidden>
@@ -421,7 +400,6 @@
                     <button id="custom-reveal-fill" type="button" style="flex: 1">解密并回填</button>
                 </div>
                 <button id="custom-save" class="primary" type="button">保存 自建节点</button>
-
             </div>
         </div>
 
