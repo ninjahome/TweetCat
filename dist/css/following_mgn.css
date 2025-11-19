@@ -1,3 +1,21 @@
+@media (min-width: 1560px) {
+    .follow-manager {
+        --side-padding: 140px;
+    }
+}
+@media (min-width: 1100px) {
+    .follow-manager {
+        min-width: 1100px;
+    }
+}
+@media (min-width: 0) {
+    .follow-manager {
+        min-width: 1100px;
+    }
+}
+
+
+
 body {
     margin: 0;
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -14,6 +32,7 @@ body.modal-open {
 }
 
 .follow-manager {
+    padding: 0 140px;
     display: flex;
     height: 100vh;
 }
@@ -428,48 +447,73 @@ body.processing-blocked {
 }
 
 .user-list {
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(3, minmax(260px, 1fr)); /* ✅ 两个一行 */
     gap: 16px;
-    flex: 1;
     display: grid;
     overflow: visible; /* ✅ tooltip 不再被裁切 */
     padding-bottom: 16px;
+    grid-auto-rows: auto;   /* ✅ 行高=内容高度 */
+    align-items: start;     /* ✅ 不再把卡片拉满行高 */
 }
 
 
 .user-card {
     position: relative;
-    box-shadow: 0 2px 6px rgba(15, 20, 25, 0.06);
-    border: 1px solid #e5e7eb;
-
-    flex-direction: column; /* 改为纵向排列 */
-    align-items: flex-start;
-    justify-content: flex-start;
-    padding: 12px 14px;
     gap: 6px;
-    min-height: 160px; /* 统一高度，防止错位 */
-
-    display: flex;
     background: #ffffff;
-    border-radius: 10px;
+    border-radius: 16px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: row; /* 改为纵向排列 */
+    align-items: center;
+    height: 88px;
+    flex: none;
+    padding: 16px;
 }
 
 .user-card:hover {
-    border-color: #1d9bf0;
-    box-shadow: 0 4px 10px rgba(29,155,240,0.15);
+    background-color: #F7F7F7;
 }
 
 /* 头像+名称行 */
 .user-card .header-row {
     display: flex;
-    align-items: center;
+    flex-direction: row;
+    align-items: flex-start;
     width: 100%;
     gap: 10px;
 }
 
 .user-card .user-select {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 2px solid #c6cad0; /* 未选中边框 */
+    background-color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
     cursor: pointer;
+}
+/* 选中状态：填充主题色 */
+.user-card .user-select:checked {
+    background-color: #1d9bf0;   /* 你的主题蓝 */
+    border-color: #1d9bf0;
+}
+
+/* 选中时的对号 */
+.user-card .user-select:checked::after {
+    content: "";
+    width: 4px;
+    height: 8px;
+    border: 2px solid #fff;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
 }
 
 .user-avatar {
@@ -488,14 +532,14 @@ body.processing-blocked {
 
 .user-card .name-row {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
 }
 
 .user-card .name {
-    font-weight: 600;
-    font-size: 15px;
+    font-size: 16px;
+    font-weight: 700;
     color: #0f1419;
     white-space: nowrap;
     overflow: hidden;
@@ -503,8 +547,9 @@ body.processing-blocked {
 }
 
 .user-card .handle {
-    font-size: 13px;
-    color: #657786;
+    font-size: 14px;
+    font-weight: 400;
+    color: #536471;
     margin-top: 2px;
 }
 
@@ -672,10 +717,6 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     border-left: 3px solid #2ecc71;
 }
 
-.user-card.is-local-only {
-    background-color: rgba(120, 120, 120, 0.08);
-    border-left: 3px solid #888;
-}
 /* following_mgn.css（或同文件） */
 #export-ipfs-btn {
     background: #eff3f4;
