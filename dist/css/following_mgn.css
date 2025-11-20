@@ -76,6 +76,54 @@ body.modal-open {
     flex: 1;
     overflow-y: auto;
 }
+.category-actions .icon {
+    display: block;
+    fill: currentColor;
+}
+
+/* 这两个数就是“对齐视觉大小”的关键，可以按效果微调 */
+.icon-rename {
+    width: 16px;
+    height: 16px;
+}
+.icon-rename path {
+    stroke: currentColor;
+    stroke-width: 30;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.icon-delete {
+    width: 12px;
+    height: 12px;
+}
+
+/* 按钮样式（之前那套可以继续用） */
+.category-actions .rename-btn,
+.category-actions .delete-btn {
+    color: #6b7280;
+    background: transparent;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 999px;
+}
+
+.category-actions .rename-btn:hover,
+.category-actions .delete-btn:hover {
+    color: #1d9bf0;
+}
+
+
+/* 默认隐藏 li 内的这两个按钮 */
+.category-list li button {
+    display: none;
+}
+
+/* hover 时显示 */
+.category-list li:hover button {
+    display: inline-flex;   /* 或 inline-block / flex 都可以 */
+}
+
 
 .category-item {
     display: flex;
@@ -120,10 +168,12 @@ body.modal-open {
 .category-count {
     font-size: 18px;
     color: #657786;
+    margin-right: 4px;
 }
 
 .category-actions {
     display: flex;
+    align-items: center;
     gap: 4px;
 }
 

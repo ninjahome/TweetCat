@@ -785,10 +785,8 @@ span.duration-badge {
 }
 
 .web3-balance-item {
-    border: 1px solid var(--border-subtle);
     border-radius: 12px;
-    padding: 10px;
-    background: transparent;
+    padding: 16px;
 }
 
 .web3-balance-label {

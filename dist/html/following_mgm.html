@@ -68,8 +68,19 @@
             <span class="category-count"></span>
         </div>
         <div class="category-actions">
-            <button class="rename-btn" title="Rename category">✎</button>
-            <button class="delete-btn" title="Delete category">🗑</button>
+            <!-- 重命名：铅笔 -->
+            <button class="rename-btn" title="Rename category">
+                <svg class="icon icon-rename" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
+                    <path d="M940.8 953.6H83.2c-25.6 0-44.8-19.2-44.8-44.8 0-25.6 19.2-44.8 44.8-44.8h851.2c25.6 0 44.8 19.2 44.8 44.8 0 25.6-19.2 44.8-38.4 44.8zM780.8 179.2l-480 480c-19.2 19.2-44.8 19.2-57.6 0-19.2-19.2-19.2-44.8 0-57.6l480-480c19.2-19.2 44.8-19.2 57.6 0 19.2 12.8 19.2 38.4 0 57.6z"></path>
+                </svg>
+            </button>
+
+            <!-- 删除：叉号 -->
+            <button class="delete-btn" title="Delete category">
+                <svg class="icon icon-delete" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
+                    <path d="M512.076288 406.866188L128.142709 21.908786A75.020621 75.020621 0 0 0 22.177041 128.130409l384.701446 383.93358L21.921085 895.997568A75.020621 75.020621 0 1 0 128.142709 1001.963236l383.933579-384.701446 383.933579 383.933579a74.303945 74.303945 0 0 0 105.197801-104.941845l-383.933579-383.933579 383.933579-383.93358A74.380732 74.380732 0 0 0 897.289646 21.908786l-383.933579 383.933579z"></path>
+                </svg>
+            </button>
         </div>
     </li>
 </template>
