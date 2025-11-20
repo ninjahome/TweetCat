@@ -13,7 +13,9 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2>Categories</h2>
-            <button id="btn-new-category" class="primary">＋ New</button>
+        </div>
+        <div class="sidebar-new">
+            <button id="btn-new-category" class="primary new-btn">＋ New</button>
         </div>
         <ul id="category-list" class="category-list"></ul>
     </aside>
@@ -21,27 +23,27 @@
         <div id="toolbar" class="toolbar">
             <div class="toolbar-ops">
                 <div id="twitter-ops" class="toolbar-section toolbar-section-x">
-                    <button id="sync-btn" class="primary">Sync Followings</button>
+                    <button id="sync-btn" class="primary primary-sync">Sync Followings</button>
                     <span id="sync-status" class="toolbar-status"></span>
                 </div>
                 <div id="ipfs-ops" class="toolbar-section toolbar-section-ipfs">
-                    <button id="export-ipfs-btn" type="button"
+                    <button id="export-ipfs-btn"  class="primary primary-IPFS"  type="button"
                             title="Export categories &amp; KOLs to IPFS (v1)">IPFS Snapshot</button>
-
-                    <!-- 最新快照显示 + 打开 + 复制 -->
-                    <div class="ipfs-latest">
-                        <span class="ipfs-latest-label">Latest Snapshot</span>
-                        <button id="ipfs-latest-open" type="button"
-                                class="ipfs-latest-pill" disabled>
-                            <span id="ipfs-latest-cid">None</span>
-                        </button>
-                        <button id="ipfs-latest-copy" type="button"
-                                class="ipfs-latest-copy-btn" disabled>
-                            Copy CID
-                        </button>
-                    </div>
                 </div>
             </div>
+            <!-- 最新快照显示 + 打开 + 复制 -->
+            <div class="ipfs-latest hidden">
+                <span class="ipfs-latest-label">Latest Snapshot</span>
+                <button id="ipfs-latest-open" type="button"
+                        class="ipfs-latest-pill" disabled>
+                    <span id="ipfs-latest-cid">None</span>
+                </button>
+                <button id="ipfs-latest-copy" type="button"
+                        class="ipfs-latest-copy-btn" disabled>
+                    Copy CID
+                </button>
+            </div>
+
             <div class="batch-actions">
                 <span id="selection-counter">0 selected</span>
                 <select id="assign-category-select"></select>
@@ -74,24 +76,40 @@
 
 <template id="user-card-template">
     <div class="user-card">
-        <input type="checkbox" class="user-select" />
-        <button class="sync-btn hidden" title="同步账号信息">⟳</button>
-        <img class="user-avatar" src="" alt="" />
+        <div style="display: flex; align-items: center; gap: 6px">
+            <input type="checkbox" class="user-select" />
+            <img class="user-avatar" src="" alt="" />
+        </div>
         <div class="name-row">
             <div class="name"></div>
             <div class="handle"></div>
+            <div>
+                <button class="sync-btn hidden" title="同步账号信息">
+                    <svg
+                            class="sync-icon"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 595.28 841.89"
+                            aria-hidden="true"
+                            focusable="false"
+                    >
+                        <path d="M696.96,550.93c0-14.14-11.46-25.6-25.6-25.6h-211.46l39.99-39.94c10.01-10,10.02-26.21.02-36.22-10-10.01-26.21-10.02-36.22-.02l-83.2,83.25c-10,10-10,26.2,0,36.2,3.15,3,7.04,5.11,11.26,6.14,2.77,1.11,5.72,1.72,8.7,1.79h270.85c14.14,0,25.6-11.46,25.6-25.6h.05ZM689.43,693.36c10-10,10-26.2,0-36.2-3.14-3.02-7.03-5.15-11.26-6.19-2.78-1.09-5.72-1.68-8.7-1.74h-270.85c-14.14,0-25.6,11.47-25.6,25.6s11.46,25.6,25.6,25.6h211.35l-39.94,39.93c-10.01,10-10.02,26.22-.02,36.23,10,10.01,26.21,10.02,36.22.02l83.2-83.25Z"/>
+                        <path d="M654.99,437.99c0,14.14,11.46,25.6,25.6,25.6s25.6-11.46,25.6-25.6c-.33-106.34-82.15-194.67-188.16-203.11-53.56-127.47-193.85-194.9-326.85-157.08C58.18,115.62-25.64,246.78-4.11,383.36c-83.71,45.4-125.97,141.78-102.65,234.11,23.33,92.32,106.29,157.07,201.52,157.27l.66.15h224.2c14.14,0,25.6-11.46,25.6-25.6s-11.46-25.6-25.6-25.6H96.09c-87.2,0-157.9-70.69-157.9-157.9S8.88,407.89,96.09,407.89s157.9,70.7,157.9,157.9c0,14.14,11.46,25.6,25.6,25.6s25.6-11.46,25.6-25.6c-.14-115.42-93.68-208.96-209.1-209.1-16.9.18-33.72,2.43-50.07,6.71-.62-6.81-2.2-13.47-2.2-20.33.02-108.02,77.44-200.5,183.78-219.51,106.34-19.01,211.01,40.92,248.45,142.25.52.98,1.1,1.92,1.74,2.82.2.51.56.82.77,1.28.92,1.76,2.03,3.41,3.33,4.91,4.72,5.99,11.89,9.5,19.51,9.57,84.8.09,153.51,68.8,153.6,153.6h0ZM654.99,437.99"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="meta">
+                <div class="location hidden"></div>
+                <div class="stats hidden"></div>
+            </div>
+            <div class="bio-wrapper">
+                <div class="bio-text"></div>
+                <div class="bio-tooltip"></div>
+            </div>
         </div>
         <div class="category-badge hidden">
             <span class="category-dot"></span>
             <span class="category-name"></span>
-        </div>
-        <div class="bio-wrapper">
-            <div class="bio-text"></div>
-            <div class="bio-tooltip"></div>
-        </div>
-        <div class="meta">
-            <div class="location hidden"></div>
-            <div class="stats hidden"></div>
         </div>
     </div>
 </template>

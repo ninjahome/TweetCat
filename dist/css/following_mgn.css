@@ -19,10 +19,13 @@
 body {
     margin: 0;
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    background: #f5f6f7;
     color: #0f1419;
+    word-break: break-all;
 }
 
+p {
+    margin: 0;
+}
 .hidden {
     display: none !important;
 }
@@ -34,15 +37,17 @@ body.modal-open {
 .follow-manager {
     padding: 0 140px;
     display: flex;
-    height: 100vh;
+    min-height: 100vh;      /* ✅ 替换 height: 100vh; */
 }
 
 .sidebar {
+    position: sticky;
     width: 240px;
     background: #ffffff;
     border-right: 1px solid #e5e5e5;
     display: flex;
     flex-direction: column;
+    padding: 0 16px;
 }
 
 .sidebar-header {
@@ -50,7 +55,6 @@ body.modal-open {
     justify-content: space-between;
     align-items: center;
     padding: 16px;
-    border-bottom: 1px solid #eeeeee;
 }
 
 .sidebar-header h2 {
@@ -61,13 +65,14 @@ body.modal-open {
 
 .sidebar-header .primary {
     font-size: 12px;
-    padding: 6px 12px;
+    padding: 12px;
 }
 
 .category-list {
+    width: 100%;
     list-style: none;
     margin: 0;
-    padding: 8px;
+    padding: 0;
     flex: 1;
     overflow-y: auto;
 }
@@ -76,11 +81,14 @@ body.modal-open {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 10px;
+    padding: 16px;
     margin-bottom: 6px;
     border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
+    font-size: 18px;
+    font-weight: 400;
+    margin-top: 8px;
 }
 
 .category-item:hover {
@@ -90,6 +98,7 @@ body.modal-open {
 .category-item.active {
     background: rgba(29, 155, 240, 0.18);
     color: #1d9bf0;
+    font-weight: 600;
 }
 
 .category-item.active .category-count {
@@ -99,6 +108,7 @@ body.modal-open {
 .category-content {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 6px;
     flex: 1;
 }
@@ -108,7 +118,7 @@ body.modal-open {
 }
 
 .category-count {
-    font-size: 12px;
+    font-size: 18px;
     color: #657786;
 }
 
@@ -142,6 +152,7 @@ body.modal-open {
 
 .toolbar {
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
     align-items: stretch;
     margin-bottom: 16px;
@@ -151,27 +162,22 @@ body.modal-open {
 /* 左侧两个母 div 的容器：竖着排 */
 .toolbar-ops {
     display: flex;
-    flex-direction: column;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    align-items: center;
     gap: 8px;
     flex: 1;
 }
 
 .toolbar-section {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    border-radius: 10px;
     justify-content: flex-start;
-    flex-wrap: wrap; /* 新增：小屏幕时一部分内容可以折到下一行 */
 }
 
 .toolbar-section-ipfs .ipfs-latest {
     margin-left: auto;
-}
-
-.toolbar-section-x {
-    background: #eef7ff;
 }
 
 .toolbar-section-ipfs {
@@ -181,8 +187,11 @@ body.modal-open {
 .ipfs-latest {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
+    gap: 4px;
+    font-size: 14px;
+    padding: 16px;
+    background: rgba(6, 203, 173, 0.1);
+    border-radius: 16px;
 }
 
 .ipfs-latest-label {
@@ -191,12 +200,10 @@ body.modal-open {
 
 /* 显示 CID 的“药丸”按钮 */
 .ipfs-latest-pill {
-    border-radius: 999px;
-    border: 1px solid #d0d7de;
-    background: #ffffff;
-    font-size: 12px;
-    padding: 4px 10px;
-    max-width: 220px;
+    border:none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -214,7 +221,7 @@ body.modal-open {
     background: transparent;
     font-size: 12px;
     cursor: pointer;
-    color: #1d9bf0;
+    color: rgb(6, 203, 173);
     padding: 4px 6px;
     border-radius: 999px;
 }
@@ -245,12 +252,13 @@ body.modal-open {
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 16px;
 }
 
 .batch-actions select,
 .batch-actions button {
-    padding: 6px 12px;
-    border-radius: 6px;
+    padding: 16px;
+    border-radius: 16px;
     font-size: 13px;
 }
 
@@ -265,35 +273,73 @@ body.modal-open {
     color: #0f1419;
     cursor: pointer;
 }
-
-.batch-actions button.danger {
-    background: #f4212e;
+/* 有选中时（按钮被启用）：统一文字变白 */
+.batch-actions button:not(:disabled) {
     color: #ffffff;
 }
 
-.batch-actions button.danger:hover:not(:disabled) {
-    background: #dc1e29;
+/* Apply：主题蓝背景 */
+#assign-category-btn:not(:disabled) {
+    background: #1d9bf0;
+}
+#assign-category-btn:hover:not(:disabled) {
+    background: #1784d4;
 }
 
-.batch-actions button:disabled {
-    opacity: 0.5;
-    cursor: default;
+/* Clear：绿色背景 */
+#clear-selection-btn:not(:disabled) {
+    background: #0cae95;
+}
+#clear-selection-btn:hover:not(:disabled) {
+    background: #0aa68e;
+}
+
+/* Unfollow Selected：保持原来的红色，只保证启用时文字为白色 */
+#unfollow-selected-btn.danger:not(:disabled) {
+    background: #df3f3f;
+    color: #ffffff;
+}
+#unfollow-selected-btn.danger:hover:not(:disabled) {
+    background: #ca3131;
 }
 
 .primary {
-    background: #1d9bf0;
-    border: none;
-    color: #ffffff;
-    padding: 8px 16px;
-    border-radius: 6px;
+    width: 100%;
+    color: #0f1419;
+    padding: 16px;
+    border-radius: 16px;
     font-weight: 600;
     cursor: pointer;
+    border: none;
 }
 
-.primary:disabled {
-    opacity: 0.6;
-    cursor: default;
+.new-btn {
+    border: 1px dashed #d0d7de;
+    color: #0f1419;
+    background: transparent;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 12px;
 }
+
+.new-btn:hover {
+    background-color: #F7F7F7;
+    color: #1d9bf0;
+}
+
+.primary-IPFS {
+    background-color: rgb(6, 203, 173);
+    color: #fff;
+}
+
+.primary-sync {
+    background-color: #1d9bf0;
+    color: #fff;
+}
+.primary-sync:hover {
+    background-color: #428ad2;
+}
+
 
 .modal {
     position: fixed;
@@ -314,6 +360,7 @@ body.modal-open {
     box-shadow: 0 20px 50px rgba(15, 20, 25, 0.2);
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 16px;
 }
 
@@ -325,10 +372,21 @@ body.modal-open {
 
 .modal-content input {
     width: 100%;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid #d0d7de;
-    font-size: 14px;
+    padding: 16px;
+    border-radius: 16px;
+    border: 2px solid #d0d7de;
+    font-size: 16px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* focus 状态：主题蓝边框 + 柔和阴影 */
+#new-category-input:focus {
+    border-color: #1d9bf0;
+    background-color: #ffffff;
+
 }
 
 .modal-actions {
@@ -340,7 +398,7 @@ body.modal-open {
 .btn-cancel,
 .btn-confirm {
     border-radius: 999px;
-    padding: 8px 18px;
+    padding: 16px 32px;
     font-size: 14px;
     font-weight: 600;
     border: none;
@@ -465,10 +523,11 @@ body.processing-blocked {
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     display: flex;
     flex-direction: row; /* 改为纵向排列 */
-    align-items: center;
-    height: 88px;
+    align-items: flex-start;
+    min-height: 88px;
     flex: none;
     padding: 16px;
+    border: 1px solid #e1e8ed;
 }
 
 .user-card:hover {
@@ -490,13 +549,14 @@ body.processing-blocked {
     width: 16px;
     height: 16px;
     border-radius: 4px;
-    border: 2px solid #c6cad0; /* 未选中边框 */
+    border: 2px solid #e1e8ed; /* 未选中边框 */
     background-color: #ffffff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
     cursor: pointer;
+    flex-shrink: 0;
 }
 /* 选中状态：填充主题色 */
 .user-card .user-select:checked {
@@ -517,8 +577,8 @@ body.processing-blocked {
 }
 
 .user-avatar {
-    width: 44px;
-    height: 44px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     object-fit: cover;
 }
@@ -550,30 +610,13 @@ body.processing-blocked {
     font-size: 14px;
     font-weight: 400;
     color: #536471;
-    margin-top: 2px;
-}
-
-.user-card .category-badge {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 12px;
-    background: rgba(29, 155, 240, 0.12);
-    padding: 2px 8px;
-    border-radius: 999px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: #1d9bf0;
-    line-height: 1.2;
 }
 
 .user-card .meta {
-    margin-top: 4px;
     font-size: 12px;
     color: #536471;
     display: flex;
-    gap: 8px;
+    gap: 4px;
     flex-wrap: wrap;
 }
 
@@ -581,6 +624,13 @@ body.processing-blocked {
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    color: #536471;
+}
+
+.stats {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 20px;
 }
 
 button {
@@ -616,7 +666,6 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 
 /* ============ Bio 统一高度 + 悬浮显示完整文本 ============ */
 .bio-wrapper {
-    margin-top: 4px;
     height: 38px;
     line-height: 1.4;
     width: 100%;
@@ -664,44 +713,51 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 
 /* ============ 单卡片同步按钮（本地账号可见） ============ */
 .sync-btn {
-    top: 32px;
     z-index: 3;
-    right: 8px;
-    background: #fff;
-    border: 1px solid #d0d7de;
+    background: rgba(29, 155, 240, 0.1);
     color: #1d9bf0;
-    padding: 3px 8px;
-    font-size: 12px;
-    border-radius: 6px;
-    opacity: 0.85;
+    padding: 8px 18px;
+    border-radius: 16px;
     transition: all 0.2s ease;
-    position: absolute;
     cursor: pointer;
     line-height: 1;
+    border: none;
 }
 
-.user-card:hover .sync-btn {
-    opacity: 1;
-    background: #1d9bf0;
-    color: #fff;
+.sync-btn svg {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
+/* 图标的线条和填充完全由 CSS 控制 */
+.sync-btn .sync-icon {
+    fill: currentColor;
+    stroke: none;
+
+}
+
+/* hover 时：背景主题蓝，文字/图标白色 */
+.sync-btn:hover {
+    background-color: #1d9bf0;
+    color: #ffffff;            /* currentColor = 白色 → 图标也变白 */
 }
 
 /* ============ 分类颜色与关注状态融合 ============ */
 /* 改造后的分类徽标容器 */
-.category-badge {
-    top: 8px;
-    right: 8px;
-    z-index: 4;
+.user-card .category-badge {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 12px;
+    background: rgba(29, 155, 240, 0.1);
+    padding: 6px 16px;
+    border-radius: 999px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    border-radius: 999px;
-    padding: 2px 10px;
-    line-height: 1.2;
-    margin-top: 6px;
-    background: rgba(29, 155, 240, 0.12); /* 淡底色，随主题可再调整 */
+    gap: 4px;
     color: #1d9bf0;
+    z-index: 999;
 }
 
 .category-dot {
@@ -713,17 +769,16 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 
 /* 左侧彩条区分是否关注；与你现有的绿色/灰色逻辑对齐 */
 .user-card.is-following {
-    background-color: rgba(46, 204, 113, 0.06);
-    border-left: 3px solid #2ecc71;
+    background-color: rgba(29, 155, 240, 0.1);
 }
 
-/* following_mgn.css（或同文件） */
-#export-ipfs-btn {
-    background: #eff3f4;
-    border: none;
-    color: #0f1419;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
+.user-card.is-following::before {
+    content: "";
+    position: absolute;
+    left: 0;          /* 紧贴左侧 */
+    top: 12px;        /* 留一点上下内边距，看起来不顶到圆角 */
+    bottom: 12px;
+    width: 2px;       /* 竖线的粗细 */
+    border-radius: 999px;
+    background-color: #1d9bf0;  /* 主题色竖线；想要绿色就改成 #2ecc71 */
 }
-#export-ipfs-btn:hover { background: #e6ebef; }
