@@ -273,8 +273,8 @@ export async function initWeb3IdentityArea(): Promise<void> {
     });
 
     host.querySelector(".web3-title-text").textContent = t('web3_id_tittle');
-    host.querySelector("#web3-refresh-btn").textContent = t('refresh');
-    host.querySelector("#web3-copy").textContent = t('copy');
+    // host.querySelector("#web3-refresh-btn").textContent = t('refresh');
+    // host.querySelector("#web3-copy").textContent = t('copy');
     host.querySelector(".web3-gas-balance-hint").textContent = t('gas_balance');
     host.querySelector(".web3-usdt-balance-hint").textContent = t('usdt_balance');
 
