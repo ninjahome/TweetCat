@@ -240,6 +240,8 @@ a {
     position: sticky;
     top: 0;
     align-self: flex-start;
+    max-height: 100vh;          /* 或 calc(100vh - 16px) 视需要微调 */
+    overflow-y: auto;
 }
 
 .tweetTimeline {
@@ -657,18 +659,31 @@ span.duration-badge {
 }
 
 .web3-identity-actions .web3-refresh-btn {
-    border: 1px solid var(--border-strong);
+    border: none;
     background: transparent;
     border-radius: 9999px;
-    padding: 4px 10px;
+    padding: 10px;
     cursor: pointer;
     font-size: 14px;
     color: var(--text-primary);
 }
 
-.web3-identity-actions .web3-refresh-btn:hover {
-    background: var(--bg-hover);
+.web3-refresh-btn .icon {
+    width: 16px;
+    height: 16px;
 }
+.web3-identity-actions .web3-refresh-btn .icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+    fill: currentColor;
+}
+
+.web3-identity-actions .web3-refresh-btn:hover {
+    background: rgba(29, 155, 240, 0.1); /* 主题蓝浅色背景 */
+    color: var(--accent);             /* 文字/图标变成主题蓝 */
+}
+
 
 .web3-state .web3-skeleton {
     display: flex;
@@ -739,9 +754,29 @@ span.duration-badge {
 
 .web3-row {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 8px;
     min-height: 28px;
+}
+.web3-row-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+/* 刷新按钮里的 SVG 图标：跟随文字颜色 */
+.web3-row-content .web3-copy-btn .icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+    fill: currentColor;
+}
+
+.web3-row-content .web3-copy-btn:hover {
+    background: var(--accent-subtle); /* 主题蓝浅色背景 */
+    border-color: var(--accent-subtle);
+    color: var(--accent);             /* 文字/图标变成主题蓝 */
 }
 
 .web3-label {
@@ -787,6 +822,12 @@ span.duration-badge {
 .web3-balance-item {
     border-radius: 12px;
     padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 12px;
+    gap: 4px;
+    color: var(--text-secondary);
 }
 
 .web3-balance-label {
@@ -796,10 +837,10 @@ span.duration-badge {
 }
 
 .web3-balance-value {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 800;
     color: var(--text-primary);
-    line-height: 1.1;
+    line-height: 20px;
 }
 
 .web3-balance-hint {
@@ -1818,7 +1859,7 @@ html[data-bg="lightsout"] {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 4px 0 8px;
+    margin: 4px 0 16px;
 }
 
 .tw-score-title {
@@ -1830,7 +1871,7 @@ html[data-bg="lightsout"] {
     font-size: 20px;
     font-weight: 800;
     line-height: 1;
-    color: var(--text-primary);
+    color: rgb(29,155,240);
 }
 
 .tw-score-grid {
