@@ -62,10 +62,19 @@ function prepareElementOfWeb3(tpl: HTMLTemplateElement) {
     let scoreDetailDiv = tpl.content.getElementById("user-profile-score-details")!.cloneNode(true) as HTMLElement;
 
     (scoreDetailDiv.querySelector(".scale-score-title") as HTMLElement).innerText = t("scale_score_title");
+    (scoreDetailDiv.querySelector(".scale-score-detail") as HTMLElement).innerText = t("scale_score_detail");
+
     (scoreDetailDiv.querySelector(".activity-score-title") as HTMLElement).innerText = t("activity_score_title");
+    (scoreDetailDiv.querySelector(".activity-score-detail") as HTMLElement).innerText = t("activity_score_detail");
+
     (scoreDetailDiv.querySelector(".trust-score-title") as HTMLElement).innerText = t("trust_score_title");
+    (scoreDetailDiv.querySelector(".trust-score-detail") as HTMLElement).innerText = t("trust_score_detail");
+
     (scoreDetailDiv.querySelector(".brand-score-title") as HTMLElement).innerText = t("brand_score_title");
+    (scoreDetailDiv.querySelector(".brand-score-detail") as HTMLElement).innerText = t("brand_score_detail");
+
     (scoreDetailDiv.querySelector(".growth-score-title") as HTMLElement).innerText = t("growth_score_title");
+    (scoreDetailDiv.querySelector(".growth-score-detail") as HTMLElement).innerText = t("growth_score_detail");
 
     document.body.appendChild(scoreDetailDiv);
 }

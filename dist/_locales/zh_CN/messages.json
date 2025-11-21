@@ -178,19 +178,34 @@
     "message": "我的关注"
   },
   "scale_score_title": {
-    "message": "规模分(粉丝、关注比、被列入列表)"
+    "message": "规模分"
+  },
+  "scale_score_detail": {
+    "message": "(粉丝、关注比、被列入列表)"
   },
   "activity_score_title": {
-    "message": "活跃分(发推、点赞、媒体、创作者订阅)"
+    "message": "活跃分"
+  },
+  "activity_score_detail": {
+    "message": "(发推、点赞、媒体、创作者订阅)"
   },
   "trust_score_title": {
-    "message": "信任分(蓝标、高亮、附属标签)"
+    "message": "信任分"
+  },
+  "trust_score_detail": {
+    "message": "(蓝标、高亮、附属标签)"
   },
   "brand_score_title": {
-    "message": "品牌分(Banner、专业账号、隐藏订阅、简介)"
+    "message": "品牌分"
+  },
+  "brand_score_detail": {
+    "message": "(Banner、专业账号、隐藏订阅、简介)"
   },
   "growth_score_title": {
-    "message": "成长分(账号年龄)"
+    "message": "成长分"
+  },
+  "growth_score_detail": {
+    "message": "(账号年龄)"
   },
   "total_score_title": {
     "message": "等级分"
