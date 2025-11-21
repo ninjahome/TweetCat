@@ -1785,6 +1785,9 @@ html[data-bg="lightsout"] {
 
 .user-profile-score-details {
     position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     z-index: 99999;
     background: var(--bg-elevated);
     color: var(--text-primary);
@@ -1810,45 +1813,59 @@ html[data-bg="lightsout"] {
 /* 每一行 */
 .user-profile-score-details .score-detail-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
     margin: 2px 0;
 }
 
+.score-detail-title-detail {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
 /* 标签名 */
-.user-profile-score-details .score-label {
-    font-weight: 400;
+.user-profile-score-details .score-label-title {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 20px;
     margin-right: 6px;
-    color: #ffd36b;
+    color: var(--text-primary);
     white-space: nowrap;
 }
 
+.user-profile-score-details .score-label {
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
 /* 数值 */
 .user-profile-score-details .score-value {
     font-family: "Courier New", monospace;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
 }
 
 /* 不同分项可配色区分 */
-.user-profile-score-details .scale-score-title {
+.user-profile-score-details .activity-score-value {
     color: #2E8EF1;
 }
 
-.user-profile-score-details .activity-score-title {
+.user-profile-score-details .scale-score-value {
     color: #08CAAC;
 }
 
-.user-profile-score-details .trust-score-title {
+.user-profile-score-details .trust-score-value {
     color: #856AFB;
 }
 
-.user-profile-score-details .brand-score-title {
+.user-profile-score-details .brand-score-value {
     color: #FE456C;
 }
 
-.user-profile-score-details .growth-score-title {
+.user-profile-score-details .growth-score-value {
     color: #ffdb3a;
 }
 
