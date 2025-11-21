@@ -421,11 +421,11 @@ function renderCategoryList() {
 
     const counts = buildCategoryCountMap();
 
-    const allLabel = `${t("category_all")} (${counts.total})`;
+    const allLabel = `${t("category_all")}`;// (${counts.total})
     const allItem = createCategoryElement(ALL_FILTER, allLabel, true, counts);
     categoryList.appendChild(allItem);
 
-    const uncategorizedLabel = `${t("category_uncategorized")} (${counts.uncategorized})`;
+    const uncategorizedLabel = `${t("category_uncategorized")}`;// (${counts.uncategorized})
     const uncategorizedItem = createCategoryElement(UNCATEGORIZED_FILTER, uncategorizedLabel, true, counts);
     categoryList.appendChild(uncategorizedItem);
 
@@ -449,10 +449,13 @@ function createCategoryElement(
     category?: Category,
 ): HTMLElement {
     if (isBuiltin) {
-        const li = document.createElement("li");
-        li.className = "category-item";
+        // const li = document.createElement("li");
+        const li = categoryTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
+        li.querySelector(".category-actions").remove()
         li.dataset.filter = String(filter);
-        li.textContent = label;
+        li.querySelector(".category-name")!.textContent =  label;
+        if (filter===ALL_FILTER)        li.querySelector(".category-count")!.textContent = `${counts.total ?? 0}`;
+        if (filter===UNCATEGORIZED_FILTER)        li.querySelector(".category-count")!.textContent = `${counts.uncategorized ?? 0}`;
         li.addEventListener("click", () => {
             selectedFilter = filter;
             highlightCurrentFilter();
@@ -1245,9 +1248,9 @@ function handleSyncError(resp: any) {
 }
 
 function fillUserMeta(card: HTMLElement, user: UnifiedKOL) {
-    const locationElm = card.querySelector(".location") as HTMLElement | null;
+    // const locationElm = card.querySelector(".location") as HTMLElement | null;
     const locationText = user.location ? `📍 ${user.location}` : undefined;
-    setTextContentOrHide(locationElm, locationText);
+    // setTextContentOrHide(locationElm, locationText);
 
     const statsElm = card.querySelector(".stats") as HTMLElement | null;
     if (statsElm) {
@@ -1267,9 +1270,9 @@ function fillUserMeta(card: HTMLElement, user: UnifiedKOL) {
 
     const metaElm = card.querySelector(".meta") as HTMLElement | null;
     if (metaElm) {
-        const hasLocation = locationElm && !locationElm.classList.contains("hidden");
+        // const hasLocation = locationElm && !locationElm.classList.contains("hidden");
         const hasStats = statsElm && !statsElm.classList.contains("hidden");
-        metaElm.classList.toggle("hidden", !hasLocation && !hasStats);
+        metaElm.classList.toggle("hidden", !hasStats);
     }
 }
 
