@@ -157,6 +157,7 @@ a {
 
 .hasCategorylabel {
     border-radius: 9999px;
+    max-width: 180px;
 }
 
 .hasCategorylabel:hover {
@@ -1689,6 +1690,9 @@ html[data-bg="lightsout"] {
 .hasCategory {
     align-items: center;
     justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 

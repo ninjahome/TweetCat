@@ -644,7 +644,7 @@ body.processing-blocked {
     width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     gap: 4px;
 }
 
