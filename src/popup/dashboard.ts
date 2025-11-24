@@ -104,6 +104,8 @@ async function initWalletOrCreate(): Promise<void> {
     const walletCreateDiv = $Id("wallet-create-div") as HTMLButtonElement;//btn-create-wallet
     const walletInfoDiv = $Id("wallet-info-area") as HTMLDivElement;
     const walletSettingBtn = $Id("wallet-settings-btn") as HTMLButtonElement;
+    const walletMainBtn = $Id("btn-main-menu") as HTMLButtonElement;
+    const walletMainMenu = $Id("wallet-main-menu") as HTMLDivElement;
 
     currentWallet = await loadWallet();
     currentSettings = await loadWalletSettings();
@@ -124,10 +126,43 @@ async function initWalletOrCreate(): Promise<void> {
     walletCreateDiv.style.display = "none";
     walletInfoDiv.style.display = "block";
     (document.querySelector(".logo-container") as HTMLDivElement).style.display = 'none';
-    await populateWalletInfo(walletInfoDiv, currentWallet);
+    populateWalletInfo(walletInfoDiv, currentWallet).then();
+
     walletSettingBtn.onclick = () => {
         showView('#onboarding/wallet-setting', dashRouter);
     }
+
+    walletMainBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        walletMainMenu.classList.toggle("hidden");
+    });
+
+    walletMainMenu.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+    });
+
+    document.addEventListener("click", (ev) => {
+        const target = ev.target as Node | null;
+        if (!target) return;
+
+        // 已经是隐藏的，就不用处理了
+        if (walletMainMenu.classList.contains("hidden")) {
+            return;
+        }
+
+        // 点在菜单内部：不关闭
+        if (walletMainMenu.contains(target)) {
+            return;
+        }
+
+        // 点在按钮本身（或按钮里的 svg）：不关闭
+        if (walletMainBtn === target || walletMainBtn.contains(target)) {
+            return;
+        }
+
+        // 其它情况：关闭菜单
+        walletMainMenu.classList.add("hidden");
+    });
 
     setupWalletActionButtons();
     updateSettingsUI(currentSettings);
@@ -218,13 +253,13 @@ function updateSettingsUI(settings: WalletSettings): void {
     }
 }
 
-    function toggleSettingsPanel(): void {
-        const panel = $Id("settings-panel") as HTMLDivElement | null;
-        if (!panel) return;
-        const willOpen = !panel.classList.contains("open");
-        panel.classList.toggle("open", willOpen);
-        panel.classList.toggle("hidden", !willOpen);
-    }
+function toggleSettingsPanel(): void {
+    const panel = $Id("settings-panel") as HTMLDivElement | null;
+    if (!panel) return;
+    const willOpen = !panel.classList.contains("open");
+    panel.classList.toggle("open", willOpen);
+    panel.classList.toggle("hidden", !willOpen);
+}
 
 async function handleSaveSettings(): Promise<void> {
     const infuraInput = $Id("infura-project-id") as HTMLInputElement | null;
