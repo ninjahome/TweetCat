@@ -814,7 +814,6 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     color: #1d9bf0;
     z-index: 999;
     overflow: hidden;
-    width: 100%;
 }
 
 .category-dot {
