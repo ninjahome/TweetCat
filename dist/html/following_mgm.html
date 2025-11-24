@@ -92,7 +92,14 @@
             <img class="user-avatar" src="" alt="" />
         </div>
         <div class="name-row">
-            <div class="name"></div>
+            <div style="display: grid; grid-template-columns: 3fr 2fr; align-items: center; gap: 6px">
+                <div class="name"></div>
+                <div class="category-badge hidden">
+                    <span class="category-dot"></span>
+                    <span class="category-name"></span>
+                </div>
+            </div>
+
             <div class="handle"></div>
             <div>
                 <button class="sync-btn hidden" title="同步账号信息">
@@ -117,10 +124,6 @@
                 <div class="bio-text"></div>
                 <div class="bio-tooltip"></div>
             </div>
-        </div>
-        <div class="category-badge hidden">
-            <span class="category-dot"></span>
-            <span class="category-name"></span>
         </div>
     </div>
 </template>

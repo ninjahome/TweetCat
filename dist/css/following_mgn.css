@@ -656,6 +656,14 @@ body.processing-blocked {
     text-overflow: ellipsis;
 }
 
+.user-card .category-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;  /* 或 flex: 1; */
+    max-width: 100%;
+    min-width: 0;           /* 在 flex 里允许缩小 */
+}
 .user-card .handle {
     font-size: 14px;
     font-weight: 400;
@@ -796,9 +804,6 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 /* ============ 分类颜色与关注状态融合 ============ */
 /* 改造后的分类徽标容器 */
 .user-card .category-badge {
-    position: absolute;
-    top: 12px;
-    right: 16px;
     font-size: 12px;
     background: rgba(29, 155, 240, 0.1);
     padding: 6px 16px;
@@ -808,6 +813,8 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     gap: 4px;
     color: #1d9bf0;
     z-index: 999;
+    overflow: hidden;
+    width: 100%;
 }
 
 .category-dot {
@@ -815,6 +822,7 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     height: 8px;
     border-radius: 50%;
     background: #1d9bf0; /* 实际渲染时由 JS 设置具体色值 */
+    flex-shrink: 0;
 }
 
 /* 左侧彩条区分是否关注；与你现有的绿色/灰色逻辑对齐 */
