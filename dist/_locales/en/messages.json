@@ -371,5 +371,11 @@
   },
   "new_web3_id": {
     "message": "New Web3 ID"
+  },
+  "ipfs_password_title": {
+    "message": "Please enter the decryption password."
+  },
+  "ipfs_password_msg": {
+    "message": "Used for decrypting Pinata/Lighthouse/custom KEY"
   }
 }

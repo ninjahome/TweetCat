@@ -371,5 +371,11 @@
   },
   "new_web3_id": {
     "message": "创建 Web3 身份"
+  },
+  "ipfs_password_title": {
+    "message": "请输入解密口令"
+  },
+  "ipfs_password_msg": {
+    "message": "请输入解密口令"
   }
 }

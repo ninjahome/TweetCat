@@ -109,6 +109,18 @@ let commInputDialog: HTMLDivElement | null;
 let dialogInput: HTMLInputElement | null;
 let confirmNewCategoryBtn: HTMLButtonElement | null;
 let cancelNewCategoryBtn: HTMLButtonElement | null;
+
+
+let passwordModal: HTMLDivElement | null;
+let passwordInput: HTMLInputElement | null;
+let passwordCancelBtn: HTMLButtonElement | null;
+let passwordConfirmBtn: HTMLButtonElement | null;
+
+// 当前一次密码弹窗的 resolve
+let passwordResolve: ((value: string | null) => void) | null = null;
+
+
+
 let confirmModal: HTMLDivElement | null;
 let confirmMessage: HTMLParagraphElement | null;
 let cancelConfirmBtn: HTMLButtonElement | null;
@@ -157,6 +169,13 @@ function initDomRefs(): void {
     cancelConfirmBtn = $Id("btn-cancel-confirm") as HTMLButtonElement | null;
     confirmConfirmBtn = $Id("btn-confirm-confirm") as HTMLButtonElement | null;
 
+
+    passwordModal = $Id("modal-password-dialog") as HTMLDivElement | null;
+    passwordInput = $Id("password-input") as HTMLInputElement | null;
+    passwordCancelBtn = $Id("btn-cancel-password") as HTMLButtonElement | null;
+    passwordConfirmBtn = $Id("btn-confirm-password") as HTMLButtonElement | null;
+
+
     processingOverlay = $Id("unfollow-processing-overlay") as HTMLDivElement | null;
 
     // ===== 🌍 初始化翻译（整合 applyTranslations） =====
@@ -181,6 +200,24 @@ function initDomRefs(): void {
     $Id("modal-confirm-title")!.textContent = t("confirm_action");
     cancelConfirmBtn!.textContent = t("cancel");
     confirmConfirmBtn!.textContent = t("confirm");
+
+
+
+    const pwdTitleEl = $Id("modal-password-title") as HTMLElement | null;
+    if (pwdTitleEl) {
+        pwdTitleEl.textContent = t("ipfs_password_title");
+    }
+    if (passwordInput) {
+        passwordInput.placeholder = t("ipfs_password_msg");
+    }
+    if (passwordCancelBtn) {
+        passwordCancelBtn.textContent = t("cancel");
+    }
+    if (passwordConfirmBtn) {
+        passwordConfirmBtn.textContent = t("confirm");
+        passwordConfirmBtn.disabled = true;
+    }
+
 
     exportIpfsBtn = $Id("export-ipfs-btn") as HTMLButtonElement | null;
 
@@ -251,6 +288,34 @@ function bindEvents() {
         }
     });
 
+    passwordCancelBtn?.addEventListener("click", () => {
+        closePasswordModal(null);
+    });
+    passwordConfirmBtn?.addEventListener("click", () => {
+        if (!passwordInput) return;
+        const val = passwordInput.value.trim();
+        if (!val) return;
+        closePasswordModal(val);
+    });
+    passwordInput?.addEventListener("input", () => {
+        if (!passwordInput || !passwordConfirmBtn) return;
+        passwordConfirmBtn.disabled = passwordInput.value.trim().length === 0;
+    });
+    passwordInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            if (passwordConfirmBtn && !passwordConfirmBtn.disabled && passwordInput) {
+                closePasswordModal(passwordInput.value.trim());
+            }
+        }
+    });
+    passwordModal?.addEventListener("click", (event) => {
+        if (event.target === passwordModal) {
+            // 点击遮罩，视为取消
+            closePasswordModal(null);
+        }
+    });
+
     document.addEventListener("keydown", handleGlobalKeydown);
 
     exportIpfsBtn?.addEventListener("click", async () => {
@@ -301,6 +366,8 @@ function handleGlobalKeydown(event: KeyboardEvent) {
         hideAddCategoryModal();
     } else if (activeModal === confirmModal) {
         hideConfirmModal();
+    }else if (activeModal === passwordModal) {
+        closePasswordModal(null);
     }
 }
 
@@ -375,6 +442,47 @@ async function handleConfirmModalConfirm() {
         hideConfirmModal();
     }
 }
+
+
+function resetPasswordModal() {
+    if (!passwordInput || !passwordConfirmBtn) return;
+    passwordInput.value = "";
+    passwordConfirmBtn.disabled = true;
+}
+
+/**
+ * 打开密码输入弹窗，返回输入的密码字符串（取消则返回 null）
+ */
+function openPasswordModal(): Promise<string | null> {
+    return new Promise<string | null>((resolve) => {
+        if (!passwordModal || !passwordInput || !passwordConfirmBtn) {
+            resolve(null);
+            return;
+        }
+        passwordResolve = resolve;
+        resetPasswordModal();
+        openModal(passwordModal);
+        window.setTimeout(() => {
+            passwordInput?.focus();
+        }, 0);
+    });
+}
+
+/**
+ * 关闭密码弹窗，并把结果传给上一次 openPasswordModal 的 Promise
+ */
+function closePasswordModal(result: string | null) {
+    if (passwordModal) {
+        closeModal(passwordModal);
+    }
+    resetPasswordModal();
+    const resolver = passwordResolve;
+    passwordResolve = null;
+    if (resolver) {
+        resolver(result);
+    }
+}
+
 
 async function refreshData() {
     const view = await buildUnifiedKOLView();
@@ -1287,8 +1395,10 @@ function attachUserCardEvents(card: HTMLElement, user: UnifiedKOL) {
 
 
 async function promptPasswordOnce(): Promise<string> {
-    const pwd = window.prompt("请输入解密口令（用于解密 Pinata/Lighthouse/自定义授权）") ?? "";
-    if (!pwd.trim()) throw new Error("已取消：未输入口令");
+    const pwd = await openPasswordModal();
+    if (!pwd || !pwd.trim()) {
+        throw new Error("已取消：未输入口令");
+    }
     return pwd.trim();
 }
 
@@ -1321,20 +1431,31 @@ async function loadLatestSnapshotCid(walletAddress: string): Promise<void> {
 }
 
 
-async function handleExportSnapshotToIpfs(walletAddress: string, onSuccess?: (cid: string) => void): Promise<void> {
+async function handleExportSnapshotToIpfs(
+    walletAddress: string,
+    onSuccess?: (cid: string) => void
+): Promise<void> {
+    const wallet = walletAddress.toLowerCase();
+    let settings: any;
+    let password: string | undefined;
+
     try {
-        const wallet = walletAddress.toLowerCase();
+        // 1️⃣ 先拿设置 & 询问密码，这一步不显示全局 loading
+        settings = await ensureSettings(); // 不解密，仅拿配置判断
+        const needPassword = ipfsNeedsPassword(settings);
+        if (needPassword) {
+            password = await promptPasswordOnce(); // 这里会弹你自定义的密码弹窗
+        }
+
+        // 如果上面用户取消了，会 throw "已取消：未输入口令" 被下面 catch 掉
+
+        // 2️⃣ 真正开始上传时再显示全局 loading
         showLoading("正在上传 IPFS 快照…");
 
-        const settings = await ensureSettings();  // 不解密，仅拿配置判断
-        const needPassword = ipfsNeedsPassword(settings);
-        const password = needPassword ? await promptPasswordOnce() : undefined;
-
-
-        // 1) 组装快照（直接用内存中的 categories / unifiedKols）
+        // 3️⃣ 组装快照（直接用内存中的 categories / unifiedKols）
         const cats = categories
             .filter(c => typeof c.id === "number")
-            .map(c => ({id: c.id!, name: c.catName}));
+            .map(c => ({ id: c.id!, name: c.catName }));
 
         const assigns = unifiedKols
             .filter(u => typeof u.categoryId === "number")
@@ -1351,22 +1472,34 @@ async function handleExportSnapshotToIpfs(walletAddress: string, onSuccess?: (ci
             assignments: assigns,
         };
 
-        const {createdAt, ...snapshotCore} = snapshot;
+        const { createdAt, ...snapshotCore } = snapshot;
+
         const snapshotCid = await uploadJson(settings, snapshotCore, wallet, password);
         showNotification(`已上传到 IPFS：${snapshotCid}（已复制）`, "info");
         onSuccess?.(snapshotCid);
 
-        const {manifest, cid, oldSnapshotCids} = await updateFollowingSnapshot(wallet, snapshotCid);
-        console.log("------>>> newest manifest:", manifest, cid, oldSnapshotCids)
+        const { manifest, cid, oldSnapshotCids } = await updateFollowingSnapshot(wallet, snapshotCid);
+        console.log("------>>> newest manifest:", manifest, cid, oldSnapshotCids);
+
         for (const oldCid of oldSnapshotCids) {
             await unpinCid(settings, oldCid, password);
         }
     } catch (err) {
-        if (err instanceof Error && err.message === ERR_LOCAL_IPFS_HANDOFF) {
+        const e = err as Error;
+
+        // 本地节点接管：沿用你原来的特殊分支
+        if (e.message === ERR_LOCAL_IPFS_HANDOFF) {
             return;
         }
-        showNotification((err as Error).message ?? "上传失败", "error");
+
+        // 用户在密码弹窗里取消：这里我按“静默取消”处理，不弹 error
+        if (e.message === "已取消：未输入口令") {
+            return;
+        }
+
+        showNotification(e.message ?? "上传失败", "error");
     } finally {
+        // 即使前面因为没 showLoading，这里 hideLoading 也无害
         hideLoading();
     }
 }
