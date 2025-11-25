@@ -20,7 +20,7 @@ import {FollowingUser, removeLocalFollowings, replaceFollowingsPreservingCategor
 import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
-import {hideLoading, showLoading, showNotification} from "./common";
+import {$Id, hideLoading, showLoading, showNotification} from "./common";
 import {buildGatewayUrls, ensureSettings, LIGHTHOUSE_GATEWAY, unpinCid, uploadJson} from "../wallet/ipfs_api";
 import {ERR_LOCAL_IPFS_HANDOFF} from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
@@ -105,8 +105,8 @@ let selectionCounter: HTMLSpanElement;
 let categoryTemplate: HTMLTemplateElement;
 let userTemplate: HTMLTemplateElement;
 let newCategoryBtn: HTMLButtonElement;
-let addCategoryModal: HTMLDivElement | null;
-let newCategoryInput: HTMLInputElement | null;
+let commInputDialog: HTMLDivElement | null;
+let dialogInput: HTMLInputElement | null;
 let confirmNewCategoryBtn: HTMLButtonElement | null;
 let cancelNewCategoryBtn: HTMLButtonElement | null;
 let confirmModal: HTMLDivElement | null;
@@ -123,41 +123,41 @@ let latestSnapshotCid: string | null = null;
 // ===== DOM 初始化封装 =====
 function initDomRefs(): void {
     initI18n();
-    categoryList = document.getElementById("category-list") as HTMLUListElement;
-    userList = document.getElementById("user-list") as HTMLDivElement;
-    emptyState = document.getElementById("empty-state") as HTMLDivElement;
-    noUsersMessage = document.getElementById("no-users-message") as HTMLDivElement;
+    categoryList = $Id("category-list") as HTMLUListElement;
+    userList = $Id("user-list") as HTMLDivElement;
+    emptyState = $Id("empty-state") as HTMLDivElement;
+    noUsersMessage = $Id("no-users-message") as HTMLDivElement;
 
     syncButtons = [
-        document.getElementById("sync-btn") as HTMLButtonElement,
-        document.getElementById("empty-sync-btn") as HTMLButtonElement,
+        $Id("sync-btn") as HTMLButtonElement,
+        $Id("empty-sync-btn") as HTMLButtonElement,
     ];
-    syncStatus = document.getElementById("sync-status") as HTMLSpanElement;
+    syncStatus = $Id("sync-status") as HTMLSpanElement;
 
-    assignSelect = document.getElementById("assign-category-select") as HTMLSelectElement;
-    assignBtn = document.getElementById("assign-category-btn") as HTMLButtonElement;
-    clearSelectionBtn = document.getElementById("clear-selection-btn") as HTMLButtonElement;
-    unfollowSelectedBtn = document.getElementById("unfollow-selected-btn") as HTMLButtonElement | null;
+    assignSelect = $Id("assign-category-select") as HTMLSelectElement;
+    assignBtn = $Id("assign-category-btn") as HTMLButtonElement;
+    clearSelectionBtn = $Id("clear-selection-btn") as HTMLButtonElement;
+    unfollowSelectedBtn = $Id("unfollow-selected-btn") as HTMLButtonElement | null;
 
-    toolbar = document.getElementById("toolbar") as HTMLDivElement;
-    selectionCounter = document.getElementById("selection-counter") as HTMLSpanElement;
+    toolbar = $Id("toolbar") as HTMLDivElement;
+    selectionCounter = $Id("selection-counter") as HTMLSpanElement;
 
-    categoryTemplate = document.getElementById("category-item-template") as HTMLTemplateElement;
-    userTemplate = document.getElementById("user-card-template") as HTMLTemplateElement;
+    categoryTemplate = $Id("category-item-template") as HTMLTemplateElement;
+    userTemplate = $Id("user-card-template") as HTMLTemplateElement;
 
-    newCategoryBtn = document.getElementById("btn-new-category") as HTMLButtonElement;
+    newCategoryBtn = $Id("btn-new-category") as HTMLButtonElement;
 
-    addCategoryModal = document.getElementById("modal-add-category") as HTMLDivElement | null;
-    newCategoryInput = document.getElementById("new-category-input") as HTMLInputElement | null;
-    confirmNewCategoryBtn = document.getElementById("btn-confirm-new-category") as HTMLButtonElement | null;
-    cancelNewCategoryBtn = document.getElementById("btn-cancel-new-category") as HTMLButtonElement | null;
+    commInputDialog = $Id("modal-input-dialog") as HTMLDivElement | null;
+    dialogInput = $Id("dialog-input") as HTMLInputElement | null;
+    confirmNewCategoryBtn = $Id("btn-confirm-new-category") as HTMLButtonElement | null;
+    cancelNewCategoryBtn = $Id("btn-cancel-new-category") as HTMLButtonElement | null;
 
-    confirmModal = document.getElementById("modal-confirm") as HTMLDivElement | null;
-    confirmMessage = document.getElementById("confirm-message") as HTMLParagraphElement | null;
-    cancelConfirmBtn = document.getElementById("btn-cancel-confirm") as HTMLButtonElement | null;
-    confirmConfirmBtn = document.getElementById("btn-confirm-confirm") as HTMLButtonElement | null;
+    confirmModal = $Id("modal-confirm") as HTMLDivElement | null;
+    confirmMessage = $Id("confirm-message") as HTMLParagraphElement | null;
+    cancelConfirmBtn = $Id("btn-cancel-confirm") as HTMLButtonElement | null;
+    confirmConfirmBtn = $Id("btn-confirm-confirm") as HTMLButtonElement | null;
 
-    processingOverlay = document.getElementById("unfollow-processing-overlay") as HTMLDivElement | null;
+    processingOverlay = $Id("unfollow-processing-overlay") as HTMLDivElement | null;
 
     // ===== 🌍 初始化翻译（整合 applyTranslations） =====
     document.querySelector(".sidebar-header h2")!.textContent = t("categories_title");
@@ -172,21 +172,21 @@ function initDomRefs(): void {
     emptyState.querySelector("p")!.textContent = t("empty_hint_no_sync");
     noUsersMessage.textContent = t("no_users_in_category");
 
-    const input = newCategoryInput!;
+    const input = dialogInput!;
     input.placeholder = t("enter_category_name");
-    document.getElementById("modal-add-category-title")!.textContent = t("create_new_category");
+    $Id("modal-add-category-title")!.textContent = t("create_new_category");
     cancelNewCategoryBtn!.textContent = t("cancel");
     confirmNewCategoryBtn!.textContent = t("confirm");
 
-    document.getElementById("modal-confirm-title")!.textContent = t("confirm_action");
+    $Id("modal-confirm-title")!.textContent = t("confirm_action");
     cancelConfirmBtn!.textContent = t("cancel");
     confirmConfirmBtn!.textContent = t("confirm");
 
-    exportIpfsBtn = document.getElementById("export-ipfs-btn") as HTMLButtonElement | null;
+    exportIpfsBtn = $Id("export-ipfs-btn") as HTMLButtonElement | null;
 
-    ipfsLatestCidSpan = document.getElementById("ipfs-latest-cid") as HTMLSpanElement | null;
-    ipfsLatestOpenBtn = document.getElementById("ipfs-latest-open") as HTMLButtonElement | null;
-    ipfsLatestCopyBtn = document.getElementById("ipfs-latest-copy") as HTMLButtonElement | null;
+    ipfsLatestCidSpan = $Id("ipfs-latest-cid") as HTMLSpanElement | null;
+    ipfsLatestOpenBtn = $Id("ipfs-latest-open") as HTMLButtonElement | null;
+    ipfsLatestCopyBtn = $Id("ipfs-latest-copy") as HTMLButtonElement | null;
 }
 
 type ConfirmCallback = () => void | Promise<void>;
@@ -228,15 +228,15 @@ function bindEvents() {
     confirmNewCategoryBtn?.addEventListener("click", () => {
         void handleAddCategoryConfirm();
     });
-    newCategoryInput?.addEventListener("input", handleAddCategoryInputChange);
-    newCategoryInput?.addEventListener("keydown", (event) => {
+    dialogInput?.addEventListener("input", handleAddCategoryInputChange);
+    dialogInput?.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
             void handleAddCategoryConfirm();
         }
     });
-    addCategoryModal?.addEventListener("click", (event) => {
-        if (event.target === addCategoryModal) {
+    commInputDialog?.addEventListener("click", (event) => {
+        if (event.target === commInputDialog) {
             hideAddCategoryModal();
         }
     });
@@ -297,7 +297,7 @@ function handleGlobalKeydown(event: KeyboardEvent) {
         return;
     }
     event.preventDefault();
-    if (activeModal === addCategoryModal) {
+    if (activeModal === commInputDialog) {
         hideAddCategoryModal();
     } else if (activeModal === confirmModal) {
         hideConfirmModal();
@@ -305,33 +305,33 @@ function handleGlobalKeydown(event: KeyboardEvent) {
 }
 
 function handleAddCategoryInputChange() {
-    if (!newCategoryInput || !confirmNewCategoryBtn) return;
-    const hasValue = newCategoryInput.value.trim().length > 0;
+    if (!dialogInput || !confirmNewCategoryBtn) return;
+    const hasValue = dialogInput.value.trim().length > 0;
     confirmNewCategoryBtn.disabled = !hasValue;
 }
 
 function resetAddCategoryModal() {
-    if (!newCategoryInput || !confirmNewCategoryBtn) return;
-    newCategoryInput.value = "";
+    if (!dialogInput || !confirmNewCategoryBtn) return;
+    dialogInput.value = "";
     confirmNewCategoryBtn.disabled = true;
 }
 
 function showAddCategoryModal() {
     resetAddCategoryModal();
-    openModal(addCategoryModal);
+    openModal(commInputDialog);
     window.setTimeout(() => {
-        newCategoryInput?.focus();
+        dialogInput?.focus();
     }, 0);
 }
 
 function hideAddCategoryModal() {
     resetAddCategoryModal();
-    closeModal(addCategoryModal);
+    closeModal(commInputDialog);
 }
 
 async function handleAddCategoryConfirm() {
-    if (!newCategoryInput || !confirmNewCategoryBtn) return;
-    const name = newCategoryInput.value.trim();
+    if (!dialogInput || !confirmNewCategoryBtn) return;
+    const name = dialogInput.value.trim();
     if (!name) return;
     confirmNewCategoryBtn.disabled = true;
     try {
@@ -339,7 +339,7 @@ async function handleAddCategoryConfirm() {
         hideAddCategoryModal();
     } catch (error) {
         console.warn("------>>> add category failed", error);
-        confirmNewCategoryBtn.disabled = newCategoryInput.value.trim().length === 0;
+        confirmNewCategoryBtn.disabled = dialogInput.value.trim().length === 0;
         confirmNewCategoryBtn.focus();
     }
 }

@@ -693,30 +693,6 @@ export async function verifySignature({
     return recovered;
 }
 
-function showAlert(title: string, message: string) {
-    const alertBox = $Id('custom-alert');
-    const alertTitle = $Id('alert-title');
-    const alertMessage = $Id('alert-message');
-    const alertOk = $Id('alert-ok');
-
-    if (!alertBox || !alertTitle || !alertMessage || !alertOk) {
-        console.error('Alert elements not found.');
-        return;
-    }
-
-    // 设置标题和消息
-    alertTitle.textContent = title;
-    alertMessage.textContent = message;
-    alertOk.textContent = t('ok');
-
-    // 显示弹窗
-    alertBox.style.display = 'block';
-
-    // 按下 OK 按钮后隐藏
-    alertOk.onclick = () => {
-        alertBox.style.display = 'none';
-    };
-}
 
 type PendingField = { label: string; value: string; apply: (block: EncryptedBlock) => void; };
 

@@ -1,3 +1,6 @@
+import {EncryptedBlock, IpfsProvider, IpfsSettings, PROVIDER_TYPE_TWEETCAT} from "../wallet/ipfs_settings";
+import {t} from "../common/i18n";
+
 let notificationTimer: number | null = null;
 let notificationBar: HTMLDivElement | null = null;
 
@@ -59,4 +62,29 @@ export function $(sel: string) {
 
 export function $input(sel: string) {
     return document.querySelector(sel) as HTMLInputElement | null;
+}
+
+export function showAlert(title: string, message: string) {
+    const alertBox = $Id('custom-alert');
+    const alertTitle = $Id('alert-title');
+    const alertMessage = $Id('alert-message');
+    const alertOk = $Id('alert-ok');
+
+    if (!alertBox || !alertTitle || !alertMessage || !alertOk) {
+        console.error('Alert elements not found.');
+        return;
+    }
+
+    // 设置标题和消息
+    alertTitle.textContent = title;
+    alertMessage.textContent = message;
+    alertOk.textContent = t('ok');
+
+    // 显示弹窗
+    alertBox.style.display = 'block';
+
+    // 按下 OK 按钮后隐藏
+    alertOk.onclick = () => {
+        alertBox.style.display = 'none';
+    };
 }
