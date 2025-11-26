@@ -906,37 +906,59 @@ export function initIpfsSettingsView() {
     });
 
 
-    $Id('ipfs-provider-set-tweetcat')?.addEventListener('click', () => {
+    const set_default_node = $Id('ipfs-provider-set-tweetcat');
+    set_default_node.textContent=t("use_office_ipfs_node")
+    set_default_node?.addEventListener('click', () => {
         setTweetcatAsDefault().then();
     });
+    const default_node_noti=$Id('tweetcat-node-notification')
+    default_node_noti.textContent=t('default_node_noti')
 
-    $Id('pinata-reveal-fill')?.addEventListener('click', () => {
+    const pinata_decrypt_btn= $Id('pinata-reveal-fill')
+    pinata_decrypt_btn.textContent=t("decrypt_config")
+    pinata_decrypt_btn?.addEventListener('click', () => {
         revealAndFill(PROVIDER_TYPE_PINATA).then();
     });
-    $Id('pinata-save')?.addEventListener('click', () => {
+    const pinata_save_btn= $Id('pinata-save')
+    pinata_save_btn.textContent=t("save_config")
+    pinata_save_btn?.addEventListener('click', () => {
         saveProviderSecrets(PROVIDER_TYPE_PINATA).then();
     });
-    $Id('pinata-clear')?.addEventListener('click', () => {
+    const pinata_clean_btn= $Id('pinata-clear')
+    pinata_clean_btn.textContent=t("clean_config")
+    pinata_clean_btn?.addEventListener('click', () => {
         clearProviderSecrets(PROVIDER_TYPE_PINATA).then();
     });
 
-    $Id('lighthouse-reveal-fill')?.addEventListener('click', () => {
+    const lighthouse_decrypt_btn= $Id('lighthouse-reveal-fill')
+    lighthouse_decrypt_btn.textContent=t("decrypt_config")
+    lighthouse_decrypt_btn?.addEventListener('click', () => {
         revealAndFill(PROVIDER_TYPE_LIGHTHOUSE).then();
     });
-    $Id('lighthouse-save')?.addEventListener('click', () => {
+    const lighthouse_save_btn= $Id('lighthouse-save')
+    lighthouse_save_btn.textContent=t("save_config")
+    lighthouse_save_btn?.addEventListener('click', () => {
         saveProviderSecrets(PROVIDER_TYPE_LIGHTHOUSE).then();
     });
-    $Id('lighthouse-clear')?.addEventListener('click', () => {
+    const lighthouse_clean_btn= $Id('lighthouse-clear')
+    lighthouse_clean_btn.textContent=t("clean_config")
+    lighthouse_clean_btn?.addEventListener('click', () => {
         clearProviderSecrets(PROVIDER_TYPE_LIGHTHOUSE).then();
     });
 
-    $Id('custom-reveal-fill')?.addEventListener('click', () => {
+    const custom_decrypt_btn= $Id('custom-reveal-fill')
+    custom_decrypt_btn.textContent=t("decrypt_config")
+    custom_decrypt_btn?.addEventListener('click', () => {
         revealAndFill(PROVIDER_TYPE_CUSTOM).then();
     });
-    $Id('custom-save')?.addEventListener('click', () => {
+    const custom_save_btn= $Id('custom-save')
+    custom_save_btn.textContent=t("save_config")
+    custom_save_btn?.addEventListener('click', () => {
         saveProviderSecrets(PROVIDER_TYPE_CUSTOM).then();
     });
-    $Id('custom-clear')?.addEventListener('click', () => {
+    const custom_clean_btn= $Id('custom-clear')
+    custom_clean_btn.textContent=t("clean_config")
+    custom_clean_btn?.addEventListener('click', () => {
         clearProviderSecrets(PROVIDER_TYPE_CUSTOM).then();
     });
 

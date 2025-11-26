@@ -377,5 +377,20 @@
   },
   "ipfs_password_msg": {
     "message": "Used for decrypting Pinata/Lighthouse/custom KEY"
+  },
+  "use_office_ipfs_node": {
+    "message": "Use TweetCat Node"
+  },
+  "clean_config": {
+    "message": "Remove Node"
+  },
+  "decrypt_config": {
+    "message": "Decrypt Keys"
+  },
+  "save_config": {
+    "message": "Save Keys"
+  },
+  "default_node_noti": {
+    "message": "Using the TweetCat official IPFS gateway and upload service is free for you, but upload speed and the maximum file size are limited, so it’s more suitable for smaller and less frequent uploads. As a Web3 product, we encourage you to use nodes that you control yourself: you can configure third-party services like Pinata and Lighthouse below, or connect to a locally running IPFS node, so that the security, availability, and scalability of your data stay in your own hands."
   }
 }

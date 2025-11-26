@@ -377,5 +377,20 @@
   },
   "ipfs_password_msg": {
     "message": "请输入解密口令"
+  },
+  "use_office_ipfs_node": {
+    "message": "使用官方 ipfs 节点"
+  },
+  "clean_config": {
+    "message": "清空配置"
+  },
+  "decrypt_config": {
+    "message": "解密配置"
+  },
+  "save_config": {
+    "message": "保存配置"
+  },
+  "default_node_noti": {
+    "message": "使用 TweetCat 官方托管的 IPFS 网关和上传服务对你是免费的，但上传速度和单个文件大小都会受到一定限制，更适合小体积、低频次的数据。作为一个 Web3 产品，我们更鼓励你使用自己掌控的节点：你可以在下方配置 Pinata、Lighthouse 等第三方服务，也可以连接本地运行的 IPFS 节点，让数据的安全性、可用性和扩展性都掌握在自己手中。"
   }
 }
