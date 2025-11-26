@@ -471,6 +471,42 @@
   },
   "sync_user_now": {
     "message": "同步账号信息"
+  },
+  "ipfs_local_page_title": {
+    "message": "TweetCat — IPFS 快照"
+  },
+  "ipfs_local_page_subtitle": {
+    "message": "Snapshot v1 预览与本地 IPFS Pin 管理"
+  },
+  "ipfs_local_refresh": {
+    "message": "从后台更新快照"
+  },
+  "ipfs_local_upload": {
+    "message": "上传并 Pin 到本地 IPFS"
+  },
+  "ipfs_local_json_title": {
+    "message": "SnapshotV1（只读）"
+  },
+  "ipfs_local_results_title": {
+    "message": "上次上传结果"
+  },
+  "ipfs_local_cid_label": {
+    "message": "CID："
+  },
+  "ipfs_local_gateway_local_label": {
+    "message": "本地网关："
+  },
+  "ipfs_local_gateway_public_label": {
+    "message": "公共网关："
+  },
+  "ipfs_local_gateway_unset": {
+    "message": "（未配置）"
+  },
+  "ipfs_local_footer_note": {
+    "message": "本系统完全开源，支持自主管理，分布式存储"
+  },
+  "ipfs_local_snapshot_time": {
+    "message": "快照时间："
   }
 }
 

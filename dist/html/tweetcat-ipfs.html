@@ -2,8 +2,10 @@
 <div id="tc-root" class="tc-root">
     <header class="tc-header">
         <img src="" id='tc-logo' alt="TweetCat" class="tc-logo">
-        <h1>TweetCat — IPFS Snapshot</h1>
-        <div class="tc-sub">Snapshot v1 preview & local IPFS pinning</div>
+        <h1 id="tc-title">TweetCat — IPFS Snapshot</h1>
+        <div id="tc-subtitle" class="tc-sub">
+            Snapshot v1 preview & local IPFS pinning
+        </div>
     </header>
 
     <main class="tc-main">
@@ -14,12 +16,12 @@
         </section>
 
         <section class="tc-json-preview">
-            <h2>SnapshotV1（只读）</h2>
+            <h2 id="tc-json-title">SnapshotV1（只读）</h2>
             <pre id="tc-json" class="tc-json" contenteditable="false" spellcheck="false"></pre>
         </section>
 
         <section class="tc-results hidden" id="tc-results">
-            <h3>上次上传结果</h3>
+            <h3 id="tc-results-title">上次上传结果</h3>
             <div class="tc-cid-row">
                 <span>CID:</span>
                 <a id="tc-cid-link" href="#" target="_blank" rel="noopener"></a>
@@ -28,18 +30,18 @@
 
             <div class="tc-gateway-links">
                 <div class="tc-link">
-                    <span>本地网关：</span>
+                    <span id="tc-local-gw-label">本地网关：</span>
                     <a id="tc-link-local" href="#" target="_blank" rel="noopener">（未配置）</a>
                 </div>
                 <div class="tc-link">
-                    <span>公共网关：</span>
+                    <span id="tc-public-gw-label">公共网关：</span>
                     <a id="tc-link-public" href="#" target="_blank" rel="noopener">ipfs.io</a>
                 </div>
             </div>
         </section>
 
         <footer class="tc-footer">
-            <small>本系统完全开源，支持自主管理，分布式存储</small>
+            <small id="tc-footer-note">本系统完全开源，支持自主管理，分布式存储</small>
         </footer>
     </main>
 </div>

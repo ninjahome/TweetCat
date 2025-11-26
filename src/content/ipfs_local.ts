@@ -3,12 +3,14 @@ import {addCustomStyles, parseContentHtml, sendMsgToService} from "../common/uti
 import {MsgType} from "../common/consts";
 import {SnapshotV1} from "../common/msg_obj";
 import {getManifest, updateFollowingSnapshot} from "../wallet/ipfs_manifest";
+import {initI18n, t} from "../common/i18n";
 
 const HASH_PREFIX = '#tweetcat-ipfs';
 
 let walletFromHash: string | null = null;
 let gatewayBase: string = 'http://127.0.0.1:8080/ipfs'
 document.addEventListener('DOMContentLoaded', async () => {
+    initI18n();
     if (!location.hash.startsWith(HASH_PREFIX)) {
         return;
     }
@@ -17,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log("-------->>>>>> mf:", mf);
     });
     await onTweetCatIpfsPageLoaded();
+    initLocalIpfsTexts();
 });
 
 function parseWalletFromHash(): string | null {
@@ -135,7 +138,7 @@ async function requestAndRenderSnapshot() {
 
         const snapshot = rsp.data as SnapshotV1;
         renderJson(snapshot);
-        setStatus(`快照时间：${snapshot.createdAt}`);
+        setStatus(`${t("ipfs_local_snapshot_time")}${snapshot.createdAt}`);
     } catch (err) {
         console.error('request snapshot error', err);
         setStatus('请求后台快照失败：' + (err as Error).message);
@@ -258,4 +261,83 @@ async function uploadJsonToLocalKubo(obj: any, apiBase: string): Promise<string>
 function showStatus(s: string) {
     setStatus(s);
     console.info('[TweetCat IPFS helper] ', s);
+}
+
+function initLocalIpfsTexts(): void {
+    // 页面标题
+    document.title = t("ipfs_local_page_title");
+
+    // logo 的 alt
+    const logo = document.getElementById("tc-logo") as HTMLImageElement | null;
+    if (logo) {
+        logo.alt = t("APP_Name");
+    }
+
+    // 头部标题和副标题
+    const titleEl = document.getElementById("tc-title");
+    if (titleEl) {
+        titleEl.textContent = t("ipfs_local_page_title");
+    }
+
+    const subTitleEl = document.getElementById("tc-subtitle");
+    if (subTitleEl) {
+        subTitleEl.textContent = t("ipfs_local_page_subtitle");
+    }
+
+    // 控制区按钮
+    const refreshBtn = document.getElementById("tc-refresh") as HTMLButtonElement | null;
+    if (refreshBtn) {
+        refreshBtn.textContent = t("ipfs_local_refresh");
+    }
+
+    const uploadBtn = document.getElementById("tc-upload") as HTMLButtonElement | null;
+    if (uploadBtn) {
+        uploadBtn.textContent = t("ipfs_local_upload");
+    }
+
+    // JSON 预览标题
+    const jsonTitle = document.getElementById("tc-json-title");
+    if (jsonTitle) {
+        jsonTitle.textContent = t("ipfs_local_json_title");
+    }
+
+    // 结果区标题
+    const resultsTitle = document.getElementById("tc-results-title");
+    if (resultsTitle) {
+        resultsTitle.textContent = t("ipfs_local_results_title");
+    }
+
+    // CID 行
+    const cidLabel = document.getElementById("tc-cid-label");
+    if (cidLabel) {
+        cidLabel.textContent = t("ipfs_local_cid_label");
+    }
+
+    const copyCidBtn = document.getElementById("tc-copy-cid") as HTMLButtonElement | null;
+    if (copyCidBtn) {
+        // 复用全局的 “copy” 文案
+        copyCidBtn.textContent = t("copy");
+    }
+
+    // 网关说明
+    const localGwLabel = document.getElementById("tc-local-gw-label");
+    if (localGwLabel) {
+        localGwLabel.textContent = t("ipfs_local_gateway_local_label");
+    }
+
+    const publicGwLabel = document.getElementById("tc-public-gw-label");
+    if (publicGwLabel) {
+        publicGwLabel.textContent = t("ipfs_local_gateway_public_label");
+    }
+
+    const localLink = document.getElementById("tc-link-local") as HTMLAnchorElement | null;
+    if (localLink) {
+        localLink.textContent = t("ipfs_local_gateway_unset");
+    }
+
+    // 页脚
+    const footerNote = document.getElementById("tc-footer-note");
+    if (footerNote) {
+        footerNote.textContent = t("ipfs_local_footer_note");
+    }
 }
