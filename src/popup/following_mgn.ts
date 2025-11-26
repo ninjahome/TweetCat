@@ -26,6 +26,7 @@ import {ERR_LOCAL_IPFS_HANDOFF} from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
 import {loadWallet} from "../wallet/wallet_api";
 import {getManifest, updateFollowingSnapshot} from "../wallet/ipfs_manifest";
+import {openPasswordModal} from "./password_modal";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -101,15 +102,6 @@ let confirmNewCategoryBtn: HTMLButtonElement | null;
 let cancelNewCategoryBtn: HTMLButtonElement | null;
 
 
-let passwordModal: HTMLDivElement | null;
-let passwordInput: HTMLInputElement | null;
-let passwordCancelBtn: HTMLButtonElement | null;
-let passwordConfirmBtn: HTMLButtonElement | null;
-
-// 当前一次密码弹窗的 resolve
-let passwordResolve: ((value: string | null) => void) | null = null;
-
-
 let confirmModal: HTMLDivElement | null;
 let confirmMessage: HTMLParagraphElement | null;
 let cancelConfirmBtn: HTMLButtonElement | null;
@@ -158,13 +150,6 @@ function initDomRefs(): void {
     cancelConfirmBtn = $Id("btn-cancel-confirm") as HTMLButtonElement | null;
     confirmConfirmBtn = $Id("btn-confirm-confirm") as HTMLButtonElement | null;
 
-
-    passwordModal = $Id("modal-password-dialog") as HTMLDivElement | null;
-    passwordInput = $Id("password-input") as HTMLInputElement | null;
-    passwordCancelBtn = $Id("btn-cancel-password") as HTMLButtonElement | null;
-    passwordConfirmBtn = $Id("btn-confirm-password") as HTMLButtonElement | null;
-
-
     processingOverlay = $Id("unfollow-processing-overlay") as HTMLDivElement | null;
 
     // ===== 🌍 初始化翻译（整合 applyTranslations） =====
@@ -193,16 +178,6 @@ function initDomRefs(): void {
     const pwdTitleEl = $Id("modal-password-title") as HTMLElement | null;
     if (pwdTitleEl) {
         pwdTitleEl.textContent = t("ipfs_password_title");
-    }
-    if (passwordInput) {
-        passwordInput.placeholder = t("ipfs_password_msg");
-    }
-    if (passwordCancelBtn) {
-        passwordCancelBtn.textContent = t("cancel");
-    }
-    if (passwordConfirmBtn) {
-        passwordConfirmBtn.textContent = t("confirm");
-        passwordConfirmBtn.disabled = true;
     }
 
     exportIpfsBtn = $Id("export-ipfs-btn") as HTMLButtonElement | null;
@@ -296,34 +271,6 @@ function bindEvents() {
         }
     });
 
-    passwordCancelBtn?.addEventListener("click", () => {
-        closePasswordModal(null);
-    });
-    passwordConfirmBtn?.addEventListener("click", () => {
-        if (!passwordInput) return;
-        const val = passwordInput.value.trim();
-        if (!val) return;
-        closePasswordModal(val);
-    });
-    passwordInput?.addEventListener("input", () => {
-        if (!passwordInput || !passwordConfirmBtn) return;
-        passwordConfirmBtn.disabled = passwordInput.value.trim().length === 0;
-    });
-    passwordInput?.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            if (passwordConfirmBtn && !passwordConfirmBtn.disabled && passwordInput) {
-                closePasswordModal(passwordInput.value.trim());
-            }
-        }
-    });
-    passwordModal?.addEventListener("click", (event) => {
-        if (event.target === passwordModal) {
-            // 点击遮罩，视为取消
-            closePasswordModal(null);
-        }
-    });
-
     document.addEventListener("keydown", handleGlobalKeydown);
 
     exportIpfsBtn?.addEventListener("click", async () => {
@@ -374,8 +321,6 @@ function handleGlobalKeydown(event: KeyboardEvent) {
         hideAddCategoryModal();
     } else if (activeModal === confirmModal) {
         hideConfirmModal();
-    } else if (activeModal === passwordModal) {
-        closePasswordModal(null);
     }
 }
 
@@ -448,46 +393,6 @@ async function handleConfirmModalConfirm() {
         showNotification(err?.message ?? t("operation_failed"), "error");
     } finally {
         hideConfirmModal();
-    }
-}
-
-
-function resetPasswordModal() {
-    if (!passwordInput || !passwordConfirmBtn) return;
-    passwordInput.value = "";
-    passwordConfirmBtn.disabled = true;
-}
-
-/**
- * 打开密码输入弹窗，返回输入的密码字符串（取消则返回 null）
- */
-function openPasswordModal(): Promise<string | null> {
-    return new Promise<string | null>((resolve) => {
-        if (!passwordModal || !passwordInput || !passwordConfirmBtn) {
-            resolve(null);
-            return;
-        }
-        passwordResolve = resolve;
-        resetPasswordModal();
-        openModal(passwordModal);
-        window.setTimeout(() => {
-            passwordInput?.focus();
-        }, 0);
-    });
-}
-
-/**
- * 关闭密码弹窗，并把结果传给上一次 openPasswordModal 的 Promise
- */
-function closePasswordModal(result: string | null) {
-    if (passwordModal) {
-        closeModal(passwordModal);
-    }
-    resetPasswordModal();
-    const resolver = passwordResolve;
-    passwordResolve = null;
-    if (resolver) {
-        resolver(result);
     }
 }
 
@@ -1407,7 +1312,6 @@ function attachUserCardEvents(card: HTMLElement, user: UnifiedKOL) {
         toggleUserSelection(user.key, checkbox.checked);
     });
 }
-
 
 async function promptPasswordOnce(): Promise<string> {
     const pwd = await openPasswordModal();

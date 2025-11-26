@@ -1,4 +1,3 @@
-import {EncryptedBlock, IpfsProvider, IpfsSettings, PROVIDER_TYPE_TWEETCAT} from "../wallet/ipfs_settings";
 import {t} from "../common/i18n";
 
 let notificationTimer: number | null = null;
