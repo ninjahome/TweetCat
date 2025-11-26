@@ -392,5 +392,63 @@
   },
   "default_node_noti": {
     "message": "使用 TweetCat 官方托管的 IPFS 网关和上传服务对你是免费的，但上传速度和单个文件大小都会受到一定限制，更适合小体积、低频次的数据。作为一个 Web3 产品，我们更鼓励你使用自己掌控的节点：你可以在下方配置 Pinata、Lighthouse 等第三方服务，也可以连接本地运行的 IPFS 节点，让数据的安全性、可用性和扩展性都掌握在自己手中。"
-  }
+  },
+  "main_menu_title": { "message": "菜单" },
+
+  "wallet_settings_title": { "message": "钱包设置" },
+  "wallet_action_refresh_balance": { "message": "刷新余额" },
+  "wallet_action_export_private_key": { "message": "导出私钥" },
+  "wallet_action_transfer_eth": { "message": "转账 ETH" },
+  "wallet_action_transfer_token": { "message": "转账代币" },
+  "wallet_action_sign_message": { "message": "签名消息" },
+  "wallet_action_sign_typed_data": { "message": "签名 TypedData" },
+  "wallet_action_verify_signature": { "message": "验签" },
+  "wallet_action_node_settings": { "message": "节点设置" },
+
+  "wallet_node_rpc_title": { "message": "节点与 RPC" },
+  "wallet_infura_project_id_label": { "message": "Infura Project ID（可选）" },
+  "wallet_infura_project_id_placeholder": { "message": "示例：123abc456def" },
+  "wallet_custom_rpc_url_label": { "message": "自定义 RPC URL（可选）" },
+  "wallet_custom_rpc_url_placeholder": { "message": "https://example.com/rpc" },
+  "wallet_rpc_mode_default": { "message": "使用默认公共 RPC" },
+  "wallet_rpc_mode_custom": { "message": "使用自定义 RPC" },
+  "wallet_save_settings": { "message": "保存" },
+  "wallet_reset_settings": { "message": "恢复默认" },
+
+  "ipfs_settings_title": { "message": "IPFS 设置" },
+  "ipfs_provider_pinata_option": { "message": "Pinata" },
+  "ipfs_provider_lighthouse_option": { "message": "Lighthouse" },
+  "ipfs_provider_custom_option": { "message": "自建节点" },
+  "ipfs_provider_tweetcat_option": { "message": "TweetCat 官方节点" },
+
+  "ipfs_sensitive_hint": {
+    "message": "敏感字段输入后将加密保存，留空则保留已有值。"
+  },
+
+  "ipfs_pinata_section_title": { "message": "Pinata 凭据" },
+  "ipfs_pinata_api_key_label": { "message": "API Key" },
+  "ipfs_pinata_api_key_placeholder": { "message": "请输入 Pinata API Key" },
+  "ipfs_pinata_secret_key_label": { "message": "API Secret" },
+  "ipfs_pinata_secret_key_placeholder": { "message": "请输入 Pinata API Secret" },
+  "ipfs_pinata_jwt_label": { "message": "JWT Token" },
+  "ipfs_pinata_jwt_placeholder": { "message": "Bearer Token（可选）" },
+
+  "ipfs_lighthouse_section_title": { "message": "Lighthouse 凭据" },
+  "ipfs_lighthouse_api_key_label": { "message": "API Key" },
+  "ipfs_lighthouse_api_key_placeholder": { "message": "输入 API Key（可选）" },
+  "ipfs_lighthouse_jwt_label": { "message": "JWT Token" },
+  "ipfs_lighthouse_jwt_placeholder": { "message": "输入 JWT Token（可选）" },
+
+  "ipfs_custom_section_title": { "message": "自建节点" },
+  "ipfs_custom_api_url_label": { "message": "API URL" },
+  "ipfs_custom_api_url_placeholder": { "message": "http://127.0.0.1:5001/api/v0" },
+  "ipfs_custom_gateway_url_label": { "message": "Gateway URL（可选）" },
+  "ipfs_custom_gateway_url_placeholder": { "message": "https://ipfs.io/ipfs" },
+  "ipfs_custom_auth_label": { "message": "Authorization（可选）" },
+  "ipfs_custom_auth_placeholder": { "message": "Basic xxx 或 Bearer yyy" },
+
+  "ipfs_link_pinata": { "message": "Pinata 官网" },
+  "ipfs_link_lighthouse": { "message": "Lighthouse 官网" },
+  "ipfs_link_desktop": { "message": "IPFS Desktop" }
 }
+

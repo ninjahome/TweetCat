@@ -392,5 +392,62 @@
   },
   "default_node_noti": {
     "message": "Using the TweetCat official IPFS gateway and upload service is free for you, but upload speed and the maximum file size are limited, so it’s more suitable for smaller and less frequent uploads. As a Web3 product, we encourage you to use nodes that you control yourself: you can configure third-party services like Pinata and Lighthouse below, or connect to a locally running IPFS node, so that the security, availability, and scalability of your data stay in your own hands."
-  }
+  },
+  "main_menu_title": { "message": "Menu" },
+
+  "wallet_settings_title": { "message": "Wallet Settings" },
+  "wallet_action_refresh_balance": { "message": "Refresh balance" },
+  "wallet_action_export_private_key": { "message": "Export private key" },
+  "wallet_action_transfer_eth": { "message": "Transfer ETH" },
+  "wallet_action_transfer_token": { "message": "Transfer token" },
+  "wallet_action_sign_message": { "message": "Sign message" },
+  "wallet_action_sign_typed_data": { "message": "Sign typed data" },
+  "wallet_action_verify_signature": { "message": "Verify signature" },
+  "wallet_action_node_settings": { "message": "Node & RPC settings" },
+
+  "wallet_node_rpc_title": { "message": "Node & RPC" },
+  "wallet_infura_project_id_label": { "message": "Infura Project ID (optional)" },
+  "wallet_infura_project_id_placeholder": { "message": "Example: 123abc456def" },
+  "wallet_custom_rpc_url_label": { "message": "Custom RPC URL (optional)" },
+  "wallet_custom_rpc_url_placeholder": { "message": "https://example.com/rpc" },
+  "wallet_rpc_mode_default": { "message": "Use default public RPC" },
+  "wallet_rpc_mode_custom": { "message": "Use custom RPC" },
+  "wallet_save_settings": { "message": "Save" },
+  "wallet_reset_settings": { "message": "Reset to default" },
+
+  "ipfs_settings_title": { "message": "IPFS Settings" },
+  "ipfs_provider_pinata_option": { "message": "Pinata" },
+  "ipfs_provider_lighthouse_option": { "message": "Lighthouse" },
+  "ipfs_provider_custom_option": { "message": "Custom node" },
+  "ipfs_provider_tweetcat_option": { "message": "TweetCat official node" },
+
+  "ipfs_sensitive_hint": {
+    "message": "Sensitive fields will be encrypted after input; leave blank to keep the existing value."
+  },
+
+  "ipfs_pinata_section_title": { "message": "Pinata credentials" },
+  "ipfs_pinata_api_key_label": { "message": "API Key" },
+  "ipfs_pinata_api_key_placeholder": { "message": "Enter Pinata API Key" },
+  "ipfs_pinata_secret_key_label": { "message": "API Secret" },
+  "ipfs_pinata_secret_key_placeholder": { "message": "Enter Pinata API Secret" },
+  "ipfs_pinata_jwt_label": { "message": "JWT Token" },
+  "ipfs_pinata_jwt_placeholder": { "message": "Bearer token (optional)" },
+
+  "ipfs_lighthouse_section_title": { "message": "Lighthouse credentials" },
+  "ipfs_lighthouse_api_key_label": { "message": "API Key" },
+  "ipfs_lighthouse_api_key_placeholder": { "message": "Enter API Key (optional)" },
+  "ipfs_lighthouse_jwt_label": { "message": "JWT Token" },
+  "ipfs_lighthouse_jwt_placeholder": { "message": "Enter JWT token (optional)" },
+
+  "ipfs_custom_section_title": { "message": "Custom node" },
+  "ipfs_custom_api_url_label": { "message": "API URL" },
+  "ipfs_custom_api_url_placeholder": { "message": "http://127.0.0.1:5001/api/v0" },
+  "ipfs_custom_gateway_url_label": { "message": "Gateway URL (optional)" },
+  "ipfs_custom_gateway_url_placeholder": { "message": "https://ipfs.io/ipfs" },
+  "ipfs_custom_auth_label": { "message": "Authorization (optional)" },
+  "ipfs_custom_auth_placeholder": { "message": "Basic xxx or Bearer yyy" },
+
+  "ipfs_link_pinata": { "message": "Pinata official site" },
+  "ipfs_link_lighthouse": { "message": "Lighthouse official site" },
+  "ipfs_link_desktop": { "message": "IPFS Desktop" }
 }

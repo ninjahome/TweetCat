@@ -47,6 +47,7 @@ let routeTarget = "";
 
 async function initDashBoard(): Promise<void> {
     initI18n();
+    initDashboardTexts();
     await checkAndInitDatabase();
     if (routeTarget) {
         showView(routeTarget, dashRouter);
@@ -891,82 +892,269 @@ async function handleIpfsSave(): Promise<boolean> {
     }
 }
 
+// export function initIpfsSettingsView() {
+//     // 一级：select 改变'
+//     const sel = $Id('ipfs-provider-select') as HTMLSelectElement;
+//     sel?.addEventListener('change', () => {
+//         updateProviderVisibility();
+//         refreshSensitiveIndicators();
+//     });
+//
+//     // 打开视图
+//     $(".ipfs-settings-btn")?.addEventListener("click", async () => {
+//         await fillIpfsForm();
+//         showView('#onboarding/ipfs-settings', dashRouter);
+//     });
+//
+//
+//     const set_default_node = $Id('ipfs-provider-set-tweetcat');
+//     set_default_node.textContent=t("use_office_ipfs_node")
+//     set_default_node?.addEventListener('click', () => {
+//         setTweetcatAsDefault().then();
+//     });
+//     const default_node_noti=$Id('tweetcat-node-notification')
+//     default_node_noti.textContent=t('default_node_noti')
+//
+//     const pinata_decrypt_btn= $Id('pinata-reveal-fill')
+//     pinata_decrypt_btn.textContent=t("decrypt_config")
+//     pinata_decrypt_btn?.addEventListener('click', () => {
+//         revealAndFill(PROVIDER_TYPE_PINATA).then();
+//     });
+//     const pinata_save_btn= $Id('pinata-save')
+//     pinata_save_btn.textContent=t("save_config")
+//     pinata_save_btn?.addEventListener('click', () => {
+//         saveProviderSecrets(PROVIDER_TYPE_PINATA).then();
+//     });
+//     const pinata_clean_btn= $Id('pinata-clear')
+//     pinata_clean_btn.textContent=t("clean_config")
+//     pinata_clean_btn?.addEventListener('click', () => {
+//         clearProviderSecrets(PROVIDER_TYPE_PINATA).then();
+//     });
+//
+//     const lighthouse_decrypt_btn= $Id('lighthouse-reveal-fill')
+//     lighthouse_decrypt_btn.textContent=t("decrypt_config")
+//     lighthouse_decrypt_btn?.addEventListener('click', () => {
+//         revealAndFill(PROVIDER_TYPE_LIGHTHOUSE).then();
+//     });
+//     const lighthouse_save_btn= $Id('lighthouse-save')
+//     lighthouse_save_btn.textContent=t("save_config")
+//     lighthouse_save_btn?.addEventListener('click', () => {
+//         saveProviderSecrets(PROVIDER_TYPE_LIGHTHOUSE).then();
+//     });
+//     const lighthouse_clean_btn= $Id('lighthouse-clear')
+//     lighthouse_clean_btn.textContent=t("clean_config")
+//     lighthouse_clean_btn?.addEventListener('click', () => {
+//         clearProviderSecrets(PROVIDER_TYPE_LIGHTHOUSE).then();
+//     });
+//
+//     const custom_decrypt_btn= $Id('custom-reveal-fill')
+//     custom_decrypt_btn.textContent=t("decrypt_config")
+//     custom_decrypt_btn?.addEventListener('click', () => {
+//         revealAndFill(PROVIDER_TYPE_CUSTOM).then();
+//     });
+//     const custom_save_btn= $Id('custom-save')
+//     custom_save_btn.textContent=t("save_config")
+//     custom_save_btn?.addEventListener('click', () => {
+//         saveProviderSecrets(PROVIDER_TYPE_CUSTOM).then();
+//     });
+//     const custom_clean_btn= $Id('custom-clear')
+//     custom_clean_btn.textContent=t("clean_config")
+//     custom_clean_btn?.addEventListener('click', () => {
+//         clearProviderSecrets(PROVIDER_TYPE_CUSTOM).then();
+//     });
+//
+//     // 返回按钮与外链保留
+//     $("#ipfs-back-btn")?.addEventListener("click", async () => {
+//         await saveProviderOnly();
+//         showView('#onboarding/main-home', dashRouter);
+//     });
+//     document.querySelectorAll<HTMLElement>('[data-ipfs-link]').forEach(btn => {
+//         btn.addEventListener('click', (ev) => {
+//             const url = (ev.currentTarget as HTMLElement).getAttribute('data-ipfs-link');
+//             if (url) window.open(url, '_blank');
+//         });
+//     });
+//
+//     updateProviderVisibility();
+//
+//     initSecretToggleButtons();
+// }
+
 export function initIpfsSettingsView() {
-    // 一级：select 改变'
+    // ----- IPFS 视图静态文案 i18n -----
+    const ipfsTitle = $Id('ipfs-settings-title');
+    if (ipfsTitle) ipfsTitle.textContent = t('ipfs_settings_title');
+
+    const backBtn = $Id('ipfs-back-btn') as HTMLButtonElement | null;
+    if (backBtn) {
+        const backLabel = t('back');
+        backBtn.setAttribute('aria-label', backLabel);
+        const backSvg = backBtn.querySelector('svg');
+        if (backSvg) {
+            backSvg.setAttribute('title', backLabel);
+            backSvg.setAttribute('aria-label', backLabel);
+        }
+    }
+
+    const providerSelect = $Id('ipfs-provider-select') as HTMLSelectElement | null;
+    if (providerSelect) {
+        const optPinata = $Id('ipfs-provider-option-pinata');
+        if (optPinata) optPinata.textContent = t('ipfs_provider_pinata_option');
+        const optLighthouse = $Id('ipfs-provider-option-lighthouse');
+        if (optLighthouse) optLighthouse.textContent = t('ipfs_provider_lighthouse_option');
+        const optCustom = $Id('ipfs-provider-option-custom');
+        if (optCustom) optCustom.textContent = t('ipfs_provider_custom_option');
+        const optTweetcat = $Id('ipfs-provider-option-tweetcat');
+        if (optTweetcat) optTweetcat.textContent = t('ipfs_provider_tweetcat_option');
+    }
+
+    const sensitiveHint = $Id('ipfs-sensitive-hint');
+    if (sensitiveHint) sensitiveHint.textContent = t('ipfs_sensitive_hint');
+
+    // 分 Provider 标题
+    const pinataTitle = $Id('ipfs-pinata-section-title');
+    if (pinataTitle) pinataTitle.textContent = t('ipfs_pinata_section_title');
+
+    const lighthouseTitle = $Id('ipfs-lighthouse-section-title');
+    if (lighthouseTitle) lighthouseTitle.textContent = t('ipfs_lighthouse_section_title');
+
+    const customTitle = $Id('ipfs-custom-section-title');
+    if (customTitle) customTitle.textContent = t('ipfs_custom_section_title');
+
+    // Pinata 表单
+    const pinataApiKeyLabel = $Id('pinata-api-key-label');
+    if (pinataApiKeyLabel) pinataApiKeyLabel.textContent = t('ipfs_pinata_api_key_label');
+    const pinataApiKeyInput = $input('#pinata-api-key');
+    if (pinataApiKeyInput) pinataApiKeyInput.placeholder = t('ipfs_pinata_api_key_placeholder');
+
+    const pinataSecretLabel = $Id('pinata-api-secret-label');
+    if (pinataSecretLabel) pinataSecretLabel.textContent = t('ipfs_pinata_secret_key_label');
+    const pinataSecretInput = $input('#pinata-api-secret');
+    if (pinataSecretInput) pinataSecretInput.placeholder = t('ipfs_pinata_secret_key_placeholder');
+
+    const pinataJwtLabel = $Id('pinata-jwt-label');
+    if (pinataJwtLabel) pinataJwtLabel.textContent = t('ipfs_pinata_jwt_label');
+    const pinataJwtInput = $input('#pinata-jwt');
+    if (pinataJwtInput) pinataJwtInput.placeholder = t('ipfs_pinata_jwt_placeholder');
+
+    // Lighthouse 表单
+    const lighthouseApiKeyLabel = $Id('lighthouse-api-key-label');
+    if (lighthouseApiKeyLabel) lighthouseApiKeyLabel.textContent = t('ipfs_lighthouse_api_key_label');
+    const lighthouseApiKeyInput = $input('#lighthouse-api-key');
+    if (lighthouseApiKeyInput) lighthouseApiKeyInput.placeholder = t('ipfs_lighthouse_api_key_placeholder');
+
+    const lighthouseJwtLabel = $Id('lighthouse-jwt-label');
+    if (lighthouseJwtLabel) lighthouseJwtLabel.textContent = t('ipfs_lighthouse_jwt_label');
+    const lighthouseJwtInput = $input('#lighthouse-jwt');
+    if (lighthouseJwtInput) lighthouseJwtInput.placeholder = t('ipfs_lighthouse_jwt_placeholder');
+
+    // 自建节点表单
+    const customApiUrlLabel = $Id('custom-api-url-label');
+    if (customApiUrlLabel) customApiUrlLabel.textContent = t('ipfs_custom_api_url_label');
+    const customApiUrlInput = $input('#custom-api-url');
+    if (customApiUrlInput) customApiUrlInput.placeholder = t('ipfs_custom_api_url_placeholder');
+
+    const customGatewayLabel = $Id('custom-gateway-url-label');
+    if (customGatewayLabel) customGatewayLabel.textContent = t('ipfs_custom_gateway_url_label');
+    const customGatewayInput = $input('#custom-gateway-url');
+    if (customGatewayInput) customGatewayInput.placeholder = t('ipfs_custom_gateway_url_placeholder');
+
+    const customAuthLabel = $Id('custom-auth-label');
+    if (customAuthLabel) customAuthLabel.textContent = t('ipfs_custom_auth_label');
+    const customAuthInput = $input('#custom-auth');
+    if (customAuthInput) customAuthInput.placeholder = t('ipfs_custom_auth_placeholder');
+
+    // 外链按钮
+    const linkPinata = $Id('ipfs-link-pinata');
+    if (linkPinata) linkPinata.textContent = t('ipfs_link_pinata');
+
+    const linkLighthouse = $Id('ipfs-link-lighthouse');
+    if (linkLighthouse) linkLighthouse.textContent = t('ipfs_link_lighthouse');
+
+    const linkDesktop = $Id('ipfs-link-desktop');
+    if (linkDesktop) linkDesktop.textContent = t('ipfs_link_desktop');
+
+    // ----- 原有逻辑：下拉切换 / 打开视图 / 按钮事件 -----
+
     const sel = $Id('ipfs-provider-select') as HTMLSelectElement;
     sel?.addEventListener('change', () => {
         updateProviderVisibility();
         refreshSensitiveIndicators();
     });
 
-    // 打开视图
     $(".ipfs-settings-btn")?.addEventListener("click", async () => {
         await fillIpfsForm();
         showView('#onboarding/ipfs-settings', dashRouter);
     });
 
-
     const set_default_node = $Id('ipfs-provider-set-tweetcat');
-    set_default_node.textContent=t("use_office_ipfs_node")
+    set_default_node.textContent = t("use_office_ipfs_node");
     set_default_node?.addEventListener('click', () => {
         setTweetcatAsDefault().then();
     });
-    const default_node_noti=$Id('tweetcat-node-notification')
-    default_node_noti.textContent=t('default_node_noti')
 
-    const pinata_decrypt_btn= $Id('pinata-reveal-fill')
-    pinata_decrypt_btn.textContent=t("decrypt_config")
+    const default_node_noti = $Id('tweetcat-node-notification');
+    default_node_noti.textContent = t('default_node_noti');
+
+    const pinata_decrypt_btn = $Id('pinata-reveal-fill');
+    pinata_decrypt_btn.textContent = t("decrypt_config");
     pinata_decrypt_btn?.addEventListener('click', () => {
         revealAndFill(PROVIDER_TYPE_PINATA).then();
     });
-    const pinata_save_btn= $Id('pinata-save')
-    pinata_save_btn.textContent=t("save_config")
+
+    const pinata_save_btn = $Id('pinata-save');
+    pinata_save_btn.textContent = t("save_config");
     pinata_save_btn?.addEventListener('click', () => {
         saveProviderSecrets(PROVIDER_TYPE_PINATA).then();
     });
-    const pinata_clean_btn= $Id('pinata-clear')
-    pinata_clean_btn.textContent=t("clean_config")
+
+    const pinata_clean_btn = $Id('pinata-clear');
+    pinata_clean_btn.textContent = t("clean_config");
     pinata_clean_btn?.addEventListener('click', () => {
         clearProviderSecrets(PROVIDER_TYPE_PINATA).then();
     });
 
-    const lighthouse_decrypt_btn= $Id('lighthouse-reveal-fill')
-    lighthouse_decrypt_btn.textContent=t("decrypt_config")
+    const lighthouse_decrypt_btn = $Id('lighthouse-reveal-fill');
+    lighthouse_decrypt_btn.textContent = t("decrypt_config");
     lighthouse_decrypt_btn?.addEventListener('click', () => {
         revealAndFill(PROVIDER_TYPE_LIGHTHOUSE).then();
     });
-    const lighthouse_save_btn= $Id('lighthouse-save')
-    lighthouse_save_btn.textContent=t("save_config")
+
+    const lighthouse_save_btn = $Id('lighthouse-save');
+    lighthouse_save_btn.textContent = t("save_config");
     lighthouse_save_btn?.addEventListener('click', () => {
         saveProviderSecrets(PROVIDER_TYPE_LIGHTHOUSE).then();
     });
-    const lighthouse_clean_btn= $Id('lighthouse-clear')
-    lighthouse_clean_btn.textContent=t("clean_config")
+
+    const lighthouse_clean_btn = $Id('lighthouse-clear');
+    lighthouse_clean_btn.textContent = t("clean_config");
     lighthouse_clean_btn?.addEventListener('click', () => {
         clearProviderSecrets(PROVIDER_TYPE_LIGHTHOUSE).then();
     });
 
-    const custom_decrypt_btn= $Id('custom-reveal-fill')
-    custom_decrypt_btn.textContent=t("decrypt_config")
+    const custom_decrypt_btn = $Id('custom-reveal-fill');
+    custom_decrypt_btn.textContent = t("decrypt_config");
     custom_decrypt_btn?.addEventListener('click', () => {
         revealAndFill(PROVIDER_TYPE_CUSTOM).then();
     });
-    const custom_save_btn= $Id('custom-save')
-    custom_save_btn.textContent=t("save_config")
+
+    const custom_save_btn = $Id('custom-save');
+    custom_save_btn.textContent = t("save_config");
     custom_save_btn?.addEventListener('click', () => {
         saveProviderSecrets(PROVIDER_TYPE_CUSTOM).then();
     });
-    const custom_clean_btn= $Id('custom-clear')
-    custom_clean_btn.textContent=t("clean_config")
+
+    const custom_clean_btn = $Id('custom-clear');
+    custom_clean_btn.textContent = t("clean_config");
     custom_clean_btn?.addEventListener('click', () => {
         clearProviderSecrets(PROVIDER_TYPE_CUSTOM).then();
     });
 
-    // 返回按钮与外链保留
     $("#ipfs-back-btn")?.addEventListener("click", async () => {
         await saveProviderOnly();
         showView('#onboarding/main-home', dashRouter);
     });
+
     document.querySelectorAll<HTMLElement>('[data-ipfs-link]').forEach(btn => {
         btn.addEventListener('click', (ev) => {
             const url = (ev.currentTarget as HTMLElement).getAttribute('data-ipfs-link');
@@ -975,9 +1163,9 @@ export function initIpfsSettingsView() {
     });
 
     updateProviderVisibility();
-
     initSecretToggleButtons();
 }
+
 
 function refreshSensitiveIndicators(): void {
     const pinata = currentIpfsSettings?.pinata;
@@ -1172,4 +1360,77 @@ function initSecretToggleButtons(): void {
             btn.classList.toggle('is-visible', input.type === 'text');
         });
     });
+}
+
+function initDashboardTexts(): void {
+    // 顶部菜单按钮
+    const mainMenuBtn = $Id('btn-main-menu') as HTMLButtonElement | null;
+    if (mainMenuBtn) {
+        mainMenuBtn.title = t('main_menu_title');
+    }
+
+    const walletSettingsBtn = $Id('wallet-settings-btn') as HTMLButtonElement | null;
+    if (walletSettingsBtn) {
+        const label = t('wallet_settings_title');
+        walletSettingsBtn.title = label;
+        walletSettingsBtn.setAttribute('aria-label', label);
+    }
+
+    // 钱包设置子页标题
+    const walletSettingsTitle = $Id('wallet-settings-title');
+    if (walletSettingsTitle) {
+        walletSettingsTitle.textContent = t('wallet_settings_title');
+    }
+
+    // 钱包动作列表
+    const signMsgLabel = $Id('wallet-action-sign-message-label');
+    if (signMsgLabel) signMsgLabel.textContent = t('wallet_action_sign_message');
+
+    const signTypedLabel = $Id('wallet-action-sign-typed-data-label');
+    if (signTypedLabel) signTypedLabel.textContent = t('wallet_action_sign_typed_data');
+
+    const verifySigLabel = $Id('wallet-action-verify-signature-label');
+    if (verifySigLabel) verifySigLabel.textContent = t('wallet_action_verify_signature');
+
+    const nodeSettingsLabel = $Id('wallet-action-open-settings-label');
+    if (nodeSettingsLabel) nodeSettingsLabel.textContent = t('wallet_action_node_settings');
+
+    // 顶部钱包主菜单四个按钮
+    const btnRefresh = $Id('btn-refresh-balance');
+    if (btnRefresh) btnRefresh.textContent = t('wallet_action_refresh_balance');
+
+    const btnExportPk = $Id('btn-export-private-key');
+    if (btnExportPk) btnExportPk.textContent = t('wallet_action_export_private_key');
+
+    const btnTransferEth = $Id('btn-transfer-eth');
+    if (btnTransferEth) btnTransferEth.textContent = t('wallet_action_transfer_eth');
+
+    const btnTransferToken = $Id('btn-transfer-token');
+    if (btnTransferToken) btnTransferToken.textContent = t('wallet_action_transfer_token');
+
+    // 节点与 RPC 设置区
+    const nodeRpcTitle = $Id('wallet-node-rpc-title');
+    if (nodeRpcTitle) nodeRpcTitle.textContent = t('wallet_node_rpc_title');
+
+    const infuraLabel = $Id('wallet-infura-label');
+    if (infuraLabel) infuraLabel.textContent = t('wallet_infura_project_id_label');
+    const infuraInput = $input('#infura-project-id');
+    if (infuraInput) infuraInput.placeholder = t('wallet_infura_project_id_placeholder');
+
+    const customRpcLabel = $Id('wallet-custom-rpc-label');
+    if (customRpcLabel) customRpcLabel.textContent = t('wallet_custom_rpc_url_label');
+    const customRpcInput = $input('#custom-rpc-url');
+    if (customRpcInput) customRpcInput.placeholder = t('wallet_custom_rpc_url_placeholder');
+
+    const rpcDefaultLabel = $Id('wallet-rpc-mode-default-label');
+    if (rpcDefaultLabel) rpcDefaultLabel.textContent = t('wallet_rpc_mode_default');
+
+    const rpcCustomLabel = $Id('wallet-rpc-mode-custom-label');
+    if (rpcCustomLabel) rpcCustomLabel.textContent = t('wallet_rpc_mode_custom');
+
+    const saveBtn = $Id('btn-save-settings');
+    if (saveBtn) saveBtn.textContent = t('wallet_save_settings');
+
+    const resetBtn = $Id('btn-reset-settings');
+    if (resetBtn) resetBtn.textContent = t('wallet_reset_settings');
 }
