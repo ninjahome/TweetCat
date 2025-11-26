@@ -120,7 +120,6 @@ let passwordConfirmBtn: HTMLButtonElement | null;
 let passwordResolve: ((value: string | null) => void) | null = null;
 
 
-
 let confirmModal: HTMLDivElement | null;
 let confirmMessage: HTMLParagraphElement | null;
 let cancelConfirmBtn: HTMLButtonElement | null;
@@ -201,8 +200,6 @@ function initDomRefs(): void {
     cancelConfirmBtn!.textContent = t("cancel");
     confirmConfirmBtn!.textContent = t("confirm");
 
-
-
     const pwdTitleEl = $Id("modal-password-title") as HTMLElement | null;
     if (pwdTitleEl) {
         pwdTitleEl.textContent = t("ipfs_password_title");
@@ -218,12 +215,32 @@ function initDomRefs(): void {
         passwordConfirmBtn.disabled = true;
     }
 
-
     exportIpfsBtn = $Id("export-ipfs-btn") as HTMLButtonElement | null;
+    if (exportIpfsBtn) {
+        exportIpfsBtn.textContent = t("ipfs_snapshot_button");
+        exportIpfsBtn.title = t("ipfs_snapshot_title");
+    }
+
+    const ipfsLatestLabel = $Id("ipfs-latest-label") as HTMLSpanElement | null;
+    if (ipfsLatestLabel) {
+        ipfsLatestLabel.textContent = t("ipfs_latest_label");
+    }
 
     ipfsLatestCidSpan = $Id("ipfs-latest-cid") as HTMLSpanElement | null;
+    if (ipfsLatestCidSpan) {
+        ipfsLatestCidSpan.textContent = t("ipfs_latest_none");
+    }
+
     ipfsLatestOpenBtn = $Id("ipfs-latest-open") as HTMLButtonElement | null;
     ipfsLatestCopyBtn = $Id("ipfs-latest-copy") as HTMLButtonElement | null;
+    if (ipfsLatestCopyBtn) {
+        ipfsLatestCopyBtn.textContent = t("ipfs_latest_copy_cid");
+    }
+
+    const processingText = $Id("processing-overlay-text") as HTMLSpanElement | null;
+    if (processingText) {
+        processingText.textContent = t("processing");
+    }
 }
 
 type ConfirmCallback = () => void | Promise<void>;
@@ -236,11 +253,12 @@ document.addEventListener("DOMContentLoaded", initFollowingManager as EventListe
 
 async function initFollowingManager() {
     initDomRefs();
+    document.title = t("mgn_following");
     await checkAndInitDatabase();
     bindEvents();
 
-    loadWallet().then((wallet)=>{
-        loadLatestSnapshotCid(wallet.address).catch(e=>{
+    loadWallet().then((wallet) => {
+        loadLatestSnapshotCid(wallet.address).catch(e => {
             console.warn("[IPFS] skip loading latest snapshot cid:", e);
             updateIpfsLatestUI();
         });
@@ -366,7 +384,7 @@ function handleGlobalKeydown(event: KeyboardEvent) {
         hideAddCategoryModal();
     } else if (activeModal === confirmModal) {
         hideConfirmModal();
-    }else if (activeModal === passwordModal) {
+    } else if (activeModal === passwordModal) {
         closePasswordModal(null);
     }
 }
@@ -561,9 +579,9 @@ function createCategoryElement(
         const li = categoryTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
         li.querySelector(".category-actions").remove()
         li.dataset.filter = String(filter);
-        li.querySelector(".category-name")!.textContent =  label;
-        if (filter===ALL_FILTER)        li.querySelector(".category-count")!.textContent = `${counts.total ?? 0}`;
-        if (filter===UNCATEGORIZED_FILTER)        li.querySelector(".category-count")!.textContent = `${counts.uncategorized ?? 0}`;
+        li.querySelector(".category-name")!.textContent = label;
+        if (filter === ALL_FILTER) li.querySelector(".category-count")!.textContent = `${counts.total ?? 0}`;
+        if (filter === UNCATEGORIZED_FILTER) li.querySelector(".category-count")!.textContent = `${counts.uncategorized ?? 0}`;
         li.addEventListener("click", () => {
             selectedFilter = filter;
             highlightCurrentFilter();
@@ -585,18 +603,24 @@ function createCategoryElement(
     li.addEventListener("click", selectHandler);
 
     const renameBtn = li.querySelector<HTMLButtonElement>(".rename-btn, .edit-btn");
-    renameBtn?.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        if (!category) return;
-        handleRenameCategory(category).then();
-    });
+    if (renameBtn) {
+        renameBtn.title = t("rename_category_prompt");
+        renameBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            if (!category) return;
+            void handleRenameCategory(category);
+        });
+    }
 
-    const deleteBtn = li.querySelector(".delete-btn") as HTMLButtonElement;
-    deleteBtn.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        if (!category) return;
-        handleDeleteCategory(category);
-    });
+    const deleteBtn = li.querySelector<HTMLButtonElement>(".delete-btn");
+    if (deleteBtn) {
+        deleteBtn.title = t("category_delete_tooltip");
+        deleteBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            if (!category) return;
+            handleDeleteCategory(category);
+        });
+    }
 
     return li;
 }
@@ -1323,6 +1347,7 @@ function fillUserSyncButton(card: HTMLElement, user: UnifiedKOL) {
     }
 
     syncBtn.classList.remove("hidden");
+    syncBtn.title = t("sync_user_now");
     syncBtn.addEventListener("click", async (ev) => {
         ev.stopPropagation();
         try {
@@ -1455,7 +1480,7 @@ async function handleExportSnapshotToIpfs(
         // 3️⃣ 组装快照（直接用内存中的 categories / unifiedKols）
         const cats = categories
             .filter(c => typeof c.id === "number")
-            .map(c => ({ id: c.id!, name: c.catName }));
+            .map(c => ({id: c.id!, name: c.catName}));
 
         const assigns = unifiedKols
             .filter(u => typeof u.categoryId === "number")
@@ -1472,13 +1497,13 @@ async function handleExportSnapshotToIpfs(
             assignments: assigns,
         };
 
-        const { createdAt, ...snapshotCore } = snapshot;
+        const {createdAt, ...snapshotCore} = snapshot;
 
         const snapshotCid = await uploadJson(settings, snapshotCore, wallet, password);
         showNotification(`已上传到 IPFS：${snapshotCid}（已复制）`, "info");
         onSuccess?.(snapshotCid);
 
-        const { manifest, cid, oldSnapshotCids } = await updateFollowingSnapshot(wallet, snapshotCid);
+        const {manifest, cid, oldSnapshotCids} = await updateFollowingSnapshot(wallet, snapshotCid);
         console.log("------>>> newest manifest:", manifest, cid, oldSnapshotCids);
 
         for (const oldCid of oldSnapshotCids) {
@@ -1511,13 +1536,12 @@ function shortenCid(cid: string, visible: number = 6): string {
     return `${cid.slice(0, visible)}…${cid.slice(-visible)}`;
 }
 
-/** 根据 latestSnapshotCid 更新 UI */
 function updateIpfsLatestUI(): void {
     const cid = latestSnapshotCid;
     const hasCid = !!cid;
 
     if (ipfsLatestCidSpan) {
-        ipfsLatestCidSpan.textContent = hasCid ? shortenCid(cid!) : "None";
+        ipfsLatestCidSpan.textContent = hasCid ? shortenCid(cid!) : t("ipfs_latest_none");
         ipfsLatestCidSpan.title = hasCid ? cid! : "";
     }
     if (ipfsLatestOpenBtn) {
@@ -1543,11 +1567,11 @@ async function openSnapshotInGateway(cid: string): Promise<void> {
     } catch (err) {
         console.error("[IPFS] openSnapshotInGateway failed", err);
         const urls = await buildGatewayUrls(cid);
-        if(urls.length===0){
-            return ;
+        if (urls.length === 0) {
+            return;
         }
         window.open(urls[0], "_blank");
-    }finally {
+    } finally {
         hideLoading();
     }
 }

@@ -449,5 +449,28 @@
 
   "ipfs_link_pinata": { "message": "Pinata official site" },
   "ipfs_link_lighthouse": { "message": "Lighthouse official site" },
-  "ipfs_link_desktop": { "message": "IPFS Desktop" }
+  "ipfs_link_desktop": { "message": "IPFS Desktop" },
+
+  "ipfs_snapshot_button": {
+    "message": "IPFS Snapshot"
+  },
+  "ipfs_snapshot_title": {
+    "message": "Export categories & KOLs to IPFS (v1)"
+  },
+  "ipfs_latest_label": {
+    "message": "Latest Snapshot"
+  },
+  "ipfs_latest_none": {
+    "message": "None"
+  },
+  "ipfs_latest_copy_cid": {
+    "message": "Copy CID"
+  },
+  "category_delete_tooltip": {
+    "message": "Delete category"
+  },
+  "sync_user_now": {
+    "message": "Sync account info"
+  }
+
 }

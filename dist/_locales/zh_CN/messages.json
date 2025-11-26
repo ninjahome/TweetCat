@@ -449,6 +449,28 @@
 
   "ipfs_link_pinata": { "message": "Pinata 官网" },
   "ipfs_link_lighthouse": { "message": "Lighthouse 官网" },
-  "ipfs_link_desktop": { "message": "IPFS Desktop" }
+  "ipfs_link_desktop": { "message": "IPFS Desktop" },
+
+  "ipfs_snapshot_button": {
+    "message": "IPFS 快照"
+  },
+  "ipfs_snapshot_title": {
+    "message": "导出分类和 KOL 列表到 IPFS（v1）"
+  },
+  "ipfs_latest_label": {
+    "message": "最新快照"
+  },
+  "ipfs_latest_none": {
+    "message": "无"
+  },
+  "ipfs_latest_copy_cid": {
+    "message": "复制 CID"
+  },
+  "category_delete_tooltip": {
+    "message": "删除分类"
+  },
+  "sync_user_now": {
+    "message": "同步账号信息"
+  }
 }
 

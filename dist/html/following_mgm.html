@@ -33,7 +33,7 @@
             </div>
             <!-- 最新快照显示 + 打开 + 复制 -->
             <div class="ipfs-latest hidden">
-                <span class="ipfs-latest-label">Latest Snapshot</span>
+                <span id="ipfs-latest-label" class="ipfs-latest-label">Latest Snapshot</span>
                 <button id="ipfs-latest-open" type="button"
                         class="ipfs-latest-pill" disabled>
                     <span id="ipfs-latest-cid">None</span>
@@ -153,7 +153,7 @@
 <div id="unfollow-processing-overlay" class="processing-overlay hidden" role="status" aria-live="assertive">
     <div class="processing-overlay__content">
         <div class="processing-overlay__spinner" aria-hidden="true"></div>
-        <span class="processing-overlay__text">Processing…</span>
+        <span id="processing-overlay-text" class="processing-overlay__text">Processing…</span>
     </div>
 </div>
 
