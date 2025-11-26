@@ -88,3 +88,15 @@ export function showAlert(title: string, message: string) {
         alertBox.style.display = 'none';
     };
 }
+
+export function setTextContentOrHide(element: HTMLElement | null, text?: string | null) {
+    if (!element) return;
+    const trimmed = typeof text === "string" ? text.trim() : "";
+    if (trimmed) {
+        element.textContent = trimmed;
+        element.classList.remove("hidden");
+    } else {
+        element.textContent = "";
+        element.classList.add("hidden");
+    }
+}

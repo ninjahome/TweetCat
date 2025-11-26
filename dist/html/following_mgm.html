@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Following Management</title>
-    <link rel="stylesheet" href="../css/common_utils.css" />
-    <link rel="stylesheet" href="../css/following_mgn.css" />
+    <link rel="stylesheet" href="../css/common_utils.css"/>
+    <link rel="stylesheet" href="../css/following_mgn.css"/>
     <script type="module" src="../js/following_mgn.js" defer></script>
 </head>
 <body>
@@ -23,27 +23,32 @@
         <div id="toolbar" class="toolbar">
             <div class="toolbar-ops">
                 <div id="twitter-ops" class="toolbar-section toolbar-section-x">
+                    <div><span>Web2:</span></div>
+                    <div class="web2-area-info">
+                        <div><span id="web2-following-no-title">关注人数:</span><span
+                                id="web2-following-no-val">2</span></div>
+                    </div>
                     <button id="sync-btn" class="primary primary-sync">Sync Followings</button>
                     <span id="sync-status" class="toolbar-status"></span>
                 </div>
                 <div id="ipfs-ops" class="toolbar-section toolbar-section-ipfs">
-                    <button id="export-ipfs-btn"  class="primary primary-IPFS"  type="button"
-                            title="Export categories &amp; KOLs to IPFS (v1)">IPFS Snapshot</button>
+                    <div><span>Web3:</span></div>
+                    <div class="ipfs-latest">
+                        <span id="ipfs-latest-label" class="ipfs-latest-label">Latest Snapshot</span>
+                        <button id="ipfs-latest-open" type="button"
+                                class="ipfs-latest-pill" disabled>
+                            <span id="ipfs-latest-cid">None</span>
+                        </button>
+                        <button id="ipfs-latest-copy" type="button"
+                                class="ipfs-latest-copy-btn" disabled>
+                            Copy CID
+                        </button>
+                    </div>
+                    <button id="export-ipfs-btn" class="primary primary-IPFS" type="button"
+                            title="Export categories &amp; KOLs to IPFS (v1)">IPFS Snapshot
+                    </button>
                 </div>
             </div>
-            <!-- 最新快照显示 + 打开 + 复制 -->
-            <div class="ipfs-latest hidden">
-                <span id="ipfs-latest-label" class="ipfs-latest-label">Latest Snapshot</span>
-                <button id="ipfs-latest-open" type="button"
-                        class="ipfs-latest-pill" disabled>
-                    <span id="ipfs-latest-cid">None</span>
-                </button>
-                <button id="ipfs-latest-copy" type="button"
-                        class="ipfs-latest-copy-btn" disabled>
-                    Copy CID
-                </button>
-            </div>
-
             <div class="batch-actions">
                 <span id="selection-counter">0 selected</span>
                 <select id="assign-category-select"></select>
@@ -88,8 +93,8 @@
 <template id="user-card-template">
     <div class="user-card">
         <div style="display: flex; align-items: center; gap: 6px">
-            <input type="checkbox" class="user-select" />
-            <img class="user-avatar" src="" alt="" />
+            <input type="checkbox" class="user-select"/>
+            <img class="user-avatar" src="" alt=""/>
         </div>
         <div class="name-row">
             <div style="display: grid; grid-template-columns: 3fr 2fr; align-items: center; gap: 6px">
@@ -128,10 +133,11 @@
     </div>
 </template>
 
-<div id="modal-input-dialog" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-add-category-title">
+<div id="modal-input-dialog" class="modal hidden" role="dialog" aria-modal="true"
+     aria-labelledby="modal-add-category-title">
     <div class="modal-content">
         <h3 id="modal-add-category-title">Create New Category</h3>
-        <input id="dialog-input" type="text" placeholder="Enter category name..." />
+        <input id="dialog-input" type="text" placeholder="Enter category name..."/>
         <div class="modal-actions">
             <button id="btn-cancel-new-category" class="btn-cancel" type="button">Cancel</button>
             <button id="btn-confirm-new-category" class="btn-confirm" type="button" disabled>Confirm</button>
@@ -167,7 +173,7 @@
 <div id="modal-password-dialog" class="modal hidden" role="dialog">
     <div class="modal-content">
         <h3 id="modal-password-title">请输入解密口令</h3>
-        <input id="password-input" type="password" placeholder="用于解密 IPFS 授权..." />
+        <input id="password-input" type="password" placeholder="用于解密 IPFS 授权..."/>
         <div class="modal-actions">
             <button id="btn-cancel-password" type="button">取消</button>
             <button id="btn-confirm-password" type="button" disabled>确认</button>

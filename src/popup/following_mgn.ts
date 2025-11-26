@@ -70,17 +70,7 @@ const selectedKeys = new Set<string>();
 
 const numberFormatter = new Intl.NumberFormat();
 
-function setTextContentOrHide(element: HTMLElement | null, text?: string | null) {
-    if (!element) return;
-    const trimmed = typeof text === "string" ? text.trim() : "";
-    if (trimmed) {
-        element.textContent = trimmed;
-        element.classList.remove("hidden");
-    } else {
-        element.textContent = "";
-        element.classList.add("hidden");
-    }
-}
+
 
 function formatStat(value: number | undefined, label: string): string | null {
     if (typeof value !== "number" || Number.isNaN(value)) {
@@ -522,6 +512,7 @@ function applyUnifiedView(view: UnifiedKOLView) {
 }
 
 async function fetchFollowings(): Promise<FollowingUser[]> {
+
     try {
         const rsp = await browser.runtime.sendMessage({action: MsgType.FollowingQueryAll});
         if (!rsp?.success) {
@@ -1011,7 +1002,8 @@ async function buildUnifiedKOLView(): Promise<UnifiedKOLView> {
         fetchFollowings(),
         queryAllKolCategoryMapFromBG(),
     ]);
-
+    const followingCnt = $Id("web2-following-no-title")
+    followingCnt.textContent = "" + followingsList.length
     const normalizeCategoryId = (value: unknown): number | null => {
         if (typeof value === "number" && Number.isFinite(value)) {
             return value;
@@ -1346,6 +1338,8 @@ function fillUserSyncButton(card: HTMLElement, user: UnifiedKOL) {
         return;
     }
 
+    const web2FollowingNoTitle = $Id("web2-following-no-title")
+    web2FollowingNoTitle.textContent = t("web2_following_no_title");
     syncBtn.classList.remove("hidden");
     syncBtn.title = t("sync_user_now");
     syncBtn.addEventListener("click", async (ev) => {
@@ -1381,10 +1375,6 @@ function handleSyncError(resp: any) {
 }
 
 function fillUserMeta(card: HTMLElement, user: UnifiedKOL) {
-    // const locationElm = card.querySelector(".location") as HTMLElement | null;
-    const locationText = user.location ? `📍 ${user.location}` : undefined;
-    // setTextContentOrHide(locationElm, locationText);
-
     const statsElm = card.querySelector(".stats") as HTMLElement | null;
     if (statsElm) {
         const parts = [
@@ -1500,7 +1490,7 @@ async function handleExportSnapshotToIpfs(
         const {createdAt, ...snapshotCore} = snapshot;
 
         const snapshotCid = await uploadJson(settings, snapshotCore, wallet, password);
-        showNotification(`已上传到 IPFS：${snapshotCid}（已复制）`, "info");
+        showNotification(t("ipfs_snapshot_uploaded_copied", snapshotCid), "info");
         onSuccess?.(snapshotCid);
 
         const {manifest, cid, oldSnapshotCids} = await updateFollowingSnapshot(wallet, snapshotCid);

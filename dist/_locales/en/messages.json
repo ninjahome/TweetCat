@@ -535,7 +535,7 @@
     "message": "IPFS Desktop"
   },
   "ipfs_snapshot_button": {
-    "message": "IPFS Snapshot"
+    "message": "Upload To IPFS"
   },
   "ipfs_snapshot_title": {
     "message": "Export categories & KOLs to IPFS (v1)"
@@ -590,5 +590,11 @@
   },
   "ipfs_local_snapshot_time": {
     "message": "Snapshot time: "
+  },
+  "ipfs_snapshot_uploaded_copied": {
+    "message": "Uploaded to IPFS: $1 (copied)"
+  },
+  "web2_following_no_title": {
+    "message": "Following:"
   }
 }
