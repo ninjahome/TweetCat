@@ -264,7 +264,9 @@ export async function uploadJson(settings: IpfsSettings, obj: any, wallet: strin
             body: form,
         }, 30_000);
         if (!resp.ok) {
-            throw new Error(`Lighthouse 上传失败: HTTP ${resp.status}`);
+            const respJson = await resp.json()
+            const errMsg= respJson?.details || respJson?.error||""
+            throw new Error(`Lighthouse 上传失败: HTTP ${resp.status} ${errMsg}`);
         }
         const data = await resp.json();
         console.log("------>>> light house upload json success:", data);
