@@ -608,5 +608,203 @@
   },
   "decrypt_info_failed": {
     "message": "Decoding failed:"
+  },
+  "wallet_node_settings_saved": {
+    "message": "RPC node settings saved"
+  },
+  "wallet_node_settings_reset": {
+    "message": "RPC node settings reset to default"
+  },
+  "wallet_error_no_wallet": {
+    "message": "Please create or import a wallet first"
+  },
+  "wallet_refreshing_balance": {
+    "message": "Refreshing balances…"
+  },
+  "wallet_refresh_balance_success": {
+    "message": "Balances refreshed"
+  },
+  "wallet_refresh_balance_failed": {
+    "message": "Failed to refresh balances"
+  },
+  "wallet_prompt_password_export_pk": {
+    "message": "Enter your wallet password to export the private key"
+  },
+  "wallet_export_pk_warning": {
+    "message": "The private key will be shown only once. Please keep it safe."
+  },
+  "wallet_export_pk_alert_prefix": {
+    "message": "Private key: "
+  },
+  "wallet_export_pk_failed": {
+    "message": "Failed to export private key"
+  },
+  "wallet_prompt_transfer_to": {
+    "message": "Enter the recipient address"
+  },
+  "wallet_prompt_transfer_eth_amount": {
+    "message": "Enter the amount of ETH to send"
+  },
+  "wallet_prompt_optional_gas_limit": {
+    "message": "Optional: Gas limit"
+  },
+  "wallet_prompt_password_send_eth": {
+    "message": "Enter your wallet password to send ETH"
+  },
+  "wallet_transfer_tx_sent": {
+    "message": "Transaction sent: "
+  },
+  "wallet_transfer_eth_failed": {
+    "message": "ETH transfer failed"
+  },
+  "wallet_prompt_token_address": {
+    "message": "Enter the token contract address"
+  },
+  "wallet_prompt_transfer_token_amount": {
+    "message": "Enter the token amount to send"
+  },
+  "wallet_prompt_token_decimals": {
+    "message": "Enter the token decimals"
+  },
+  "wallet_prompt_password_send_token": {
+    "message": "Enter your wallet password to send tokens"
+  },
+  "wallet_transfer_token_tx_sent": {
+    "message": "Token transfer sent: "
+  },
+  "wallet_transfer_token_failed": {
+    "message": "Token transfer failed"
+  },
+  "wallet_prompt_sign_message": {
+    "message": "Enter the message to sign"
+  },
+  "wallet_prompt_password_sign_message": {
+    "message": "Enter your wallet password to sign the message"
+  },
+  "wallet_sign_message_success": {
+    "message": "Message signature created"
+  },
+  "wallet_sign_message_alert_prefix": {
+    "message": "Signature: "
+  },
+  "wallet_sign_message_failed": {
+    "message": "Failed to sign message"
+  },
+  "wallet_prompt_sign_typed_json": {
+    "message": "Enter JSON containing domain/types/value"
+  },
+  "wallet_error_json_missing_fields": {
+    "message": "JSON is missing required fields"
+  },
+  "wallet_prompt_password_sign_typed": {
+    "message": "Enter your wallet password to sign typed data"
+  },
+  "wallet_sign_typed_success": {
+    "message": "Typed data signature created"
+  },
+  "wallet_error_json_parse_failed": {
+    "message": "Failed to parse JSON"
+  },
+  "wallet_sign_typed_failed": {
+    "message": "Failed to sign typed data"
+  },
+  "wallet_prompt_verify_signature_input_signature": {
+    "message": "Enter the signature"
+  },
+  "wallet_prompt_verify_typed_json_or_empty": {
+    "message": "To verify TypedData, enter JSON; leave empty to verify a normal message"
+  },
+  "wallet_prompt_verify_expected_address": {
+    "message": "Optional: expected signer address"
+  },
+  "wallet_prompt_verify_original_message": {
+    "message": "Enter the original message"
+  },
+  "wallet_verify_success": {
+    "message": "Signature verification passed"
+  },
+  "wallet_verify_failed": {
+    "message": "Signature verification failed"
+  },
+  "wallet_verify_signer_resolved": {
+    "message": "Signer address resolved"
+  },
+  "wallet_verify_signer_alert_prefix": {
+    "message": "Signer: "
+  },
+  "wallet_error_operation_cancelled": {
+    "message": "Operation cancelled"
+  },
+  "wallet_error_password_required": {
+    "message": "Password cannot be empty"
+  },
+  "wallet_error_invalid_to_address": {
+    "message": "Invalid recipient address"
+  },
+  "wallet_error_amount_required": {
+    "message": "Please enter an amount"
+  },
+  "wallet_error_invalid_token_address": {
+    "message": "Invalid token contract address"
+  },
+  "wallet_error_message_required": {
+    "message": "Message cannot be empty"
+  },
+  "wallet_error_typeddata_incomplete": {
+    "message": "TypedData parameters are incomplete"
+  },
+  "wallet_error_signature_required": {
+    "message": "Signature is required"
+  },
+  "wallet_error_message_or_typed_required": {
+    "message": "Please provide a message or TypedData"
+  },
+  "ipfs_error_custom_api_url_required": {
+    "message": "Please fill in the custom node API URL"
+  },
+  "ipfs_error_pinata_jwt_or_key_required": {
+    "message": "Please provide at least a Pinata JWT or API Key/Secret"
+  },
+  "ipfs_error_lighthouse_api_or_jwt_required": {
+    "message": "Please provide a Lighthouse API Key or JWT"
+  },
+  "ipfs_save_encrypted_success": {
+    "message": "Saved (encrypted)"
+  },
+  "ipfs_save_failed": {
+    "message": "Save failed"
+  },
+  "ipfs_set_tweetcat_default_success": {
+    "message": "Set TweetCat as default provider"
+  },
+  "ipfs_no_saved_settings": {
+    "message": "No saved IPFS settings yet"
+  },
+  "ipfs_tweetcat_no_sensitive_config": {
+    "message": "TweetCat has no sensitive configuration"
+  },
+  "ipfs_provider_no_encrypted_fields": {
+    "message": "This provider has no encrypted fields to decrypt"
+  },
+  "ipfs_prompt_encrypt_password": {
+    "message": "Enter a password to encrypt IPFS credentials"
+  },
+  "ipfs_prompt_decrypt_password": {
+    "message": "Enter the password to decrypt and view credentials"
+  },
+  "ipfs_confirm_clear_provider_secrets": {
+    "message": "Clear all encrypted fields for this provider? This action cannot be undone."
+  },
+  "ipfs_tweetcat_no_need_clear": {
+    "message": "TweetCat does not need to be cleared"
+  },
+  "ipfs_clear_provider_secrets_success": {
+    "message": "Encrypted fields for this provider have been cleared"
+  },
+  "ipfs_save_default_provider_success": {
+    "message": "Default IPFS provider saved"
+  },
+  "ipfs_info_click_decrypt_first": {
+    "message": "Please click the provider’s “Decrypt & fill” button first"
   }
 }

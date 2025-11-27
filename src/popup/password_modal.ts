@@ -10,7 +10,7 @@ let confirmBtn: HTMLButtonElement | null = null;
 let currentResolver: ((value: string | null) => void) | null = null;
 let initialized = false;
 
-function ensureInitialized(): boolean {
+function ensureInitialized(promptMessage?:string): boolean {
     if (initialized) {
         return !!modalEl && !!inputEl && !!cancelBtn && !!confirmBtn;
     }
@@ -28,7 +28,7 @@ function ensureInitialized(): boolean {
     // 初始化文案（走 i18n）
     const titleEl = $Id("modal-password-title") as HTMLElement | null;
     if (titleEl) {
-        titleEl.textContent = t("ipfs_password_title");
+        titleEl.textContent = promptMessage ?? "Need Wallet Password";
     }
     inputEl.placeholder = t("ipfs_password_msg");
     cancelBtn.textContent = t("cancel");
@@ -109,8 +109,8 @@ function hideModal() {
     document.body.classList.remove("modal-open");
 }
 
-export function openPasswordModal(): Promise<string | null> {
-    if (!ensureInitialized()) {
+export function openPasswordModal(promptMessage?:string): Promise<string | null> {
+    if (!ensureInitialized(promptMessage)) {
         // 没有这几个 DOM 节点，直接返回 null
         return Promise.resolve(null);
     }

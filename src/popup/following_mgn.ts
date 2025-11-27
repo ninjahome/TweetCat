@@ -22,7 +22,12 @@ import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
 import {$Id, hideLoading, showLoading, showNotification} from "./common";
 import {buildGatewayUrls, ensureSettings, LIGHTHOUSE_GATEWAY, unpinCid, uploadJson} from "../wallet/ipfs_api";
-import {ERR_LOCAL_IPFS_HANDOFF} from "../wallet/ipfs_settings";
+import {
+    ERR_LOCAL_IPFS_HANDOFF,
+    PROVIDER_TYPE_CUSTOM,
+    PROVIDER_TYPE_LIGHTHOUSE,
+    PROVIDER_TYPE_PINATA
+} from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
 import {loadWallet} from "../wallet/wallet_api";
 import {getManifest, updateFollowingSnapshot} from "../wallet/ipfs_manifest";
@@ -70,7 +75,6 @@ let selectedFilter: CategoryFilter = ALL_FILTER;
 const selectedKeys = new Set<string>();
 
 const numberFormatter = new Intl.NumberFormat();
-
 
 
 function formatStat(value: number | undefined, label: string): string | null {
@@ -1314,7 +1318,7 @@ function attachUserCardEvents(card: HTMLElement, user: UnifiedKOL) {
 }
 
 async function promptPasswordOnce(): Promise<string> {
-    const pwd = await openPasswordModal();
+    const pwd = await openPasswordModal(t("ipfs_password_title"));
     if (!pwd || !pwd.trim()) {
         throw new Error(t('password_tips_no_input'));
     }
@@ -1324,12 +1328,12 @@ async function promptPasswordOnce(): Promise<string> {
 // ★ 新增：根据设置判断是否需要口令
 function ipfsNeedsPassword(settings: any): boolean {
     const provider = settings?.provider;
-    if (provider === "pinata" || provider === "lighthouse") return true;
-    if (provider === "custom") {
+    if (provider === PROVIDER_TYPE_PINATA || provider === PROVIDER_TYPE_LIGHTHOUSE) return true;
+    if (provider === PROVIDER_TYPE_CUSTOM) {
         const auth = settings?.custom?.authorization ?? settings?.custom?.auth ?? "";
         return typeof auth === "string" && auth.trim().length > 0;
     }
-    return false; // tweetcat、本地节点都不需要
+    return false;
 }
 
 /** 从 manifest 中加载最新快照 CID，写入 latestSnapshotCid 并刷新 UI */

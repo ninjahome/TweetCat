@@ -608,6 +608,214 @@
   },
   "decrypt_info_failed": {
     "message": "解码失败:"
+  },
+  "wallet_node_settings_saved": {
+    "message": "节点配置已保存"
+  },
+  "wallet_node_settings_reset": {
+    "message": "已恢复默认节点配置"
+  },
+  "wallet_error_no_wallet": {
+    "message": "请先创建或导入钱包"
+  },
+  "wallet_refreshing_balance": {
+    "message": "正在刷新余额..."
+  },
+  "wallet_refresh_balance_success": {
+    "message": "余额已刷新"
+  },
+  "wallet_refresh_balance_failed": {
+    "message": "刷新余额失败"
+  },
+
+  "wallet_prompt_password_export_pk": {
+    "message": "请输入钱包口令以导出私钥"
+  },
+  "wallet_export_pk_warning": {
+    "message": "私钥仅一次性展示，请妥善保管"
+  },
+  "wallet_export_pk_alert_prefix": {
+    "message": "私钥："
+  },
+  "wallet_export_pk_failed": {
+    "message": "导出私钥失败"
+  },
+
+  "wallet_prompt_transfer_to": {
+    "message": "请输入接收地址"
+  },
+  "wallet_prompt_transfer_eth_amount": {
+    "message": "请输入转账 ETH 数量"
+  },
+  "wallet_prompt_optional_gas_limit": {
+    "message": "可选：Gas Limit"
+  },
+  "wallet_prompt_password_send_eth": {
+    "message": "请输入钱包口令以发送 ETH"
+  },
+  "wallet_transfer_tx_sent": {
+    "message": "交易已发送：{0}"
+  },
+  "wallet_transfer_eth_failed": {
+    "message": "转账失败"
+  },
+
+  "wallet_prompt_token_address": {
+    "message": "请输入代币合约地址"
+  },
+  "wallet_prompt_transfer_token_amount": {
+    "message": "请输入转账数量"
+  },
+  "wallet_prompt_token_decimals": {
+    "message": "请输入代币精度"
+  },
+  "wallet_prompt_password_send_token": {
+    "message": "请输入钱包口令以发送代币"
+  },
+  "wallet_transfer_token_tx_sent": {
+    "message": "代币转账已发送：{0}"
+  },
+  "wallet_transfer_token_failed": {
+    "message": "代币转账失败"
+  },
+
+  "wallet_prompt_sign_message": {
+    "message": "请输入要签名的消息"
+  },
+  "wallet_prompt_password_sign_message": {
+    "message": "请输入钱包口令以签名消息"
+  },
+  "wallet_sign_message_success": {
+    "message": "消息签名已生成"
+  },
+  "wallet_sign_message_alert_prefix": {
+    "message": "签名："
+  },
+  "wallet_sign_message_failed": {
+    "message": "签名失败"
+  },
+
+  "wallet_prompt_sign_typed_json": {
+    "message": "请输入包含 domain/types/value 的 JSON"
+  },
+  "wallet_error_json_missing_fields": {
+    "message": "JSON 缺少必要字段"
+  },
+  "wallet_prompt_password_sign_typed": {
+    "message": "请输入钱包口令以签名数据"
+  },
+  "wallet_sign_typed_success": {
+    "message": "TypedData 签名已生成"
+  },
+  "wallet_error_json_parse_failed": {
+    "message": "JSON 解析失败"
+  },
+  "wallet_sign_typed_failed": {
+    "message": "TypedData 签名失败"
+  },
+
+  "wallet_prompt_verify_signature_input_signature": {
+    "message": "请输入签名字符串"
+  },
+  "wallet_prompt_verify_typed_json_or_empty": {
+    "message": "如需验证 TypedData，请输入 JSON，留空则按普通消息"
+  },
+  "wallet_prompt_verify_expected_address": {
+    "message": "可选：期望签名者地址"
+  },
+  "wallet_prompt_verify_original_message": {
+    "message": "请输入原始消息"
+  },
+  "wallet_verify_success": {
+    "message": "签名验证通过"
+  },
+  "wallet_verify_failed": {
+    "message": "签名验证失败"
+  },
+  "wallet_verify_signer_resolved": {
+    "message": "签名者地址已解析"
+  },
+  "wallet_verify_signer_alert_prefix": {
+    "message": "签名者："
+  },
+
+  "wallet_error_operation_cancelled": {
+    "message": "操作已取消"
+  },
+  "wallet_error_password_required": {
+    "message": "口令不能为空"
+  },
+  "wallet_error_invalid_to_address": {
+    "message": "接收地址无效"
+  },
+  "wallet_error_amount_required": {
+    "message": "请输入转账金额"
+  },
+  "wallet_error_invalid_token_address": {
+    "message": "代币合约地址无效"
+  },
+  "wallet_error_message_required": {
+    "message": "消息内容不能为空"
+  },
+  "wallet_error_typeddata_incomplete": {
+    "message": "TypedData 参数不完整"
+  },
+  "wallet_error_signature_required": {
+    "message": "缺少签名"
+  },
+  "wallet_error_message_or_typed_required": {
+    "message": "请提供消息或 TypedData"
+  },
+
+  "ipfs_error_custom_api_url_required": {
+    "message": "请填写自建节点 API URL"
+  },
+  "ipfs_error_pinata_jwt_or_key_required": {
+    "message": "请至少填写 Pinata JWT 或 API Key/Secret"
+  },
+  "ipfs_error_lighthouse_api_or_jwt_required": {
+    "message": "请填写 Lighthouse API Key 或 JWT"
+  },
+  "ipfs_save_encrypted_success": {
+    "message": "已保存（加密）"
+  },
+  "ipfs_save_failed": {
+    "message": "保存失败"
+  },
+
+  "ipfs_set_tweetcat_default_success": {
+    "message": "已设为 TweetCat 默认"
+  },
+  "ipfs_no_saved_settings": {
+    "message": "尚无已保存的 IPFS 设置"
+  },
+  "ipfs_tweetcat_no_sensitive_config": {
+    "message": "TweetCat 无敏感配置"
+  },
+  "ipfs_provider_no_encrypted_fields": {
+    "message": "当前提供方没有可解密的敏感字段"
+  },
+  "ipfs_prompt_encrypt_password": {
+    "message": "请输入用于加密 IPFS 凭据的口令"
+  },
+  "ipfs_prompt_decrypt_password": {
+    "message": "请输入用于解密查看的口令"
+  },
+  "ipfs_confirm_clear_provider_secrets": {
+    "message": "确认清空该 Provider 的密文？此操作不可恢复。"
+  },
+  "ipfs_tweetcat_no_need_clear": {
+    "message": "TweetCat 无需清空"
+  },
+  "ipfs_clear_provider_secrets_success": {
+    "message": "已清空该 Provider 的密文"
+  },
+  "ipfs_save_default_provider_success": {
+    "message": "已保存默认 Provider"
+  },
+  "ipfs_info_click_decrypt_first": {
+    "message": "请先点击对应 Provider 的「解密并回填」按钮"
   }
+
 }
 

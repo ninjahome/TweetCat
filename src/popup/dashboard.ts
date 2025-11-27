@@ -26,6 +26,7 @@ import {
     PROVIDER_TYPE_TWEETCAT
 } from "../wallet/ipfs_settings";
 import {resetIpfsClient} from "../wallet/ipfs_api";
+import {openPasswordModal} from "./password_modal";
 
 const ARBITRUM_CHAIN_ID = 42161;
 const DEFAULT_RPC_URL = "https://arb1.arbitrum.io/rpc";
@@ -275,7 +276,7 @@ async function handleSaveSettings(): Promise<void> {
 
     await saveWalletSettings(newSettings);
     currentSettings = newSettings;
-    showNotification("节点配置已保存");
+    showNotification(t('wallet_node_settings_saved'));
     notifySettingsChanged();
     await refreshBalances();
 }
@@ -284,7 +285,7 @@ async function handleResetSettings(): Promise<void> {
     currentSettings = {...defaultWalletSettings};
     updateSettingsUI(currentSettings);
     await saveWalletSettings(currentSettings);
-    showNotification("已恢复默认节点配置");
+    showNotification(t('wallet_node_settings_reset'));
     notifySettingsChanged();
     await refreshBalances();
 }
@@ -300,12 +301,12 @@ async function refreshBalances(showStatus = true): Promise<void> {
     if (!currentWallet) {
         if (ethSpan) ethSpan.textContent = "--";
         if (usdtSpan) usdtSpan.textContent = "--";
-        if (showStatus) showNotification("请先创建或导入钱包", "error");
+        if (showStatus) showNotification(t('wallet_error_no_wallet'), "error");
         return;
     }
 
     try {
-        if (showStatus) showNotification("正在刷新余额...");
+        if (showStatus) showNotification(t('wallet_refreshing_balance'));
         const provider = createProvider(currentSettings);
         const usdtContract = new ethers.Contract(USDT_CONTRACT_ADDRESS, ERC20_ABI, provider);
 
@@ -321,10 +322,10 @@ async function refreshBalances(showStatus = true): Promise<void> {
             usdtSpan.textContent = formatTokenAmount(usdtBalance, 6);
         }
 
-        if (showStatus) showNotification("余额已刷新");
+        if (showStatus) showNotification(t('wallet_refresh_balance_success'));
     } catch (error) {
         if (showStatus) {
-            showNotification((error as Error).message ?? "刷新余额失败", "error");
+            showNotification((error as Error).message ?? t('wallet_refresh_balance_failed'), "error");
         }
     }
 }
@@ -357,62 +358,62 @@ function formatTokenAmount(value: ethers.BigNumber, decimals: number): string {
 
 async function handleExportPrivateKey(): Promise<void> {
     if (!currentWallet) {
-        showNotification("请先创建或导入钱包", "info");
+        showNotification(t("wallet_error_no_wallet"), "info");
         return;
     }
 
     try {
         const privateKey = await withDecryptedWallet(
-            () => requestPassword("请输入钱包口令以导出私钥"),
+            () => requestPassword(t("wallet_prompt_password_export_pk")),
             async wallet => wallet.privateKey
         );
-        showNotification("私钥仅一次性展示，请妥善保管");
-        window.alert(`私钥：${privateKey}`);//TODO::
+        showNotification(t("wallet_export_pk_warning"));
+        window.alert(t("wallet_export_pk_alert_prefix") + privateKey);//TODO::
     } catch (error) {
-        showNotification((error as Error).message ?? "导出私钥失败", "error");
+        showNotification((error as Error).message ?? t("wallet_export_pk_failed"), "error");
     }
 }
 
 async function handleTransferEth(): Promise<void> {
     if (!currentWallet) {
-        showNotification("请先创建或导入钱包", "info");
+        showNotification(t("wallet_error_no_wallet"), "info");
         return;
     }
 
-    const to = window.prompt("请输入接收地址", "");
+    const to = window.prompt(t("wallet_prompt_transfer_to"), "");
     if (!to) return;
-    const amount = window.prompt("请输入转账 ETH 数量", "");
+    const amount = window.prompt(t("wallet_prompt_transfer_eth_amount"), "");
     if (!amount) return;
-    const gasInput = window.prompt("可选：Gas Limit", "");
+    const gasInput = window.prompt(t("wallet_prompt_optional_gas_limit"), "");
 
     try {
         const txHash = await transferEth({
             to: to.trim(),
             amountEther: amount.trim(),
             gas: gasInput?.trim() ? gasInput.trim() : undefined,
-            passwordPrompt: () => requestPassword("请输入钱包口令以发送 ETH")
+            passwordPrompt: () => requestPassword(t("wallet_prompt_password_send_eth"))
         });
-        showNotification(`交易已发送：${txHash}`);
+        showNotification(t("wallet_transfer_tx_sent") + txHash);
         await refreshBalances();
     } catch (error) {
-        showNotification((error as Error).message ?? "转账失败", "error");
+        showNotification((error as Error).message ?? t("wallet_transfer_eth_failed"), "error");
     }
 }
 
 async function handleTransferToken(): Promise<void> {
     if (!currentWallet) {
-        showNotification("请先创建或导入钱包", "info");
+        showNotification(t("wallet_error_no_wallet"), "info");
         return;
     }
 
-    const tokenAddress = window.prompt("请输入代币合约地址", USDT_CONTRACT_ADDRESS) ?? "";
+    const tokenAddress = window.prompt(t("wallet_prompt_token_address"), USDT_CONTRACT_ADDRESS) ?? "";
     if (!tokenAddress.trim()) return;
-    const to = window.prompt("请输入接收地址", "");
+    const to = window.prompt(t("wallet_prompt_transfer_to"), "");
     if (!to) return;
-    const amount = window.prompt("请输入转账数量", "");
+    const amount = window.prompt(t("wallet_prompt_transfer_token_amount"), "");
     if (!amount) return;
-    const decimalsInput = window.prompt("请输入代币精度", "6");
-    const gasInput = window.prompt("可选：Gas Limit", "");
+    const decimalsInput = window.prompt(t("wallet_prompt_token_decimals"), "6");
+    const gasInput = window.prompt(t("wallet_prompt_optional_gas_limit"), "");
 
     const decimals = decimalsInput ? Number(decimalsInput) : 18;
 
@@ -423,71 +424,71 @@ async function handleTransferToken(): Promise<void> {
             amount: amount.trim(),
             decimals: Number.isFinite(decimals) ? decimals : 18,
             gas: gasInput?.trim() ? gasInput.trim() : undefined,
-            passwordPrompt: () => requestPassword("请输入钱包口令以发送代币")
+            passwordPrompt: () => requestPassword(t("wallet_prompt_password_send_token"))
         });
-        showNotification(`代币转账已发送：${txHash}`);
+        showNotification(t("wallet_transfer_token_tx_sent") + txHash);
         await refreshBalances();
     } catch (error) {
-        showNotification((error as Error).message ?? "代币转账失败", "error");
+        showNotification((error as Error).message ?? t("wallet_transfer_token_failed"), "error");
     }
 }
 
 async function handleSignMessage(): Promise<void> {
     if (!currentWallet) {
-        showNotification("请先创建或导入钱包", "info");
+        showNotification(t("wallet_error_no_wallet"), "info");
         return;
     }
 
-    const message = window.prompt("请输入要签名的消息", "");
+    const message = window.prompt(t("wallet_prompt_sign_message"), "");
     if (message === null) return;
 
     try {
         const signature = await signMessage({
             message,
-            passwordPrompt: () => requestPassword("请输入钱包口令以签名消息")
+            passwordPrompt: () => requestPassword(t("wallet_prompt_password_sign_message"))
         });
-        showNotification("消息签名已生成");
-        window.alert(`签名：${signature}`);
+        showNotification(t("wallet_sign_message_success"));
+        window.alert(t("wallet_sign_message_alert_prefix") + signature);
     } catch (error) {
-        showNotification((error as Error).message ?? "签名失败", "error");
+        showNotification((error as Error).message ?? t("wallet_sign_message_failed"), "error");
     }
 }
 
 async function handleSignTypedData(): Promise<void> {
     if (!currentWallet) {
-        showNotification("请先创建或导入钱包", "info");
+        showNotification(t("wallet_error_no_wallet"), "info");
         return;
     }
 
-    const typedInput = window.prompt("请输入包含 domain/types/value 的 JSON", "");
+    const typedInput = window.prompt(t("wallet_prompt_sign_typed_json"), "");
     if (!typedInput) return;
 
     try {
         const parsed = JSON.parse(typedInput);
         if (!parsed.domain || !parsed.types || !parsed.value) {
-            showNotification("JSON 缺少必要字段", "error");
+            showNotification(t("wallet_error_json_missing_fields"), "error");
             return;
         }
         const signature = await signTypedData({
             domain: parsed.domain,
             types: parsed.types,
             value: parsed.value,
-            passwordPrompt: () => requestPassword("请输入钱包口令以签名数据")
+            passwordPrompt: () => requestPassword(t("wallet_prompt_password_sign_typed"))
         });
-        showNotification("TypedData 签名已生成");
-        window.alert(`签名：${signature}`);
+        showNotification(t("wallet_sign_typed_success"));
+        window.alert(t("wallet_sign_message_alert_prefix") + signature);
     } catch (error) {
-        const message = error instanceof SyntaxError ? "JSON 解析失败" : (error as Error).message;
-        showNotification(message ?? "签名失败", "error");
+        const message = error instanceof SyntaxError ? t("wallet_error_json_parse_failed") : (error as Error).message;
+        showNotification(message ?? t("wallet_sign_typed_failed"), "error");
     }
 }
 
 async function handleVerifySignature(): Promise<void> {
-    const signature = window.prompt("请输入签名字符串", "");
+    const signature = window.prompt(t("wallet_prompt_verify_signature_input_signature"), "");
     if (!signature) return;
 
-    const typedInput = window.prompt("如需验证 TypedData，请输入 JSON，留空则按普通消息", "");
-    const expected = window.prompt("可选：期望签名者地址", currentWallet?.address ?? "") ?? "";
+    const typedInput = window.prompt(t("wallet_prompt_verify_typed_json_or_empty"), "");
+    const expected = window.prompt(t("wallet_prompt_verify_expected_address"), currentWallet?.address ?? "") ?? "";
 
     try {
         let result: boolean | string;
@@ -499,7 +500,7 @@ async function handleVerifySignature(): Promise<void> {
                 expectedAddress: expected.trim() || undefined,
             });
         } else {
-            const message = window.prompt("请输入原始消息", "");
+            const message = window.prompt(t("wallet_prompt_verify_original_message"), "");
             if (message === null) return;
             result = await verifySignature({
                 message,
@@ -509,35 +510,36 @@ async function handleVerifySignature(): Promise<void> {
         }
 
         if (typeof result === "boolean") {
-            showNotification(result ? "签名验证通过" : "签名验证失败", result ? undefined : "error");
+            showNotification(result ? t("wallet_verify_success") : t("wallet_verify_failed"), result ? undefined : "error");
         } else {
-            showNotification("签名者地址已解析");
-            window.alert(`签名者：${result}`);
+            showNotification(t("wallet_verify_signer_resolved"));
+            window.alert(t("wallet_verify_signer_alert_prefix") + result);
         }
     } catch (error) {
-        const message = error instanceof SyntaxError ? "JSON 解析失败" : (error as Error).message;
-        showNotification(message ?? "验签失败", "error");
+        const message = error instanceof SyntaxError ? t("wallet_error_json_parse_failed") : (error as Error).message;
+        showNotification(message ?? t("wallet_verify_failed"), "error");
     }
 }
 
 async function requestPassword(promptMessage: string): Promise<string> {
-    const input = window.prompt(promptMessage, "");
+    const input = await openPasswordModal(promptMessage);
+
     if (!input) {
-        throw new Error("操作已取消");
+        throw new Error(t("wallet_error_operation_cancelled"));
     }
     return input;
 }
 
 async function withDecryptedWallet<T>(passwordPrompt: PasswordPrompt, action: (wallet: ethers.Wallet) => Promise<T>): Promise<T> {
     if (!currentWallet) {
-        throw new Error("请先创建或导入钱包");
+        throw new Error(t("wallet_error_no_wallet"));
     }
 
     let wallet: ethers.Wallet | null = null;
     try {
         const password = await passwordPrompt();
         if (!password) {
-            throw new Error("口令不能为空");
+            throw new Error(t("wallet_error_password_required"));
         }
         wallet = await ethers.Wallet.fromEncryptedJson(currentWallet.keystoreJson, password);
         return await action(wallet);
@@ -605,10 +607,10 @@ interface VerifySignatureParams {
 
 export async function transferEth({to, amountEther, gas, passwordPrompt}: TransferEthParams): Promise<string> {
     if (!ethers.utils.isAddress(to)) {
-        throw new Error("接收地址无效");
+        throw new Error(t("wallet_error_invalid_to_address"));
     }
     if (!amountEther) {
-        throw new Error("请输入转账金额");
+        throw new Error(t("wallet_error_amount_required"));
     }
 
     return withDecryptedWallet(passwordPrompt, async wallet => {
@@ -635,13 +637,13 @@ export async function transferErc20({
                                         passwordPrompt
                                     }: TransferErc20Params): Promise<string> {
     if (!ethers.utils.isAddress(tokenAddress)) {
-        throw new Error("代币合约地址无效");
+        throw new Error(t("wallet_error_invalid_token_address"));
     }
     if (!ethers.utils.isAddress(to)) {
-        throw new Error("接收地址无效");
+        throw new Error(t("wallet_error_invalid_to_address"));
     }
     if (!amount) {
-        throw new Error("请输入转账数量");
+        throw new Error(t("wallet_error_amount_required"));
     }
 
     return withDecryptedWallet(passwordPrompt, async wallet => {
@@ -657,14 +659,14 @@ export async function transferErc20({
 
 export async function signMessage({message, passwordPrompt}: SignMessageParams): Promise<string> {
     if (!message) {
-        throw new Error("消息内容不能为空");
+        throw new Error(t("wallet_error_message_required"));
     }
     return withDecryptedWallet(passwordPrompt, wallet => wallet.signMessage(message));
 }
 
 export async function signTypedData({domain, types, value, passwordPrompt}: SignTypedDataParams): Promise<string> {
     if (!domain || !types || !value) {
-        throw new Error("TypedData 参数不完整");
+        throw new Error(t("wallet_error_typeddata_incomplete"));
     }
     return withDecryptedWallet(passwordPrompt, wallet => wallet._signTypedData(domain, types, value));
 }
@@ -676,7 +678,7 @@ export async function verifySignature({
                                           expectedAddress
                                       }: VerifySignatureParams): Promise<boolean | string> {
     if (!signature) {
-        throw new Error("缺少签名");
+        throw new Error(t("wallet_error_signature_required"));
     }
 
     let recovered: string;
@@ -685,7 +687,7 @@ export async function verifySignature({
     } else if (typed) {
         recovered = ethers.utils.verifyTypedData(typed.domain, typed.types, typed.value, signature);
     } else {
-        throw new Error("请提供消息或 TypedData");
+        throw new Error(t("wallet_error_message_or_typed_required"));
     }
 
     if (expectedAddress) {
@@ -835,7 +837,7 @@ async function handleIpfsSave(): Promise<boolean> {
         } else if (provider === PROVIDER_TYPE_CUSTOM) {
             const apiUrl = $input('#custom-api-url')?.value.trim() ?? '';
             if (!apiUrl) {
-                showNotification('请填写自建节点 API URL', 'error');
+                showNotification(t('ipfs_error_custom_api_url_required'), 'error');
                 return false;
             }
             const gatewayUrl = $input('#custom-gateway-url')?.value.trim() ?? '';
@@ -851,7 +853,7 @@ async function handleIpfsSave(): Promise<boolean> {
 
         let password = '';
         if (pending.length > 0) {
-            password = await requestPassword('请输入用于加密 IPFS 凭据的口令');
+            password = await requestPassword(t('ipfs_prompt_encrypt_password'));
         }
         for (const task of pending) {
             const block = await encryptString(task.value, password);
@@ -863,18 +865,18 @@ async function handleIpfsSave(): Promise<boolean> {
             const hasJwt = !!p.jwtEnc;
             const hasKeyPair = !!p.apiKeyEnc && !!p.secretEnc;
             if (!hasJwt && !hasKeyPair) {
-                showNotification('请至少填写 Pinata JWT 或 API Key/Secret', 'error');
+                showNotification(t('ipfs_error_pinata_jwt_or_key_required'), 'error');
                 return false;
             }
         } else if (provider === PROVIDER_TYPE_LIGHTHOUSE) {
             const l = next.lighthouse ?? {};
             if (!l.jwtEnc && !l.apiKeyEnc) {
-                showNotification('请填写 Lighthouse API Key 或 JWT', 'error');
+                showNotification(t('ipfs_error_lighthouse_api_or_jwt_required'), 'error');
                 return false;
             }
         } else if (provider === PROVIDER_TYPE_CUSTOM) {
             if (!next.custom?.apiUrl) {
-                showNotification('请填写自建节点 API URL', 'error');
+                showNotification(t('ipfs_error_custom_api_url_required'), 'error');
                 return false;
             }
         }
@@ -882,10 +884,10 @@ async function handleIpfsSave(): Promise<boolean> {
         await saveIpfsSettings(next);
         resetIpfsClient();
         currentIpfsSettings = next;
-        showNotification('已保存（加密）', 'info');
+        showNotification(t('ipfs_save_encrypted_success'), 'info');
         return true;
     } catch (error) {
-        const message = (error as Error).message ?? '保存失败';
+        const message = (error as Error).message ?? t('ipfs_save_failed');
         showNotification(message, 'error');
         return false;
     }
@@ -923,6 +925,13 @@ export function initIpfsSettingsView() {
         if (optTweetcat) optTweetcat.textContent = t('ipfs_provider_tweetcat_option');
 
         providerSelect.addEventListener('change', () => {
+            const value = providerSelect.value as IpfsProvider;
+            if (currentIpfsSettings) {
+                currentIpfsSettings = {
+                    ...currentIpfsSettings,
+                    provider: value,
+                };
+            }
             updateProviderVisibility();
             refreshSensitiveIndicators();
         });
@@ -1105,7 +1114,7 @@ async function setTweetcatAsDefault(): Promise<void> {
     currentIpfsSettings = next;
     setSelectedProvider(PROVIDER_TYPE_TWEETCAT);
     updateProviderVisibility();
-    showNotification('已设为 TweetCat 默认');
+    showNotification(t('ipfs_set_tweetcat_default_success'));
 }
 
 function fillPlain(selector: string, value: string | undefined) {
@@ -1113,32 +1122,36 @@ function fillPlain(selector: string, value: string | undefined) {
     const el = $input(selector);
     if (!el) return;
 
-    el.value = value;          // ★ 直接回填明文
-    el.dataset.hasValue = '1'; // 标记“这个字段有内容”
-    el.readOnly = false;       // ★ 解密后允许编辑
+    el.value = value;
+    el.dataset.hasValue = '1';
+    el.readOnly = false;
     el.classList.remove('secret-readonly');
 }
 
 async function revealAndFill(provider: IpfsProvider): Promise<void> {
     try {
 
-        const saved = currentIpfsSettings ?? await loadIpfsSettings();
-        if (!saved) {
-            showNotification('尚无已保存的 IPFS 设置', 'info');
+        const savedRaw = currentIpfsSettings ?? await loadIpfsSettings();
+        if (!savedRaw) {
+            showNotification(t('ipfs_no_saved_settings'), 'info');
             return;
         }
         if (provider === PROVIDER_TYPE_TWEETCAT) {
-            showNotification('TweetCat 无敏感配置', 'info');
+            showNotification(t('ipfs_tweetcat_no_sensitive_config'), 'info');
             return;
         }
 
-        if (!hasEncryptedSecretsFor(provider, saved)) {
-            showNotification('当前提供方没有可解密的敏感字段', 'info');
+        if (!hasEncryptedSecretsFor(provider, savedRaw)) {
+            showNotification(t('ipfs_provider_no_encrypted_fields'), 'info');
             return;
         }
 
-        const password = await requestPassword('请输入用于解密查看的口令');
-        const dec = await decryptSettingsForUI(saved, password);
+        const password = await requestPassword(t('ipfs_prompt_decrypt_password'));
+        const savedForProvider: IpfsSettings = {
+            ...savedRaw,
+            provider,
+        };
+        const dec = await decryptSettingsForUI(savedForProvider, password);
 
         if (provider === PROVIDER_TYPE_PINATA && dec.pinata) {
             fillPlain('#pinata-api-key', dec.pinata.apiKey);
@@ -1162,11 +1175,11 @@ async function saveProviderSecrets(_provider: IpfsProvider): Promise<void> {
 }
 
 async function clearProviderSecrets(provider: IpfsProvider): Promise<void> {
-    if (!window.confirm('确认清空该 Provider 的密文？此操作不可恢复。')) return;
+    if (!window.confirm(t('ipfs_confirm_clear_provider_secrets'))) return;
 
     const saved = currentIpfsSettings ?? await loadIpfsSettings();
     if (!saved) {
-        showNotification('尚无已保存的设置', 'info');
+        showNotification(t('ipfs_no_saved_settings'), 'info');
         return;
     }
 
@@ -1193,7 +1206,7 @@ async function clearProviderSecrets(provider: IpfsProvider): Promise<void> {
             delete next.custom.authEnc;
         }
     } else {
-        showNotification('TweetCat 无需清空', 'info');
+        showNotification(t('ipfs_tweetcat_no_need_clear'), 'info');
         return;
     }
 
@@ -1226,7 +1239,7 @@ async function clearProviderSecrets(provider: IpfsProvider): Promise<void> {
     }
 
     refreshSensitiveIndicators();
-    showNotification('已清空该 Provider 的密文');
+    showNotification(t('ipfs_clear_provider_secrets_success'));
 }
 
 async function saveProviderOnly(): Promise<void> {
@@ -1241,7 +1254,7 @@ async function saveProviderOnly(): Promise<void> {
     };
     await saveIpfsSettings(next);
     currentIpfsSettings = next;
-    showNotification('已保存默认 Provider'); // 简短提示
+    showNotification(t('ipfs_save_default_provider_success'));
 }
 
 function initSecretToggleButtons(): void {
@@ -1254,7 +1267,7 @@ function initSecretToggleButtons(): void {
         btn.addEventListener('click', () => {
             // 未解密但已设置时（只读 + 无 value），不允许直接点眼睛看
             if (input.readOnly && input.dataset.hasValue === '1' && !input.value) {
-                showNotification('请先点击对应 Provider 的「解密并回填」按钮', 'info');
+                showNotification(t('ipfs_info_click_decrypt_first'), 'info');
                 return;
             }
 
