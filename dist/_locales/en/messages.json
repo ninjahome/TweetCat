@@ -809,5 +809,16 @@
   },
   "wallet_decrypting": {
     "message": "Decrypting......"
+  },"wallet_network_title": {
+  "message": "Network"
+},
+  "wallet_network_select_label": {
+    "message": "Blockchain network"
+  },
+  "wallet_network_option_base_mainnet": {
+    "message": "Base mainnet"
+  },
+  "wallet_network_option_base_sepolia": {
+    "message": "Base Sepolia testnet"
   }
 }

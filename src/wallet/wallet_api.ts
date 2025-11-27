@@ -21,6 +21,8 @@ export interface WalletSettings {
     infuraProjectId?: string;
     customRpcUrl?: string;
     useDefaultRpc: boolean;
+
+    network?: 'base-mainnet' | 'base-sepolia';
 }
 
 const WALLET_SETTINGS_KEY = "default";
@@ -29,6 +31,8 @@ export const defaultWalletSettings: WalletSettings = {
     useDefaultRpc: true,
     infuraProjectId: "",
     customRpcUrl: "",
+
+    network: 'base-mainnet',
 };
 
 /** ====== 存取（保留你已有的导出） ====== */

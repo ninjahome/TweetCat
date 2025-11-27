@@ -818,6 +818,18 @@
   },
   "wallet_decrypting": {
     "message": "解码......"
+  },
+  "wallet_network_title": {
+    "message": "网络"
+  },
+  "wallet_network_select_label": {
+    "message": "区块链网络"
+  },
+  "wallet_network_option_base_mainnet": {
+    "message": "Base 主网"
+  },
+  "wallet_network_option_base_sepolia": {
+    "message": "Base 测试网（Sepolia）"
   }
 }
 

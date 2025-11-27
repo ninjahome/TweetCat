@@ -175,12 +175,6 @@ button {
     border-color: #1d9bf0;
 }
 
-.rpc-mode-group label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
 .settings-actions {
     display: flex;
     gap: 8px;

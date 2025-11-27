@@ -185,6 +185,18 @@
             </span>
                 </div>
                 <div id="settings-panel" class="wallet-settings hidden">
+                    <!-- 网络选择 -->
+                    <h3 id="wallet-network-title" class="section-title">网络</h3>
+                    <div class="settings-group">
+                        <label id="wallet-network-select-label" for="wallet-network-select">区块链网络</label>
+                        <select id="wallet-network-select">
+                            <option id="wallet-network-option-base-mainnet" value="base-mainnet">Base 主网</option>
+                            <option id="wallet-network-option-base-sepolia" value="base-sepolia">Base 测试网 (Sepolia)</option>
+                            <option id="wallet-network-option-custom" value="custom">自定义 RPC 节点</option>
+                        </select>
+                    </div>
+
+                    <!-- 节点与 RPC -->
                     <h3 id="wallet-node-rpc-title" class="section-title">节点与 RPC</h3>
                     <div class="settings-group">
                         <label id="wallet-infura-label" for="infura-project-id">Infura Project ID（可选）</label>
@@ -194,15 +206,9 @@
                         <label id="wallet-custom-rpc-label" for="custom-rpc-url">自定义 RPC URL（可选）</label>
                         <input type="text" id="custom-rpc-url" placeholder="https://example.com/rpc"/>
                     </div>
-                    <div class="settings-group rpc-mode-group">
-                        <label><input type="radio" name="rpc-mode" value="default" class="secret-select" checked/><span
-                                id="wallet-rpc-mode-default-label">使用默认公共 RPC</span></label>
-                        <label><input type="radio" name="rpc-mode" value="custom" class="secret-select"/><span
-                                id="wallet-rpc-mode-custom-label">使用自定义 RPC</span></label>
-                    </div>
+
                     <div class="settings-actions">
                         <button id="btn-save-settings">保存</button>
-                        <button id="btn-reset-settings">恢复默认</button>
                     </div>
                 </div>
             </div>
