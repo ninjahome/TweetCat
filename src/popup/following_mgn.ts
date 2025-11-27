@@ -1316,7 +1316,7 @@ function attachUserCardEvents(card: HTMLElement, user: UnifiedKOL) {
 async function promptPasswordOnce(): Promise<string> {
     const pwd = await openPasswordModal();
     if (!pwd || !pwd.trim()) {
-        throw new Error("已取消：未输入口令");
+        throw new Error(t('password_tips_no_input'));
     }
     return pwd.trim();
 }

@@ -596,5 +596,17 @@
   },
   "web2_following_no_title": {
     "message": "Following:"
+  },
+  "key_tips_has_set": {
+    "message": "Already set"
+  },
+  "password_tips_no_input": {
+    "message": "Cancelled: No password entered"
+  },
+  "decrypt_info_success": {
+    "message": "Decrypted Success"
+  },
+  "decrypt_info_failed": {
+    "message": "Decoding failed:"
   }
 }

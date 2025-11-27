@@ -596,6 +596,18 @@
   },
   "web2_following_no_title": {
     "message": "关注人数："
+  },
+  "key_tips_has_set": {
+    "message": "已设置"
+  },
+  "password_tips_no_input": {
+    "message": "已取消：未输入口令"
+  },
+  "decrypt_info_success": {
+    "message": "已经解密"
+  },
+  "decrypt_info_failed": {
+    "message": "解码失败:"
   }
 }
 
