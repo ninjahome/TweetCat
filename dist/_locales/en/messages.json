@@ -806,5 +806,8 @@
   },
   "ipfs_info_click_decrypt_first": {
     "message": "Please click the provider’s “Decrypt & fill” button first"
+  },
+  "wallet_decrypting": {
+    "message": "Decrypting......"
   }
 }

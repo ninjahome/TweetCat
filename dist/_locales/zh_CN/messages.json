@@ -815,7 +815,9 @@
   },
   "ipfs_info_click_decrypt_first": {
     "message": "请先点击对应 Provider 的「解密并回填」按钮"
+  },
+  "wallet_decrypting": {
+    "message": "解码......"
   }
-
 }
 

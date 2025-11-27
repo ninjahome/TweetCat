@@ -15,7 +15,7 @@ import {
     TCWallet,
     WalletSettings
 } from "../wallet/wallet_api";
-import {$, $Id, $input, showNotification} from "./common";
+import {$, $Id, $input, hideLoading, showAlert, showLoading, showNotification} from "./common";
 import {
     encryptString,
     IpfsProvider,
@@ -202,28 +202,45 @@ function setupWalletActionButtons(): void {
     const backBtn = $Id("wallet-back-btn") as HTMLButtonElement | null;
 
 
+    const walletMainMenu = $Id("wallet-main-menu") as HTMLDivElement | null;
+    const closeMainMenu = () => {
+        if (walletMainMenu && !walletMainMenu.classList.contains("hidden")) {
+            walletMainMenu.classList.add("hidden");
+        }
+    };
+
     refreshBtn?.addEventListener("click", () => {
+        closeMainMenu();
         refreshBalances().then();
     });
     exportBtn?.addEventListener("click", () => {
         handleExportPrivateKey().then();
     });
     transferEthBtn?.addEventListener("click", () => {
+        closeMainMenu();
         handleTransferEth().then();
     });
     transferTokenBtn?.addEventListener("click", () => {
+        closeMainMenu();
         handleTransferToken().then();
     });
     signMessageBtn?.addEventListener("click", () => {
+        closeMainMenu();
         handleSignMessage().then();
     });
     signTypedBtn?.addEventListener("click", () => {
+        closeMainMenu();
         handleSignTypedData().then();
     });
     verifyBtn?.addEventListener("click", () => {
+        closeMainMenu();
         handleVerifySignature().then();
     });
-    openSettingsBtn?.addEventListener("click", () => toggleSettingsPanel());
+    openSettingsBtn?.addEventListener("click", () => {
+        closeMainMenu();               // 虽然这个按钮不在下拉菜单里，但多关一次没坏处
+        toggleSettingsPanel();
+    });
+
     saveSettingsBtn?.addEventListener("click", () => {
         handleSaveSettings().then();
     });
@@ -367,8 +384,7 @@ async function handleExportPrivateKey(): Promise<void> {
             () => requestPassword(t("wallet_prompt_password_export_pk")),
             async wallet => wallet.privateKey
         );
-        showNotification(t("wallet_export_pk_warning"));
-        window.alert(t("wallet_export_pk_alert_prefix") + privateKey);//TODO::
+        showAlert(t("wallet_export_pk_alert_prefix")+t("wallet_export_pk_warning"), privateKey)
     } catch (error) {
         showNotification((error as Error).message ?? t("wallet_export_pk_failed"), "error");
     }
@@ -534,16 +550,17 @@ async function withDecryptedWallet<T>(passwordPrompt: PasswordPrompt, action: (w
     if (!currentWallet) {
         throw new Error(t("wallet_error_no_wallet"));
     }
-
     let wallet: ethers.Wallet | null = null;
     try {
         const password = await passwordPrompt();
         if (!password) {
             throw new Error(t("wallet_error_password_required"));
         }
+        showLoading(t("wallet_decrypting"))
         wallet = await ethers.Wallet.fromEncryptedJson(currentWallet.keystoreJson, password);
         return await action(wallet);
     } finally {
+        hideLoading()
         if (wallet) {
             secureDisposeWallet(wallet);
         }
