@@ -22,7 +22,7 @@ export interface WalletSettings {
     customRpcUrl?: string;
     useDefaultRpc: boolean;
 
-    network?: 'base-mainnet' | 'base-sepolia';
+    network: 'base-mainnet' | 'base-sepolia';
 }
 
 const WALLET_SETTINGS_KEY = "default";
@@ -88,12 +88,21 @@ export async function loadWalletSettings(): Promise<WalletSettings> {
 
     const records = (await databaseQueryAll(__tableWalletSettings)) as Array<WalletSettings & { id: string }>;
     const stored = records.find((item) => item.id === WALLET_SETTINGS_KEY);
-    if (!stored) return {...defaultWalletSettings};
+    if (!stored) {
+        return { ...defaultWalletSettings };
+    }
+
+    const storedNetwork = (stored as any).network;
+    const network: WalletSettings['network'] =
+        storedNetwork === 'base-mainnet' || storedNetwork === 'base-sepolia'
+            ? storedNetwork
+            : defaultWalletSettings.network;
 
     return {
         useDefaultRpc: stored.useDefaultRpc ?? defaultWalletSettings.useDefaultRpc,
         infuraProjectId: stored.infuraProjectId ?? "",
         customRpcUrl: stored.customRpcUrl ?? "",
+        network,
     };
 }
 
@@ -105,6 +114,7 @@ export async function saveWalletSettings(settings: WalletSettings): Promise<void
         useDefaultRpc: settings.useDefaultRpc,
         infuraProjectId: settings.infuraProjectId?.trim() ?? "",
         customRpcUrl: settings.customRpcUrl?.trim() ?? "",
+        network: settings.network,     // ← 新增这一行
     };
 
     await databaseUpdateOrAddItem(__tableWalletSettings, payload);

@@ -36,7 +36,7 @@ const BASE_MAINNET_DEFAULT_RPC = "https://mainnet.base.org";
 const BASE_SEPOLIA_DEFAULT_RPC = "https://sepolia.base.org";
 
 // USDC 合约地址（6 位小数）
-const BASE_MAINNET_USDC = "0x833589fCD6EDb6E08f4c7c32D4f71b54BDA02913";
+const BASE_MAINNET_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
 // 测试网 USDC，仅用于开发测试
 const BASE_SEPOLIA_USDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 
@@ -44,6 +44,8 @@ const ERC20_ABI = [
     "function balanceOf(address owner) view returns (uint256)",
     "function transfer(address to, uint256 amount) returns (bool)"
 ];
+
+type UiNetworkOption = 'base-mainnet' | 'base-sepolia' | 'custom';
 
 type PasswordPrompt = () => Promise<string>;
 
@@ -208,7 +210,6 @@ function setupWalletActionButtons(): void {
     const openSettingsBtn = document.querySelector<HTMLElement>(
         "#btn-open-settings .wallet-action-inner"
     );
-    const saveSettingsBtn = $Id("btn-save-settings") as HTMLButtonElement | null;
     const resetSettingsBtn = $Id("btn-reset-settings") as HTMLButtonElement | null;
     const backBtn = $Id("wallet-back-btn") as HTMLButtonElement | null;
 
@@ -253,9 +254,6 @@ function setupWalletActionButtons(): void {
         toggleSettingsPanel();
     });
 
-    saveSettingsBtn?.addEventListener("click", () => {
-        handleSaveSettings().then();
-    });
     resetSettingsBtn?.addEventListener("click", () => {
         handleResetSettings().then();
     });
@@ -263,12 +261,9 @@ function setupWalletActionButtons(): void {
         showView('#onboarding/main-home', dashRouter);
     });
 }
-
 function updateSettingsUI(settings: WalletSettings): void {
     const infuraInput = $Id("infura-project-id") as HTMLInputElement | null;
     const customInput = $Id("custom-rpc-url") as HTMLInputElement | null;
-    const defaultRadio = document.querySelector('input[name="rpc-mode"][value="default"]') as HTMLInputElement | null;
-    const customRadio = document.querySelector('input[name="rpc-mode"][value="custom"]') as HTMLInputElement | null;
 
     if (infuraInput) {
         infuraInput.value = settings.infuraProjectId ?? "";
@@ -276,49 +271,29 @@ function updateSettingsUI(settings: WalletSettings): void {
     if (customInput) {
         customInput.value = settings.customRpcUrl ?? "";
     }
-    if (defaultRadio) {
-        defaultRadio.checked = settings.useDefaultRpc;
-    }
-    if (customRadio) {
-        customRadio.checked = !settings.useDefaultRpc;
-    }
 
+    // 现在不再使用 rpc-mode 单选按钮，直接通过下拉 + useDefaultRpc 推导
     const networkSelect = $Id("wallet-network-select") as HTMLSelectElement | null;
     if (networkSelect) {
-        const net = settings.network === 'base-sepolia' ? 'base-sepolia' : 'base-mainnet';
-        networkSelect.value = net;
+        const uiNetwork = deriveUiNetwork(settings);
+        networkSelect.value = uiNetwork;
+        applyUiNetworkToForm(uiNetwork, settings);
     }
 }
 
 function toggleSettingsPanel(): void {
     const panel = $Id("settings-panel") as HTMLDivElement | null;
     if (!panel) return;
+
     const willOpen = !panel.classList.contains("open");
-    initRpcSettingsPanel();
+
+    if (willOpen) {
+        // 每次打开前，用最新的 WalletSettings 刷一下表单
+        updateSettingsUI(currentSettings);
+    }
+
     panel.classList.toggle("open", willOpen);
     panel.classList.toggle("hidden", !willOpen);
-}
-
-async function handleSaveSettings(): Promise<void> {
-    const infuraInput = $Id("infura-project-id") as HTMLInputElement | null;
-    const customInput = $Id("custom-rpc-url") as HTMLInputElement | null;
-    const customRadio = document.querySelector('input[name="rpc-mode"][value="custom"]') as HTMLInputElement | null;
-    const networkSelect = $Id("wallet-network-select") as HTMLSelectElement | null;
-
-    const networkValue = (networkSelect?.value as 'base-mainnet' | 'base-sepolia' | undefined) ?? 'base-mainnet';
-
-    const newSettings: WalletSettings = {
-        infuraProjectId: infuraInput?.value.trim() ?? "",
-        customRpcUrl: customInput?.value.trim() ?? "",
-        useDefaultRpc: !(customRadio?.checked ?? false),
-        network: networkValue,
-    };
-
-    await saveWalletSettings(newSettings);
-    currentSettings = newSettings;
-    showNotification(t('wallet_node_settings_saved'));
-    notifySettingsChanged();
-    await refreshBalances();
 }
 
 async function handleResetSettings(): Promise<void> {
@@ -370,28 +345,30 @@ async function refreshBalances(showStatus = true): Promise<void> {
     }
 }
 
-function getSelectedNetwork(settings: WalletSettings): 'base-mainnet' | 'base-sepolia' {
-    return settings.network === 'base-sepolia' ? 'base-sepolia' : 'base-mainnet';
-}
 
 function getChainId(settings: WalletSettings): number {
-    return getSelectedNetwork(settings) === 'base-mainnet'
+    return settings.network  === 'base-mainnet'
         ? BASE_MAINNET_CHAIN_ID
         : BASE_SEPOLIA_CHAIN_ID;
 }
 
 function getDefaultUsdcAddress(settings: WalletSettings): string {
-    return getSelectedNetwork(settings) === 'base-mainnet'
+    return settings.network  === 'base-mainnet'
         ? BASE_MAINNET_USDC
         : BASE_SEPOLIA_USDC;
 }
 
 function getRpcEndpoint(settings: WalletSettings): string {
-    const net = getSelectedNetwork(settings);
+    const net = settings.network; // 只返回 base-mainnet / base-sepolia
     const infuraId = settings.infuraProjectId?.trim();
     const custom = settings.customRpcUrl?.trim();
 
-    // 1) 如果填了 Infura key，优先用 Infura 的 Base 节点
+    // 1) 若 useDefaultRpc === false 且配置了 customRpcUrl，则优先使用自定义 RPC
+    if (!settings.useDefaultRpc && custom) {
+        return custom;
+    }
+
+    // 2) 否则如果配置了 Infura，则用 Infura 节点
     if (infuraId) {
         if (net === 'base-mainnet') {
             return `https://base-mainnet.infura.io/v3/${infuraId}`;
@@ -399,12 +376,7 @@ function getRpcEndpoint(settings: WalletSettings): string {
         return `https://base-sepolia.infura.io/v3/${infuraId}`;
     }
 
-    // 2) 选择了“自定义 RPC”并且填了 URL，则使用自定义
-    if (!settings.useDefaultRpc && custom) {
-        return custom;
-    }
-
-    // 3) 否则用官方公共 RPC
+    // 3) 最后使用官方公共 RPC
     if (net === 'base-mainnet') {
         return BASE_MAINNET_DEFAULT_RPC;
     }
@@ -857,23 +829,7 @@ async function fillIpfsForm(): Promise<void> {
     const provider = currentIpfsSettings?.provider ?? PROVIDER_TYPE_TWEETCAT;
     setSelectedProvider(provider);
     updateProviderVisibility();
-
-    const pinata = currentIpfsSettings?.pinata;
-    setSensitiveState($input('#pinata-api-key'), !!pinata?.apiKeyEnc);
-    setSensitiveState($input('#pinata-api-secret'), !!pinata?.secretEnc);
-    setSensitiveState($input('#pinata-jwt'), !!pinata?.jwtEnc);
-
-    const lighthouse = currentIpfsSettings?.lighthouse;
-    setSensitiveState($input('#lighthouse-api-key'), !!lighthouse?.apiKeyEnc);
-    setSensitiveState($input('#lighthouse-jwt'), !!lighthouse?.jwtEnc);
-
-    const custom = currentIpfsSettings?.custom;
-    setSensitiveState($input('#custom-auth'), !!custom?.authEnc);
-
-    const apiUrlInput = $input('#custom-api-url');
-    if (apiUrlInput) apiUrlInput.value = custom?.apiUrl ?? '';
-    const gatewayInput = $input('#custom-gateway-url');
-    if (gatewayInput) gatewayInput.value = custom?.gatewayUrl ?? '';
+    refreshSensitiveIndicators();
 }
 
 async function handleIpfsSave(): Promise<boolean> {
@@ -1160,6 +1116,13 @@ function refreshSensitiveIndicators(): void {
 
     const custom = currentIpfsSettings?.custom;
     setSensitiveState($input('#custom-auth'), !!custom?.authEnc);
+
+    // 同时顺手刷一下自建节点的非加密字段
+    const apiUrlInput = $input('#custom-api-url');
+    if (apiUrlInput) apiUrlInput.value = custom?.apiUrl ?? '';
+
+    const gatewayInput = $input('#custom-gateway-url');
+    if (gatewayInput) gatewayInput.value = custom?.gatewayUrl ?? '';
 }
 
 function hasEncryptedSecretsFor(provider: IpfsProvider, saved: IpfsSettings): boolean {
@@ -1424,76 +1387,134 @@ function initDashboardTexts(): void {
     const customRpcInput = $input('#custom-rpc-url');
     if (customRpcInput) customRpcInput.placeholder = t('wallet_custom_rpc_url_placeholder');
 
-
     const networkSelect = $Id("wallet-network-select") as HTMLSelectElement | null;
-    networkSelect.addEventListener("change", e => {
-        updateRpcFormByNetwork(networkSelect.value);
-    });
+    const saveBtn = $Id('btn-save-settings') as HTMLButtonElement | null;
 
-    const saveBtn = $Id('btn-save-settings');
-    if (saveBtn){
+    if (networkSelect) {
+        const uiNetwork = deriveUiNetwork(currentSettings);
+        networkSelect.value = uiNetwork;
+        applyUiNetworkToForm(uiNetwork, currentSettings);
+
+        networkSelect.addEventListener("change", () => {
+            handleNetworkSelectChange(networkSelect).then();
+        });
+    }
+
+    if (saveBtn && networkSelect) {
         saveBtn.textContent = t('wallet_save_settings');
         saveBtn.addEventListener("click", () => {
-            const network = networkSelect.value;
-            const infura = (document.querySelector("#infura-project-id") as HTMLInputElement).value.trim();
-            const customRpc = (document.querySelector("#custom-rpc-url") as HTMLInputElement).value.trim();
-
-            let finalRpcUrl = "";
-            let finalInfura = "";
-
-            if (network === "base-mainnet") {
-                finalRpcUrl = BASE_MAINNET_DEFAULT_RPC;
-            }
-            else if (network === "base-sepolia") {
-                finalRpcUrl = BASE_SEPOLIA_DEFAULT_RPC;
-            }
-            else if (network === "custom") {
-                finalRpcUrl = customRpc;
-                finalInfura = infura;
-            }
-
-            browser.storage.local.set({
-                walletNetwork: network,
-                rpcUrl: finalRpcUrl,
-                infuraProjectId: finalInfura
-            }, () => {
-                showNotification(t("save_success"));
-            });
+            handleSaveSettingsClick(networkSelect).then();
         });
-
     }
 
     const resetBtn = $Id('btn-reset-settings');
     if (resetBtn) resetBtn.textContent = t('wallet_reset_settings');
 }
 
-function updateRpcFormByNetwork(value: string) {
-    const infuraInput = document.querySelector<HTMLInputElement>("#infura-project-id")!;
-    const customRpcInput = document.querySelector<HTMLInputElement>("#custom-rpc-url")!;
 
-    if (value === "base-mainnet") {
+/**
+ * 从 WalletSettings 推导出 UI 下拉应该选哪个：
+ * - mainnet → base-mainnet
+ * - sepolia 且没有自定义 RPC → base-sepolia
+ * - sepolia 且有自定义 RPC（useDefaultRpc === false 且 customRpcUrl 有值）→ custom
+ */
+function deriveUiNetwork(settings: WalletSettings): UiNetworkOption {
+    if (settings.network === 'base-mainnet') {
+        return 'base-mainnet';
+    }
+
+    // 其它情况一律视为 base-sepolia 环境
+    const hasCustomRpc = !!settings.customRpcUrl && settings.customRpcUrl.trim().length > 0;
+    if (!settings.useDefaultRpc && hasCustomRpc) {
+        return 'custom';
+    }
+    return 'base-sepolia';
+}
+
+/**
+ * 根据 UI 下拉的选项，把「输入框的值/只读状态/保存按钮」同步到 DOM。
+ * 注意这里不会改 currentSettings，只是更新表单。
+ */
+function applyUiNetworkToForm(uiNetwork: UiNetworkOption, settings: WalletSettings): void {
+    const infuraInput = document.querySelector<HTMLInputElement>("#infura-project-id");
+    const customRpcInput = document.querySelector<HTMLInputElement>("#custom-rpc-url");
+    const saveBtn = $Id('btn-save-settings') as HTMLButtonElement | null;
+
+    if (!infuraInput || !customRpcInput) return;
+
+    if (uiNetwork === "base-mainnet") {
+        // 主网：使用固定公共 RPC，字段只读、隐藏保存按钮
         infuraInput.value = "";
-        customRpcInput.value = BASE_MAINNET_DEFAULT_RPC; // 你实际使用的默认 RPC
+        customRpcInput.value = BASE_MAINNET_DEFAULT_RPC;
         infuraInput.readOnly = true;
         customRpcInput.readOnly = true;
-    }
-    else if (value === "base-sepolia") {
+        if (saveBtn) saveBtn.style.display = "none";
+    } else if (uiNetwork === "base-sepolia") {
+        // Sepolia：使用固定公共 RPC，字段只读、隐藏保存按钮
         infuraInput.value = "";
-        customRpcInput.value = BASE_SEPOLIA_DEFAULT_RPC; // 你实际测试网默认 RPC
+        customRpcInput.value = BASE_SEPOLIA_DEFAULT_RPC;
         infuraInput.readOnly = true;
         customRpcInput.readOnly = true;
-    }
-    else if (value === "custom") {
+        if (saveBtn) saveBtn.style.display = "none";
+    } else {
+        // custom：Base Sepolia + 自定义 RPC，可编辑
         infuraInput.readOnly = false;
         customRpcInput.readOnly = false;
+        infuraInput.value = settings.infuraProjectId ?? "";
+        customRpcInput.value = settings.customRpcUrl ?? "";
+        if (saveBtn) saveBtn.style.display = "";
     }
 }
 
-function initRpcSettingsPanel() {
-    const networkSelect = document.querySelector<HTMLSelectElement>("#wallet-network-select")!;
-    browser.storage.local.get(["walletNetwork"], (res) => {
-        const net = res.walletNetwork ?? "base-mainnet";
-        networkSelect.value = net;
-        updateRpcFormByNetwork(net);
-    });
+async function handleNetworkSelectChange(select: HTMLSelectElement): Promise<void> {
+    const value = select.value as UiNetworkOption;
+
+    if (value === "base-mainnet" || value === "base-sepolia") {
+        // === 1) 修改内存中的 WalletSettings ===
+        if (value === "base-mainnet") {
+            currentSettings.network = "base-mainnet";
+        } else {
+            currentSettings.network = "base-sepolia";
+        }
+        currentSettings.infuraProjectId = undefined;
+        currentSettings.customRpcUrl = undefined;
+        currentSettings.useDefaultRpc = true;
+
+        // === 2) 更新表单显示（只读字段 & 默认 RPC）===
+        applyUiNetworkToForm(value, currentSettings);
+
+        // === 3) 持久化设置 & 同步兼容字段 ===
+        await saveWalletSettings(currentSettings);
+        showNotification(t("save_success"));
+        await refreshBalances();
+    } else {
+        // custom：只更新 UI，不立即保存，等待用户点「保存」按钮
+        applyUiNetworkToForm("custom", currentSettings);
+    }
+}
+
+async function handleSaveSettingsClick(select: HTMLSelectElement): Promise<void> {
+    const uiNetwork = select.value as UiNetworkOption;
+
+    // 保险：只有 custom 模式才需要「保存」按钮
+    if (uiNetwork !== "custom") {
+        return;
+    }
+
+    const infuraInput = document.querySelector<HTMLInputElement>("#infura-project-id");
+    const customRpcInput = document.querySelector<HTMLInputElement>("#custom-rpc-url");
+    if (!infuraInput || !customRpcInput) return;
+
+    const infura = infuraInput.value.trim();
+    const customRpc = customRpcInput.value.trim();
+
+    // custom：Base Sepolia + 自定义 RPC
+    currentSettings.network = "base-sepolia";
+    currentSettings.infuraProjectId = infura || undefined;
+    currentSettings.customRpcUrl = customRpc || undefined;
+    currentSettings.useDefaultRpc = false;
+
+    await saveWalletSettings(currentSettings);
+    showNotification(t("save_success"));
+    await refreshBalances();
 }
