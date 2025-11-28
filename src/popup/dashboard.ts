@@ -1,6 +1,13 @@
 import browser from "webextension-polyfill";
 import {ethers} from "ethers";
-import {__DBK_AD_Block_Key, MsgType} from "../common/consts";
+import {
+    __DBK_AD_Block_Key,
+    BASE_MAINNET_CHAIN_ID, BASE_MAINNET_DEFAULT_RPC,
+    BASE_MAINNET_USDC,
+    BASE_SEPOLIA_CHAIN_ID, BASE_SEPOLIA_DEFAULT_RPC, BASE_SEPOLIA_USDC,
+    ERC20_ABI,
+    MsgType
+} from "../common/consts";
 import {checkAndInitDatabase} from "../common/database";
 import {showView} from "../common/utils";
 import {sendMessageToX} from "../service_work/bg_msg";
@@ -27,23 +34,6 @@ import {
 } from "../wallet/ipfs_settings";
 import {resetIpfsClient} from "../wallet/ipfs_api";
 import {openPasswordModal} from "./password_modal";
-
-// ===== Base 网络配置 =====
-const BASE_MAINNET_CHAIN_ID = 8453;
-const BASE_SEPOLIA_CHAIN_ID = 84532;
-
-const BASE_MAINNET_DEFAULT_RPC = "https://mainnet.base.org";
-const BASE_SEPOLIA_DEFAULT_RPC = "https://sepolia.base.org";
-
-// USDC 合约地址（6 位小数）
-const BASE_MAINNET_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
-// 测试网 USDC，仅用于开发测试
-const BASE_SEPOLIA_USDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
-
-const ERC20_ABI = [
-    "function balanceOf(address owner) view returns (uint256)",
-    "function transfer(address to, uint256 amount) returns (bool)"
-];
 
 type UiNetworkOption = 'base-mainnet' | 'base-sepolia' | 'custom';
 

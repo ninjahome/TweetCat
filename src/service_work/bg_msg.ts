@@ -25,7 +25,7 @@ import {
     assignFollowingsToCategory,
     loadAllFollowings
 } from "../object/following";
-import {getEthBalance, getTokenBalance, loadWallet} from "../wallet/wallet_api";
+import {getBaseUsdcAddress, getEthBalance, getTokenBalance, loadWallet, loadWalletSettings} from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
 
@@ -190,15 +190,19 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.WalletInfoQuery: {
-            const wallet = await loadWallet(); // 来自 wallet_api.ts
+            const wallet = await loadWallet();
             if (!wallet) {
-                return {success: true, data: {unlocked: false}};     // content 收到后显示“未解锁”
+                return { success: true, data: { unlocked: false } };
             }
 
             const address = wallet.address;
-            const gas = await getEthBalance(address);
-            const usdt = await getTokenBalance(address, "USDT");
-            return {success: true, data: {address, gas, usdt}};
+            const settings = await loadWalletSettings();          // 读当前网络设置
+            const gas = await getEthBalance(address, settings);   // 可显式传 settings
+
+            const usdcAddress = getBaseUsdcAddress(settings);     // 👈 关键：选出当前链的 USDC 地址
+            const usdt = await getTokenBalance(address, usdcAddress, settings);
+
+            return { success: true, data: { unlocked: true, address, gas, usdt } };
         }
 
         case MsgType.OpenOrFocusUrl:{

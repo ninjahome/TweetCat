@@ -8,6 +8,13 @@ import {
     databaseQueryAll,
     databaseUpdateOrAddItem,
 } from "../common/database";
+import {
+    BASE_MAINNET_CHAIN_ID,
+    BASE_MAINNET_DEFAULT_RPC,
+    BASE_MAINNET_USDC, BASE_SEPOLIA_CHAIN_ID,
+    BASE_SEPOLIA_DEFAULT_RPC,
+    BASE_SEPOLIA_USDC
+} from "../common/consts";
 
 /** ====== 类型 ====== */
 export interface TCWallet {
@@ -158,15 +165,36 @@ export async function saveFromMnemonic(mnemonic: string, password: string): Prom
 /** ====== Provider 选择（与 dashboard 保持一致） ====== */
 export function getRpcEndpoint(settings: WalletSettings): string {
     const infuraId = settings.infuraProjectId?.trim();
-    if (infuraId) return `https://arbitrum-mainnet.infura.io/v3/${infuraId}`;
     const custom = settings.customRpcUrl?.trim();
-    if (!settings.useDefaultRpc && custom) return custom;
-    return "https://arb1.arbitrum.io/rpc";
+
+    // 1) 自定义 RPC：useDefaultRpc === false 且 customRpcUrl 有值，优先走这里
+    if (!settings.useDefaultRpc && custom) {
+        return custom;
+    }
+
+    // 2) 配了 Infura 的情况：根据 network 选 base 主网 / 测试网
+    if (infuraId) {
+        if (settings.network === "base-mainnet") {
+            return `https://base-mainnet.infura.io/v3/${infuraId}`;
+        } else {
+            return `https://base-sepolia.infura.io/v3/${infuraId}`;
+        }
+    }
+
+    // 3) 否则走默认公共 RPC，直接用你的全局常量
+    return settings.network === "base-mainnet"
+        ? BASE_MAINNET_DEFAULT_RPC
+        : BASE_SEPOLIA_DEFAULT_RPC;
 }
 
 export function createProvider(settings: WalletSettings) {
     const url = getRpcEndpoint(settings);
-    return new ethers.providers.JsonRpcProvider(url, 42161);
+    const chainId =
+        settings.network === "base-mainnet"
+            ? BASE_MAINNET_CHAIN_ID
+            : BASE_SEPOLIA_CHAIN_ID;
+
+    return new ethers.providers.JsonRpcProvider(url, chainId);
 }
 
 /** ====== 余额 & 转账 & 签名 API（可直接给 dashboard 调用） ====== */
@@ -201,9 +229,50 @@ export async function getEthBalance(address: string, settings?: WalletSettings):
     return formatUnits(raw, 18);
 }
 
-export async function getTokenBalance(address: string, token: string): Promise<string> {
-    return "0.00"
+export function getBaseUsdcAddress(settings: WalletSettings): string {
+    return settings.network === "base-mainnet"
+        ? BASE_MAINNET_USDC
+        : BASE_SEPOLIA_USDC;
 }
+
+export async function getTokenBalance(
+    address: string,
+    tokenAddress: string,
+    settings?: WalletSettings
+): Promise<string> {
+    if (!address) throw new Error("地址不能为空");
+    if (!tokenAddress) throw new Error("代币合约地址不能为空");
+
+    const s = settings ?? (await loadWalletSettings());
+    const provider = createProvider(s);
+
+    const abi = [
+        "function balanceOf(address owner) view returns (uint256)",
+        "function decimals() view returns (uint8)"
+    ];
+
+    const contract = new (ethers as any).Contract(tokenAddress, abi, provider);
+
+    const [balanceRaw, decimalsRaw] = await Promise.all([
+        contract.balanceOf(address),
+        contract.decimals().catch(() => 18),
+    ]);
+
+    const raw: bigint =
+        typeof balanceRaw === "bigint"
+            ? balanceRaw
+            : (balanceRaw as any)._hex
+                ? BigInt((balanceRaw as any)._hex)
+                : BigInt(balanceRaw.toString());
+
+    const decimals: number =
+        typeof decimalsRaw === "number"
+            ? decimalsRaw
+            : Number(decimalsRaw.toString());
+
+    return formatUnits(raw, decimals);
+}
+
 
 export async function transferEth(params: {
     to: string;
@@ -301,12 +370,6 @@ interface DecryptedWalletCache {
 let decryptedWalletCache: DecryptedWalletCache | null = null;
 
 
-/**
- * 2. 新增核心解密函数，包含缓存逻辑
- * @param {string} password - 钱包密码。
- * @param {function(ethers.Wallet): Promise<T>} action - 要执行的操作。
- * @returns {Promise<T>} - 操作结果。
- */
 export async function withDecryptedWallet<T>(
     password: string,
     action: (wallet: ethers.Wallet) => Promise<T>
