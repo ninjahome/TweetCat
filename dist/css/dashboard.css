@@ -182,7 +182,7 @@ button {
 
 .settings-actions button {
     flex: 1;
-    padding: 8px 12px;
+    padding: 12px;
     border-radius: 999px;
     border: none;
     cursor: pointer;
@@ -773,7 +773,9 @@ input.category-input:focus {
     width: 100%;
 }
 
-#view-ipfs-settings #ipfs-provider-select {
+#view-ipfs-settings #ipfs-provider-select,
+.settings-group select,
+#wallet-network-select {
     border-radius: 16px;
     border: 1px solid var(--border-subtle, #e5e7eb);
     background: var(--surface, #fff);
