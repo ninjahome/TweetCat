@@ -227,6 +227,7 @@ async function initFollowingManager() {
     bindEvents();
 
     loadWallet().then((wallet) => {
+        if (!wallet)return;
         loadLatestSnapshotCid(wallet.address).catch(e => {
             console.warn("[IPFS] skip loading latest snapshot cid:", e);
             updateIpfsLatestUI();
@@ -476,7 +477,6 @@ function createCategoryElement(
     category?: Category,
 ): HTMLElement {
     if (isBuiltin) {
-        // const li = document.createElement("li");
         const li = categoryTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
         li.querySelector(".category-actions").remove()
         li.dataset.filter = String(filter);
@@ -869,6 +869,7 @@ async function addNewCategory(name: string) {
 }
 
 async function handleRenameCategory(category: Category) {
+    const dialog = document.getElementById("new-category-dialog") as HTMLElement
     const name = prompt(t("rename_category_prompt"), category.catName);
     if (!name) return;
     const trimmed = name.trim();
