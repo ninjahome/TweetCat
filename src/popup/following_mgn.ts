@@ -450,6 +450,7 @@ function renderCategoryList() {
     const allLabel = `${t("category_all")}`;// (${counts.total})
     const allItem = createCategoryElement(ALL_FILTER, allLabel, true, counts);
     categoryList.appendChild(allItem);
+    (document.getElementById("web2-following-no-val") as HTMLElement).innerText = "" + counts.total;
 
     const uncategorizedLabel = `${t("category_uncategorized")}`;// (${counts.uncategorized})
     const uncategorizedItem = createCategoryElement(UNCATEGORIZED_FILTER, uncategorizedLabel, true, counts);
