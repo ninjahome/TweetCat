@@ -874,6 +874,41 @@
   },
   "wallet_error_gas_invalid": {
     "message": "Gas 限额不合法，请输入不小于 21000 的整数。"
+  },
+  "wallet_transfer_token_title": {
+    "message": "发送 USDC"
+  },
+  "wallet_transfer_token_subtitle": {
+    "message": "请仔细确认代币合约地址、收款地址和转账数量，提交后将发起链上交易。"
+  },
+
+  "wallet_token_address_label": {
+    "message": "代币合约地址"
+  },
+  "wallet_token_address_placeholder": {
+    "message": "ERC-20 代币合约地址"
+  },
+  "wallet_token_address_hint": {
+    "message": "默认使用当前网络的官方 USDC 合约地址。"
+  },
+
+  "wallet_transfer_token_amount_label": {
+    "message": "转账数量"
+  },
+  "wallet_transfer_token_fee_hint": {
+    "message": "请确保钱包中仍有足够的 ETH 用于支付网络手续费。"
+  },
+
+  "wallet_token_decimals_label": {
+    "message": "代币精度（decimals）"
+  },
+
+  "wallet_transfer_token_confirm_btn": {
+    "message": "确认并发送"
+  },
+
+  "wallet_token_address_required": {
+    "message": "请输入代币合约地址。"
   }
 }
 

@@ -662,6 +662,161 @@
     </div>
 </div>
 
+<div
+        id="transfer-token-modal"
+        class="tc-modal tc-modal--transfer hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transfer-token-title"
+>
+    <div class="tc-modal__dialog">
+        <header class="tc-modal__header">
+            <div>
+                <h2 id="transfer-token-title" class="tc-modal__title"><!-- i18n: wallet_transfer_token_title --></h2>
+                <p id="transfer-token-subtitle" class="tc-modal__subtitle"><!-- i18n: wallet_transfer_token_subtitle --></p>
+            </div>
+            <button
+                    type="button"
+                    id="transfer-token-close-btn"
+                    class="tc-modal__icon-btn"
+                    aria-label="Close"
+            >
+                ✕
+            </button>
+        </header>
+
+        <form id="transfer-token-form" class="tc-modal__body">
+            <!-- 收款地址 -->
+            <div class="tc-field">
+                <label
+                        for="transfer-token-to"
+                        id="transfer-token-to-label"
+                        class="tc-field__label"
+                ></label>
+                <input
+                        id="transfer-token-to"
+                        type="text"
+                        class="tc-input"
+                        autocomplete="off"
+                />
+                <p
+                        id="transfer-token-to-hint"
+                        class="tc-field__hint"
+                ></p>
+            </div>
+
+            <!-- 数量 + Max + 余额 -->
+            <div class="tc-field">
+                <div class="tc-field__row">
+                    <label
+                            for="transfer-token-amount"
+                            id="transfer-token-amount-label"
+                            class="tc-field__label"
+                    ></label>
+                    <span
+                            id="transfer-token-balance"
+                            class="tc-field__hint"
+                    ></span>
+                </div>
+
+                <div class="tc-field__control tc-field__control--with-suffix">
+                    <input
+                            id="transfer-token-amount"
+                            type="number"
+                            class="tc-input"
+                            min="0"
+                            step="0.000001"
+                            inputmode="decimal"
+                    />
+                    <span class="tc-field__suffix">USDC</span>
+                </div>
+
+                <div class="tc-field__row tc-field__row--space-between">
+                    <button
+                            type="button"
+                            id="transfer-token-fill-max"
+                            class="tc-link-button"
+                    >
+                        Max
+                    </button>
+                    <span
+                            id="transfer-token-fee-hint"
+                            class="tc-field__hint"
+                    ></span>
+                </div>
+            </div>
+
+            <!-- Decimals -->
+            <div class="tc-field">
+                <div class="tc-field__row tc-field__row--space-between">
+                    <label
+                            for="transfer-token-decimals"
+                            id="transfer-token-decimals-label"
+                            class="tc-field__label"
+                    ></label>
+                </div>
+                <input
+                        id="transfer-token-decimals"
+                        type="number"
+                        class="tc-input"
+                        min="0"
+                        step="1"
+                />
+            </div>
+
+            <!-- Gas -->
+            <div class="tc-field">
+                <div class="tc-field__row tc-field__row--space-between">
+                    <label
+                            for="transfer-token-gas"
+                            id="transfer-token-gas-label"
+                            class="tc-field__label"
+                    ></label>
+                    <span
+                            id="transfer-token-network-label"
+                            class="tc-tag tc-tag--subtle"
+                    ></span>
+                </div>
+                <input
+                        id="transfer-token-gas"
+                        type="number"
+                        class="tc-input"
+                        min="21000"
+                        step="1000"
+                />
+                <p
+                        id="transfer-token-gas-hint"
+                        class="tc-field__hint"
+                ></p>
+            </div>
+
+            <!-- 错误信息 -->
+            <p
+                    id="transfer-token-error"
+                    class="tc-form-error"
+                    aria-live="polite"
+            ></p>
+
+            <!-- 底部按钮 -->
+            <footer class="tc-modal__footer">
+                <button
+                        type="button"
+                        id="transfer-token-cancel-btn"
+                        class="btn btn-secondary"
+                >
+                    <!-- i18n: cancel/common_cancel -->
+                </button>
+                <button
+                        type="submit"
+                        id="transfer-token-submit-btn"
+                        class="btn btn-primary"
+                >
+                    <!-- i18n: wallet_transfer_token_confirm_btn -->
+                </button>
+            </footer>
+        </form>
+    </div>
+</div>
 
 </body>
 </html>

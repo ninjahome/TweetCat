@@ -864,5 +864,40 @@
   },
   "wallet_error_gas_invalid": {
     "message": "Invalid gas limit. Please enter an integer no less than 21000."
+  },
+  "wallet_transfer_token_title": {
+    "message": "Send USDC"
+  },
+  "wallet_transfer_token_subtitle": {
+    "message": "Please double-check the token address, recipient, and amount before submitting the transaction."
+  },
+
+  "wallet_token_address_label": {
+    "message": "Token contract address"
+  },
+  "wallet_token_address_placeholder": {
+    "message": "ERC-20 token contract address"
+  },
+  "wallet_token_address_hint": {
+    "message": "By default, the official USDC contract for the current network is used."
+  },
+
+  "wallet_transfer_token_amount_label": {
+    "message": "Amount"
+  },
+  "wallet_transfer_token_fee_hint": {
+    "message": "Make sure there is still enough ETH in this wallet to pay the network fee."
+  },
+
+  "wallet_token_decimals_label": {
+    "message": "Token decimals"
+  },
+
+  "wallet_transfer_token_confirm_btn": {
+    "message": "Confirm & Send"
+  },
+
+  "wallet_token_address_required": {
+    "message": "Please enter the token contract address."
   }
 }

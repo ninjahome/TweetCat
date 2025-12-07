@@ -441,34 +441,32 @@ async function handleTransferToken(): Promise<void> {
         return;
     }
 
-    const tokenAddress = window.prompt(
-        t("wallet_prompt_token_address"),
-        getDefaultUsdcAddress(currentSettings)
-    ) ?? "";
+    const formValues = await openTransferTokenDialog();
+    if (!formValues) {
+        // 用户取消 / DOM 不完整
+        return;
+    }
 
-    if (!tokenAddress.trim()) return;
-    const to = window.prompt(t("wallet_prompt_transfer_to"), "");
-    if (!to) return;
-    const amount = window.prompt(t("wallet_prompt_transfer_token_amount"), "");
-    if (!amount) return;
-    const decimalsInput = window.prompt(t("wallet_prompt_token_decimals"), "6");
-    const gasInput = window.prompt(t("wallet_prompt_optional_gas_limit"), "");
-
-    const decimals = decimalsInput ? Number(decimalsInput) : 18;
+    const { to, amount, decimals, gas } = formValues;
+    const tokenAddress = getDefaultUsdcAddress(currentSettings); // 固定用当前网络 USDC
 
     try {
         const txHash = await transferErc20({
-            tokenAddress: tokenAddress.trim(),
-            to: to.trim(),
-            amount: amount.trim(),
-            decimals: Number.isFinite(decimals) ? decimals : 18,
-            gas: gasInput?.trim() ? gasInput.trim() : undefined,
-            passwordPrompt: () => requestPassword(t("wallet_prompt_password_send_token"))
+            tokenAddress,
+            to,
+            amount,
+            decimals,
+            gas,
+            passwordPrompt: () =>
+                requestPassword(t("wallet_prompt_password_send_token")),
         });
         showNotification(t("wallet_transfer_token_tx_sent") + txHash);
         await refreshBalances();
     } catch (error) {
-        showNotification((error as Error).message ?? t("wallet_transfer_token_failed"), "error");
+        showNotification(
+            (error as Error).message ?? t("wallet_transfer_token_failed"),
+            "error",
+        );
     }
 }
 
@@ -1464,6 +1462,74 @@ function initDashboardTexts(): void {
     if (cancelBtn) {
         cancelBtn.textContent = t('cancel');
     }
+
+    // === Token / USDC 转账弹窗文案 ===
+    const tokenTitle = $Id('transfer-token-title');
+    if (tokenTitle) {
+        tokenTitle.textContent = t('wallet_transfer_token_title');
+    }
+
+    const tokenSubtitle = $Id('transfer-token-subtitle');
+    if (tokenSubtitle) {
+        tokenSubtitle.textContent = t('wallet_transfer_token_subtitle');
+    }
+
+    const tokenToLabel = $Id('transfer-token-to-label');
+    if (tokenToLabel) {
+        tokenToLabel.textContent = t('wallet_transfer_to_label');
+    }
+    const tokenToInput = $input('#transfer-token-to');
+    if (tokenToInput) {
+        tokenToInput.placeholder = t('wallet_transfer_to_hint');
+    }
+    const tokenToHint = $Id('transfer-token-to-hint');
+    if (tokenToHint) {
+        tokenToHint.textContent = t('wallet_transfer_to_hint');
+    }
+
+    const tokenAmountLabel = $Id('transfer-token-amount-label');
+    if (tokenAmountLabel) {
+        tokenAmountLabel.textContent = t('wallet_transfer_token_amount_label');
+    }
+    const tokenAmountInput = $input('#transfer-token-amount');
+    if (tokenAmountInput) {
+        tokenAmountInput.placeholder = t('wallet_transfer_token_amount_label');
+    }
+
+    const tokenFeeHint = $Id('transfer-token-fee-hint');
+    if (tokenFeeHint) {
+        tokenFeeHint.textContent = t('wallet_transfer_token_fee_hint');
+    }
+
+    const tokenDecimalsLabel = $Id('transfer-token-decimals-label');
+    if (tokenDecimalsLabel) {
+        tokenDecimalsLabel.textContent = t('wallet_token_decimals_label');
+    }
+
+    const tokenGasLabel = $Id('transfer-token-gas-label');
+    if (tokenGasLabel) {
+        tokenGasLabel.textContent = t('wallet_transfer_gas_label');
+    }
+    const tokenGasInput = $input('#transfer-token-gas');
+    if (tokenGasInput) {
+        tokenGasInput.placeholder = t('wallet_transfer_gas_label');
+    }
+
+    const tokenGasHint = $Id('transfer-token-gas-hint');
+    if (tokenGasHint) {
+        tokenGasHint.textContent = t('wallet_transfer_gas_hint');
+    }
+
+    const tokenSubmitBtn = $Id('transfer-token-submit-btn') as HTMLButtonElement | null;
+    if (tokenSubmitBtn) {
+        tokenSubmitBtn.textContent = t('wallet_transfer_token_confirm_btn');
+    }
+
+    const tokenCancelBtn = $Id('transfer-token-cancel-btn') as HTMLButtonElement | null;
+    if (tokenCancelBtn) {
+        tokenCancelBtn.textContent = t('cancel'); // 或 common_cancel
+    }
+
 }
 
 
@@ -1729,5 +1795,159 @@ function openTransferEthDialog(): Promise<TransferEthFormValues | null> {
         document.addEventListener("keydown", handleKeydown);
         modal.addEventListener("click", handleBackdropClick);
     });
+}
+
+function openTransferTokenDialog(): Promise<TransferTokenFormValues | null> {
+    const modal = $Id("transfer-token-modal") as HTMLDivElement | null;
+    if (!modal) {
+        // 没有 DOM，直接视为取消
+        return Promise.resolve(null);
+    }
+
+    const form = $Id("transfer-token-form") as HTMLFormElement | null;
+    const toInput = $input("#transfer-token-to");
+    const amountInput = $input("#transfer-token-amount");
+    const decimalsInput = $input("#transfer-token-decimals");
+    const gasInput = $input("#transfer-token-gas");
+    const errorEl = $Id("transfer-token-error") as HTMLParagraphElement | null;
+    const cancelBtn = $Id("transfer-token-cancel-btn") as HTMLButtonElement | null;
+    const closeBtn = $Id("transfer-token-close-btn") as HTMLButtonElement | null;
+    const maxBtn = $Id("transfer-token-fill-max") as HTMLButtonElement | null;
+    const balanceSpan = $Id("transfer-token-balance") as HTMLSpanElement | null;
+    const networkLabel = $Id("transfer-token-network-label") as HTMLSpanElement | null;
+
+    if (!form || !toInput || !amountInput || !errorEl) {
+        return Promise.resolve(null);
+    }
+
+    // 初始化默认值
+    toInput.value = "";
+    amountInput.value = "";
+    if (decimalsInput) {
+        decimalsInput.value = "6";
+        // USDC 精度固定 6，可以视情况设为只读
+        decimalsInput.readOnly = true;
+    }
+    if (gasInput) {
+        gasInput.value = "";
+    }
+    errorEl.textContent = "";
+
+    if (balanceSpan) {
+        const bal = getCurrentTokenBalanceText();
+        balanceSpan.textContent = `${t("wallet_current_balance") || ""}：${bal} USDC`;
+    }
+    if (networkLabel) {
+        networkLabel.textContent = getReadableNetworkName();
+    }
+
+    modal.classList.remove("hidden");
+
+    return new Promise<TransferTokenFormValues | null>((resolve) => {
+        const handleClose = (result: TransferTokenFormValues | null) => {
+            modal.classList.add("hidden");
+            form.removeEventListener("submit", handleSubmit);
+            cancelBtn?.removeEventListener("click", handleCancel);
+            closeBtn?.removeEventListener("click", handleCancel);
+            maxBtn?.removeEventListener("click", handleMax);
+            document.removeEventListener("keydown", handleKeydown);
+            modal.removeEventListener("click", handleBackdropClick as any);
+            resolve(result);
+        };
+
+        const handleCancel = () => {
+            handleClose(null);
+        };
+
+        const handleKeydown = (ev: KeyboardEvent) => {
+            if (ev.key === "Escape") {
+                ev.preventDefault();
+                handleClose(null);
+            }
+        };
+
+        const handleMax = () => {
+            const raw = getCurrentTokenBalanceText();
+            if (!raw || raw === "--") return;
+            const numeric = raw.replace(/,/g, "").split(" ")[0];
+            amountInput.value = numeric;
+        };
+
+        const handleSubmit = (ev: Event) => {
+            ev.preventDefault();
+            errorEl.textContent = "";
+
+            const to = toInput.value.trim();
+            const amount = amountInput.value.trim();
+            const gas = gasInput?.value.trim() || "";
+            const decimalsRaw = decimalsInput?.value
+                ? Number(decimalsInput.value)
+                : 6;
+
+            if (!to) {
+                errorEl.textContent = t("wallet_error_to_required");
+                return;
+            }
+            if (!ethers.utils.isAddress(to)) {
+                errorEl.textContent = t("wallet_error_invalid_to_address");
+                return;
+            }
+
+            if (!amount) {
+                errorEl.textContent = t("wallet_error_amount_required");
+                return;
+            }
+            const n = Number(amount);
+            if (!Number.isFinite(n) || n <= 0) {
+                errorEl.textContent =
+                    t("wallet_error_amount_invalid") || t("wallet_error_amount_required");
+                return;
+            }
+
+            const decimals =
+                Number.isFinite(decimalsRaw) && decimalsRaw > 0
+                    ? decimalsRaw
+                    : 6;
+
+            if (gas && (!/^\d+$/.test(gas) || Number(gas) < 21000)) {
+                errorEl.textContent =
+                    t("wallet_error_gas_invalid") || "Gas limit 不合法";
+                return;
+            }
+
+            handleClose({
+                to,
+                amount,
+                decimals,
+                gas: gas || undefined,
+            });
+        };
+
+        const handleBackdropClick = (ev: MouseEvent) => {
+            if (ev.target === modal) {
+                handleClose(null);
+            }
+        };
+
+        form.addEventListener("submit", handleSubmit);
+        cancelBtn?.addEventListener("click", handleCancel);
+        closeBtn?.addEventListener("click", handleCancel);
+        maxBtn?.addEventListener("click", handleMax);
+        document.addEventListener("keydown", handleKeydown);
+        modal.addEventListener("click", handleBackdropClick);
+    });
+}
+
+interface TransferTokenFormValues {
+    to: string;
+    amount: string;
+    decimals: number;
+    gas?: string;
+}
+
+
+function getCurrentTokenBalanceText(): string {
+    const span = document.querySelector<HTMLSpanElement>(".wallet-usdt-value");
+    return span?.textContent?.trim() || "--";
 }
 
