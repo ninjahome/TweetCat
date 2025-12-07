@@ -189,12 +189,42 @@
     </div>
 </div>
 
-<div class="new-category-name" id="new-category-dialog" style="padding: 0 16px">
-    <label>
-        <input type="text" class="new-category-name-val">
-    </label>
 
-    <button class="name-edit">__MSG_save__</button>
+<div id="new-category-dialog"
+     class="modal hidden"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="new-category-dialog-title">
+    <div class="modal-content">
+        <h3 id="new-category-dialog-title">Rename Category</h3>
+
+        <div class="new-category-dialog-body">
+            <input
+                    type="text"
+                    class="new-category-name-val"
+                    id="new-category-name-input"
+                    placeholder="Enter new category name..."
+            />
+        </div>
+
+        <div class="modal-actions">
+            <button id="btn-cancel-rename" class="btn-cancel" type="button">
+                Cancel
+            </button>
+            <button id="btn-confirm-rename" class="btn-confirm" type="button">
+                Save
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<div id="custom-alert">
+    <div id="alert-content">
+        <h3 id="alert-title">__MSG_alert_title__</h3>
+        <p id="alert-message">__MSG_alert_message__</p>
+        <button id="alert-ok">__MSG_ok__</button>
+    </div>
 </div>
 
 </body>

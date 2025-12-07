@@ -20,7 +20,7 @@ import {FollowingUser, removeLocalFollowings, replaceFollowingsPreservingCategor
 import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
-import {$Id, hideLoading, showLoading, showNotification} from "./common";
+import {$Id, hideLoading, showAlert, showLoading, showNotification} from "./common";
 import {buildGatewayUrls, ensureSettings, LIGHTHOUSE_GATEWAY, unpinCid, uploadJson} from "../wallet/ipfs_api";
 import {
     ERR_LOCAL_IPFS_HANDOFF,
@@ -227,7 +227,7 @@ async function initFollowingManager() {
     bindEvents();
 
     loadWallet().then((wallet) => {
-        if (!wallet)return;
+        if (!wallet) return;
         loadLatestSnapshotCid(wallet.address).catch(e => {
             console.warn("[IPFS] skip loading latest snapshot cid:", e);
             updateIpfsLatestUI();
@@ -280,6 +280,11 @@ function bindEvents() {
 
     exportIpfsBtn?.addEventListener("click", async () => {
         const w = await loadWallet();
+        if (!w) {
+            showAlert(t('tips_title'), t('wallet_error_no_wallet'))
+            return
+        }
+
         await handleExportSnapshotToIpfs(w.address, (cid) => {
             latestSnapshotCid = cid;
             updateIpfsLatestUI();
@@ -869,9 +874,13 @@ async function addNewCategory(name: string) {
 }
 
 async function handleRenameCategory(category: Category) {
-    const dialog = document.getElementById("new-category-dialog") as HTMLElement
-    const name = prompt(t("rename_category_prompt"), category.catName);
+
+    const name = await showRenameCategoryDialog(
+        category.catName,
+        t("rename_category_prompt")
+    );
     if (!name) return;
+
     const trimmed = name.trim();
     if (!trimmed) {
         showNotification(t("category_name_empty"), "error");
@@ -1495,3 +1504,90 @@ async function canReachViaIpfsIo(cid: string, timeoutMs: number = 3000): Promise
     }
 }
 
+export function showRenameCategoryDialog(
+    initialName: string = "",
+    title?: string
+): Promise<string | null> {
+    return new Promise((resolve) => {
+        const dialog = document.getElementById("new-category-dialog") as HTMLDivElement | null;
+        const input = dialog?.querySelector<HTMLInputElement>("#new-category-name-input");
+        const btnConfirm = dialog?.querySelector<HTMLButtonElement>("#btn-confirm-rename");
+        const btnCancel = dialog?.querySelector<HTMLButtonElement>("#btn-cancel-rename");
+        const titleEl = dialog?.querySelector<HTMLElement>("#new-category-dialog-title");
+
+        if (!dialog || !input || !btnConfirm || !btnCancel) {
+            console.warn("[rename-dialog] DOM not found");
+            resolve(null);
+            return;
+        }
+
+        // 设置标题（如果有传）
+        if (title && titleEl) {
+            titleEl.textContent = title;
+        }
+
+        // 初始值
+        input.value = initialName ?? "";
+
+        const updateConfirmState = () => {
+            const trimmed = input.value.trim();
+            btnConfirm.disabled = trimmed.length === 0;
+        };
+        updateConfirmState();
+
+        dialog.classList.remove("hidden");
+        document.body.classList.add("modal-open");
+        input.focus();
+        input.select();
+
+        const cleanup = (value: string | null) => {
+            dialog.classList.add("hidden");
+            document.body.classList.remove("modal-open");
+
+            btnConfirm.removeEventListener("click", onConfirm);
+            btnCancel.removeEventListener("click", onCancel);
+            dialog.removeEventListener("click", onBackdropClick);
+            input.removeEventListener("keydown", onKeydown);
+            input.removeEventListener("input", onInput);
+
+            resolve(value);
+        };
+
+        const onConfirm = () => {
+            const value = input.value;
+            cleanup(value);
+        };
+
+        const onCancel = () => {
+            cleanup(null);
+        };
+
+        const onBackdropClick = (ev: MouseEvent) => {
+            if (ev.target === dialog) {
+                cleanup(null);
+            }
+        };
+
+        const onKeydown = (ev: KeyboardEvent) => {
+            if (ev.key === "Enter") {
+                ev.preventDefault();
+                if (!btnConfirm.disabled) {
+                    onConfirm();
+                }
+            } else if (ev.key === "Escape") {
+                ev.preventDefault();
+                onCancel();
+            }
+        };
+
+        const onInput = () => {
+            updateConfirmState();
+        };
+
+        btnConfirm.addEventListener("click", onConfirm);
+        btnCancel.addEventListener("click", onCancel);
+        dialog.addEventListener("click", onBackdropClick);
+        input.addEventListener("keydown", onKeydown);
+        input.addEventListener("input", onInput);
+    });
+}

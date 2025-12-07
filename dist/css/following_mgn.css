@@ -838,3 +838,34 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     border-radius: 999px;
     background-color: #1d9bf0;  /* 主题色竖线；想要绿色就改成 #2ecc71 */
 }
+
+/* ========== Rename Category Dialog ========== */
+#new-category-dialog .modal-content {
+    max-width: 420px;
+}
+
+.new-category-dialog-body {
+    margin: 16px 0 8px;
+}
+
+#new-category-name-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid #d0d7de;
+    outline: none;
+}
+
+/* focus 状态：和其他 input 保持一致 */
+#new-category-name-input:focus {
+    border-color: #1d9bf0;
+    background-color: #ffffff;
+}
+
+/* 为了和 btn-confirm 一致的禁用表现 */
+#btn-confirm-rename:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
