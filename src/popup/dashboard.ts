@@ -128,7 +128,7 @@ async function initWalletOrCreate(): Promise<void> {
 
     walletCreateDiv.style.display = "none";
     walletInfoDiv.style.display = "block";
-    (document.querySelector(".logo-container") as HTMLDivElement).style.display = 'none';
+    // (document.querySelector(".logo-container") as HTMLDivElement).style.display = 'none';
     populateWalletInfo(walletInfoDiv, currentWallet).then();
 
     walletSettingBtn.onclick = () => {
@@ -411,23 +411,27 @@ async function handleTransferEth(): Promise<void> {
         return;
     }
 
-    const to = window.prompt(t("wallet_prompt_transfer_to"), "");
-    if (!to) return;
-    const amount = window.prompt(t("wallet_prompt_transfer_eth_amount"), "");
-    if (!amount) return;
-    const gasInput = window.prompt(t("wallet_prompt_optional_gas_limit"), "");
+    const formValues = await openTransferEthDialog();
+    if (!formValues) {
+        return;
+    }
+
+    const { to, amount, gas } = formValues;
 
     try {
         const txHash = await transferEth({
-            to: to.trim(),
-            amountEther: amount.trim(),
-            gas: gasInput?.trim() ? gasInput.trim() : undefined,
-            passwordPrompt: () => requestPassword(t("wallet_prompt_password_send_eth"))
+            to,
+            amountEther: amount,
+            gas,
+            passwordPrompt: () => requestPassword(t("wallet_prompt_password_send_eth")),
         });
         showNotification(t("wallet_transfer_tx_sent") + txHash);
         await refreshBalances();
     } catch (error) {
-        showNotification((error as Error).message ?? t("wallet_transfer_eth_failed"), "error");
+        showNotification(
+            (error as Error).message ?? t("wallet_transfer_eth_failed"),
+            "error",
+        );
     }
 }
 
@@ -1399,6 +1403,67 @@ function initDashboardTexts(): void {
 
     const resetBtn = $Id('btn-reset-settings');
     if (resetBtn) resetBtn.textContent = t('wallet_reset_settings');
+
+    const transferTitle = $Id('transfer-eth-title');
+    if (transferTitle) {
+        transferTitle.textContent = t('wallet_transfer_eth_title');
+    }
+
+    const transferSubtitle = $Id('transfer-eth-subtitle');
+    if (transferSubtitle) {
+        transferSubtitle.textContent = t('wallet_transfer_eth_subtitle');
+    }
+
+    const toLabel = $Id('transfer-eth-to-label');
+    if (toLabel) {
+        toLabel.textContent = t('wallet_transfer_to_label');
+    }
+    const toInput = $input('#transfer-eth-to');
+    if (toInput) {
+        toInput.placeholder = t('wallet_transfer_to_hint');
+    }
+    const toHint = $Id('transfer-eth-to-hint');
+    if (toHint) {
+        toHint.textContent = t('wallet_transfer_to_hint');
+    }
+
+    const amountLabel = $Id('transfer-eth-amount-label');
+    if (amountLabel) {
+        amountLabel.textContent = t('wallet_transfer_amount_label');
+    }
+    const amountInput = $input('#transfer-eth-amount');
+    if (amountInput) {
+        amountInput.placeholder = t('wallet_transfer_amount_label');
+    }
+
+    const feeHint = $Id('transfer-eth-fee-hint');
+    if (feeHint) {
+        feeHint.textContent = t('wallet_transfer_fee_hint');
+    }
+
+    const gasLabel = $Id('transfer-eth-gas-label');
+    if (gasLabel) {
+        gasLabel.textContent = t('wallet_transfer_gas_label');
+    }
+    const gasInput = $input('#transfer-eth-gas');
+    if (gasInput) {
+        gasInput.placeholder = t('wallet_transfer_gas_label');
+    }
+
+    const gasHint = $Id('transfer-eth-gas-hint');
+    if (gasHint) {
+        gasHint.textContent = t('wallet_transfer_gas_hint');
+    }
+
+    const submitBtn = $Id('transfer-eth-submit-btn') as HTMLButtonElement | null;
+    if (submitBtn) {
+        submitBtn.textContent = t('wallet_transfer_confirm_btn');
+    }
+
+    const cancelBtn = $Id('transfer-eth-cancel-btn') as HTMLButtonElement | null;
+    if (cancelBtn) {
+        cancelBtn.textContent = t('cancel');
+    }
 }
 
 
@@ -1508,3 +1573,161 @@ async function handleSaveSettingsClick(select: HTMLSelectElement): Promise<void>
     showNotification(t("save_success"));
     await refreshBalances();
 }
+interface TransferEthFormValues {
+    to: string;
+    amount: string;
+    gas?: string;
+}
+
+function getReadableNetworkName(): string {
+    if (currentSettings.network === "base-mainnet") {
+        return t("wallet_network_option_base_mainnet");
+    }
+    return t("wallet_network_option_base_sepolia");
+}
+
+function getCurrentEthBalanceText(): string {
+    const span = document.querySelector<HTMLSpanElement>(".wallet-eth-value");
+    return span?.textContent?.trim() || "--";
+}
+
+/**
+ * 打开 ETH 转账表单弹窗，返回用户输入的参数；取消则返回 null。
+ */
+function openTransferEthDialog(): Promise<TransferEthFormValues | null> {
+    const modal = $Id("transfer-eth-modal") as HTMLDivElement | null;
+
+    // 如果还没加 HTML，兜底用旧的 prompt 流程
+    if (!modal) {
+        return new Promise((resolve) => {
+            const to = window.prompt(t("wallet_prompt_transfer_to"), "");
+            if (!to) return resolve(null);
+            const amount = window.prompt(t("wallet_prompt_transfer_eth_amount"), "");
+            if (!amount) return resolve(null);
+            const gas = window.prompt(t("wallet_prompt_optional_gas_limit"), "");
+            resolve({
+                to: to.trim(),
+                amount: amount.trim(),
+                gas: gas?.trim() || undefined,
+            });
+        });
+    }
+
+    const form = $Id("transfer-eth-form") as HTMLFormElement | null;
+    const toInput = $input("#transfer-eth-to");
+    const amountInput = $input("#transfer-eth-amount");
+    const gasInput = $input("#transfer-eth-gas");
+    const errorEl = $Id("transfer-eth-error") as HTMLParagraphElement | null;
+    const cancelBtn = $Id("transfer-eth-cancel-btn") as HTMLButtonElement | null;
+    const closeBtn = $Id("transfer-eth-close-btn") as HTMLButtonElement | null;
+    const maxBtn = $Id("transfer-eth-fill-max") as HTMLButtonElement | null;
+    const balanceSpan = $Id("transfer-eth-balance") as HTMLSpanElement | null;
+    const networkLabel = $Id("transfer-eth-network-label") as HTMLSpanElement | null;
+
+    if (!form || !toInput || !amountInput || !errorEl) {
+        // 结构不完整就直接退出
+        return Promise.resolve(null);
+    }
+
+    // 初始化展示文案（余额/网络）
+    if (balanceSpan) {
+        const bal = getCurrentEthBalanceText();
+        balanceSpan.textContent = `${t("wallet_current_balance") || ""}：${bal} ETH`;
+    }
+    if (networkLabel) {
+        networkLabel.textContent = getReadableNetworkName();
+    }
+    if (gasInput) {
+        gasInput.value = "";
+    }
+    toInput.value = "";
+    amountInput.value = "";
+    errorEl.textContent = "";
+
+    modal.classList.remove("hidden");
+
+    return new Promise<TransferEthFormValues | null>((resolve) => {
+        const handleClose = (result: TransferEthFormValues | null) => {
+            modal.classList.add("hidden");
+            form.removeEventListener("submit", handleSubmit);
+            cancelBtn?.removeEventListener("click", handleCancel);
+            closeBtn?.removeEventListener("click", handleCancel);
+            maxBtn?.removeEventListener("click", handleMax);
+            document.removeEventListener("keydown", handleKeydown);
+            modal.removeEventListener("click", handleBackdropClick as any);
+            resolve(result);
+        };
+
+        const handleCancel = () => {
+            handleClose(null);
+        };
+
+        const handleKeydown = (ev: KeyboardEvent) => {
+            if (ev.key === "Escape") {
+                ev.preventDefault();
+                handleClose(null);
+            }
+        };
+
+        const handleMax = () => {
+            const raw = getCurrentEthBalanceText();
+            if (!raw || raw === "--") return;
+            const numeric = raw.replace(/,/g, "").split(" ")[0];
+            amountInput.value = numeric;
+        };
+
+        const handleSubmit = (ev: Event) => {
+            ev.preventDefault();
+            errorEl.textContent = "";
+
+            const to = toInput.value.trim();
+            const amount = amountInput.value.trim();
+            const gas = gasInput?.value.trim() || "";
+
+            if (!to) {
+                errorEl.textContent = t("wallet_error_to_required");
+                return;
+            }
+            if (!ethers.utils.isAddress(to)) {
+                errorEl.textContent = t("wallet_error_invalid_to_address");
+                return;
+            }
+            if (!amount) {
+                errorEl.textContent = t("wallet_error_amount_required");
+                return;
+            }
+            const n = Number(amount);
+            if (!Number.isFinite(n) || n <= 0) {
+                errorEl.textContent =
+                    t("wallet_error_amount_invalid") || t("wallet_error_amount_required");
+                return;
+            }
+
+            if (gas && (!/^\d+$/.test(gas) || Number(gas) < 21000)) {
+                errorEl.textContent =
+                    t("wallet_error_gas_invalid") || "Gas limit 不合法";
+                return;
+            }
+
+            handleClose({
+                to,
+                amount,
+                gas: gas || undefined,
+            });
+        };
+
+        const handleBackdropClick = (ev: MouseEvent) => {
+            if (ev.target === modal) {
+                handleClose(null);
+            }
+        };
+
+        form.addEventListener("submit", handleSubmit);
+        cancelBtn?.addEventListener("click", handleCancel);
+        closeBtn?.addEventListener("click", handleCancel);
+        maxBtn?.addEventListener("click", handleMax);
+        document.addEventListener("keydown", handleKeydown);
+        modal.addEventListener("click", handleBackdropClick);
+    });
+}
+

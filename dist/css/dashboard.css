@@ -1025,3 +1025,172 @@ input.category-input:focus {
 .settings-group {
     font-weight: 400;
 }
+
+/* ==== 通用弹窗布局 ==== */
+.tc-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2200; /* 比钱包面板略高 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.45); /* 半透明遮罩 */
+}
+
+.tc-modal.hidden {
+    display: none;
+}
+
+.tc-modal__dialog {
+    width: 100%;
+    max-width: 480px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.25);
+    padding: 20px 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tc-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.tc-modal__title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.tc-modal__subtitle {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.tc-modal__icon-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px;
+    color: #9ca3af;
+}
+
+.tc-modal__icon-btn:hover {
+    color: #4b5563;
+}
+
+.tc-modal__body {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tc-modal__footer {
+    margin-top: 8px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+/* ==== 表单控件 ==== */
+
+.tc-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tc-field__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.tc-field__hint {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.tc-field__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tc-field__row--space-between {
+    justify-content: space-between;
+}
+
+.tc-field__control {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tc-field__control--with-suffix {
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    padding: 0 8px;
+    background-color: #f9fafb;
+}
+
+.tc-field__suffix {
+    font-size: 13px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.tc-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px 0;
+    font-size: 13px;
+    color: #111827;
+}
+
+.tc-input:focus {
+    outline: none;
+}
+
+.tc-form-error {
+    min-height: 16px;
+    font-size: 12px;
+    color: #b91c1c;
+}
+
+/* 小标签 */
+.tc-tag {
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    line-height: 1.3;
+}
+
+.tc-tag--subtle {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+/* 链接样式按钮 */
+.tc-link-button {
+    padding: 0;
+    border: none;
+    background: none;
+    font-size: 12px;
+    color: #2563eb;
+    cursor: pointer;
+}
+
+.tc-link-button:hover {
+    text-decoration: underline;
+}
+

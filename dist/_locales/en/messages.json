@@ -820,5 +820,49 @@
   },
   "wallet_network_option_base_sepolia": {
     "message": "Base Sepolia testnet"
+  },
+  "wallet_transfer_eth_title": {
+    "message": "Send ETH"
+  },
+  "wallet_transfer_eth_subtitle": {
+    "message": "Please double-check the recipient address and amount before submitting the transaction."
+  },
+
+  "wallet_transfer_to_label": {
+    "message": "Recipient address"
+  },
+  "wallet_transfer_to_hint": {
+    "message": "Make sure the address is correct. Blockchain transfers are irreversible."
+  },
+
+  "wallet_transfer_amount_label": {
+    "message": "Amount"
+  },
+  "wallet_transfer_fee_hint": {
+    "message": "Available balance ≈ current balance − estimated network fee."
+  },
+
+  "wallet_transfer_gas_label": {
+    "message": "Gas limit (optional)"
+  },
+  "wallet_transfer_gas_hint": {
+    "message": "If the gas limit is too low, the transaction may fail while still consuming fees."
+  },
+
+  "wallet_transfer_confirm_btn": {
+    "message": "Confirm & Send"
+  },
+
+  "wallet_current_balance": {
+    "message": "Balance"
+  },
+  "wallet_error_to_required": {
+    "message": "Please enter the recipient address."
+  },
+  "wallet_error_amount_invalid": {
+    "message": "Please enter a valid amount greater than 0."
+  },
+  "wallet_error_gas_invalid": {
+    "message": "Invalid gas limit. Please enter an integer no less than 21000."
   }
 }

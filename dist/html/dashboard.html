@@ -52,8 +52,7 @@
     </div>
     <div id="wallet-main-menu"
          class="wallet-main-menu-list hidden"
-         role="menu"
-         aria-hidden="true">
+         role="menu">
         <ul class="main-actions">
             <li>
                 <button id="btn-refresh-balance">刷新余额</button>
@@ -516,6 +515,153 @@
         </div>
     </div>
 </div>
+
+
+<!-- ETH 转账弹窗 -->
+<div
+        id="transfer-eth-modal"
+        class="tc-modal tc-modal--transfer hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transfer-eth-title"
+>
+    <div class="tc-modal__dialog">
+        <header class="tc-modal__header">
+            <div>
+                <h2 id="transfer-eth-title" class="tc-modal__title"></h2>
+                <p id="transfer-eth-subtitle" class="tc-modal__subtitle"></p>
+            </div>
+            <button
+                    type="button"
+                    id="transfer-eth-close-btn"
+                    class="tc-modal__icon-btn"
+                    aria-label="Close"
+            >
+                ✕
+            </button>
+        </header>
+
+        <form id="transfer-eth-form" class="tc-modal__body">
+            <!-- 收款地址 -->
+            <div class="tc-field">
+                <label
+                        for="transfer-eth-to"
+                        id="transfer-eth-to-label"
+                        class="tc-field__label"
+                ></label>
+                <input
+                        id="transfer-eth-to"
+                        type="text"
+                        class="tc-input"
+                        autocomplete="off"
+                />
+                <p
+                        id="transfer-eth-to-hint"
+                        class="tc-field__hint"
+                ></p>
+            </div>
+
+            <!-- 金额 -->
+            <div class="tc-field">
+                <div class="tc-field__row">
+                    <label
+                            for="transfer-eth-amount"
+                            id="transfer-eth-amount-label"
+                            class="tc-field__label"
+                    ></label>
+                    <span
+                            id="transfer-eth-balance"
+                            class="tc-field__hint"
+                    >
+            <!-- 运行时填充：当前余额：x.xxx ETH -->
+          </span>
+                </div>
+
+                <div class="tc-field__control tc-field__control--with-suffix">
+                    <input
+                            id="transfer-eth-amount"
+                            type="number"
+                            class="tc-input"
+                            min="0"
+                            step="0.0001"
+                            inputmode="decimal"
+                    />
+                    <span class="tc-field__suffix">ETH</span>
+                </div>
+
+                <div class="tc-field__row tc-field__row--space-between">
+                    <button
+                            type="button"
+                            id="transfer-eth-fill-max"
+                            class="tc-link-button"
+                    >
+                        Max
+                    </button>
+                    <span
+                            id="transfer-eth-fee-hint"
+                            class="tc-field__hint"
+                    ></span>
+                </div>
+            </div>
+
+            <!-- Gas / 网络信息 -->
+            <div class="tc-field">
+                <div class="tc-field__row tc-field__row--space-between">
+                    <label
+                            for="transfer-eth-gas"
+                            id="transfer-eth-gas-label"
+                            class="tc-field__label"
+                    ></label>
+                    <span
+                            id="transfer-eth-network-label"
+                            class="tc-tag tc-tag--subtle"
+                    >
+            <!-- 运行时填充：Base mainnet / Base Sepolia -->
+          </span>
+                </div>
+
+                <input
+                        id="transfer-eth-gas"
+                        type="number"
+                        class="tc-input"
+                        min="21000"
+                        step="1000"
+                />
+
+                <p
+                        id="transfer-eth-gas-hint"
+                        class="tc-field__hint"
+                ></p>
+            </div>
+
+            <!-- 错误信息 -->
+            <p
+                    id="transfer-eth-error"
+                    class="tc-form-error"
+                    aria-live="polite"
+            ></p>
+
+            <!-- 底部按钮 -->
+            <footer class="tc-modal__footer">
+                <button
+                        type="button"
+                        id="transfer-eth-cancel-btn"
+                        class="btn btn-secondary"
+                >
+                    <!-- 你原来应该有 common_cancel 之类的 key，这里用 JS 设置 -->
+                </button>
+                <button
+                        type="submit"
+                        id="transfer-eth-submit-btn"
+                        class="btn btn-primary"
+                >
+                    <!-- 用 wallet_transfer_confirm_btn 设置 -->
+                </button>
+            </footer>
+        </form>
+    </div>
+</div>
+
 
 </body>
 </html>
