@@ -11,6 +11,7 @@ import {blockedAdNumIncrease} from "../object/system_setting";
 import {prepareDownloadBtn} from "../timeline/render_action";
 import {t} from "../common/i18n";
 import {showDialog} from "../timeline/render_common";
+import {addTipBtnForTweet} from "./x402";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -105,7 +106,7 @@ function tryVideoDownloadLater(actionMenuList: HTMLElement, tid: string, divNode
     bindDownLoadBtn(actionMenuList, videoInfo.f, videoInfo.m, divNode);
 }
 
-function findTweetIDOfTweetDiv(divNode: HTMLDivElement) {
+export function findTweetIDOfTweetDiv(divNode: HTMLDivElement) {
     const anchors = Array.from(divNode.querySelectorAll<HTMLAnchorElement>("a[href]"));
     const regex = /^\/[^/]+\/status\/(\d+)$/;
 
@@ -170,6 +171,7 @@ function filterTweets(nodes: NodeList) {
 
         if (linkInfo.kind === "tweet") {
             addVideoDownloadBtnForTweet(divNode, linkInfo.tweetId);
+            addTipBtnForTweet(divNode)
         }
 
         if (linkInfo.kind === "followersPage") {

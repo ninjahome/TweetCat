@@ -1,4 +1,5 @@
 import {EntryObj} from "../timeline/tweet_entry";
+import {findTweetIDOfTweetDiv} from "./twitter_observer";
 
 function findArticleByStatusId(statusId: string): HTMLElement | null {
     // 使用属性选择器查找包含指定状态ID的链接
@@ -13,14 +14,37 @@ function findArticleByStatusId(statusId: string): HTMLElement | null {
     return null;
 }
 
-export async function addTipButtonForTweet(tweets: EntryObj[]) {
-    tweets.forEach(obj=>{
+const tweetsCache = new Map<string, EntryObj>()
+
+export async function cacheTweetInStatus(tweets: EntryObj[]) {
+    console.log("----->>> tweets length:", tweets.length)
+    tweets.forEach(obj => {
         const statusId = obj.tweet.rest_id
-        const article = findArticleByStatusId(statusId);
-        if (article) {
-            console.log("------>>>found:", article)
-        } else {
-            console.log("not found:", statusId)
-        }
+        tweetsCache.set(statusId, obj)
     })
+}
+
+function getTweetById(statusId: string): EntryObj | undefined {
+    return tweetsCache.get(statusId)
+}
+
+export function addTipBtnForTweetDetail(mainTweetID: string) {
+    console.log("-------->>> main tweet id:", mainTweetID)
+    const article = findArticleByStatusId(mainTweetID)
+    console.log("------->>>", article)
+    const obj = tweetsCache.get(mainTweetID)
+    if (!obj) {
+        console.log("no data for main tweet")
+        return
+    }
+}
+
+export function addTipBtnForTweet(divNode: HTMLDivElement) {
+
+    const statusId = findTweetIDOfTweetDiv(divNode);
+    if (!statusId) {
+        return
+    }
+    const obj = tweetsCache.get(statusId)
+    console.log("-------->>> find tweet:", statusId, obj)
 }
