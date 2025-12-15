@@ -234,7 +234,7 @@ export function sleep(ms: number): Promise<void> {
 export type ParsedTwitterLink =
     | { kind: "tweet"; url: URL; tweetId: string; username?: string }
     | { kind: "profile"; url: URL; username: string }
-    | { kind: "followersPage"; url: URL; username: string; subpage: "following" | "followers" | "verified_followers" | "followers_you_follow" } // <— 新增
+    | { kind: "followersPage"; url: URL; username: string; subpage: "following" | "followers" | "verified_followers" | "followers_you_follow" }
     | { kind: "home"; url: URL }
     | { kind: "explore"; url: URL }
     | { kind: "other"; url: URL };

@@ -305,8 +305,10 @@ async function fetchWeb3Identity() {
 
         addrEl.textContent = data.address ?? "--";
         addrEl.title = data.address ?? "";
-        gasEl.textContent = data.gas ?? "--";
+        gasEl.textContent = data.gas ? Number(data.gas).toFixed(6) : "--";
+        gasEl.title = data.gas ?? "--";
         usdtEl.textContent = data.usdt ?? "--";
+
         state.style.display = "none";
         card.style.display = "block";
     } catch (e) {

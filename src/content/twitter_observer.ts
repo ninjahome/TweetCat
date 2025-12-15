@@ -163,6 +163,7 @@ function filterTweets(nodes: NodeList) {
             const user = parseNameFromTweetCell(divNode);
             catMenuForTweetOfHome(divNode, user).then();
         }
+
         if (linkInfo.kind === "home" || linkInfo.kind === "profile") {
             addVideoDownloadBtnForHomeOrProfile(divNode);
         }
@@ -170,6 +171,7 @@ function filterTweets(nodes: NodeList) {
         if (linkInfo.kind === "tweet") {
             addVideoDownloadBtnForTweet(divNode, linkInfo.tweetId);
         }
+
         if (linkInfo.kind === "followersPage") {
             catMenuForFlowerPage(divNode).then();
         }

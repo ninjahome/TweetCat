@@ -189,7 +189,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: await openLocalApp()}
         }
 
-        case MsgType.WalletInfoQuery: {
+        case MsgType.   WalletInfoQuery: {
             const wallet = await loadWallet();
             if (!wallet) {
                 return { success: true, data: { unlocked: false } };

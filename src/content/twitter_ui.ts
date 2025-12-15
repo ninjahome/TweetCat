@@ -30,11 +30,11 @@ const kolScoreCache = new Map<string, LevelScoreBreakdown>();
 
 export async function appendScoreInfoToProfilePage(profileData: any, userName: string) {
 
-    console.log("[injection fetched data]------>>>screen name：", userName, "\n raw data:", profileData);
+    // console.log("[injection fetched data]------>>>screen name：", userName, "\n raw data:", profileData);
     try {
         const usrProfile = new UserProfile(profileData);
         const scoreData = calculateLevelBreakdown(usrProfile);
-        console.log("------>>> score data:", scoreData);
+        // console.log("------>>> score data:", scoreData);
         kolScoreCache.set(userName, scoreData);
 
         const userInfoArea = document.querySelector(`div[data-testid="UserName"]`)
