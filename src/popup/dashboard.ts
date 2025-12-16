@@ -6,12 +6,12 @@ import {
     BASE_MAINNET_USDC,
     BASE_SEPOLIA_CHAIN_ID, BASE_SEPOLIA_DEFAULT_RPC, BASE_SEPOLIA_USDC,
     ERC20_ABI,
-    MsgType
+    MsgType, X402TaskKey
 } from "../common/consts";
 import {checkAndInitDatabase} from "../common/database";
 import {showView} from "../common/utils";
 import {sendMessageToX} from "../service_work/bg_msg";
-import {localGet, localSet} from "../common/local_storage";
+import {localGet, localRemove, localSet} from "../common/local_storage";
 import {getSystemSetting, switchAdOn} from "../object/system_setting";
 import {initI18n, t} from "../common/i18n";
 import {
@@ -34,6 +34,7 @@ import {
 } from "../wallet/ipfs_settings";
 import {resetIpfsClient} from "../wallet/ipfs_api";
 import {openPasswordModal} from "./password_modal";
+import {logX402} from "../common/debug_flags";
 
 type UiNetworkOption = 'base-mainnet' | 'base-sepolia' | 'custom';
 
@@ -61,6 +62,35 @@ async function initDashBoard(): Promise<void> {
     initSettings();
     await initWalletOrCreate();
     initIpfsSettingsView();
+    await processX402Task()
+}
+
+async function processX402Task() {
+    const x402_popup_task = await localGet(X402TaskKey)
+    logX402("------>>> popup task", x402_popup_task)
+    if (!x402_popup_task) return;
+
+    switch (x402_popup_task.type) {
+        case MsgType.X402SessionCreate: {
+            const reason = x402_popup_task.payload.reason
+            if (reason === "no_wallet") {
+                showAlert("Tips", t('wallet_error_no_wallet'))
+                return
+            } else if (reason === "no_session") {
+                const input = await openPasswordModal("请解锁钱包以创建 session key");
+                if (!input) {
+                    return
+                }
+            }
+            break;
+        }
+        default: {
+            logX402("------>>> popup task type unresolved", x402_popup_task.type)
+            break
+        }
+    }
+
+    await localRemove(X402TaskKey)
 }
 
 function dashRouter(path: string): void {
@@ -251,6 +281,7 @@ function setupWalletActionButtons(): void {
         showView('#onboarding/main-home', dashRouter);
     });
 }
+
 function updateSettingsUI(settings: WalletSettings): void {
     const infuraInput = $Id("infura-project-id") as HTMLInputElement | null;
     const customInput = $Id("custom-rpc-url") as HTMLInputElement | null;
@@ -337,13 +368,13 @@ async function refreshBalances(showStatus = true): Promise<void> {
 
 
 function getChainId(settings: WalletSettings): number {
-    return settings.network  === 'base-mainnet'
+    return settings.network === 'base-mainnet'
         ? BASE_MAINNET_CHAIN_ID
         : BASE_SEPOLIA_CHAIN_ID;
 }
 
 function getDefaultUsdcAddress(settings: WalletSettings): string {
-    return settings.network  === 'base-mainnet'
+    return settings.network === 'base-mainnet'
         ? BASE_MAINNET_USDC
         : BASE_SEPOLIA_USDC;
 }
@@ -399,7 +430,7 @@ async function handleExportPrivateKey(): Promise<void> {
             () => requestPassword(t("wallet_prompt_password_export_pk")),
             async wallet => wallet.privateKey
         );
-        showAlert(t("wallet_export_pk_alert_prefix")+t("wallet_export_pk_warning"), privateKey)
+        showAlert(t("wallet_export_pk_alert_prefix") + t("wallet_export_pk_warning"), privateKey)
     } catch (error) {
         showNotification((error as Error).message ?? t("wallet_export_pk_failed"), "error");
     }
@@ -416,7 +447,7 @@ async function handleTransferEth(): Promise<void> {
         return;
     }
 
-    const { to, amount, gas } = formValues;
+    const {to, amount, gas} = formValues;
 
     try {
         const txHash = await transferEth({
@@ -447,7 +478,7 @@ async function handleTransferToken(): Promise<void> {
         return;
     }
 
-    const { to, amount, decimals, gas } = formValues;
+    const {to, amount, decimals, gas} = formValues;
     const tokenAddress = getDefaultUsdcAddress(currentSettings); // 固定用当前网络 USDC
 
     try {
@@ -1639,6 +1670,7 @@ async function handleSaveSettingsClick(select: HTMLSelectElement): Promise<void>
     showNotification(t("save_success"));
     await refreshBalances();
 }
+
 interface TransferEthFormValues {
     to: string;
     amount: string;

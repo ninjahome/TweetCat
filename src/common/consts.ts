@@ -82,7 +82,10 @@ export enum MsgType {
     WalletInfoQuery = "WalletInfoQuery",
     OpenOrFocusUrl = "OpenOrFocusUrl",
     SW_ACTION_GET_SNAPSHOT = "SW_ACTION_GET_SNAPSHOT",
-    IPFS_GET_GATEWAY_BASE = "IPFS_GET_GATEWAY_BASE"
+    IPFS_GET_GATEWAY_BASE = "IPFS_GET_GATEWAY_BASE",
+
+    X402TipAction = "X402TipAction",
+    X402SessionCreate = "X402SessionCreate"
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
@@ -157,3 +160,5 @@ export const ERC20_ABI = [
     "function balanceOf(address owner) view returns (uint256)",
     "function transfer(address to, uint256 amount) returns (bool)"
 ];
+
+export const X402TaskKey = "x402_popup_task"

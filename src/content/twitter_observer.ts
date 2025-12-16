@@ -11,7 +11,7 @@ import {blockedAdNumIncrease} from "../object/system_setting";
 import {prepareDownloadBtn} from "../timeline/render_action";
 import {t} from "../common/i18n";
 import {showDialog} from "../timeline/render_common";
-import {addTipBtnForTweet} from "./x402";
+import {addTipBtnForTweet} from "./content_x402";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -42,7 +42,7 @@ const observer = new MutationObserver((mutations) => {
 });
 
 
-let _contentTemplate: HTMLTemplateElement | null = null;
+export let _contentTemplate: HTMLTemplateElement | null = null;
 
 export async function initObserver() {
     __blockAdStatus = await localGet(__DBK_AD_Block_Key) as boolean ?? false;

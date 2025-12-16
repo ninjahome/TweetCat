@@ -28,6 +28,7 @@ import {
 import {getBaseUsdcAddress, getEthBalance, getTokenBalance, loadWallet, loadWalletSettings} from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
+import {tipActionForTweet} from "./bg_x402";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -189,10 +190,10 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: await openLocalApp()}
         }
 
-        case MsgType.   WalletInfoQuery: {
+        case MsgType.WalletInfoQuery: {
             const wallet = await loadWallet();
             if (!wallet) {
-                return { success: true, data: { unlocked: false } };
+                return {success: true, data: {unlocked: false}};
             }
 
             const address = wallet.address;
@@ -202,19 +203,22 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             const usdcAddress = getBaseUsdcAddress(settings);     // 👈 关键：选出当前链的 USDC 地址
             const usdt = await getTokenBalance(address, usdcAddress, settings);
 
-            return { success: true, data: { unlocked: true, address, gas, usdt } };
+            return {success: true, data: {unlocked: true, address, gas, usdt}};
         }
 
-        case MsgType.OpenOrFocusUrl:{
+        case MsgType.OpenOrFocusUrl: {
             await openOrUpdateTab(request.data as string)
             return {success: true};
         }
 
-        case MsgType.SW_ACTION_GET_SNAPSHOT:{
+        case MsgType.SW_ACTION_GET_SNAPSHOT: {
             return {success: true, data: await loadCategorySnapshot()};
         }
         case MsgType.IPFS_GET_GATEWAY_BASE: {
             return {success: true, data: await loadIpfsLocalCustomGateWay()};
+        }
+        case MsgType.X402TipAction: {
+            return await tipActionForTweet(request.data);
         }
         default:
             return {success: false, data: "unsupportable message type"};

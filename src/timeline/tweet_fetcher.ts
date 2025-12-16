@@ -10,7 +10,7 @@ import {resetNewestTweet, showNewestTweets} from "../content/tweetcat_web3_area"
 import {setLatestFetchAt} from "./tweet_pager";
 import {tweetFetchParam} from "../common/msg_obj";
 import {extractMp4UrlList} from "./render_video";
-import {cacheTweetInStatus} from "../content/x402";
+import {cacheTweetInStatus} from "../content/content_x402";
 
 const MIN_FETCH_GAP = 5_000;
 
@@ -233,7 +233,7 @@ export async function processCapturedTweets(result: any, kolId: string) {
 export async function processCapturedTweetDetail(result: any) {
     const res = parseTimelineFromGraphQL(result, "tweetDetail");
     cacheVideoTweet(res.tweets);
-   await cacheTweetInStatus(res.tweets)
+    await cacheTweetInStatus(res.tweets)
 }
 
 export async function processCapturedHomeLatest(result: any) {
