@@ -1,12 +1,10 @@
 import {EntryObj} from "../timeline/tweet_entry";
 import {_contentTemplate, findTweetIDOfTweetDiv} from "./twitter_observer";
 import {logX402} from "../common/debug_flags";
-import {sendMsgToService, sleep} from "../common/utils";
+import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {t} from "../common/i18n";
 import {hideGlobalLoading, showGlobalLoading} from "./common";
-import {showDialog, showToastMsg} from "../timeline/render_common";
-import {ar} from "date-fns/locale/ar";
+import {showToastMsg} from "../timeline/render_common";
 
 function findArticleByStatusId(statusId: string): HTMLElement | null {
     // 使用属性选择器查找包含指定状态ID的链接
