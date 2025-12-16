@@ -1,13 +1,13 @@
 import {create} from 'kubo-rpc-client';
 import {
-    decryptString, ERR_LOCAL_IPFS_HANDOFF,
+    ERR_LOCAL_IPFS_HANDOFF,
     getCachedIpfsSettings,
     IpfsSettings,
     loadIpfsSettings, PROVIDER_TYPE_CUSTOM, PROVIDER_TYPE_LIGHTHOUSE, PROVIDER_TYPE_PINATA, PROVIDER_TYPE_TWEETCAT,
 } from './ipfs_settings';
 import {TWEETCAT_PINATA} from "./ipfs_config";
 import browser from "webextension-polyfill";
-import {fetchWithTimeout, openOrUpdateTab, sendMsgToService} from "../common/utils";
+import {decryptString, fetchWithTimeout, openOrUpdateTab, sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 
 export const DEFAULT_IPFS_API = 'https://ipfs.infura.io:5001/api/v0';

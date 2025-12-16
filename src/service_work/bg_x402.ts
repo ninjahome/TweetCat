@@ -2,66 +2,15 @@ import browser from "webextension-polyfill";
 import {logX402} from "../common/debug_flags";
 import {ethers} from "ethers";
 import {loadWallet, withDecryptedWallet} from "../wallet/wallet_api";
-import {localSet} from "../common/local_storage";
+import {localGet, localSet} from "../common/local_storage";
 import {MsgType, X402TaskKey} from "../common/consts";
-
-interface X402SessionKey {
-    address: string
-    privateKeyEnc: string      // 加密存储（不用明文）
-    expiresAt: number          // 毫秒时间戳
-    maxTotalAmount: string     // USDC 最多可花
-    spentAmount: string        // 已花
-    chainId: number            // Base / Sepolia
-}
-
-interface X402SessionAuthorization {
-    sessionKey: string          // address
-    owner: string               // 主钱包地址
-    scope: "x402:eip3009"
-    chainId: number
-    maxAmount: string
-    validAfter: number
-    validBefore: number
-}
-
-//
-// interface X402Payment {
-//     authorization: EIP3009Authorization
-//     sessionKeySignature: string
-// }
-
-
-const EIP3009_TYPES = {
-    TransferWithAuthorization: [
-        {name: "from", type: "address"},
-        {name: "to", type: "address"},
-        {name: "value", type: "uint256"},
-        {name: "validAfter", type: "uint256"},
-        {name: "validBefore", type: "uint256"},
-        {name: "nonce", type: "bytes32"},
-    ],
-};
-
-
-// EIP-3009 / x402 专用签名参数
-export interface Eip3009AuthorizationParams {
-    domain: {
-        name: string;              // e.g. "USD Coin"
-        version: string;           // e.g. "2"
-        chainId: number;           // Base / Base Sepolia
-        verifyingContract: string; // USDC 合约地址
-    };
-    message: {
-        from: string;        // payer address
-        to: string;          // payTo address
-        value: string;       // uint256, 最小单位（string）
-        validAfter: number;  // uint256 (seconds)
-        validBefore: number; // uint256 (seconds)
-        nonce: string;       // bytes32 / uint256 string
-    };
-    password: string;
-}
-
+import {
+    EIP3009_TYPES,
+    Eip3009AuthorizationParams,
+    StoredX402Session,
+    X402_SESSION_STORE_KEY,
+    X402SessionKey
+} from "../common/x402_obj";
 
 export async function signEip3009Authorization(
     params: Eip3009AuthorizationParams
@@ -108,14 +57,12 @@ export async function signEip3009Authorization(
             throw new Error("当前 ethers Wallet 不支持 TypedData 签名");
         }
 
-        const signature = await signFn.call(
+        return await signFn.call(
             wallet,
             domain,
             EIP3009_TYPES,
             normalizedMessage
         );
-
-        return signature;
     });
 }
 
@@ -230,4 +177,24 @@ export async function tipActionForTweet(data: { tweetId: string, authorId: strin
             data: "SIGN_FAILED",
         };
     }
+}
+
+export async function findUsableX402Session(chainId: number) {
+    const store =
+        (await localGet(X402_SESSION_STORE_KEY)) as Record<string, StoredX402Session> | null
+    if (!store) return null
+
+    const now = Date.now()
+
+    for (const v of Object.values(store)) {
+        const { session, authorization } = v
+        if (
+            session.chainId === chainId &&
+            session.expiresAt > now &&
+            BigInt(session.spentAmount) < BigInt(session.maxTotalAmount)
+        ) {
+            return v
+        }
+    }
+    return null
 }

@@ -9,7 +9,7 @@ import {
     MsgType, X402TaskKey
 } from "../common/consts";
 import {checkAndInitDatabase} from "../common/database";
-import {showView} from "../common/utils";
+import {EncryptedBlock, encryptString, showView} from "../common/utils";
 import {sendMessageToX} from "../service_work/bg_msg";
 import {localGet, localRemove, localSet} from "../common/local_storage";
 import {getSystemSetting, switchAdOn} from "../object/system_setting";
@@ -24,17 +24,17 @@ import {
 } from "../wallet/wallet_api";
 import {$, $Id, $input, hideLoading, showAlert, showLoading, showNotification} from "./common";
 import {
-    encryptString,
     IpfsProvider,
     IpfsSettings,
     loadIpfsSettings,
     saveIpfsSettings,
-    EncryptedBlock, decryptSettingsForUI, PROVIDER_TYPE_PINATA, PROVIDER_TYPE_LIGHTHOUSE, PROVIDER_TYPE_CUSTOM,
+    decryptSettingsForUI, PROVIDER_TYPE_PINATA, PROVIDER_TYPE_LIGHTHOUSE, PROVIDER_TYPE_CUSTOM,
     PROVIDER_TYPE_TWEETCAT
 } from "../wallet/ipfs_settings";
 import {resetIpfsClient} from "../wallet/ipfs_api";
 import {openPasswordModal} from "./password_modal";
 import {logX402} from "../common/debug_flags";
+import {handleX402SessionCreate} from "./popup_x402";
 
 type UiNetworkOption = 'base-mainnet' | 'base-sepolia' | 'custom';
 
@@ -70,27 +70,21 @@ async function processX402Task() {
     logX402("------>>> popup task", x402_popup_task)
     if (!x402_popup_task) return;
 
-    switch (x402_popup_task.type) {
-        case MsgType.X402SessionCreate: {
-            const reason = x402_popup_task.payload.reason
-            if (reason === "no_wallet") {
-                showAlert("Tips", t('wallet_error_no_wallet'))
-                return
-            } else if (reason === "no_session") {
-                const input = await openPasswordModal("请解锁钱包以创建 session key");
-                if (!input) {
-                    return
-                }
+    try {
+        switch (x402_popup_task.type) {
+            case MsgType.X402SessionCreate: {
+                await handleX402SessionCreate()
+                break
             }
-            break;
+            default: {
+                logX402("------>>> popup task type unresolved", x402_popup_task.type)
+                break
+            }
         }
-        default: {
-            logX402("------>>> popup task type unresolved", x402_popup_task.type)
-            break
-        }
-    }
+    } finally {
+        await localRemove(X402TaskKey)
 
-    await localRemove(X402TaskKey)
+    }
 }
 
 function dashRouter(path: string): void {
