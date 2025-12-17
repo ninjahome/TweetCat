@@ -80,11 +80,13 @@ export enum MsgType {
     StartLocalApp = 'StartLocalApp',
 
     WalletInfoQuery = "WalletInfoQuery",
+    WalletUnlock = "WalletUnlock",
     OpenOrFocusUrl = "OpenOrFocusUrl",
     SW_ACTION_GET_SNAPSHOT = "SW_ACTION_GET_SNAPSHOT",
     IPFS_GET_GATEWAY_BASE = "IPFS_GET_GATEWAY_BASE",
 
     X402TipAction = "X402TipAction",
+    X402Heartbeat = 'X402_HEARTBEAT',
     X402SessionCreate = "X402SessionCreate"
 }
 

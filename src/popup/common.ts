@@ -99,3 +99,5 @@ export function setTextContentOrHide(element: HTMLElement | null, text?: string 
         element.classList.add("hidden");
     }
 }
+
+

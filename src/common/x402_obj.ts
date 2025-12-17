@@ -1,3 +1,4 @@
+import {s} from "vitest/dist/chunks/reporters.d.BFLkQcL6";
 
 export const EIP3009_TYPES = {
     TransferWithAuthorization: [
@@ -29,13 +30,6 @@ export interface Eip3009AuthorizationParams {
     };
     password: string;
 }
-
-export interface StoredX402Session {
-    session: X402SessionKey
-    authorization: X402SessionAuthorization
-    createdAt: number
-}
-
 
 // x402_obj.ts
 export interface X402SessionKey {
@@ -70,7 +64,6 @@ export interface StoredX402Session {
     authorization: X402SessionAuthorization
     createdAt: number
 }
-export const X402_SESSION_STORE_KEY = "x402:session:v1"
 
 export const X402_SESSION_AUTH_DOMAIN = (chainId: number) => ({
     name: "TweetCat x402 Session",
@@ -91,7 +84,7 @@ export const X402_SESSION_AUTH_TYPES = {
 }
 
 
-interface CdpEip3009 {
+export interface CdpEip3009 {
     from: string
     to: string
     value: string
@@ -99,4 +92,75 @@ interface CdpEip3009 {
     validBefore: number
     nonce: string
     signature: string
+}
+
+
+export const ChainIDBaseSepolia = 84532 as const
+export const ChainIDBaseMain = 8453 as const
+
+export const ChainNameBaseSepolia = "base-sepolia" as const
+export const ChainNameBaseMain = "base-mainnet" as const
+export type ChainNetwork = typeof ChainNameBaseSepolia | typeof ChainNameBaseMain
+
+// x402_facilitator.ts
+export interface X402FacilitatorConfig {
+    chainId: number
+    network: ChainNetwork
+    usdcAddress: string
+    settlementContract: string
+    endpoint: string
+}
+
+export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
+    // Base Sepolia
+    [ChainIDBaseSepolia]: {
+        chainId: ChainIDBaseSepolia,
+        network: ChainNameBaseSepolia,
+        usdcAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        settlementContract:"0x06856d7a17b0ac072a845fbe95812e94ef8c2411",
+        endpoint: "https://facilitator.sepolia.x402.org",
+    },
+
+    // Base Mainnet
+    [ChainIDBaseMain]: {
+        chainId: ChainIDBaseMain,
+        network: ChainNameBaseMain,
+        usdcAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        settlementContract:"0x06856d7a17b0ac072a845fbe95812e94ef8c2411",
+        endpoint: "https://facilitator.x402.org",
+    },
+}
+
+
+
+export interface X402SubmitInput {
+    facilitator: X402FacilitatorConfig
+    // owner -> sessionKey
+    sessionAuthorization: X402SessionAuthorization
+    // sessionKey -> transfer
+    transfer: CdpEip3009
+}
+
+
+export type X402SubmitResult =
+    | {
+    ok: true
+    txHash: string
+    status: "submitted" | "confirmed"
+}
+    | {
+    ok: false
+    error:
+        | "FACILITATOR_REJECTED"
+        | "INVALID_AUTHORIZATION"
+        | "INSUFFICIENT_FUNDS"
+        | "SESSION_EXPIRED"
+        | "NETWORK_ERROR"
+        | "UNKNOWN_ERROR"
+    message?: string
+}
+
+export interface X402FacilitatorRequest {
+    sessionAuthorization: X402SessionAuthorization
+    transferAuthorization: CdpEip3009
 }

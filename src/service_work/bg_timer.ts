@@ -35,12 +35,12 @@ export async function createAlarm(): Promise<void> {
 export async function updateAlarm(): Promise<void> {
     await browser.alarms.clear(__alarm_tweets_fetch__);
     await browser.alarms.clear(__alarm_userid_check__);
-    alarms.create(__alarm_tweets_fetch__, {
+    await alarms.create(__alarm_tweets_fetch__, {
         periodInMinutes: __interval_tweets_fetch__
     });
     logBGT("------>>> alarm for tweets fetch recreate success,timer:", __interval_tweets_fetch__);
 
-    alarms.create(__alarm_userid_check__, {
+    await alarms.create(__alarm_userid_check__, {
         periodInMinutes: __interval_userID_check__
     });
     logBGT("------>>> alarm for user id check recreate success,timer:", __interval_userID_check__);
@@ -65,8 +65,10 @@ export async function timerKolInQueueImmediate(kolID: string): Promise<void> {
     await tweetFM.queuePush(kolID);
 }
 
+let testCounter = 1
+
 async function alarmTweetsProc() {
-    logBGT("------>>> alarm triggered, start to fetch tweets from server");
+    logBGT("------>>> alarm triggered, start to fetch tweets from server", testCounter++);
     await checkAndInitDatabase();
     await refillApiAccessToken(tweetFM.MAX_KOL_PER_ROUND);
     try {

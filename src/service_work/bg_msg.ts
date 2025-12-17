@@ -220,6 +220,12 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.X402TipAction: {
             return await tipActionForTweet(request.data);
         }
+
+        case MsgType.X402Heartbeat: {
+            console.log("------>>>keep alive success")
+            return {success: true,data:"success"}
+        }
+
         default:
             return {success: false, data: "unsupportable message type"};
     }

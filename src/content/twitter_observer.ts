@@ -11,7 +11,6 @@ import {blockedAdNumIncrease} from "../object/system_setting";
 import {prepareDownloadBtn} from "../timeline/render_action";
 import {t} from "../common/i18n";
 import {showDialog} from "../timeline/render_common";
-import {addTipBtnForTweet} from "./content_x402";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -171,7 +170,6 @@ function filterTweets(nodes: NodeList) {
 
         if (linkInfo.kind === "tweet") {
             addVideoDownloadBtnForTweet(divNode, linkInfo.tweetId);
-            addTipBtnForTweet(divNode)
         }
 
         if (linkInfo.kind === "followersPage") {

@@ -5,6 +5,7 @@ import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {hideGlobalLoading, showGlobalLoading} from "./common";
 import {showToastMsg} from "../timeline/render_common";
+import browser from "webextension-polyfill";
 
 function findArticleByStatusId(statusId: string): HTMLElement | null {
     // 使用属性选择器查找包含指定状态ID的链接
@@ -45,12 +46,13 @@ export async function cacheTweetInStatus(tweets: EntryObj[], tryAgain: boolean =
         return
     }
 
+    logX402("-------->>> find twee when tweet detail data got:", tweetId, firstTweetObj)
     appendTipBtn(article, firstTweetObj)
 }
 
 function appendTipBtn(article: HTMLElement, obj: EntryObj) {
     const toolBar = article.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep")
-    if (!!toolBar.querySelector(".user-tip-action"))return;
+    if (!!toolBar.querySelector(".user-tip-action")) return;
 
     const tipBtn = _contentTemplate.content.getElementById("user-tip-action")?.cloneNode(true) as HTMLElement;
     if (!tipBtn) return;
@@ -65,14 +67,27 @@ function appendTipBtn(article: HTMLElement, obj: EntryObj) {
 async function tipAction(firstTweetObj: EntryObj) {
     showGlobalLoading("正在访问 X402 服务")
     try {
+
+        const tip = 0.01
+
+        // 1) 先查钱包信息（复用现有接口）
+        const info = await sendMsgToService({}, MsgType.WalletInfoQuery)
+        const usdc = Number(info?.data?.usdt ?? 0) // 如果你改名了这里改成 usdc
+
+        if (!Number.isFinite(usdc) || usdc < tip) {
+            showToastMsg(`USDC 余额不足：需要 ${tip} USDC`)
+            return
+        }
+
         logX402("------>>> tip action clicked:")
         const tweet = firstTweetObj.tweet
         const req = await sendMsgToService({
             tweetId: tweet.rest_id,
-            authorId: tweet.author.authorID
+            authorId: tweet.author.authorID,
+            val: tip
         }, MsgType.X402TipAction)
         console.log("x402 req:", req)
-        if(!req.success){
+        if (!req.success) {
             showToastMsg(req.data as string)
             return
         }
@@ -98,15 +113,24 @@ export function addTipBtnForTweetDetail(mainTweetID: string) {
     }
 }
 
-export function addTipBtnForTweet(divNode: HTMLDivElement) {
-
-    const statusId = findTweetIDOfTweetDiv(divNode);
-    if (!statusId) {
-        return
-    }
+export function addTipBtnForTweet(statusId: string) {
     const obj = tweetsCache.get(statusId)
-    logX402("-------->>> find tweet:", statusId, obj)
-    const article = divNode.querySelector('article') as HTMLElement
-    if(!obj || !article)return;
+    logX402("-------->>> find twee when url changed:", statusId, obj)
+    const article = document.querySelector('article') as HTMLElement
+    if (!obj || !article) return;
     appendTipBtn(article, obj)
+}
+
+
+let heartbeatTimer: number | null = null
+export function startX402Heartbeat() {
+    heartbeatTimer = window.setInterval(() => {
+        try {
+            sendMsgToService({}, MsgType.X402Heartbeat).then(()=>{
+                console.log("======>>>>>KA发送成功")
+            })
+        } catch (err) {
+            console.log("---------->>>>>port error:", err)
+        }
+    }, 20_000)
 }

@@ -13,7 +13,7 @@ export const DBG = {
     TweetCache: false,
     TweetFetcher: false,
     TweetCursor: false,
-    TweetBGTimer: false,
+    TweetBGTimer: true,
     TweetObjParse: false,
     TweetRenderCard: false,
     TweetRenderContent: false,

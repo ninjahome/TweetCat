@@ -32,9 +32,8 @@ import {
     PROVIDER_TYPE_TWEETCAT
 } from "../wallet/ipfs_settings";
 import {resetIpfsClient} from "../wallet/ipfs_api";
-import {openPasswordModal} from "./password_modal";
-import {logX402} from "../common/debug_flags";
-import {handleX402SessionCreate} from "./popup_x402";
+import {requestPassword} from "./password_modal";
+import {processX402Task} from "./popup_x402";
 
 type UiNetworkOption = 'base-mainnet' | 'base-sepolia' | 'custom';
 
@@ -65,27 +64,6 @@ async function initDashBoard(): Promise<void> {
     await processX402Task()
 }
 
-async function processX402Task() {
-    const x402_popup_task = await localGet(X402TaskKey)
-    logX402("------>>> popup task", x402_popup_task)
-    if (!x402_popup_task) return;
-
-    try {
-        switch (x402_popup_task.type) {
-            case MsgType.X402SessionCreate: {
-                await handleX402SessionCreate()
-                break
-            }
-            default: {
-                logX402("------>>> popup task type unresolved", x402_popup_task.type)
-                break
-            }
-        }
-    } finally {
-        await localRemove(X402TaskKey)
-
-    }
-}
 
 function dashRouter(path: string): void {
     if (path === '#onboarding/main-home') {
@@ -583,14 +561,7 @@ async function handleVerifySignature(): Promise<void> {
     }
 }
 
-async function requestPassword(promptMessage: string): Promise<string> {
-    const input = await openPasswordModal(promptMessage);
 
-    if (!input) {
-        throw new Error(t("wallet_error_operation_cancelled"));
-    }
-    return input;
-}
 
 async function withDecryptedWallet<T>(passwordPrompt: PasswordPrompt, action: (wallet: ethers.Wallet) => Promise<T>): Promise<T> {
     if (!currentWallet) {
