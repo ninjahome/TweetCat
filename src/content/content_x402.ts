@@ -97,10 +97,6 @@ async function tipAction(firstTweetObj: EntryObj) {
     }
 }
 
-function getTweetById(statusId: string): EntryObj | undefined {
-    return tweetsCache.get(statusId)
-}
-
 export function addTipBtnForTweetDetail(mainTweetID: string) {
     console.log("-------->>> main tweet id:", mainTweetID)
     const article = findArticleByStatusId(mainTweetID)

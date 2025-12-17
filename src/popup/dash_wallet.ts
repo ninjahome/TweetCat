@@ -6,23 +6,25 @@ import {
     defaultWalletSettings,
     loadWallet,
     loadWalletSettings,
-    saveWalletSettings, signTypedData,
-    TCWallet, verifySignature,
+    saveWalletSettings,
+    TCWallet,
     WalletSettings
 } from "../wallet/wallet_api";
 import {
     BASE_MAINNET_CHAIN_ID,
     BASE_MAINNET_DEFAULT_RPC,
     BASE_MAINNET_USDC,
-    BASE_SEPOLIA_CHAIN_ID, BASE_SEPOLIA_DEFAULT_RPC,
-    BASE_SEPOLIA_USDC, ERC20_ABI, MsgType
+    BASE_SEPOLIA_CHAIN_ID,
+    BASE_SEPOLIA_DEFAULT_RPC,
+    BASE_SEPOLIA_USDC,
+    ERC20_ABI,
+    MsgType
 } from "../common/consts";
 import {sendMsgToService, showView} from "../common/utils";
 import {dashRouter} from "./dashboard";
 import browser from "webextension-polyfill";
 
 type UiNetworkOption = 'base-mainnet' | 'base-sepolia' | 'custom';
-type PasswordPrompt = () => Promise<string>;
 let currentWallet: TCWallet | null = null;
 let currentSettings: WalletSettings = {...defaultWalletSettings};
 
@@ -104,8 +106,7 @@ function openTransferEthDialog(): Promise<TransferEthFormValues | null> {
         const handleMax = () => {
             const raw = getCurrentEthBalanceText();
             if (!raw || raw === "--") return;
-            const numeric = raw.replace(/,/g, "").split(" ")[0];
-            amountInput.value = numeric;
+            amountInput.value = raw.replace(/,/g, "").split(" ")[0];
         };
 
         const handleSubmit = (ev: Event) => {
@@ -698,8 +699,7 @@ function openTransferTokenDialog(): Promise<TransferTokenFormValues | null> {
         const handleMax = () => {
             const raw = getCurrentTokenBalanceText();
             if (!raw || raw === "--") return;
-            const numeric = raw.replace(/,/g, "").split(" ")[0];
-            amountInput.value = numeric;
+            amountInput.value = raw.replace(/,/g, "").split(" ")[0];
         };
 
         const handleSubmit = (ev: Event) => {

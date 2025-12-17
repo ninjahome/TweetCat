@@ -26,7 +26,6 @@ import {
     loadAllFollowings
 } from "../object/following";
 import {
-    exportPrivateKey,
     getBaseUsdcAddress,
     getEthBalance,
     getTokenBalance,
