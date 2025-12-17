@@ -1,5 +1,3 @@
-export const __targetUrlToFilter = 'https://x.com/home';
-
 export const defaultCategoryName = "Main"
 export const maxElmFindTryTimes = 5;
 export const defaultCatID = 1;
@@ -81,13 +79,19 @@ export enum MsgType {
 
     WalletInfoQuery = "WalletInfoQuery",
     WalletUnlock = "WalletUnlock",
+    WalletStatus = "WALLET_STATUS",
+    WalletSignMessage = "WALLET_SIGN_MESSAGE",
+    WalletTransferEth = "WALLET_TRANSFER_ETH",
+    WalletTransferUSDC = "WALLET_TRANSFER_USDC",
+    WalletExportPrivateKey = "WALLET_EXPORT_PRIVATE_KEY",
+
     OpenOrFocusUrl = "OpenOrFocusUrl",
     SW_ACTION_GET_SNAPSHOT = "SW_ACTION_GET_SNAPSHOT",
     IPFS_GET_GATEWAY_BASE = "IPFS_GET_GATEWAY_BASE",
 
     X402TipAction = "X402TipAction",
     X402Heartbeat = 'X402_HEARTBEAT',
-    X402SessionCreate = "X402SessionCreate"
+    X402WalletOpen = "X402WalletOpen"
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

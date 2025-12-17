@@ -1,11 +1,10 @@
 import {EntryObj} from "../timeline/tweet_entry";
-import {_contentTemplate, findTweetIDOfTweetDiv} from "./twitter_observer";
+import {_contentTemplate} from "./twitter_observer";
 import {logX402} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {hideGlobalLoading, showGlobalLoading} from "./common";
 import {showToastMsg} from "../timeline/render_common";
-import browser from "webextension-polyfill";
 
 function findArticleByStatusId(statusId: string): HTMLElement | null {
     // 使用属性选择器查找包含指定状态ID的链接

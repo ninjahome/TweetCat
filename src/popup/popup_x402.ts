@@ -13,7 +13,7 @@ export async function processX402Task() {
 
     try {
         switch (x402_popup_task.type) {
-            case MsgType.X402SessionCreate: {
+            case MsgType.X402WalletOpen: {
                 const password = await requestPassword("创建 x402 Session（仅一次）")
                 const rsp = await sendMsgToService(password, MsgType.WalletUnlock)
                 if (!rsp || !rsp.success) {
@@ -29,6 +29,5 @@ export async function processX402Task() {
         }
     } finally {
         await localRemove(X402TaskKey)
-
     }
 }

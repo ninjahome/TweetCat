@@ -681,6 +681,9 @@
   "wallet_prompt_password_sign_message": {
     "message": "Enter your wallet password to sign the message"
   },
+  "wallet_signing": {
+    "message": "Signing by wallet......"
+  },
   "wallet_sign_message_success": {
     "message": "Message signature created"
   },
@@ -899,5 +902,8 @@
 
   "wallet_token_address_required": {
     "message": "Please enter the token contract address."
+  },
+  "wallet_sending_transaction": {
+    "message": "sending transaction......"
   }
 }

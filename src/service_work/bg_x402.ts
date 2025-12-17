@@ -1,53 +1,23 @@
 import browser from "webextension-polyfill";
 import {logX402} from "../common/debug_flags";
 import {ethers} from "ethers";
-import {loadWallet, withDecryptedWallet} from "../wallet/wallet_api";
-import {localGet, localSet} from "../common/local_storage";
-import {MsgType, X402TaskKey} from "../common/consts";
+import {loadWalletSettings, walletStatus} from "../wallet/wallet_api";
+import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID, MsgType, X402TaskKey} from "../common/consts";
 import {
-    CdpEip3009,
+    CdpEip3009, ChainNameBaseMain,
     EIP3009_TYPES,
     Eip3009AuthorizationParams,
-    StoredX402Session, X402_FACILITATORS,
-    X402FacilitatorRequest, X402SessionKey, X402SubmitInput, X402SubmitResult
+    X402_FACILITATORS,
+    X402SubmitInput, X402SubmitResult
 } from "../common/x402_obj";
+import {localSet} from "../common/local_storage";
 
-async function getActiveX402Session(): Promise<X402SessionKey | null> {
-
-    return null
-}
-
-async function requestCreateX402Session(params: {
-    reason: "no_wallet" | "no_session" | "expired_session"
-    tweetId: string
-    authorId: string
-}) {
-    await localSet(X402TaskKey, {
-        type: MsgType.X402SessionCreate,
-        payload: params,
-        createdAt: Date.now(),
-    })
-    await browser.action.openPopup()
-}
-
-async function signEip3009WithSessionKey(
-    session: X402SessionKey,
-    params: Eip3009AuthorizationParams
+async function signEip3009WithMainWallet(
+    params: Eip3009AuthorizationParams, wallet: ethers.Wallet
 ): Promise<string> {
-    const {domain, message} = params
+    const {domain, message} = params;
 
-    // 基础校验
-    if (!session.privateKey) {
-        throw new Error("Session privateKey missing")
-    }
 
-    const wallet = new ethers.Wallet(session.privateKey)
-
-    if (wallet.address.toLowerCase() !== session.address.toLowerCase()) {
-        throw new Error("Session key mismatch")
-    }
-
-    // 规范化 message（ethers 对 bytes32 很严格）
     const normalizedMessage = {
         from: ethers.utils.getAddress(message.from),
         to: ethers.utils.getAddress(message.to),
@@ -55,106 +25,92 @@ async function signEip3009WithSessionKey(
         validAfter: ethers.BigNumber.from(message.validAfter).toString(),
         validBefore: ethers.BigNumber.from(message.validBefore).toString(),
         nonce: ethers.utils.hexZeroPad(message.nonce, 32),
-    }
+    };
 
-    const signFn =
-        (wallet as any)._signTypedData ||
-        (wallet as any).signTypedData
-
-    if (!signFn) {
-        throw new Error("Session wallet does not support typed data signing")
-    }
-
-    return await signFn.call(
-        wallet,
+    return wallet._signTypedData(
         domain,
         EIP3009_TYPES,
         normalizedMessage
-    )
+    );
 }
 
-export async function tipActionForTweet(data: { tweetId: string, authorId: string, val:number }) {// 0.01 USDC
-    logX402("------>>>tip action data:", data)
+export async function tipActionForTweet(data: {
+    tweetId: string;
+    authorId: string;
+    val: number;
+}) {
+    logX402("------>>> tip action data:", data);
+
     try {
-        const wallet = await loadWallet();
-        if (!wallet) {
-            logX402("no wallet, request create wallet");
-            await requestCreateX402Session({
-                reason: "no_wallet",
-                tweetId: data.tweetId,
-                authorId: data.authorId,
-            });
-            return {
-                success: false,
-                data: "NO_WALLET",
-            };
+        // 1️⃣ 查询钱包运行态
+        const status = await walletStatus();
+
+        if (status.status === "NO_WALLET") {
+            return {success: false, data: "NO_WALLET"};
         }
 
-        const session = await getActiveX402Session();
-        if (!session) {
-            logX402("no active session, request create session");
-            await requestCreateX402Session({
-                reason: "no_session",
-                tweetId: data.tweetId,
-                authorId: data.authorId,
+        // 2️⃣ 如果没解锁 → 让 popup 弹密码
+        if (status.status === "LOCKED" || status.status === "EXPIRED") {
+            await localSet(X402TaskKey, {
+                type: MsgType.X402WalletOpen,
+                payload: {tweetId: data.tweetId, authorId: data.authorId},
+                createdAt: Date.now(),
             });
-            return {
-                success: false,
-                data: "NO_SESSION",
-            };
+            await browser.action.openPopup();
+            return {success: false, data: "WALLET_LOCKED"};
+        }
+        const wallet = status.wallet;
+
+        // 3️⃣ UNLOCKED：继续
+        if (status.status !== "UNLOCKED"|| !wallet) {
+            return {success: false, data: "INVALID_WALLET_STATE"};
         }
 
+        if (!data.val || data.val <= 0) {
+            return {success: false, data: "INVALID_AMOUNT"};
+        }
 
-        const facilitator = X402_FACILITATORS[session.chainId]
+        const walletSetting = await loadWalletSettings()
+        const chainId =
+            walletSetting.network === ChainNameBaseMain
+                ? BASE_MAINNET_CHAIN_ID
+                : BASE_SEPOLIA_CHAIN_ID;
+        const facilitator = X402_FACILITATORS[chainId];
         if (!facilitator) {
             return {
                 success: false,
-                data: `Unsupported chainId for x402: ${session.chainId}`,
-            }
+                data: `Unsupported chainId for x402: ${chainId}`,
+            };
         }
 
-        if (!data.val){
-            return {
-                success: false,
-                data: `Invalid amount to transfer  ${data.val}`,
-            }
-        }
+        // 4️⃣ 构造 EIP-3009
+        const value = BigInt(Math.floor(data.val * 1_000_000)).toString();
+        const nowSec = Math.floor(Date.now() / 1000);
 
-        const value = BigInt(Math.floor(data.val * 1_000_000)).toString()
-        const nowSec = Math.floor(Date.now() / 1000)
         const authorizationParams: Eip3009AuthorizationParams = {
             domain: {
                 name: "USD Coin",
                 version: "2",
-                chainId: session.chainId,
+                chainId,
                 verifyingContract: facilitator.usdcAddress,
             },
             message: {
-                from: wallet.address,
+                from: status.address!, // 主钱包地址
                 to: facilitator.settlementContract,
-                // value: "10000", // 0.01 USDC
-                value: value,
+                value,
                 validAfter: nowSec,
                 validBefore: nowSec + 300,
                 nonce: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
             },
             password: "",
-        }
+        };
 
-        // 4️⃣ session key 签名
-        const signature = await signEip3009WithSessionKey(
-            session,
-            authorizationParams
-        )
+        // 5️⃣ 主钱包私钥签名
+        const signature = await signEip3009WithMainWallet(
+            authorizationParams, wallet
+        );
 
-        // 5️⃣ 更新 session 已用额度（防重放 / 防本地超额）
-        session.spentAmount = (
-            BigInt(session.spentAmount) +
-            BigInt(authorizationParams.message.value)
-        ).toString()
-
-
-        const cdpEip3009: CdpEip3009 = {
+        const transfer: CdpEip3009 = {
             from: authorizationParams.message.from,
             to: authorizationParams.message.to,
             value: authorizationParams.message.value,
@@ -162,44 +118,32 @@ export async function tipActionForTweet(data: { tweetId: string, authorId: strin
             validBefore: authorizationParams.message.validBefore,
             nonce: authorizationParams.message.nonce,
             signature,
-        }
-
-
-
-        return {
-            success: false,
-            data: "submitResult",
-        }
-    } catch (err) {
-        logX402("session sign failed:", err);
-        return {
-            success: false,
-            data: "SIGN_FAILED",
         };
+
+        // 6️⃣ 提交给官方 facilitator
+        const submitResult = await submitToX402Facilitator({
+            facilitator,
+            transfer,
+        });
+
+        return {
+            success: submitResult.ok,
+            data: submitResult,
+        };
+    } catch (err) {
+        logX402("x402 sign failed:", err);
+        return {success: false, data: "SIGN_FAILED"};
     }
 }
 
 export async function submitToX402Facilitator(
     input: X402SubmitInput
 ): Promise<X402SubmitResult> {
-    const { facilitator, sessionAuthorization, transfer } = input
+    const {facilitator, transfer} = input;
 
-    const body: X402FacilitatorRequest = {
-        sessionAuthorization: {
-            payload: sessionAuthorization.payload,
-            signature: sessionAuthorization.signature,
-        },
-        transferAuthorization: {
-            from: transfer.from,
-            to: transfer.to,
-            value: transfer.value,
-            validAfter: transfer.validAfter,
-            validBefore: transfer.validBefore,
-            nonce: transfer.nonce,
-            signature: transfer.signature,
-        },
-    }
-
+    const body = {
+        transferAuthorization: transfer,
+    };
     let resp: Response
     try {
         resp = await fetch(facilitator.endpoint, {
@@ -243,17 +187,17 @@ export async function submitToX402Facilitator(
     switch (code) {
         case "INVALID_SESSION":
         case "SESSION_EXPIRED":
-            return { ok: false, error: "SESSION_EXPIRED", message: json.message }
+            return {ok: false, error: "SESSION_EXPIRED", message: json.message}
 
         case "INVALID_AUTH":
         case "INVALID_SIGNATURE":
-            return { ok: false, error: "INVALID_AUTHORIZATION", message: json.message }
+            return {ok: false, error: "INVALID_AUTHORIZATION", message: json.message}
 
         case "INSUFFICIENT_FUNDS":
-            return { ok: false, error: "INSUFFICIENT_FUNDS", message: json.message }
+            return {ok: false, error: "INSUFFICIENT_FUNDS", message: json.message}
 
         case "REJECTED":
-            return { ok: false, error: "FACILITATOR_REJECTED", message: json.message }
+            return {ok: false, error: "FACILITATOR_REJECTED", message: json.message}
 
         default:
             return {

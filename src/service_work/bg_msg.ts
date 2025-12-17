@@ -25,10 +25,18 @@ import {
     assignFollowingsToCategory,
     loadAllFollowings
 } from "../object/following";
-import {getBaseUsdcAddress, getEthBalance, getTokenBalance, loadWallet, loadWalletSettings} from "../wallet/wallet_api";
+import {
+    exportPrivateKey,
+    getBaseUsdcAddress,
+    getEthBalance,
+    getTokenBalance,
+    loadWallet,
+    loadWalletSettings, walletStatus
+} from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
 import {tipActionForTweet} from "./bg_x402";
+import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -223,7 +231,31 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.X402Heartbeat: {
             console.log("------>>>keep alive success")
-            return {success: true,data:"success"}
+            return {success: true, data: "success"}
+        }
+
+        case MsgType.WalletUnlock: {
+            return await msgUnlockWallet(request.data as string);
+        }
+
+        case MsgType.WalletSignMessage: {
+            return await msgSignMsg(request.data);
+        }
+
+        case MsgType.WalletTransferEth: {
+            return await msgTransferEth(request.data)
+        }
+
+        case MsgType.WalletTransferUSDC: {
+            return await msgTransferUsdc(request.data);
+        }
+
+        case MsgType.WalletExportPrivateKey: {
+            return await msgExportPriKye(request.data as string);
+        }
+
+        case MsgType.WalletStatus: {
+            return {success:true, data: await walletStatus()}
         }
 
         default:

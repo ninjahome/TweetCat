@@ -28,6 +28,7 @@ export const DBG = {
     FollowMgn:true,
     UserIfo:false,
     X402:true,
+    Wallet:true,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -64,3 +65,4 @@ export const logATA = makeLogger('AiTrendApi', 'AiTrendApi');
 export const logFM = makeLogger('FollowMgn', 'FollowMgn');
 export const logUI = makeLogger('UserIfo', 'UserIfo');
 export const logX402 = makeLogger('X402', 'X402');
+export const logW = makeLogger('Wallet', 'Wallet');

@@ -1,5 +1,3 @@
-import {s} from "vitest/dist/chunks/reporters.d.BFLkQcL6";
-
 export const EIP3009_TYPES = {
     TransferWithAuthorization: [
         {name: "from", type: "address"},
@@ -10,7 +8,6 @@ export const EIP3009_TYPES = {
         {name: "nonce", type: "bytes32"},
     ],
 };
-
 
 // EIP-3009 / x402 专用签名参数
 export interface Eip3009AuthorizationParams {
@@ -32,58 +29,6 @@ export interface Eip3009AuthorizationParams {
 }
 
 // x402_obj.ts
-export interface X402SessionKey {
-    address: string
-    privateKey: string
-    chainId: number
-    expiresAt: number
-    maxTotalAmount: string
-    spentAmount: string
-}
-
-export const X402_SCOPE = "x402:eip3009" as const
-
-export interface X402SessionAuthorizationPayload {
-    owner: string              // 主钱包地址
-    sessionKey: string         // session address
-    scope: "x402:eip3009"
-    chainId: number
-    maxAmount: string
-    validAfter: number         // seconds
-    validBefore: number        // seconds
-}
-
-export interface X402SessionAuthorization {
-    payload: X402SessionAuthorizationPayload
-    signature: string          // owner 对 payload 的 EIP-712 签名
-}
-
-
-export interface StoredX402Session {
-    session: X402SessionKey
-    authorization: X402SessionAuthorization
-    createdAt: number
-}
-
-export const X402_SESSION_AUTH_DOMAIN = (chainId: number) => ({
-    name: "TweetCat x402 Session",
-    version: "1",
-    chainId,
-})
-
-export const X402_SESSION_AUTH_TYPES = {
-    X402Session: [
-        { name: "owner", type: "address" },
-        { name: "sessionKey", type: "address" },
-        { name: "scope", type: "string" },
-        { name: "chainId", type: "uint256" },
-        { name: "maxAmount", type: "uint256" },
-        { name: "validAfter", type: "uint256" },
-        { name: "validBefore", type: "uint256" },
-    ],
-}
-
-
 export interface CdpEip3009 {
     from: string
     to: string
@@ -102,7 +47,6 @@ export const ChainNameBaseSepolia = "base-sepolia" as const
 export const ChainNameBaseMain = "base-mainnet" as const
 export type ChainNetwork = typeof ChainNameBaseSepolia | typeof ChainNameBaseMain
 
-// x402_facilitator.ts
 export interface X402FacilitatorConfig {
     chainId: number
     network: ChainNetwork
@@ -131,16 +75,10 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
     },
 }
 
-
-
 export interface X402SubmitInput {
     facilitator: X402FacilitatorConfig
-    // owner -> sessionKey
-    sessionAuthorization: X402SessionAuthorization
-    // sessionKey -> transfer
     transfer: CdpEip3009
 }
-
 
 export type X402SubmitResult =
     | {
@@ -158,9 +96,4 @@ export type X402SubmitResult =
         | "NETWORK_ERROR"
         | "UNKNOWN_ERROR"
     message?: string
-}
-
-export interface X402FacilitatorRequest {
-    sessionAuthorization: X402SessionAuthorization
-    transferAuthorization: CdpEip3009
 }

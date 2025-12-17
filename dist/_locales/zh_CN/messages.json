@@ -654,7 +654,7 @@
     "message": "请输入钱包口令以发送 ETH"
   },
   "wallet_transfer_tx_sent": {
-    "message": "交易已发送：{0}"
+    "message": "交易已发送:"
   },
   "wallet_transfer_eth_failed": {
     "message": "转账失败"
@@ -909,6 +909,12 @@
 
   "wallet_token_address_required": {
     "message": "请输入代币合约地址。"
+  },
+  "wallet_sending_transaction": {
+    "message": "交易发送中......"
+  },
+  "wallet_signing": {
+    "message": "钱包签名......"
   }
 }
 

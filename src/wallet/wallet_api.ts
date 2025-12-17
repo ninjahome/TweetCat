@@ -15,6 +15,8 @@ import {
     BASE_SEPOLIA_DEFAULT_RPC,
     BASE_SEPOLIA_USDC
 } from "../common/consts";
+import {logW} from "../common/debug_flags";
+import {ChainNameBaseMain, ChainNameBaseSepolia, ChainNetwork} from "../common/x402_obj";
 
 /** ====== 类型 ====== */
 export interface TCWallet {
@@ -29,7 +31,7 @@ export interface WalletSettings {
     customRpcUrl?: string;
     useDefaultRpc: boolean;
 
-    network: 'base-mainnet' | 'base-sepolia';
+    network: ChainNetwork;
 }
 
 const WALLET_SETTINGS_KEY = "default";
@@ -96,12 +98,12 @@ export async function loadWalletSettings(): Promise<WalletSettings> {
     const records = (await databaseQueryAll(__tableWalletSettings)) as Array<WalletSettings & { id: string }>;
     const stored = records.find((item) => item.id === WALLET_SETTINGS_KEY);
     if (!stored) {
-        return { ...defaultWalletSettings };
+        return {...defaultWalletSettings};
     }
 
     const storedNetwork = (stored as any).network;
     const network: WalletSettings['network'] =
-        storedNetwork === 'base-mainnet' || storedNetwork === 'base-sepolia'
+        storedNetwork === ChainNameBaseMain || storedNetwork === ChainNameBaseSepolia
             ? storedNetwork
             : defaultWalletSettings.network;
 
@@ -174,7 +176,7 @@ export function getRpcEndpoint(settings: WalletSettings): string {
 
     // 2) 配了 Infura 的情况：根据 network 选 base 主网 / 测试网
     if (infuraId) {
-        if (settings.network === "base-mainnet") {
+        if (settings.network === ChainNameBaseMain) {
             return `https://base-mainnet.infura.io/v3/${infuraId}`;
         } else {
             return `https://base-sepolia.infura.io/v3/${infuraId}`;
@@ -182,7 +184,7 @@ export function getRpcEndpoint(settings: WalletSettings): string {
     }
 
     // 3) 否则走默认公共 RPC，直接用你的全局常量
-    return settings.network === "base-mainnet"
+    return settings.network === ChainNameBaseMain
         ? BASE_MAINNET_DEFAULT_RPC
         : BASE_SEPOLIA_DEFAULT_RPC;
 }
@@ -190,7 +192,7 @@ export function getRpcEndpoint(settings: WalletSettings): string {
 export function createProvider(settings: WalletSettings) {
     const url = getRpcEndpoint(settings);
     const chainId =
-        settings.network === "base-mainnet"
+        settings.network === ChainNameBaseMain
             ? BASE_MAINNET_CHAIN_ID
             : BASE_SEPOLIA_CHAIN_ID;
 
@@ -230,7 +232,7 @@ export async function getEthBalance(address: string, settings?: WalletSettings):
 }
 
 export function getBaseUsdcAddress(settings: WalletSettings): string {
-    return settings.network === "base-mainnet"
+    return settings.network === ChainNameBaseMain
         ? BASE_MAINNET_USDC
         : BASE_SEPOLIA_USDC;
 }
@@ -369,6 +371,9 @@ interface DecryptedWalletCache {
 
 let decryptedWalletCache: DecryptedWalletCache | null = null;
 
+export function lockWallet() {
+    decryptedWalletCache = null;
+}
 
 export async function withDecryptedWallet<T>(
     password: string,
@@ -385,12 +390,12 @@ export async function withDecryptedWallet<T>(
         decryptedWalletCache.address === normalizedAddress &&
         decryptedWalletCache.expires > now
     ) {
-        console.log("[Wallet] 使用缓存的钱包对象 (Expires:", new Date(decryptedWalletCache.expires).toLocaleTimeString(), ")");
+        logW("[Wallet] 使用缓存的钱包对象 (Expires:", new Date(decryptedWalletCache.expires).toLocaleTimeString(), ")");
         return action(decryptedWalletCache.wallet);
     }
     // --- 缓存检查结束 ---
 
-    console.log("[Wallet] 缓存过期或未命中，开始执行耗时的 fromEncryptedJson...");
+    logW("[Wallet] 缓存过期或未命中，开始执行耗时的 fromEncryptedJson...");
 
     let wallet: ethers.Wallet;
     try {
@@ -407,19 +412,41 @@ export async function withDecryptedWallet<T>(
         expires: now + CACHE_LIFETIME_MS,
         address: normalizedAddress,
     };
-    console.log("[Wallet] 钱包对象已解密并缓存，有效期至:", new Date(decryptedWalletCache.expires).toLocaleTimeString());
+    logW("[Wallet] 钱包对象已解密并缓存，有效期至:", new Date(decryptedWalletCache.expires).toLocaleTimeString());
 
     return action(wallet);
 }
 
-// 导出私钥（利用 withDecryptedWallet 自动获取缓存或解密的钱包）
 export async function exportPrivateKey(password: string): Promise<string> {
     return withDecryptedWallet(password, async (wallet) => wallet.privateKey);
 }
 
-// 登出/清理时清除缓存
-export function clearDecryptedWalletCache(): void {
-    decryptedWalletCache = null;
-    console.log("[Wallet] 已清除解密钱包缓存");
+export interface WalletStatusResponse {
+    status: "NO_WALLET" | "LOCKED" | "UNLOCKED" | "EXPIRED";
+    wallet?: ethers.Wallet;
+    expiresAt?: number; // 仅 UNLOCKED 时存在
+    address?: string;   // 可选，用于 UI 展示
 }
 
+
+export async function walletStatus(): Promise<WalletStatusResponse> {
+    const stored = await loadWallet();
+
+    if (!stored) {
+        return {status: "NO_WALLET"};
+    }
+
+    if (!decryptedWalletCache) {
+        return {status: "LOCKED"};
+    }
+    if (Date.now() > decryptedWalletCache.expires) {
+        decryptedWalletCache = null;
+        return {status: "EXPIRED"};
+    }
+    return {
+        status: "UNLOCKED",
+        wallet:decryptedWalletCache.wallet,
+        expiresAt: decryptedWalletCache.expires,
+        address: decryptedWalletCache.address,
+    };
+}
