@@ -79,7 +79,6 @@ export enum MsgType {
 
     WalletInfoQuery = "WalletInfoQuery",
     WalletUnlock = "WalletUnlock",
-    WalletStatus = "WALLET_STATUS",
     WalletSignMessage = "WALLET_SIGN_MESSAGE",
     WalletTransferEth = "WALLET_TRANSFER_ETH",
     WalletTransferUSDC = "WALLET_TRANSFER_USDC",
@@ -90,7 +89,6 @@ export enum MsgType {
     IPFS_GET_GATEWAY_BASE = "IPFS_GET_GATEWAY_BASE",
 
     X402TipAction = "X402TipAction",
-    X402Heartbeat = 'X402_HEARTBEAT',
     X402WalletOpen = "X402WalletOpen",
 }
 

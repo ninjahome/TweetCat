@@ -26,16 +26,13 @@ import {
     loadAllFollowings
 } from "../object/following";
 import {
-    getBaseUsdcAddress,
-    getEthBalance,
-    getTokenBalance,
-    loadWallet,
-    loadWalletSettings, transEthParam, transUsdcParam, walletStatus
+    queryBasicInfo, transEthParam, transUsdcParam
 } from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
-import {tipActionForTweet, x402HeartResponse} from "./bg_x402";
+import {tipActionForTweet} from "./bg_x402";
 import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
+import {x402TipPayload} from "../common/x402_obj";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -198,19 +195,8 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.WalletInfoQuery: {
-            const wallet = await loadWallet();
-            if (!wallet) {
-                return {success: true, data: {unlocked: false}};
-            }
-
-            const address = wallet.address;
-            const settings = await loadWalletSettings();          // 读当前网络设置
-            const gas = await getEthBalance(address, settings);   // 可显式传 settings
-
-            const usdcAddress = getBaseUsdcAddress(settings);     // 👈 关键：选出当前链的 USDC 地址
-            const usdt = await getTokenBalance(address, usdcAddress, settings);
-
-            return {success: true, data: {unlocked: true, address, gas, usdt}};
+            const data = await queryBasicInfo()
+            return {success: data !== null, data}
         }
 
         case MsgType.OpenOrFocusUrl: {
@@ -225,11 +211,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: true, data: await loadIpfsLocalCustomGateWay()};
         }
         case MsgType.X402TipAction: {
-            return await tipActionForTweet(request.data);
-        }
-
-        case MsgType.X402Heartbeat: {
-            return await x402HeartResponse()
+            return await tipActionForTweet(request.data as x402TipPayload);
         }
 
         case MsgType.WalletUnlock: {
@@ -252,9 +234,6 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return await msgExportPriKye(request.data as string);
         }
 
-        case MsgType.WalletStatus: {
-            return {success:true, data: await walletStatus()}
-        }
         default:
             return {success: false, data: "unsupportable message type"};
     }

@@ -812,9 +812,10 @@
   },
   "wallet_decrypting": {
     "message": "Decrypting......"
-  },"wallet_network_title": {
-  "message": "Network"
-},
+  },
+  "wallet_network_title": {
+    "message": "Network"
+  },
   "wallet_network_select_label": {
     "message": "Blockchain network"
   },
@@ -830,32 +831,27 @@
   "wallet_transfer_eth_subtitle": {
     "message": "Please double-check the recipient address and amount before submitting the transaction."
   },
-
   "wallet_transfer_to_label": {
     "message": "Recipient address"
   },
   "wallet_transfer_to_hint": {
     "message": "Make sure the address is correct. Blockchain transfers are irreversible."
   },
-
   "wallet_transfer_amount_label": {
     "message": "Amount"
   },
   "wallet_transfer_fee_hint": {
     "message": "Available balance ≈ current balance − estimated network fee."
   },
-
   "wallet_transfer_gas_label": {
     "message": "Gas limit (optional)"
   },
   "wallet_transfer_gas_hint": {
     "message": "If the gas limit is too low, the transaction may fail while still consuming fees."
   },
-
   "wallet_transfer_confirm_btn": {
     "message": "Confirm & Send"
   },
-
   "wallet_current_balance": {
     "message": "Balance"
   },
@@ -874,7 +870,6 @@
   "wallet_transfer_token_subtitle": {
     "message": "Please double-check the token address, recipient, and amount before submitting the transaction."
   },
-
   "wallet_token_address_label": {
     "message": "Token contract address"
   },
@@ -884,26 +879,28 @@
   "wallet_token_address_hint": {
     "message": "By default, the official USDC contract for the current network is used."
   },
-
   "wallet_transfer_token_amount_label": {
     "message": "Amount"
   },
   "wallet_transfer_token_fee_hint": {
     "message": "Make sure there is still enough ETH in this wallet to pay the network fee."
   },
-
   "wallet_token_decimals_label": {
     "message": "Token decimals"
   },
-
   "wallet_transfer_token_confirm_btn": {
     "message": "Confirm & Send"
   },
-
   "wallet_token_address_required": {
     "message": "Please enter the token contract address."
   },
   "wallet_sending_transaction": {
     "message": "sending transaction......"
+  },
+  "wallet_err_no_basic": {
+    "message": "Failed to fetch wallet info"
+  },
+  "wallet_insufficient_funds": {
+    "message": "Insufficient funds"
   }
 }

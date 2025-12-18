@@ -1,4 +1,3 @@
-// src/wallet/wallet_api.ts
 import {ethers} from "ethers";
 import {
     __tableWalletSettings,
@@ -51,7 +50,7 @@ export interface transEthParam {
     settings?: WalletSettings;
 }
 
-export interface transUsdcParam{
+export interface transUsdcParam {
     tokenAddress: string;
     to: string;
     amount: string;
@@ -60,6 +59,7 @@ export interface transUsdcParam{
     gasLimitWei?: string;
     settings?: WalletSettings;
 }
+
 
 /** ====== 存取（保留你已有的导出） ====== */
 export async function saveWallet(record: TCWallet): Promise<void> {
@@ -363,39 +363,12 @@ export async function verifySignature(params: {
     return recovered;
 }
 
-// 1. 定义缓存对象和有效期
-const CACHE_LIFETIME_MS = 15 * 60 * 1000; // 15 分钟
-interface DecryptedWalletCache {
-    wallet: ethers.Wallet;
-    expires: number;
-    address: string;
-}
-
-let decryptedWalletCache: DecryptedWalletCache | null = null;
-
-export function lockWallet() {
-    decryptedWalletCache = null;
-}
-
 export async function withDecryptedWallet<T>(
     password: string,
     action: (wallet: ethers.Wallet) => Promise<T>
 ): Promise<T> {
     const record = await loadWallet();
     if (!record) throw new Error("未找到本地钱包记录");
-
-    const normalizedAddress = record.address.toLowerCase();
-
-    // --- 缓存检查 ---
-    const now = Date.now();
-    if (decryptedWalletCache &&
-        decryptedWalletCache.address === normalizedAddress &&
-        decryptedWalletCache.expires > now
-    ) {
-        logW("[Wallet] 使用缓存的钱包对象 (Expires:", new Date(decryptedWalletCache.expires).toLocaleTimeString(), ")");
-        return action(decryptedWalletCache.wallet);
-    }
-    // --- 缓存检查结束 ---
 
     logW("[Wallet] 缓存过期或未命中，开始执行耗时的 fromEncryptedJson...");
 
@@ -408,14 +381,6 @@ export async function withDecryptedWallet<T>(
         throw new Error("密码错误或解密失败: " + (error as Error).message);
     }
 
-    // --- 缓存更新 ---
-    decryptedWalletCache = {
-        wallet,
-        expires: now + CACHE_LIFETIME_MS,
-        address: normalizedAddress,
-    };
-    logW("[Wallet] 钱包对象已解密并缓存，有效期至:", new Date(decryptedWalletCache.expires).toLocaleTimeString());
-
     return action(wallet);
 }
 
@@ -423,32 +388,30 @@ export async function exportPrivateKey(password: string): Promise<string> {
     return withDecryptedWallet(password, async (wallet) => wallet.privateKey);
 }
 
-export interface WalletStatusResponse {
-    status: "NO_WALLET" | "LOCKED" | "UNLOCKED" | "EXPIRED";
-    wallet?: ethers.Wallet;
-    expiresAt?: number; // 仅 UNLOCKED 时存在
-    address?: string;   // 可选，用于 UI 展示
+export interface walletInfo {
+    hasCreated: boolean;
+    address: string;
+    ethVal: string;
+    usdcVal: string;
 }
 
+export async function queryBasicInfo(): Promise<walletInfo> {
+    try {
+        const wallet = await loadWallet();
+        if (!wallet) {
+            return {address: "", ethVal: "", usdcVal: "", hasCreated: false}
+        }
 
-export async function walletStatus(): Promise<WalletStatusResponse> {
-    const stored = await loadWallet();
+        const address = wallet.address;
+        const settings = await loadWalletSettings();          // 读当前网络设置
+        const eth = await getEthBalance(address, settings);   // 可显式传 settings
 
-    if (!stored) {
-        return {status: "NO_WALLET"};
-    }
+        const usdcAddress = getBaseUsdcAddress(settings);     // 👈 关键：选出当前链的 USDC 地址
+        const usdc = await getTokenBalance(address, usdcAddress, settings);
 
-    if (!decryptedWalletCache) {
-        return {status: "LOCKED"};
+        return {address: address, ethVal: eth, usdcVal: usdc, hasCreated: true}
+    } catch (e) {
+        console.warn("query basic info of wallet failed:", e)
+        return null
     }
-    if (Date.now() > decryptedWalletCache.expires) {
-        decryptedWalletCache = null;
-        return {status: "EXPIRED"};
-    }
-    return {
-        status: "UNLOCKED",
-        wallet: decryptedWalletCache.wallet,
-        expiresAt: decryptedWalletCache.expires,
-        address: decryptedWalletCache.address,
-    };
 }

@@ -5,12 +5,14 @@ import {
     transferEth, transUsdcParam,
     withDecryptedWallet
 } from "../wallet/wallet_api";
-
+import {createWalletSession} from "./session_wallet";
 export async function msgUnlockWallet(password: string) {
     try {
         const info = await withDecryptedWallet(password, async (wallet) => {
+            await createWalletSession(wallet);
             return wallet.address
         });
+
         return {success: true, data: info};
     } catch (e) {
         return {success: false, error: (e as Error).message};

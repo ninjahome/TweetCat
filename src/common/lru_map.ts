@@ -129,38 +129,3 @@ export class LRUCache<K, V> {
         };
     }
 }
-
-
-class StatsLRUCache<K, V> extends LRUCache<K, V> {
-    private hits = 0;
-    private misses = 0;
-
-    get(key: K): V | undefined {
-        const value = super.get(key);
-        if (value !== undefined) {
-            this.hits++;
-        } else {
-            this.misses++;
-        }
-        return value;
-    }
-
-    getHitRate(): number {
-        const total = this.hits + this.misses;
-        return total === 0 ? 0 : (this.hits / total) * 100;
-    }
-
-    resetStats(): void {
-        this.hits = 0;
-        this.misses = 0;
-    }
-
-    getDetailedStats() {
-        return {
-            ...super.getStats(),
-            hits: this.hits,
-            misses: this.misses,
-            hitRate: this.getHitRate()
-        };
-    }
-}

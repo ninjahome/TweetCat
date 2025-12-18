@@ -108,6 +108,8 @@ export interface X402PopupTask{
 export interface x402TipPayload{
     tweetId:string;
     authorId:string;
+    usdcVal:number
     walletAddr?:string;
 }
 export const MAX_TIP_AMOUNT = 1000;
+

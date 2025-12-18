@@ -1,16 +1,17 @@
 import browser from "webextension-polyfill";
 import {logX402} from "../common/debug_flags";
 import {ethers} from "ethers";
-import {loadWalletSettings, walletStatus} from "../wallet/wallet_api";
+import {loadWalletSettings} from "../wallet/wallet_api";
 import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID, MsgType} from "../common/consts";
 import {
     CdpEip3009, ChainNameBaseMain,
     EIP3009_TYPES,
     Eip3009AuthorizationParams, MAX_TIP_AMOUNT,
     X402_FACILITATORS, X402PopupTask,
-    X402SubmitInput, X402SubmitResult, X402TaskKey
+    X402SubmitInput, X402SubmitResult, X402TaskKey, x402TipPayload
 } from "../common/x402_obj";
 import {localSet} from "../common/local_storage";
+import {getSessionWallet} from "./session_wallet";
 
 async function signEip3009WithMainWallet(
     params: Eip3009AuthorizationParams, wallet: ethers.Wallet
@@ -34,23 +35,13 @@ async function signEip3009WithMainWallet(
     );
 }
 
-export async function tipActionForTweet(data: {
-    tweetId: string;
-    authorId: string;
-    val: number;
-}) {
+export async function tipActionForTweet(data: x402TipPayload) {
     logX402("------>>> tip action data:", data);
 
     try {
         // 1️⃣ 查询钱包运行态
-        const status = await walletStatus();
-
-        if (status.status === "NO_WALLET") {
-            return {success: false, data: "NO_WALLET"};
-        }
-
-        // 2️⃣ 如果没解锁 → 让 popup 弹密码
-        if (status.status === "LOCKED" || status.status === "EXPIRED") {
+        const wallet = await getSessionWallet();
+        if (!wallet) {
 
             const task: X402PopupTask = {
                 type: MsgType.X402WalletOpen,
@@ -65,14 +56,8 @@ export async function tipActionForTweet(data: {
             await browser.action.openPopup();
             return {success: false, data: "WALLET_LOCKED"};
         }
-        const wallet = status.wallet;
 
-        // 3️⃣ UNLOCKED：继续
-        if (status.status !== "UNLOCKED" || !wallet) {
-            return {success: false, data: "INVALID_WALLET_STATE"};
-        }
-
-        if (!data.val || data.val <= 0 || data.val > MAX_TIP_AMOUNT) {
+        if (!data.usdcVal || data.usdcVal <= 0 || data.usdcVal > MAX_TIP_AMOUNT) {
             return {success: false, data: "INVALID_AMOUNT"};
         }
 
@@ -90,7 +75,7 @@ export async function tipActionForTweet(data: {
         }
 
         // 4️⃣ 构造 EIP-3009
-        const value = BigInt(Math.floor(data.val * 1_000_000)).toString();
+        const value = BigInt(Math.floor(data.usdcVal * 1_000_000)).toString();
         const nowSec = Math.floor(Date.now() / 1000);
 
         const authorizationParams: Eip3009AuthorizationParams = {
@@ -101,7 +86,7 @@ export async function tipActionForTweet(data: {
                 verifyingContract: facilitator.usdcAddress,
             },
             message: {
-                from: status.address!, // 主钱包地址
+                from: wallet.address!,
                 to: facilitator.settlementContract,
                 value,
                 validAfter: nowSec,
@@ -218,11 +203,4 @@ export async function submitToX402Facilitator(
                 message: json?.message || "Unknown facilitator error",
             }
     }
-}
-
-let heartBeatCounter = 0
-
-export async function x402HeartResponse() {
-    console.log("------>>>keep alive success", heartBeatCounter++)
-    return {success: true, data: "success" + heartBeatCounter}
 }

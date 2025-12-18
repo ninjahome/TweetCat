@@ -9,6 +9,7 @@ import {t} from "../common/i18n";
 import {grokConversation} from "./ai_trend";
 import {showToastMsg} from "../timeline/render_common";
 import {LevelScoreBreakdown} from "../object/user_info";
+import {walletInfo} from "../wallet/wallet_api";
 
 const defaultCatPointColor = '#B9CAD3';
 
@@ -297,7 +298,7 @@ async function fetchWeb3Identity() {
             return;
         }
 
-        const data = resp.data;
+        const data = resp.data as walletInfo;
 
         const addrEl = host.querySelector("#web3-address") as HTMLSpanElement;
         const gasEl = host.querySelector("#web3-gas") as HTMLDivElement;
@@ -305,9 +306,9 @@ async function fetchWeb3Identity() {
 
         addrEl.textContent = data.address ?? "--";
         addrEl.title = data.address ?? "";
-        gasEl.textContent = data.gas ? Number(data.gas).toFixed(6) : "--";
-        gasEl.title = data.gas ?? "--";
-        usdtEl.textContent = data.usdt ?? "--";
+        gasEl.textContent = data.ethVal ? Number(data.ethVal).toFixed(6) : "--";
+        gasEl.title = data.ethVal ?? "--";
+        usdtEl.textContent = data.usdcVal ?? "--";
 
         state.style.display = "none";
         card.style.display = "block";

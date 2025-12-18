@@ -20,7 +20,7 @@ import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
 import {queryProfileOfTwitterOwner} from "./tweet_user_info";
 import {initI18n} from "../common/i18n";
 import {performBulkUnfollow, syncFollowingsFromPage, syncOneFollowingsByScreenName} from "../object/following";
-import {addTipBtnForTweet, startX402Heartbeat} from "./content_x402";
+import {addTipBtnForTweet} from "./content_x402";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
@@ -86,7 +86,6 @@ async function onDocumentLoaded() {
     });
     appendTweetCatMenuItem();
     queryProfileOfTwitterOwner();
-    startX402Heartbeat();
     logTPR('------>>>TweetCat content script success ✨');
 }
 

@@ -6,6 +6,10 @@ import {MsgType} from "../common/consts";
 import {hideGlobalLoading, showGlobalLoading} from "./common";
 import {showToastMsg} from "../timeline/render_common";
 import {LRUCache} from "../common/lru_map";
+import {showAlert} from "../popup/common";
+import {t} from "../common/i18n";
+import {walletInfo} from "../wallet/wallet_api";
+import {x402TipPayload} from "../common/x402_obj";
 
 const tweetsCache = new LRUCache<string, EntryObj>(1000);
 
@@ -29,28 +33,34 @@ async function tipAction(statusId: string) {
         const tip = 0.01
 
         // 1) 先查钱包信息（复用现有接口）
-        const info = await sendMsgToService({}, MsgType.WalletInfoQuery)
-        const usdc = Number(info?.data?.usdt ?? 0) // 如果你改名了这里改成 usdc
+        const resp = await sendMsgToService({}, MsgType.WalletInfoQuery)
+        if (!resp || !resp.success) {
+            showAlert(t('tips_title'), t('wallet_err_no_basic'))
+            return
+        }
+        const data = resp.data as walletInfo
+        if (!data.hasCreated) {
+            showAlert(t('tips_title'), t('wallet_error_no_wallet'))
+            return
+        }
+        const usdc = Number(data.usdcVal ?? 0)
 
         if (!Number.isFinite(usdc) || usdc < tip) {
-            showToastMsg(`USDC 余额不足：需要 ${tip} USDC`)
+            showToastMsg(t('wallet_insufficient_funds') + ` USDC ${tip} Needed`)
             return
         }
 
         logX402("------>>> tip action clicked:")
         const tweet = obj.tweet
-        const req = await sendMsgToService({
-            tweetId: tweet.rest_id,
-            authorId: tweet.author.authorID,
-            val: tip
-        }, MsgType.X402TipAction)
+        const payload: x402TipPayload = {tweetId: tweet.rest_id, authorId: tweet.author.authorID, usdcVal: tip}
+        const req = await sendMsgToService(payload, MsgType.X402TipAction)
         console.log("x402 req:", req)
         if (!req.success) {
             showToastMsg(req.data as string)
             return
         }
     } catch (e) {
-        showToastMsg("打赏失败：" + e.toString())
+        showToastMsg(e.toString())
     } finally {
         hideGlobalLoading()
     }
@@ -77,18 +87,4 @@ export function addTipBtnForTweet(statusId: string, isTryAgain: boolean = false)
     tipBtn.onclick = async function () {
         await tipAction(statusId)
     }
-}
-
-let heartbeatTimer: number | null = null
-
-export function startX402Heartbeat() {
-    heartbeatTimer = window.setInterval(() => {
-        try {
-            sendMsgToService({}, MsgType.X402Heartbeat).then(() => {
-                console.log("======>>>>>KA发送成功")
-            })
-        } catch (err) {
-            console.log("---------->>>>>port error:", err)
-        }
-    }, 20_000)
 }

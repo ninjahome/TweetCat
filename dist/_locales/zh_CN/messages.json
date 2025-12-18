@@ -915,6 +915,12 @@
   },
   "wallet_signing": {
     "message": "钱包签名......"
+  },
+  "wallet_err_no_basic": {
+    "message": "获取钱包信息失败"
+  },
+  "wallet_insufficient_funds": {
+    "message": "余额不足"
   }
 }
 
