@@ -1,48 +1,114 @@
-import { Hono } from 'hono';
-import { paymentMiddleware } from '@x402/hono';
-import { HTTPFacilitatorClient, x402ResourceServer } from '@x402/core/server';
-import { ExactEvmScheme } from '@x402/evm';
-
-interface Env {
+export interface Env {
 	CDP_API_KEY_ID: string;
 	CDP_API_KEY_SECRET: string;
 }
 
-const app = new Hono<{ Bindings: Env }>();
+const BASE_SEPOLIA_USDC = '0x036CbD53842c5426634e7929541eC2318F3dCF7e';
+const FACILITATOR_SETTLE_URL =
+	'https://facilitator.cdp.coinbase.com/v1/x402/settle';
 
-app.post('/tip', async (c) => {
-	const amount = c.req.query('amount') || '5.00';
-	const payTo = c.req.query('payTo');
-
-	if (!payTo || !/^0x[a-fA-F0-9]{40}$/.test(payTo)) {
-		return c.text('Invalid address', 400);
-	}
-
-	// 在 handler 中初始化（访问 c.env）
-	const facilitator = new HTTPFacilitatorClient({
-		url: '[https://facilitator.cdp.coinbase.com](https://facilitator.cdp.coinbase.com)',
-		// 这里需要实现 JWT 认证逻辑
-	});
-
-	const server = new x402ResourceServer(facilitator)
-		.register('eip155:8453', new ExactEvmScheme());
-
-	const middleware = paymentMiddleware({
-		'POST /tip': {
-			accepts: [{
-				scheme: 'exact',
-				network: 'eip155:8453',
-				asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-				price: `$${parseFloat(amount).toFixed(2)}`,
-				payTo: payTo,
-			}]
+export default {
+	async fetch(req: Request, env: Env): Promise<Response> {
+		const url = new URL(req.url);
+		if (url.pathname !== '/tip') {
+			return new Response('Not Found', { status: 404 });
 		}
-	}, server);
 
-	await middleware(c, async () => {
-		const receipt = c.get('x402Receipt');
-		return c.json({ success: true, txHash: receipt.transaction });
-	});
-});
+		const payTo = url.searchParams.get('payTo');
+		const amount = url.searchParams.get('amount');
 
-export default app;
+		if (!payTo || !/^0x[a-fA-F0-9]{40}$/.test(payTo)) {
+			return new Response('Invalid address', { status: 400 });
+		}
+		if (!amount || isNaN(Number(amount))) {
+			return new Response('Invalid amount', { status: 400 });
+		}
+
+		const paymentSignature = req.headers.get('PAYMENT-SIGNATURE');
+
+		/**
+		 * ===============================
+		 * 第一次请求：返回 402
+		 * ===============================
+		 */
+		if (!paymentSignature) {
+			const requirements = {
+				x402Version: 2,
+				accepts: [
+					{
+						scheme: 'exact',
+						network: 'eip155:84532', // Base Sepolia
+						asset: BASE_SEPOLIA_USDC,
+						payTo,
+						price: `$${Number(amount).toFixed(2)}`,
+					},
+				],
+			};
+
+			return new Response(
+				JSON.stringify({ error: 'Payment Required' }),
+				{
+					status: 402,
+					headers: {
+						'Content-Type': 'application/json',
+						'PAYMENT-REQUIRED': btoa(JSON.stringify(requirements)),
+					},
+				},
+			);
+		}
+
+		/**
+		 * ===============================
+		 * 第二次请求：调用 CDP settle
+		 * ===============================
+		 */
+		const settlePayload = {
+			paymentSignature,
+			requirements: {
+				x402Version: 2,
+				accepts: [
+					{
+						scheme: 'exact',
+						network: 'eip155:84532',
+						asset: BASE_SEPOLIA_USDC,
+						payTo,
+						price: `$${Number(amount).toFixed(2)}`,
+					},
+				],
+			},
+		};
+
+		const auth = btoa(
+			`${env.CDP_API_KEY_ID}:${env.CDP_API_KEY_SECRET}`,
+		);
+
+		const resp = await fetch(FACILITATOR_SETTLE_URL, {
+			method: 'POST',
+			headers: {
+				Authorization: `Basic ${auth}`,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(settlePayload),
+		});
+
+		if (!resp.ok) {
+			const err = await resp.text();
+			return new Response(
+				JSON.stringify({ error: 'CDP settle failed', detail: err }),
+				{ status: 502 },
+			);
+		}
+
+		const result = await resp.json();
+
+		return new Response(
+			JSON.stringify({
+				ok: true,
+				network: 'base-sepolia',
+				txHash: result.transactionHash,
+				raw: result,
+			}),
+			{ status: 200 },
+		);
+	},
+};
