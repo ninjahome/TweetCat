@@ -34,7 +34,7 @@ import {
 } from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
-import {tipActionForTweet} from "./bg_x402";
+import {tipActionForTweet, x402HeartResponse} from "./bg_x402";
 import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
 
 
@@ -229,8 +229,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.X402Heartbeat: {
-            console.log("------>>>keep alive success")
-            return {success: true, data: "success"}
+            return await x402HeartResponse()
         }
 
         case MsgType.WalletUnlock: {

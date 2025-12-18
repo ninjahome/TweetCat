@@ -65,10 +65,8 @@ export async function timerKolInQueueImmediate(kolID: string): Promise<void> {
     await tweetFM.queuePush(kolID);
 }
 
-let testCounter = 1
-
 async function alarmTweetsProc() {
-    logBGT("------>>> alarm triggered, start to fetch tweets from server", testCounter++);
+    logBGT("------>>> alarm triggered, start to fetch tweets from server");
     await checkAndInitDatabase();
     await refillApiAccessToken(tweetFM.MAX_KOL_PER_ROUND);
     try {

@@ -7,49 +7,15 @@ import {hideGlobalLoading, showGlobalLoading} from "./common";
 import {showToastMsg} from "../timeline/render_common";
 import {LRUCache} from "../common/lru_map";
 
-function findArticleByStatusId(statusId: string): HTMLElement | null {
-    // 使用属性选择器查找包含指定状态ID的链接
-    const selector = `a[href*="/status/${statusId}"]`;
-    const link = document.querySelector<HTMLAnchorElement>(selector);
-
-    // 如果找到链接，则向上查找最近的article元素
-    if (link) {
-        return link.closest('article');
-    }
-
-    return null;
-}
-
 const tweetsCache = new LRUCache<string, EntryObj>(1000);
 
-export async function cacheTweetInStatus(tweets: EntryObj[], tryAgain: boolean = false) {
+export async function cacheTweetInStatus(tweets: EntryObj[]) {
     if (tweets.length === 0) return
-
-
     tweets.forEach(obj => {
         const statusId = obj.tweet.rest_id
         tweetsCache.set(statusId, obj)
     })
-
-    // const firstTweetObj = tweets[0]
-    //
-    // const tweetId = firstTweetObj.tweet.rest_id
-    // const article = findArticleByStatusId(tweetId)
-    // if (!article) {
-    //     if (tryAgain) {
-    //         console.warn("failed to find tweet article")
-    //         return
-    //     }
-    //     setTimeout(() => {
-    //         cacheTweetInStatus(tweets, true)
-    //     }, 1_000)
-    //     return
-    // }
-    //
-    // logX402("-------->>> find twee when tweet detail data got:", tweetId, firstTweetObj)
-    // appendTipBtn(article, firstTweetObj)
 }
-
 
 async function tipAction(statusId: string) {
     const obj = tweetsCache.get(statusId)
@@ -58,7 +24,6 @@ async function tipAction(statusId: string) {
         console.warn("should not be nil for:", statusId)
         return
     }
-
     showGlobalLoading("正在访问 X402 服务")
     try {
         const tip = 0.01
@@ -91,25 +56,14 @@ async function tipAction(statusId: string) {
     }
 }
 
-export function addTipBtnForTweetDetail(mainTweetID: string) {
-    console.log("-------->>> main tweet id:", mainTweetID)
-    const article = findArticleByStatusId(mainTweetID)
-    console.log("------->>>", article)
-    const obj = tweetsCache.get(mainTweetID)
-    if (!obj) {
-        console.log("no data for main tweet")
-        return
-    }
-}
-
 export function addTipBtnForTweet(statusId: string, isTryAgain: boolean = false) {
     const article = document.querySelector('div[data-testid="primaryColumn"] article') as HTMLElement
-    logX402("-------->>> find tweet when url changed:", statusId, article)
+    logX402("-------->>> find tweet when url changed:", statusId, article === null)
     if (!article) {
         if (isTryAgain) return;
         setTimeout(() => {
             addTipBtnForTweet(statusId, true)
-        },5_000)
+        }, 5_000)
         return;
     }
 
@@ -125,8 +79,8 @@ export function addTipBtnForTweet(statusId: string, isTryAgain: boolean = false)
     }
 }
 
-
 let heartbeatTimer: number | null = null
+
 export function startX402Heartbeat() {
     heartbeatTimer = window.setInterval(() => {
         try {

@@ -72,7 +72,7 @@ export async function tipActionForTweet(data: {
             return {success: false, data: "INVALID_WALLET_STATE"};
         }
 
-        if (!data.val || data.val <= 0|| data.val > MAX_TIP_AMOUNT) {
+        if (!data.val || data.val <= 0 || data.val > MAX_TIP_AMOUNT) {
             return {success: false, data: "INVALID_AMOUNT"};
         }
 
@@ -169,7 +169,7 @@ export async function submitToX402Facilitator(
             error: "NETWORK_ERROR",
             message: String(err),
         }
-    }finally {
+    } finally {
         clearTimeout(timeout);
     }
 
@@ -218,4 +218,11 @@ export async function submitToX402Facilitator(
                 message: json?.message || "Unknown facilitator error",
             }
     }
+}
+
+let heartBeatCounter = 0
+
+export async function x402HeartResponse() {
+    console.log("------>>>keep alive success", heartBeatCounter++)
+    return {success: true, data: "success" + heartBeatCounter}
 }
