@@ -6,9 +6,9 @@ import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID, MsgType} from "../common/c
 import {
     CdpEip3009, ChainNameBaseMain,
     EIP3009_TYPES,
-    Eip3009AuthorizationParams,
+    Eip3009AuthorizationParams, MAX_TIP_AMOUNT,
     X402_FACILITATORS, X402PopupTask,
-    X402SubmitInput, X402SubmitResult, X402TaskKey, x402TipPayload
+    X402SubmitInput, X402SubmitResult, X402TaskKey
 } from "../common/x402_obj";
 import {localSet} from "../common/local_storage";
 
@@ -72,7 +72,7 @@ export async function tipActionForTweet(data: {
             return {success: false, data: "INVALID_WALLET_STATE"};
         }
 
-        if (!data.val || data.val <= 0) {
+        if (!data.val || data.val <= 0|| data.val > MAX_TIP_AMOUNT) {
             return {success: false, data: "INVALID_AMOUNT"};
         }
 

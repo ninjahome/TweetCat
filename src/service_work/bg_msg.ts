@@ -36,7 +36,6 @@ import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
 import {tipActionForTweet} from "./bg_x402";
 import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
-import {x402TipPayload} from "../common/x402_obj";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {

@@ -15,7 +15,6 @@ import {showDialog} from "../timeline/render_common";
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
 let __blockAdStatus: boolean = false;
-new Map<string, TweetKol>();
 
 export function changeAdsBlockStatus(status: boolean) {
     console.log("------>>> change block ads settings:", status);

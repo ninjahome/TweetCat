@@ -11,6 +11,7 @@ import {setLatestFetchAt} from "./tweet_pager";
 import {tweetFetchParam} from "../common/msg_obj";
 import {extractMp4UrlList} from "./render_video";
 import {cacheTweetInStatus} from "../content/content_x402";
+import {LRUCache} from "../common/lru_map";
 
 const MIN_FETCH_GAP = 5_000;
 
@@ -205,7 +206,7 @@ export async function startToCheckKolId(ids: any[]) {
     }
 }
 
-const tempCacheForTweetOfKolProfilePage = new Map<string, WrapEntryObj[]>();
+const tempCacheForTweetOfKolProfilePage = new LRUCache<string, WrapEntryObj[]>(1000);
 
 export async function processCapturedTweets(result: any, kolId: string) {
 

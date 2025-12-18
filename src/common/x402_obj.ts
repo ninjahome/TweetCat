@@ -110,3 +110,4 @@ export interface x402TipPayload{
     authorId:string;
     walletAddr?:string;
 }
+export const MAX_TIP_AMOUNT = 1000;

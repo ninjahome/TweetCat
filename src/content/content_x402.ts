@@ -5,6 +5,7 @@ import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {hideGlobalLoading, showGlobalLoading} from "./common";
 import {showToastMsg} from "../timeline/render_common";
+import {LRUCache} from "../common/lru_map";
 
 function findArticleByStatusId(statusId: string): HTMLElement | null {
     // 使用属性选择器查找包含指定状态ID的链接
@@ -19,7 +20,7 @@ function findArticleByStatusId(statusId: string): HTMLElement | null {
     return null;
 }
 
-const tweetsCache = new Map<string, EntryObj>()
+const tweetsCache = new LRUCache<string, EntryObj>(1000);
 
 export async function cacheTweetInStatus(tweets: EntryObj[], tryAgain: boolean = false) {
     if (tweets.length === 0) return
@@ -118,10 +119,11 @@ export function addTipBtnForTweet(statusId: string) {
 
 
 let heartbeatTimer: number | null = null
+
 export function startX402Heartbeat() {
     heartbeatTimer = window.setInterval(() => {
         try {
-            sendMsgToService({}, MsgType.X402Heartbeat).then(()=>{
+            sendMsgToService({}, MsgType.X402Heartbeat).then(() => {
                 console.log("======>>>>>KA发送成功")
             })
         } catch (err) {
