@@ -30,12 +30,13 @@ import {
     getEthBalance,
     getTokenBalance,
     loadWallet,
-    loadWalletSettings, walletStatus
+    loadWalletSettings, transEthParam, transUsdcParam, walletStatus
 } from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
 import {tipActionForTweet} from "./bg_x402";
 import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
+import {x402TipPayload} from "../common/x402_obj";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -242,11 +243,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.WalletTransferEth: {
-            return await msgTransferEth(request.data)
+            return await msgTransferEth(request.data as transEthParam)
         }
 
         case MsgType.WalletTransferUSDC: {
-            return await msgTransferUsdc(request.data);
+            return await msgTransferUsdc(request.data as transUsdcParam);
         }
 
         case MsgType.WalletExportPrivateKey: {
@@ -256,7 +257,6 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.WalletStatus: {
             return {success:true, data: await walletStatus()}
         }
-
         default:
             return {success: false, data: "unsupportable message type"};
     }

@@ -97,3 +97,16 @@ export type X402SubmitResult =
         | "UNKNOWN_ERROR"
     message?: string
 }
+
+export const X402TaskKey = "x402_popup_task"
+export interface X402PopupTask{
+    type:string;
+    payload:any;
+    createdAt:number;
+}
+
+export interface x402TipPayload{
+    tweetId:string;
+    authorId:string;
+    walletAddr?:string;
+}

@@ -40,9 +40,26 @@ export const defaultWalletSettings: WalletSettings = {
     useDefaultRpc: true,
     infuraProjectId: "",
     customRpcUrl: "",
-
     network: 'base-mainnet',
 };
+
+export interface transEthParam {
+    to: string;
+    amountEther: string;
+    password: string;
+    gasLimitWei?: string;
+    settings?: WalletSettings;
+}
+
+export interface transUsdcParam{
+    tokenAddress: string;
+    to: string;
+    amount: string;
+    decimals: number;
+    password: string;
+    gasLimitWei?: string;
+    settings?: WalletSettings;
+}
 
 /** ====== 存取（保留你已有的导出） ====== */
 export async function saveWallet(record: TCWallet): Promise<void> {
@@ -275,14 +292,7 @@ export async function getTokenBalance(
     return formatUnits(raw, decimals);
 }
 
-
-export async function transferEth(params: {
-    to: string;
-    amountEther: string;
-    password: string;
-    gasLimitWei?: string;
-    settings?: WalletSettings;
-}): Promise<string /* txHash */> {
+export async function transferEth(params: transEthParam): Promise<string> {
     const {to, amountEther, password, gasLimitWei, settings} = params;
     if (!to) throw new Error("接收地址无效");
     if (!amountEther) throw new Error("请输入转账金额");
@@ -299,15 +309,7 @@ export async function transferEth(params: {
     });
 }
 
-export async function transferErc20(params: {
-    tokenAddress: string;
-    to: string;
-    amount: string;
-    decimals: number;
-    password: string;
-    gasLimitWei?: string;
-    settings?: WalletSettings;
-}): Promise<string> {
+export async function transferErc20(params: transUsdcParam): Promise<string> {
     const {tokenAddress, to, amount, decimals, password, gasLimitWei, settings} = params;
     if (!tokenAddress) throw new Error("代币合约地址无效");
     if (!to) throw new Error("接收地址无效");
@@ -445,7 +447,7 @@ export async function walletStatus(): Promise<WalletStatusResponse> {
     }
     return {
         status: "UNLOCKED",
-        wallet:decryptedWalletCache.wallet,
+        wallet: decryptedWalletCache.wallet,
         expiresAt: decryptedWalletCache.expires,
         address: decryptedWalletCache.address,
     };

@@ -91,7 +91,7 @@ export enum MsgType {
 
     X402TipAction = "X402TipAction",
     X402Heartbeat = 'X402_HEARTBEAT',
-    X402WalletOpen = "X402WalletOpen"
+    X402WalletOpen = "X402WalletOpen",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
@@ -167,4 +167,3 @@ export const ERC20_ABI = [
     "function transfer(address to, uint256 amount) returns (bool)"
 ];
 
-export const X402TaskKey = "x402_popup_task"

@@ -7,7 +7,7 @@ import {
     loadWallet,
     loadWalletSettings,
     saveWalletSettings,
-    TCWallet,
+    TCWallet, transEthParam, transUsdcParam,
     WalletSettings
 } from "../wallet/wallet_api";
 import {
@@ -181,8 +181,8 @@ async function handleTransferEth(): Promise<void> {
         const password = await requestPassword(t("wallet_prompt_password_send_eth"))
         showLoading(t("wallet_sending_transaction"));
 
-        const resp = await sendMsgToService({to, amountEther: amount, gas, password}, MsgType.WalletTransferEth)
-
+        const param: transEthParam = {to, amountEther: amount, password, ...(gas ? { gasLimitWei: gas } : {})}
+        const resp = await sendMsgToService(param, MsgType.WalletTransferEth)
         if (!resp?.success) {
             showNotification(resp?.error || "TRANSFER_FAILED");
             return
@@ -324,7 +324,7 @@ async function handleExportPrivateKey(): Promise<void> {
         showAlert(t("wallet_export_pk_alert_prefix") + t("wallet_export_pk_warning"), resp.privateKey)
     } catch (error) {
         showNotification((error as Error).message ?? t("wallet_export_pk_failed"), "error");
-    }finally {
+    } finally {
         hideLoading()
     }
 }
@@ -350,14 +350,8 @@ async function handleTransferToken(): Promise<void> {
 
         showLoading(t("wallet_sending_transaction"));
 
-        const resp = await sendMsgToService({
-            tokenAddress,
-            to,
-            amount,
-            decimals,
-            gas,
-            password
-        }, MsgType.WalletTransferUSDC)
+        const param: transUsdcParam = {tokenAddress, to, amount, decimals, password, ...(gas ? { gasLimitWei: gas } : {})}
+        const resp = await sendMsgToService(param, MsgType.WalletTransferUSDC)
         if (!resp?.success) {
             showNotification(resp?.error || "TRANSFER_FAILED");
             return

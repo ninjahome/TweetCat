@@ -1,8 +1,8 @@
 import {
     exportPrivateKey,
-    signMessage,
+    signMessage, transEthParam,
     transferErc20,
-    transferEth,
+    transferEth, transUsdcParam,
     withDecryptedWallet
 } from "../wallet/wallet_api";
 
@@ -27,28 +27,18 @@ export async function msgSignMsg(payload: any) {
     }
 }
 
-export async function msgTransferEth(payload: any) {
-    const {to, amountEther, gas, password} = payload;
+export async function msgTransferEth(payload: transEthParam) {
     try {
-        const tx = await transferEth({to, amountEther, password, gasLimitWei: gas})
+        const tx = await transferEth(payload)
         return {success: true, txHash: tx};
     } catch (e) {
         return {success: false, error: (e as Error).message};
     }
 }
 
-export async function msgTransferUsdc(payload: any) {
-    const {
-        tokenAddress,
-        to,
-        amount,
-        decimals,
-        gas,
-        password
-    } = payload;
-
+export async function msgTransferUsdc(payload: transUsdcParam) {
     try {
-        const tx = await transferErc20({tokenAddress, to, amount, decimals, password, gasLimitWei: gas})
+        const tx = await transferErc20(payload)
         return {success: true, txHash: tx};
     } catch (e) {
         return {success: false, error: (e as Error).message};

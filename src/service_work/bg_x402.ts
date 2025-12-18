@@ -2,13 +2,13 @@ import browser from "webextension-polyfill";
 import {logX402} from "../common/debug_flags";
 import {ethers} from "ethers";
 import {loadWalletSettings, walletStatus} from "../wallet/wallet_api";
-import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID, MsgType, X402TaskKey} from "../common/consts";
+import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID, MsgType} from "../common/consts";
 import {
     CdpEip3009, ChainNameBaseMain,
     EIP3009_TYPES,
     Eip3009AuthorizationParams,
-    X402_FACILITATORS,
-    X402SubmitInput, X402SubmitResult
+    X402_FACILITATORS, X402PopupTask,
+    X402SubmitInput, X402SubmitResult, X402TaskKey, x402TipPayload
 } from "../common/x402_obj";
 import {localSet} from "../common/local_storage";
 
@@ -51,18 +51,24 @@ export async function tipActionForTweet(data: {
 
         // 2️⃣ 如果没解锁 → 让 popup 弹密码
         if (status.status === "LOCKED" || status.status === "EXPIRED") {
-            await localSet(X402TaskKey, {
+
+            const task: X402PopupTask = {
                 type: MsgType.X402WalletOpen,
-                payload: {tweetId: data.tweetId, authorId: data.authorId},
                 createdAt: Date.now(),
-            });
+                payload: {
+                    tweetId: data.tweetId,
+                    authorId: data.authorId,
+                },
+            }
+
+            await localSet(X402TaskKey, task);
             await browser.action.openPopup();
             return {success: false, data: "WALLET_LOCKED"};
         }
         const wallet = status.wallet;
 
         // 3️⃣ UNLOCKED：继续
-        if (status.status !== "UNLOCKED"|| !wallet) {
+        if (status.status !== "UNLOCKED" || !wallet) {
             return {success: false, data: "INVALID_WALLET_STATE"};
         }
 
