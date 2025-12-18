@@ -3,7 +3,7 @@ import browser from "webextension-polyfill";
 
 const SESSION_KEY_ID = "x402_session_key";      // 存储 AES key (hex string)
 const SESSION_DATA_ID = "x402_session_data";    // 存储 { blob: hex, expiresAt }
-const DEFAULT_WALLET_TTL = 30
+const DEFAULT_WALLET_TTL = 30//TODO:: config this param
 interface SessionData {
     blob: string;         // hex: IV (12 bytes) + ciphertext
     expiresAt: number;
