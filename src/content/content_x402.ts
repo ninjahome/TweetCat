@@ -31,43 +31,36 @@ export async function cacheTweetInStatus(tweets: EntryObj[], tryAgain: boolean =
         tweetsCache.set(statusId, obj)
     })
 
-    const firstTweetObj = tweets[0]
+    // const firstTweetObj = tweets[0]
+    //
+    // const tweetId = firstTweetObj.tweet.rest_id
+    // const article = findArticleByStatusId(tweetId)
+    // if (!article) {
+    //     if (tryAgain) {
+    //         console.warn("failed to find tweet article")
+    //         return
+    //     }
+    //     setTimeout(() => {
+    //         cacheTweetInStatus(tweets, true)
+    //     }, 1_000)
+    //     return
+    // }
+    //
+    // logX402("-------->>> find twee when tweet detail data got:", tweetId, firstTweetObj)
+    // appendTipBtn(article, firstTweetObj)
+}
 
-    const tweetId = firstTweetObj.tweet.rest_id
-    const article = findArticleByStatusId(tweetId)
-    if (!article) {
-        if (tryAgain) {
-            console.warn("failed to find tweet article")
-            return
-        }
-        setTimeout(() => {
-            cacheTweetInStatus(tweets, true)
-        }, 1_000)
+
+async function tipAction(statusId: string) {
+    const obj = tweetsCache.get(statusId)
+    if (!obj) {
+        //TODO::
+        console.warn("should not be nil for:", statusId)
         return
     }
 
-    logX402("-------->>> find twee when tweet detail data got:", tweetId, firstTweetObj)
-    appendTipBtn(article, firstTweetObj)
-}
-
-function appendTipBtn(article: HTMLElement, obj: EntryObj) {
-    const toolBar = article.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep")
-    if (!!toolBar.querySelector(".user-tip-action")) return;
-
-    const tipBtn = _contentTemplate.content.getElementById("user-tip-action")?.cloneNode(true) as HTMLElement;
-    if (!tipBtn) return;
-    tipBtn.removeAttribute("id")
-
-    toolBar.insertBefore(tipBtn, toolBar.firstChild)
-    tipBtn.onclick = async function () {
-        await tipAction(obj)
-    }
-}
-
-async function tipAction(firstTweetObj: EntryObj) {
     showGlobalLoading("正在访问 X402 服务")
     try {
-
         const tip = 0.01
 
         // 1) 先查钱包信息（复用现有接口）
@@ -80,7 +73,7 @@ async function tipAction(firstTweetObj: EntryObj) {
         }
 
         logX402("------>>> tip action clicked:")
-        const tweet = firstTweetObj.tweet
+        const tweet = obj.tweet
         const req = await sendMsgToService({
             tweetId: tweet.rest_id,
             authorId: tweet.author.authorID,
@@ -109,17 +102,31 @@ export function addTipBtnForTweetDetail(mainTweetID: string) {
     }
 }
 
-export function addTipBtnForTweet(statusId: string) {
-    const obj = tweetsCache.get(statusId)
-    logX402("-------->>> find twee when url changed:", statusId, obj)
-    const article = document.querySelector('article') as HTMLElement
-    if (!obj || !article) return;
-    appendTipBtn(article, obj)
+export function addTipBtnForTweet(statusId: string, isTryAgain: boolean = false) {
+    const article = document.querySelector('div[data-testid="primaryColumn"] article') as HTMLElement
+    logX402("-------->>> find tweet when url changed:", statusId, article)
+    if (!article) {
+        if (isTryAgain) return;
+        setTimeout(() => {
+            addTipBtnForTweet(statusId, true)
+        },5_000)
+        return;
+    }
+
+    const toolBar = article?.querySelector(".css-175oi2r.r-1awozwy.r-18u37iz.r-1cmwbt1.r-1wtj0ep")
+    if (!toolBar || !!toolBar.querySelector(".user-tip-action")) return;
+
+    const tipBtn = _contentTemplate.content.getElementById("user-tip-action")?.cloneNode(true) as HTMLElement;
+    tipBtn.removeAttribute("id")
+
+    toolBar.insertBefore(tipBtn, toolBar.firstChild)
+    tipBtn.onclick = async function () {
+        await tipAction(statusId)
+    }
 }
 
 
 let heartbeatTimer: number | null = null
-
 export function startX402Heartbeat() {
     heartbeatTimer = window.setInterval(() => {
         try {

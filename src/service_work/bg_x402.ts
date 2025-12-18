@@ -150,6 +150,9 @@ export async function submitToX402Facilitator(
     const body = {
         transferAuthorization: transfer,
     };
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+
     let resp: Response
     try {
         resp = await fetch(facilitator.endpoint, {
@@ -157,6 +160,7 @@ export async function submitToX402Facilitator(
             headers: {
                 "Content-Type": "application/json",
             },
+            signal: controller.signal,
             body: JSON.stringify(body),
         })
     } catch (err) {
@@ -165,6 +169,8 @@ export async function submitToX402Facilitator(
             error: "NETWORK_ERROR",
             message: String(err),
         }
+    }finally {
+        clearTimeout(timeout);
     }
 
     let json: any

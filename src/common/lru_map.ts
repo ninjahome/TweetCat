@@ -131,7 +131,6 @@ export class LRUCache<K, V> {
 }
 
 
-// 示例 4: 带统计信息的缓存
 class StatsLRUCache<K, V> extends LRUCache<K, V> {
     private hits = 0;
     private misses = 0;
