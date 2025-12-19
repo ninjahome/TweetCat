@@ -100,13 +100,3 @@ export function setTextContentOrHide(element: HTMLElement | null, text?: string 
         element.classList.add("hidden");
     }
 }
-
-const PROJECT_ID = "602a8505-5645-45e5-81aa-a0a642ed9a0d";
-export async function initCDP() {
-    await initialize({
-        projectId: PROJECT_ID,
-        ethereum: {
-            createOnLogin: "smart",
-        },
-    });
-}

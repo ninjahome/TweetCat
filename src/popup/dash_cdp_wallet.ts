@@ -2,13 +2,8 @@ import {$Id} from "./common";
 import {formatEther} from 'viem';
 import {createPublicClient, http} from 'viem';
 import {base} from 'viem/chains';
-import browser from "webextension-polyfill";  // 主网
-import {
-    initialize,
-    getCurrentUser,
-    signOut,
-    type Config,
-} from "@coinbase/cdp-core";
+import browser from "webextension-polyfill";
+import {doSignOut, tryGetSignedInUser} from "../common/x402_obj";
 
 
 // Base 主网配置
@@ -20,7 +15,6 @@ const publicClient = createPublicClient({
     transport: http(BASE_RPC_URL),
 });
 
-// USDC 最小 ABI
 const usdcAbi = [
     {
         constant: true,
@@ -95,39 +89,6 @@ export async function bindOpenAuthPage() {
     // 👉 初始化时判断登录态
     const user = await tryGetSignedInUser();
     renderAuthState(user);
-}
-
-
-const CDP_PROJECT_ID = "602a8505-5645-45e5-81aa-a0a642ed9a0d"; // 你的 Project ID
-
-let inited = false;
-
-export async function initCdpOnce() {
-    if (inited) return;
-
-    const config: Config = {
-        projectId: CDP_PROJECT_ID,
-        ethereum: {
-            createOnLogin: "smart", // 推荐 smart account
-        },
-    };
-
-    await initialize(config);
-    inited = true;
-}
-
-export async function tryGetSignedInUser() {
-    await initCdpOnce();
-    try {
-        return await getCurrentUser();
-    } catch {
-        return null;
-    }
-}
-
-export async function doSignOut() {
-    await initCdpOnce();
-    await signOut();
 }
 
 

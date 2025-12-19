@@ -46,7 +46,7 @@ async function tipAction(statusId: string) {
         const usdc = Number(data.usdcVal ?? 0)
 
         if (!Number.isFinite(usdc) || usdc < tip) {
-            showToastMsg(t('wallet_insufficient_funds') + ` USDC ${tip} Needed`)
+            showAlert(t('tips_title'),t('wallet_insufficient_funds') + ` USDC ${tip} Needed`)
             return
         }
 

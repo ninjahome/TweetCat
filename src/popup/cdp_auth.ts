@@ -1,8 +1,7 @@
-import {getCurrentUser, initialize, signInWithOAuth} from "@coinbase/cdp-core";
-import browser from "webextension-polyfill";
+import {getCurrentUser, signInWithOAuth} from "@coinbase/cdp-core";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {initCDP} from "./common";
+import {initCDP} from "../common/x402_obj";
 
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
 

@@ -1,3 +1,5 @@
+import {getCurrentUser, initialize, signOut} from "@coinbase/cdp-core";
+
 export const EIP3009_TYPES = {
     TransferWithAuthorization: [
         {name: "from", type: "address"},
@@ -115,3 +117,27 @@ export interface x402TipPayload {
 }
 
 export const MAX_TIP_AMOUNT = 1000;
+
+export async function tryGetSignedInUser() {
+    await initCDP();
+    try {
+        return await getCurrentUser();
+    } catch {
+        return null;
+    }
+}
+
+export async function doSignOut() {
+    await initCDP();
+    await signOut();
+}
+
+const PROJECT_ID = "602a8505-5645-45e5-81aa-a0a642ed9a0d";
+export async function initCDP() {
+    await initialize({
+        projectId: PROJECT_ID,
+        ethereum: {
+            createOnLogin: "smart",
+        },
+    });
+}
