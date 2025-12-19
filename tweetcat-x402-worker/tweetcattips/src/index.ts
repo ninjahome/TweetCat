@@ -21,25 +21,6 @@ export default {
 			return new Response(null, {headers: corsHeaders});
 		}
 		const url = new URL(req.url);
-
-		/**
-		 * ===============================
-		 * OAuth redirect 落点
-		 * ===============================
-		 */
-		if (url.pathname === '/auth') {
-			return new Response(
-				`Login complete.
-You can close this tab and return to the extension.`,
-				{
-					status: 200,
-					headers: {
-						'Content-Type': 'text/plain',
-					},
-				},
-			);
-		}
-
 		if (url.pathname !== '/tip') {
 			return new Response('Not Found', {
 				status: 404,

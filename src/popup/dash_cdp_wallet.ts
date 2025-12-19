@@ -1,7 +1,7 @@
-import { $Id } from "./common";
-import { formatEther } from 'viem';
-import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+import {$Id} from "./common";
+import {formatEther} from 'viem';
+import {createPublicClient, http} from 'viem';
+import {base} from 'viem/chains';
 import browser from "webextension-polyfill";  // 主网
 import {
     initialize,
@@ -24,9 +24,9 @@ const publicClient = createPublicClient({
 const usdcAbi = [
     {
         constant: true,
-        inputs: [{ name: '_owner', type: 'address' }],
+        inputs: [{name: '_owner', type: 'address'}],
         name: 'balanceOf',
-        outputs: [{ name: 'balance', type: 'uint256' }],
+        outputs: [{name: 'balance', type: 'uint256'}],
         type: 'function',
     },
 ] as const;
@@ -76,7 +76,7 @@ export async function bindOpenAuthPage() {
 
     btn.onclick = async () => {
         const url = browser.runtime.getURL("html/cdp_auth.html");
-        await browser.tabs.create({ url });
+        await browser.tabs.create({url});
     };
 
     const statusEl = $Id("cdp-auth-status") as HTMLElement;
