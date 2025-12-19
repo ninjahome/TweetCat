@@ -6,7 +6,7 @@
     ]
   },
   "name": "TweetCat",
-  "version": "3.1.2",
+  "version": "3.1.4",
   "default_locale": "en",
   "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {
@@ -32,6 +32,8 @@
     "nativeMessaging"
   ],
   "host_permissions": [
+    "https://api.cdp.coinbase.com/*",
+    "https://*.coinbase.com/*",
     "https://twitter.com/*",
     "https://x.com/*",
     "*://x.com/*",
@@ -75,6 +77,14 @@
         "https://x.com/*",
         "http://127.0.0.1/*",
         "http://localhost/*"
+      ]
+    },
+    {
+      "resources": [
+        "html/cdp_auth.html"
+      ],
+      "matches": [
+        "<all_urls>"
       ]
     }
   ],

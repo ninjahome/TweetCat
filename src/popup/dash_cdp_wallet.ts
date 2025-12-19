@@ -72,24 +72,31 @@ export async function refreshWalletBalance(address: string): Promise<void> {
 }
 
 export async function bindOpenAuthPage() {
-    const btn = $Id("btn-open-cdp-auth") as HTMLButtonElement;
+    const btnLogin = $Id("btn-open-cdp-auth") as HTMLButtonElement;
+    const btnLogout = $Id("btn-cdp-signout") as HTMLButtonElement;
 
-    btn.onclick = async () => {
+    // 👉 登录：打开 OAuth 页面
+    btnLogin.onclick = async () => {
         const url = browser.runtime.getURL("html/cdp_auth.html");
         await browser.tabs.create({url});
     };
 
-    const statusEl = $Id("cdp-auth-status") as HTMLElement;
+    // 👉 退出登录
+    btnLogout.onclick = async () => {
+        btnLogout.disabled = true;
+        try {
+            await doSignOut();
+        } finally {
+            btnLogout.disabled = false;
+            renderAuthState(null);
+        }
+    };
+
+    // 👉 初始化时判断登录态
     const user = await tryGetSignedInUser();
-
-    if (!user || !user.evmAccounts?.length) {
-        statusEl.innerText = "未连接";
-        return;
-    }
-
-    const address = user.evmAccounts[0];
-    statusEl.innerText = `已连接：${address.slice(0, 6)}...${address.slice(-4)}`;
+    renderAuthState(user);
 }
+
 
 const CDP_PROJECT_ID = "602a8505-5645-45e5-81aa-a0a642ed9a0d"; // 你的 Project ID
 
@@ -121,4 +128,26 @@ export async function tryGetSignedInUser() {
 export async function doSignOut() {
     await initCdpOnce();
     await signOut();
+}
+
+
+function renderAuthState(user: any) {
+    const btnLogin = $Id("btn-open-cdp-auth") as HTMLButtonElement;
+    const btnLogout = $Id("btn-cdp-signout") as HTMLButtonElement;
+    const statusEl = $Id("cdp-auth-status") as HTMLElement;
+
+    console.log("------>>>:", user)
+    if (!user || !user.evmAccounts?.length) {
+        // ❌ 未登录
+        btnLogin.style.display = "block";
+        btnLogout.style.display = "none";
+        statusEl.innerText = "未连接";
+        return;
+    }
+
+    // ✅ 已登录
+    const address = user.evmAccounts[0];
+    btnLogin.style.display = "none";
+    btnLogout.style.display = "block";
+    statusEl.innerText = `已连接：${address.slice(0, 6)}...${address.slice(-4)}`;
 }

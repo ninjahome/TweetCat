@@ -30,7 +30,7 @@ import {
 } from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
-import {tipActionForTweet} from "./bg_x402";
+import {tipActionForTweet, walletSignedIn} from "./bg_x402";
 import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
 import {x402TipPayload} from "../common/x402_obj";
 
@@ -232,6 +232,9 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.WalletExportPrivateKey: {
             return await msgExportPriKye(request.data as string);
+        }
+        case MsgType.X402EmbeddWalletSignIn: {
+            return {success: true, data: await walletSignedIn()};
         }
 
         default:

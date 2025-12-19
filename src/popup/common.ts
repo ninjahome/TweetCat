@@ -1,4 +1,5 @@
 import {t} from "../common/i18n";
+import {initialize} from "@coinbase/cdp-core";
 
 let notificationTimer: number | null = null;
 let notificationBar: HTMLDivElement | null = null;
@@ -100,4 +101,12 @@ export function setTextContentOrHide(element: HTMLElement | null, text?: string 
     }
 }
 
-
+const PROJECT_ID = "602a8505-5645-45e5-81aa-a0a642ed9a0d";
+export async function initCDP() {
+    await initialize({
+        projectId: PROJECT_ID,
+        ethereum: {
+            createOnLogin: "smart",
+        },
+    });
+}

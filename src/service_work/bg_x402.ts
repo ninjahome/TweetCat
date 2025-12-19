@@ -59,7 +59,7 @@ async function fetch402PaymentRequired(
     try {
         const url = `${WORKER_URL}/tip?payTo=${payTo}&amount=${amount}`;
         logX402("Fetching 402 from:", url);
-        
+
         const resp = await fetch(url, {
             method: 'GET',
         });
@@ -98,7 +98,7 @@ async function submitPaymentToWorker(
     try {
         const url = `${WORKER_URL}/tip?payTo=${payTo}&amount=${amount}`;
         logX402("Submitting payment to:", url);
-        
+
         const resp = await fetch(url, {
             method: 'GET',
             headers: {
@@ -121,7 +121,7 @@ async function submitPaymentToWorker(
 
         const json = await resp.json();
         logX402('Worker response:', json);
-        
+
         if (json.ok && json.txHash) {
             return {
                 ok: true,
@@ -186,7 +186,7 @@ export async function tipActionForTweet(data: x402TipPayload) {
             "0x06856d7a17b0ac072a845fbe95812e94ef8c2411",
             data.usdcVal
         );
-        
+
         if (!paymentRequired) {
             return {success: false, data: "FAILED_TO_GET_402"};
         }
@@ -265,3 +265,7 @@ export async function tipActionForTweet(data: x402TipPayload) {
     }
 }
 
+export async function walletSignedIn(): Promise<string> {
+    console.log("------>>> wallet signed success!")
+    return "success"
+}

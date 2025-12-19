@@ -90,6 +90,7 @@ export enum MsgType {
 
     X402TipAction = "X402TipAction",
     X402WalletOpen = "X402WalletOpen",
+    X402EmbeddWalletSignIn = "X402EmbeddWalletSignIn",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
