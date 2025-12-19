@@ -1,5 +1,4 @@
 import {t} from "../common/i18n";
-import {initialize} from "@coinbase/cdp-core";
 
 let notificationTimer: number | null = null;
 let notificationBar: HTMLDivElement | null = null;

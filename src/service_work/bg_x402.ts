@@ -1,7 +1,7 @@
 import browser from "webextension-polyfill";
 import {logX402} from "../common/debug_flags";
 import {loadWalletSettings} from "../wallet/wallet_api";
-import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID, MsgType} from "../common/consts";
+import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID} from "../common/consts";
 import {
     ChainNameBaseMain,
     MAX_TIP_AMOUNT, tryGetSignedInUser, X402_FACILITATORS,
