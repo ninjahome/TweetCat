@@ -61,7 +61,7 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
         chainId: ChainIDBaseSepolia,
         network: ChainNameBaseSepolia,
         usdcAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
-        settlementContract:"0x06856d7a17b0ac072a845fbe95812e94ef8c2411",
+        settlementContract: "0x06856d7a17b0ac072a845fbe95812e94ef8c2411",
         endpoint: "https://facilitator.sepolia.x402.org",
     },
 
@@ -70,7 +70,7 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
         chainId: ChainIDBaseMain,
         network: ChainNameBaseMain,
         usdcAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-        settlementContract:"0x06856d7a17b0ac072a845fbe95812e94ef8c2411",
+        settlementContract: "0x06856d7a17b0ac072a845fbe95812e94ef8c2411",
         endpoint: "https://facilitator.x402.org",
     },
 }
@@ -95,21 +95,23 @@ export type X402SubmitResult =
         | "SESSION_EXPIRED"
         | "NETWORK_ERROR"
         | "UNKNOWN_ERROR"
+        | 'WORKER_ERROR'
     message?: string
 }
 
 export const X402TaskKey = "x402_popup_task"
-export interface X402PopupTask{
-    type:string;
-    payload:any;
-    createdAt:number;
+
+export interface X402PopupTask {
+    type: string;
+    payload: any;
+    createdAt: number;
 }
 
-export interface x402TipPayload{
-    tweetId:string;
-    authorId:string;
-    usdcVal:number
-    walletAddr?:string;
+export interface x402TipPayload {
+    tweetId: string;
+    authorId: string;
+    usdcVal: number
+    payTo?: string;
 }
+
 export const MAX_TIP_AMOUNT = 1000;
-

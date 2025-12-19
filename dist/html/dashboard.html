@@ -8,7 +8,36 @@
     <script src="../js/dashboard.js"></script>
 </head>
 <body>
+
 <div id="view-main-home" class="view-main-home page_view">
+
+    <div id="cdp-auth-card" class="tc-card">
+        <div class="tc-card__header">
+            <div class="tc-card__title">Connect Coinbase Wallet</div>
+            <div class="tc-card__sub">
+                登录一次，后续 x402 支付自动完成
+            </div>
+        </div>
+
+        <div class="tc-card__body">
+            <button
+                    id="btn-open-cdp-auth"
+                    class="tc-btn tc-btn--primary"
+                    type="button"
+            >
+                Connect Wallet
+            </button>
+
+            <div
+                    id="cdp-auth-status"
+                    class="tc-hint"
+                    style="margin-top: 10px"
+            >
+                未连接
+            </div>
+        </div>
+    </div>
+
     <div class="wallet-action-div">
         <button id="btn-main-menu" class="top-icon-btn" type="button" title="菜单">
             <svg t="1763528406216" class="icon top-menu-icon" viewBox="0 0 1024 1024"
@@ -86,7 +115,6 @@
             </div>
         </div>
     </div>
-
     <div class="category-show-area" id="category-show-area">
         <button id="btn-mgn-category" class="btn-mgn-category"></button>
         <div id="wallet-create-div" class="wallet-create-div">
@@ -105,7 +133,6 @@
         </div>
 
     </div>
-
 </div>
 
 <div id="view-wallet-setting" class="view-wallet-setting page_view">
@@ -477,7 +504,6 @@
     </div>
 </div>
 
-
 <div id="confirm-popup">
     <div class="popup-content">
         <p id="confirm-message">__MSG_confirm_message__</p>
@@ -516,8 +542,6 @@
     </div>
 </div>
 
-
-<!-- ETH 转账弹窗 -->
 <div
         id="transfer-eth-modal"
         class="tc-modal tc-modal--transfer hidden"

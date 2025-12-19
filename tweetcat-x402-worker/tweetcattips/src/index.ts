@@ -7,21 +7,60 @@ const BASE_SEPOLIA_USDC = '0x036CbD53842c5426634e7929541eC2318F3dCF7e';
 const FACILITATOR_SETTLE_URL =
 	'https://facilitator.cdp.coinbase.com/v1/x402/settle';
 
+// 添加 CORS 头部
+const corsHeaders = {
+	'Access-Control-Allow-Origin': '*',
+	'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+	'Access-Control-Allow-Headers': 'Content-Type, PAYMENT-SIGNATURE',
+};
+
 export default {
 	async fetch(req: Request, env: Env): Promise<Response> {
+		// 处理 CORS preflight
+		if (req.method === 'OPTIONS') {
+			return new Response(null, {headers: corsHeaders});
+		}
 		const url = new URL(req.url);
+
+		/**
+		 * ===============================
+		 * OAuth redirect 落点
+		 * ===============================
+		 */
+		if (url.pathname === '/auth') {
+			return new Response(
+				`Login complete.
+You can close this tab and return to the extension.`,
+				{
+					status: 200,
+					headers: {
+						'Content-Type': 'text/plain',
+					},
+				},
+			);
+		}
+
 		if (url.pathname !== '/tip') {
-			return new Response('Not Found', { status: 404 });
+			return new Response('Not Found', {
+				status: 404,
+				headers: corsHeaders,
+			});
 		}
 
 		const payTo = url.searchParams.get('payTo');
 		const amount = url.searchParams.get('amount');
 
 		if (!payTo || !/^0x[a-fA-F0-9]{40}$/.test(payTo)) {
-			return new Response('Invalid address', { status: 400 });
+			return new Response('Invalid address', {
+				status: 400,
+				headers: corsHeaders,
+			});
 		}
 		if (!amount || isNaN(Number(amount))) {
-			return new Response('Invalid amount', { status: 400 });
+			return new Response('Invalid amount', {
+				status: 400,
+				headers: corsHeaders,
+			});
 		}
 
 		const paymentSignature = req.headers.get('PAYMENT-SIGNATURE');
@@ -46,10 +85,11 @@ export default {
 			};
 
 			return new Response(
-				JSON.stringify({ error: 'Payment Required' }),
+				JSON.stringify({error: 'Payment Required'}),
 				{
 					status: 402,
 					headers: {
+						...corsHeaders,
 						'Content-Type': 'application/json',
 						'PAYMENT-REQUIRED': btoa(JSON.stringify(requirements)),
 					},
@@ -93,9 +133,13 @@ export default {
 
 		if (!resp.ok) {
 			const err = await resp.text();
+			console.error('CDP settle failed:', err);
 			return new Response(
-				JSON.stringify({ error: 'CDP settle failed', detail: err }),
-				{ status: 502 },
+				JSON.stringify({error: 'CDP settle failed', detail: err}),
+				{
+					status: 502,
+					headers: {...corsHeaders, 'Content-Type': 'application/json'},
+				},
 			);
 		}
 
@@ -108,7 +152,10 @@ export default {
 				txHash: result.transactionHash,
 				raw: result,
 			}),
-			{ status: 200 },
+			{
+				status: 200,
+				headers: {...corsHeaders, 'Content-Type': 'application/json'},
+			},
 		);
 	},
 };
