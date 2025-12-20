@@ -8,7 +8,6 @@ import {sendMessageToX} from "../service_work/bg_msg";
 import {localGet, localSet} from "../common/local_storage";
 import {getSystemSetting, switchAdOn} from "../object/system_setting";
 import {initI18n, t} from "../common/i18n";
-import {processX402Task} from "./popup_x402";
 import {initDashboardTexts, initWalletOrCreate} from "./dash_wallet";
 import {$Id} from "./common";
 import {initIpfsSettingsView} from "./dash_ipfs";
@@ -35,7 +34,6 @@ async function initDashBoard(): Promise<void> {
     initSettings();
     await initWalletOrCreate();
     initIpfsSettingsView();
-    await processX402Task()
 }
 
 

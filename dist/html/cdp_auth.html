@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Connect Coinbase Wallet</title>
+    <link rel="stylesheet" href="../css/common_utils.css"/>
     <style>
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont;
@@ -39,7 +40,15 @@
     <button id="btn-apple">Sign in with Apple</button>
     <button id="btn-x">Sign in with X</button>
 
-    <p id="status" style="margin-top:12px;color:#666;"></p>
+    <p id="status" style="margin-top:12px;color:red;"></p>
+</div>
+
+
+<div id="loading-overlay">
+    <div id="loading-content">
+        <div class="spinner"></div>
+        <div class="loading-message"></div>
+    </div>
 </div>
 
 </body>

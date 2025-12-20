@@ -1,30 +1,30 @@
-import {getCurrentUser, signInWithOAuth} from "@coinbase/cdp-core";
+import {getCurrentUser, OAuth2ProviderType, signInWithOAuth} from "@coinbase/cdp-core";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {initCDP} from "../common/x402_obj";
+import {$Id, hideLoading, showLoading} from "./common";
 
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
 
 async function initDashBoard(): Promise<void> {
+    showLoading("初始化 coinbase 钱包SDK")
     try {
-        // ① 判断是否是 OAuth 回调
         const params = new URLSearchParams(window.location.search);
         const code = params.get("code");
         const flowId = params.get("flow_id");
         const provider = params.get("provider_type");
 
         if (code && provider) {
-            // ✅ OAuth 回调页：只做“结果接收”，不初始化 SDK
             await handleOAuthCallback(code, flowId, provider);
             return;
         }
-
-        // ② 普通登录入口页：才初始化 SDK
         await init();
 
     } catch (err) {
         console.error(err);
         document.body.innerText = "初始化失败";
+    } finally {
+        hideLoading();
     }
 }
 
@@ -59,9 +59,11 @@ async function init() {
     if (user) {
         showStatus("钱包已连接")
         disableLoginButtons();
-        return;
     }
-    bind();
+
+    $Id("btn-google").onclick = () => signInFunc("google")
+    $Id("btn-apple").onclick = () => signInFunc("apple")
+    $Id("btn-x").onclick = () => signInFunc("x")
 }
 
 function disableLoginButtons() {
@@ -75,20 +77,10 @@ function disableLoginButtons() {
     });
 }
 
-function bind() {
-    document.getElementById("btn-google")?.addEventListener("click", () => {
-        signInWithOAuth("google").then(() => {
-            showStatus("正在跳转到 Google 登录...")
-        });
-    });
-    document.getElementById("btn-apple")?.addEventListener("click", () => {
-        signInWithOAuth("apple").then(() => {
-            showStatus("正在跳转到 Apple 登录...")
-        });
-    });
-    document.getElementById("btn-x")?.addEventListener("click", () => {
-        signInWithOAuth("x").then(() => {
-            showStatus("正在跳转到 X 登录...")
-        });
+function signInFunc(typ: OAuth2ProviderType) {
+    signInWithOAuth(typ).then(() => {
+        showStatus("正在跳转到 " + typ + " 登录...")
+    }).catch(e => {
+        showStatus(e.toString())
     });
 }
