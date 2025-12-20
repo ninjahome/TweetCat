@@ -3,12 +3,8 @@ import {t} from "../common/i18n";
 import {requestPassword} from "./password_modal";
 import {ethers} from "ethers";
 import {
-    defaultWalletSettings,
     loadWallet,
-    loadWalletSettings,
-    saveWalletSettings,
     TCWallet, transEthParam, transUsdcParam,
-    WalletSettings
 } from "../wallet/wallet_api";
 import {
     BASE_MAINNET_CHAIN_ID,
@@ -23,6 +19,7 @@ import {
 import {sendMsgToService, showView} from "../common/utils";
 import {dashRouter} from "./dashboard";
 import browser from "webextension-polyfill";
+import {defaultWalletSettings, loadWalletSettings, saveWalletSettings, WalletSettings} from "../wallet/wallet_setting";
 
 type UiNetworkOption = 'base-mainnet' | 'base-sepolia' | 'custom';
 let currentWallet: TCWallet | null = null;

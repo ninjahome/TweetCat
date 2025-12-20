@@ -1,10 +1,10 @@
 import {queryFilterFromBG} from "../object/tweet_kol";
 import {t} from "../common/i18n";
-import {showDialog, showToastMsg} from "../timeline/render_common";
 import {addGrokResponse, createGrokConversation, deleteGrokConversation} from "../timeline/twitter_api";
 import {defaultAllCategoryID} from "../common/consts";
 import {logATA} from "../common/debug_flags";
 import {sleep} from "../common/utils";
+import {showDialog, showToastMsg} from "./common";
 
 const basePrompts = {
     chinese: `

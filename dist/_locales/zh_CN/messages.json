@@ -921,6 +921,9 @@
   },
   "wallet_insufficient_funds": {
     "message": "余额不足"
+  },
+  "cdp_wallet_connect": {
+    "message": "链接 Coinbase 钱包"
   }
 }
 

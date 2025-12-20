@@ -3,13 +3,11 @@ import {_contentTemplate} from "./twitter_observer";
 import {logX402} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {hideGlobalLoading, showGlobalLoading} from "./common";
-import {showToastMsg} from "../timeline/render_common";
+import {hideGlobalLoading, showDialog, showGlobalLoading, showToastMsg} from "./common";
 import {LRUCache} from "../common/lru_map";
-import {showAlert} from "../popup/common";
 import {t} from "../common/i18n";
-import {walletInfo} from "../wallet/wallet_api";
-import {x402TipPayload} from "../common/x402_obj";
+import {walletInfo, x402TipPayload} from "../common/x402_obj";
+import {queryWalletBalance} from "../wallet/cdp_wallet";
 
 const tweetsCache = new LRUCache<string, EntryObj>(1000);
 
@@ -32,21 +30,20 @@ async function tipAction(statusId: string) {
     try {
         const tip = 0.01
 
-        // 1) 先查钱包信息（复用现有接口）
         const resp = await sendMsgToService({}, MsgType.WalletInfoQuery)
         if (!resp || !resp.success) {
-            showAlert(t('tips_title'), t('wallet_err_no_basic'))
+            showDialog(t('tips_title'), t('wallet_err_no_basic'))
             return
         }
         const data = resp.data as walletInfo
         if (!data.hasCreated) {
-            showAlert(t('tips_title'), t('wallet_error_no_wallet'))
+            showDialog(t('tips_title'), t('wallet_error_no_wallet'))
             return
         }
         const usdc = Number(data.usdcVal ?? 0)
 
         if (!Number.isFinite(usdc) || usdc < tip) {
-            showAlert(t('tips_title'),t('wallet_insufficient_funds') + ` USDC ${tip} Needed`)
+            showDialog(t('tips_title'),t('wallet_insufficient_funds') + ` USDC ${tip} Needed`)
             return
         }
 

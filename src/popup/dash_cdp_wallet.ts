@@ -1,71 +1,51 @@
 import {$Id} from "./common";
-import {formatEther} from 'viem';
-import {createPublicClient, http} from 'viem';
-import {base} from 'viem/chains';
 import browser from "webextension-polyfill";
-import {doSignOut, tryGetSignedInUser} from "../common/x402_obj";
+import {ChainIDBaseSepolia, ChainNameBaseSepolia, doSignOut, tryGetSignedInUser} from "../common/x402_obj";
+import {queryWalletBalance} from "../wallet/cdp_wallet";
+import {t} from "../common/i18n";
 
+export async function refreshWalletBalance(
+    address: string,
+    networkId: number,
+): Promise<void> {
 
-// Base 主网配置
-const BASE_RPC_URL = 'https://mainnet.base.org';
-const USDC_ADDRESS_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as const;
-
-const publicClient = createPublicClient({
-    chain: base,
-    transport: http(BASE_RPC_URL),
-});
-
-const usdcAbi = [
-    {
-        constant: true,
-        inputs: [{name: '_owner', type: 'address'}],
-        name: 'balanceOf',
-        outputs: [{name: 'balance', type: 'uint256'}],
-        type: 'function',
-    },
-] as const;
-
-export async function refreshWalletBalance(address: string): Promise<void> {
-    if (!address || address === '未知') {
-        console.log('无有效地址，无法刷新余额');
-        return;
-    }
+    const ethEl = document.querySelector('.wallet-eth-value') as HTMLElement
+    const usdcEl = document.querySelector('.wallet-usdt-value') as HTMLElement
 
     try {
-        // ETH 余额（不受影响）
-        const ethBalanceRaw = await publicClient.getBalance({
-            address: address as `0x${string}`
-        });
-        const ethBalance = formatEther(ethBalanceRaw);
+        const balance = await queryWalletBalance(address, networkId)
 
-        const ethEl = document.querySelector('.wallet-eth-value') as HTMLElement;
-        if (ethEl) ethEl.innerText = Number(ethBalance).toFixed(6);
+        if (ethEl) ethEl.innerText = balance.eth
+        if (usdcEl) usdcEl.innerText = balance.usdc
 
-        // USDC 余额（关键修复）
-        const usdcBalanceRaw = await publicClient.readContract({
-            address: USDC_ADDRESS_BASE,
-            abi: usdcAbi,
-            functionName: 'balanceOf',
-            args: [address as `0x${string}`],
-            authorizationList: undefined,  // ← 必须加这行，消除 TS2345
-        }) as bigint;
-
-        const usdcBalance = Number(usdcBalanceRaw) / 1_000_000;
-
-        const usdtEl = document.querySelector('.wallet-usdt-value') as HTMLElement;
-        if (usdtEl) usdtEl.innerText = usdcBalance.toFixed(2);
-
-        console.log(`余额更新: ETH ${ethBalance}, USDC ${usdcBalance}`);
-    } catch (error) {
-        console.error('刷新余额失败', error);
-        const ethEl = document.querySelector('.wallet-eth-value') as HTMLElement;
-        const usdtEl = document.querySelector('.wallet-usdt-value') as HTMLElement;
-        if (ethEl) ethEl.innerText = '--';
-        if (usdtEl) usdtEl.innerText = '--';
+        console.log(`[${networkId}] balance updated`, balance)
+    } catch (err) {
+        console.error('刷新余额失败', err)
+        if (ethEl) ethEl.innerText = '--'
+        if (usdcEl) usdcEl.innerText = '--'
     }
 }
 
-export async function bindOpenAuthPage() {
+export async function initCdpWallet() {
+
+    // const walletCreateDiv = $Id("wallet-create-div") as HTMLButtonElement;//btn-create-wallet
+    // const walletInfoDiv = $Id("wallet-info-area") as HTMLDivElement;
+    // const walletSettingBtn = $Id("wallet-settings-btn") as HTMLButtonElement;
+    // const walletMainBtn = $Id("btn-main-menu") as HTMLButtonElement;
+    // const walletMainMenu = $Id("wallet-main-menu") as HTMLDivElement;
+    //
+    //
+    // const walletNewBtn = (walletCreateDiv.querySelector(".btn-create-wallet") as HTMLButtonElement);
+    // walletNewBtn.textContent = t('cdp_wallet_connect');
+    //
+    // tryGetSignedInUser().then(user=>{
+    //     if(!user){
+    //
+    //     }
+    // })
+    //
+
+
     const btnLogin = $Id("btn-open-cdp-auth") as HTMLButtonElement;
     const btnLogout = $Id("btn-cdp-signout") as HTMLButtonElement;
 
@@ -92,7 +72,7 @@ export async function bindOpenAuthPage() {
 }
 
 
-function renderAuthState(user: any) {
+async function renderAuthState(user: any) {
     const btnLogin = $Id("btn-open-cdp-auth") as HTMLButtonElement;
     const btnLogout = $Id("btn-cdp-signout") as HTMLButtonElement;
     const statusEl = $Id("cdp-auth-status") as HTMLElement;
@@ -111,4 +91,8 @@ function renderAuthState(user: any) {
     btnLogin.style.display = "none";
     btnLogout.style.display = "block";
     statusEl.innerText = `已连接：${address.slice(0, 6)}...${address.slice(-4)}`;
+    console.log("------>>> embedded cdp wallet address:",
+        address,
+        user.authenticationMethods,
+        await queryWalletBalance(address, ChainIDBaseSepolia))
 }

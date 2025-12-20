@@ -33,6 +33,7 @@ import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
 import {tipActionForTweet, walletSignedIn} from "./bg_x402";
 import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
 import {x402TipPayload} from "../common/x402_obj";
+import {queryCdpWalletInfo} from "../wallet/cdp_wallet";
 
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -195,7 +196,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.WalletInfoQuery: {
-            const data = await queryBasicInfo()
+            const data = await queryCdpWalletInfo()
             return {success: data !== null, data}
         }
 

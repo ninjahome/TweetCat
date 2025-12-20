@@ -10,7 +10,7 @@ import {logAD, logTPR} from "../common/debug_flags";
 import {blockedAdNumIncrease} from "../object/system_setting";
 import {prepareDownloadBtn} from "../timeline/render_action";
 import {t} from "../common/i18n";
-import {showDialog} from "../timeline/render_common";
+import {showDialog} from "./common";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;

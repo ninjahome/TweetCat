@@ -1,20 +1,21 @@
 import browser from "webextension-polyfill";
 import {logX402} from "../common/debug_flags";
-import {loadWalletSettings} from "../wallet/wallet_api";
 import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID} from "../common/consts";
 import {
-    ChainNameBaseMain,
+    ChainNameBaseMain, initCDP,
     MAX_TIP_AMOUNT, tryGetSignedInUser, X402_FACILITATORS,
     x402TipPayload
 } from "../common/x402_obj";
-import {fetchWithX402} from "@coinbase/cdp-core";
+import {fetchWithX402, getCurrentUser} from "@coinbase/cdp-core";
+import {loadWalletSettings} from "../wallet/wallet_setting";
 
 const WORKER_URL = "https://tweetcattips.ribencong.workers.dev";
 
-const { fetchWithPayment } = fetchWithX402({
+const {fetchWithPayment} = fetchWithX402({
     // 可选：限制单笔最大支付（安全）
     // maxValue: parseUnits("10", 6), // 最大 10 USDC
 });
+
 export async function tipActionForTweet(data: x402TipPayload) {
     logX402("------>>> Starting x402 tip action with Embedded Wallet:", data);
 
@@ -26,7 +27,7 @@ export async function tipActionForTweet(data: x402TipPayload) {
             await browser.tabs.create({
                 url: browser.runtime.getURL("html/cdp_auth.html")
             });
-            return { success: false, data: "WALLET_NOT_CONNECTED" };
+            return {success: false, data: "WALLET_NOT_CONNECTED"};
         }
 
         const address = user.evmAccounts[0];
@@ -51,7 +52,7 @@ export async function tipActionForTweet(data: x402TipPayload) {
         if (!response.ok) {
             const errText = await response.text();
             logX402("x402 payment failed:", response.status, errText);
-            return { success: false, data: "PAYMENT_FAILED", message: errText };
+            return {success: false, data: "PAYMENT_FAILED", message: errText};
         }
 
         const result = await response.json();
@@ -73,6 +74,7 @@ export async function tipActionForTweet(data: x402TipPayload) {
 }
 
 export async function walletSignedIn(): Promise<string> {
-    console.log("------>>> wallet signed success!")
+    await initCDP()
+    console.log("------>>> wallet signed success!", await getCurrentUser())
     return "success"
 }

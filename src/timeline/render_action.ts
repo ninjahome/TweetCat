@@ -10,8 +10,9 @@ import {
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {bookmarkApi} from "./twitter_api";
-import {indexToGrade, resolutionToNearestP, showToastMsg} from "./render_common";
+import {indexToGrade, resolutionToNearestP} from "./render_common";
 import { t } from "../common/i18n";
+import {showToastMsg} from "../content/common";
 
 export function updateTweetBottomButtons(
     container: HTMLElement, tweetObj: TweetObj, mp4List: string[], entryID: string): void {

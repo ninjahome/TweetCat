@@ -7,9 +7,9 @@ import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {t} from "../common/i18n";
 import {grokConversation} from "./ai_trend";
-import {showToastMsg} from "../timeline/render_common";
 import {LevelScoreBreakdown} from "../object/user_info";
-import {walletInfo} from "../wallet/wallet_api";
+import {showToastMsg} from "./common";
+import {walletInfo} from "../common/x402_obj";
 
 const defaultCatPointColor = '#B9CAD3';
 

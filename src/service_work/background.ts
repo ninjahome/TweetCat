@@ -12,6 +12,7 @@ import {localGet, localSet} from "../common/local_storage";
 import {getBearerToken, updateBearerToken} from "../common/utils";
 import {createAlarm, updateAlarm} from "./bg_timer";
 import {resetApiBucketSetting} from "./api_bucket_state";
+import {initCDP} from "../common/x402_obj";
 
 /****************************************************************************************
  ┌────────────┐
@@ -62,6 +63,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
         console.log("------>>> update api bucket settings")
     });
     initDefaultQueryKey().then();
+    initCDP().then()
 });
 
 
@@ -98,6 +100,7 @@ browser.runtime.onStartup.addListener(() => {
         console.log('------>>> onStartup......');
         await checkAndInitDatabase();
         await createAlarm();
+        await initCDP()
     })();
 });
 

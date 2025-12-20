@@ -902,5 +902,8 @@
   },
   "wallet_insufficient_funds": {
     "message": "Insufficient funds"
+  },
+  "cdp_wallet_connect": {
+    "message": "Connect Coinbase Wallet"
   }
 }

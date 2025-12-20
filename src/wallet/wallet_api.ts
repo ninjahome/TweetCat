@@ -1,6 +1,5 @@
 import {ethers} from "ethers";
 import {
-    __tableWalletSettings,
     __tableWallets,
     checkAndInitDatabase,
     databaseDelete,
@@ -15,7 +14,8 @@ import {
     BASE_SEPOLIA_USDC
 } from "../common/consts";
 import {logW} from "../common/debug_flags";
-import {ChainNameBaseMain, ChainNameBaseSepolia, ChainNetwork} from "../common/x402_obj";
+import {ChainNameBaseMain, walletInfo} from "../common/x402_obj";
+import {loadWalletSettings, WalletSettings} from "./wallet_setting";
 
 /** ====== 类型 ====== */
 export interface TCWallet {
@@ -24,23 +24,6 @@ export interface TCWallet {
     createdAt: number;
     peerId?: string;
 }
-
-export interface WalletSettings {
-    infuraProjectId?: string;
-    customRpcUrl?: string;
-    useDefaultRpc: boolean;
-
-    network: ChainNetwork;
-}
-
-const WALLET_SETTINGS_KEY = "default";
-
-export const defaultWalletSettings: WalletSettings = {
-    useDefaultRpc: true,
-    infuraProjectId: "",
-    customRpcUrl: "",
-    network: 'base-mainnet',
-};
 
 export interface transEthParam {
     to: string;
@@ -109,42 +92,6 @@ export async function clearWallet(address?: string): Promise<void> {
     await Promise.all(records.map((item: any) => databaseDelete(__tableWallets, item.address)));
 }
 
-export async function loadWalletSettings(): Promise<WalletSettings> {
-    await checkAndInitDatabase();
-
-    const records = (await databaseQueryAll(__tableWalletSettings)) as Array<WalletSettings & { id: string }>;
-    const stored = records.find((item) => item.id === WALLET_SETTINGS_KEY);
-    if (!stored) {
-        return {...defaultWalletSettings};
-    }
-
-    const storedNetwork = (stored as any).network;
-    const network: WalletSettings['network'] =
-        storedNetwork === ChainNameBaseMain || storedNetwork === ChainNameBaseSepolia
-            ? storedNetwork
-            : defaultWalletSettings.network;
-
-    return {
-        useDefaultRpc: stored.useDefaultRpc ?? defaultWalletSettings.useDefaultRpc,
-        infuraProjectId: stored.infuraProjectId ?? "",
-        customRpcUrl: stored.customRpcUrl ?? "",
-        network,
-    };
-}
-
-export async function saveWalletSettings(settings: WalletSettings): Promise<void> {
-    await checkAndInitDatabase();
-
-    const payload = {
-        id: WALLET_SETTINGS_KEY,
-        useDefaultRpc: settings.useDefaultRpc,
-        infuraProjectId: settings.infuraProjectId?.trim() ?? "",
-        customRpcUrl: settings.customRpcUrl?.trim() ?? "",
-        network: settings.network,     // ← 新增这一行
-    };
-
-    await databaseUpdateOrAddItem(__tableWalletSettings, payload);
-}
 
 /** ====== 助记词与加密保存（新增） ====== */
 const fromPhrase = (ethers as any).Wallet.fromPhrase || (ethers as any).Wallet.fromMnemonic;
@@ -388,12 +335,6 @@ export async function exportPrivateKey(password: string): Promise<string> {
     return withDecryptedWallet(password, async (wallet) => wallet.privateKey);
 }
 
-export interface walletInfo {
-    hasCreated: boolean;
-    address: string;
-    ethVal: string;
-    usdcVal: string;
-}
 
 export async function queryBasicInfo(): Promise<walletInfo> {
     try {
