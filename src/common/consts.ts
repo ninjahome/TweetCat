@@ -89,8 +89,10 @@ export enum MsgType {
     IPFS_GET_GATEWAY_BASE = "IPFS_GET_GATEWAY_BASE",
 
     X402TipAction = "X402TipAction",
-    X402WalletOpen = "X402WalletOpen",
     X402EmbeddWalletSignIn = "X402EmbeddWalletSignIn",
+
+    OffscreenWalletInfo = "OffscreenWalletInfo",
+    OffscreenWalletSignIn = "OffscreenWalletSignIn"
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

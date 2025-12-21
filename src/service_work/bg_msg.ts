@@ -26,15 +26,13 @@ import {
     loadAllFollowings
 } from "../object/following";
 import {
-    queryBasicInfo, transEthParam, transUsdcParam
+    transEthParam, transUsdcParam
 } from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
-import {tipActionForTweet, walletSignedIn} from "./bg_x402";
+import {connectToOffscreen, tipActionForTweet, walletPort, walletSignedIn} from "./bg_x402";
 import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
 import {x402TipPayload} from "../common/x402_obj";
-import {queryCdpWalletInfo} from "../wallet/cdp_wallet";
-
 
 export async function checkIfXIsOpen(): Promise<boolean> {
     const tabs = await browser.tabs.query({
@@ -193,11 +191,6 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.StartLocalApp: {
             return {success: await openLocalApp()}
-        }
-
-        case MsgType.WalletInfoQuery: {
-            const data = await queryCdpWalletInfo()
-            return {success: data !== null, data}
         }
 
         case MsgType.OpenOrFocusUrl: {

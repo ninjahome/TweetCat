@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 import {logX402} from "../common/debug_flags";
-import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID} from "../common/consts";
+import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID, MsgType} from "../common/consts";
 import {
     ChainNameBaseMain, initCDP,
     MAX_TIP_AMOUNT, tryGetSignedInUser, X402_FACILITATORS,
@@ -74,7 +74,37 @@ export async function tipActionForTweet(data: x402TipPayload) {
 }
 
 export async function walletSignedIn(): Promise<string> {
-    await initCDP()
-    console.log("------>>> wallet signed success!", await getCurrentUser())
+    await browser.offscreen.closeDocument();
+
+    // 2. 重新创建（你的原逻辑）
+    await connectToOffscreen();
+
+    walletPort.postMessage({action: MsgType.OffscreenWalletSignIn});
     return "success"
+}
+
+async function ensureOffscreenWallet() {
+    const has = await browser.offscreen.hasDocument();
+    if (!has) {
+        const tab = await browser.offscreen.createDocument({
+            url: browser.runtime.getURL('html/wallet_offscreen.html'),
+            reasons: ['DOM_PARSER'], // 或 'WORKERS', 'IFRAME_SCRIPTING'
+            justification: 'Run Coinbase Embedded Wallets SDK for background x402 payments',
+        });
+        console.log("Offscreen wallet created", tab);
+    } else {
+        console.log("Offscreen wallet is ready");
+    }
+}
+
+export let walletPort: browser.runtime.Port | null = null;
+
+export async function connectToOffscreen() {
+    await ensureOffscreenWallet(); // 创建 offscreen
+    if (walletPort) return
+    walletPort = browser.runtime.connect({name: "wallet-offscreen"});
+    walletPort.onDisconnect.addListener(() => {
+        walletPort = null;
+        console.log("------->>>. offscreen connection closed")
+    });
 }

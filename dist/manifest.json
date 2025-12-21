@@ -6,7 +6,7 @@
     ]
   },
   "name": "TweetCat",
-  "version": "3.1.7",
+  "version": "3.1.8",
   "default_locale": "en",
   "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {
@@ -29,7 +29,8 @@
     "storage",
     "activeTab",
     "tabs",
-    "nativeMessaging"
+    "nativeMessaging",
+    "offscreen"
   ],
   "host_permissions": [
     "https://api.cdp.coinbase.com/*",
@@ -37,7 +38,8 @@
     "https://twitter.com/*",
     "https://x.com/*",
     "*://x.com/*",
-    "https://tweetcat.dessage.xyz/*"
+    "https://tweetcat.dessage.xyz/*",
+    "https://tweetcattips.ribencong.workers.dev/*"
   ],
   "background": {
     "service_worker": "js/background.js"

@@ -7,7 +7,6 @@ import {hideGlobalLoading, showDialog, showGlobalLoading, showToastMsg} from "./
 import {LRUCache} from "../common/lru_map";
 import {t} from "../common/i18n";
 import {walletInfo, x402TipPayload} from "../common/x402_obj";
-import {queryWalletBalance} from "../wallet/cdp_wallet";
 
 const tweetsCache = new LRUCache<string, EntryObj>(1000);
 
@@ -40,6 +39,7 @@ async function tipAction(statusId: string) {
             showDialog(t('tips_title'), t('wallet_error_no_wallet'))
             return
         }
+
         const usdc = Number(data.usdcVal ?? 0)
 
         if (!Number.isFinite(usdc) || usdc < tip) {

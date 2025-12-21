@@ -9,10 +9,13 @@ import {
 } from "../common/consts";
 import {checkAndInitDatabase} from "../common/database";
 import {localGet, localSet} from "../common/local_storage";
-import {getBearerToken, updateBearerToken} from "../common/utils";
+import {getBearerToken, openOrUpdateTab, updateBearerToken} from "../common/utils";
 import {createAlarm, updateAlarm} from "./bg_timer";
 import {resetApiBucketSetting} from "./api_bucket_state";
-import {initCDP} from "../common/x402_obj";
+import {connectToOffscreen, tipActionForTweet, walletPort} from "./bg_x402";
+import {loadCategorySnapshot} from "../object/category";
+import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
+import {x402TipPayload} from "../common/x402_obj";
 
 /****************************************************************************************
  ┌────────────┐
@@ -63,7 +66,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
         console.log("------>>> update api bucket settings")
     });
     initDefaultQueryKey().then();
-    initCDP().then()
+    connectToOffscreen().then();
 });
 
 
@@ -100,17 +103,29 @@ browser.runtime.onStartup.addListener(() => {
         console.log('------>>> onStartup......');
         await checkAndInitDatabase();
         await createAlarm();
-        await initCDP()
+        await connectToOffscreen();
     })();
 });
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
     (async () => {
         await checkAndInitDatabase();
-        await createAlarm(); // 保底恢复定时器
+        await createAlarm();
         try {
+            if (request.action === MsgType.WalletInfoQuery) {
+                await connectToOffscreen()
+                walletPort.postMessage({action: MsgType.OffscreenWalletInfo});
+                const listener = (responseMsg: any) => {
+                    if (responseMsg.type === "TIP_RESULT") {
+                        sendResponse(responseMsg.result);
+                        walletPort?.onMessage.removeListener(listener);
+                    }
+                };
+                walletPort.onMessage.addListener(listener);
+                return
+            }
             const result = await bgMsgDispatch(request, _sender);
-            sendResponse(result);
+            if (!result.notForMe) sendResponse(result);
         } catch (e) {
             sendResponse({success: false, data: e});
         }
