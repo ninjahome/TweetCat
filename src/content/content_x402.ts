@@ -1,7 +1,7 @@
 import {EntryObj} from "../timeline/tweet_entry";
 import {_contentTemplate} from "./twitter_observer";
 import {logX402} from "../common/debug_flags";
-import {sendMsgToService} from "../common/utils";
+import {sendMsgToOffScreen, sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {hideGlobalLoading, showDialog, showGlobalLoading, showToastMsg} from "./common";
 import {LRUCache} from "../common/lru_map";
@@ -29,7 +29,7 @@ async function tipAction(statusId: string) {
     try {
         const tip = 0.01
 
-        const resp = await sendMsgToService({}, MsgType.WalletInfoQuery)
+        const resp = await sendMsgToOffScreen({}, MsgType.WalletInfoQuery)
         if (!resp || !resp.success) {
             showDialog(t('tips_title'), t('wallet_err_no_basic'))
             return

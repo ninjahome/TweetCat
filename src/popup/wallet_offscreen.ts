@@ -18,29 +18,35 @@ async function ensureWalletReady() {
     await initCDP();
     inited = true;
     const user = await getCurrentUser();
-    console.log("Offscreen Wallet SDK initialized:",user);
+    console.log("Offscreen Wallet SDK initialized:", user);
 }
 
 ensureWalletReady().then()
 
 browser.runtime.onConnect.addListener((port) => {
+    if (port.name === "wallet-offscreen") {
+        return
+    }
+
     console.log("------->>> onConnect port:", port)
 
-    if (port.name === "wallet-offscreen") {
-        port.onMessage.addListener(async (msg) => {
-            console.log("------->>> port message:", msg)
+    port.onMessage.addListener(async (msg) => {
+        console.log("------->>> port message:", msg)
 
-            switch (msg.action) {
-                case MsgType.OffscreenWalletInfo:
-                    const data = await queryCdpWalletInfo()
-                    port.postMessage({type: "TIP_RESULT", result: {success: true, data: data}});
-                    break
+        switch (msg.action) {
 
-                case MsgType.OffscreenWalletSignIn:
-                    await initCDP();
-                    console.log("Offscreen wallet signIn success:",await getCurrentUser());
-                    break
-            }
-        });
-    }
+            case MsgType.WalletInfoQuery:
+                const data = await queryCdpWalletInfo()
+                port.postMessage({type: "TIP_RESULT", requestId: msg.requestId, result: {success: true, data: data}});
+                break
+
+            default:
+                port.postMessage({
+                    type: "TIP_RESULT",
+                    requestId: msg.requestId,
+                    result: {success: false, data: "unknown message type:" + msg.action}
+                });
+                break
+        }
+    });
 });

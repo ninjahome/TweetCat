@@ -12,7 +12,7 @@ import {localGet, localSet} from "../common/local_storage";
 import {getBearerToken, openOrUpdateTab, updateBearerToken} from "../common/utils";
 import {createAlarm, updateAlarm} from "./bg_timer";
 import {resetApiBucketSetting} from "./api_bucket_state";
-import {connectToOffscreen, tipActionForTweet, walletPort} from "./bg_x402";
+import {connectToOffscreen, relayWalletMsg, tipActionForTweet, walletPort} from "./bg_x402";
 import {loadCategorySnapshot} from "../object/category";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
 import {x402TipPayload} from "../common/x402_obj";
@@ -112,18 +112,11 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
         await checkAndInitDatabase();
         await createAlarm();
         try {
-            if (request.action === MsgType.WalletInfoQuery) {
-                await connectToOffscreen()
-                walletPort.postMessage({action: MsgType.OffscreenWalletInfo});
-                const listener = (responseMsg: any) => {
-                    if (responseMsg.type === "TIP_RESULT") {
-                        sendResponse(responseMsg.result);
-                        walletPort?.onMessage.removeListener(listener);
-                    }
-                };
-                walletPort.onMessage.addListener(listener);
+            if (request.scope === "off-screen") {
+                await relayWalletMsg(request, sendResponse)
                 return
             }
+
             const result = await bgMsgDispatch(request, _sender);
             if (!result.notForMe) sendResponse(result);
         } catch (e) {

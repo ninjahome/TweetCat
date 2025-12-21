@@ -1,4 +1,4 @@
-import {parseContentHtml, sendMsgToService} from "../common/utils";
+import {parseContentHtml, sendMsgToOffScreen, sendMsgToService} from "../common/utils";
 import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
 import {EntryObj} from "../timeline/tweet_entry";
 import {switchCategory} from "./tweetcat_timeline";
@@ -292,7 +292,7 @@ async function fetchWeb3Identity() {
     card.style.display = "none";
 
     try {
-        const resp = await sendMsgToService({}, MsgType.WalletInfoQuery)
+        const resp = await sendMsgToOffScreen({}, MsgType.WalletInfoQuery)
         if (!resp || resp.success === false || !resp.data) {
             state.style.display = "none";
             return;

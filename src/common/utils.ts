@@ -38,6 +38,21 @@ export async function sendMsgToService(data: any, actTyp: string): Promise<any> 
     }
 }
 
+
+export async function sendMsgToOffScreen(data: any, actTyp: string): Promise<any> {
+    try {
+        return await browser.runtime.sendMessage({
+            action: actTyp,
+            data: data,
+            scope: "off-screen",
+        });
+    } catch (e) {
+        const error = e as Error;
+        console.warn("------>>>send message error", error, data, actTyp);
+        return {success: false, data: error.message}
+    }
+}
+
 export function showView(hash: string, callback?: (hash: string) => void): void {
     const views = document.querySelectorAll<HTMLElement>('.page_view');
     views.forEach(view => view.style.display = 'none');

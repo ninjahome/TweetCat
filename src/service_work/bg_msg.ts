@@ -227,6 +227,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         case MsgType.WalletExportPrivateKey: {
             return await msgExportPriKye(request.data as string);
         }
+
         case MsgType.X402EmbeddWalletSignIn: {
             return {success: true, data: await walletSignedIn()};
         }

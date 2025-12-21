@@ -75,11 +75,7 @@ export async function tipActionForTweet(data: x402TipPayload) {
 
 export async function walletSignedIn(): Promise<string> {
     await browser.offscreen.closeDocument();
-
-    // 2. 重新创建（你的原逻辑）
     await connectToOffscreen();
-
-    walletPort.postMessage({action: MsgType.OffscreenWalletSignIn});
     return "success"
 }
 
@@ -102,9 +98,61 @@ export let walletPort: browser.runtime.Port | null = null;
 export async function connectToOffscreen() {
     await ensureOffscreenWallet(); // 创建 offscreen
     if (walletPort) return
+
     walletPort = browser.runtime.connect({name: "wallet-offscreen"});
     walletPort.onDisconnect.addListener(() => {
         walletPort = null;
         console.log("------->>>. offscreen connection closed")
     });
+
+    walletPort.onMessage.removeListener(handleOffScreenMsg)
+    walletPort.onMessage.addListener(handleOffScreenMsg)
+}
+
+
+
+type PendingEntry = {
+    sendResponse: (resp: any) => void
+    timeout?: number
+}
+
+const pendingWalletResponses = new Map<string, PendingEntry>()
+function handleOffScreenMsg(msg: any) {
+    if (!msg || !msg.requestId) return
+
+    const pending = pendingWalletResponses.get(msg.requestId)
+    if (!pending) return
+
+    // 返回结果
+    pending.sendResponse(msg.result)
+
+    // 清理
+    if (pending.timeout) {
+        clearTimeout(pending.timeout)
+    }
+
+    pendingWalletResponses.delete(msg.requestId)
+}
+
+export async function relayWalletMsg(request: any,sendResponse: (response?: any) => void){
+    await connectToOffscreen()
+    const requestId = crypto.randomUUID()
+
+    const timeout = window.setTimeout(() => {
+        const pending = pendingWalletResponses.get(requestId)
+        if (pending) {
+            pending.sendResponse({ success: false, error: 'wallet timeout' })
+            pendingWalletResponses.delete(requestId)
+        }
+    }, 10_000)
+
+    pendingWalletResponses.set(requestId, {
+        sendResponse,
+        timeout,
+    })
+
+    walletPort.postMessage({
+        ...request,
+        requestId,
+    })
 }
