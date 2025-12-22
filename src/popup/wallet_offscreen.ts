@@ -1,5 +1,5 @@
 import {fetchWithX402, getCurrentUser} from "@coinbase/cdp-core";
-import {initCDP, tryGetSignedInUser, x402_connection_name} from "../common/x402_obj";
+import {initCDP, x402_connection_name} from "../common/x402_obj";
 import browser from "webextension-polyfill";
 import {MsgType} from "../common/consts";
 import {queryCdpWalletInfo} from "../wallet/cdp_wallet";

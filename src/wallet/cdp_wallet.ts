@@ -7,7 +7,7 @@ import {
     http,
     formatEther,
     createWalletClient,
-    formatUnits, isAddress, getAddress,
+    formatUnits, isAddress, getAddress, encodeFunctionData,
 } from 'viem'
 import {
     ChainIDBaseMain,
@@ -16,7 +16,7 @@ import {
     X402_FACILITATORS
 } from "../common/x402_obj";
 import {getChainId} from "./wallet_setting";
-import {EvmAddress, getCurrentUser, isSignedIn, toViemAccount} from "@coinbase/cdp-core";
+import {EvmAddress, getCurrentUser, isSignedIn, toViemAccount,sendUserOperation} from "@coinbase/cdp-core";
 
 const ERC20_BALANCE_ABI = [
     {
@@ -145,25 +145,38 @@ export async function transferUSDC(
     }
     const to = getAddress(toAddress); // 转换为标准的 Address (0x...)
 
-    const walletClient = await getWalletClient(chainId);
-    const account = walletClient.account;
-
-    if (!account) throw new Error("No wallet address available");
+    const smartAccount = await _address();
+    if (!smartAccount) {
+        throw new Error("No Smart Account found");
+    }
 
     const usdcAddress = X402_FACILITATORS[chainId].usdcAddress as Address;
 
-    const hash = await walletClient.writeContract({
-        account,
-        address: usdcAddress,
+    // 1️⃣ encode ERC20 transfer calldata
+    const data = encodeFunctionData({
         abi: USDC_ABI,
         functionName: "transfer",
         args: [to, parseUnits(amountUsdc, 6)],
-        chain: null,  // 👈 添加这一行，解决 TS2345
     });
 
-    console.log("USDC Transfer hash:", hash);
-    return hash;
+    // 2️⃣ send UserOperation
+    const result = await sendUserOperation({
+        evmSmartAccount: smartAccount,
+        network: chainId === 8453 ? "base" : "base-sepolia",
+        calls: [
+            {
+                to: usdcAddress,
+                value: 0n,
+                data,
+            },
+        ],
+        // 如果你未来启用 spend-permissions / paymaster
+        // useCdpPaymaster: true,
+    });
+
+    return result.userOperationHash as `0x${string}`;
 }
+
 
 export async function transferETH(
     chainId: number,
@@ -174,20 +187,32 @@ export async function transferETH(
     if (!isAddress(toAddress)) {
         throw new Error(`Invalid recipient address: ${toAddress}`);
     }
-    const to = getAddress(toAddress); // 转换为标准的 Address (0x...)
+    const to = getAddress(toAddress);
 
-    const walletClient = await getWalletClient(chainId);
+    const smartAccount = await _address()
+    if (!smartAccount) {
+        throw new Error("No Smart Account found");
+    }
 
-    const account = walletClient.account;
-    if (!account) throw new Error("Account not found");
+    // 4. 发送 UserOperation（ETH 转账）
+    const result = await sendUserOperation({
+        evmSmartAccount: smartAccount,
+        network:chainId === 8453 ? "base" : "base-sepolia" ,
+        calls: [
+            {
+                to,
+                value: parseEther(amountEth),
+                data: "0x",   // ETH 转账，calldata 为空
+            },
+        ],
+        // 👉 如果你要 gas 赞助（facilitator）
+        // useCdpPaymaster: true,
+    });
 
-    const hash = await walletClient.sendTransaction({
-        account,
-        to,
-        value: parseEther(amountEth),
-    } as any);
-
-    console.log("ETH Transfer hash:", hash);
-    return hash;
+    return result.userOperationHash as `0x${string}`;
 }
+
+
+
+
 

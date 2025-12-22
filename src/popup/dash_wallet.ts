@@ -5,7 +5,7 @@ import {showView} from "../common/utils";
 import {dashRouter} from "./dashboard";
 import browser from "webextension-polyfill";
 import {getReadableNetworkName, initSettingsPanel,} from "./dash_setting";
-import {tryGetSignedInUser, X402_FACILITATORS} from "../common/x402_obj";
+import {X402_FACILITATORS} from "../common/x402_obj";
 import {getWalletAddress, queryCdpWalletInfo, transferETH, transferUSDC} from "../wallet/cdp_wallet";
 import {getChainId} from "../wallet/wallet_setting";
 
@@ -153,11 +153,13 @@ async function handleTransferEth(): Promise<void> {
 
     const {to, amount} = formValues;
     try {
+        showLoading(t("wallet_sending_transaction") || "");
         const chainID = await getChainId()
         const hash = await transferETH(chainID, to, amount)
         browser.tabs.create({url: X402_FACILITATORS[chainID].browser + "/tx/" + hash}).then()
         refreshBalances().then();
     } catch (error) {
+        console.log(error)
         showNotification(
             (error as Error).message ?? t("wallet_transfer_eth_failed"),
             "error",

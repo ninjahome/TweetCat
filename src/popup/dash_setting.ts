@@ -5,8 +5,7 @@ import {defaultWalletSettings, loadWalletSettings, saveWalletSettings, WalletSet
 import {
     BASE_MAINNET_DEFAULT_RPC,
     BASE_SEPOLIA_DEFAULT_RPC,
-    ChainIDBaseMain,
-    ChainIDBaseSepolia, ChainNameBaseMain, ChainNameBaseSepolia, ChainNetwork
+    ChainNameBaseMain, ChainNameBaseSepolia, ChainNetwork
 } from "../common/x402_obj";
 import {refreshBalances} from "./dash_wallet";
 
@@ -140,11 +139,6 @@ function toggleSettingsPanel(): void {
     panel.classList.toggle("open", willOpen);
     panel.classList.toggle("hidden", !willOpen);
 }
-
-interface SettingsPanelOptions {
-    onOpenSettings?: () => void;
-}
-
 export async function initSettingsPanel(): Promise<void> {
     currentSettings = await loadWalletSettings();
 
