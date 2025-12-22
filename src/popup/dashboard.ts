@@ -12,7 +12,6 @@ import {initDashboardTexts, initWalletOrCreate} from "./dash_wallet";
 import {$Id} from "./common";
 import {initIpfsSettingsView} from "./dash_ipfs";
 import {showView} from "../common/utils";
-import {initCdpWallet} from "./dash_cdp_wallet";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -31,7 +30,6 @@ async function initDashBoard(): Promise<void> {
 
     initCatMgmBtn();
     initSettings();
-    await initCdpWallet()
     await initWalletOrCreate();
     initIpfsSettingsView();
 }

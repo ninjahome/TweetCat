@@ -405,6 +405,9 @@
   "wallet_action_export_private_key": {
     "message": "Export private key"
   },
+  "wallet_action_sign_out": {
+    "message": "Sign out"
+  },
   "wallet_action_transfer_eth": {
     "message": "Transfer ETH"
   },
@@ -423,8 +426,11 @@
   "wallet_action_node_settings": {
     "message": "Node & RPC settings"
   },
+  "wallet_action_network_settings": {
+    "message": "Network settings"
+  },
   "wallet_node_rpc_title": {
-    "message": "Node & RPC"
+    "message": "Network"
   },
   "wallet_infura_project_id_label": {
     "message": "Infura Project ID (optional)"
@@ -618,6 +624,12 @@
   "wallet_error_no_wallet": {
     "message": "Please create or import a wallet first"
   },
+  "wallet_cdp_connect_prompt": {
+    "message": "Please connect your Coinbase embedded wallet first"
+  },
+  "wallet_cdp_transfer_unavailable": {
+    "message": "Transfers are handled by the Coinbase embedded wallet. Please continue the flow from the CDP wallet window"
+  },
   "wallet_refreshing_balance": {
     "message": "Refreshing balances…"
   },
@@ -638,6 +650,15 @@
   },
   "wallet_export_pk_failed": {
     "message": "Failed to export private key"
+  },
+  "wallet_signing_out": {
+    "message": "Signing out…"
+  },
+  "wallet_signed_out": {
+    "message": "Signed out"
+  },
+  "wallet_signout_failed": {
+    "message": "Failed to sign out"
   },
   "wallet_prompt_transfer_to": {
     "message": "Enter the recipient address"

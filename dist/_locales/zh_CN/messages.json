@@ -405,6 +405,9 @@
   "wallet_action_export_private_key": {
     "message": "导出私钥"
   },
+  "wallet_action_sign_out": {
+    "message": "退出登录"
+  },
   "wallet_action_transfer_eth": {
     "message": "转账 ETH"
   },
@@ -423,8 +426,11 @@
   "wallet_action_node_settings": {
     "message": "节点设置"
   },
+  "wallet_action_network_settings": {
+    "message": "网络设置"
+  },
   "wallet_node_rpc_title": {
-    "message": "节点与 RPC"
+    "message": "网络"
   },
   "wallet_infura_project_id_label": {
     "message": "Infura Project ID（可选）"
@@ -618,6 +624,12 @@
   "wallet_error_no_wallet": {
     "message": "请先创建或导入钱包"
   },
+  "wallet_cdp_connect_prompt": {
+    "message": "请先连接 CDP 钱包"
+  },
+  "wallet_cdp_transfer_unavailable": {
+    "message": "转账将通过 Coinbase 嵌入钱包完成，请在钱包弹窗中继续操作"
+  },
   "wallet_refreshing_balance": {
     "message": "正在刷新余额..."
   },
@@ -639,6 +651,15 @@
   },
   "wallet_export_pk_failed": {
     "message": "导出私钥失败"
+  },
+  "wallet_signing_out": {
+    "message": "正在退出..."
+  },
+  "wallet_signed_out": {
+    "message": "已退出"
+  },
+  "wallet_signout_failed": {
+    "message": "退出失败"
   },
 
   "wallet_prompt_transfer_to": {
