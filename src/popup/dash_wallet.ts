@@ -6,8 +6,8 @@ import browser from "webextension-polyfill";
 import {defaultWalletSettings, loadWalletSettings, saveWalletSettings, WalletSettings} from "../wallet/wallet_setting";
 import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID} from "../common/consts";
 import {doSignOut, tryGetSignedInUser} from "../common/x402_obj";
-import {queryWalletBalance} from "../wallet/cdp_wallet";
-import {isAddress} from "viem";
+import {queryWalletBalance, sendEth, sendUsdc, signMessage} from "../wallet/cdp_wallet";
+import {isAddress, parseEther, parseUnits} from "viem";
 
 type UiNetworkOption = "base-mainnet" | "base-sepolia";
 
@@ -25,6 +25,42 @@ function getReadableNetworkName(): string {
         return t("wallet_network_option_base_mainnet");
     }
     return t("wallet_network_option_base_sepolia");
+}
+
+function getExplorerBaseUrl(chainId: number): string | null {
+    switch (chainId) {
+        case BASE_MAINNET_CHAIN_ID:
+            return "https://basescan.org/tx/";
+        case BASE_SEPOLIA_CHAIN_ID:
+            return "https://sepolia.basescan.org/tx/";
+        default:
+            return null;
+    }
+}
+
+function buildExplorerLink(hash: string, chainId: number): string | null {
+    const base = getExplorerBaseUrl(chainId);
+    return base ? `${base}${hash}` : null;
+}
+
+function parseGasLimit(raw?: string): bigint | undefined {
+    if (!raw) return undefined;
+    try {
+        return BigInt(raw);
+    } catch {
+        return undefined;
+    }
+}
+
+function friendlyWalletError(error: unknown): string {
+    const msg = (error as Error)?.message || String(error);
+    if (/user denied|user rejected|rejected by user/i.test(msg)) {
+        return t("wallet_error_user_rejected") || msg;
+    }
+    if (/insufficient funds|insufficient balance/i.test(msg)) {
+        return t("wallet_error_insufficient_balance") || msg;
+    }
+    return msg;
 }
 
 function getCurrentEthBalanceText(): string {
@@ -447,7 +483,25 @@ async function handleTransferEth(): Promise<void> {
         return;
     }
 
-    showNotification(t("wallet_cdp_transfer_unavailable"), "info");
+    const chainId = getChainId(currentSettings);
+
+    try {
+        showLoading(t("wallet_sending_tx") || "");
+        const amount = parseEther(formValues.amount);
+        const gasLimit = parseGasLimit(formValues.gas);
+        const hash = await sendEth(formValues.to, amount, gasLimit, chainId);
+
+        const link = buildExplorerLink(hash, chainId);
+        const successMsg = link
+            ? `${t("wallet_transfer_success") || ""}: ${hash}\n${link}`
+            : `${t("wallet_transfer_success") || ""}: ${hash}`;
+        showNotification(successMsg, "success");
+        await refreshBalances(false);
+    } catch (error) {
+        showNotification(friendlyWalletError(error), "error");
+    } finally {
+        hideLoading();
+    }
 }
 
 async function handleTransferToken(): Promise<void> {
@@ -461,7 +515,26 @@ async function handleTransferToken(): Promise<void> {
         return;
     }
 
-    showNotification(t("wallet_cdp_transfer_unavailable"), "info");
+    const chainId = getChainId(currentSettings);
+
+    try {
+        showLoading(t("wallet_sending_tx") || "");
+        const decimals = formValues.decimals || 6;
+        const amount = parseUnits(formValues.amount, decimals);
+        const gasLimit = parseGasLimit(formValues.gas);
+        const hash = await sendUsdc(formValues.to, amount, gasLimit, chainId);
+
+        const link = buildExplorerLink(hash, chainId);
+        const successMsg = link
+            ? `${t("wallet_transfer_success") || ""}: ${hash}\n${link}`
+            : `${t("wallet_transfer_success") || ""}: ${hash}`;
+        showNotification(successMsg, "success");
+        await refreshBalances(false);
+    } catch (error) {
+        showNotification(friendlyWalletError(error), "error");
+    } finally {
+        hideLoading();
+    }
 }
 
 async function handleSignOut(): Promise<void> {

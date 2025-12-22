@@ -1,5 +1,11 @@
 import {base, baseSepolia} from 'viem/chains'
-import {createPublicClient, http, formatEther} from 'viem'
+import {
+    createPublicClient,
+    createWalletClient,
+    custom,
+    formatEther,
+    http,
+} from 'viem'
 import {
     ChainIDBaseMain,
     ChainIDBaseSepolia,
@@ -16,6 +22,19 @@ const ERC20_BALANCE_ABI = [
         inputs: [{name: '_owner', type: 'address'}],
         name: 'balanceOf',
         outputs: [{name: 'balance', type: 'uint256'}],
+        type: 'function',
+    },
+] as const
+
+const ERC20_TRANSFER_ABI = [
+    {
+        constant: false,
+        inputs: [
+            {name: '_to', type: 'address'},
+            {name: '_value', type: 'uint256'},
+        ],
+        name: 'transfer',
+        outputs: [{name: 'success', type: 'bool'}],
         type: 'function',
     },
 ] as const
@@ -45,6 +64,40 @@ function getPublicClient(networkId: number) {
         chain: cfg.chain,
         transport: http(cfg.rpcUrl),
     })
+}
+
+export async function getWalletClient(networkId: number) {
+    const cfg = NETWORK_RUNTIME_CONFIG[networkId]
+    if (!cfg) {
+        throw new Error(`Unsupported networkId: ${networkId}`)
+    }
+
+    const user = await tryGetSignedInUser()
+    if (!user) {
+        throw new Error('Please sign in to CDP wallet first')
+    }
+
+    const ethereum = (user as any)?.ethereum
+    if (!ethereum) {
+        throw new Error('CDP wallet provider is unavailable')
+    }
+
+    const walletClient = createWalletClient({
+        account: user.evmAccounts?.[0] as `0x${string}` | undefined,
+        chain: cfg.chain,
+        transport: custom(ethereum),
+    })
+
+    try {
+        const currentChainId = await walletClient.getChainId()
+        if (currentChainId !== networkId) {
+            await walletClient.switchChain({id: networkId}).catch(() => undefined)
+        }
+    } catch {
+        // ignore switching errors; downstream calls will surface if chain mismatched
+    }
+
+    return walletClient
 }
 
 
@@ -109,4 +162,92 @@ export async function queryCdpWalletInfo(): Promise<walletInfo> {
     const {eth, usdc} = await queryWalletBalance(address, chainId)
 
     return {address: address, ethVal: eth, usdcVal: usdc, hasCreated: true}
+}
+
+function normalizeWalletError(error: unknown): Error {
+    if (error instanceof Error) return error
+    return new Error(String(error))
+}
+
+export async function sendEth(
+    to: string,
+    amount: bigint,
+    gas: bigint | undefined,
+    networkId: number,
+): Promise<`0x${string}`> {
+    try {
+        const client = await getWalletClient(networkId)
+        const [account] = await client.getAddresses()
+        if (!account) {
+            throw new Error('CDP wallet address not found')
+        }
+
+        return await client.sendTransaction({
+            account,
+            to: to as `0x${string}`,
+            value: amount,
+            gas,
+        })
+    } catch (error) {
+        throw normalizeWalletError(error)
+    }
+}
+
+export async function sendUsdc(
+    to: string,
+    amount: bigint,
+    gas: bigint | undefined,
+    networkId: number,
+): Promise<`0x${string}`> {
+    const facilitator = X402_FACILITATORS[networkId]
+    if (!facilitator) {
+        throw new Error(`No facilitator config for networkId=${networkId}`)
+    }
+
+    try {
+        const client = await getWalletClient(networkId)
+        const [account] = await client.getAddresses()
+        if (!account) {
+            throw new Error('CDP wallet address not found')
+        }
+
+        return await client.writeContract({
+            account,
+            abi: ERC20_TRANSFER_ABI,
+            address: facilitator.usdcAddress as `0x${string}`,
+            functionName: 'transfer',
+            args: [to as `0x${string}`, amount],
+            gas,
+        })
+    } catch (error) {
+        throw normalizeWalletError(error)
+    }
+}
+
+export async function signMessage(message: string, networkId: number): Promise<`0x${string}`> {
+    try {
+        const client = await getWalletClient(networkId)
+        const [account] = await client.getAddresses()
+        if (!account) {
+            throw new Error('CDP wallet address not found')
+        }
+
+        return await client.signMessage({account, message})
+    } catch (error) {
+        throw normalizeWalletError(error)
+    }
+}
+
+export async function signTypedData(params: any, networkId: number): Promise<`0x${string}`> {
+    try {
+        const client = await getWalletClient(networkId)
+        const [account] = await client.getAddresses()
+        if (!account) {
+            throw new Error('CDP wallet address not found')
+        }
+
+        return await client.signTypedData({...params, account})
+    } catch (error) {
+        throw normalizeWalletError(error)
+    }
 }
