@@ -6,24 +6,17 @@ import {
     loadWallet,
     TCWallet, transEthParam, transUsdcParam,
 } from "../wallet/wallet_api";
-import {
-    BASE_MAINNET_CHAIN_ID,
-    BASE_MAINNET_DEFAULT_RPC,
-    BASE_MAINNET_USDC,
-    BASE_SEPOLIA_CHAIN_ID,
-    BASE_SEPOLIA_DEFAULT_RPC,
-    BASE_SEPOLIA_USDC,
-    ERC20_ABI,
-    MsgType
-} from "../common/consts";
+import {ERC20_ABI, MsgType} from "../common/consts";
 import {sendMsgToService, showView} from "../common/utils";
 import {dashRouter} from "./dashboard";
 import browser from "webextension-polyfill";
-import {defaultWalletSettings, loadWalletSettings, saveWalletSettings, WalletSettings} from "../wallet/wallet_setting";
-
-type UiNetworkOption = 'base-mainnet' | 'base-sepolia' | 'custom';
+import {
+    createProvider,
+    currentSettings,
+    getDefaultUsdcAddress,
+    initSettingsPanel,
+} from "./dash_setting";
 let currentWallet: TCWallet | null = null;
-let currentSettings: WalletSettings = {...defaultWalletSettings};
 
 function openTransferEthDialog(): Promise<TransferEthFormValues | null> {
     const modal = $Id("transfer-eth-modal") as HTMLDivElement | null;
@@ -233,64 +226,6 @@ async function refreshBalances(showStatus = true): Promise<void> {
 }
 
 
-function getChainId(settings: WalletSettings): number {
-    return settings.network === 'base-mainnet'
-        ? BASE_MAINNET_CHAIN_ID
-        : BASE_SEPOLIA_CHAIN_ID;
-}
-
-function getDefaultUsdcAddress(settings: WalletSettings): string {
-    return settings.network === 'base-mainnet'
-        ? BASE_MAINNET_USDC
-        : BASE_SEPOLIA_USDC;
-}
-
-
-async function handleResetSettings(): Promise<void> {
-    currentSettings = {...defaultWalletSettings};
-    updateSettingsUI(currentSettings);
-    await saveWalletSettings(currentSettings);
-    showNotification(t('wallet_node_settings_reset'));
-    notifySettingsChanged();
-    await refreshBalances();
-}
-
-function notifySettingsChanged(): void {
-    console.log("------>>> infura setting changed.....")
-}
-
-
-function getRpcEndpoint(settings: WalletSettings): string {
-    const net = settings.network; // 只返回 base-mainnet / base-sepolia
-    const infuraId = settings.infuraProjectId?.trim();
-    const custom = settings.customRpcUrl?.trim();
-
-    // 1) 若 useDefaultRpc === false 且配置了 customRpcUrl，则优先使用自定义 RPC
-    if (!settings.useDefaultRpc && custom) {
-        return custom;
-    }
-
-    // 2) 否则如果配置了 Infura，则用 Infura 节点
-    if (infuraId) {
-        if (net === 'base-mainnet') {
-            return `https://base-mainnet.infura.io/v3/${infuraId}`;
-        }
-        return `https://base-sepolia.infura.io/v3/${infuraId}`;
-    }
-
-    // 3) 最后使用官方公共 RPC
-    if (net === 'base-mainnet') {
-        return BASE_MAINNET_DEFAULT_RPC;
-    }
-    return BASE_SEPOLIA_DEFAULT_RPC;
-}
-
-function createProvider(settings: WalletSettings): ethers.providers.JsonRpcProvider {
-    const rpcUrl = getRpcEndpoint(settings);
-    const chainId = getChainId(settings);
-    return new ethers.providers.JsonRpcProvider(rpcUrl, chainId);
-}
-
 function formatTokenAmount(value: ethers.BigNumber, decimals: number): string {
     const formatted = ethers.utils.formatUnits(value, decimals);
     const numeric = Number(formatted);
@@ -394,20 +329,6 @@ export async function handleSignMessage(): Promise<void> {
     }
 }
 
-function toggleSettingsPanel(): void {
-    const panel = $Id("settings-panel") as HTMLDivElement | null;
-    if (!panel) return;
-
-    const willOpen = !panel.classList.contains("open");
-
-    if (willOpen) {
-        updateSettingsUI(currentSettings);
-    }
-
-    panel.classList.toggle("open", willOpen);
-    panel.classList.toggle("hidden", !willOpen);
-}
-
 async function populateWalletInfo(container: HTMLDivElement, wallet: TCWallet): Promise<void> {
     const addressSpan = container.querySelector(".wallet-address-value") as HTMLSpanElement;
     const ethSpan = container.querySelector(".wallet-eth-value") as HTMLSpanElement;
@@ -426,24 +347,12 @@ async function populateWalletInfo(container: HTMLDivElement, wallet: TCWallet): 
     await refreshBalances(false);
 }
 
-function setupWalletActionButtons(): void {
+function setupWalletActionButtons(closeMainMenu: () => void): void {
     const refreshBtn = $Id("btn-refresh-balance") as HTMLButtonElement | null;
     const exportBtn = $Id("btn-export-private-key") as HTMLButtonElement | null;
     const transferEthBtn = $Id("btn-transfer-eth") as HTMLButtonElement | null;
     const transferTokenBtn = $Id("btn-transfer-token") as HTMLButtonElement | null;
-    const openSettingsBtn = document.querySelector<HTMLElement>(
-        "#btn-open-settings .wallet-action-inner"
-    );
-    const resetSettingsBtn = $Id("btn-reset-settings") as HTMLButtonElement | null;
     const backBtn = $Id("wallet-back-btn") as HTMLButtonElement | null;
-
-
-    const walletMainMenu = $Id("wallet-main-menu") as HTMLDivElement | null;
-    const closeMainMenu = () => {
-        if (walletMainMenu && !walletMainMenu.classList.contains("hidden")) {
-            walletMainMenu.classList.add("hidden");
-        }
-    };
 
     refreshBtn?.addEventListener("click", () => {
         closeMainMenu();
@@ -460,15 +369,6 @@ function setupWalletActionButtons(): void {
         closeMainMenu();
         handleTransferToken().then();
     });
-    openSettingsBtn?.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        closeMainMenu();               // 虽然这个按钮不在下拉菜单里，但多关一次没坏处
-        toggleSettingsPanel();
-    });
-
-    resetSettingsBtn?.addEventListener("click", () => {
-        handleResetSettings().then();
-    });
     backBtn?.addEventListener("click", () => {
         showView('#onboarding/main-home', dashRouter);
     });
@@ -480,9 +380,14 @@ export async function initWalletOrCreate(): Promise<void> {
     const walletSettingBtn = $Id("wallet-settings-btn") as HTMLButtonElement;
     const walletMainBtn = $Id("btn-main-menu") as HTMLButtonElement;
     const walletMainMenu = $Id("wallet-main-menu") as HTMLDivElement;
+    const closeMainMenu = () => {
+        if (walletMainMenu && !walletMainMenu.classList.contains("hidden")) {
+            walletMainMenu.classList.add("hidden");
+        }
+    };
 
     currentWallet = await loadWallet();
-    currentSettings = await loadWalletSettings();
+    await initSettingsPanel(refreshBalances, {onOpenSettings: closeMainMenu});
 
     const walletNewBtn = (walletCreateDiv.querySelector(".btn-create-wallet") as HTMLButtonElement);
     walletNewBtn.textContent = t('new_web3_id');
@@ -538,63 +443,9 @@ export async function initWalletOrCreate(): Promise<void> {
         walletMainMenu.classList.add("hidden");
     });
 
-    setupWalletActionButtons();
-    updateSettingsUI(currentSettings);
+    setupWalletActionButtons(closeMainMenu);
 }
 
-
-async function handleNetworkSelectChange(select: HTMLSelectElement): Promise<void> {
-    const value = select.value as UiNetworkOption;
-
-    if (value === "base-mainnet" || value === "base-sepolia") {
-        // === 1) 修改内存中的 WalletSettings ===
-        if (value === "base-mainnet") {
-            currentSettings.network = "base-mainnet";
-        } else {
-            currentSettings.network = "base-sepolia";
-        }
-        currentSettings.infuraProjectId = undefined;
-        currentSettings.customRpcUrl = undefined;
-        currentSettings.useDefaultRpc = true;
-
-        // === 2) 更新表单显示（只读字段 & 默认 RPC）===
-        applyUiNetworkToForm(value, currentSettings);
-
-        // === 3) 持久化设置 & 同步兼容字段 ===
-        await saveWalletSettings(currentSettings);
-        showNotification(t("save_success"));
-        await refreshBalances();
-    } else {
-        // custom：只更新 UI，不立即保存，等待用户点「保存」按钮
-        applyUiNetworkToForm("custom", currentSettings);
-    }
-}
-
-async function handleSaveSettingsClick(select: HTMLSelectElement): Promise<void> {
-    const uiNetwork = select.value as UiNetworkOption;
-
-    // 保险：只有 custom 模式才需要「保存」按钮
-    if (uiNetwork !== "custom") {
-        return;
-    }
-
-    const infuraInput = document.querySelector<HTMLInputElement>("#infura-project-id");
-    const customRpcInput = document.querySelector<HTMLInputElement>("#custom-rpc-url");
-    if (!infuraInput || !customRpcInput) return;
-
-    const infura = infuraInput.value.trim();
-    const customRpc = customRpcInput.value.trim();
-
-    // custom：Base Sepolia + 自定义 RPC
-    currentSettings.network = "base-sepolia";
-    currentSettings.infuraProjectId = infura || undefined;
-    currentSettings.customRpcUrl = customRpc || undefined;
-    currentSettings.useDefaultRpc = false;
-
-    await saveWalletSettings(currentSettings);
-    showNotification(t("save_success"));
-    await refreshBalances();
-}
 
 interface TransferEthFormValues {
     to: string;
@@ -845,29 +696,6 @@ export function initDashboardTexts(): void {
     const customRpcInput = $input('#custom-rpc-url');
     if (customRpcInput) customRpcInput.placeholder = t('wallet_custom_rpc_url_placeholder');
 
-    const networkSelect = $Id("wallet-network-select") as HTMLSelectElement | null;
-    const saveBtn = $Id('btn-save-settings') as HTMLButtonElement | null;
-
-    if (networkSelect) {
-        const uiNetwork = deriveUiNetwork(currentSettings);
-        networkSelect.value = uiNetwork;
-        applyUiNetworkToForm(uiNetwork, currentSettings);
-
-        networkSelect.addEventListener("change", () => {
-            handleNetworkSelectChange(networkSelect).then();
-        });
-    }
-
-    if (saveBtn && networkSelect) {
-        saveBtn.textContent = t('wallet_save_settings');
-        saveBtn.addEventListener("click", () => {
-            handleSaveSettingsClick(networkSelect).then();
-        });
-    }
-
-    const resetBtn = $Id('btn-reset-settings');
-    if (resetBtn) resetBtn.textContent = t('wallet_reset_settings');
-
     const transferTitle = $Id('transfer-eth-title');
     if (transferTitle) {
         transferTitle.textContent = t('wallet_transfer_eth_title');
@@ -999,76 +827,3 @@ export function initDashboardTexts(): void {
 }
 
 
-/**
- * 从 WalletSettings 推导出 UI 下拉应该选哪个：
- * - mainnet → base-mainnet
- * - sepolia 且没有自定义 RPC → base-sepolia
- * - sepolia 且有自定义 RPC（useDefaultRpc === false 且 customRpcUrl 有值）→ custom
- */
-function deriveUiNetwork(settings: WalletSettings): UiNetworkOption {
-    if (settings.network === 'base-mainnet') {
-        return 'base-mainnet';
-    }
-
-    // 其它情况一律视为 base-sepolia 环境
-    const hasCustomRpc = !!settings.customRpcUrl && settings.customRpcUrl.trim().length > 0;
-    if (!settings.useDefaultRpc && hasCustomRpc) {
-        return 'custom';
-    }
-    return 'base-sepolia';
-}
-
-/**
- * 根据 UI 下拉的选项，把「输入框的值/只读状态/保存按钮」同步到 DOM。
- * 注意这里不会改 currentSettings，只是更新表单。
- */
-function applyUiNetworkToForm(uiNetwork: UiNetworkOption, settings: WalletSettings): void {
-    const infuraInput = document.querySelector<HTMLInputElement>("#infura-project-id");
-    const customRpcInput = document.querySelector<HTMLInputElement>("#custom-rpc-url");
-    const saveBtn = $Id('btn-save-settings') as HTMLButtonElement | null;
-
-    if (!infuraInput || !customRpcInput) return;
-
-    if (uiNetwork === "base-mainnet") {
-        // 主网：使用固定公共 RPC，字段只读、隐藏保存按钮
-        infuraInput.value = "";
-        customRpcInput.value = BASE_MAINNET_DEFAULT_RPC;
-        infuraInput.readOnly = true;
-        customRpcInput.readOnly = true;
-        if (saveBtn) saveBtn.style.display = "none";
-    } else if (uiNetwork === "base-sepolia") {
-        // Sepolia：使用固定公共 RPC，字段只读、隐藏保存按钮
-        infuraInput.value = "";
-        customRpcInput.value = BASE_SEPOLIA_DEFAULT_RPC;
-        infuraInput.readOnly = true;
-        customRpcInput.readOnly = true;
-        if (saveBtn) saveBtn.style.display = "none";
-    } else {
-        // custom：Base Sepolia + 自定义 RPC，可编辑
-        infuraInput.readOnly = false;
-        customRpcInput.readOnly = false;
-        infuraInput.value = settings.infuraProjectId ?? "";
-        customRpcInput.value = settings.customRpcUrl ?? "";
-        if (saveBtn) saveBtn.style.display = "";
-    }
-}
-
-function updateSettingsUI(settings: WalletSettings): void {
-    const infuraInput = $Id("infura-project-id") as HTMLInputElement | null;
-    const customInput = $Id("custom-rpc-url") as HTMLInputElement | null;
-
-    if (infuraInput) {
-        infuraInput.value = settings.infuraProjectId ?? "";
-    }
-    if (customInput) {
-        customInput.value = settings.customRpcUrl ?? "";
-    }
-
-    // 现在不再使用 rpc-mode 单选按钮，直接通过下拉 + useDefaultRpc 推导
-    const networkSelect = $Id("wallet-network-select") as HTMLSelectElement | null;
-    if (networkSelect) {
-        const uiNetwork = deriveUiNetwork(settings);
-        networkSelect.value = uiNetwork;
-        applyUiNetworkToForm(uiNetwork, settings);
-    }
-}
