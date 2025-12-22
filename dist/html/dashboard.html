@@ -10,43 +10,6 @@
 <body>
 
 <div id="view-main-home" class="view-main-home page_view">
-
-    <div id="cdp-auth-card" class="tc-card">
-        <div class="tc-card__header">
-            <div class="tc-card__title">Connect Coinbase Wallet</div>
-            <div class="tc-card__sub">
-                登录一次，后续 x402 支付自动完成
-            </div>
-        </div>
-
-        <div class="tc-card__body">
-            <button
-                    id="btn-open-cdp-auth"
-                    class="tc-btn tc-btn--primary"
-                    type="button"
-            >
-                Connect Wallet
-            </button>
-
-            <button
-                    id="btn-cdp-signout"
-                    class="tc-btn tc-btn--danger"
-                    type="button"
-                    style="display:none; margin-top:8px"
-            >
-                Disconnect Wallet
-            </button>
-
-            <div
-                    id="cdp-auth-status"
-                    class="tc-hint"
-                    style="margin-top: 10px"
-            >
-                未连接
-            </div>
-        </div>
-    </div>
-
     <div class="wallet-action-div">
         <button id="btn-main-menu" class="top-icon-btn" type="button" title="菜单">
             <svg t="1763528406216" class="icon top-menu-icon" viewBox="0 0 1024 1024"
@@ -95,7 +58,7 @@
                 <button id="btn-refresh-balance">刷新余额</button>
             </li>
             <li>
-                <button id="btn-export-private-key">导出私钥</button>
+                <button id="btn-show-on-browser">浏览器查看</button>
             </li>
             <li>
                 <button id="btn-transfer-eth">转账 ETH</button>
@@ -126,7 +89,7 @@
     <div class="category-show-area" id="category-show-area">
         <button id="btn-mgn-category" class="btn-mgn-category"></button>
         <div id="wallet-create-div" class="wallet-create-div">
-            <button id="btn-create-wallet" class="btn-create-wallet">New Web3 ID</button>
+            <button id="btn-create-wallet" class="btn-create-wallet">Connect</button>
         </div>
         <div id="ad-block-setting"
              style="margin-top: 16px; background-color: rgba(74,153,233,0.2);border-radius: 9999px;padding:12px 16px">

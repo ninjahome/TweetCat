@@ -6,15 +6,15 @@ import {
     databaseQueryAll,
     databaseUpdateOrAddItem,
 } from "../common/database";
-import {
-    BASE_MAINNET_CHAIN_ID,
-    BASE_MAINNET_DEFAULT_RPC,
-    BASE_MAINNET_USDC, BASE_SEPOLIA_CHAIN_ID,
-    BASE_SEPOLIA_DEFAULT_RPC,
-    BASE_SEPOLIA_USDC
-} from "../common/consts";
+
 import {logW} from "../common/debug_flags";
-import {ChainNameBaseMain, walletInfo} from "../common/x402_obj";
+import {
+    BASE_MAINNET_DEFAULT_RPC, BASE_MAINNET_USDC,
+    BASE_SEPOLIA_DEFAULT_RPC, BASE_SEPOLIA_USDC, ChainIDBaseMain,
+    ChainIDBaseSepolia,
+    ChainNameBaseMain,
+    walletInfo
+} from "../common/x402_obj";
 import {loadWalletSettings, WalletSettings} from "./wallet_setting";
 
 /** ====== 类型 ====== */
@@ -157,8 +157,8 @@ export function createProvider(settings: WalletSettings) {
     const url = getRpcEndpoint(settings);
     const chainId =
         settings.network === ChainNameBaseMain
-            ? BASE_MAINNET_CHAIN_ID
-            : BASE_SEPOLIA_CHAIN_ID;
+            ? ChainIDBaseMain
+            : ChainIDBaseSepolia;
 
     return new ethers.providers.JsonRpcProvider(url, chainId);
 }

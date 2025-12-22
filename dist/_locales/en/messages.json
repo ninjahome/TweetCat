@@ -402,8 +402,8 @@
   "wallet_action_refresh_balance": {
     "message": "Refresh balance"
   },
-  "wallet_action_export_private_key": {
-    "message": "Export private key"
+  "wallet_action_show_on_browser": {
+    "message": "View on browser"
   },
   "wallet_action_transfer_eth": {
     "message": "Transfer ETH"

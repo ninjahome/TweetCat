@@ -1,4 +1,10 @@
-import {ChainNameBaseMain, ChainNameBaseSepolia, ChainNetwork} from "../common/x402_obj";
+import {
+    ChainIDBaseMain,
+    ChainIDBaseSepolia,
+    ChainNameBaseMain,
+    ChainNameBaseSepolia,
+    ChainNetwork
+} from "../common/x402_obj";
 import {
     __tableWalletSettings,
     checkAndInitDatabase,
@@ -61,3 +67,9 @@ export async function loadWalletSettings(): Promise<WalletSettings> {
     };
 }
 
+export async function getChainId(): Promise<number> {
+    const settings = await loadWalletSettings()
+    return settings.network === ChainNameBaseMain
+        ? ChainIDBaseMain
+        : ChainIDBaseSepolia;
+}

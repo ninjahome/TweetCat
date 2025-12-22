@@ -402,8 +402,8 @@
   "wallet_action_refresh_balance": {
     "message": "刷新余额"
   },
-  "wallet_action_export_private_key": {
-    "message": "导出私钥"
+  "wallet_action_show_on_browser": {
+    "message": "浏览器查看"
   },
   "wallet_action_transfer_eth": {
     "message": "转账 ETH"

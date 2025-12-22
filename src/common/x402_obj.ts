@@ -2,9 +2,16 @@ import {getCurrentUser, initialize, signOut} from "@coinbase/cdp-core";
 export const ChainIDBaseSepolia = 84532 as const
 export const ChainIDBaseMain = 8453 as const
 
+export const BASE_MAINNET_DEFAULT_RPC = "https://basescan.org" as const
+export const BASE_SEPOLIA_DEFAULT_RPC = "https://sepolia.basescan.org" as const
+export const  BASE_MAINNET_USDC ="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const
+export const  BASE_SEPOLIA_USDC ="0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const
+
 export const ChainNameBaseSepolia = "base-sepolia" as const
 export const ChainNameBaseMain = "base-mainnet" as const
 export type ChainNetwork = typeof ChainNameBaseSepolia | typeof ChainNameBaseMain
+
+export const x402_connection_name = "wallet-offscreen"
 
 export interface X402FacilitatorConfig {
     chainId: number
@@ -12,6 +19,7 @@ export interface X402FacilitatorConfig {
     usdcAddress: string
     settlementContract: string
     endpoint: string
+    browser: string
 }
 
 export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
@@ -19,18 +27,20 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
     [ChainIDBaseSepolia]: {
         chainId: ChainIDBaseSepolia,
         network: ChainNameBaseSepolia,
-        usdcAddress: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        usdcAddress: BASE_SEPOLIA_USDC,
         settlementContract: "0x06856d7a17b0ac072a845fbe95812e94ef8c2411",
         endpoint: "https://facilitator.sepolia.x402.org",
+        browser:BASE_SEPOLIA_DEFAULT_RPC,
     },
 
     // Base Mainnet
     [ChainIDBaseMain]: {
         chainId: ChainIDBaseMain,
         network: ChainNameBaseMain,
-        usdcAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        usdcAddress: BASE_MAINNET_USDC,
         settlementContract: "0x06856d7a17b0ac072a845fbe95812e94ef8c2411",
         endpoint: "https://facilitator.x402.org",
+        browser:BASE_MAINNET_DEFAULT_RPC,
     },
 }
 export interface x402TipPayload {
@@ -73,4 +83,3 @@ export interface walletInfo {
     ethVal: string;
     usdcVal: string;
 }
-

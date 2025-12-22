@@ -1,5 +1,5 @@
 import {fetchWithX402, getCurrentUser} from "@coinbase/cdp-core";
-import {initCDP, tryGetSignedInUser} from "../common/x402_obj";
+import {initCDP, tryGetSignedInUser, x402_connection_name} from "../common/x402_obj";
 import browser from "webextension-polyfill";
 import {MsgType} from "../common/consts";
 import {queryCdpWalletInfo} from "../wallet/cdp_wallet";
@@ -24,11 +24,11 @@ async function ensureWalletReady() {
 ensureWalletReady().then()
 
 browser.runtime.onConnect.addListener((port) => {
-    if (port.name === "wallet-offscreen") {
+    console.log("------->>> onConnect port:", port)
+    if (port.name !== x402_connection_name) {
+        console.warn("------>>> unknown connection name:", port.name)
         return
     }
-
-    console.log("------->>> onConnect port:", port)
 
     port.onMessage.addListener(async (msg) => {
         console.log("------->>> port message:", msg)

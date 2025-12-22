@@ -1,22 +1,13 @@
-import {$Id, $input, hideLoading, showAlert, showLoading, showNotification} from "./common";
+import {$Id, $input, hideLoading, showLoading, showNotification} from "./common";
 import {t} from "../common/i18n";
-import {requestPassword} from "./password_modal";
 import {ethers} from "ethers";
-import {
-    loadWallet,
-    TCWallet, transEthParam, transUsdcParam,
-} from "../wallet/wallet_api";
-import {ERC20_ABI, MsgType} from "../common/consts";
-import {sendMsgToService, showView} from "../common/utils";
+import {showView} from "../common/utils";
 import {dashRouter} from "./dashboard";
 import browser from "webextension-polyfill";
-import {
-    createProvider,
-    currentSettings,
-    getDefaultUsdcAddress,
-    initSettingsPanel,
-} from "./dash_setting";
-let currentWallet: TCWallet | null = null;
+import {getReadableNetworkName, initSettingsPanel,} from "./dash_setting";
+import {tryGetSignedInUser, X402_FACILITATORS} from "../common/x402_obj";
+import {getWalletAddress, queryCdpWalletInfo, transferETH, transferUSDC} from "../wallet/cdp_wallet";
+import {getChainId} from "../wallet/wallet_setting";
 
 function openTransferEthDialog(): Promise<TransferEthFormValues | null> {
     const modal = $Id("transfer-eth-modal") as HTMLDivElement | null;
@@ -155,30 +146,17 @@ function openTransferEthDialog(): Promise<TransferEthFormValues | null> {
 }
 
 async function handleTransferEth(): Promise<void> {
-    if (!currentWallet) {
-        showNotification(t("wallet_error_no_wallet"), "info");
-        return;
-    }
-
     const formValues = await openTransferEthDialog();
     if (!formValues) {
         return;
     }
 
-    const {to, amount, gas} = formValues;
-
+    const {to, amount} = formValues;
     try {
-        const password = await requestPassword(t("wallet_prompt_password_send_eth"))
-        showLoading(t("wallet_sending_transaction"));
-
-        const param: transEthParam = {to, amountEther: amount, password, ...(gas ? { gasLimitWei: gas } : {})}
-        const resp = await sendMsgToService(param, MsgType.WalletTransferEth)
-        if (!resp?.success) {
-            showNotification(resp?.error || "TRANSFER_FAILED");
-            return
-        }
-        showNotification(t("wallet_transfer_tx_sent") + resp.txHash);
-        await refreshBalances();
+        const chainID = await getChainId()
+        const hash = await transferETH(chainID, to, amount)
+        browser.tabs.create({url: X402_FACILITATORS[chainID].browser + "/tx/" + hash}).then()
+        refreshBalances().then();
     } catch (error) {
         showNotification(
             (error as Error).message ?? t("wallet_transfer_eth_failed"),
@@ -189,34 +167,26 @@ async function handleTransferEth(): Promise<void> {
     }
 }
 
-async function refreshBalances(showStatus = true): Promise<void> {
+export async function refreshBalances(showStatus = true): Promise<void> {
     const ethSpan = document.querySelector(".wallet-eth-value") as HTMLSpanElement | null;
-    const usdtSpan = document.querySelector(".wallet-usdt-value") as HTMLSpanElement | null;
-
-    if (!currentWallet) {
-        if (ethSpan) ethSpan.textContent = "--";
-        if (usdtSpan) usdtSpan.textContent = "--";
-        if (showStatus) showNotification(t('wallet_error_no_wallet'), "error");
-        return;
-    }
+    const usdcSpan = document.querySelector(".wallet-usdt-value") as HTMLSpanElement | null;
 
     try {
         if (showStatus) showNotification(t('wallet_refreshing_balance'));
-        const provider = createProvider(currentSettings);
-        const usdtContract = new ethers.Contract(getDefaultUsdcAddress(currentSettings), ERC20_ABI, provider);
-
-        const [ethBalance, usdtBalance] = await Promise.all([
-            provider.getBalance(currentWallet.address),
-            usdtContract.balanceOf(currentWallet.address)
-        ]);
+        const walletInfo = await queryCdpWalletInfo()
+        if (!walletInfo.hasCreated) {
+            if (ethSpan) ethSpan.textContent = "--";
+            if (usdcSpan) usdcSpan.textContent = "--";
+            if (showStatus) showNotification(t('wallet_error_no_wallet'), "error");
+            return;
+        }
 
         if (ethSpan) {
-            ethSpan.textContent = formatTokenAmount(ethBalance, 18);
+            ethSpan.textContent = walletInfo.ethVal
         }
-        if (usdtSpan) {
-            usdtSpan.textContent = formatTokenAmount(usdtBalance, 6);
+        if (usdcSpan) {
+            usdcSpan.textContent = walletInfo.usdcVal
         }
-
         if (showStatus) showNotification(t('wallet_refresh_balance_success'));
     } catch (error) {
         if (showStatus) {
@@ -225,72 +195,30 @@ async function refreshBalances(showStatus = true): Promise<void> {
     }
 }
 
-
-function formatTokenAmount(value: ethers.BigNumber, decimals: number): string {
-    const formatted = ethers.utils.formatUnits(value, decimals);
-    const numeric = Number(formatted);
-    if (!Number.isFinite(numeric)) {
-        return formatted;
+async function showBalanceOnBrowser(): Promise<void> {
+    const addr = await getWalletAddress()
+    if (!addr) {
+        return
     }
-    return numeric.toLocaleString(undefined, {maximumFractionDigits: Math.min(decimals, 6)});
+    const chainID = await getChainId()
+    const url = X402_FACILITATORS[chainID].browser + "/address/" + addr
+    await browser.tabs.create({url})
 }
 
-async function handleExportPrivateKey(): Promise<void> {
-    if (!currentWallet) {
-        showNotification(t("wallet_error_no_wallet"), "info");
-        return;
-    }
-
-    try {
-        const password = await requestPassword(
-            t("wallet_prompt_password_export_pk")
-        );
-        showLoading(t("wallet_decrypting"));
-
-        const resp = await sendMsgToService(password, MsgType.WalletExportPrivateKey)
-        if (!resp?.success) {
-            showNotification(t("wallet_export_pk_failed"));
-            return;
-        }
-
-        showAlert(t("wallet_export_pk_alert_prefix") + t("wallet_export_pk_warning"), resp.privateKey)
-    } catch (error) {
-        showNotification((error as Error).message ?? t("wallet_export_pk_failed"), "error");
-    } finally {
-        hideLoading()
-    }
-}
 
 async function handleTransferToken(): Promise<void> {
-    if (!currentWallet) {
-        showNotification(t("wallet_error_no_wallet"), "info");
-        return;
-    }
 
     const formValues = await openTransferTokenDialog();
     if (!formValues) {
         return;
     }
-
-    const {to, amount, decimals, gas} = formValues;
-    const tokenAddress = getDefaultUsdcAddress(currentSettings); // 固定用当前网络 USDC
-
+    const {to, amount} = formValues;
     try {
-        const password = await requestPassword(
-            t("wallet_prompt_password_send_token")
-        );
-
         showLoading(t("wallet_sending_transaction"));
-
-        const param: transUsdcParam = {tokenAddress, to, amount, decimals, password, ...(gas ? { gasLimitWei: gas } : {})}
-        const resp = await sendMsgToService(param, MsgType.WalletTransferUSDC)
-        if (!resp?.success) {
-            showNotification(resp?.error || "TRANSFER_FAILED");
-            return
-        }
-
-        showNotification(t("wallet_transfer_token_tx_sent") + resp.txHash);
-        await refreshBalances();
+        const chainID = await getChainId()
+        const hash = await transferUSDC(chainID, to, amount)
+        browser.tabs.create({url: X402_FACILITATORS[chainID].browser + "/tx/" + hash}).then()
+        refreshBalances().then();
     } catch (error) {
         showNotification(
             (error as Error).message ?? t("wallet_transfer_token_failed"),
@@ -301,149 +229,101 @@ async function handleTransferToken(): Promise<void> {
     }
 }
 
-export async function handleSignMessage(): Promise<void> {
-    if (!currentWallet) {
-        showNotification(t("wallet_error_no_wallet"), "info");
-        return;
-    }
+function setupWalletActionButtons(): void {
+    const refreshBtn = $Id("btn-refresh-balance") as HTMLButtonElement;
+    refreshBtn.textContent = t('wallet_action_refresh_balance');
+    refreshBtn.onclick = async () => refreshBalances(true)
 
-    const message = window.prompt(t("wallet_prompt_sign_message"), "");
-    if (message === null) return;
 
-    try {
-        const password = await requestPassword(
-            t("wallet_prompt_password_sign_message")
-        );
-        showLoading(t("wallet_signing"));
+    const showBtn = $Id("btn-show-on-browser") as HTMLButtonElement;
+    showBtn.textContent = t('wallet_action_show_on_browser');
+    showBtn.onclick = async () => showBalanceOnBrowser()
 
-        const resp = await sendMsgToService({message, password}, MsgType.WalletSignMessage)
-        if (!resp?.success) {
-            showNotification(resp?.error || "SIGN_FAILED");
-            return;
-        }
-        showAlert(t("wallet_sign_message_success"), t("wallet_sign_message_alert_prefix") + resp.signature)
-    } catch (error) {
-        showNotification((error as Error).message ?? t("wallet_sign_message_failed"), "error");
-    } finally {
-        hideLoading()
-    }
-}
+    const transferEthBtn = $Id("btn-transfer-eth") as HTMLButtonElement;
+    transferEthBtn.textContent = t('wallet_action_transfer_eth');
+    transferEthBtn.onclick = async () => handleTransferEth()
 
-async function populateWalletInfo(container: HTMLDivElement, wallet: TCWallet): Promise<void> {
-    const addressSpan = container.querySelector(".wallet-address-value") as HTMLSpanElement;
-    const ethSpan = container.querySelector(".wallet-eth-value") as HTMLSpanElement;
-    const usdtSpan = container.querySelector(".wallet-usdt-value") as HTMLSpanElement;
+    const transferTokenBtn = $Id("btn-transfer-token") as HTMLButtonElement;
+    transferTokenBtn.onclick = async () => handleTransferToken()
+    transferTokenBtn.textContent = t('wallet_action_transfer_token');
 
-    if (addressSpan) {
-        addressSpan.textContent = wallet.address;
-    }
-    if (ethSpan) {
-        ethSpan.textContent = "--";
-    }
-    if (usdtSpan) {
-        usdtSpan.textContent = "--";
-    }
-
-    await refreshBalances(false);
-}
-
-function setupWalletActionButtons(closeMainMenu: () => void): void {
-    const refreshBtn = $Id("btn-refresh-balance") as HTMLButtonElement | null;
-    const exportBtn = $Id("btn-export-private-key") as HTMLButtonElement | null;
-    const transferEthBtn = $Id("btn-transfer-eth") as HTMLButtonElement | null;
-    const transferTokenBtn = $Id("btn-transfer-token") as HTMLButtonElement | null;
-    const backBtn = $Id("wallet-back-btn") as HTMLButtonElement | null;
-
-    refreshBtn?.addEventListener("click", () => {
-        closeMainMenu();
-        refreshBalances().then();
-    });
-    exportBtn?.addEventListener("click", () => {
-        handleExportPrivateKey().then();
-    });
-    transferEthBtn?.addEventListener("click", () => {
-        closeMainMenu();
-        handleTransferEth().then();
-    });
-    transferTokenBtn?.addEventListener("click", () => {
-        closeMainMenu();
-        handleTransferToken().then();
-    });
-    backBtn?.addEventListener("click", () => {
+    const backBtn = $Id("wallet-back-btn") as HTMLButtonElement;
+    backBtn.onclick = async () => {
         showView('#onboarding/main-home', dashRouter);
-    });
+    }
 }
 
 export async function initWalletOrCreate(): Promise<void> {
     const walletCreateDiv = $Id("wallet-create-div") as HTMLButtonElement;//btn-create-wallet
     const walletInfoDiv = $Id("wallet-info-area") as HTMLDivElement;
     const walletSettingBtn = $Id("wallet-settings-btn") as HTMLButtonElement;
-    const walletMainBtn = $Id("btn-main-menu") as HTMLButtonElement;
+    const walletMenuBtn = $Id("btn-main-menu") as HTMLButtonElement;
     const walletMainMenu = $Id("wallet-main-menu") as HTMLDivElement;
-    const closeMainMenu = () => {
+
+    walletMainMenu.onclick = () => {
         if (walletMainMenu && !walletMainMenu.classList.contains("hidden")) {
             walletMainMenu.classList.add("hidden");
         }
-    };
-
-    currentWallet = await loadWallet();
-    await initSettingsPanel(refreshBalances, {onOpenSettings: closeMainMenu});
-
-    const walletNewBtn = (walletCreateDiv.querySelector(".btn-create-wallet") as HTMLButtonElement);
-    walletNewBtn.textContent = t('new_web3_id');
-    if (!currentWallet) {
-        walletCreateDiv.style.display = "block";
-        walletInfoDiv.style.display = "none";
-        walletNewBtn.onclick = async () => {
-            await browser.tabs.create({
-                url: browser.runtime.getURL("html/wallet_new.html"),
-            });
-        };
-        return;
     }
 
-    walletCreateDiv.style.display = "none";
-    walletInfoDiv.style.display = "block";
-    // (document.querySelector(".logo-container") as HTMLDivElement).style.display = 'none';
-    populateWalletInfo(walletInfoDiv, currentWallet).then();
+    await initSettingsPanel();
+
+    const address = await getWalletAddress();
+    const walletConnectBtn = (walletCreateDiv.querySelector(".btn-create-wallet") as HTMLButtonElement);
+    walletConnectBtn.textContent = t('cdp_wallet_connect');
+    walletConnectBtn.onclick = async () => {
+        const url = browser.runtime.getURL("html/cdp_auth.html");
+        await browser.tabs.create({url});
+    };
+
+    if (!address) {
+        walletCreateDiv.style.display = "block";
+        walletInfoDiv.style.display = "none";
+    } else {
+        walletCreateDiv.style.display = "none";
+        walletInfoDiv.style.display = "block";
+        const addressSpan = walletInfoDiv.querySelector(".wallet-address-value") as HTMLSpanElement;
+        addressSpan.textContent = address;
+        refreshBalances().then()
+    }
 
     walletSettingBtn.onclick = () => {
         showView('#onboarding/wallet-setting', dashRouter);
     }
 
-    walletMainBtn.addEventListener("click", (ev) => {
+    walletMenuBtn.addEventListener("click", (ev) => {
         ev.stopPropagation();
         walletMainMenu.classList.toggle("hidden");
     });
 
-    walletMainMenu.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-    });
-
     document.addEventListener("click", (ev) => {
-        const target = ev.target as Node | null;
-        if (!target) return;
-
-        // 已经是隐藏的，就不用处理了
-        if (walletMainMenu.classList.contains("hidden")) {
-            return;
-        }
-
-        // 点在菜单内部：不关闭
-        if (walletMainMenu.contains(target)) {
-            return;
-        }
-
-        // 点在按钮本身（或按钮里的 svg）：不关闭
-        if (walletMainBtn === target || walletMainBtn.contains(target)) {
-            return;
-        }
-
-        // 其它情况：关闭菜单
-        walletMainMenu.classList.add("hidden");
+        hideWalletMenu(ev, walletMainMenu)
     });
 
-    setupWalletActionButtons(closeMainMenu);
+    setupWalletActionButtons();
+}
+
+function hideWalletMenu(ev: PointerEvent, menu: HTMLElement) {
+    const target = ev.target as Node | null;
+    if (!target) return;
+
+    // 已经是隐藏的，就不用处理了
+    if (menu.classList.contains("hidden")) {
+        return;
+    }
+
+    // 点在菜单内部：不关闭
+    if (menu.contains(target)) {
+        return;
+    }
+
+    // 点在按钮本身（或按钮里的 svg）：不关闭
+    if (menu === target || menu.contains(target)) {
+        return;
+    }
+
+    // 其它情况：关闭菜单
+    menu.classList.add("hidden");
 }
 
 
@@ -451,13 +331,6 @@ interface TransferEthFormValues {
     to: string;
     amount: string;
     gas?: string;
-}
-
-function getReadableNetworkName(): string {
-    if (currentSettings.network === "base-mainnet") {
-        return t("wallet_network_option_base_mainnet");
-    }
-    return t("wallet_network_option_base_sepolia");
 }
 
 function getCurrentEthBalanceText(): string {
@@ -656,19 +529,6 @@ export function initDashboardTexts(): void {
     const nodeSettingsLabel = $Id('wallet-action-open-settings-label');
     if (nodeSettingsLabel) nodeSettingsLabel.textContent = t('wallet_action_node_settings');
 
-    // 顶部钱包主菜单四个按钮
-    const btnRefresh = $Id('btn-refresh-balance');
-    if (btnRefresh) btnRefresh.textContent = t('wallet_action_refresh_balance');
-
-    const btnExportPk = $Id('btn-export-private-key');
-    if (btnExportPk) btnExportPk.textContent = t('wallet_action_export_private_key');
-
-    const btnTransferEth = $Id('btn-transfer-eth');
-    if (btnTransferEth) btnTransferEth.textContent = t('wallet_action_transfer_eth');
-
-    const btnTransferToken = $Id('btn-transfer-token');
-    if (btnTransferToken) btnTransferToken.textContent = t('wallet_action_transfer_token');
-
     // 网络选择
     const networkTitle = $Id('wallet-network-title');
     if (networkTitle) networkTitle.textContent = t('wallet_network_title');
@@ -685,16 +545,6 @@ export function initDashboardTexts(): void {
     // 节点与 RPC 设置区
     const nodeRpcTitle = $Id('wallet-node-rpc-title');
     if (nodeRpcTitle) nodeRpcTitle.textContent = t('wallet_node_rpc_title');
-
-    const infuraLabel = $Id('wallet-infura-label');
-    if (infuraLabel) infuraLabel.textContent = t('wallet_infura_project_id_label');
-    const infuraInput = $input('#infura-project-id');
-    if (infuraInput) infuraInput.placeholder = t('wallet_infura_project_id_placeholder');
-
-    const customRpcLabel = $Id('wallet-custom-rpc-label');
-    if (customRpcLabel) customRpcLabel.textContent = t('wallet_custom_rpc_url_label');
-    const customRpcInput = $input('#custom-rpc-url');
-    if (customRpcInput) customRpcInput.placeholder = t('wallet_custom_rpc_url_placeholder');
 
     const transferTitle = $Id('transfer-eth-title');
     if (transferTitle) {
@@ -823,7 +673,6 @@ export function initDashboardTexts(): void {
     if (tokenCancelBtn) {
         tokenCancelBtn.textContent = t('cancel'); // 或 common_cancel
     }
-
 }
 
 

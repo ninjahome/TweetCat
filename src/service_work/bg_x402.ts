@@ -1,13 +1,12 @@
 import browser from "webextension-polyfill";
 import {logX402} from "../common/debug_flags";
-import {BASE_MAINNET_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID, MsgType} from "../common/consts";
 import {
-    ChainNameBaseMain, initCDP,
-    MAX_TIP_AMOUNT, tryGetSignedInUser, X402_FACILITATORS,
+    MAX_TIP_AMOUNT, x402_connection_name, X402_FACILITATORS,
     x402TipPayload
 } from "../common/x402_obj";
-import {fetchWithX402, getCurrentUser} from "@coinbase/cdp-core";
-import {loadWalletSettings} from "../wallet/wallet_setting";
+import {fetchWithX402} from "@coinbase/cdp-core";
+import {getChainId} from "../wallet/wallet_setting";
+import {getWalletAddress} from "../wallet/cdp_wallet";
 
 const WORKER_URL = "https://tweetcattips.ribencong.workers.dev";
 
@@ -20,8 +19,8 @@ export async function tipActionForTweet(data: x402TipPayload) {
     logX402("------>>> Starting x402 tip action with Embedded Wallet:", data);
 
     try {
-        const user = await tryGetSignedInUser();
-        if (!user || !user.evmAccounts?.length) {
+        const address = await getWalletAddress();
+        if (!address) {
             logX402("Wallet not connected, opening login...");
             // 打开登录页
             await browser.tabs.create({
@@ -30,18 +29,13 @@ export async function tipActionForTweet(data: x402TipPayload) {
             return {success: false, data: "WALLET_NOT_CONNECTED"};
         }
 
-        const address = user.evmAccounts[0];
         logX402("User connected:", address);
 
         if (!data.usdcVal || data.usdcVal <= 0 || data.usdcVal > MAX_TIP_AMOUNT) {
             return {success: false, data: "INVALID_AMOUNT"};
         }
 
-        const walletSetting = await loadWalletSettings();
-        const chainId =
-            walletSetting.network === ChainNameBaseMain
-                ? BASE_MAINNET_CHAIN_ID
-                : BASE_SEPOLIA_CHAIN_ID;
+        const chainId = await getChainId();
         const settleAddress = X402_FACILITATORS[chainId].settlementContract
         const tipUrl = `${WORKER_URL}/tip?payTo=${settleAddress}&amount=${data.usdcVal}`;
         logX402("Step 1: Requesting 402 from Worker...");
@@ -75,11 +69,11 @@ export async function tipActionForTweet(data: x402TipPayload) {
 
 export async function walletSignedIn(): Promise<string> {
     await browser.offscreen.closeDocument();
-    await connectToOffscreen();
+    await ensureOffscreenWallet();
     return "success"
 }
 
-async function ensureOffscreenWallet() {
+export async function ensureOffscreenWallet() {
     const has = await browser.offscreen.hasDocument();
     if (!has) {
         const tab = await browser.offscreen.createDocument({
@@ -93,66 +87,72 @@ async function ensureOffscreenWallet() {
     }
 }
 
+
 export let walletPort: browser.runtime.Port | null = null;
-
-export async function connectToOffscreen() {
-    await ensureOffscreenWallet(); // 创建 offscreen
-    if (walletPort) return
-
-    walletPort = browser.runtime.connect({name: "wallet-offscreen"});
-    walletPort.onDisconnect.addListener(() => {
-        walletPort = null;
-        console.log("------->>>. offscreen connection closed")
-    });
-
-    walletPort.onMessage.removeListener(handleOffScreenMsg)
-    walletPort.onMessage.addListener(handleOffScreenMsg)
-}
-
-
+const pendingWalletResponses = new Map<string, PendingEntry>();
 
 type PendingEntry = {
-    sendResponse: (resp: any) => void
-    timeout?: number
-}
+    resolve: (resp: any) => void;
+    timeout: ReturnType<typeof setTimeout>;
+};
 
-const pendingWalletResponses = new Map<string, PendingEntry>()
 function handleOffScreenMsg(msg: any) {
-    if (!msg || !msg.requestId) return
+    if (!msg?.requestId) return;
+    const pending = pendingWalletResponses.get(msg.requestId);
+    if (!pending) return;
 
-    const pending = pendingWalletResponses.get(msg.requestId)
-    if (!pending) return
-
-    // 返回结果
-    pending.sendResponse(msg.result)
-
-    // 清理
-    if (pending.timeout) {
-        clearTimeout(pending.timeout)
-    }
-
-    pendingWalletResponses.delete(msg.requestId)
+    pending.resolve(msg.result);
+    clearTimeout(pending.timeout);
+    pendingWalletResponses.delete(msg.requestId);
 }
 
-export async function relayWalletMsg(request: any,sendResponse: (response?: any) => void){
-    await connectToOffscreen()
-    const requestId = crypto.randomUUID()
+function createPort() {
+    const port = browser.runtime.connect({ name: x402_connection_name });
 
-    const timeout = window.setTimeout(() => {
-        const pending = pendingWalletResponses.get(requestId)
-        if (pending) {
-            pending.sendResponse({ success: false, error: 'wallet timeout' })
-            pendingWalletResponses.delete(requestId)
+    port.onMessage.addListener(handleOffScreenMsg);
+
+    port.onDisconnect.addListener(() => {
+        console.warn("Offscreen connection lost");
+        walletPort = null;
+        for (const [_, entry] of pendingWalletResponses) {
+            clearTimeout(entry.timeout);
+            entry.resolve({ success: false, error: 'Connection lost' });
         }
-    }, 10_000)
+        pendingWalletResponses.clear();  // 一键清空
+    });
 
-    pendingWalletResponses.set(requestId, {
-        sendResponse,
-        timeout,
-    })
+    return port;
+}
 
-    walletPort.postMessage({
-        ...request,
-        requestId,
-    })
+function getPort(): browser.runtime.Port {
+    if (!walletPort) {
+        walletPort = createPort();
+    }
+    return walletPort;
+}
+
+export async function relayWalletMsg(request: any): Promise<any> {
+    await ensureOffscreenWallet();
+
+    const port = getPort();
+    const requestId = crypto.randomUUID();
+
+    return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+            if (pendingWalletResponses.has(requestId)) {
+                pendingWalletResponses.delete(requestId);
+                resolve({ success: false, error: 'wallet timeout' });
+            }
+        }, 15000); // 考虑到 CDP 转账确认，建议拉长到 15s
+
+        pendingWalletResponses.set(requestId, { resolve, timeout });
+
+        try {
+            port.postMessage({ ...request, requestId });
+        } catch (err) {
+            clearTimeout(timeout);
+            pendingWalletResponses.delete(requestId);
+            resolve({ success: false, error: 'Post message failed' });
+        }
+    });
 }

@@ -12,10 +12,7 @@ import {localGet, localSet} from "../common/local_storage";
 import {getBearerToken, openOrUpdateTab, updateBearerToken} from "../common/utils";
 import {createAlarm, updateAlarm} from "./bg_timer";
 import {resetApiBucketSetting} from "./api_bucket_state";
-import {connectToOffscreen, relayWalletMsg, tipActionForTweet, walletPort} from "./bg_x402";
-import {loadCategorySnapshot} from "../object/category";
-import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
-import {x402TipPayload} from "../common/x402_obj";
+import {ensureOffscreenWallet, relayWalletMsg} from "./bg_x402";
 
 /****************************************************************************************
  ┌────────────┐
@@ -66,7 +63,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
         console.log("------>>> update api bucket settings")
     });
     initDefaultQueryKey().then();
-    connectToOffscreen().then();
+    ensureOffscreenWallet().then();
 });
 
 
@@ -103,7 +100,7 @@ browser.runtime.onStartup.addListener(() => {
         console.log('------>>> onStartup......');
         await checkAndInitDatabase();
         await createAlarm();
-        await connectToOffscreen();
+        await ensureOffscreenWallet();
     })();
 });
 
@@ -113,8 +110,8 @@ browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSen
         await createAlarm();
         try {
             if (request.scope === "off-screen") {
-                await relayWalletMsg(request, sendResponse)
-                return
+                relayWalletMsg(request).then(sendResponse);
+                return true
             }
 
             const result = await bgMsgDispatch(request, _sender);

@@ -1,4 +1,4 @@
-import {getCurrentUser, OAuth2ProviderType, signInWithOAuth} from "@coinbase/cdp-core";
+import {getCurrentUser,OAuth2ProviderType, signInWithOAuth} from "@coinbase/cdp-core";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {initCDP} from "../common/x402_obj";

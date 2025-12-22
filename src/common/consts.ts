@@ -148,20 +148,4 @@ export const defaultQueryKeyMap: Record<string, string> = {
     ConversationItem_DeleteConversationMutation: "TlKHSWVMVeaa-i7dqQqFQA",
 }
 
-// ===== Base 网络配置 =====
-export const BASE_MAINNET_CHAIN_ID = 8453;
-export const BASE_SEPOLIA_CHAIN_ID = 84532;
-
-export const BASE_MAINNET_DEFAULT_RPC = "https://mainnet.base.org";
-export const BASE_SEPOLIA_DEFAULT_RPC = "https://sepolia.base.org";
-
-// USDC 合约地址（6 位小数）
-export const BASE_MAINNET_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
-// 测试网 USDC，仅用于开发测试
-export const BASE_SEPOLIA_USDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
-
-export const ERC20_ABI = [
-    "function balanceOf(address owner) view returns (uint256)",
-    "function transfer(address to, uint256 amount) returns (bool)"
-];
 
