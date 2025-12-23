@@ -5,7 +5,7 @@ export interface Env {
 	CDP_API_KEY_SECRET?: string;
 }
 
-export interface X402SettleResponse {
+interface X402SettleResponse {
 	success: boolean;
 	transactionHash?: string;
 	transaction?: string;
@@ -14,9 +14,11 @@ export interface X402SettleResponse {
 	errorReason?: string;
 }
 
+// 配置网络：false 表示测试网（Base Sepolia），true 表示主网（Base 主网）
 const IS_MAINNET = false;
-const NETWORK = IS_MAINNET ? "eip155:8453" : "eip155:84532";
+const NETWORK = IS_MAINNET ? "eip155:8453" : "eip155:84532";  // 使用 CAIP-2 网络标识:contentReference[oaicite:10]{index=10}
 
+// 配置 Facilitator 接口 URL：测试网使用公共facilitator，主网使用CDP平台接口
 const FACILITATOR_URL = IS_MAINNET
 	? "https://api.cdp.coinbase.com/platform/v2/x402/settle"
 	: "https://x402.org/facilitator";
@@ -25,192 +27,128 @@ const corsHeaders = {
 	"Access-Control-Allow-Origin": "*",
 	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 	"Access-Control-Allow-Headers": "Content-Type, PAYMENT-SIGNATURE, X-Requested-With",
-	"Access-Control-Expose-Headers": "PAYMENT-REQUIRED, PAYMENT-RESPONSE",
+	"Access-Control-Expose-Headers": "PAYMENT-REQUIRED, PAYMENT-RESPONSE"
 };
 
 export default {
 	async fetch(req: Request, env: Env): Promise<Response> {
-		// ----------- LOG: 入参 -----------
-		console.log("[ENTRY] New request", {
-			method: req.method,
-			url: req.url,
-			headers: Object.fromEntries(req.headers),
-		});
-
+		console.log("[ENTRY] New request", req.method, req.url);
 		if (req.method === "OPTIONS") {
-			console.log("[OPTIONS] CORS preflight");
-			return new Response(null, { headers: corsHeaders });
+			// 处理预检请求
+			return new Response(null, {headers: corsHeaders});
 		}
 
 		const url = new URL(req.url);
-		const pathname = url.pathname;
+		if (url.pathname !== "/tip") {
+			return new Response("Not Found", {status: 404, headers: corsHeaders});
+		}
 
-		console.log("[REQUEST PATH]", pathname);
-
-		// 仅支持 /tip
-		if (pathname !== "/tip") {
-			console.warn("[NOT FOUND] Unsupported path", { pathname });
-			return new Response("Not Found", {
-				status: 404,
-				headers: corsHeaders,
+		// 提取支付参数
+		const payTo = url.searchParams.get("payTo");      // 接收付款的合约地址
+		const amountStr = url.searchParams.get("amount"); // 支付金额（USDC）
+		console.log("[PARAMS]", {payTo, amountStr});
+		if (!payTo || !/^0x[a-fA-F0-9]{40}$/.test(payTo) || !amountStr || isNaN(Number(amountStr))) {
+			// 基础校验未通过
+			return new Response(JSON.stringify({error: "Invalid parameters"}), {
+				status: 400,
+				headers: {...corsHeaders, "Content-Type": "application/json"}
 			});
 		}
 
-		const payTo = url.searchParams.get("payTo");
-		const amountStr = url.searchParams.get("amount");
-
-		console.log("[PARSE PARAMS]", { payTo, amountStr });
-
-		// 参数基础校验
-		if (
-			!payTo ||
-			!/^0x[a-fA-F0-9]{40}$/.test(payTo) ||
-			!amountStr ||
-			isNaN(Number(amountStr))
-		) {
-			console.error("[INVALID PARAMS]", { payTo, amountStr });
-			return new Response(
-				JSON.stringify({ error: "Invalid parameters" }),
-				{
-					status: 400,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
-		}
-
-		const amount = Number(amountStr);
-		const paymentSignature = req.headers.get("PAYMENT-SIGNATURE");
-
-		console.log("[PAYMENT SIGNATURE HEADER]", { paymentSignature });
-
-		// 构造 x402 accepts
-		const accepts = [
-			{
-				scheme: "exact",
-				price: `$${amount.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")}`,
-				network: NETWORK,
-				payTo,
-			},
-		];
-
-		console.log("[ACCEPTS ARRAY]", accepts);
-
-		// ---- 阶段 1：尚未有 PAYMENT-SIGNATURE → 返回 402 ----
+		// **阶段1**：返回支付要求 (402)
+		const paymentSignature = req.headers.get("PAYMENT-SIGNATURE");  // 检查客户端是否已附带支付签名头:contentReference[oaicite:11]{index=11}
 		if (!paymentSignature) {
-			const encoded = btoa(JSON.stringify(accepts));
-			console.log("[RETURN 402] No signature yet", {
-				accepts,
-				encodedPAYMENT: encoded,
-			});
-			return new Response(JSON.stringify({ error: "Payment Required" }), {
+			const price = `$${Number(amountStr).toFixed(2)}`;
+
+			const paymentRequired = {
+				x402Version: 2,
+				accepts: [
+					{
+						scheme: "exact",
+						network: NETWORK,
+						payTo,
+						price,
+					},
+				],
+			};
+
+			const encoded = btoa(JSON.stringify(paymentRequired));
+			console.log("[402 Payment Required]", paymentRequired);
+			return new Response(null, {
 				status: 402,
-				headers: {
-					...corsHeaders,
-					"Content-Type": "application/json",
-					"PAYMENT-REQUIRED": encoded,
-				},
+				headers: {...corsHeaders, "PAYMENT-REQUIRED": encoded}
 			});
 		}
 
-		// ---- 阶段 2：有 PAYMENT-SIGNATURE → 发起 settlement ----
-		console.log("[HAS PAYMENT SIG] Proceed to settle", {
-			paymentSignature,
-		});
-
-		const settlePayload = {
-			paymentSignature,
-			requirements: accepts,
-		};
-
+		// **阶段2**：收到 PAYMENT-SIGNATURE，向 facilitator 验证并结算交易
+		console.log("[HAS PAYMENT-SIGNATURE]", paymentSignature);
+		const requirements = [
+			{scheme: "exact", price: `$${Number(amountStr).toFixed(2)}`, network: NETWORK, payTo}
+		];
+		const settlePayload = {paymentSignature, requirements};
 		console.log("[SETTLE PAYLOAD]", settlePayload);
 
-		const headers: Record<string, string> = {
-			"Content-Type": "application/json",
-		};
-
-		// 主网需要 JWT auth
+		// 配置请求头（如主网需要添加 JWT 授权）
+		const headers: Record<string, string> = {"Content-Type": "application/json"};
 		if (IS_MAINNET) {
+			// 使用 CDP API 密钥生成 JWT，用于主网结算认证
 			if (!env.CDP_API_KEY_ID || !env.CDP_API_KEY_SECRET) {
-				console.error("[MISSING CREDENTIALS]", {
-					CDP_API_KEY_ID: !!env.CDP_API_KEY_ID,
-					CDP_API_KEY_SECRET: !!env.CDP_API_KEY_SECRET,
+				return new Response(JSON.stringify({error: "Missing credentials"}), {
+					status: 500, headers: {...corsHeaders, "Content-Type": "application/json"}
 				});
-				return new Response(
-					JSON.stringify({ error: "Missing credentials" }),
-					{
-						status: 500,
-						headers: { ...corsHeaders, "Content-Type": "application/json" },
-					}
-				);
 			}
 			try {
 				const secretPEM = env.CDP_API_KEY_SECRET.replace(/\\n/g, "\n");
 				const privateKey = await jose.importPKCS8(secretPEM, "ES256");
 				const jwt = await new jose.SignJWT({})
-					.setProtectedHeader({ alg: "ES256" })
+					.setProtectedHeader({alg: "ES256"})
 					.setIssuer(env.CDP_API_KEY_ID)
 					.setSubject(env.CDP_API_KEY_ID)
 					.setIssuedAt()
 					.setExpirationTime("2m")
 					.sign(privateKey);
-
 				headers["Authorization"] = `Bearer ${jwt}`;
-				console.log("[JWT GENERATED]", { issuer: env.CDP_API_KEY_ID });
 			} catch (err) {
-				console.error("[JWT FAILURE]", err);
+				console.error("[JWT ERROR]", err);
 			}
 		}
 
-		// 发起实际结算请求
+		// 调用 Facilitator 执行结算请求
 		let facilitatorResp: Response;
 		try {
 			facilitatorResp = await fetch(FACILITATOR_URL, {
 				method: "POST",
 				headers,
-				body: JSON.stringify(settlePayload),
+				body: JSON.stringify(settlePayload)
 			});
-			console.log("[FACILITATOR STATUS]", facilitatorResp.status);
-		} catch (fetchErr) {
-			console.error("[FACILITATOR FETCH ERROR]", fetchErr);
-			return new Response(
-				JSON.stringify({ error: "Facilitator request failed", detail: fetchErr }),
-				{
-					status: 502,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
+		} catch (err) {
+			console.error("[FACILITATOR FETCH ERROR]", err);
+			return new Response(JSON.stringify({error: "Facilitator request failed", detail: err}), {
+				status: 502, headers: {...corsHeaders, "Content-Type": "application/json"}
+			});
 		}
 
-		// 读取结果
+		// 读取结算结果
 		let result: X402SettleResponse;
 		try {
-			result = (await facilitatorResp.json()) as X402SettleResponse;
-			console.log("[FACILITATOR RESULT]", result);
-		} catch (parseErr) {
-			console.error("[RESULT PARSE ERROR]", parseErr);
-			return new Response(
-				JSON.stringify({ error: "Invalid facilitator response", detail: parseErr }),
-				{
-					status: 502,
-					headers: { ...corsHeaders, "Content-Type": "application/json" },
-				}
-			);
+			result = await facilitatorResp.json() as X402SettleResponse;
+		} catch (err) {
+			console.error("[SETTLEMENT PARSE ERROR]", err);
+			return new Response(JSON.stringify({error: "Invalid facilitator response", detail: err}), {
+				status: 502, headers: {...corsHeaders, "Content-Type": "application/json"}
+			});
 		}
+		console.log("[FACILITATOR RESULT]", result);
 
-		// Base64 encode the raw settlement response
+		// 将结算结果编码返回给客户端，同时返回200内容（例如交易哈希等）
 		const encodedResponse = btoa(JSON.stringify(result));
-		console.log("[RETURN 200 RESULT]", {
-			result,
-			encodedResponsePreview: encodedResponse.substring(0, 80) + "...",
-		});
-
 		return new Response(JSON.stringify(result), {
 			status: 200,
 			headers: {
 				...corsHeaders,
 				"Content-Type": "application/json",
-				"PAYMENT-RESPONSE": encodedResponse,
-			},
+				"PAYMENT-RESPONSE": encodedResponse
+			}
 		});
-	},
+	}
 };

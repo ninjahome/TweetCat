@@ -17,9 +17,13 @@
 		"wrangler": "^4.55.0"
 	},
 	"dependencies": {
+		"@coinbase/cdp-core": "^0.0.74",
+		"@coinbase/cdp-hooks": "^0.0.74",
 		"@coinbase/cdp-sdk": "^1.40.1",
+		"@x402/axios": "^2.0.0",
 		"@x402/core": "^2.0.0",
 		"@x402/evm": "^2.0.0",
+		"@x402/fetch": "^2.0.0",
 		"@x402/hono": "^2.0.0",
 		"hono": "^4.11.1"
 	}

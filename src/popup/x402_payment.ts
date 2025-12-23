@@ -5,7 +5,7 @@ import browser from "webextension-polyfill";
 
 const WORKER_URL = "https://tweetcattips.ribencong.workers.dev";
 
-const {fetchWithPayment} = fetchWithX402({});
+const {fetchWithPayment} = fetchWithX402();
 
 // DOM 元素
 let statusDiv: HTMLElement;
