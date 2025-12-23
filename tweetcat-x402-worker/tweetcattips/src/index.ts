@@ -62,12 +62,17 @@ export default {
 
 			const paymentRequired = {
 				x402Version: 2,
+				resource: {
+					url: req.url,
+					description: "Tweet tip",
+					mimeType: "application/json",
+				},
 				accepts: [
 					{
 						scheme: "exact",
 						network: NETWORK,
 						payTo,
-						price,
+						price: price,
 					},
 				],
 			};
