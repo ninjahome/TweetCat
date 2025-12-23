@@ -30,7 +30,7 @@ import {
 } from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
-import {tipActionForTweet, restartOffScreen} from "./bg_x402";
+import {restartOffScreen, tipActionForTweet} from "./bg_x402";
 import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
 import {x402TipPayload} from "../common/x402_obj";
 

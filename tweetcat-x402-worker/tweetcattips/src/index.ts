@@ -1,142 +1,216 @@
+import * as jose from 'jose';
+
 export interface Env {
-	CDP_API_KEY_ID: string;
-	CDP_API_KEY_SECRET: string;
+	CDP_API_KEY_ID?: string;
+	CDP_API_KEY_SECRET?: string;
 }
 
-const BASE_SEPOLIA_USDC = '0x036CbD53842c5426634e7929541eC2318F3dCF7e';
-const FACILITATOR_SETTLE_URL =
-	'https://facilitator.cdp.coinbase.com/v1/x402/settle';
+export interface X402SettleResponse {
+	success: boolean;
+	transactionHash?: string;
+	transaction?: string;
+	payer?: string;
+	network?: string;
+	errorReason?: string;
+}
 
-// 添加 CORS 头部
+const IS_MAINNET = false;
+const NETWORK = IS_MAINNET ? "eip155:8453" : "eip155:84532";
+
+const FACILITATOR_URL = IS_MAINNET
+	? "https://api.cdp.coinbase.com/platform/v2/x402/settle"
+	: "https://x402.org/facilitator";
+
 const corsHeaders = {
-	'Access-Control-Allow-Origin': '*',
-	'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-	'Access-Control-Allow-Headers': 'Content-Type, PAYMENT-SIGNATURE',
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+	"Access-Control-Allow-Headers": "Content-Type, PAYMENT-SIGNATURE, X-Requested-With",
+	"Access-Control-Expose-Headers": "PAYMENT-REQUIRED, PAYMENT-RESPONSE",
 };
 
 export default {
 	async fetch(req: Request, env: Env): Promise<Response> {
-		// 处理 CORS preflight
-		if (req.method === 'OPTIONS') {
-			return new Response(null, {headers: corsHeaders});
+		// ----------- LOG: 入参 -----------
+		console.log("[ENTRY] New request", {
+			method: req.method,
+			url: req.url,
+			headers: Object.fromEntries(req.headers),
+		});
+
+		if (req.method === "OPTIONS") {
+			console.log("[OPTIONS] CORS preflight");
+			return new Response(null, { headers: corsHeaders });
 		}
+
 		const url = new URL(req.url);
-		if (url.pathname !== '/tip') {
-			return new Response('Not Found', {
+		const pathname = url.pathname;
+
+		console.log("[REQUEST PATH]", pathname);
+
+		// 仅支持 /tip
+		if (pathname !== "/tip") {
+			console.warn("[NOT FOUND] Unsupported path", { pathname });
+			return new Response("Not Found", {
 				status: 404,
 				headers: corsHeaders,
 			});
 		}
 
-		const payTo = url.searchParams.get('payTo');
-		const amount = url.searchParams.get('amount');
+		const payTo = url.searchParams.get("payTo");
+		const amountStr = url.searchParams.get("amount");
 
-		if (!payTo || !/^0x[a-fA-F0-9]{40}$/.test(payTo)) {
-			return new Response('Invalid address', {
-				status: 400,
-				headers: corsHeaders,
-			});
-		}
-		if (!amount || isNaN(Number(amount))) {
-			return new Response('Invalid amount', {
-				status: 400,
-				headers: corsHeaders,
-			});
-		}
+		console.log("[PARSE PARAMS]", { payTo, amountStr });
 
-		const paymentSignature = req.headers.get('PAYMENT-SIGNATURE');
-
-		/**
-		 * ===============================
-		 * 第一次请求：返回 402
-		 * ===============================
-		 */
-		if (!paymentSignature) {
-			const requirements = {
-				x402Version: 2,
-				accepts: [
-					{
-						scheme: 'exact',
-						network: 'eip155:84532', // Base Sepolia
-						asset: BASE_SEPOLIA_USDC,
-						payTo,
-						price: `$${Number(amount).toFixed(2)}`,
-					},
-				],
-			};
-
+		// 参数基础校验
+		if (
+			!payTo ||
+			!/^0x[a-fA-F0-9]{40}$/.test(payTo) ||
+			!amountStr ||
+			isNaN(Number(amountStr))
+		) {
+			console.error("[INVALID PARAMS]", { payTo, amountStr });
 			return new Response(
-				JSON.stringify({error: 'Payment Required'}),
+				JSON.stringify({ error: "Invalid parameters" }),
 				{
-					status: 402,
-					headers: {
-						...corsHeaders,
-						'Content-Type': 'application/json',
-						'PAYMENT-REQUIRED': btoa(JSON.stringify(requirements)),
-					},
-				},
+					status: 400,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				}
 			);
 		}
 
-		/**
-		 * ===============================
-		 * 第二次请求：调用 CDP settle
-		 * ===============================
-		 */
-		const settlePayload = {
+		const amount = Number(amountStr);
+		const paymentSignature = req.headers.get("PAYMENT-SIGNATURE");
+
+		console.log("[PAYMENT SIGNATURE HEADER]", { paymentSignature });
+
+		// 构造 x402 accepts
+		const accepts = [
+			{
+				scheme: "exact",
+				price: `$${amount.toFixed(6).replace(/0+$/, "").replace(/\.$/, "")}`,
+				network: NETWORK,
+				payTo,
+			},
+		];
+
+		console.log("[ACCEPTS ARRAY]", accepts);
+
+		// ---- 阶段 1：尚未有 PAYMENT-SIGNATURE → 返回 402 ----
+		if (!paymentSignature) {
+			const encoded = btoa(JSON.stringify(accepts));
+			console.log("[RETURN 402] No signature yet", {
+				accepts,
+				encodedPAYMENT: encoded,
+			});
+			return new Response(JSON.stringify({ error: "Payment Required" }), {
+				status: 402,
+				headers: {
+					...corsHeaders,
+					"Content-Type": "application/json",
+					"PAYMENT-REQUIRED": encoded,
+				},
+			});
+		}
+
+		// ---- 阶段 2：有 PAYMENT-SIGNATURE → 发起 settlement ----
+		console.log("[HAS PAYMENT SIG] Proceed to settle", {
 			paymentSignature,
-			requirements: {
-				x402Version: 2,
-				accepts: [
-					{
-						scheme: 'exact',
-						network: 'eip155:84532',
-						asset: BASE_SEPOLIA_USDC,
-						payTo,
-						price: `$${Number(amount).toFixed(2)}`,
-					},
-				],
-			},
-		};
-
-		const auth = btoa(
-			`${env.CDP_API_KEY_ID}:${env.CDP_API_KEY_SECRET}`,
-		);
-
-		const resp = await fetch(FACILITATOR_SETTLE_URL, {
-			method: 'POST',
-			headers: {
-				Authorization: `Basic ${auth}`,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(settlePayload),
 		});
 
-		if (!resp.ok) {
-			const err = await resp.text();
-			console.error('CDP settle failed:', err);
+		const settlePayload = {
+			paymentSignature,
+			requirements: accepts,
+		};
+
+		console.log("[SETTLE PAYLOAD]", settlePayload);
+
+		const headers: Record<string, string> = {
+			"Content-Type": "application/json",
+		};
+
+		// 主网需要 JWT auth
+		if (IS_MAINNET) {
+			if (!env.CDP_API_KEY_ID || !env.CDP_API_KEY_SECRET) {
+				console.error("[MISSING CREDENTIALS]", {
+					CDP_API_KEY_ID: !!env.CDP_API_KEY_ID,
+					CDP_API_KEY_SECRET: !!env.CDP_API_KEY_SECRET,
+				});
+				return new Response(
+					JSON.stringify({ error: "Missing credentials" }),
+					{
+						status: 500,
+						headers: { ...corsHeaders, "Content-Type": "application/json" },
+					}
+				);
+			}
+			try {
+				const secretPEM = env.CDP_API_KEY_SECRET.replace(/\\n/g, "\n");
+				const privateKey = await jose.importPKCS8(secretPEM, "ES256");
+				const jwt = await new jose.SignJWT({})
+					.setProtectedHeader({ alg: "ES256" })
+					.setIssuer(env.CDP_API_KEY_ID)
+					.setSubject(env.CDP_API_KEY_ID)
+					.setIssuedAt()
+					.setExpirationTime("2m")
+					.sign(privateKey);
+
+				headers["Authorization"] = `Bearer ${jwt}`;
+				console.log("[JWT GENERATED]", { issuer: env.CDP_API_KEY_ID });
+			} catch (err) {
+				console.error("[JWT FAILURE]", err);
+			}
+		}
+
+		// 发起实际结算请求
+		let facilitatorResp: Response;
+		try {
+			facilitatorResp = await fetch(FACILITATOR_URL, {
+				method: "POST",
+				headers,
+				body: JSON.stringify(settlePayload),
+			});
+			console.log("[FACILITATOR STATUS]", facilitatorResp.status);
+		} catch (fetchErr) {
+			console.error("[FACILITATOR FETCH ERROR]", fetchErr);
 			return new Response(
-				JSON.stringify({error: 'CDP settle failed', detail: err}),
+				JSON.stringify({ error: "Facilitator request failed", detail: fetchErr }),
 				{
 					status: 502,
-					headers: {...corsHeaders, 'Content-Type': 'application/json'},
-				},
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				}
 			);
 		}
 
-		const result = await resp.json();
+		// 读取结果
+		let result: X402SettleResponse;
+		try {
+			result = (await facilitatorResp.json()) as X402SettleResponse;
+			console.log("[FACILITATOR RESULT]", result);
+		} catch (parseErr) {
+			console.error("[RESULT PARSE ERROR]", parseErr);
+			return new Response(
+				JSON.stringify({ error: "Invalid facilitator response", detail: parseErr }),
+				{
+					status: 502,
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+				}
+			);
+		}
 
-		return new Response(
-			JSON.stringify({
-				ok: true,
-				network: 'base-sepolia',
-				txHash: result.transactionHash,
-				raw: result,
-			}),
-			{
-				status: 200,
-				headers: {...corsHeaders, 'Content-Type': 'application/json'},
+		// Base64 encode the raw settlement response
+		const encodedResponse = btoa(JSON.stringify(result));
+		console.log("[RETURN 200 RESULT]", {
+			result,
+			encodedResponsePreview: encodedResponse.substring(0, 80) + "...",
+		});
+
+		return new Response(JSON.stringify(result), {
+			status: 200,
+			headers: {
+				...corsHeaders,
+				"Content-Type": "application/json",
+				"PAYMENT-RESPONSE": encodedResponse,
 			},
-		);
+		});
 	},
 };

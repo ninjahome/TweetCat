@@ -6,7 +6,7 @@
     ]
   },
   "name": "TweetCat",
-  "version": "3.1.12",
+  "version": "3.1.15",
   "default_locale": "en",
   "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {
@@ -39,7 +39,8 @@
     "https://x.com/*",
     "*://x.com/*",
     "https://tweetcat.dessage.xyz/*",
-    "https://tweetcattips.ribencong.workers.dev/*"
+    "https://tweetcattips.ribencong.workers.dev/*",
+    "http://localhost:8787/*"
   ],
   "background": {
     "service_worker": "js/background.js"

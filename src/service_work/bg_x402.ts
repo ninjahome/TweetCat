@@ -1,71 +1,7 @@
 import browser from "webextension-polyfill";
-import {logX402} from "../common/debug_flags";
 import {
-    MAX_TIP_AMOUNT, x402_connection_name, X402_FACILITATORS,
-    x402TipPayload
+    x402_connection_name, x402TipPayload
 } from "../common/x402_obj";
-import {fetchWithX402} from "@coinbase/cdp-core";
-import {getChainId} from "../wallet/wallet_setting";
-import {getWalletAddress} from "../wallet/cdp_wallet";
-
-const WORKER_URL = "https://tweetcattips.ribencong.workers.dev";
-
-const {fetchWithPayment} = fetchWithX402({
-    // 可选：限制单笔最大支付（安全）
-    // maxValue: parseUnits("10", 6), // 最大 10 USDC
-});
-
-export async function tipActionForTweet(data: x402TipPayload) {
-    logX402("------>>> Starting x402 tip action with Embedded Wallet:", data);
-
-    try {
-        const address = await getWalletAddress();
-        if (!address) {
-            logX402("Wallet not connected, opening login...");
-            // 打开登录页
-            await browser.tabs.create({
-                url: browser.runtime.getURL("html/cdp_auth.html")
-            });
-            return {success: false, data: "WALLET_NOT_CONNECTED"};
-        }
-
-        logX402("User connected:", address);
-
-        if (!data.usdcVal || data.usdcVal <= 0 || data.usdcVal > MAX_TIP_AMOUNT) {
-            return {success: false, data: "INVALID_AMOUNT"};
-        }
-
-        const chainId = await getChainId();
-        const settleAddress = X402_FACILITATORS[chainId].settlementContract
-        const tipUrl = `${WORKER_URL}/tip?payTo=${settleAddress}&amount=${data.usdcVal}`;
-        logX402("Step 1: Requesting 402 from Worker...");
-        const response = await fetchWithPayment(tipUrl, {
-            method: 'GET',  // 或 POST，根据你的 Worker
-        });
-
-        if (!response.ok) {
-            const errText = await response.text();
-            logX402("x402 payment failed:", response.status, errText);
-            return {success: false, data: "PAYMENT_FAILED", message: errText};
-        }
-
-        const result = await response.json();
-        logX402("x402 payment success:", result);
-
-        return {
-            success: true,
-            data: {
-                ok: true,
-                txHash: result.txHash,
-                status: 'completed',
-            },
-        };
-
-    } catch (err) {
-        logX402("x402 payment failed:", err);
-        return {success: false, data: "PAYMENT_FAILED"};
-    }
-}
 
 export async function restartOffScreen(): Promise<string> {
     await browser.offscreen.closeDocument();
@@ -107,7 +43,7 @@ function handleOffScreenMsg(msg: any) {
 }
 
 function createPort() {
-    const port = browser.runtime.connect({ name: x402_connection_name });
+    const port = browser.runtime.connect({name: x402_connection_name});
 
     port.onMessage.addListener(handleOffScreenMsg);
 
@@ -116,7 +52,7 @@ function createPort() {
         walletPort = null;
         for (const [_, entry] of pendingWalletResponses) {
             clearTimeout(entry.timeout);
-            entry.resolve({ success: false, error: 'Connection lost' });
+            entry.resolve({success: false, error: 'Connection lost'});
         }
         pendingWalletResponses.clear();  // 一键清空
     });
@@ -141,18 +77,54 @@ export async function relayWalletMsg(request: any): Promise<any> {
         const timeout = setTimeout(() => {
             if (pendingWalletResponses.has(requestId)) {
                 pendingWalletResponses.delete(requestId);
-                resolve({ success: false, error: 'wallet timeout' });
+                resolve({success: false, error: 'wallet timeout'});
             }
         }, 15000); // 考虑到 CDP 转账确认，建议拉长到 15s
 
-        pendingWalletResponses.set(requestId, { resolve, timeout });
+        pendingWalletResponses.set(requestId, {resolve, timeout});
 
         try {
-            port.postMessage({ ...request, requestId });
+            port.postMessage({...request, requestId});
         } catch (err) {
             clearTimeout(timeout);
             pendingWalletResponses.delete(requestId);
-            resolve({ success: false, error: 'Post message failed' });
+            resolve({success: false, error: 'Post message failed'});
         }
     });
+}
+
+export async function tipActionForTweet(payload: x402TipPayload) {
+
+    try {
+        const url = browser.runtime.getURL(`html/x402_pay.html?payload=${encodeURIComponent(JSON.stringify(payload))}`)
+
+        const width = 450;
+        const height = 650;
+
+        const currentWindow = await browser.windows.getLastFocused();
+
+        let left = 0;
+        let top = 0;
+
+        if (currentWindow.width && currentWindow.height) {
+            // 计算相对于当前浏览器窗口的居中位置
+            left = Math.round(currentWindow.left! + (currentWindow.width - width) / 2);
+            top = Math.round(currentWindow.top! + (currentWindow.height - height) / 2);
+        }
+
+        await browser.windows.create({
+            url,
+            type: 'popup',
+            width,
+            height,
+            left,
+            top,
+            focused: true
+        });
+
+        return {success: true};
+    } catch (e) {
+        console.log("open payment url failed:", e)
+        return {success: false, data: e.toString()};
+    }
 }
