@@ -90,6 +90,7 @@ export enum MsgType {
 
     X402TipAction = "X402TipAction",
     X402EmbeddWalletSignIn = "X402EmbeddWalletSignIn",
+    X402NotSignedIn = "X402NotSignedIn",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
@@ -100,7 +101,9 @@ export const UserByScreenName = "UserByScreenName" // 根据 username 获取 use
 export const HomeLatestTimeline = "HomeLatestTimeline"// 首页的最新推文流
 export const HomeTimeline = "HomeTimeline"// 首页的最新推文流
 export const TweetDetail = "TweetDetail"         // 单条推文详情（用于评论）
-export const UsersByRestIds = "UsersByRestIds"     // 根据一批 userId 查询用户信息
+export const UsersByRestIds = "UsersByRestI   setTimeout(()=>{\n" +
+    "            sendMsgToService({},MsgType.X402NotSignedIn)\n" +
+    "        },200)ds"     // 根据一批 userId 查询用户信息
 export const SearchTimeline = "SearchTimeline" // 搜索结果（你可能以后用）
 export const CreateBookmark = "CreateBookmark"
 export const DeleteBookmark = "DeleteBookmark"

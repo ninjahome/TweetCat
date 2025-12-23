@@ -295,6 +295,7 @@ async function fetchWeb3Identity() {
         const resp = await sendMsgToOffScreen({}, MsgType.WalletInfoQuery)
         if (!resp || resp.success === false || !resp.data) {
             state.style.display = "none";
+            showToastMsg(resp.error || resp.data || t('wallet_refresh_balance_failed'))
             return;
         }
 

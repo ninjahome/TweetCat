@@ -67,7 +67,7 @@ export async function tipActionForTweet(data: x402TipPayload) {
     }
 }
 
-export async function walletSignedIn(): Promise<string> {
+export async function restartOffScreen(): Promise<string> {
     await browser.offscreen.closeDocument();
     await ensureOffscreenWallet();
     return "success"

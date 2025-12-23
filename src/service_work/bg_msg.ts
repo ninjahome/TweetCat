@@ -30,7 +30,7 @@ import {
 } from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
-import {tipActionForTweet, walletSignedIn} from "./bg_x402";
+import {tipActionForTweet, restartOffScreen} from "./bg_x402";
 import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
 import {x402TipPayload} from "../common/x402_obj";
 
@@ -228,8 +228,14 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return await msgExportPriKye(request.data as string);
         }
 
-        case MsgType.X402EmbeddWalletSignIn: {
-            return {success: true, data: await walletSignedIn()};
+        case MsgType.X402EmbeddWalletSignIn : {
+            return {success: true, data: await restartOffScreen()};
+        }
+
+        case MsgType.X402NotSignedIn: {
+            console.log("======>>>>closeDocument")
+            await browser.offscreen.closeDocument();
+            return {success: true};
         }
 
         default:

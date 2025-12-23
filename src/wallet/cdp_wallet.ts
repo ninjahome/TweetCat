@@ -6,7 +6,6 @@ import {
     parseUnits,
     http,
     formatEther,
-    createWalletClient,
     formatUnits, isAddress, getAddress, encodeFunctionData,
 } from 'viem'
 import {
@@ -16,7 +15,7 @@ import {
     X402_FACILITATORS
 } from "../common/x402_obj";
 import {getChainId} from "./wallet_setting";
-import {EvmAddress, getCurrentUser, isSignedIn, toViemAccount,sendUserOperation} from "@coinbase/cdp-core";
+import {EvmAddress, getCurrentUser, isSignedIn, sendUserOperation} from "@coinbase/cdp-core";
 
 const ERC20_BALANCE_ABI = [
     {
@@ -60,18 +59,6 @@ function getChain(chainId: number) {
     if (chainId === ChainIDBaseMain) return base;
     if (chainId === ChainIDBaseSepolia) return baseSepolia;
     throw new Error("Unsupported chain");
-}
-
-async function getWalletClient(chainId: number) {
-    const addr = await  _address()
-    const account = toViemAccount(addr);
-    const chain = getChain(chainId);
-
-    return createWalletClient({
-        account,
-        chain,
-        transport: http(), // Base 有官方免费 RPC，Smart Account 会处理签名
-    });
 }
 
 export function getPublicClient(chainId: number) {
