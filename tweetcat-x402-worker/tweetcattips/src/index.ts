@@ -74,9 +74,9 @@ export default {
 
 			const encoded = btoa(JSON.stringify(paymentRequired));
 			console.log("[402 Payment Required]", paymentRequired);
-			return new Response(null, {
+			return new Response(JSON.stringify({}), {
 				status: 402,
-				headers: {...corsHeaders, "PAYMENT-REQUIRED": encoded}
+				headers: {...corsHeaders, "Content-Type": "application/json", "PAYMENT-REQUIRED": encoded}
 			});
 		}
 
