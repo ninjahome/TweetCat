@@ -28,7 +28,7 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
         chainId: ChainIDBaseSepolia,
         network: ChainNameBaseSepolia,
         usdcAddress: BASE_SEPOLIA_USDC,
-        settlementContract: "0xE400dfed2E03D5AFE012cCB4b4cAa74bfdB5A257",
+        settlementContract: "0x1BD5fF7e17ec7950cAA06BF2DeB0038C54d31Fc2",
         endpoint: "https://facilitator.sepolia.x402.org",
         browser:BASE_SEPOLIA_DEFAULT_RPC,
     },
@@ -38,7 +38,7 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
         chainId: ChainIDBaseMain,
         network: ChainNameBaseMain,
         usdcAddress: BASE_MAINNET_USDC,
-        settlementContract: "0xE400dfed2E03D5AFE012cCB4b4cAa74bfdB5A257",
+        settlementContract: "0x1BD5fF7e17ec7950cAA06BF2DeB0038C54d31Fc2",
         endpoint: "https://facilitator.x402.org",
         browser:BASE_MAINNET_DEFAULT_RPC,
     },
@@ -49,8 +49,6 @@ export interface x402TipPayload {
     usdcVal: number
     payTo?: string;
 }
-
-export const MAX_TIP_AMOUNT = 1000;
 
 export async function tryGetSignedInUser() {
     await initCDP();
@@ -71,7 +69,7 @@ export async function initCDP() {
     await initialize({
         projectId: PROJECT_ID,
         ethereum: {
-            createOnLogin: "smart",
+            createOnLogin: "eoa",
         },
     });
 }

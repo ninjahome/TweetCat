@@ -5,8 +5,12 @@ import {showView} from "../common/utils";
 import {dashRouter} from "./dashboard";
 import browser from "webextension-polyfill";
 import {getReadableNetworkName, initSettingsPanel,} from "./dash_setting";
-import {X402_FACILITATORS} from "../common/x402_obj";
-import {getWalletAddress, queryCdpWalletInfo, transferETH, transferUSDC} from "../wallet/cdp_wallet";
+import {doSignOut, X402_FACILITATORS} from "../common/x402_obj";
+import {
+    getWalletAddress,
+    queryCdpWalletInfo,
+    transferETHEoa, transferUSDCEoa
+} from "../wallet/cdp_wallet";
 import {getChainId} from "../wallet/wallet_setting";
 
 function openTransferEthDialog(): Promise<TransferEthFormValues | null> {
@@ -155,7 +159,7 @@ async function handleTransferEth(): Promise<void> {
     try {
         showLoading(t("wallet_sending_transaction") || "");
         const chainID = await getChainId()
-        const hash = await transferETH(chainID, to, amount)
+        const hash = await transferETHEoa(chainID, to, amount)
         browser.tabs.create({url: X402_FACILITATORS[chainID].browser + "/tx/" + hash}).then()
         refreshBalances().then();
     } catch (error) {
@@ -218,7 +222,7 @@ async function handleTransferToken(): Promise<void> {
     try {
         showLoading(t("wallet_sending_transaction"));
         const chainID = await getChainId()
-        const hash = await transferUSDC(chainID, to, amount)
+        const hash = await transferUSDCEoa(chainID, to, amount)
         browser.tabs.create({url: X402_FACILITATORS[chainID].browser + "/tx/" + hash}).then()
         refreshBalances().then();
     } catch (error) {
@@ -252,6 +256,13 @@ function setupWalletActionButtons(): void {
     const backBtn = $Id("wallet-back-btn") as HTMLButtonElement;
     backBtn.onclick = async () => {
         showView('#onboarding/main-home', dashRouter);
+    }
+
+    const signOutBtn = $Id("btn-sign-out") as HTMLButtonElement;
+    signOutBtn.textContent = t('wallet_action_sign_out');
+    signOutBtn.onclick = async () => {
+        await doSignOut();
+        await initWalletOrCreate();
     }
 }
 

@@ -1,15 +1,15 @@
 {
   "dependencies": {
-    "@coinbase/cdp-core": "^0.0.73",
-    "@coinbase/cdp-hooks": "^0.0.73",
-    "@x402/core": "^2.0.0",
-    "@x402/evm": "^2.0.0",
-    "@x402/fetch": "^2.0.0",
+    "@coinbase/cdp-core": "^0.0.74",
+    "@x402/evm": "^2.1.0",
+    "@x402/fetch": "^2.1.0",
     "date-fns": "^4.1.0",
     "ethers": "^5.8.0",
     "hls.js": "^1.6.10",
     "kubo-rpc-client": "^6.0.2",
-    "viem": "^2.43.2",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "viem": "^2.43.3",
     "webextension-polyfill": "^0.12.0",
     "x-client-transaction-id": "^0.1.8",
     "x402-fetch": "^0.7.3"
@@ -34,5 +34,5 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
-  "version": "3.1.15"
+  "version": "3.1.17"
 }

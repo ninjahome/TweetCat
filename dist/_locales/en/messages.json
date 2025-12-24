@@ -411,6 +411,9 @@
   "wallet_action_transfer_token": {
     "message": "Transfer token"
   },
+  "wallet_action_sign_out": {
+    "message": "Sign Out Wallet"
+  },
   "wallet_action_sign_message": {
     "message": "Sign message"
   },

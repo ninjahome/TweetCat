@@ -1,159 +1,112 @@
-import * as jose from 'jose';
+import { Hono } from "hono";
+import { cors } from 'hono/cors';
+import { x402ResourceServer, HTTPFacilitatorClient } from "@x402/core/server";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
 
 export interface Env {
 	CDP_API_KEY_ID?: string;
 	CDP_API_KEY_SECRET?: string;
 }
 
-interface X402SettleResponse {
-	success: boolean;
-	transactionHash?: string;
-	transaction?: string;
-	payer?: string;
-	network?: string;
-	errorReason?: string;
-}
+const app = new Hono<{ Bindings: Env }>();
 
-// 配置网络：false 表示测试网（Base Sepolia），true 表示主网（Base 主网）
 const IS_MAINNET = false;
-const NETWORK = IS_MAINNET ? "eip155:8453" : "eip155:84532";  // 使用 CAIP-2 网络标识:contentReference[oaicite:10]{index=10}
-
-// 配置 Facilitator 接口 URL：测试网使用公共facilitator，主网使用CDP平台接口
+const NETWORK = IS_MAINNET ? "eip155:8453" : "eip155:84532";
 const FACILITATOR_URL = IS_MAINNET
-	? "https://api.cdp.coinbase.com/platform/v2/x402/settle"
+	? "https://facilitator.cdp.coinbase.com/v1/x402/settle"
 	: "https://x402.org/facilitator";
 
-const corsHeaders = {
-	"Access-Control-Allow-Origin": "*",
-	"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-	"Access-Control-Allow-Headers": "Content-Type, PAYMENT-SIGNATURE, X-Requested-With",
-	"Access-Control-Expose-Headers": "PAYMENT-REQUIRED, PAYMENT-RESPONSE"
-};
+// --- CORS 配置 (严格匹配文档) ---
+app.use('*', cors({
+	origin: '*',
+	allowMethods: ['GET', 'POST', 'OPTIONS'],
+	allowHeaders: ['Content-Type', 'Payment', 'Payment-Signature', 'X-Payment'],
+	exposeHeaders: ['Payment-Required', 'Payment-Response', 'PAYMENT-REQUIRED', 'PAYMENT-RESPONSE'],
+}));
 
-export default {
-	async fetch(req: Request, env: Env): Promise<Response> {
-		console.log("[ENTRY] New request", req.method, req.url);
-		if (req.method === "OPTIONS") {
-			// 处理预检请求
-			return new Response(null, {headers: corsHeaders});
+// 1️⃣ 初始化 Resource Server
+const facilitatorClient = new HTTPFacilitatorClient({ url: FACILITATOR_URL });
+const resourceServer = new x402ResourceServer(facilitatorClient)
+	.register("eip155:*", new ExactEvmScheme());
+
+// --- 辅助函数：Base64 编解码 ---
+const encode = (obj: any) => btoa(JSON.stringify(obj));
+const decode = (str: string) => JSON.parse(atob(str));
+
+// 2️⃣ 业务路由
+app.get("/tip", async (c) => {
+	const payTo = c.req.query('payTo');
+	const amountStr = c.req.query('amount') || "0.01";
+	if (!payTo) return c.json({ error: "Missing payTo" }, 400);
+	const atomicAmount = (Math.round(parseFloat(amountStr) * 1_000_000)).toString();
+	const requirements = {
+		scheme: "exact" as const,
+		network: NETWORK, // "eip155:84532"
+		asset: IS_MAINNET
+			? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"  // 主网 USDC
+			: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // 测试网 USDC
+		amount: atomicAmount,
+		payTo: payTo as `0x${string}`,
+		maxTimeoutSeconds: 300,
+		extra: {
+			name: "USDC",
+			version: "2",
+			resourceUrl: c.req.url
 		}
+	}as const;
 
-		const url = new URL(req.url);
-		if (url.pathname !== "/tip") {
-			return new Response("Not Found", {status: 404, headers: corsHeaders});
-		}
+	const resource = {
+		url: c.req.url,
+		description: "Tweet Tip Payment",
+		mimeType: "application/json",
+	};
+	// 3️⃣ 检查支付 Header (支持多种写法)
+	const paymentHeader = c.req.header('Payment-Signature') ||
+		c.req.header('PAYMENT-SIGNATURE') ||
+		c.req.header('X-Payment');
 
-		// 提取支付参数
-		const payTo = url.searchParams.get("payTo");      // 接收付款的合约地址
-		const amountStr = url.searchParams.get("amount"); // 支付金额（USDC）
-		console.log("[PARAMS]", {payTo, amountStr});
-		if (!payTo || !/^0x[a-fA-F0-9]{40}$/.test(payTo) || !amountStr || isNaN(Number(amountStr))) {
-			// 基础校验未通过
-			return new Response(JSON.stringify({error: "Invalid parameters"}), {
-				status: 400,
-				headers: {...corsHeaders, "Content-Type": "application/json"}
-			});
-		}
+	if (!paymentHeader) {
+		console.log("--- [x402] No payment header, sending 402 ---");
+		// 手动生成 402 响应头
+		const paymentRequired = resourceServer.createPaymentRequiredResponse([requirements], resource);
+		const encodedReq = encode(paymentRequired);
 
-		// **阶段1**：返回支付要求 (402)
-		const paymentSignature = req.headers.get("PAYMENT-SIGNATURE");  // 检查客户端是否已附带支付签名头:contentReference[oaicite:11]{index=11}
-		if (!paymentSignature) {
-			const price = `$${Number(amountStr).toFixed(2)}`;
-
-			const paymentRequired = {
-				x402Version: 2,
-				resource: {
-					url: req.url,
-					description: "Tweet tip",
-					mimeType: "application/json",
-				},
-				accepts: [
-					{
-						scheme: "exact",
-						network: NETWORK,
-						payTo,
-						price: price,
-					},
-				],
-			};
-
-			const encoded = btoa(JSON.stringify(paymentRequired));
-			console.log("[402 Payment Required]", paymentRequired);
-			return new Response(JSON.stringify({}), {
-				status: 402,
-				headers: {...corsHeaders, "Content-Type": "application/json", "PAYMENT-REQUIRED": encoded}
-			});
-		}
-
-		// **阶段2**：收到 PAYMENT-SIGNATURE，向 facilitator 验证并结算交易
-		console.log("[HAS PAYMENT-SIGNATURE]", paymentSignature);
-		const requirements = [
-			{scheme: "exact", price: `$${Number(amountStr).toFixed(2)}`, network: NETWORK, payTo}
-		];
-		const settlePayload = {paymentSignature, requirements};
-		console.log("[SETTLE PAYLOAD]", settlePayload);
-
-		// 配置请求头（如主网需要添加 JWT 授权）
-		const headers: Record<string, string> = {"Content-Type": "application/json"};
-		if (IS_MAINNET) {
-			// 使用 CDP API 密钥生成 JWT，用于主网结算认证
-			if (!env.CDP_API_KEY_ID || !env.CDP_API_KEY_SECRET) {
-				return new Response(JSON.stringify({error: "Missing credentials"}), {
-					status: 500, headers: {...corsHeaders, "Content-Type": "application/json"}
-				});
-			}
-			try {
-				const secretPEM = env.CDP_API_KEY_SECRET.replace(/\\n/g, "\n");
-				const privateKey = await jose.importPKCS8(secretPEM, "ES256");
-				const jwt = await new jose.SignJWT({})
-					.setProtectedHeader({alg: "ES256"})
-					.setIssuer(env.CDP_API_KEY_ID)
-					.setSubject(env.CDP_API_KEY_ID)
-					.setIssuedAt()
-					.setExpirationTime("2m")
-					.sign(privateKey);
-				headers["Authorization"] = `Bearer ${jwt}`;
-			} catch (err) {
-				console.error("[JWT ERROR]", err);
-			}
-		}
-
-		// 调用 Facilitator 执行结算请求
-		let facilitatorResp: Response;
-		try {
-			facilitatorResp = await fetch(FACILITATOR_URL, {
-				method: "POST",
-				headers,
-				body: JSON.stringify(settlePayload)
-			});
-		} catch (err) {
-			console.error("[FACILITATOR FETCH ERROR]", err);
-			return new Response(JSON.stringify({error: "Facilitator request failed", detail: err}), {
-				status: 502, headers: {...corsHeaders, "Content-Type": "application/json"}
-			});
-		}
-
-		// 读取结算结果
-		let result: X402SettleResponse;
-		try {
-			result = await facilitatorResp.json() as X402SettleResponse;
-		} catch (err) {
-			console.error("[SETTLEMENT PARSE ERROR]", err);
-			return new Response(JSON.stringify({error: "Invalid facilitator response", detail: err}), {
-				status: 502, headers: {...corsHeaders, "Content-Type": "application/json"}
-			});
-		}
-		console.log("[FACILITATOR RESULT]", result);
-
-		// 将结算结果编码返回给客户端，同时返回200内容（例如交易哈希等）
-		const encodedResponse = btoa(JSON.stringify(result));
-		return new Response(JSON.stringify(result), {
-			status: 200,
-			headers: {
-				...corsHeaders,
-				"Content-Type": "application/json",
-				"PAYMENT-RESPONSE": encodedResponse
-			}
-		});
+		c.status(402);
+		c.header("Payment-Required", encodedReq);
+		c.header("PAYMENT-REQUIRED", encodedReq); // 双重保障
+		return c.json({ error: "Payment Required", message: "Please pay to continue" });
 	}
-};
+
+	try {
+		console.log("--- [x402] Payment header found, verifying... ---");
+		const paymentPayload = decode(paymentHeader);
+
+		// 4️⃣ 验证支付结果 (Verify)
+		const verifyResult = await resourceServer.verifyPayment(paymentPayload, requirements);
+		if (!verifyResult.isValid) {
+			console.error("--- [x402] Verify failed:", verifyResult.invalidReason);
+			return c.json({ error: "Invalid Payment", reason: verifyResult.invalidReason }, 402);
+		}
+
+		// 5️⃣ 结算支付 (Settle)
+		console.log("--- [x402] Verifed, settling... ---");
+		const settleResult = await resourceServer.settlePayment(paymentPayload, requirements);
+
+		// 6️⃣ 构造成功响应
+		const encodedRes = encode(settleResult);
+		c.header("Payment-Response", encodedRes);
+		c.header("PAYMENT-RESPONSE", encodedRes);
+
+		return c.json({
+			success: true,
+			txHash: settleResult.transaction || (settleResult as any).transactionHash,
+			message: "Tip received!"
+		});
+
+	} catch (err: any) {
+		console.error("--- [x402] Processing error:", err);
+		return c.json({ error: "Internal Server Error", detail: err.message }, 500);
+	}
+});
+
+export default app;

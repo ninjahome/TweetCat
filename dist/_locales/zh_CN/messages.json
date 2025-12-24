@@ -411,6 +411,9 @@
   "wallet_action_transfer_token": {
     "message": "转账代币"
   },
+  "wallet_action_sign_out": {
+    "message": "退出钱包"
+  },
   "wallet_action_sign_message": {
     "message": "签名消息"
   },
