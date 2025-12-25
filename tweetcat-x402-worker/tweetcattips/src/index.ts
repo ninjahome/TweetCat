@@ -119,7 +119,7 @@ app.get("/tip", async (c) => {
 		payTo: payTo as `0x${string}`,
 		maxTimeoutSeconds: 300,
 		extra: {
-			name: "USDC",
+			name: "USD Coin",
 			version: "2",
 			resourceUrl: c.req.url,
 		},
