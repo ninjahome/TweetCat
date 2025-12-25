@@ -5,8 +5,6 @@ import {initX402Client} from "../wallet/cdp_wallet";
 import {logX402} from "../common/debug_flags";
 import {t} from "../common/i18n";
 
-const WORKER_URL = "https://tweetcattips.ribencong.workers.dev";
-
 // DOM 元素
 let statusDiv: HTMLElement;
 let loadingDiv: HTMLElement;
@@ -117,9 +115,8 @@ async function processTipPayment(payload: x402TipPayload) {
         updateStatus(t('fetching_network_info'));
         const chainId = await getChainId();
         const settleAddress = X402_FACILITATORS[chainId].settlementContract;
-
-        // 4. 构造支付 URL
-        const tipUrl = `${WORKER_URL}/tip?payTo=${settleAddress}&amount=${payload.usdcVal}&tweetId=${payload.tweetId}&authorId=${payload.authorId}`;
+        const end_point = X402_FACILITATORS[chainId].endpoint;
+        const tipUrl = `${end_point}?payTo=${settleAddress}&amount=${payload.usdcVal}&tweetId=${payload.tweetId}&authorId=${payload.authorId}`;
 
         updateStatus(t('requesting_payment'));
 
