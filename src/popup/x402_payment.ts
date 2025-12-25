@@ -1,10 +1,9 @@
-import browser from "webextension-polyfill";
 import {isSignedIn} from "@coinbase/cdp-core";
 import {initCDP, X402_FACILITATORS, x402TipPayload} from "../common/x402_obj";
 import {getChainId} from "../wallet/wallet_setting";
 import {initX402Client} from "../wallet/cdp_wallet";
 import {logX402} from "../common/debug_flags";
-import {showPopupWindow} from "./common";
+import {t} from "../common/i18n";
 
 const WORKER_URL = "https://tweetcattips.ribencong.workers.dev";
 
@@ -14,12 +13,54 @@ let loadingDiv: HTMLElement;
 let tweetInfoDiv: HTMLElement;
 let btnClose: HTMLElement;
 
+// 翻译函数
+function translateStaticTexts() {
+    // 设置页面标题
+    document.title = t('page_title');
+
+    // 设置页面标题
+    const pageHeader = document.getElementById('pageHeader');
+    if (pageHeader) {
+        pageHeader.textContent = t('page_header');
+    }
+
+    // 设置推文标签
+    const tweetIdLabel = document.getElementById('tweetIdLabel');
+    if (tweetIdLabel) {
+        tweetIdLabel.textContent = t('tweet_id_label');
+    }
+
+    const authorIdLabel = document.getElementById('authorIdLabel');
+    if (authorIdLabel) {
+        authorIdLabel.textContent = t('author_id_label');
+    }
+
+    // 设置货币单位
+    const currencyUnit = document.getElementById('currencyUnit');
+    if (currencyUnit) {
+        currencyUnit.textContent = t('currency_unit');
+    }
+
+    // 设置关闭按钮
+    if (btnClose) {
+        btnClose.textContent = t('close_button');
+    }
+
+    // 设置初始状态文本
+    const defaultStatusText = statusDiv.getAttribute('data-default-text');
+    if (defaultStatusText) {
+        statusDiv.textContent = t('initializing_status');
+    }
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     // 获取 DOM 元素
     statusDiv = document.getElementById('status')!;
     loadingDiv = document.getElementById('loading')!;
     tweetInfoDiv = document.getElementById('tweetInfo')!;
     btnClose = document.getElementById('btnClose')!;
+
+    translateStaticTexts();
 
     btnClose.onclick = () => window.close();
 
@@ -28,27 +69,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     const payloadStr = params.get('payload');
 
     if (!payloadStr) {
-        showError('缺少支付参数');
+        showError(t('missing_payload_error'));
         return;
     }
     try {
         const payload: x402TipPayload = JSON.parse(decodeURIComponent(payloadStr));
-
-        // 显示推文信息
         showTweetInfo(payload);
-
-        // 执行支付
         await processTipPayment(payload);
     } catch (err) {
         console.error('Payment initialization error:', err);
-        showError(err.message);
+        showError(err.message || t('initialization_error'));
     }
 });
 
 function showTweetInfo(payload: x402TipPayload) {
-    document.getElementById('tweetId')!.textContent = payload.tweetId;
-    document.getElementById('authorId')!.textContent = payload.authorId;
-    document.getElementById('amount')!.textContent = payload.usdcVal.toFixed(2);
+    const tweetIdElement = document.getElementById('tweetId');
+    const authorIdElement = document.getElementById('authorId');
+    const amountElement = document.getElementById('amount');
+
+    if (tweetIdElement) tweetIdElement.textContent = payload.tweetId;
+    if (authorIdElement) authorIdElement.textContent = payload.authorId;
+    if (amountElement) amountElement.textContent = payload.usdcVal.toFixed(2);
+
     tweetInfoDiv.style.display = 'block';
 }
 
@@ -57,29 +99,29 @@ async function processTipPayment(payload: x402TipPayload) {
         await initCDP();
 
         // 1. 检查登录状态
-        updateStatus('检查登录状态...');
+        updateStatus(t('checking_login_status'));
         const signed = await isSignedIn();
         if (!signed) {
-            showError('请先登录 Coinbase 钱包');
+            showError(t('coinbase_login_error'));
             return
         }
 
         // 2. 验证金额
-        updateStatus('验证支付金额...');
+        updateStatus(t('verifying_payment_amount'));
         if (!payload.usdcVal || payload.usdcVal <= 0 || payload.usdcVal > 1000) {
-            showError('无效的支付金额');
+            showError(t('invalid_payment_amount'));
             return
         }
 
         // 3. 获取链信息
-        updateStatus('获取网络信息...');
+        updateStatus(t('fetching_network_info'));
         const chainId = await getChainId();
         const settleAddress = X402_FACILITATORS[chainId].settlementContract;
 
         // 4. 构造支付 URL
         const tipUrl = `${WORKER_URL}/tip?payTo=${settleAddress}&amount=${payload.usdcVal}&tweetId=${payload.tweetId}&authorId=${payload.authorId}`;
 
-        updateStatus('正在请求支付...\n请在弹出的窗口中确认');
+        updateStatus(t('requesting_payment'));
 
         const selfFetch = await initX402Client()
         const response = await selfFetch(tipUrl, {
@@ -91,7 +133,7 @@ async function processTipPayment(payload: x402TipPayload) {
         if (!response.ok) {
             const text = await response.text();
             logX402("------>>>x402 error:", text);
-            showError(`支付后请求失败 (${response.status}): ${text}`);
+            showError(`${t('post_payment_failure')} (${response.status}): ${text}`);
             return
         }
         const result = await response.json();
@@ -99,7 +141,7 @@ async function processTipPayment(payload: x402TipPayload) {
         // 6. 显示成功
         const txHash = result.txHash || result.transactionHash;
         logX402("-------x402>>>result,", result)
-        showSuccess(`✅ 打赏成功！`, txHash);
+        showSuccess(t('tip_success'), txHash);
 
         // 7. 自动关闭（延迟以便用户看到结果）
         setTimeout(() => {
@@ -108,7 +150,7 @@ async function processTipPayment(payload: x402TipPayload) {
 
     } catch (error) {
         console.error('❌ Payment error:', error);
-        showError(error.message || '支付过程中发生错误');
+        showError(error.message || t('payment_process_error'));
     }
 }
 
@@ -129,9 +171,9 @@ function showSuccess(msg: string, txHash?: string) {
 
     let html = `<div>${msg}</div>`;
     if (txHash) {
-        html += `<div class="txhash">TxHash: ${txHash}</div>`;
+        html += `<div class="txhash">${t('txhash_label')}: ${txHash}</div>`;
     }
-    html += `<div style="margin-top: 12px; font-size: 14px;">窗口将在 10 秒后自动关闭</div>`;
+    html += `<div style="margin-top: 12px; font-size: 14px;">${t('window_auto_close')}</div>`;
 
     statusDiv.innerHTML = html;
     statusDiv.className = 'status success';

@@ -630,7 +630,6 @@
   "wallet_refresh_balance_failed": {
     "message": "刷新余额失败"
   },
-
   "wallet_prompt_password_export_pk": {
     "message": "请输入钱包口令以导出私钥"
   },
@@ -643,7 +642,6 @@
   "wallet_export_pk_failed": {
     "message": "导出私钥失败"
   },
-
   "wallet_prompt_transfer_to": {
     "message": "请输入接收地址"
   },
@@ -662,7 +660,6 @@
   "wallet_transfer_eth_failed": {
     "message": "转账失败"
   },
-
   "wallet_prompt_token_address": {
     "message": "请输入代币合约地址"
   },
@@ -681,7 +678,6 @@
   "wallet_transfer_token_failed": {
     "message": "代币转账失败"
   },
-
   "wallet_prompt_sign_message": {
     "message": "请输入要签名的消息"
   },
@@ -697,7 +693,6 @@
   "wallet_sign_message_failed": {
     "message": "签名失败"
   },
-
   "wallet_prompt_sign_typed_json": {
     "message": "请输入包含 domain/types/value 的 JSON"
   },
@@ -716,7 +711,6 @@
   "wallet_sign_typed_failed": {
     "message": "TypedData 签名失败"
   },
-
   "wallet_prompt_verify_signature_input_signature": {
     "message": "请输入签名字符串"
   },
@@ -741,7 +735,6 @@
   "wallet_verify_signer_alert_prefix": {
     "message": "签名者："
   },
-
   "wallet_error_operation_cancelled": {
     "message": "操作已取消"
   },
@@ -769,7 +762,6 @@
   "wallet_error_message_or_typed_required": {
     "message": "请提供消息或 TypedData"
   },
-
   "ipfs_error_custom_api_url_required": {
     "message": "请填写自建节点 API URL"
   },
@@ -785,7 +777,6 @@
   "ipfs_save_failed": {
     "message": "保存失败"
   },
-
   "ipfs_set_tweetcat_default_success": {
     "message": "已设为 TweetCat 默认"
   },
@@ -840,32 +831,27 @@
   "wallet_transfer_eth_subtitle": {
     "message": "请确认收款地址和转账金额，提交后将发起链上交易。"
   },
-
   "wallet_transfer_to_label": {
     "message": "收款地址"
   },
   "wallet_transfer_to_hint": {
     "message": "请确保复制的地址正确，链上转账一旦发出将无法撤回。"
   },
-
   "wallet_transfer_amount_label": {
     "message": "转账数量"
   },
   "wallet_transfer_fee_hint": {
     "message": "实际可用余额 ≈ 当前余额 − 预估网络手续费。"
   },
-
   "wallet_transfer_gas_label": {
     "message": "Gas 限额（可选）"
   },
   "wallet_transfer_gas_hint": {
     "message": "Gas 设置过低可能导致交易失败，但仍然消耗部分手续费。"
   },
-
   "wallet_transfer_confirm_btn": {
     "message": "确认并发送"
   },
-
   "wallet_current_balance": {
     "message": "当前余额"
   },
@@ -884,7 +870,6 @@
   "wallet_transfer_token_subtitle": {
     "message": "请仔细确认代币合约地址、收款地址和转账数量，提交后将发起链上交易。"
   },
-
   "wallet_token_address_label": {
     "message": "代币合约地址"
   },
@@ -894,22 +879,18 @@
   "wallet_token_address_hint": {
     "message": "默认使用当前网络的官方 USDC 合约地址。"
   },
-
   "wallet_transfer_token_amount_label": {
     "message": "转账数量"
   },
   "wallet_transfer_token_fee_hint": {
     "message": "请确保钱包中仍有足够的 ETH 用于支付网络手续费。"
   },
-
   "wallet_token_decimals_label": {
     "message": "代币精度（decimals）"
   },
-
   "wallet_transfer_token_confirm_btn": {
     "message": "确认并发送"
   },
-
   "wallet_token_address_required": {
     "message": "请输入代币合约地址。"
   },
@@ -928,8 +909,110 @@
   "cdp_wallet_connect": {
     "message": "链接 Coinbase 钱包"
   },
-  "coinbase_signin_tip": {
-    "message": "请先连接 Coinbase 钱包"
+  "missing_payload_error": {
+    "message": "缺少支付参数"
+  },
+  "coinbase_login_error": {
+    "message": "请先登录 Coinbase 钱包"
+  },
+  "invalid_payment_amount": {
+    "message": "无效的支付金额"
+  },
+  "checking_login_status": {
+    "message": "检查登录状态..."
+  },
+  "verifying_payment_amount": {
+    "message": "验证支付金额..."
+  },
+  "fetching_network_info": {
+    "message": "获取网络信息..."
+  },
+  "requesting_payment": {
+    "message": "正在请求支付...\n请在弹出的窗口中确认"
+  },
+  "post_payment_failure": {
+    "message": "支付后请求失败"
+  },
+  "payment_process_error": {
+    "message": "支付过程中发生错误"
+  },
+  "tip_success": {
+    "message": "✅ 打赏成功！"
+  },
+  "window_auto_close": {
+    "message": "窗口将在 10 秒后自动关闭"
+  },
+  "page_title": {
+    "message": "X402 支付确认"
+  },
+  "page_header": {
+    "message": "💎 X402 打赏支付"
+  },
+  "tweet_id_label": {
+    "message": "推文 ID:"
+  },
+  "author_id_label": {
+    "message": "作者 ID:"
+  },
+  "currency_unit": {
+    "message": "USDC"
+  },
+  "close_button": {
+    "message": "关闭"
+  },
+  "initializing_status": {
+    "message": "正在初始化..."
+  },
+  "initialization_error": {
+    "message": "支付初始化错误"
+  },
+  "txhash_label": {
+    "message": "交易哈希"
+  },
+  "connect_wallet_page_title": {
+    "message": "连接 Coinbase 钱包"
+  },
+  "connect_wallet_page_header": {
+    "message": "连接钱包"
+  },
+  "connect_wallet_description": {
+    "message": "选择一种方式登录 Coinbase"
+  },
+  "sign_in_with_google": {
+    "message": "使用 Google 登录"
+  },
+  "sign_in_with_apple": {
+    "message": "使用 Apple 登录"
+  },
+  "sign_in_with_x": {
+    "message": "使用 X 登录"
+  },
+  "initializing_coinbase_wallet_sdk": {
+    "message": "正在初始化 Coinbase 钱包 SDK"
+  },
+  "initialization_failed": {
+    "message": "初始化失败"
+  },
+  "login_success_completing_connection": {
+    "message": "登录成功，正在完成连接..."
+  },
+  "login_success_window_closing": {
+    "message": "登录成功！窗口即将关闭..."
+  },
+  "wallet_connected": {
+    "message": "钱包已连接"
+  },
+  "redirecting_to_login": {
+    "message": "正在跳转到 $1 登录..."
+  },
+  "accessing_x402_service": {
+    "message": "正在访问 X402 服务"
+  },
+  "fetch_tweet_info_failed": {
+    "message": "获取推文信息失败: $1"
+  },
+  "user_tip_button_title": {
+    "message": "打赏($1)U"
   }
 }
 

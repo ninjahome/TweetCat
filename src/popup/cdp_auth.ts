@@ -1,13 +1,51 @@
-import {getCurrentUser,OAuth2ProviderType, signInWithOAuth} from "@coinbase/cdp-core";
+import {getCurrentUser, OAuth2ProviderType, signInWithOAuth} from "@coinbase/cdp-core";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {initCDP} from "../common/x402_obj";
 import {$Id, hideLoading, showLoading} from "./common";
+import {t} from "../common/i18n";
+
+// 翻译静态文本
+function translateStaticTexts() {
+    // 设置页面标题
+    document.title = t('connect_wallet_page_title');
+
+    // 设置页面标题（h2）
+    const pageHeader = document.getElementById('pageHeader');
+    if (pageHeader) {
+        pageHeader.textContent = t('connect_wallet_page_header');
+    }
+
+    // 设置描述文本
+    const description = document.getElementById('description');
+    if (description) {
+        description.textContent = t('connect_wallet_description');
+    }
+
+    // 设置按钮文本
+    const btnGoogle = document.getElementById('btn-google');
+    if (btnGoogle) {
+        btnGoogle.textContent = t('sign_in_with_google');
+    }
+
+    const btnApple = document.getElementById('btn-apple');
+    if (btnApple) {
+        btnApple.textContent = t('sign_in_with_apple');
+    }
+
+    const btnX = document.getElementById('btn-x');
+    if (btnX) {
+        btnX.textContent = t('sign_in_with_x');
+    }
+}
 
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
 
 async function initDashBoard(): Promise<void> {
-    showLoading("初始化 coinbase 钱包SDK")
+    // 先翻译静态文本
+    translateStaticTexts();
+
+    showLoading(t('initializing_coinbase_wallet_sdk'));
     try {
         const params = new URLSearchParams(window.location.search);
         const code = params.get("code");
@@ -22,7 +60,7 @@ async function initDashBoard(): Promise<void> {
 
     } catch (err) {
         console.error(err);
-        document.body.innerText = "初始化失败";
+        document.body.innerText = t('initialization_failed');
     } finally {
         hideLoading();
     }
@@ -33,13 +71,13 @@ async function handleOAuthCallback(
     flowId: string | null,
     provider: string,
 ) {
-    showStatus("登录成功，正在完成连接…");
+    showStatus(t('login_success_completing_connection'));
 
     await initCDP()
 
     const user = await getCurrentUser();
     if (user) {
-        showStatus("登录成功！窗口即将关闭...");
+        showStatus(t('login_success_window_closing'));
         setTimeout(() => window.close(), 1500);
     }
 
@@ -57,7 +95,7 @@ async function init() {
     await initCDP()
     const user = await getCurrentUser();
     if (user) {
-        showStatus("钱包已连接")
+        showStatus(t('wallet_connected'))
         disableLoginButtons();
     }
 
@@ -79,8 +117,8 @@ function disableLoginButtons() {
 
 function signInFunc(typ: OAuth2ProviderType) {
     signInWithOAuth(typ).then(() => {
-        showStatus("正在跳转到 " + typ + " 登录...")
+        showStatus(t('redirecting_to_login', typ));
     }).catch(e => {
-        showStatus(e.toString())
+        showStatus(e.toString());
     });
 }

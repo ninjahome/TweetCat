@@ -28,7 +28,7 @@ browser.runtime.onConnect.addListener(async (port) => {
 
         port.postMessage({
             requestId: msg.requestId,
-            result: {success: false, data: t('coinbase_signin_tip')}
+            result: {success: false, data: t('coinbase_login_error')}
         });
 
         await sendMsgToService({}, MsgType.X402NotSignedIn)

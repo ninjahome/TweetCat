@@ -909,7 +909,109 @@
   "cdp_wallet_connect": {
     "message": "Connect Coinbase Wallet"
   },
-  "coinbase_signin_tip": {
-    "message": "Please connect your Coinbase Wallet first."
+  "missing_payload_error": {
+    "message": "Missing payment parameters"
+  },
+  "coinbase_login_error": {
+    "message": "Please sign in to your Coinbase Wallet first"
+  },
+  "invalid_payment_amount": {
+    "message": "Invalid payment amount"
+  },
+  "checking_login_status": {
+    "message": "Checking login status..."
+  },
+  "verifying_payment_amount": {
+    "message": "Verifying payment amount..."
+  },
+  "fetching_network_info": {
+    "message": "Fetching network information..."
+  },
+  "requesting_payment": {
+    "message": "Requesting payment...\nPlease confirm in the pop-up window"
+  },
+  "post_payment_failure": {
+    "message": "Post-payment request failed"
+  },
+  "payment_process_error": {
+    "message": "An error occurred during payment"
+  },
+  "tip_success": {
+    "message": "✅ Tip successful!"
+  },
+  "window_auto_close": {
+    "message": "The window will close automatically in 10 seconds"
+  },
+  "page_title": {
+    "message": "X402 Payment Confirmation"
+  },
+  "page_header": {
+    "message": "💎 X402 Tip Payment"
+  },
+  "tweet_id_label": {
+    "message": "Tweet ID:"
+  },
+  "author_id_label": {
+    "message": "Author ID:"
+  },
+  "currency_unit": {
+    "message": "USDC"
+  },
+  "close_button": {
+    "message": "Close"
+  },
+  "initializing_status": {
+    "message": "Initializing..."
+  },
+  "initialization_error": {
+    "message": "Payment initialization error"
+  },
+  "txhash_label": {
+    "message": "TxHash"
+  },
+  "connect_wallet_page_title": {
+    "message": "Connect Coinbase Wallet"
+  },
+  "connect_wallet_page_header": {
+    "message": "Connect Wallet"
+  },
+  "connect_wallet_description": {
+    "message": "Choose a way to sign in to Coinbase"
+  },
+  "sign_in_with_google": {
+    "message": "Sign in with Google"
+  },
+  "sign_in_with_apple": {
+    "message": "Sign in with Apple"
+  },
+  "sign_in_with_x": {
+    "message": "Sign in with X"
+  },
+  "initializing_coinbase_wallet_sdk": {
+    "message": "Initializing Coinbase Wallet SDK"
+  },
+  "initialization_failed": {
+    "message": "Initialization failed"
+  },
+  "login_success_completing_connection": {
+    "message": "Login successful, completing connection..."
+  },
+  "login_success_window_closing": {
+    "message": "Login successful! Window will close soon..."
+  },
+  "wallet_connected": {
+    "message": "Wallet connected"
+  },
+  "redirecting_to_login": {
+    "message": "Redirecting to $1 login..."
+  },
+  "accessing_x402_service": {
+    "message": "Accessing X402 service"
+  },
+  "fetch_tweet_info_failed": {
+    "message": "Failed to fetch tweet information: $1"
+  },
+  "user_tip_button_title": {
+    "message": "Tip($1)U"
   }
 }

@@ -18,17 +18,17 @@ export async function cacheTweetInStatus(tweets: EntryObj[]) {
     })
 }
 
+export const tipValInUsdc: number = 0.01
+
 async function tipAction(statusId: string) {
     const obj = tweetsCache.get(statusId)
     if (!obj) {
-        showToastMsg("获取推文信息失败:" + statusId)
+        showToastMsg(t('fetch_tweet_info_failed', statusId));
         console.warn("should not be nil for:", statusId)
         return
     }
-    showGlobalLoading("正在访问 X402 服务")
+    showGlobalLoading(t('accessing_x402_service'));
     try {
-        const tip = 0.01
-
         const resp = await sendMsgToOffScreen({}, MsgType.WalletInfoQuery)
         if (!resp || !resp.success) {
             const msg = resp.data || resp.message || t('wallet_err_no_basic')
@@ -43,14 +43,14 @@ async function tipAction(statusId: string) {
 
         const usdc = Number(data.usdcVal ?? 0)
 
-        if (!Number.isFinite(usdc) || usdc < tip) {
-            showDialog(t('tips_title'), t('wallet_insufficient_funds') + ` USDC ${tip} Needed`)
+        if (!Number.isFinite(usdc) || usdc < tipValInUsdc) {
+            showDialog(t('tips_title'), t('wallet_insufficient_funds') + ` USDC ${tipValInUsdc} Needed`)
             return
         }
 
         logX402("------>>> tip action clicked:")
         const tweet = obj.tweet
-        const payload: x402TipPayload = {tweetId: tweet.rest_id, authorId: tweet.author.authorID, usdcVal: tip}
+        const payload: x402TipPayload = {tweetId: tweet.rest_id, authorId: tweet.author.authorID, usdcVal: tipValInUsdc}
         const req = await sendMsgToService(payload, MsgType.X402TipAction)
         console.log("x402 req:", req)
         if (!req.success) {
@@ -79,6 +79,7 @@ export function addTipBtnForTweet(statusId: string, isTryAgain: boolean = false)
     if (!toolBar || !!toolBar.querySelector(".user-tip-action")) return;
 
     const tipBtn = _contentTemplate.content.getElementById("user-tip-action")?.cloneNode(true) as HTMLElement;
+    (tipBtn.querySelector(".user-tip-btn-title") as HTMLElement).innerText = t('user_tip_button_title', "" + tipValInUsdc)
     tipBtn.removeAttribute("id")
 
     toolBar.insertBefore(tipBtn, toolBar.firstChild)

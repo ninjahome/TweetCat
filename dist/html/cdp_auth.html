@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8" />
-    <title>Connect Coinbase Wallet</title>
+    <title id="pageTitle">Connect Coinbase Wallet</title>
     <link rel="stylesheet" href="../css/common_utils.css"/>
     <style>
         body {
@@ -33,21 +33,20 @@
 </head>
 <body>
 <div class="card">
-    <h2>Connect Wallet</h2>
-    <p>选择一种方式登录 Coinbase</p>
+    <h2 id="pageHeader">Connect Wallet</h2>
+    <p id="description">选择一种方式登录 Coinbase</p>
 
-    <button id="btn-google">Sign in with Google</button>
-    <button id="btn-apple">Sign in with Apple</button>
-    <button id="btn-x">Sign in with X</button>
+    <button id="btn-google" data-i18n-key="sign_in_with_google">Sign in with Google</button>
+    <button id="btn-apple" data-i18n-key="sign_in_with_apple">Sign in with Apple</button>
+    <button id="btn-x" data-i18n-key="sign_in_with_x">Sign in with X</button>
 
     <p id="status" style="margin-top:12px;color:red;"></p>
 </div>
 
-
 <div id="loading-overlay">
     <div id="loading-content">
         <div class="spinner"></div>
-        <div class="loading-message"></div>
+        <div id="loading-message" class="loading-message"></div>
     </div>
 </div>
 

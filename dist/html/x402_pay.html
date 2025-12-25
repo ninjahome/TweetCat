@@ -119,20 +119,19 @@
 </head>
 <body>
 <div class="container">
-  <h1>💎 X402 打赏支付</h1>
+  <h1 id="pageHeader">💎 X402 打赏支付</h1>
 
   <div id="tweetInfo" class="tweet-info" style="display: none;">
-    <p><strong>推文 ID:</strong> <span id="tweetId"></span></p>
-    <p><strong>作者 ID:</strong> <span id="authorId"></span></p>
-    <div class="amount">$<span id="amount"></span> USDC</div>
+    <p><strong><span id="tweetIdLabel">推文 ID:</span></strong> <span id="tweetId"></span></p>
+    <p><strong><span id="authorIdLabel">作者 ID:</span></strong> <span id="authorId"></span></p>
+    <div class="amount">$<span id="amount"></span> <span id="currencyUnit">USDC</span></div>
   </div>
 
   <div class="loading" id="loading"></div>
-  <div class="status" id="status">正在初始化...</div>
+  <div class="status" id="status" data-default-text="正在初始化...">正在初始化...</div>
 
   <button class="btn-close" id="btnClose">关闭</button>
 </div>
-
 <script src="../js/x402_payment.js"></script>
 </body>
 </html>

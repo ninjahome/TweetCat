@@ -84,3 +84,4 @@ export interface walletInfo {
     ethVal: string;
     usdcVal: string;
 }
+
