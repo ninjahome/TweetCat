@@ -4,7 +4,7 @@ import {ethers} from "ethers";
 import {showView} from "../common/utils";
 import {dashRouter} from "./dashboard";
 import browser from "webextension-polyfill";
-import {getReadableNetworkName, initSettingsPanel,} from "./dash_setting";
+import {getReadableNetworkName} from "./dash_setting";
 import {doSignOut, X402_FACILITATORS} from "../common/x402_obj";
 import {
     getWalletAddress,
@@ -279,8 +279,6 @@ export async function initWalletOrCreate(): Promise<void> {
         }
     }
 
-    await initSettingsPanel();
-
     const address = await getWalletAddress();
     const walletConnectBtn = (walletCreateDiv.querySelector(".btn-create-wallet") as HTMLButtonElement);
     walletConnectBtn.textContent = t('cdp_wallet_connect');
@@ -554,10 +552,6 @@ export function initDashboardTexts(): void {
 
     const networkOptionSepolia = $Id('wallet-network-option-base-sepolia');
     if (networkOptionSepolia) networkOptionSepolia.textContent = t('wallet_network_option_base_sepolia');
-
-    // 节点与 RPC 设置区
-    const nodeRpcTitle = $Id('wallet-node-rpc-title');
-    if (nodeRpcTitle) nodeRpcTitle.textContent = t('wallet_node_rpc_title');
 
     const transferTitle = $Id('transfer-eth-title');
     if (transferTitle) {

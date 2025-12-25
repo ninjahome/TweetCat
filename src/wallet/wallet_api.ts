@@ -130,24 +130,6 @@ export async function saveFromMnemonic(mnemonic: string, password: string): Prom
 
 /** ====== Provider 选择（与 dashboard 保持一致） ====== */
 export function getRpcEndpoint(settings: WalletSettings): string {
-    const infuraId = settings.infuraProjectId?.trim();
-    const custom = settings.customRpcUrl?.trim();
-
-    // 1) 自定义 RPC：useDefaultRpc === false 且 customRpcUrl 有值，优先走这里
-    if (!settings.useDefaultRpc && custom) {
-        return custom;
-    }
-
-    // 2) 配了 Infura 的情况：根据 network 选 base 主网 / 测试网
-    if (infuraId) {
-        if (settings.network === ChainNameBaseMain) {
-            return `https://base-mainnet.infura.io/v3/${infuraId}`;
-        } else {
-            return `https://base-sepolia.infura.io/v3/${infuraId}`;
-        }
-    }
-
-    // 3) 否则走默认公共 RPC，直接用你的全局常量
     return settings.network === ChainNameBaseMain
         ? BASE_MAINNET_DEFAULT_RPC
         : BASE_SEPOLIA_DEFAULT_RPC;

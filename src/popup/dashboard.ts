@@ -12,6 +12,7 @@ import {initDashboardTexts, initWalletOrCreate} from "./dash_wallet";
 import {$Id} from "./common";
 import {initIpfsSettingsView} from "./dash_ipfs";
 import {showView} from "../common/utils";
+import {initSettingsPanel} from "./dash_setting";
 
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
@@ -27,11 +28,11 @@ async function initDashBoard(): Promise<void> {
         showView('#onboarding/main-home', dashRouter);
     }
 
-
     initCatMgmBtn();
     initSettings();
     await initWalletOrCreate();
     initIpfsSettingsView();
+    await initSettingsPanel();
 }
 
 

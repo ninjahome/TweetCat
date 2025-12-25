@@ -426,29 +426,11 @@
   "wallet_action_node_settings": {
     "message": "Node & RPC settings"
   },
-  "wallet_node_rpc_title": {
-    "message": "Node & RPC"
-  },
-  "wallet_infura_project_id_label": {
-    "message": "Infura Project ID (optional)"
-  },
-  "wallet_infura_project_id_placeholder": {
-    "message": "Example: 123abc456def"
-  },
-  "wallet_custom_rpc_url_label": {
-    "message": "Custom RPC URL (optional)"
-  },
-  "wallet_custom_rpc_url_placeholder": {
-    "message": "https://example.com/rpc"
-  },
   "wallet_rpc_mode_default": {
     "message": "Use default public RPC"
   },
   "wallet_rpc_mode_custom": {
     "message": "Use custom RPC"
-  },
-  "wallet_save_settings": {
-    "message": "Save"
   },
   "wallet_reset_settings": {
     "message": "Reset to default"

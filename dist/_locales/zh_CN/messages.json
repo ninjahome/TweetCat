@@ -426,29 +426,11 @@
   "wallet_action_node_settings": {
     "message": "节点设置"
   },
-  "wallet_node_rpc_title": {
-    "message": "节点与 RPC"
-  },
-  "wallet_infura_project_id_label": {
-    "message": "Infura Project ID（可选）"
-  },
-  "wallet_infura_project_id_placeholder": {
-    "message": "示例：123abc456def"
-  },
-  "wallet_custom_rpc_url_label": {
-    "message": "自定义 RPC URL（可选）"
-  },
-  "wallet_custom_rpc_url_placeholder": {
-    "message": "https://example.com/rpc"
-  },
   "wallet_rpc_mode_default": {
     "message": "使用默认公共 RPC"
   },
   "wallet_rpc_mode_custom": {
     "message": "使用自定义 RPC"
-  },
-  "wallet_save_settings": {
-    "message": "保存"
   },
   "wallet_reset_settings": {
     "message": "恢复默认"

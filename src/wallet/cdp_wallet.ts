@@ -114,7 +114,7 @@ export async function queryWalletBalance(
     address: string,
     networkId: number,
 ) {
-    if (!address || address === '未知') {
+    if (!address) {
         throw new Error('Invalid address');
     }
 
