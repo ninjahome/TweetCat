@@ -2,7 +2,9 @@ import browser from "webextension-polyfill";
 import {isSignedIn} from "@coinbase/cdp-core";
 import {initCDP, X402_FACILITATORS, x402TipPayload} from "../common/x402_obj";
 import {getChainId} from "../wallet/wallet_setting";
-import {initX402Client, initX402ClientWithPrivateKey} from "../wallet/cdp_wallet";
+import {initX402Client} from "../wallet/cdp_wallet";
+import {logX402} from "../common/debug_flags";
+import {showPopupWindow} from "./common";
 
 const WORKER_URL = "https://tweetcattips.ribencong.workers.dev";
 
@@ -59,13 +61,7 @@ async function processTipPayment(payload: x402TipPayload) {
         const signed = await isSignedIn();
         if (!signed) {
             showError('请先登录 Coinbase 钱包');
-            setTimeout(() => {
-                browser.tabs.create({
-                    url: browser.runtime.getURL('html/cdp_auth.html')
-                });
-                window.close();
-            }, 2000);
-            return;
+            return
         }
 
         // 2. 验证金额
@@ -94,7 +90,7 @@ async function processTipPayment(payload: x402TipPayload) {
         });
         if (!response.ok) {
             const text = await response.text();
-            console.log("------>>>error:", text);
+            logX402("------>>>x402 error:", text);
             showError(`支付后请求失败 (${response.status}): ${text}`);
             return
         }
@@ -102,12 +98,12 @@ async function processTipPayment(payload: x402TipPayload) {
 
         // 6. 显示成功
         const txHash = result.txHash || result.transactionHash;
-        console.log("------->?>>result,", result)
+        logX402("-------x402>>>result,", result)
         showSuccess(`✅ 打赏成功！`, txHash);
 
         // 7. 自动关闭（延迟以便用户看到结果）
         setTimeout(() => {
-            // window.close();
+            window.close();
         }, 10000);
 
     } catch (error) {

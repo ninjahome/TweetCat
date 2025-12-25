@@ -2,6 +2,8 @@ import browser from "webextension-polyfill";
 import {
     x402_connection_name, x402TipPayload
 } from "../common/x402_obj";
+import {logX402} from "../common/debug_flags";
+import {showPopupWindow} from "../popup/common";
 
 export async function restartOffScreen(): Promise<string> {
     await browser.offscreen.closeDocument();
@@ -17,9 +19,9 @@ export async function ensureOffscreenWallet() {
             reasons: ['DOM_PARSER'], // 或 'WORKERS', 'IFRAME_SCRIPTING'
             justification: 'Run Coinbase Embedded Wallets SDK for background x402 payments',
         });
-        console.log("Offscreen wallet created", tab);
+        logX402("Offscreen wallet created", tab);
     } else {
-        console.log("Offscreen wallet is ready");
+        logX402("Offscreen wallet is ready");
     }
 }
 
@@ -96,34 +98,11 @@ export async function tipActionForTweet(payload: x402TipPayload) {
 
     try {
         const url = browser.runtime.getURL(`html/x402_pay.html?payload=${encodeURIComponent(JSON.stringify(payload))}`)
-
-        const width = 450;
-        const height = 650;
-
-        const currentWindow = await browser.windows.getLastFocused();
-
-        let left = 0;
-        let top = 0;
-
-        if (currentWindow.width && currentWindow.height) {
-            // 计算相对于当前浏览器窗口的居中位置
-            left = Math.round(currentWindow.left! + (currentWindow.width - width) / 2);
-            top = Math.round(currentWindow.top! + (currentWindow.height - height) / 2);
-        }
-
-        await browser.windows.create({
-            url,
-            type: 'popup',
-            width,
-            height,
-            left,
-            top,
-            focused: true
-        });
-
+        await showPopupWindow(url)
         return {success: true};
     } catch (e) {
         console.log("open payment url failed:", e)
         return {success: false, data: e.toString()};
     }
 }
+

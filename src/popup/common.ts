@@ -1,4 +1,5 @@
 import {t} from "../common/i18n";
+import browser from "webextension-polyfill";
 
 let notificationTimer: number | null = null;
 let notificationBar: HTMLDivElement | null = null;
@@ -98,4 +99,28 @@ export function setTextContentOrHide(element: HTMLElement | null, text?: string 
         element.textContent = "";
         element.classList.add("hidden");
     }
+}
+
+
+export async function showPopupWindow(url: string, width: number = 450, height: number = 650) {
+
+    const currentWindow = await browser.windows.getLastFocused();
+
+    let left = 0;
+    let top = 0;
+
+    if (currentWindow.width && currentWindow.height) {
+        left = Math.round(currentWindow.left! + (currentWindow.width - width) / 2);
+        top = Math.round(currentWindow.top! + (currentWindow.height - height) / 2);
+    }
+
+    await browser.windows.create({
+        url,
+        type: 'popup',
+        width,
+        height,
+        left,
+        top,
+        focused: true
+    });
 }

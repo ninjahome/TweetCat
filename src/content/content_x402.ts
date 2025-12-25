@@ -21,7 +21,7 @@ export async function cacheTweetInStatus(tweets: EntryObj[]) {
 async function tipAction(statusId: string) {
     const obj = tweetsCache.get(statusId)
     if (!obj) {
-        //TODO::
+        showToastMsg("获取推文信息失败:" + statusId)
         console.warn("should not be nil for:", statusId)
         return
     }
@@ -31,7 +31,8 @@ async function tipAction(statusId: string) {
 
         const resp = await sendMsgToOffScreen({}, MsgType.WalletInfoQuery)
         if (!resp || !resp.success) {
-            showDialog(t('tips_title'), t('wallet_err_no_basic'))
+            const msg = resp.data || resp.message || t('wallet_err_no_basic')
+            showDialog(t('tips_title'), msg)
             return
         }
         const data = resp.data as walletInfo
@@ -43,7 +44,7 @@ async function tipAction(statusId: string) {
         const usdc = Number(data.usdcVal ?? 0)
 
         if (!Number.isFinite(usdc) || usdc < tip) {
-            showDialog(t('tips_title'),t('wallet_insufficient_funds') + ` USDC ${tip} Needed`)
+            showDialog(t('tips_title'), t('wallet_insufficient_funds') + ` USDC ${tip} Needed`)
             return
         }
 

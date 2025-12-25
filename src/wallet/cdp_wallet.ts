@@ -353,11 +353,6 @@ function normalizeTypedDataForCdp(args: {
         message[k] = normalizeEip712Value(v, typeByName.get(k));
     }
 
-    console.log("[x402 typedData]", {
-        domain: args.domain,
-        primaryType: args.primaryType,
-        message: args.message,
-    });
     return {...args, domain, types, message};
 }
 

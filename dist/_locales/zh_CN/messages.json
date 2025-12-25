@@ -927,6 +927,9 @@
   },
   "cdp_wallet_connect": {
     "message": "链接 Coinbase 钱包"
+  },
+  "coinbase_signin_tip": {
+    "message": "请先连接 Coinbase 钱包"
   }
 }
 

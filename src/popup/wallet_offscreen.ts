@@ -4,6 +4,7 @@ import browser from "webextension-polyfill";
 import {MsgType} from "../common/consts";
 import {queryCdpWalletInfo} from "../wallet/cdp_wallet";
 import {sendMsgToService} from "../common/utils";
+import {t} from "../common/i18n";
 
 document.addEventListener("DOMContentLoaded", async () => {
     await initCDP();
@@ -27,7 +28,7 @@ browser.runtime.onConnect.addListener(async (port) => {
 
         port.postMessage({
             requestId: msg.requestId,
-            result: {success: false, data: "Sign in coinbase wallet first please!"}
+            result: {success: false, data: t('coinbase_signin_tip')}
         });
 
         await sendMsgToService({}, MsgType.X402NotSignedIn)

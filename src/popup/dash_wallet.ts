@@ -1,4 +1,4 @@
-import {$Id, $input, hideLoading, showLoading, showNotification} from "./common";
+import {$Id, $input, hideLoading, showLoading, showNotification, showPopupWindow} from "./common";
 import {t} from "../common/i18n";
 import {ethers} from "ethers";
 import {showView} from "../common/utils";
@@ -286,7 +286,7 @@ export async function initWalletOrCreate(): Promise<void> {
     walletConnectBtn.textContent = t('cdp_wallet_connect');
     walletConnectBtn.onclick = async () => {
         const url = browser.runtime.getURL("html/cdp_auth.html");
-        await browser.tabs.create({url});
+        await showPopupWindow(url)
     };
 
     if (!address) {

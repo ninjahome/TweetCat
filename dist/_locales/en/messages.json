@@ -908,5 +908,8 @@
   },
   "cdp_wallet_connect": {
     "message": "Connect Coinbase Wallet"
+  },
+  "coinbase_signin_tip": {
+    "message": "Please connect your Coinbase Wallet first."
   }
 }
