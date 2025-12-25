@@ -23,7 +23,7 @@ import {getChainId} from "./wallet_setting";
 import {
     EndUserEvmAccount,
     EndUserEvmSmartAccount,
-    EvmAddress,
+    EvmAddress, exportEvmAccount,
     getCurrentUser,
     isSignedIn,
     sendEvmTransaction,
@@ -33,6 +33,7 @@ import {ClientEvmSigner} from "@x402/evm";
 import {x402Client} from "@x402/core/client";
 import {registerExactEvmScheme} from "@x402/evm/exact/client";
 import {wrapFetchWithPayment} from "@x402/fetch";
+import {privateKeyToAccount} from "viem/accounts";
 
 const ERC20_BALANCE_ABI = [
     {
@@ -409,3 +410,33 @@ function buildEip712DomainTypes(domain: any): Eip712Field[] {
     return fields.length ? fields : [{name: "chainId", type: "uint256"}];
 }
 
+
+export async function initX402ClientWithPrivateKey(): Promise<typeof fetch> {
+    // 1. 获取 EOA
+    const eoa = await getEOA();
+
+    // 2. 导出私钥
+    const exportResult = await exportEvmAccount({
+        // 注意：根据 CDP Core SDK，参数名可能是 evmAccount 或 address，请以你当前版本为准
+        evmAccount: eoa.address as `0x${string}`
+    });
+
+    // 3. 核心修复：确保私钥格式正确
+    let rawKey = exportResult.privateKey;
+    if (!rawKey.startsWith('0x')) {
+        rawKey = `0x${rawKey}`;
+    }
+
+    const chainId = await getChainId();
+
+    // 4. 创建账户
+    const account = privateKeyToAccount(rawKey as `0x${string}`);
+    // 5. 初始化 x402 客户端
+    const client = new x402Client();
+    registerExactEvmScheme(client, {
+        signer: account,
+        networks: [`eip155:${chainId}`],
+    });
+
+    return wrapFetchWithPayment(fetch, client);
+}

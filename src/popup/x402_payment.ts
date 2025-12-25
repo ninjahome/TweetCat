@@ -2,7 +2,7 @@ import browser from "webextension-polyfill";
 import {isSignedIn} from "@coinbase/cdp-core";
 import {initCDP, X402_FACILITATORS, x402TipPayload} from "../common/x402_obj";
 import {getChainId} from "../wallet/wallet_setting";
-import {initX402Client} from "../wallet/cdp_wallet";
+import {initX402Client, initX402ClientWithPrivateKey} from "../wallet/cdp_wallet";
 
 const WORKER_URL = "https://tweetcattips.ribencong.workers.dev";
 
@@ -86,7 +86,6 @@ async function processTipPayment(payload: x402TipPayload) {
         updateStatus('正在请求支付...\n请在弹出的窗口中确认');
 
         const selfFetch = await initX402Client()
-
         const response = await selfFetch(tipUrl, {
             method: 'GET',
             headers: {
