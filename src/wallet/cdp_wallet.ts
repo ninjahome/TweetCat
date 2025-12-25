@@ -6,14 +6,11 @@ import {
     parseUnits,
     http,
     formatEther,
-    custom,
     formatUnits,
     isAddress,
     getAddress,
     encodeFunctionData,
-    createWalletClient,
-    WalletClient,
-    Account,
+    bytesToHex, padHex, toHex, isHex,
 } from 'viem'
 import {
     ChainIDBaseMain,
@@ -24,14 +21,13 @@ import {
 } from "../common/x402_obj";
 import {getChainId} from "./wallet_setting";
 import {
-    createCDPEmbeddedWallet,
     EndUserEvmAccount,
     EndUserEvmSmartAccount,
     EvmAddress,
     getCurrentUser,
     isSignedIn,
     sendEvmTransaction,
-    sendUserOperation
+    sendUserOperation, signEvmTypedData
 } from "@coinbase/cdp-core";
 import {ClientEvmSigner} from "@x402/evm";
 import {x402Client} from "@x402/core/client";
@@ -79,7 +75,7 @@ export function getCdpNetwork(chainId: number): "base" | "base-sepolia" {
 }
 
 // ============ CDP 账户管理 ============
-async function getEOA(): Promise<EndUserEvmAccount> {
+export async function getEOA(): Promise<EndUserEvmAccount> {
     await initCDP();
     if (!await isSignedIn()) throw new Error("Not signed in");
 
@@ -290,76 +286,126 @@ export async function transferUSDCEoa(
 }
 
 
+export async function initX402Client(): Promise<typeof fetch> {
+    await initCDP();
 
+    const chainId = await getChainId();
+    const chain = getChain(chainId);
+    const eoa = await getEOA();
+    const eoaAddress = eoa.address as unknown as EvmAddress;
 
-function getEmbeddedWallet() {
-    return createCDPEmbeddedWallet({
-        chains: [base, baseSepolia],
-        transports: {
-            [base.id]: http(),
-            [baseSepolia.id]: http(),
-        },
-        announceProvider: false,
-    });
-}
-
-
-function toClientEvmSigner(walletClient: WalletClient): ClientEvmSigner {
-    if (!walletClient.account) {
-        throw new Error("Wallet client must have an account");
-    }
-
-    return {
-        address: walletClient.account.address,
-        signTypedData: async (message) => {
-            return await walletClient.signTypedData({
-                account: walletClient.account as Account,
-                domain: message.domain,
-                types: message.types,
-                primaryType: message.primaryType,
-                message: message.message,
+    const signer: ClientEvmSigner = {
+        address: eoa.address as `0x${string}`,
+        signTypedData: async (args: any): Promise<`0x${string}`> => {
+            const normalized = normalizeTypedDataForCdp({
+                domain: args.domain,
+                types: args.types,
+                primaryType: args.primaryType,
+                message: args.message,
             });
+            const res = await signEvmTypedData({
+                evmAccount: eoaAddress,
+                typedData: {
+                    domain: normalized.domain,
+                    types: normalized.types,
+                    primaryType: normalized.primaryType,
+                    message: normalized.message,
+                },
+            });
+
+            return res.signature as `0x${string}`;
         },
     };
-}
 
-export async function initX402Client(): Promise<typeof fetch> {
-
-    // 2. 获取当前 chainId
-    const chainId = await getChainId();
-    console.log(`[x402] Initializing for chainId: ${chainId}`);
-
-    // 3. 根据 chainId 选择对应的链配置
-    const chain = getChain(chainId);
-    console.log(`[x402] Using chain: ${chain.name}`);
-
-    // 4. 获取 EOA 账户地址
-    const eoa = await getEOA();
-    const address = eoa.address as `0x${string}`;
-    console.log(`[x402] Using address: ${address}`);
-
-    const wallet = getEmbeddedWallet();
-
-    // 6. 创建 viem WalletClient
-    const walletClient = createWalletClient({
-        account: {address, type: "json-rpc"},
-        chain,
-        transport: custom(wallet.provider),
-    });
-
-    // 7. 转换为 x402 需要的 ClientEvmSigner 类型
-    const signer = toClientEvmSigner(walletClient);
-
-    // 8. 创建 x402Client 并注册 EVM scheme
     const client = new x402Client();
     registerExactEvmScheme(client, {
         signer,
         networks: [`eip155:${chain.id}`],
     });
 
-    console.log(`[x402] Client initialized successfully for ${chain.name}`);
-
-    // 9. 返回包装后的 fetch 函数
     return wrapFetchWithPayment(fetch, client);
+}
+
+type Eip712Field = { name: string; type: string };
+type Eip712Types = Record<string, readonly Eip712Field[]>;
+
+function normalizeTypedDataForCdp(args: {
+    domain: any;
+    types: Eip712Types;
+    primaryType: string;
+    message: Record<string, any>;
+}) {
+    const domain = {...args.domain};
+
+    if (typeof domain.chainId === "bigint") {
+        domain.chainId = Number(domain.chainId);
+    }
+    const types: Record<string, readonly Eip712Field[]> = {...(args.types || {})};
+    if (!types.EIP712Domain) {
+        types.EIP712Domain = buildEip712DomainTypes(domain);
+    }
+
+    const message = {...args.message};
+    const fields = (types?.[args.primaryType] ?? []) as readonly Eip712Field[];
+    const typeByName = new Map(fields.map((f) => [f.name, f.type] as const));
+
+    for (const [k, v] of Object.entries(message)) {
+        message[k] = normalizeEip712Value(v, typeByName.get(k));
+    }
+
+    return {...args, domain, types, message};
+}
+
+function normalizeEip712Value(value: any, typeHint?: string): any {
+    if (typeof value === 'bigint') {
+        return value.toString();
+    }
+
+    if (value instanceof Uint8Array) {
+        const hex = bytesToHex(value);
+        return typeHint === 'bytes32' ? padHex(hex, {size: 32}) : hex;
+    }
+
+    if (typeof value === 'number') {
+        if (typeHint === 'bytes32') {
+            return padHex(toHex(BigInt(value)), {size: 32});
+        }
+        return value;
+    }
+
+    if (typeof value === 'string') {
+        if (typeHint === 'bytes32') {
+            if (isHex(value)) {
+                return padHex(value, {size: 32});
+            }
+            try {
+                return padHex(toHex(BigInt(value)), {size: 32});
+            } catch {
+                return value;
+            }
+        }
+        if (typeHint === 'uint256' && isHex(value)) {
+            try {
+                return BigInt(value).toString();
+            } catch {
+                return value;
+            }
+        }
+        return value;
+    }
+
+    return value;
+}
+
+function buildEip712DomainTypes(domain: any): Eip712Field[] {
+    const fields: Eip712Field[] = [];
+
+    if (domain?.name != null) fields.push({name: "name", type: "string"});
+    if (domain?.version != null) fields.push({name: "version", type: "string"});
+    if (domain?.chainId != null) fields.push({name: "chainId", type: "uint256"});
+    if (domain?.verifyingContract != null) fields.push({name: "verifyingContract", type: "address"});
+    if (domain?.salt != null) fields.push({name: "salt", type: "bytes32"});
+
+    return fields.length ? fields : [{name: "chainId", type: "uint256"}];
 }
 

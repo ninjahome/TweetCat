@@ -23,7 +23,6 @@ export async function ensureOffscreenWallet() {
     }
 }
 
-
 export let walletPort: browser.runtime.Port | null = null;
 const pendingWalletResponses = new Map<string, PendingEntry>();
 

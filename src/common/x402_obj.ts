@@ -66,12 +66,20 @@ export async function doSignOut() {
 
 const PROJECT_ID = "602a8505-5645-45e5-81aa-a0a642ed9a0d";
 export async function initCDP() {
-    await initialize({
-        projectId: PROJECT_ID,
-        ethereum: {
-            createOnLogin: "eoa",
-        },
-    });
+    console.log('[CDP Init] 开始初始化...');
+    try {
+        await initialize({
+            projectId: PROJECT_ID,
+            ethereum: {
+                createOnLogin: "eoa",
+            },
+        });
+        console.log('[CDP Init] ✅ 初始化成功');
+        // 验证初始化结果
+    } catch (error) {
+        console.error('[CDP Init] ❌ 初始化失败:', error);
+        throw error;
+    }
 }
 
 
