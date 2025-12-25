@@ -94,6 +94,7 @@ async function processTipPayment(payload: x402TipPayload) {
         });
         if (!response.ok) {
             const text = await response.text();
+            console.log("------>>>error:", text);
             showError(`支付后请求失败 (${response.status}): ${text}`);
             return
         }
@@ -101,11 +102,12 @@ async function processTipPayment(payload: x402TipPayload) {
 
         // 6. 显示成功
         const txHash = result.txHash || result.transactionHash;
+        console.log("------->?>>result,", result)
         showSuccess(`✅ 打赏成功！`, txHash);
 
         // 7. 自动关闭（延迟以便用户看到结果）
         setTimeout(() => {
-            window.close();
+            // window.close();
         }, 10000);
 
     } catch (error) {

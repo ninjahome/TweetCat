@@ -338,9 +338,8 @@ function normalizeTypedDataForCdp(args: {
 }) {
     const domain = {...args.domain};
 
-    if (typeof domain.chainId === "bigint") {
-        domain.chainId = Number(domain.chainId);
-    }
+    if (domain.chainId) domain.chainId = Number(domain.chainId);
+
     const types: Record<string, readonly Eip712Field[]> = {...(args.types || {})};
     if (!types.EIP712Domain) {
         types.EIP712Domain = buildEip712DomainTypes(domain);
@@ -354,6 +353,11 @@ function normalizeTypedDataForCdp(args: {
         message[k] = normalizeEip712Value(v, typeByName.get(k));
     }
 
+    console.log("[x402 typedData]", {
+        domain: args.domain,
+        primaryType: args.primaryType,
+        message: args.message,
+    });
     return {...args, domain, types, message};
 }
 

@@ -1,11 +1,12 @@
 import {getCurrentUser, initialize, signOut} from "@coinbase/cdp-core";
+
 export const ChainIDBaseSepolia = 84532 as const
 export const ChainIDBaseMain = 8453 as const
 
 export const BASE_MAINNET_DEFAULT_RPC = "https://basescan.org" as const
 export const BASE_SEPOLIA_DEFAULT_RPC = "https://sepolia.basescan.org" as const
-export const  BASE_MAINNET_USDC ="0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const
-export const  BASE_SEPOLIA_USDC ="0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const
+export const BASE_MAINNET_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const
+export const BASE_SEPOLIA_USDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const
 
 export const ChainNameBaseSepolia = "base-sepolia" as const
 export const ChainNameBaseMain = "base-mainnet" as const
@@ -30,7 +31,7 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
         usdcAddress: BASE_SEPOLIA_USDC,
         settlementContract: "0x1BD5fF7e17ec7950cAA06BF2DeB0038C54d31Fc2",
         endpoint: "https://facilitator.sepolia.x402.org",
-        browser:BASE_SEPOLIA_DEFAULT_RPC,
+        browser: BASE_SEPOLIA_DEFAULT_RPC,
     },
 
     // Base Mainnet
@@ -40,9 +41,10 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
         usdcAddress: BASE_MAINNET_USDC,
         settlementContract: "0x1BD5fF7e17ec7950cAA06BF2DeB0038C54d31Fc2",
         endpoint: "https://facilitator.x402.org",
-        browser:BASE_MAINNET_DEFAULT_RPC,
+        browser: BASE_MAINNET_DEFAULT_RPC,
     },
 }
+
 export interface x402TipPayload {
     tweetId: string;
     authorId: string;
@@ -65,21 +67,14 @@ export async function doSignOut() {
 }
 
 const PROJECT_ID = "602a8505-5645-45e5-81aa-a0a642ed9a0d";
+
 export async function initCDP() {
-    console.log('[CDP Init] 开始初始化...');
-    try {
-        await initialize({
-            projectId: PROJECT_ID,
-            ethereum: {
-                createOnLogin: "eoa",
-            },
-        });
-        console.log('[CDP Init] ✅ 初始化成功');
-        // 验证初始化结果
-    } catch (error) {
-        console.error('[CDP Init] ❌ 初始化失败:', error);
-        throw error;
-    }
+    await initialize({
+        projectId: PROJECT_ID,
+        ethereum: {
+            createOnLogin: "eoa",
+        },
+    });
 }
 
 

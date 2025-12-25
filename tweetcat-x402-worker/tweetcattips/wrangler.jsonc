@@ -7,6 +7,9 @@
 	"name": "tweetcattips",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-12-17",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
 	"observability": {
 		"enabled": true
 	}
