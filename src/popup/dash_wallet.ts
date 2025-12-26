@@ -1,5 +1,5 @@
 import {
-    $, $Id, $input, FIXED_ETH_TRANSFER_GAS_ETH,
+    $Id, $input, FIXED_ETH_TRANSFER_GAS_ETH,
     FIXED_USDC_TRANSFER_GAS_ETH, hideLoading, showAlert, showLoading, showNotification, showPopupWindow
 } from "./common";
 import {t} from "../common/i18n";
