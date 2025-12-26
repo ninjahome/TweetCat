@@ -13,143 +13,88 @@ import {
 } from "../wallet/cdp_wallet";
 import {getChainId} from "../wallet/wallet_setting";
 
+function parseTransVal(toInput: HTMLInputElement, amountInput: HTMLInputElement) {
+    const to = toInput.value.trim();
+    const amount = amountInput.value.trim();
+
+    if (!to) {
+        return {err: t("wallet_error_to_required")};
+    }
+    if (!ethers.utils.isAddress(to)) {
+        return {err: t("wallet_error_invalid_to_address")};
+    }
+
+    if (!amount) {
+        return {err: t("wallet_error_amount_required")};
+    }
+
+    const n = Number(amount);
+    if (!Number.isFinite(n) || n <= 0) {
+        return {err: t("wallet_error_amount_required")};
+    }
+    return {to, amount}
+}
+
 function openTransferEthDialog(): Promise<TransferEthFormValues | null> {
-    const modal = $Id("transfer-eth-modal") as HTMLDivElement | null;
-
-    // 如果还没加 HTML，兜底用旧的 prompt 流程
-    if (!modal) {
-        return new Promise((resolve) => {
-            const to = window.prompt(t("wallet_prompt_transfer_to"), "");
-            if (!to) return resolve(null);
-            const amount = window.prompt(t("wallet_prompt_transfer_eth_amount"), "");
-            if (!amount) return resolve(null);
-            const gas = window.prompt(t("wallet_prompt_optional_gas_limit"), "");
-            resolve({
-                to: to.trim(),
-                amount: amount.trim(),
-                gas: gas?.trim() || undefined,
-            });
-        });
-    }
-
-    const form = $Id("transfer-eth-form") as HTMLFormElement | null;
-    const toInput = $input("#transfer-eth-to");
-    const amountInput = $input("#transfer-eth-amount");
-    const gasInput = $input("#transfer-eth-gas");
-    const errorEl = $Id("transfer-eth-error") as HTMLParagraphElement | null;
-    const cancelBtn = $Id("transfer-eth-cancel-btn") as HTMLButtonElement | null;
-    const closeBtn = $Id("transfer-eth-close-btn") as HTMLButtonElement | null;
-    const maxBtn = $Id("transfer-eth-fill-max") as HTMLButtonElement | null;
-    const balanceSpan = $Id("transfer-eth-balance") as HTMLSpanElement | null;
-    const networkLabel = $Id("transfer-eth-network-label") as HTMLSpanElement | null;
-
-    if (!form || !toInput || !amountInput || !errorEl) {
-        // 结构不完整就直接退出
-        return Promise.resolve(null);
-    }
-
-    // 初始化展示文案（余额/网络）
-    if (balanceSpan) {
-        const bal = getCurrentEthBalanceText();
-        balanceSpan.textContent = `${t("wallet_current_balance") || ""}：${bal} ETH`;
-    }
-    if (networkLabel) {
-        networkLabel.textContent = getReadableNetworkName();
-    }
-    if (gasInput) {
-        gasInput.value = "";
-    }
-    toInput.value = "";
-    amountInput.value = "";
-    errorEl.textContent = "";
-
-    modal.classList.remove("hidden");
 
     return new Promise<TransferEthFormValues | null>((resolve) => {
+
+        const modal = $Id("transfer-eth-modal") as HTMLDivElement;
+        modal.classList.remove("hidden");
+
         const handleClose = (result: TransferEthFormValues | null) => {
+            toInput.value = "";
+            amountInput.value = "";
+            errorEl.textContent = "";
             modal.classList.add("hidden");
-            form.removeEventListener("submit", handleSubmit);
-            cancelBtn?.removeEventListener("click", handleCancel);
-            closeBtn?.removeEventListener("click", handleCancel);
-            maxBtn?.removeEventListener("click", handleMax);
-            document.removeEventListener("keydown", handleKeydown);
-            modal.removeEventListener("click", handleBackdropClick as any);
             resolve(result);
-        };
+        }
 
-        const handleCancel = () => {
-            handleClose(null);
-        };
+        const cancelBtn = $Id("transfer-eth-cancel-btn") as HTMLButtonElement;
+        const closeBtn = $Id("transfer-eth-close-btn") as HTMLButtonElement;
+        cancelBtn.onclick = () => handleClose(null);
+        closeBtn.onclick = () => handleClose(null);
 
-        const handleKeydown = (ev: KeyboardEvent) => {
-            if (ev.key === "Escape") {
-                ev.preventDefault();
-                handleClose(null);
-            }
-        };
 
-        const handleMax = () => {
-            const raw = getCurrentEthBalanceText();
-            if (!raw || raw === "--") return;
-            amountInput.value = raw.replace(/,/g, "").split(" ")[0];
-        };
+        const toInput = $input("#transfer-eth-to");
+        const amountInput = $input("#transfer-eth-amount");
+        const errorEl = $Id("transfer-eth-error") as HTMLParagraphElement
+        const form = $Id("transfer-eth-form") as HTMLFormElement;
 
-        const handleSubmit = (ev: Event) => {
+        form.onsubmit = (ev: Event) => {
             ev.preventDefault();
             errorEl.textContent = "";
-
-            const to = toInput.value.trim();
-            const amount = amountInput.value.trim();
-            const gas = gasInput?.value.trim() || "";
-
-            if (!to) {
-                errorEl.textContent = t("wallet_error_to_required");
-                return;
+            const {to, amount, err} = parseTransVal(toInput,amountInput)
+            if(err){
+                errorEl.textContent = err;
+                return
             }
-            if (!ethers.utils.isAddress(to)) {
-                errorEl.textContent = t("wallet_error_invalid_to_address");
-                return;
-            }
-            if (!amount) {
-                errorEl.textContent = t("wallet_error_amount_required");
-                return;
-            }
-            const n = Number(amount);
-            if (!Number.isFinite(n) || n <= 0) {
-                errorEl.textContent =
-                    t("wallet_error_amount_invalid") || t("wallet_error_amount_required");
-                return;
-            }
-
-            if (gas && (!/^\d+$/.test(gas) || Number(gas) < 21000)) {
-                errorEl.textContent =
-                    t("wallet_error_gas_invalid") || "Gas limit 不合法";
-                return;
-            }
-
-            handleClose({
-                to,
-                amount,
-                gas: gas || undefined,
-            });
+            handleClose({to, amount})
         };
 
-        const handleBackdropClick = (ev: MouseEvent) => {
-            if (ev.target === modal) {
-                handleClose(null);
-            }
-        };
+        const maxBtn = $Id("transfer-eth-fill-max") as HTMLButtonElement;
+        maxBtn.onclick = async () => {
+            const wi = await queryCdpWalletInfo()
+            if (!wi.hasCreated) return
+            amountInput.value = wi.ethVal;
+        }
 
-        form.addEventListener("submit", handleSubmit);
-        cancelBtn?.addEventListener("click", handleCancel);
-        closeBtn?.addEventListener("click", handleCancel);
-        maxBtn?.addEventListener("click", handleMax);
-        document.addEventListener("keydown", handleKeydown);
-        modal.addEventListener("click", handleBackdropClick);
+        const balanceSpan = $Id("transfer-eth-balance") as HTMLSpanElement | null;
+        const networkLabel = $Id("transfer-eth-network-label") as HTMLSpanElement | null;
+
+        queryCdpWalletInfo().then(wi => {
+            if (wi.hasCreated) {
+                balanceSpan.textContent = `${t("wallet_current_balance") || ""}：${wi.ethVal} ETH`;
+            } else {
+                balanceSpan.textContent = `--ETH`;
+            }
+        })
+        networkLabel.textContent = getReadableNetworkName();
     });
 }
 
 async function handleTransferEth(): Promise<void> {
+    console.log("------->>> transfer eth on clicked:")
     const formValues = await openTransferEthDialog();
     if (!formValues) {
         return;
@@ -341,13 +286,8 @@ function hideWalletMenu(ev: PointerEvent, menu: HTMLElement) {
 interface TransferEthFormValues {
     to: string;
     amount: string;
-    gas?: string;
 }
 
-function getCurrentEthBalanceText(): string {
-    const span = document.querySelector<HTMLSpanElement>(".wallet-eth-value");
-    return span?.textContent?.trim() || "--";
-}
 
 /**
  * 打开 ETH 转账表单弹窗，返回用户输入的参数；取消则返回 null。
@@ -356,7 +296,6 @@ function getCurrentEthBalanceText(): string {
 function openTransferTokenDialog(): Promise<TransferTokenFormValues | null> {
     const modal = $Id("transfer-token-modal") as HTMLDivElement | null;
     if (!modal) {
-        // 没有 DOM，直接视为取消
         return Promise.resolve(null);
     }
 
@@ -558,11 +497,6 @@ export function initDashboardTexts(): void {
         transferTitle.textContent = t('wallet_transfer_eth_title');
     }
 
-    const transferSubtitle = $Id('transfer-eth-subtitle');
-    if (transferSubtitle) {
-        transferSubtitle.textContent = t('wallet_transfer_eth_subtitle');
-    }
-
     const toLabel = $Id('transfer-eth-to-label');
     if (toLabel) {
         toLabel.textContent = t('wallet_transfer_to_label');
@@ -590,18 +524,9 @@ export function initDashboardTexts(): void {
         feeHint.textContent = t('wallet_transfer_fee_hint');
     }
 
-    const gasLabel = $Id('transfer-eth-gas-label');
-    if (gasLabel) {
-        gasLabel.textContent = t('wallet_transfer_gas_label');
-    }
     const gasInput = $input('#transfer-eth-gas');
     if (gasInput) {
         gasInput.placeholder = t('wallet_transfer_gas_label');
-    }
-
-    const gasHint = $Id('transfer-eth-gas-hint');
-    if (gasHint) {
-        gasHint.textContent = t('wallet_transfer_gas_hint');
     }
 
     const submitBtn = $Id('transfer-eth-submit-btn') as HTMLButtonElement | null;

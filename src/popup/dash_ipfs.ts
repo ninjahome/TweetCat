@@ -7,7 +7,7 @@ import {
     PROVIDER_TYPE_TWEETCAT, saveIpfsSettings
 } from "../wallet/ipfs_settings";
 import {EncryptedBlock, encryptString, showView} from "../common/utils";
-import {$, $Id, $input, showNotification} from "./common";
+import {$, $Id, $input, showConfirm, showNotification} from "./common";
 import {t} from "../common/i18n";
 import {requestPassword} from "./password_modal";
 import {resetIpfsClient} from "../wallet/ipfs_api";
@@ -482,7 +482,7 @@ async function saveProviderSecrets(_provider: IpfsProvider): Promise<void> {
 }
 
 async function clearProviderSecrets(provider: IpfsProvider): Promise<void> {
-    if (!window.confirm(t('ipfs_confirm_clear_provider_secrets'))) return;
+    if (!(await showConfirm(t('ipfs_confirm_clear_provider_secrets')))) return;
 
     const saved = currentIpfsSettings ?? await loadIpfsSettings();
     if (!saved) {

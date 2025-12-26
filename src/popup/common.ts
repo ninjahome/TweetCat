@@ -101,6 +101,30 @@ export function setTextContentOrHide(element: HTMLElement | null, text?: string 
     }
 }
 
+export function showConfirm(msg: string): Promise<boolean> {
+    return new Promise((resolve) => {
+        const container = document.getElementById("confirm-popup")!;
+        container.style.display = 'block';
+
+        (container.querySelector(".confirm-message") as HTMLElement).innerText = msg;
+
+        const cancelBtn = container.querySelector(".btn-cancel") as HTMLElement;
+        cancelBtn.innerText = t("cancel");
+        cancelBtn.onclick = () => {
+            container.style.display = 'none';
+            resolve(false);
+        };
+
+        const okBtn = container.querySelector(".btn-ok") as HTMLElement;
+        okBtn.innerText = t("confirm");
+        okBtn.onclick = () => {
+            container.style.display = 'none';
+            resolve(true);
+        };
+    });
+}
+
+
 
 export async function showPopupWindow(url: string, width: number = 450, height: number = 650) {
 

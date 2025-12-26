@@ -186,7 +186,8 @@
                         <label id="wallet-network-select-label" for="wallet-network-select">区块链网络</label>
                         <select id="wallet-network-select">
                             <option id="wallet-network-option-base-mainnet" value="base-mainnet">Base 主网</option>
-                            <option id="wallet-network-option-base-sepolia" value="base-sepolia">Base 测试网 (Sepolia)</option>
+                            <option id="wallet-network-option-base-sepolia" value="base-sepolia">Base 测试网 (Sepolia)
+                            </option>
                         </select>
                     </div>
                 </div>
@@ -463,10 +464,10 @@
 
 <div id="confirm-popup">
     <div class="popup-content">
-        <p id="confirm-message">__MSG_confirm_message__</p>
+        <p id="confirm-message" class="confirm-message">__MSG_confirm_message__</p>
         <div class="button-row">
-            <button id="btn-cancel">__MSG_cancel__</button>
-            <button id="btn-ok">__MSG_confirm__</button>
+            <button id="btn-cancel" class="btn-cancel">__MSG_cancel__</button>
+            <button id="btn-ok" class="btn-ok">__MSG_confirm__</button>
         </div>
     </div>
 </div>
@@ -510,20 +511,14 @@
         <header class="tc-modal__header">
             <div>
                 <h2 id="transfer-eth-title" class="tc-modal__title"></h2>
-                <p id="transfer-eth-subtitle" class="tc-modal__subtitle"></p>
             </div>
-            <button
-                    type="button"
-                    id="transfer-eth-close-btn"
+            <button type="button" id="transfer-eth-close-btn"
                     class="tc-modal__icon-btn"
-                    aria-label="Close"
-            >
-                ✕
+                    aria-label="Close"> ✕
             </button>
         </header>
 
         <form id="transfer-eth-form" class="tc-modal__body">
-            <!-- 收款地址 -->
             <div class="tc-field">
                 <label
                         for="transfer-eth-to"
@@ -541,7 +536,6 @@
                         class="tc-field__hint"
                 ></p>
             </div>
-
             <!-- 金额 -->
             <div class="tc-field">
                 <div class="tc-field__row">
@@ -587,40 +581,10 @@
 
             <!-- Gas / 网络信息 -->
             <div class="tc-field">
-                <div class="tc-field__row tc-field__row--space-between">
-                    <label
-                            for="transfer-eth-gas"
-                            id="transfer-eth-gas-label"
-                            class="tc-field__label"
-                    ></label>
-                    <span
-                            id="transfer-eth-network-label"
-                            class="tc-tag tc-tag--subtle"
-                    >
-            <!-- 运行时填充：Base mainnet / Base Sepolia -->
-          </span>
-                </div>
-
-                <input
-                        id="transfer-eth-gas"
-                        type="number"
-                        class="tc-input"
-                        min="21000"
-                        step="1000"
-                />
-
-                <p
-                        id="transfer-eth-gas-hint"
-                        class="tc-field__hint"
-                ></p>
+                <span id="transfer-eth-network-label" class="tc-tag tc-tag--subtle">  </span>
             </div>
 
-            <!-- 错误信息 -->
-            <p
-                    id="transfer-eth-error"
-                    class="tc-form-error"
-                    aria-live="polite"
-            ></p>
+            <p id="transfer-eth-error" class="tc-form-error" aria-live="polite"></p>
 
             <!-- 底部按钮 -->
             <footer class="tc-modal__footer">
@@ -654,7 +618,8 @@
         <header class="tc-modal__header">
             <div>
                 <h2 id="transfer-token-title" class="tc-modal__title"><!-- i18n: wallet_transfer_token_title --></h2>
-                <p id="transfer-token-subtitle" class="tc-modal__subtitle"><!-- i18n: wallet_transfer_token_subtitle --></p>
+                <p id="transfer-token-subtitle" class="tc-modal__subtitle">
+                    <!-- i18n: wallet_transfer_token_subtitle --></p>
             </div>
             <button
                     type="button"

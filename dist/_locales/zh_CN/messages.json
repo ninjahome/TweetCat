@@ -810,9 +810,6 @@
   "wallet_transfer_eth_title": {
     "message": "发送 ETH"
   },
-  "wallet_transfer_eth_subtitle": {
-    "message": "请确认收款地址和转账金额，提交后将发起链上交易。"
-  },
   "wallet_transfer_to_label": {
     "message": "收款地址"
   },
@@ -825,12 +822,6 @@
   "wallet_transfer_fee_hint": {
     "message": "实际可用余额 ≈ 当前余额 − 预估网络手续费。"
   },
-  "wallet_transfer_gas_label": {
-    "message": "Gas 限额（可选）"
-  },
-  "wallet_transfer_gas_hint": {
-    "message": "Gas 设置过低可能导致交易失败，但仍然消耗部分手续费。"
-  },
   "wallet_transfer_confirm_btn": {
     "message": "确认并发送"
   },
@@ -839,9 +830,6 @@
   },
   "wallet_error_to_required": {
     "message": "请输入收款地址。"
-  },
-  "wallet_error_amount_invalid": {
-    "message": "请输入大于 0 的有效转账金额。"
   },
   "wallet_error_gas_invalid": {
     "message": "Gas 限额不合法，请输入不小于 21000 的整数。"

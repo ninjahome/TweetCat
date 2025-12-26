@@ -9,7 +9,7 @@ import {refreshBalances} from "./dash_wallet";
 export let currentSettings: WalletSettings = {...defaultWalletSettings};
 
 function notifySettingsChanged(): void {
-    console.log("------>>> infura setting changed.....");
+    console.log("------>>> infura setting changed.....", currentSettings);
 }
 
 export function getReadableNetworkName(): string {
@@ -44,7 +44,6 @@ function toggleSettingsPanel(): void {
 
 export async function initSettingsPanel(): Promise<void> {
     currentSettings = await loadWalletSettings();
-    console.log("------>>> current settings", currentSettings);
     const networkSelect = $Id("wallet-network-select") as HTMLSelectElement | null;
     if (networkSelect) {
         networkSelect.value = currentSettings.network
@@ -53,7 +52,6 @@ export async function initSettingsPanel(): Promise<void> {
             await saveWalletSettings(currentSettings);
             showNotification(t("save_success"));
             await refreshBalances();
-            console.log("------>>> wallet settings changed:", currentSettings);
         }
     }
 
