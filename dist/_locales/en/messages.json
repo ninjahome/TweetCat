@@ -814,7 +814,7 @@
     "message": "Please enter the recipient address."
   },
   "wallet_error_gas_invalid": {
-    "message": "Invalid gas."
+    "message": "Insufficient gas."
   },
   "wallet_transfer_token_title": {
     "message": "Send USDC"
