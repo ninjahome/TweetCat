@@ -1,11 +1,14 @@
-import {$Id, $input, hideLoading, showLoading, showNotification, showPopupWindow} from "./common";
+import {
+    $, $Id, $input, FIXED_ETH_TRANSFER_GAS_ETH,
+    FIXED_USDC_TRANSFER_GAS_ETH, hideLoading, showAlert, showLoading, showNotification, showPopupWindow
+} from "./common";
 import {t} from "../common/i18n";
 import {ethers} from "ethers";
 import {showView} from "../common/utils";
 import {dashRouter} from "./dashboard";
 import browser from "webextension-polyfill";
 import {getReadableNetworkName} from "./dash_setting";
-import {doSignOut, X402_FACILITATORS} from "../common/x402_obj";
+import {doSignOut, walletInfo, X402_FACILITATORS} from "../common/x402_obj";
 import {
     getWalletAddress,
     queryCdpWalletInfo,
@@ -35,14 +38,22 @@ function parseTransVal(toInput: HTMLInputElement, amountInput: HTMLInputElement)
     return {to, amount}
 }
 
-function openTransferEthDialog(): Promise<TransferEthFormValues | null> {
+function openTransferDialog(typ: "eth" | "usdc", wi: walletInfo): Promise<TransferValues | null> {
 
-    return new Promise<TransferEthFormValues | null>((resolve) => {
+    return new Promise<TransferValues | null>((resolve) => {
+        const isEth = typ === "eth"
 
-        const modal = $Id("transfer-eth-modal") as HTMLDivElement;
+        const modal = $Id("transfer-modal") as HTMLDivElement;
         modal.classList.remove("hidden");
 
-        const handleClose = (result: TransferEthFormValues | null) => {
+        const transferTitle = $Id('transfer-title');
+        transferTitle.textContent = isEth ? t('wallet_transfer_eth_title') : t('wallet_transfer_token_title');
+
+        const closeBtn = $Id("transfer-close-btn") as HTMLButtonElement;
+        closeBtn.onclick = () => handleClose(null);
+        const errorEl = $Id("transfer-error") as HTMLParagraphElement
+
+        const handleClose = (result: TransferValues | null) => {
             toInput.value = "";
             amountInput.value = "";
             errorEl.textContent = "";
@@ -50,73 +61,81 @@ function openTransferEthDialog(): Promise<TransferEthFormValues | null> {
             resolve(result);
         }
 
-        const cancelBtn = $Id("transfer-eth-cancel-btn") as HTMLButtonElement;
-        const closeBtn = $Id("transfer-eth-close-btn") as HTMLButtonElement;
-        cancelBtn.onclick = () => handleClose(null);
-        closeBtn.onclick = () => handleClose(null);
-
-
-        const toInput = $input("#transfer-eth-to");
-        const amountInput = $input("#transfer-eth-amount");
-        const errorEl = $Id("transfer-eth-error") as HTMLParagraphElement
-        const form = $Id("transfer-eth-form") as HTMLFormElement;
-
+        const form = $Id("transfer-form") as HTMLFormElement;
         form.onsubmit = (ev: Event) => {
             ev.preventDefault();
             errorEl.textContent = "";
-            const {to, amount, err} = parseTransVal(toInput,amountInput)
-            if(err){
+            const {to, amount, err} = parseTransVal(toInput, amountInput)
+            if (err) {
                 errorEl.textContent = err;
                 return
             }
             handleClose({to, amount})
         };
 
-        const maxBtn = $Id("transfer-eth-fill-max") as HTMLButtonElement;
+        $Id('transfer-to-label').textContent = t('wallet_transfer_to_label');
+        const toInput = $input("#transfer-to");
+        $Id('transfer-to-hint').textContent = t('wallet_transfer_to_hint');
+
+        $Id('transfer-amount-label').textContent = t('wallet_transfer_amount_label');
+        const amountInput = $input("#transfer-amount");
+        const val = isEth ? wi.ethVal + "  ETH" : wi.usdcVal + " USDC"
+        $Id("transfer-balance").textContent = `${t("wallet_current_balance") || ""}：${val}`;
+        $Id("tc-field__suffix").textContent = isEth ? "ETH" : "USDC"
+
+        const maxBtn = $Id("transfer-fill-max") as HTMLButtonElement;
         maxBtn.onclick = async () => {
             const wi = await queryCdpWalletInfo()
             if (!wi.hasCreated) return
-            amountInput.value = wi.ethVal;
+            amountInput.value = isEth ? wi.ethVal : wi.usdcVal;
         }
 
-        const balanceSpan = $Id("transfer-eth-balance") as HTMLSpanElement | null;
-        const networkLabel = $Id("transfer-eth-network-label") as HTMLSpanElement | null;
+        $Id("transfer-network-label").textContent = getReadableNetworkName();
 
-        queryCdpWalletInfo().then(wi => {
-            if (wi.hasCreated) {
-                balanceSpan.textContent = `${t("wallet_current_balance") || ""}：${wi.ethVal} ETH`;
-            } else {
-                balanceSpan.textContent = `--ETH`;
-            }
-        })
-        networkLabel.textContent = getReadableNetworkName();
+        const cancelBtn = $Id("transfer-cancel-btn") as HTMLButtonElement;
+        cancelBtn.textContent = t('cancel');
+        cancelBtn.onclick = () => handleClose(null);
+
+        $Id('transfer-submit-btn').textContent = t('wallet_transfer_confirm_btn');
     });
 }
 
-async function handleTransferEth(): Promise<void> {
-    console.log("------->>> transfer eth on clicked:")
-    const formValues = await openTransferEthDialog();
-    if (!formValues) {
-        return;
-    }
-
-    const {to, amount} = formValues;
+async function __handleTransfer(typ: "eth" | "usdc", threshold: number, action: (chain: number, receipt: string, amount: string) => Promise<`0x${string}`>): Promise<void> {
+    showLoading(t("syncing") || "");
     try {
+        const wi = await queryCdpWalletInfo()
+        if (!wi.hasCreated) {
+            showAlert(t('tips_title'), t('wallet_error_no_wallet'))
+            return
+        }
+
+        if (Number(wi.ethVal) < threshold) {
+            showAlert(t('tips_title'), t('wallet_error_gas_invalid'))
+            return
+        }
+
+        hideLoading()
+        const formValues = await openTransferDialog(typ, wi);
+        if (!formValues) {
+            return;
+        }
         showLoading(t("wallet_sending_transaction") || "");
+        const {to, amount} = formValues;
         const chainID = await getChainId()
-        const hash = await transferETHEoa(chainID, to, amount)
+        const hash = await action(chainID, to, amount)
         browser.tabs.create({url: X402_FACILITATORS[chainID].browser + "/tx/" + hash}).then()
-        refreshBalances().then();
+        refreshBalances(false).then();
     } catch (error) {
         console.log(error)
         showNotification(
-            (error as Error).message ?? t("wallet_transfer_eth_failed"),
+            (error as Error).message ?? t("wallet_transfer_failed"),
             "error",
         );
     } finally {
         hideLoading()
     }
 }
+
 
 export async function refreshBalances(showStatus = true): Promise<void> {
     const ethSpan = document.querySelector(".wallet-eth-value") as HTMLSpanElement | null;
@@ -156,34 +175,10 @@ async function showBalanceOnBrowser(): Promise<void> {
     await browser.tabs.create({url})
 }
 
-
-async function handleTransferToken(): Promise<void> {
-
-    const formValues = await openTransferTokenDialog();
-    if (!formValues) {
-        return;
-    }
-    const {to, amount} = formValues;
-    try {
-        showLoading(t("wallet_sending_transaction"));
-        const chainID = await getChainId()
-        const hash = await transferUSDCEoa(chainID, to, amount)
-        browser.tabs.create({url: X402_FACILITATORS[chainID].browser + "/tx/" + hash}).then()
-        refreshBalances().then();
-    } catch (error) {
-        showNotification(
-            (error as Error).message ?? t("wallet_transfer_token_failed"),
-            "error",
-        );
-    } finally {
-        hideLoading()
-    }
-}
-
 function setupWalletActionButtons(): void {
     const refreshBtn = $Id("btn-refresh-balance") as HTMLButtonElement;
     refreshBtn.textContent = t('wallet_action_refresh_balance');
-    refreshBtn.onclick = async () => refreshBalances(true)
+    refreshBtn.onclick = async () => refreshBalances()
 
 
     const showBtn = $Id("btn-show-on-browser") as HTMLButtonElement;
@@ -192,10 +187,10 @@ function setupWalletActionButtons(): void {
 
     const transferEthBtn = $Id("btn-transfer-eth") as HTMLButtonElement;
     transferEthBtn.textContent = t('wallet_action_transfer_eth');
-    transferEthBtn.onclick = async () => handleTransferEth()
+    transferEthBtn.onclick = async () => __handleTransfer("eth", FIXED_ETH_TRANSFER_GAS_ETH, transferETHEoa)
 
-    const transferTokenBtn = $Id("btn-transfer-token") as HTMLButtonElement;
-    transferTokenBtn.onclick = async () => handleTransferToken()
+    const transferTokenBtn = $Id("btn-transfer-token");
+    transferTokenBtn.onclick = async () => __handleTransfer("usdc", FIXED_USDC_TRANSFER_GAS_ETH, transferUSDCEoa)
     transferTokenBtn.textContent = t('wallet_action_transfer_token');
 
     const backBtn = $Id("wallet-back-btn") as HTMLButtonElement;
@@ -207,15 +202,15 @@ function setupWalletActionButtons(): void {
     signOutBtn.textContent = t('wallet_action_sign_out');
     signOutBtn.onclick = async () => {
         await doSignOut();
-        await initWalletOrCreate();
+        initWalletOrCreate();
     }
+
+    console.log("----------->>>>> wallet action init success!!!!!!")
 }
 
-export async function initWalletOrCreate(): Promise<void> {
+export function initWalletOrCreate() {
     const walletCreateDiv = $Id("wallet-create-div") as HTMLButtonElement;//btn-create-wallet
     const walletInfoDiv = $Id("wallet-info-area") as HTMLDivElement;
-    const walletSettingBtn = $Id("wallet-settings-btn") as HTMLButtonElement;
-    const walletMenuBtn = $Id("btn-main-menu") as HTMLButtonElement;
     const walletMainMenu = $Id("wallet-main-menu") as HTMLDivElement;
 
     walletMainMenu.onclick = () => {
@@ -224,7 +219,19 @@ export async function initWalletOrCreate(): Promise<void> {
         }
     }
 
-    const address = await getWalletAddress();
+    getWalletAddress().then((address => {
+        if (!address) {
+            walletCreateDiv.style.display = "block";
+            walletInfoDiv.style.display = "none";
+        } else {
+            walletCreateDiv.style.display = "none";
+            walletInfoDiv.style.display = "block";
+            const addressSpan = walletInfoDiv.querySelector(".wallet-address-value") as HTMLSpanElement;
+            addressSpan.textContent = address;
+            refreshBalances(false).then()
+        }
+    }));
+
     const walletConnectBtn = (walletCreateDiv.querySelector(".btn-create-wallet") as HTMLButtonElement);
     walletConnectBtn.textContent = t('cdp_wallet_connect');
     walletConnectBtn.onclick = async () => {
@@ -232,25 +239,14 @@ export async function initWalletOrCreate(): Promise<void> {
         await showPopupWindow(url)
     };
 
-    if (!address) {
-        walletCreateDiv.style.display = "block";
-        walletInfoDiv.style.display = "none";
-    } else {
-        walletCreateDiv.style.display = "none";
-        walletInfoDiv.style.display = "block";
-        const addressSpan = walletInfoDiv.querySelector(".wallet-address-value") as HTMLSpanElement;
-        addressSpan.textContent = address;
-        refreshBalances().then()
-    }
-
-    walletSettingBtn.onclick = () => {
+    $Id("wallet-settings-btn").onclick = () => {
         showView('#onboarding/wallet-setting', dashRouter);
     }
 
-    walletMenuBtn.addEventListener("click", (ev) => {
+    $Id("btn-main-menu").onclick = (ev) => {
         ev.stopPropagation();
         walletMainMenu.classList.toggle("hidden");
-    });
+    }
 
     document.addEventListener("click", (ev) => {
         hideWalletMenu(ev, walletMainMenu)
@@ -277,172 +273,14 @@ function hideWalletMenu(ev: PointerEvent, menu: HTMLElement) {
     if (menu === target || menu.contains(target)) {
         return;
     }
-
     // 其它情况：关闭菜单
     menu.classList.add("hidden");
 }
 
 
-interface TransferEthFormValues {
+interface TransferValues {
     to: string;
     amount: string;
-}
-
-
-/**
- * 打开 ETH 转账表单弹窗，返回用户输入的参数；取消则返回 null。
- */
-
-function openTransferTokenDialog(): Promise<TransferTokenFormValues | null> {
-    const modal = $Id("transfer-token-modal") as HTMLDivElement | null;
-    if (!modal) {
-        return Promise.resolve(null);
-    }
-
-    const form = $Id("transfer-token-form") as HTMLFormElement | null;
-    const toInput = $input("#transfer-token-to");
-    const amountInput = $input("#transfer-token-amount");
-    const decimalsInput = $input("#transfer-token-decimals");
-    const gasInput = $input("#transfer-token-gas");
-    const errorEl = $Id("transfer-token-error") as HTMLParagraphElement | null;
-    const cancelBtn = $Id("transfer-token-cancel-btn") as HTMLButtonElement | null;
-    const closeBtn = $Id("transfer-token-close-btn") as HTMLButtonElement | null;
-    const maxBtn = $Id("transfer-token-fill-max") as HTMLButtonElement | null;
-    const balanceSpan = $Id("transfer-token-balance") as HTMLSpanElement | null;
-    const networkLabel = $Id("transfer-token-network-label") as HTMLSpanElement | null;
-
-    if (!form || !toInput || !amountInput || !errorEl) {
-        return Promise.resolve(null);
-    }
-
-    // 初始化默认值
-    toInput.value = "";
-    amountInput.value = "";
-    if (decimalsInput) {
-        decimalsInput.value = "6";
-        // USDC 精度固定 6，可以视情况设为只读
-        decimalsInput.readOnly = true;
-    }
-    if (gasInput) {
-        gasInput.value = "";
-    }
-    errorEl.textContent = "";
-
-    if (balanceSpan) {
-        const bal = getCurrentTokenBalanceText();
-        balanceSpan.textContent = `${t("wallet_current_balance") || ""}：${bal} USDC`;
-    }
-    if (networkLabel) {
-        networkLabel.textContent = getReadableNetworkName();
-    }
-
-    modal.classList.remove("hidden");
-
-    return new Promise<TransferTokenFormValues | null>((resolve) => {
-        const handleClose = (result: TransferTokenFormValues | null) => {
-            modal.classList.add("hidden");
-            form.removeEventListener("submit", handleSubmit);
-            cancelBtn?.removeEventListener("click", handleCancel);
-            closeBtn?.removeEventListener("click", handleCancel);
-            maxBtn?.removeEventListener("click", handleMax);
-            document.removeEventListener("keydown", handleKeydown);
-            modal.removeEventListener("click", handleBackdropClick as any);
-            resolve(result);
-        };
-
-        const handleCancel = () => {
-            handleClose(null);
-        };
-
-        const handleKeydown = (ev: KeyboardEvent) => {
-            if (ev.key === "Escape") {
-                ev.preventDefault();
-                handleClose(null);
-            }
-        };
-
-        const handleMax = () => {
-            const raw = getCurrentTokenBalanceText();
-            if (!raw || raw === "--") return;
-            amountInput.value = raw.replace(/,/g, "").split(" ")[0];
-        };
-
-        const handleSubmit = (ev: Event) => {
-            ev.preventDefault();
-            errorEl.textContent = "";
-
-            const to = toInput.value.trim();
-            const amount = amountInput.value.trim();
-            const gas = gasInput?.value.trim() || "";
-            const decimalsRaw = decimalsInput?.value
-                ? Number(decimalsInput.value)
-                : 6;
-
-            if (!to) {
-                errorEl.textContent = t("wallet_error_to_required");
-                return;
-            }
-            if (!ethers.utils.isAddress(to)) {
-                errorEl.textContent = t("wallet_error_invalid_to_address");
-                return;
-            }
-
-            if (!amount) {
-                errorEl.textContent = t("wallet_error_amount_required");
-                return;
-            }
-            const n = Number(amount);
-            if (!Number.isFinite(n) || n <= 0) {
-                errorEl.textContent =
-                    t("wallet_error_amount_invalid") || t("wallet_error_amount_required");
-                return;
-            }
-
-            const decimals =
-                Number.isFinite(decimalsRaw) && decimalsRaw > 0
-                    ? decimalsRaw
-                    : 6;
-
-            if (gas && (!/^\d+$/.test(gas) || Number(gas) < 21000)) {
-                errorEl.textContent =
-                    t("wallet_error_gas_invalid") || "Gas limit 不合法";
-                return;
-            }
-
-            handleClose({
-                to,
-                amount,
-                decimals,
-                gas: gas || undefined,
-            });
-        };
-
-        const handleBackdropClick = (ev: MouseEvent) => {
-            if (ev.target === modal) {
-                handleClose(null);
-            }
-        };
-
-        form.addEventListener("submit", handleSubmit);
-        cancelBtn?.addEventListener("click", handleCancel);
-        closeBtn?.addEventListener("click", handleCancel);
-        maxBtn?.addEventListener("click", handleMax);
-        document.addEventListener("keydown", handleKeydown);
-        modal.addEventListener("click", handleBackdropClick);
-    });
-}
-
-interface TransferTokenFormValues {
-    to: string;
-    amount: string;
-    decimals: number;
-    gas?: string;
-}
-
-
-function getCurrentTokenBalanceText(): string {
-    const span = document.querySelector<HTMLSpanElement>(".wallet-usdt-value");
-    return span?.textContent?.trim() || "--";
 }
 
 
@@ -492,119 +330,6 @@ export function initDashboardTexts(): void {
     const networkOptionSepolia = $Id('wallet-network-option-base-sepolia');
     if (networkOptionSepolia) networkOptionSepolia.textContent = t('wallet_network_option_base_sepolia');
 
-    const transferTitle = $Id('transfer-eth-title');
-    if (transferTitle) {
-        transferTitle.textContent = t('wallet_transfer_eth_title');
-    }
-
-    const toLabel = $Id('transfer-eth-to-label');
-    if (toLabel) {
-        toLabel.textContent = t('wallet_transfer_to_label');
-    }
-    const toInput = $input('#transfer-eth-to');
-    if (toInput) {
-        toInput.placeholder = t('wallet_transfer_to_hint');
-    }
-    const toHint = $Id('transfer-eth-to-hint');
-    if (toHint) {
-        toHint.textContent = t('wallet_transfer_to_hint');
-    }
-
-    const amountLabel = $Id('transfer-eth-amount-label');
-    if (amountLabel) {
-        amountLabel.textContent = t('wallet_transfer_amount_label');
-    }
-    const amountInput = $input('#transfer-eth-amount');
-    if (amountInput) {
-        amountInput.placeholder = t('wallet_transfer_amount_label');
-    }
-
-    const feeHint = $Id('transfer-eth-fee-hint');
-    if (feeHint) {
-        feeHint.textContent = t('wallet_transfer_fee_hint');
-    }
-
-    const gasInput = $input('#transfer-eth-gas');
-    if (gasInput) {
-        gasInput.placeholder = t('wallet_transfer_gas_label');
-    }
-
-    const submitBtn = $Id('transfer-eth-submit-btn') as HTMLButtonElement | null;
-    if (submitBtn) {
-        submitBtn.textContent = t('wallet_transfer_confirm_btn');
-    }
-
-    const cancelBtn = $Id('transfer-eth-cancel-btn') as HTMLButtonElement | null;
-    if (cancelBtn) {
-        cancelBtn.textContent = t('cancel');
-    }
-
-    // === Token / USDC 转账弹窗文案 ===
-    const tokenTitle = $Id('transfer-token-title');
-    if (tokenTitle) {
-        tokenTitle.textContent = t('wallet_transfer_token_title');
-    }
-
-    const tokenSubtitle = $Id('transfer-token-subtitle');
-    if (tokenSubtitle) {
-        tokenSubtitle.textContent = t('wallet_transfer_token_subtitle');
-    }
-
-    const tokenToLabel = $Id('transfer-token-to-label');
-    if (tokenToLabel) {
-        tokenToLabel.textContent = t('wallet_transfer_to_label');
-    }
-    const tokenToInput = $input('#transfer-token-to');
-    if (tokenToInput) {
-        tokenToInput.placeholder = t('wallet_transfer_to_hint');
-    }
-    const tokenToHint = $Id('transfer-token-to-hint');
-    if (tokenToHint) {
-        tokenToHint.textContent = t('wallet_transfer_to_hint');
-    }
-
-    const tokenAmountLabel = $Id('transfer-token-amount-label');
-    if (tokenAmountLabel) {
-        tokenAmountLabel.textContent = t('wallet_transfer_token_amount_label');
-    }
-    const tokenAmountInput = $input('#transfer-token-amount');
-    if (tokenAmountInput) {
-        tokenAmountInput.placeholder = t('wallet_transfer_token_amount_label');
-    }
-
-    const tokenFeeHint = $Id('transfer-token-fee-hint');
-    if (tokenFeeHint) {
-        tokenFeeHint.textContent = t('wallet_transfer_token_fee_hint');
-    }
-
-    const tokenDecimalsLabel = $Id('transfer-token-decimals-label');
-    if (tokenDecimalsLabel) {
-        tokenDecimalsLabel.textContent = t('wallet_token_decimals_label');
-    }
-
-    const tokenGasLabel = $Id('transfer-token-gas-label');
-    if (tokenGasLabel) {
-        tokenGasLabel.textContent = t('wallet_transfer_gas_label');
-    }
-    const tokenGasInput = $input('#transfer-token-gas');
-    if (tokenGasInput) {
-        tokenGasInput.placeholder = t('wallet_transfer_gas_label');
-    }
-
-    const tokenGasHint = $Id('transfer-token-gas-hint');
-    if (tokenGasHint) {
-        tokenGasHint.textContent = t('wallet_transfer_gas_hint');
-    }
-
-    const tokenSubmitBtn = $Id('transfer-token-submit-btn') as HTMLButtonElement | null;
-    if (tokenSubmitBtn) {
-        tokenSubmitBtn.textContent = t('wallet_transfer_token_confirm_btn');
-    }
-
-    const tokenCancelBtn = $Id('transfer-token-cancel-btn') as HTMLButtonElement | null;
-    if (tokenCancelBtn) {
-        tokenCancelBtn.textContent = t('cancel'); // 或 common_cancel
-    }
 }
 
 

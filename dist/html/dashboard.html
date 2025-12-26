@@ -58,16 +58,16 @@
                 <button id="btn-refresh-balance">刷新余额</button>
             </li>
             <li>
-                <button id="btn-show-on-browser">浏览器查看</button>
+                <button class="wallet-action-btn" id="btn-show-on-browser">浏览器查看</button>
             </li>
             <li>
-                <button id="btn-transfer-eth">转账 ETH</button>
+                <button class="wallet-action-btn" id="btn-transfer-eth">转账 ETH</button>
             </li>
             <li>
-                <button id="btn-transfer-token">转账代币</button>
+                <button class="wallet-action-btn" id="btn-transfer-token">转账代币</button>
             </li>
             <li>
-                <button id="btn-sign-out">退出钱包</button>
+                <button class="wallet-action-btn" id="btn-sign-out">退出钱包</button>
             </li>
         </ul>
     </div>
@@ -91,7 +91,7 @@
     </div>
     <div class="category-show-area" id="category-show-area">
         <button id="btn-mgn-category" class="btn-mgn-category"></button>
-        <div id="wallet-create-div" class="wallet-create-div">
+        <div id="wallet-create-div" class="wallet-create-div" style="display: none">
             <button id="btn-create-wallet" class="btn-create-wallet">Connect</button>
         </div>
         <div id="ad-block-setting"
@@ -500,264 +500,57 @@
     </div>
 </div>
 
-<div
-        id="transfer-eth-modal"
-        class="tc-modal tc-modal--transfer hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="transfer-eth-title"
->
+<div id="transfer-modal" class="tc-modal tc-modal--transfer hidden">
     <div class="tc-modal__dialog">
         <header class="tc-modal__header">
             <div>
-                <h2 id="transfer-eth-title" class="tc-modal__title"></h2>
+                <h2 id="transfer-title" class="tc-modal__title"></h2>
             </div>
-            <button type="button" id="transfer-eth-close-btn"
-                    class="tc-modal__icon-btn"
-                    aria-label="Close"> ✕
-            </button>
+            <button type="button" id="transfer-close-btn" class="tc-modal__icon-btn">✕</button>
         </header>
 
-        <form id="transfer-eth-form" class="tc-modal__body">
+        <form id="transfer-form" class="tc-modal__body">
             <div class="tc-field">
-                <label
-                        for="transfer-eth-to"
-                        id="transfer-eth-to-label"
-                        class="tc-field__label"
-                ></label>
-                <input
-                        id="transfer-eth-to"
-                        type="text"
-                        class="tc-input"
-                        autocomplete="off"
-                />
-                <p
-                        id="transfer-eth-to-hint"
-                        class="tc-field__hint"
-                ></p>
+                <label for="transfer-to" id="transfer-to-label" class="tc-field__label"></label>
+                <input id="transfer-to" type="text" class="tc-input" autocomplete="off"/>
+                <p id="transfer-to-hint" class="tc-field__hint"></p>
             </div>
-            <!-- 金额 -->
             <div class="tc-field">
                 <div class="tc-field__row">
-                    <label
-                            for="transfer-eth-amount"
-                            id="transfer-eth-amount-label"
-                            class="tc-field__label"
-                    ></label>
-                    <span
-                            id="transfer-eth-balance"
-                            class="tc-field__hint"
-                    >
-            <!-- 运行时填充：当前余额：x.xxx ETH -->
-          </span>
+                    <label for="transfer-amount" id="transfer-amount-label" class="tc-field__label"></label>
+                    <span id="transfer-balance" class="tc-field__hint"></span>
                 </div>
 
                 <div class="tc-field__control tc-field__control--with-suffix">
                     <input
-                            id="transfer-eth-amount"
+                            id="transfer-amount"
                             type="number"
                             class="tc-input"
                             min="0"
-                            step="0.0001"
+                            step="0.001"
                             inputmode="decimal"
                     />
-                    <span class="tc-field__suffix">ETH</span>
+                    <span id="tc-field__suffix" class="tc-field__suffix">ETH</span>
                 </div>
 
                 <div class="tc-field__row tc-field__row--space-between">
-                    <button
-                            type="button"
-                            id="transfer-eth-fill-max"
-                            class="tc-link-button"
-                    >
+                    <button type="button" id="transfer-fill-max" class="tc-link-button">
                         Max
                     </button>
-                    <span
-                            id="transfer-eth-fee-hint"
-                            class="tc-field__hint"
-                    ></span>
+                    <span id="transfer-gas-fee-hint" class="tc-field__hint"></span>
                 </div>
             </div>
 
-            <!-- Gas / 网络信息 -->
             <div class="tc-field">
-                <span id="transfer-eth-network-label" class="tc-tag tc-tag--subtle">  </span>
+                <span id="transfer-network-label" class="tc-tag tc-tag--subtle"></span>
             </div>
 
-            <p id="transfer-eth-error" class="tc-form-error" aria-live="polite"></p>
+            <p id="transfer-error" class="tc-form-error" aria-live="polite"></p>
 
-            <!-- 底部按钮 -->
             <footer class="tc-modal__footer">
-                <button
-                        type="button"
-                        id="transfer-eth-cancel-btn"
-                        class="btn btn-secondary"
-                >
-                    <!-- 你原来应该有 common_cancel 之类的 key，这里用 JS 设置 -->
+                <button type="button" id="transfer-cancel-btn" class="btn btn-secondary">
                 </button>
-                <button
-                        type="submit"
-                        id="transfer-eth-submit-btn"
-                        class="btn btn-primary"
-                >
-                    <!-- 用 wallet_transfer_confirm_btn 设置 -->
-                </button>
-            </footer>
-        </form>
-    </div>
-</div>
-
-<div
-        id="transfer-token-modal"
-        class="tc-modal tc-modal--transfer hidden"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="transfer-token-title"
->
-    <div class="tc-modal__dialog">
-        <header class="tc-modal__header">
-            <div>
-                <h2 id="transfer-token-title" class="tc-modal__title"><!-- i18n: wallet_transfer_token_title --></h2>
-                <p id="transfer-token-subtitle" class="tc-modal__subtitle">
-                    <!-- i18n: wallet_transfer_token_subtitle --></p>
-            </div>
-            <button
-                    type="button"
-                    id="transfer-token-close-btn"
-                    class="tc-modal__icon-btn"
-                    aria-label="Close"
-            >
-                ✕
-            </button>
-        </header>
-
-        <form id="transfer-token-form" class="tc-modal__body">
-            <!-- 收款地址 -->
-            <div class="tc-field">
-                <label
-                        for="transfer-token-to"
-                        id="transfer-token-to-label"
-                        class="tc-field__label"
-                ></label>
-                <input
-                        id="transfer-token-to"
-                        type="text"
-                        class="tc-input"
-                        autocomplete="off"
-                />
-                <p
-                        id="transfer-token-to-hint"
-                        class="tc-field__hint"
-                ></p>
-            </div>
-
-            <!-- 数量 + Max + 余额 -->
-            <div class="tc-field">
-                <div class="tc-field__row">
-                    <label
-                            for="transfer-token-amount"
-                            id="transfer-token-amount-label"
-                            class="tc-field__label"
-                    ></label>
-                    <span
-                            id="transfer-token-balance"
-                            class="tc-field__hint"
-                    ></span>
-                </div>
-
-                <div class="tc-field__control tc-field__control--with-suffix">
-                    <input
-                            id="transfer-token-amount"
-                            type="number"
-                            class="tc-input"
-                            min="0"
-                            step="0.000001"
-                            inputmode="decimal"
-                    />
-                    <span class="tc-field__suffix">USDC</span>
-                </div>
-
-                <div class="tc-field__row tc-field__row--space-between">
-                    <button
-                            type="button"
-                            id="transfer-token-fill-max"
-                            class="tc-link-button"
-                    >
-                        Max
-                    </button>
-                    <span
-                            id="transfer-token-fee-hint"
-                            class="tc-field__hint"
-                    ></span>
-                </div>
-            </div>
-
-            <!-- Decimals -->
-            <div class="tc-field">
-                <div class="tc-field__row tc-field__row--space-between">
-                    <label
-                            for="transfer-token-decimals"
-                            id="transfer-token-decimals-label"
-                            class="tc-field__label"
-                    ></label>
-                </div>
-                <input
-                        id="transfer-token-decimals"
-                        type="number"
-                        class="tc-input"
-                        min="0"
-                        step="1"
-                />
-            </div>
-
-            <!-- Gas -->
-            <div class="tc-field">
-                <div class="tc-field__row tc-field__row--space-between">
-                    <label
-                            for="transfer-token-gas"
-                            id="transfer-token-gas-label"
-                            class="tc-field__label"
-                    ></label>
-                    <span
-                            id="transfer-token-network-label"
-                            class="tc-tag tc-tag--subtle"
-                    ></span>
-                </div>
-                <input
-                        id="transfer-token-gas"
-                        type="number"
-                        class="tc-input"
-                        min="21000"
-                        step="1000"
-                />
-                <p
-                        id="transfer-token-gas-hint"
-                        class="tc-field__hint"
-                ></p>
-            </div>
-
-            <!-- 错误信息 -->
-            <p
-                    id="transfer-token-error"
-                    class="tc-form-error"
-                    aria-live="polite"
-            ></p>
-
-            <!-- 底部按钮 -->
-            <footer class="tc-modal__footer">
-                <button
-                        type="button"
-                        id="transfer-token-cancel-btn"
-                        class="btn btn-secondary"
-                >
-                    <!-- i18n: cancel/common_cancel -->
-                </button>
-                <button
-                        type="submit"
-                        id="transfer-token-submit-btn"
-                        class="btn btn-primary"
-                >
-                    <!-- i18n: wallet_transfer_token_confirm_btn -->
+                <button type="submit" id="transfer-submit-btn" class="btn btn-primary">
                 </button>
             </footer>
         </form>

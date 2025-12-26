@@ -18,6 +18,7 @@ console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
 
 let routeTarget = "";
+
 async function initDashBoard(): Promise<void> {
     initI18n();
     initDashboardTexts();
@@ -30,7 +31,7 @@ async function initDashBoard(): Promise<void> {
 
     initCatMgmBtn();
     initSettings();
-    await initWalletOrCreate();
+    initWalletOrCreate();
     initIpfsSettingsView();
     await initSettingsPanel();
 }

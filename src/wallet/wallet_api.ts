@@ -322,7 +322,7 @@ export async function queryBasicInfo(): Promise<walletInfo> {
     try {
         const wallet = await loadWallet();
         if (!wallet) {
-            return {address: "", ethVal: "", usdcVal: "", hasCreated: false}
+            return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1}
         }
 
         const address = wallet.address;
@@ -331,10 +331,13 @@ export async function queryBasicInfo(): Promise<walletInfo> {
 
         const usdcAddress = getBaseUsdcAddress(settings);     // 👈 关键：选出当前链的 USDC 地址
         const usdc = await getTokenBalance(address, usdcAddress, settings);
-
-        return {address: address, ethVal: eth, usdcVal: usdc, hasCreated: true}
+        const chainId =
+            settings.network === ChainNameBaseMain
+                ? ChainIDBaseMain
+                : ChainIDBaseSepolia;
+        return {address: address, ethVal: eth, usdcVal: usdc, hasCreated: true, chainId}
     } catch (e) {
         console.warn("query basic info of wallet failed:", e)
-        return null
+        return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1}
     }
 }

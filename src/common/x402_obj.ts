@@ -83,4 +83,5 @@ export interface walletInfo {
     address: string;
     ethVal: string;
     usdcVal: string;
+    chainId:number
 }

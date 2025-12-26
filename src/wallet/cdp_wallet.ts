@@ -155,11 +155,12 @@ export async function queryCdpWalletInfo(): Promise<walletInfo> {
             address: eoa.address,
             ethVal: eth,
             usdcVal: usdc,
-            hasCreated: true
+            hasCreated: true,
+            chainId
         };
     } catch (error) {
         console.error('Failed to query CDP wallet info:', error);
-        return {address: "", ethVal: "", usdcVal: "", hasCreated: false};
+        return {address: "", ethVal: "", usdcVal: "", hasCreated: false,chainId:-1};
     }
 }
 

@@ -409,7 +409,7 @@
     "message": "Transfer ETH"
   },
   "wallet_action_transfer_token": {
-    "message": "Transfer token"
+    "message": "Transfer USDC"
   },
   "wallet_action_sign_out": {
     "message": "Sign Out Wallet"
@@ -639,26 +639,8 @@
   "wallet_transfer_tx_sent": {
     "message": "Transaction sent: "
   },
-  "wallet_transfer_eth_failed": {
-    "message": "ETH transfer failed"
-  },
-  "wallet_prompt_token_address": {
-    "message": "Enter the token contract address"
-  },
-  "wallet_prompt_transfer_token_amount": {
-    "message": "Enter the token amount to send"
-  },
-  "wallet_prompt_token_decimals": {
-    "message": "Enter the token decimals"
-  },
-  "wallet_prompt_password_send_token": {
-    "message": "Enter your wallet password to send tokens"
-  },
-  "wallet_transfer_token_tx_sent": {
-    "message": "Token transfer sent: "
-  },
-  "wallet_transfer_token_failed": {
-    "message": "Token transfer failed"
+  "wallet_transfer_failed": {
+    "message": "Transfer failed"
   },
   "wallet_prompt_sign_message": {
     "message": "Enter the message to sign"
@@ -822,9 +804,6 @@
   "wallet_transfer_amount_label": {
     "message": "Amount"
   },
-  "wallet_transfer_fee_hint": {
-    "message": "Available balance ≈ current balance − estimated network fee."
-  },
   "wallet_transfer_confirm_btn": {
     "message": "Confirm & Send"
   },
@@ -835,37 +814,10 @@
     "message": "Please enter the recipient address."
   },
   "wallet_error_gas_invalid": {
-    "message": "Invalid gas limit. Please enter an integer no less than 21000."
+    "message": "Invalid gas."
   },
   "wallet_transfer_token_title": {
     "message": "Send USDC"
-  },
-  "wallet_transfer_token_subtitle": {
-    "message": "Please double-check the token address, recipient, and amount before submitting the transaction."
-  },
-  "wallet_token_address_label": {
-    "message": "Token contract address"
-  },
-  "wallet_token_address_placeholder": {
-    "message": "ERC-20 token contract address"
-  },
-  "wallet_token_address_hint": {
-    "message": "By default, the official USDC contract for the current network is used."
-  },
-  "wallet_transfer_token_amount_label": {
-    "message": "Amount"
-  },
-  "wallet_transfer_token_fee_hint": {
-    "message": "Make sure there is still enough ETH in this wallet to pay the network fee."
-  },
-  "wallet_token_decimals_label": {
-    "message": "Token decimals"
-  },
-  "wallet_transfer_token_confirm_btn": {
-    "message": "Confirm & Send"
-  },
-  "wallet_token_address_required": {
-    "message": "Please enter the token contract address."
   },
   "wallet_sending_transaction": {
     "message": "sending transaction......"

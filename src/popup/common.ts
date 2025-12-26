@@ -89,18 +89,6 @@ export function showAlert(title: string, message: string) {
     };
 }
 
-export function setTextContentOrHide(element: HTMLElement | null, text?: string | null) {
-    if (!element) return;
-    const trimmed = typeof text === "string" ? text.trim() : "";
-    if (trimmed) {
-        element.textContent = trimmed;
-        element.classList.remove("hidden");
-    } else {
-        element.textContent = "";
-        element.classList.add("hidden");
-    }
-}
-
 export function showConfirm(msg: string): Promise<boolean> {
     return new Promise((resolve) => {
         const container = document.getElementById("confirm-popup")!;
@@ -148,3 +136,7 @@ export async function showPopupWindow(url: string, width: number = 450, height: 
         focused: true
     });
 }
+
+
+export const FIXED_ETH_TRANSFER_GAS_ETH = 0.000002; // ETH转账所需Gas费
+export const FIXED_USDC_TRANSFER_GAS_ETH = 0.000005; // USDC转账所需Gas费
