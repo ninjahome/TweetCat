@@ -1,11 +1,10 @@
 import {Hono} from "hono";
 import {cors} from "hono/cors";
-import {x402ResourceServer, HTTPFacilitatorClient} from "@x402/core/server";
+import {HTTPFacilitatorClient, x402ResourceServer} from "@x402/core/server";
 import {ExactEvmScheme} from "@x402/evm/exact/server";
 import {generateJwt, generateWalletJwt} from "@coinbase/cdp-sdk/auth";
 import {SettleResponse} from "@x402/core/types";
 import {ContentfulStatusCode} from "hono/utils/http-status";
-import {CdpClient} from "@coinbase/cdp-sdk";
 
 export interface Env {
 	CDP_API_KEY_ID: string;
@@ -223,14 +222,13 @@ async function getCdpAuthHeader(env: Env, method: string, path: string, requestD
 	};
 
 	if (requireWalletAuth) {
-		const walletJwt = await generateWalletJwt({
+		headers["X-Wallet-Auth"] = await generateWalletJwt({
 			walletSecret: env.CDP_WALLET_SECRET,
 			requestMethod: method,
 			requestHost: host,
 			requestPath: path,
 			requestData: requestData ?? {},
 		});
-		headers["X-Wallet-Auth"] = walletJwt;
 	}
 
 	return headers;
