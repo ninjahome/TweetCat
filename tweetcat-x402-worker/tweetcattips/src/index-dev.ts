@@ -1,13 +1,13 @@
-import { Hono } from "hono";
-import { HTTPFacilitatorClient, x402ResourceServer } from "@x402/core/server";
-import { ExactEvmScheme } from "@x402/evm/exact/server";
+import {Hono} from "hono";
+import {HTTPFacilitatorClient, x402ResourceServer} from "@x402/core/server";
+import {ExactEvmScheme} from "@x402/evm/exact/server";
 
 import {
 	applyCors,
 	type Env,
 	type NetConfig,
 } from "./common";
-import {registerUserInfoRoute,createTipHandler} from "./api_srv";
+import {registerUserInfoRoute, createTipHandler, createUsdcTransferHandler} from "./api_srv";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -51,6 +51,13 @@ app.post(
 registerUserInfoRoute(app);
 
 /** 可选：健康检查 */
-app.get("/health", (c) => c.json({ ok: true, env: "testnet" }));
+app.get("/health", (c) => c.json({ok: true, env: "testnet"}));
+
+
+app.post(
+	"/usdc-transfer",
+	createUsdcTransferHandler({cfg: TESTNET_CFG, getResourceServer: getTestnetResourceServer})
+);
+
 
 export default app;

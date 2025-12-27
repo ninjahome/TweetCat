@@ -139,4 +139,4 @@ export async function showPopupWindow(url: string, width: number = 450, height: 
 
 
 export const FIXED_ETH_TRANSFER_GAS_ETH = 0.000002; // ETH转账所需Gas费
-export const FIXED_USDC_TRANSFER_GAS_ETH = 0.000005; // USDC转账所需Gas费
+export const FIXED_MINI_USDC_TRANSFER = 0.00001; // USDC转账所需Gas费

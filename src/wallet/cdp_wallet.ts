@@ -34,6 +34,8 @@ import {x402Client} from "@x402/core/client";
 import {registerExactEvmScheme} from "@x402/evm/exact/client";
 import {wrapFetchWithPayment} from "@x402/fetch";
 import {privateKeyToAccount} from "viem/accounts";
+import {t} from "../common/i18n";
+import {logX402} from "../common/debug_flags";
 
 const ERC20_BALANCE_ABI = [
     {
@@ -160,7 +162,7 @@ export async function queryCdpWalletInfo(): Promise<walletInfo> {
         };
     } catch (error) {
         console.error('Failed to query CDP wallet info:', error);
-        return {address: "", ethVal: "", usdcVal: "", hasCreated: false,chainId:-1};
+        return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1};
     }
 }
 
@@ -287,6 +289,29 @@ export async function transferUSDCEoa(
     return result.transactionHash as `0x${string}`;
 }
 
+
+export async function transferUSDCByX402(
+    chainId: number,
+    toAddress: string,
+    amountUsdc: string
+): Promise<`0x${string}`> {
+    if (!isAddress(toAddress)) {
+        throw new Error(`Invalid recipient address: ${toAddress}`);
+    }
+
+    const end_point = X402_FACILITATORS[chainId].endpoint + "/usdc-transfer";
+    const response = await postToX402Srv(end_point, {amount: amountUsdc, to: toAddress})
+    if (!response.ok) {
+        const text = await response.text();
+        logX402("------>>>x402 transfer error:", text);
+        throw new Error(`transfer failed: ${text}`);
+    }
+
+    const result = await response.json();
+    const txHash = result.txHash;
+    logX402("-------x402>>>transfer result,", result)
+    return txHash;
+}
 
 export async function initX402Client(): Promise<typeof fetch> {
     await initCDP();
@@ -439,4 +464,16 @@ export async function initX402ClientWithPrivateKey(): Promise<typeof fetch> {
     });
 
     return wrapFetchWithPayment(fetch, client);
+}
+
+export async function postToX402Srv(urlPath: string, body: any) {
+
+    const x402Fetch = await initX402Client()
+    return x402Fetch(urlPath, {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
 }

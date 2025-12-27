@@ -30,8 +30,19 @@ interface TipObj {
 	tweetId?: string;
 }
 
+type Ctx = Context<{ Bindings: Env }>;
 
-/** 两端通用路由：查询 end-user 信息 */
+type Parsed = {
+	payTo: `0x${string}`;
+	atomicAmount: string;
+	meta?: any;
+};
+
+export interface TransferRequestParams {
+	amount: string;          // "0.01"
+	to: `0x${string}` | string;
+}
+
 export function registerUserInfoRoute(app: Hono<{ Bindings: Env }>) {
 	app.get("/user-info", async (c) => {
 		const userId = c.req.query("userId"); // x:12345 或 uuid
@@ -69,59 +80,7 @@ export function registerUserInfoRoute(app: Hono<{ Bindings: Env }>) {
 	});
 }
 
-
-async function x402WorkFlow(
-	c: Context<{ Bindings: Env }>,
-	requirements: PaymentRequirements,
-	resource: ResourceInfo,
-	resourceServer: x402ResourceServer
-): Promise<
-	| { success: true; settleResult: SettleResponse }
-	| { success: false; error: string; raw?: any }
-> {
-
-	const paymentHeader = getPaymentHeader(c);
-
-	if (!paymentHeader) {
-		const paymentRequired = resourceServer.createPaymentRequiredResponse([requirements], resource);
-		c.status(402);
-		c.header("PAYMENT-REQUIRED", encodeBase64Json(paymentRequired));
-		return {success: false, error: "Payment Required"};
-	}
-
-	let paymentPayload;
-	try {
-		paymentPayload = decodeBase64Json(paymentHeader);
-	} catch {
-		return {success: false, error: "Invalid payment header encoding"};
-	}
-	console.log("[X402] Received payment payload:", JSON.stringify(paymentPayload));
-
-	const verifyResult = await resourceServer.verifyPayment(paymentPayload, requirements);
-	if (!verifyResult.isValid) {
-		return {success: false, error: "Invalid Payment", raw: verifyResult.invalidReason};
-	}
-	console.log("[X402] verify Result Detail:", JSON.stringify(verifyResult));
-
-	const settleResult = (await resourceServer.settlePayment(
-		paymentPayload,
-		requirements
-	)) as SettleResponse;
-
-	c.header("PAYMENT-RESPONSE", encodeBase64Json(settleResult));
-	console.log("[X402] Settle Result Detail:", JSON.stringify(settleResult));
-
-	if (!settleResult.success) {
-		return {
-			success: false,
-			error: settleResult.errorReason || "Settle failed",
-			raw: settleResult,
-		};
-	}
-	return {success: true, settleResult};
-}
-
-export async function parseTipParams(c: any): Promise<TipObj> {
+export async function parseTipParams(c: Ctx): Promise<TipObj> {
 	const body = (await c.req.json()) as TipRequestParams;
 	if (!body) throw new Error("Invalid tip parameters");
 
@@ -148,30 +107,82 @@ export async function parseTipParams(c: any): Promise<TipObj> {
 	return {mode, payTo, atomicAmount, xId, tweetId};
 }
 
-/**
- * 通用 tip handler 工厂：两端差异通过 cfg + getResourceServer(env) 注入
- * - 主网：getResourceServer 会带 createAuthHeaders
- * - 测试网：getResourceServer 不带 createAuthHeaders
- */
-export function createTipHandler(opts: {
+export async function parseTransferParams(
+	c: Context<{ Bindings: Env }>
+): Promise<{ payTo: `0x${string}`; atomicAmount: string }> {
+
+	const body = (await c.req.json()) as TransferRequestParams;
+	if (!body) throw new Error("Invalid transfer parameters");
+
+	const to = String(body?.to ?? "").trim();
+	if (!isHexAddress(to)) throw new Error("Invalid to address");
+
+	const amountStr = String(body?.amount ?? "").trim();
+	if (!amountStr) throw new Error("Missing amount");
+
+	const atomicAmount = usdcToAtomic(amountStr);
+	if (!/^\d+$/.test(atomicAmount) || atomicAmount === "0") {
+		throw new Error("Invalid amount");
+	}
+
+	return { payTo: to as `0x${string}`, atomicAmount };
+}
+
+async function x402Workflow(
+	c: Ctx,
+	requirements: PaymentRequirements,
+	resource: ResourceInfo,
+	resourceServer: x402ResourceServer,
+): Promise<{ response: Response; settleResult?: SettleResponse }> {
+
+	const paymentHeader = getPaymentHeader(c);
+
+	if (!paymentHeader) {
+		const pr = resourceServer.createPaymentRequiredResponse([requirements], resource);
+		c.status(402);
+		c.header("PAYMENT-REQUIRED", encodeBase64Json(pr));
+		return { response: c.json({ error: "Payment Required" }) };
+	}
+
+	const paymentPayload = decodeBase64Json(paymentHeader);
+
+	const verifyResult = await resourceServer.verifyPayment(paymentPayload, requirements);
+	if (!verifyResult.isValid) {
+		return { response: c.json({ error: "Invalid Payment", reason: verifyResult.invalidReason }, 402) };
+	}
+
+	const settleResult = (await resourceServer.settlePayment(paymentPayload, requirements)) as SettleResponse;
+	c.header("PAYMENT-RESPONSE", encodeBase64Json(settleResult));
+
+	if (!settleResult.success) {
+		return { response: c.json({ success: false, error: settleResult.errorReason, raw: settleResult }, 500), settleResult };
+	}
+
+	return {
+		response: c.json({ success: true, txHash: settleResult.transaction, payer: settleResult.payer, raw: settleResult }),
+		settleResult,
+	};
+}
+
+export function createX402Handler(opts: {
 	cfg: NetConfig;
-	getResourceServer: (env: Env) => any;
-	description?: string;
+	getResourceServer: (env: Env) => x402ResourceServer;
+	description: string;
+	parse: (c: Ctx) => Promise<Parsed>;
+	onSettled?: (c: Ctx, parsed: Parsed, settle: SettleResponse) => Promise<void>;
 }) {
-	const {cfg, getResourceServer} = opts;
-	const description = opts.description ?? "Tweet Tip Payment";
+	const { cfg, getResourceServer, description, parse, onSettled } = opts;
 
-	return async (c: Context<{ Bindings: Env }>): Promise<Response> => {
+	return async (c: Ctx): Promise<Response> => {
 		try {
-
-			const tip = await parseTipParams(c);
+			const parsed = await parse(c);
 
 			const requirements = {
 				scheme: "exact" as const,
 				network: cfg.NETWORK,
 				asset: cfg.USDC,
-				amount: tip.atomicAmount,
-				payTo: tip.payTo,
+				amount: parsed.atomicAmount,
+				payTo: parsed.payTo,
 				maxTimeoutSeconds: 300,
 				extra: {
 					name: cfg.USDC_EIP712_NAME,
@@ -180,51 +191,84 @@ export function createTipHandler(opts: {
 				},
 			} as const;
 
-			const resource = {
-				url: c.req.url,
-				description,
-				mimeType: "application/json",
-			};
+			const resource: ResourceInfo = { url: c.req.url, description, mimeType: "application/json" };
 
-			const resourceServer = getResourceServer(c.env);
-			const x402Result = await x402WorkFlow(c, requirements, resource, resourceServer)
+			const rs = getResourceServer(c.env);
+			const { response, settleResult } = await x402Workflow(c, requirements, resource, rs);
 
-			if (!x402Result.success) {
-				return c.json(
-					{
-						success: false,
-						error: x402Result.error,
-						raw: x402Result.raw,
-					},
-					x402Result.error === "Payment Required" ? 402 : 500
-				);
+			if (settleResult?.success && onSettled) {
+				await onSettled(c, parsed, settleResult);
 			}
 
-			const {settleResult} = x402Result;
+			return response;
+		} catch (e: any) {
+			return c.json({ error: e?.message ?? "Bad Request" }, 400);
+		}
+	};
+}
+
+export function createTipHandler(opts: {
+	cfg: NetConfig;
+	getResourceServer: (env: Env) => x402ResourceServer;
+	description?: string;
+}) {
+	const { cfg, getResourceServer } = opts;
+	const description = opts.description ?? "Tweet Tip Payment";
+
+	return createX402Handler({
+		cfg,
+		getResourceServer,
+		description,
+
+		parse: async (c) => {
+			const tip = await parseTipParams(c);
+			return {
+				payTo: tip.payTo,
+				atomicAmount: tip.atomicAmount,
+				meta: tip,
+			};
+		},
+
+		onSettled: async (c, parsed, settle) => {
+			const tip = parsed.meta as TipObj;
+			if (!tip || tip.mode !== "escrow") return;
+
+			const payer = settle.payer;
+			if (!payer) return;
 
 			const record: TipRecord = {
 				xId: tip.xId,
 				mode: tip.mode,
 				amountAtomic: tip.atomicAmount,
-				payer: settleResult.payer!,
-				txHash: settleResult.transaction,
+				payer,
+				txHash: settle.transaction,
+			};
+
+			try {
+				const id = await recordEscrowTips(c.env.DB, record);
+				console.log("new tip record id=", id);
+			} catch (e) {
+				console.warn("tip record error:", e);
 			}
+		},
+	});
+}
 
-			recordEscrowTips(c.env.DB, record).then((record_id) => {
-				console.log("new tip record id=", record_id);
-			}).catch(err => {
-				console.warn("tip record error: ", err);
-			})
+export function createUsdcTransferHandler(opts: {
+	cfg: NetConfig;
+	getResourceServer: (env: Env) => x402ResourceServer;
+	description?: string;
+}) {
+	const { cfg, getResourceServer } = opts;
+	const description = opts.description ?? "USDC Transfer";
 
-			return c.json({
-				success: true,
-				txHash: settleResult.transaction,
-				message: "Tip received and recorded!",
-				raw: settleResult,
-			});
-
-		} catch (err: any) {
-			return c.json({error: "Internal Server Error", detail: err?.message}, 500);
-		}
-	};
+	return createX402Handler({
+		cfg,
+		getResourceServer,
+		description,
+		parse: async (c) => {
+			const p = await parseTransferParams(c);
+			return { payTo: p.payTo, atomicAmount: p.atomicAmount };
+		},
+	});
 }

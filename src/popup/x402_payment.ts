@@ -1,9 +1,9 @@
 import {isSignedIn} from "@coinbase/cdp-core";
 import {initCDP, X402_FACILITATORS, x402TipPayload} from "../common/x402_obj";
 import {getChainId} from "../wallet/wallet_setting";
-import {initX402Client} from "../wallet/cdp_wallet";
 import {logX402} from "../common/debug_flags";
 import {t} from "../common/i18n";
+import {postToX402Srv} from "../wallet/cdp_wallet";
 
 // DOM 元素
 let statusDiv: HTMLElement;
@@ -96,7 +96,6 @@ async function processTipPayment(payload: x402TipPayload) {
     try {
         await initCDP();
 
-        // 1. 检查登录状态
         updateStatus(t('checking_login_status'));
         const signed = await isSignedIn();
         if (!signed) {
@@ -104,34 +103,24 @@ async function processTipPayment(payload: x402TipPayload) {
             return
         }
 
-        // 2. 验证金额
         updateStatus(t('verifying_payment_amount'));
         if (!payload.usdcVal || payload.usdcVal <= 0 || payload.usdcVal > 1000) {
             showError(t('invalid_payment_amount'));
             return
         }
 
-        // 3. 获取链信息
         updateStatus(t('fetching_network_info'));
         const chainId = await getChainId();
-        const end_point = X402_FACILITATORS[chainId].endpoint;
-
-        const body = {
-            amount: payload.usdcVal,
-            tweetId: payload.tweetId,
-            xId: payload.authorId // 对应后端 parseTipParams 中的 xId
-        };
+        const end_point = X402_FACILITATORS[chainId].endpoint + "/tip";
 
         updateStatus(t('requesting_payment'));
 
-        const selfFetch = await initX402Client()
-        const response = await selfFetch(end_point, {
-            method: 'POST',
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
-        });
+        const response = await postToX402Srv(end_point, {
+            amount: payload.usdcVal,
+            tweetId: payload.tweetId,
+            xId: payload.authorId
+        })
+
         if (!response.ok) {
             const text = await response.text();
             logX402("------>>>x402 error:", text);
@@ -140,12 +129,10 @@ async function processTipPayment(payload: x402TipPayload) {
         }
         const result = await response.json();
 
-        // 6. 显示成功
         const txHash = result.txHash || result.transactionHash;
         logX402("-------x402>>>result,", result)
         showSuccess(t('tip_success'), txHash);
 
-        // 7. 自动关闭（延迟以便用户看到结果）
         setTimeout(() => {
             window.close();
         }, 10000);

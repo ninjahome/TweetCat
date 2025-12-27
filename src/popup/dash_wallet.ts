@@ -1,6 +1,6 @@
 import {
     $Id, $input, FIXED_ETH_TRANSFER_GAS_ETH,
-    FIXED_USDC_TRANSFER_GAS_ETH, hideLoading, showAlert, showLoading, showNotification, showPopupWindow
+    FIXED_MINI_USDC_TRANSFER, hideLoading, showAlert, showLoading, showNotification, showPopupWindow
 } from "./common";
 import {t} from "../common/i18n";
 import {ethers} from "ethers";
@@ -12,7 +12,7 @@ import {doSignOut, walletInfo, X402_FACILITATORS} from "../common/x402_obj";
 import {
     getWalletAddress,
     queryCdpWalletInfo,
-    transferETHEoa, transferUSDCEoa
+    transferETHEoa, transferUSDCByX402
 } from "../wallet/cdp_wallet";
 import {getChainId} from "../wallet/wallet_setting";
 
@@ -100,7 +100,7 @@ function openTransferDialog(typ: "eth" | "usdc", wi: walletInfo): Promise<Transf
     });
 }
 
-async function __handleTransfer(typ: "eth" | "usdc", threshold: number, action: (chain: number, receipt: string, amount: string) => Promise<`0x${string}`>): Promise<void> {
+async function __handleTransfer(typ: "eth" | "usdc", action: (chain: number, receipt: string, amount: string) => Promise<`0x${string}`>): Promise<void> {
     showLoading(t("syncing") || "");
     try {
         const wi = await queryCdpWalletInfo()
@@ -109,8 +109,13 @@ async function __handleTransfer(typ: "eth" | "usdc", threshold: number, action: 
             return
         }
 
-        if (Number(wi.ethVal) < threshold) {
+        if (typ === "eth" && Number(wi.ethVal) < FIXED_ETH_TRANSFER_GAS_ETH) {
             showAlert(t('tips_title'), t('wallet_error_gas_invalid'))
+            return
+        }
+
+        if (typ === "usdc" && Number(wi.usdcVal) < FIXED_MINI_USDC_TRANSFER) {
+            showAlert(t('tips_title'), t('wallet_insufficient_funds') + "(Minimum:" + FIXED_MINI_USDC_TRANSFER + ")")
             return
         }
 
@@ -187,10 +192,10 @@ function setupWalletActionButtons(): void {
 
     const transferEthBtn = $Id("btn-transfer-eth") as HTMLButtonElement;
     transferEthBtn.textContent = t('wallet_action_transfer_eth');
-    transferEthBtn.onclick = async () => __handleTransfer("eth", FIXED_ETH_TRANSFER_GAS_ETH, transferETHEoa)
+    transferEthBtn.onclick = async () => __handleTransfer("eth", transferETHEoa)
 
     const transferTokenBtn = $Id("btn-transfer-token");
-    transferTokenBtn.onclick = async () => __handleTransfer("usdc", FIXED_USDC_TRANSFER_GAS_ETH, transferUSDCEoa)
+    transferTokenBtn.onclick = async () => __handleTransfer("usdc", transferUSDCByX402)
     transferTokenBtn.textContent = t('wallet_action_transfer_token');
 
     const backBtn = $Id("wallet-back-btn") as HTMLButtonElement;
