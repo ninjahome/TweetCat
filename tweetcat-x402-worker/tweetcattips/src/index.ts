@@ -10,6 +10,9 @@ export interface Env {
 	CDP_API_KEY_ID: string;
 	CDP_API_KEY_SECRET: string;
 	CDP_WALLET_SECRET: string;
+	DB: D1Database;
+	NETWORK: string;
+	TREASURY_ADDRESS: string;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -32,7 +35,6 @@ function getNetConfig(isMainnet: boolean): NetConfig {
 			NETWORK: "eip155:8453",
 			FACILITATOR_URL: "https://api.cdp.coinbase.com/platform/v2/x402",
 			USDC: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-			// Base 主网：很多地方把它称为 USD Coin（但 explorer 也提示展示名和 name() 可能不同）
 			USDC_EIP712_NAME: "USD Coin",
 			USDC_EIP712_VERSION: "2",
 			REQUIRE_FACILITATOR_AUTH: true,
@@ -43,7 +45,6 @@ function getNetConfig(isMainnet: boolean): NetConfig {
 		NETWORK: "eip155:84532",
 		FACILITATOR_URL: "https://x402.org/facilitator",
 		USDC: "0x036CbD53842c5426634e7929541eC2318F3dCF7e",
-		// ⭐ Base Sepolia：CDP 示例里 domain name 用的是 "USDC"
 		USDC_EIP712_NAME: "USDC",
 		USDC_EIP712_VERSION: "2",
 		REQUIRE_FACILITATOR_AUTH: false,
