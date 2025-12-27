@@ -269,38 +269,4 @@ app.get("/user-info", async (c) => {
 		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
 	}
 });
-
-
-//根据推特/X 用户 id 预创建 End User（type=x，createSmartAccount=true）
-app.get("/end-users/x", async (c) => {
-
-
-	const xUserIdRaw = c.req.query("xId");
-	const xUserId = (xUserIdRaw || "").trim();
-	if (!xUserId) return c.json({error: "xId"}, 400);
-	const userId = `x-${xUserId}`;
-
-	try {
-
-		const cdp = new CdpClient({
-			apiKeyId: c.env.CDP_API_KEY_ID,
-			apiKeySecret: c.env.CDP_API_KEY_SECRET,
-			walletSecret: c.env.CDP_WALLET_SECRET,
-		});
-
-		const endUser = await cdp.endUser.createEndUser({
-			userId,
-			authenticationMethods: [
-				{type: "jwt", kid: "tweetcat-x-jwt-key-v1", sub: userId}
-			],
-			evmAccount: {createSmartAccount: true}
-		});
-
-		console.log("Created end user:", endUser);
-		return c.json(JSON.stringify(endUser), 200);
-	} catch (err: any) {
-		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
-	}
-});
-
 export default app;
