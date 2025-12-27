@@ -3,11 +3,20 @@
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
+		"typecheck": "tsc --noEmit",
+		"cf-typegen": "wrangler types",
+
+		"dev": "wrangler dev --env dev",
+		"dev:prod": "wrangler dev",
+
+		"deploy:dev": "npm run typecheck && wrangler deploy --env dev",
+		"deploy:prod": "npm run typecheck && wrangler deploy",
+
+		"db:migrate:test": "wrangler d1 migrations apply DB --env dev",
+		"db:migrate:main": "wrangler d1 migrations apply DB",
+
 		"test": "vitest",
-		"cf-typegen": "wrangler types"
+		"build": "npm run typecheck"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",

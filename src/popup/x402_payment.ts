@@ -114,18 +114,23 @@ async function processTipPayment(payload: x402TipPayload) {
         // 3. 获取链信息
         updateStatus(t('fetching_network_info'));
         const chainId = await getChainId();
-        const settleAddress = X402_FACILITATORS[chainId].settlementContract;
         const end_point = X402_FACILITATORS[chainId].endpoint;
-        const tipUrl = `${end_point}?payTo=${settleAddress}&amount=${payload.usdcVal}&tweetId=${payload.tweetId}&authorId=${payload.authorId}`;
+
+        const body = {
+            amount: payload.usdcVal,
+            tweetId: payload.tweetId,
+            xId: payload.authorId // 对应后端 parseTipParams 中的 xId
+        };
 
         updateStatus(t('requesting_payment'));
 
         const selfFetch = await initX402Client()
-        const response = await selfFetch(tipUrl, {
-            method: 'GET',
+        const response = await selfFetch(end_point, {
+            method: 'POST',
             headers: {
                 "Content-Type": "application/json"
-            }
+            },
+            body: JSON.stringify(body)
         });
         if (!response.ok) {
             const text = await response.text();

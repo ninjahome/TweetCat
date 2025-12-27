@@ -4,11 +4,10 @@ import { ExactEvmScheme } from "@x402/evm/exact/server";
 
 import {
 	applyCors,
-	createTipHandler,
-	registerUserInfoRoute,
 	type Env,
 	type NetConfig,
 } from "./common";
+import {registerUserInfoRoute,createTipHandler} from "./api_srv";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -40,7 +39,7 @@ function getTestnetResourceServer(_env: Env) {
 }
 
 /** ✅ 测试网：只挂 /tip */
-app.get(
+app.post(
 	"/tip",
 	createTipHandler({
 		cfg: TESTNET_CFG,

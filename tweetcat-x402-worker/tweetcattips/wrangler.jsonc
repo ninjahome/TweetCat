@@ -14,7 +14,7 @@
 		}
 	],
 	"vars": {
-		"TREASURY_ADDRESS": "0x你的主网托管钱包地址"
+		"TREASURY_ADDRESS": "0x729e71ff357ccefAa31635931621531082A698f6"
 	},
 
 	"env": {
@@ -29,7 +29,7 @@
 				}
 			],
 			"vars": {
-				"TREASURY_ADDRESS": "0x你的测试网托管钱包地址"
+				"TREASURY_ADDRESS": "0x729e71ff357ccefAa31635931621531082A698f6"
 			}
 		}
 	}

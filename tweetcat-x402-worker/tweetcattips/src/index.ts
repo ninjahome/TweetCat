@@ -4,13 +4,12 @@ import { ExactEvmScheme } from "@x402/evm/exact/server";
 
 import {
 	applyCors,
-	createTipHandler,
 	getX402AuthHeader,
 	normalizeMultilineSecret,
-	registerUserInfoRoute,
 	type Env,
 	type NetConfig,
 } from "./common";
+import {createTipHandler, registerUserInfoRoute} from "./api_srv";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -54,7 +53,7 @@ function getMainnetResourceServer(env: Env) {
 }
 
 /** ✅ 主网：只挂 /tip */
-app.get(
+app.post(
 	"/tip",
 	createTipHandler({
 		cfg: MAINNET_CFG,

@@ -6,7 +6,7 @@
     ]
   },
   "name": "TweetCat",
-  "version": "3.2.5",
+  "version": "3.3.1",
   "default_locale": "en",
   "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {
