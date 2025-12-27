@@ -30,7 +30,7 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
         network: ChainNameBaseSepolia,
         usdcAddress: BASE_SEPOLIA_USDC,
         settlementContract: "0x1BD5fF7e17ec7950cAA06BF2DeB0038C54d31Fc2",
-        endpoint: "https://tweetcattips.ribencong.workers.dev/tip-test",
+        endpoint: "https://tweetcattips-dev.ribencong.workers.dev/tip",
         browser: BASE_SEPOLIA_DEFAULT_RPC,
     },
 

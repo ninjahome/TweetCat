@@ -40,6 +40,7 @@
     "*://x.com/*",
     "https://tweetcat.dessage.xyz/*",
     "https://tweetcattips.ribencong.workers.dev/*",
+    "https://tweetcattips-dev.ribencong.workers.dev/*",
     "http://localhost:8787/*"
   ],
   "background": {

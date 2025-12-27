@@ -3,13 +3,9 @@
 	"name": "tweetcattips",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-12-17",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"observability": {
-		"enabled": true
-	},
-	// 默认配置（通常对应主网 Production）
+	"compatibility_flags": ["nodejs_compat"],
+	"observability": { "enabled": true },
+
 	"d1_databases": [
 		{
 			"binding": "DB",
@@ -18,9 +14,9 @@
 		}
 	],
 	"vars": {
-		"NETWORK": "base-mainnet",
 		"TREASURY_ADDRESS": "0x你的主网托管钱包地址"
 	},
+
 	"env": {
 		"dev": {
 			"name": "tweetcattips-dev",
@@ -33,7 +29,6 @@
 				}
 			],
 			"vars": {
-				"NETWORK": "base-sepolia",
 				"TREASURY_ADDRESS": "0x你的测试网托管钱包地址"
 			}
 		}
