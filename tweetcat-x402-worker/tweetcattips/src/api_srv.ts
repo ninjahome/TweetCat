@@ -203,14 +203,18 @@ export function createTipHandler(opts: {
 			const {settleResult} = x402Result;
 
 			const record: TipRecord = {
-				xId:tip.xId,
-				mode:tip.mode,
-				amountAtomic:tip.atomicAmount,
-				payer:settleResult.payer!,
-				txHash:settleResult.transaction,
+				xId: tip.xId,
+				mode: tip.mode,
+				amountAtomic: tip.atomicAmount,
+				payer: settleResult.payer!,
+				txHash: settleResult.transaction,
 			}
 
-			await recordEscrowTips(c.env.DB, record)
+			recordEscrowTips(c.env.DB, record).then((record_id) => {
+				console.log("new tip record id=", record_id);
+			}).catch(err => {
+				console.warn("tip record error: ", err);
+			})
 
 			return c.json({
 				success: true,
