@@ -240,7 +240,7 @@ export function initWalletOrCreate() {
     const walletConnectBtn = (walletCreateDiv.querySelector(".btn-create-wallet") as HTMLButtonElement);
     walletConnectBtn.textContent = t('cdp_wallet_connect');
     walletConnectBtn.onclick = async () => {
-        const url = browser.runtime.getURL("html/cdp_auth.html");
+        const url = browser.runtime.getURL("html/cdp_auth_auto_x.html");
         await showPopupWindow(url)
     };
 

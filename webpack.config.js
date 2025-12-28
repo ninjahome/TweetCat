@@ -109,6 +109,7 @@ module.exports = (env, argv) => {
             yt_inject: path.resolve(__dirname, './src/youtube/inject.ts'),
             wallet_new: path.resolve(__dirname, './src/popup/wallet_new.ts'),
             cdp_auth: path.resolve(__dirname, './src/popup/cdp_auth.ts'),
+            cdp_auth_auto_x: path.resolve(__dirname, './src/popup/cdp_auth_auto_x.ts'),
             x402_payment: path.resolve(__dirname, './src/popup/x402_payment.ts'),
             ipfs_local_content: path.resolve(__dirname, './src/content/ipfs_local.ts'),
         },
