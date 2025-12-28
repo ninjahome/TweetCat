@@ -1,4 +1,4 @@
-import {getCurrentUser, signInWithOAuth, type OAuth2ProviderType} from "@coinbase/cdp-core";
+import {getCurrentUser, signInWithOAuth, type OAuth2ProviderType, getAccessToken} from "@coinbase/cdp-core";
 import {initCDP} from "../common/x402_obj";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
@@ -32,9 +32,19 @@ class AuthManager {
         this.updateUI("正在验证授权结果...");
         await initCDP();
 
+        const user = await getCurrentUser()
+        if (!user) {
+            this.btnRetry.disabled = false;
+            this.btnRetry.classList.remove("btn-hidden");
+            return;
+        }
+
+        const accessToken = await getAccessToken();
+        console.log("------>>> accessToken :", accessToken);
+
         await sendMsgToService({code, flowId, provider}, MsgType.X402EmbeddWalletSignIn);
         this.updateUI("✅ 登录成功，正在关闭...", "success");
-        setTimeout(() => window.close(), 3_000);
+        setTimeout(() => window.close(), 30_000);
     }
 
     public async run() {
