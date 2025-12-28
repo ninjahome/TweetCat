@@ -1,40 +1,36 @@
 {
-	"name": "tweetcattips",
-	"version": "0.0.0",
-	"private": true,
-	"scripts": {
-		"typecheck": "tsc --noEmit",
-		"cf-typegen": "wrangler types",
-
-		"dev": "wrangler dev --env dev",
-		"dev:prod": "wrangler dev",
-
-		"deploy:dev": "npm run typecheck && wrangler deploy --env dev",
-		"deploy:prod": "npm run typecheck && wrangler deploy",
-
-		"db:migrate:test": "wrangler d1 migrations apply DB --env dev",
-		"db:migrate:main": "wrangler d1 migrations apply DB",
-
-		"test": "vitest",
-		"build": "npm run typecheck"
-	},
-	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "^0.8.19",
-		"@cloudflare/workers-types": "^4.20251217.0",
-		"typescript": "^5.5.2",
-		"vitest": "~3.2.0",
-		"wrangler": "^4.55.0"
-	},
-	"dependencies": {
-		"@coinbase/cdp-core": "^0.0.74",
-		"@coinbase/cdp-hooks": "^0.0.74",
-		"@coinbase/cdp-sdk": "^1.40.1",
-		"@x402/axios": "^2.0.0",
-		"@x402/core": "^2.1.0",
-		"@x402/evm": "^2.1.0",
-		"@x402/fetch": "^2.0.0",
-		"@x402/hono": "^2.1.0",
-		"hono": "^4.11.1",
-		"jose": "^6.1.3"
-	}
+  "name": "tweetcattips",
+  "version": "3.3.4",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "cf-typegen": "wrangler types",
+    "dev": "wrangler dev --env dev",
+    "dev:prod": "wrangler dev",
+    "deploy:dev": "npm run typecheck && wrangler deploy --env dev",
+    "deploy:prod": "npm run typecheck && wrangler deploy",
+    "db:migrate:test": "wrangler d1 migrations apply DB --env dev",
+    "db:migrate:main": "wrangler d1 migrations apply DB",
+    "test": "vitest",
+    "build": "npm run typecheck"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.19",
+    "@cloudflare/workers-types": "^4.20251217.0",
+    "typescript": "^5.5.2",
+    "vitest": "~3.2.0",
+    "wrangler": "^4.55.0"
+  },
+  "dependencies": {
+    "@coinbase/cdp-core": "^0.0.74",
+    "@coinbase/cdp-hooks": "^0.0.74",
+    "@coinbase/cdp-sdk": "^1.40.1",
+    "@x402/axios": "^2.0.0",
+    "@x402/core": "^2.1.0",
+    "@x402/evm": "^2.1.0",
+    "@x402/fetch": "^2.0.0",
+    "@x402/hono": "^2.1.0",
+    "hono": "^4.11.1",
+    "jose": "^6.1.3"
+  }
 }
