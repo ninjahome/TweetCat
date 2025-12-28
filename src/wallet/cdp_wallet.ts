@@ -477,3 +477,16 @@ export async function postToX402Srv(urlPath: string, body: any) {
         body: JSON.stringify(body)
     });
 }
+
+
+export async function postToX402SrvByPri(urlPath: string, body: any) {
+
+    const x402Fetch = await initX402ClientWithPrivateKey()
+    return x402Fetch(urlPath, {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+}
