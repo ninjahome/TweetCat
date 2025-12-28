@@ -10,7 +10,7 @@ const alarms = browser.alarms;
 const __alarm_tweets_fetch__: string = '__tweet__fetcher__timer__';
 const __alarm_userid_check__: string = '__alarm_userid_check__';
 const __interval_tweets_fetch__: number = 2;
-const __interval_userID_check__: number = 5;
+const __interval_userID_check__: number = 8;
 
 alarms.onAlarm.addListener(timerTaskWork);
 
