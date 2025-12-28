@@ -1,6 +1,6 @@
-import {getCurrentUser, signInWithOAuth, verifyOAuth, type OAuth2ProviderType} from "@coinbase/cdp-core";
+import {getCurrentUser, signInWithOAuth, type OAuth2ProviderType} from "@coinbase/cdp-core";
 import {initCDP} from "../common/x402_obj";
-import {sendMsgToService, sleep} from "../common/utils";
+import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 
 // 定义 UI 状态类型
