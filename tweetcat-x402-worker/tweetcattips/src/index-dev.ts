@@ -7,13 +7,12 @@ import {
 	type Env,
 	type NetConfig,
 } from "./common";
-import {registerUserInfoRoute, createTipHandler, createUsdcTransferHandler} from "./api_srv";
+import {registerUserInfoRoute, createTipHandler, createUsdcTransferHandler, handleAutoClaim} from "./api_srv";
 
 const app = new Hono<{ Bindings: Env }>();
 
 applyCors(app);
 
-/** ✅ 测试网固定配置（不再用 isMainnet 分支） */
 const TESTNET_CFG: NetConfig = {
 	NETWORK: "eip155:84532",
 	FACILITATOR_URL: "https://x402.org/facilitator",
@@ -23,13 +22,10 @@ const TESTNET_CFG: NetConfig = {
 };
 
 const evmScheme = new ExactEvmScheme();
-
 let cachedTestnetResourceServer: any | null = null;
-
 function getTestnetResourceServer(_env: Env) {
 	if (cachedTestnetResourceServer) return cachedTestnetResourceServer;
 
-	// ✅ 测试网 facilitator 不需要 createAuthHeaders
 	const client = new HTTPFacilitatorClient({
 		url: TESTNET_CFG.FACILITATOR_URL,
 	});
@@ -38,26 +34,14 @@ function getTestnetResourceServer(_env: Env) {
 	return cachedTestnetResourceServer;
 }
 
-/** ✅ 测试网：只挂 /tip */
-app.post(
-	"/tip",
-	createTipHandler({
-		cfg: TESTNET_CFG,
-		getResourceServer: getTestnetResourceServer,
-	})
-);
+app.post("/tip", createTipHandler({cfg: TESTNET_CFG, getResourceServer: getTestnetResourceServer}));
 
-/** 两端通用：/user-info */
 registerUserInfoRoute(app);
 
-/** 可选：健康检查 */
 app.get("/health", (c) => c.json({ok: true, env: "testnet"}));
 
+app.post("/usdc-transfer", createUsdcTransferHandler({cfg: TESTNET_CFG, getResourceServer: getTestnetResourceServer}));
 
-app.post(
-	"/usdc-transfer",
-	createUsdcTransferHandler({cfg: TESTNET_CFG, getResourceServer: getTestnetResourceServer})
-);
-
+app.post("/auto-claim", (c) => handleAutoClaim(c, TESTNET_CFG, getTestnetResourceServer));
 
 export default app;

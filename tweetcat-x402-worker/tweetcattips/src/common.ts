@@ -3,7 +3,7 @@ import {cors} from "hono/cors";
 import {generateJwt, generateWalletJwt} from "@coinbase/cdp-sdk/auth";
 
 export type TipMode = "direct" | "escrow"
-export type EscrowStatus = "pending"|"claiming"|"claimed"
+export type EscrowStatus = "pending" | "claiming" | "claimed"
 
 /** 你当前 worker 的 Bindings */
 export interface Env {
@@ -12,6 +12,7 @@ export interface Env {
 	CDP_WALLET_SECRET: string;
 	DB: D1Database;
 	TREASURY_ADDRESS: string;
+	TREASURY_PRIVATE_KEY: string;
 }
 
 /** CAIP-2 network id: e.g. "eip155:8453" */
@@ -114,7 +115,7 @@ export async function createCdpJwtAuthHeader(params: {
 		requestPath: params.requestPath,
 	});
 
-	return { Authorization: `Bearer ${token}` };
+	return {Authorization: `Bearer ${token}`};
 }
 
 /** x402 主网 facilitator（CDP hosted）专用：/platform/v2/x402 + endpoint */

@@ -9,13 +9,12 @@ import {
 	type Env,
 	type NetConfig,
 } from "./common";
-import {createTipHandler, createUsdcTransferHandler, registerUserInfoRoute} from "./api_srv";
+import {createTipHandler, createUsdcTransferHandler, handleAutoClaim, registerUserInfoRoute} from "./api_srv";
 
 const app = new Hono<{ Bindings: Env }>();
 
 applyCors(app);
 
-/** ✅ 主网固定配置（不再用 isMainnet 分支） */
 const MAINNET_CFG: NetConfig = {
 	NETWORK: "eip155:8453",
 	FACILITATOR_URL: "https://api.cdp.coinbase.com/platform/v2/x402",
@@ -25,14 +24,11 @@ const MAINNET_CFG: NetConfig = {
 };
 
 const evmScheme = new ExactEvmScheme();
-
-/** isolate 内缓存（同一实例可跨请求复用） */
 let cachedMainnetResourceServer: any | null = null;
 
 function getMainnetResourceServer(env: Env) {
 	if (cachedMainnetResourceServer) return cachedMainnetResourceServer;
 
-	// 只把需要的字符串取出来，避免把整个 env 捕获进闭包
 	const apiKeyId = env.CDP_API_KEY_ID;
 	const apiKeySecret = normalizeMultilineSecret(env.CDP_API_KEY_SECRET);
 
@@ -52,24 +48,14 @@ function getMainnetResourceServer(env: Env) {
 	return cachedMainnetResourceServer;
 }
 
-/** ✅ 主网：只挂 /tip */
-app.post(
-	"/tip",
-	createTipHandler({
-		cfg: MAINNET_CFG,
-		getResourceServer: getMainnetResourceServer,
-	})
-);
+app.post("/tip", createTipHandler({cfg: MAINNET_CFG, getResourceServer: getMainnetResourceServer}));
 
-/** 两端通用：/user-info */
 registerUserInfoRoute(app);
 
-/** 可选：健康检查 */
 app.get("/health", (c) => c.json({ok: true, env: "mainnet"}));
 
-app.post(
-	"/usdc-transfer",
-	createUsdcTransferHandler({cfg: MAINNET_CFG, getResourceServer: getMainnetResourceServer})
-);
+app.post("/usdc-transfer", createUsdcTransferHandler({cfg: MAINNET_CFG, getResourceServer: getMainnetResourceServer}));
+
+app.post("/auto-claim", (c) => handleAutoClaim(c, MAINNET_CFG, getMainnetResourceServer));
 
 export default app;
