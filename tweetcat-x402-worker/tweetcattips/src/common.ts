@@ -1,9 +1,10 @@
-import type {Hono} from "hono";
+import {Context, Hono} from "hono";
 import {cors} from "hono/cors";
 import {generateJwt, generateWalletJwt} from "@coinbase/cdp-sdk/auth";
 import type {x402ResourceServer} from "@x402/core/server";
+
 export type TipMode = "direct" | "escrow"
-/** 你当前 worker 的 Bindings */
+
 export interface Env {
 	CDP_API_KEY_ID: string;
 	CDP_API_KEY_SECRET: string;
@@ -11,9 +12,9 @@ export interface Env {
 	DB: D1Database;
 	TREASURY_ADDRESS: string;
 	TREASURY_PRIVATE_KEY: string;
+	REWARD_FOR_SIGNUP: string;
 }
 
-/** 扩展 Hono 上下文，添加依赖注入 */
 export type ExtendedEnv = {
 	Bindings: Env;
 	Variables: {
@@ -21,6 +22,7 @@ export type ExtendedEnv = {
 		getResourceServer: (env: Env) => x402ResourceServer;
 	};
 };
+export type ExtCtx = Context<ExtendedEnv>;
 
 /** CAIP-2 network id: e.g. "eip155:8453" */
 export type Caip2Network = `${string}:${string}`;
@@ -33,7 +35,6 @@ export interface NetConfig {
 	USDC_EIP712_VERSION: string;
 }
 
-/** 统一挂载 CORS（两端环境共享） */
 export function applyCors(app: Hono<ExtendedEnv>) {
 	app.use(
 		"*",
@@ -143,7 +144,6 @@ export async function getX402AuthHeader(params: {
 	});
 }
 
-/** CDP 平台 API 鉴权（可选 X-Wallet-Auth） */
 export async function getCdpAuthHeader(
 	env: Env,
 	method: string,
@@ -178,3 +178,27 @@ export async function getCdpAuthHeader(
 
 	return headers;
 }
+
+
+export async function cdpFetch(c: ExtCtx, path: string, method: string, body?: any): Promise<any> {
+	const url = `https://api.cdp.coinbase.com${path}`;
+	const headers = await getCdpAuthHeader(c.env, method, path);
+	const options: RequestInit = {
+		method,
+		headers,
+	};
+
+	if (body) options.body = JSON.stringify(body)
+
+	const response = await fetch(url, options);
+	if (!response.ok) {
+		const errorData = await response.text();
+		console.error("[CDP Validate Token Error]", errorData);
+		return {error: "Failed to validate token", status: response.status, detail: errorData}
+	}
+
+	if (response.status === 204) return {error: "No Content", status: response.status};
+	return await response.json();
+}
+
+

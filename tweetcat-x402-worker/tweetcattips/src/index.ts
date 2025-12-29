@@ -10,13 +10,7 @@ import {
 	type Env,
 	type NetConfig,
 } from "./common";
-import {
-	handleTip,
-	handleUsdcTransfer,
-	handleAutoClaim,
-	registerUserInfoRoute,
-	registerValidateTokenRoute
-} from "./api_srv";
+import {registerSrv} from "./api_srv";
 
 const app = new Hono<ExtendedEnv>();
 
@@ -55,27 +49,13 @@ function getMainnetResourceServer(env: Env) {
 	return cachedMainnetResourceServer;
 }
 
-// ============================================
-// 依赖注入中间件（方案 4）
-// 为所有路由注入 cfg 和 getResourceServer
-// ============================================
 app.use("*", async (c, next) => {
 	c.set("cfg", MAINNET_CFG);
 	c.set("getResourceServer", getMainnetResourceServer);
 	await next();
 });
-
-// ============================================
-// 注册路由 - 现在非常简洁！
-// ============================================
-app.post("/tip", handleTip);
-app.post("/usdc-transfer", handleUsdcTransfer);
-app.post("/auto-claim", handleAutoClaim);
-
-// 注册不需要依赖注入的路由
-registerUserInfoRoute(app);
-registerValidateTokenRoute(app);
-
 app.get("/health", (c) => c.json({ok: true, env: "mainnet"}));
+
+registerSrv(app)
 
 export default app;
