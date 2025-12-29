@@ -9,7 +9,7 @@ import {
 import {PaymentRequirements} from "@x402/hono";
 import {ResourceInfo, x402ResourceServer} from "@x402/core/server";
 import {SettleResponse} from "@x402/core/types";
-import {getKolBinding, recordEscrowTips, TipRecord} from "./database";
+import {getKolBinding, recordEscrowTips} from "./database";
 import {privateKeyToAccount} from "viem/accounts";
 import {x402Client} from "@x402/core/client";
 import {registerExactEvmScheme} from "@x402/evm/exact/client";
@@ -215,7 +215,7 @@ async function prepareKolClaim(userId: string): Promise<{ payTo: `0x${string}`; 
 	};
 }
 
-async function internalTreasurySettle(
+export async function internalTreasurySettle(
 	c: ExtCtx,
 	cfg: NetConfig,
 	rs: x402ResourceServer,

@@ -1,7 +1,13 @@
 import {Hono} from "hono";
 import {ExtendedEnv} from "./common";
 import {handleAutoClaim, handleTip, handleUsdcTransfer} from "./api_srv_x402";
-import {registerUserInfoRoute, registerValidateTokenRoute} from "./api_srv_usr";
+import {
+	registerUserInfoRoute,
+	registerValidateTokenRoute,
+	registerQueryValidRewardsRoute,
+	registerClaimRewardRoute,
+	registerQueryRewardHistoryRoute
+} from "./api_srv_usr";
 
 export  function registerSrv(app:Hono<ExtendedEnv>){
 	app.post("/tip", handleTip);
@@ -10,4 +16,9 @@ export  function registerSrv(app:Hono<ExtendedEnv>){
 
 	registerUserInfoRoute(app);
 	registerValidateTokenRoute(app);
+	
+	// 奖励系统相关接口
+	registerQueryValidRewardsRoute(app);
+	registerClaimRewardRoute(app);
+	registerQueryRewardHistoryRoute(app);
 }

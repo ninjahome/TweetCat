@@ -4,15 +4,13 @@ export type TIP_STATUS = typeof TIP_RECORD_PENDING | typeof TIP_RECORD_CLAIMED
 
 export const REWARD_STATUS_PENDING = 0
 export const REWARD_STATUS_LOCKED = 10
-export const REWARD_STATUS_PROCESSING = 20
-export const REWARD_STATUS_SUCCESS = 30
-export const REWARD_STATUS_FAILED = 40
-export const REWARD_STATUS_CANCELLED = 50
+export const REWARD_STATUS_SUCCESS = 20
+export const REWARD_STATUS_FAILED = 30
+export const REWARD_STATUS_CANCELLED = 40
 
 export type REWARD_STATUS =
 	typeof REWARD_STATUS_PENDING
 	| typeof REWARD_STATUS_LOCKED
-	| typeof REWARD_STATUS_PROCESSING
 	| typeof REWARD_STATUS_SUCCESS
 	| typeof REWARD_STATUS_FAILED
 	| typeof REWARD_STATUS_CANCELLED
@@ -130,4 +128,142 @@ export async function createKolBinding(
 	`).bind(userInfo.xSub, userInfo.userId);
 
 	await db.batch([newUser, moveEscrowToRewards]);
+}
+
+export interface UserReward {
+	id: number;
+	cdp_user_id: string;
+	asset_symbol: string;
+	asset_address: string | null;
+	amount_atomic: string;
+	status: number;
+	tx_hash: string | null;
+	reason: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface ValidRewardsResult {
+	rewards: UserReward[];
+	totalAmount: string;
+	count: number;
+}
+
+/**
+ * 查询用户待领取的奖励（status = 0）
+ */
+export async function queryValidRewards(
+	db: D1Database,
+	cdpUserId: string
+): Promise<ValidRewardsResult> {
+	const stmt = db.prepare(
+		`SELECT *
+		 FROM user_rewards
+		 WHERE cdp_user_id = ?
+		   AND status = ?
+		 ORDER BY created_at DESC`
+	).bind(cdpUserId, REWARD_STATUS_PENDING);
+
+	const result = await stmt.all<UserReward>();
+	const rewards = result.results || [];
+
+	// 计算总额
+	let totalAmount = BigInt(0);
+	for (const reward of rewards) {
+		totalAmount += BigInt(reward.amount_atomic);
+	}
+
+	return {
+		rewards,
+		totalAmount: totalAmount.toString(),
+		count: rewards.length
+	};
+}
+
+/**
+ * 查询用户历史奖励记录（分页）
+ */
+export async function queryRewardHistory(
+	db: D1Database,
+	cdpUserId: string,
+	status: number = -1,
+	pageStart: number = 0,
+	pageSize: number = 20
+): Promise<{ rewards: UserReward[]; hasMore: boolean }> {
+	let sql = `SELECT *
+			   FROM user_rewards
+			   WHERE cdp_user_id = ?`;
+	const params: any[] = [cdpUserId];
+
+	if (status !== -1) {
+		sql += ` AND status = ?`;
+		params.push(status);
+	}
+
+	sql += ` ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
+	params.push(pageSize + 1, pageStart);
+
+	const stmt = db.prepare(sql).bind(...params);
+	const result = await stmt.all<UserReward>();
+	const rewards = result.results || [];
+
+	const hasMore = rewards.length > pageSize;
+	if (hasMore) {
+		rewards.pop(); // 移除多查询的一条
+	}
+
+	return {rewards, hasMore};
+}
+
+/**
+ * 更新奖励状态
+ */
+export async function updateRewardStatus(
+	db: D1Database,
+	id: number,
+	status: number,
+	txHash?: string
+): Promise<void> {
+	let sql = "UPDATE user_rewards SET status = ?, updated_at = CURRENT_TIMESTAMP";
+	const params: any[] = [status];
+
+	if (txHash) {
+		sql += ", tx_hash = ?";
+		params.push(txHash);
+	}
+
+	sql += " WHERE id = ?";
+	params.push(id);
+
+	await db.prepare(sql).bind(...params).run();
+}
+
+/**
+ * 锁定并获取奖励（原子操作）
+ * 将符合条件的奖励从 PENDING 改为 LOCKED 并返回该奖励
+ */
+export async function lockAndGetReward(
+	db: D1Database,
+	id: number,
+	cdpUserId: string,
+	assetSymbol: string = 'USDC'
+): Promise<UserReward | null> {
+	const result = await db.prepare(
+		`UPDATE user_rewards
+		 SET status     = ?,
+			 updated_at = CURRENT_TIMESTAMP
+		 WHERE id = ?
+		   AND cdp_user_id = ?
+		   AND asset_symbol = ?
+		   AND status = ?
+		 RETURNING *`
+	).bind(
+		REWARD_STATUS_LOCKED,
+		id,
+		cdpUserId,
+		assetSymbol.toUpperCase(),
+		REWARD_STATUS_PENDING
+	).first<UserReward>();
+
+	return result || null;
 }
