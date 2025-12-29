@@ -4,14 +4,21 @@ import {ExactEvmScheme} from "@x402/evm/exact/server";
 
 import {
 	applyCors,
+	ExtendedEnv,
 	getX402AuthHeader,
 	normalizeMultilineSecret,
 	type Env,
 	type NetConfig,
 } from "./common";
-import {createTipHandler, createUsdcTransferHandler, handleAutoClaim, registerUserInfoRoute, registerValidateTokenRoute} from "./api_srv";
+import {
+	handleTip,
+	handleUsdcTransfer,
+	handleAutoClaim,
+	registerUserInfoRoute,
+	registerValidateTokenRoute
+} from "./api_srv";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<ExtendedEnv>();
 
 applyCors(app);
 
@@ -48,15 +55,27 @@ function getMainnetResourceServer(env: Env) {
 	return cachedMainnetResourceServer;
 }
 
-app.post("/tip", createTipHandler({cfg: MAINNET_CFG, getResourceServer: getMainnetResourceServer}));
+// ============================================
+// 依赖注入中间件（方案 4）
+// 为所有路由注入 cfg 和 getResourceServer
+// ============================================
+app.use("*", async (c, next) => {
+	c.set("cfg", MAINNET_CFG);
+	c.set("getResourceServer", getMainnetResourceServer);
+	await next();
+});
 
+// ============================================
+// 注册路由 - 现在非常简洁！
+// ============================================
+app.post("/tip", handleTip);
+app.post("/usdc-transfer", handleUsdcTransfer);
+app.post("/auto-claim", handleAutoClaim);
+
+// 注册不需要依赖注入的路由
 registerUserInfoRoute(app);
 registerValidateTokenRoute(app);
 
 app.get("/health", (c) => c.json({ok: true, env: "mainnet"}));
-
-app.post("/usdc-transfer", createUsdcTransferHandler({cfg: MAINNET_CFG, getResourceServer: getMainnetResourceServer}));
-
-app.post("/auto-claim", (c) => handleAutoClaim(c, MAINNET_CFG, getMainnetResourceServer));
 
 export default app;

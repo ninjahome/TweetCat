@@ -1,10 +1,8 @@
 import type {Hono} from "hono";
 import {cors} from "hono/cors";
 import {generateJwt, generateWalletJwt} from "@coinbase/cdp-sdk/auth";
-
+import type {x402ResourceServer} from "@x402/core/server";
 export type TipMode = "direct" | "escrow"
-export type EscrowStatus = "pending" | "claiming" | "claimed"
-
 /** 你当前 worker 的 Bindings */
 export interface Env {
 	CDP_API_KEY_ID: string;
@@ -14,6 +12,15 @@ export interface Env {
 	TREASURY_ADDRESS: string;
 	TREASURY_PRIVATE_KEY: string;
 }
+
+/** 扩展 Hono 上下文，添加依赖注入 */
+export type ExtendedEnv = {
+	Bindings: Env;
+	Variables: {
+		cfg: NetConfig;
+		getResourceServer: (env: Env) => x402ResourceServer;
+	};
+};
 
 /** CAIP-2 network id: e.g. "eip155:8453" */
 export type Caip2Network = `${string}:${string}`;
@@ -27,7 +34,7 @@ export interface NetConfig {
 }
 
 /** 统一挂载 CORS（两端环境共享） */
-export function applyCors(app: Hono<{ Bindings: Env }>) {
+export function applyCors(app: Hono<ExtendedEnv>) {
 	app.use(
 		"*",
 		cors({

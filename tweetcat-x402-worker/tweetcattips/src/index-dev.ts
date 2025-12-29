@@ -4,18 +4,19 @@ import {ExactEvmScheme} from "@x402/evm/exact/server";
 
 import {
 	applyCors,
+	ExtendedEnv,
 	type Env,
 	type NetConfig,
 } from "./common";
 import {
 	registerUserInfoRoute,
-	createTipHandler,
-	createUsdcTransferHandler,
+	handleTip,
+	handleUsdcTransfer,
 	handleAutoClaim,
 	registerValidateTokenRoute
 } from "./api_srv";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<ExtendedEnv>();
 
 applyCors(app);
 
@@ -40,15 +41,27 @@ function getTestnetResourceServer(_env: Env) {
 	return cachedTestnetResourceServer;
 }
 
-app.post("/tip", createTipHandler({cfg: TESTNET_CFG, getResourceServer: getTestnetResourceServer}));
+// ============================================
+// 依赖注入中间件（方案 4）
+// 为所有路由注入 cfg 和 getResourceServer
+// ============================================
+app.use("*", async (c, next) => {
+	c.set("cfg", TESTNET_CFG);
+	c.set("getResourceServer", getTestnetResourceServer);
+	await next();
+});
 
+// ============================================
+// 注册路由 - 现在非常简洁！
+// ============================================
+app.post("/tip", handleTip);
+app.post("/usdc-transfer", handleUsdcTransfer);
+app.post("/auto-claim", handleAutoClaim);
+
+// 注册不需要依赖注入的路由
 registerUserInfoRoute(app);
 registerValidateTokenRoute(app);
 
 app.get("/health", (c) => c.json({ok: true, env: "testnet"}));
-
-app.post("/usdc-transfer", createUsdcTransferHandler({cfg: TESTNET_CFG, getResourceServer: getTestnetResourceServer}));
-
-app.post("/auto-claim", (c) => handleAutoClaim(c, TESTNET_CFG, getTestnetResourceServer));
 
 export default app;

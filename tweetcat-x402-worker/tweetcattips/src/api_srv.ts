@@ -3,6 +3,7 @@ import {
 	decodeBase64Json,
 	encodeBase64Json,
 	Env,
+	ExtendedEnv,
 	getCdpAuthHeader,
 	getPaymentHeader,
 	isHexAddress,
@@ -34,20 +35,14 @@ interface TipObj {
 	tweetId?: string;
 }
 
-type Ctx = Context<{ Bindings: Env }>;
-
-type Parsed = {
-	payTo: `0x${string}`;
-	atomicAmount: string;
-	meta?: any;
-};
+type ExtCtx = Context<ExtendedEnv>;
 
 export interface TransferRequestParams {
 	amount: string;          // "0.01"
 	to: `0x${string}` | string;
 }
 
-export function registerUserInfoRoute(app: Hono<{ Bindings: Env }>) {
+export function registerUserInfoRoute(app: Hono<ExtendedEnv>) {
 	app.get("/user-info", async (c) => {
 		const userId = c.req.query("userId"); // x:12345 或 uuid
 		if (!userId) return c.json({error: "Missing userId"}, 400);
@@ -84,11 +79,11 @@ export function registerUserInfoRoute(app: Hono<{ Bindings: Env }>) {
 	});
 }
 
-export function registerValidateTokenRoute(app: Hono<{ Bindings: Env }>) {
+export function registerValidateTokenRoute(app: Hono<ExtendedEnv>) {
 	app.post("/validate-token", async (c) => {
 		const body = await c.req.json().catch(() => ({}));
 		const accessToken = body?.accessToken;
-		
+
 		if (!accessToken) {
 			return c.json({error: "Missing accessToken"}, 400);
 		}
@@ -130,7 +125,7 @@ export function registerValidateTokenRoute(app: Hono<{ Bindings: Env }>) {
 	});
 }
 
-export async function parseTipParams(c: Ctx): Promise<TipObj> {
+export async function parseTipParams(c: ExtCtx): Promise<TipObj> {
 	const body = (await c.req.json()) as TipRequestParams;
 	if (!body) throw new Error("Invalid tip parameters");
 
@@ -157,9 +152,7 @@ export async function parseTipParams(c: Ctx): Promise<TipObj> {
 	return {mode, payTo, atomicAmount, xId, tweetId};
 }
 
-export async function parseTransferParams(
-	c: Context<{ Bindings: Env }>
-): Promise<{ payTo: `0x${string}`; atomicAmount: string }> {
+export async function parseTransferParams(c: ExtCtx): Promise<{ payTo: `0x${string}`; atomicAmount: string }> {
 
 	const body = (await c.req.json()) as TransferRequestParams;
 	if (!body) throw new Error("Invalid transfer parameters");
@@ -179,7 +172,7 @@ export async function parseTransferParams(
 }
 
 async function x402Workflow(
-	c: Ctx,
+	c: ExtCtx,
 	requirements: PaymentRequirements,
 	resource: ResourceInfo,
 	resourceServer: x402ResourceServer,
@@ -222,84 +215,52 @@ async function x402Workflow(
 	};
 }
 
-export function createX402Handler(opts: {
-	cfg: NetConfig;
-	getResourceServer: (env: Env) => x402ResourceServer;
-	description: string;
-	parse: (c: Ctx) => Promise<Parsed>;
-	onSettled?: (c: Ctx, parsed: Parsed, settle: SettleResponse) => Promise<void>;
-}) {
-	const {cfg, getResourceServer, description, parse, onSettled} = opts;
+// ============================================
+// 新的直接处理函数（方案 4）
+// ============================================
 
-	return async (c: Ctx): Promise<Response> => {
-		try {
-			const parsed = await parse(c);
+/**
+ * 处理 Tip 请求
+ * 从上下文中获取 cfg 和 getResourceServer 依赖
+ */
+export async function handleTip(c: ExtCtx): Promise<Response> {
+	try {
+		const cfg = c.get("cfg");
+		const getResourceServer = c.get("getResourceServer");
 
-			const requirements = {
-				scheme: "exact" as const,
-				network: cfg.NETWORK,
-				asset: cfg.USDC,
-				amount: parsed.atomicAmount,
-				payTo: parsed.payTo,
-				maxTimeoutSeconds: 300,
-				extra: {
-					name: cfg.USDC_EIP712_NAME,
-					version: cfg.USDC_EIP712_VERSION,
-					resourceUrl: c.req.url,
-				},
-			} as const;
+		const tip = await parseTipParams(c);
 
-			const resource: ResourceInfo = {url: c.req.url, description, mimeType: "application/json"};
+		const requirements = {
+			scheme: "exact" as const,
+			network: cfg.NETWORK,
+			asset: cfg.USDC,
+			amount: tip.atomicAmount,
+			payTo: tip.payTo,
+			maxTimeoutSeconds: 300,
+			extra: {
+				name: cfg.USDC_EIP712_NAME,
+				version: cfg.USDC_EIP712_VERSION,
+				resourceUrl: c.req.url,
+			},
+		} as const;
 
-			const rs = getResourceServer(c.env);
-			const {response, settleResult} = await x402Workflow(c, requirements, resource, rs);
+		const resource: ResourceInfo = {
+			url: c.req.url,
+			description: "Tweet Tip Payment",
+			mimeType: "application/json"
+		};
 
-			if (settleResult?.success && onSettled) {
-				await onSettled(c, parsed, settleResult);
-			}
+		const rs = getResourceServer(c.env);
+		const {response, settleResult} = await x402Workflow(c, requirements, resource, rs);
 
-			return response;
-		} catch (e: any) {
-			return c.json({error: e?.message ?? "Bad Request"}, 400);
-		}
-	};
-}
-
-export function createTipHandler(opts: {
-	cfg: NetConfig;
-	getResourceServer: (env: Env) => x402ResourceServer;
-	description?: string;
-}) {
-	const {cfg, getResourceServer} = opts;
-	const description = opts.description ?? "Tweet Tip Payment";
-
-	return createX402Handler({
-		cfg,
-		getResourceServer,
-		description,
-
-		parse: async (c) => {
-			const tip = await parseTipParams(c);
-			return {
-				payTo: tip.payTo,
-				atomicAmount: tip.atomicAmount,
-				meta: tip,
-			};
-		},
-
-		onSettled: async (c, parsed, settle) => {
-			const tip = parsed.meta as TipObj;
-			if (!tip || tip.mode !== "escrow") return;
-
-			const payer = settle.payer;
-			if (!payer) return;
-
+		// 托管模式记录
+		if (settleResult?.success && tip.mode === "escrow" && settleResult.payer) {
 			const record: TipRecord = {
 				xId: tip.xId,
 				mode: tip.mode,
 				amountAtomic: tip.atomicAmount,
-				payer,
-				txHash: settle.transaction,
+				payer: settleResult.payer,
+				txHash: settleResult.transaction,
 			};
 
 			try {
@@ -308,29 +269,52 @@ export function createTipHandler(opts: {
 			} catch (e) {
 				console.warn("tip record error:", e);
 			}
-		},
-	});
+		}
+
+		return response;
+	} catch (e: any) {
+		return c.json({error: e?.message ?? "Bad Request"}, 400);
+	}
 }
 
-export function createUsdcTransferHandler(opts: {
-	cfg: NetConfig;
-	getResourceServer: (env: Env) => x402ResourceServer;
-	description?: string;
-}) {
-	const {cfg, getResourceServer} = opts;
-	const description = opts.description ?? "USDC Transfer";
+/**
+ * 处理 USDC 转账请求
+ * 从上下文中获取 cfg 和 getResourceServer 依赖
+ */
+export async function handleUsdcTransfer(c: ExtCtx): Promise<Response> {
+	try {
+		const cfg = c.get("cfg");
+		const getResourceServer = c.get("getResourceServer");
 
-	return createX402Handler({
-		cfg,
-		getResourceServer,
-		description,
-		parse: async (c) => {
-			const p = await parseTransferParams(c);
-			return {payTo: p.payTo, atomicAmount: p.atomicAmount};
-		},
-	});
+		const p = await parseTransferParams(c);
+
+		const requirements = {
+			scheme: "exact" as const,
+			network: cfg.NETWORK,
+			asset: cfg.USDC,
+			amount: p.atomicAmount,
+			payTo: p.payTo,
+			maxTimeoutSeconds: 300,
+			extra: {
+				name: cfg.USDC_EIP712_NAME,
+				version: cfg.USDC_EIP712_VERSION,
+				resourceUrl: c.req.url,
+			},
+		} as const;
+
+		const resource: ResourceInfo = {
+			url: c.req.url,
+			description: "USDC Transfer",
+			mimeType: "application/json"
+		};
+
+		const rs = getResourceServer(c.env);
+		const {response} = await x402Workflow(c, requirements, resource, rs);
+		return response;
+	} catch (e: any) {
+		return c.json({error: e?.message ?? "Bad Request"}, 400);
+	}
 }
-
 
 async function prepareKolClaim(userId: string): Promise<{ payTo: `0x${string}`; amount: string }> {
 	console.log(`[DB] Querying data for userId: ${userId}`);
@@ -340,8 +324,8 @@ async function prepareKolClaim(userId: string): Promise<{ payTo: `0x${string}`; 
 	};
 }
 
-export async function internalTreasurySettle(
-	c: Ctx,
+async function internalTreasurySettle(
+	c: ExtCtx,
 	cfg: NetConfig,
 	getResourceServer: (env: Env) => x402ResourceServer,
 	payTo: `0x${string}`,
@@ -397,8 +381,15 @@ export interface claimRequest {
 	allClaim?: boolean;
 }
 
-export async function handleAutoClaim(c: Ctx, cfg: NetConfig, getResourceServer: (env: Env) => x402ResourceServer) {
+/**
+ * 处理自动领取请求
+ * 从上下文中获取 cfg 和 getResourceServer 依赖
+ */
+export async function handleAutoClaim(c: ExtCtx): Promise<Response> {
 	try {
+		const cfg = c.get("cfg");
+		const getResourceServer = c.get("getResourceServer");
+
 		const body = (await c.req.json()) as claimRequest;
 		const {userId} = body;
 		if (!userId) return c.json({error: "Missing userId"}, 400);
@@ -429,4 +420,3 @@ export async function handleAutoClaim(c: Ctx, cfg: NetConfig, getResourceServer:
 		return c.json({error: "Internal Error", detail: err.message}, 500);
 	}
 }
-
