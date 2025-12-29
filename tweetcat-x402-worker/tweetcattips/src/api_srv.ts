@@ -84,6 +84,52 @@ export function registerUserInfoRoute(app: Hono<{ Bindings: Env }>) {
 	});
 }
 
+export function registerValidateTokenRoute(app: Hono<{ Bindings: Env }>) {
+	app.post("/validate-token", async (c) => {
+		const body = await c.req.json().catch(() => ({}));
+		const accessToken = body?.accessToken;
+		
+		if (!accessToken) {
+			return c.json({error: "Missing accessToken"}, 400);
+		}
+
+		const path = `/platform/v2/end-users/auth/validate-token`;
+		const url = `https://api.cdp.coinbase.com${path}`;
+
+		try {
+			const headers = await getCdpAuthHeader(c.env, "POST", path);
+
+			const response = await fetch(url, {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					accessToken: accessToken
+				}),
+			});
+
+			if (!response.ok) {
+				const errorData = await response.text();
+				console.error("[CDP Validate Token Error]", errorData);
+				return c.json(
+					{
+						error: "Failed to validate token",
+						status: response.status,
+						detail: errorData,
+					},
+					response.status as ContentfulStatusCode
+				);
+			}
+
+			const validationResult = await response.json();
+			console.log("[CDP Validate Token Success]", validationResult);
+			return c.json(validationResult);
+		} catch (err: any) {
+			console.error("[Validate Token Error]", err);
+			return c.json({error: "Internal Server Error", detail: err?.message}, 500);
+		}
+	});
+}
+
 export async function parseTipParams(c: Ctx): Promise<TipObj> {
 	const body = (await c.req.json()) as TipRequestParams;
 	if (!body) throw new Error("Invalid tip parameters");

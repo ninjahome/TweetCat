@@ -2,6 +2,7 @@ import {getCurrentUser, signInWithOAuth, type OAuth2ProviderType, getAccessToken
 import {initCDP} from "../common/x402_obj";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
+import {x402WorkerFetch} from "./common";
 
 // 定义 UI 状态类型
 type UIState = 'loading' | 'success' | 'error' | 'idle';
@@ -42,9 +43,17 @@ class AuthManager {
         const accessToken = await getAccessToken();
         console.log("------>>> accessToken :", accessToken);
 
+        this.updateUI("正在验证用户信息...");
+        try {
+            const validationResult = await x402WorkerFetch("/validate-token", {accessToken: accessToken})
+            console.log("------>>> validation result:", validationResult);
+        } catch (err) {
+            console.error("Token 验证失败:", err);
+        }
+
         await sendMsgToService({code, flowId, provider}, MsgType.X402EmbeddWalletSignIn);
         this.updateUI("✅ 登录成功，正在关闭...", "success");
-        setTimeout(() => window.close(), 30_000);
+        setTimeout(() => window.close(), 3_000);
     }
 
     public async run() {

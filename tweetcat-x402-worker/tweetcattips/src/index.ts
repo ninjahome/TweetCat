@@ -9,7 +9,7 @@ import {
 	type Env,
 	type NetConfig,
 } from "./common";
-import {createTipHandler, createUsdcTransferHandler, handleAutoClaim, registerUserInfoRoute} from "./api_srv";
+import {createTipHandler, createUsdcTransferHandler, handleAutoClaim, registerUserInfoRoute, registerValidateTokenRoute} from "./api_srv";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -51,6 +51,7 @@ function getMainnetResourceServer(env: Env) {
 app.post("/tip", createTipHandler({cfg: MAINNET_CFG, getResourceServer: getMainnetResourceServer}));
 
 registerUserInfoRoute(app);
+registerValidateTokenRoute(app);
 
 app.get("/health", (c) => c.json({ok: true, env: "mainnet"}));
 
