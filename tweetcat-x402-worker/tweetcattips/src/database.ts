@@ -1,4 +1,22 @@
-import {TipMode} from "./common";
+export const TIP_RECORD_PENDING = 0
+export const TIP_RECORD_CLAIMED = 10
+export type TIP_STATUS = typeof TIP_RECORD_PENDING | typeof TIP_RECORD_CLAIMED
+
+export const REWARD_STATUS_PENDING = 0
+export const REWARD_STATUS_LOCKED = 10
+export const REWARD_STATUS_PROCESSING = 20
+export const REWARD_STATUS_SUCCESS = 30
+export const REWARD_STATUS_FAILED = 40
+export const REWARD_STATUS_CANCELLED = 50
+
+export type REWARD_STATUS =
+	typeof REWARD_STATUS_PENDING
+	| typeof REWARD_STATUS_LOCKED
+	| typeof REWARD_STATUS_PROCESSING
+	| typeof REWARD_STATUS_SUCCESS
+	| typeof REWARD_STATUS_FAILED
+	| typeof REWARD_STATUS_CANCELLED
+
 
 export async function getKolBinding(db: D1Database, xId: string): Promise<string | null> {
 	const stmt = db.prepare("SELECT wallet_address FROM kol_binding WHERE x_id = ?").bind(xId);
@@ -8,32 +26,28 @@ export async function getKolBinding(db: D1Database, xId: string): Promise<string
 
 export interface TipRecord {
 	xId: string;
-	mode: TipMode;
 	amountAtomic: string;
-	payer: string;
-	txHash: string;
 }
 
-export async function recordEscrowTips(db: D1Database, params: TipRecord): Promise<string> {
-	const id = crypto.randomUUID();
+export async function recordEscrowTips(db: D1Database, params: TipRecord) {
+	const sql = `
+		INSERT INTO tip_escrow (x_id, amount_atomic)
+		VALUES (?, ?) ON CONFLICT(x_id) DO
+		UPDATE SET
+			amount_atomic = CAST (tip_escrow.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER),
+			updated_at = CURRENT_TIMESTAMP
+		WHERE status = ${TIP_RECORD_PENDING};
+	`;
 
-	await db
-		.prepare(
-			`INSERT INTO tips (id, x_id, mode, amount_atomic, payer, tx_hash, status, created_at)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
-		)
-		.bind(
-			id,
-			params.xId,
-			params.mode,
-			params.amountAtomic,
-			params.payer,
-			params.txHash,
-			"pending"
-		)
+	const result = await db.prepare(sql)
+		.bind(params.xId, params.amountAtomic)
 		.run();
 
-	return id
+	if (!result.success || result.meta.changes === 0) {
+		throw new Error(`Failed to record tips: x_id ${params.xId} not found or status is not Pending.`);
+	}
+
+	return result;
 }
 
 export interface ValidatedUserInfo {
@@ -64,8 +78,7 @@ export async function getKolBindingByUserId(
 		"SELECT * FROM kol_binding WHERE cdp_user_id = ?"
 	).bind(userId);
 
-	const row = await stmt.first<KolBindingRecord>();
-	return row;
+	return await stmt.first<KolBindingRecord>();
 }
 
 export async function updateUserSigninTime(
@@ -81,16 +94,15 @@ export async function createKolBinding(
 	db: D1Database,
 	userInfo: ValidatedUserInfo
 ): Promise<void> {
-	await db.prepare(
+
+	const newUser = db.prepare(
 		`INSERT INTO kol_binding (x_id,
 								  cdp_user_id,
 								  wallet_address,
 								  email,
 								  username,
-								  evm_account_created_at,
-								  signin_time,
-								  created_at)
-		 VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`
+								  evm_account_created_at)
+		 VALUES (?, ?, ?, ?, ?, ?)`
 	).bind(
 		userInfo.xSub,
 		userInfo.userId,
@@ -98,6 +110,24 @@ export async function createKolBinding(
 		userInfo.email,
 		userInfo.username,
 		userInfo.walletCreatedAt
-	).run();
+	)
 
+	const moveEscrowToRewards = db.prepare(`
+		WITH moved AS (
+		UPDATE tip_escrow
+		SET status     = ${TIP_RECORD_CLAIMED},
+			updated_at = CURRENT_TIMESTAMP
+		WHERE x_id = ?
+		  AND status = ${TIP_RECORD_PENDING} RETURNING amount_atomic
+  )
+		INSERT
+		INTO user_rewards (cdp_user_id, amount_atomic, reason)
+		SELECT ?,
+			   amount_atomic,
+			   'Tips before account creation'
+
+		FROM moved
+	`).bind(userInfo.xSub, userInfo.userId);
+
+	await db.batch([newUser, moveEscrowToRewards]);
 }

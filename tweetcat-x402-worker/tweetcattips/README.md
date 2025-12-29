@@ -151,3 +151,9 @@ http://127.0.0.1:8787/tip?payTo=0xE400dfed2E03D5AFE012cCB4b4cAa74bfdB5A257&amoun
 		- `Payment`
 	- 响应 Header：`PAYMENT-RESPONSE: <base64(json settleResult)>`
 	- 响应 Body：包含 `success / txHash / payer` 等字段
+
+
+## database
+	-wrangler d1 execute tweetcat_db_test --file=tip_escrow.sql --remote  --env dev
+
+	-wrangler d1 execute tweetcat_db --file=tip_escrow.sql --remote

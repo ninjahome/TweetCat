@@ -3,8 +3,6 @@ import {cors} from "hono/cors";
 import {generateJwt, generateWalletJwt} from "@coinbase/cdp-sdk/auth";
 import type {x402ResourceServer} from "@x402/core/server";
 
-export type TipMode = "direct" | "escrow"
-
 export interface Env {
 	CDP_API_KEY_ID: string;
 	CDP_API_KEY_SECRET: string;

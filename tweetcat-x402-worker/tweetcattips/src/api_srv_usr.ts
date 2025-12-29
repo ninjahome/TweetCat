@@ -1,14 +1,6 @@
 import {Hono} from "hono";
-import {
-	cdpFetch,
-	ExtendedEnv,
-} from "./common";
-import {
-	ValidatedUserInfo,
-	getKolBindingByUserId,
-	updateUserSigninTime,
-	createKolBinding
-} from "./database";
+import {cdpFetch, ExtendedEnv,} from "./common";
+import {createKolBinding, getKolBindingByUserId, updateUserSigninTime, ValidatedUserInfo} from "./database";
 
 export function registerUserInfoRoute(app: Hono<ExtendedEnv>) {
 	app.get("/user-info", async (c) => {
@@ -38,15 +30,14 @@ function parseXAuthEndUserSnapshot(validationResult: any): ValidatedUserInfo {
 		throw new Error("No EVM account found")
 	}
 
-	const userInfo: ValidatedUserInfo = {
+	return {
 		userId: validationResult.userId,
 		walletAddress: evmAccounts[0].address,
 		walletCreatedAt: evmAccounts[0].createdAt,
 		email: xAuth.email || "",
 		xSub: xAuth.sub,
 		username: xAuth.username
-	};
-	return userInfo
+	}
 }
 
 export function registerValidateTokenRoute(app: Hono<ExtendedEnv>) {
@@ -81,13 +72,4 @@ export function registerValidateTokenRoute(app: Hono<ExtendedEnv>) {
 			return c.json({error: "Internal Server Error", detail: err?.message}, 500);
 		}
 	});
-}
-
-
-async function grantNewUserRewards(user: ValidatedUserInfo): Promise<void> {
-	try {
-
-	} catch (err) {
-		console.error("[Grant Rewards Error]", err);
-	}
 }

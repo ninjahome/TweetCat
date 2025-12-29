@@ -4,7 +4,6 @@ import {
 	ExtCtx,
 	getPaymentHeader, isHexAddress,
 	NetConfig,
-	TipMode,
 	usdcToAtomic
 } from "./common";
 import {PaymentRequirements} from "@x402/hono";
@@ -23,13 +22,12 @@ interface TipRequestParams {
 }
 
 interface TipObj {
-	mode: TipMode;
+	isEscrow: boolean;
 	payTo: `0x${string}`;
 	atomicAmount: string;
 	xId: string;
 	tweetId?: string;
 }
-
 
 interface TransferRequestParams {
 	amount: string;          // "0.01"
@@ -59,15 +57,14 @@ async function parseTipParams(c: ExtCtx): Promise<TipObj> {
 	}
 
 	const boundAddress = await getKolBinding(c.env.DB, xId);
-	const isDirect = !!boundAddress;
-	const mode = isDirect ? "direct" : "escrow";
+	const isEscrow = !!boundAddress;
 
-	const payTo = isDirect ? (boundAddress as `0x${string}`) : (c.env.TREASURY_ADDRESS as `0x${string}`);
+	const payTo = isEscrow ? (boundAddress as `0x${string}`) : (c.env.TREASURY_ADDRESS as `0x${string}`);
 	if (!isHexAddress(payTo)) {
 		throw new Error("Invalid payTo address (config error)");
 	}
 
-	return {mode, payTo, atomicAmount, xId, tweetId};
+	return {isEscrow, payTo, atomicAmount, xId, tweetId};
 }
 
 async function parseTransferParams(c: ExtCtx): Promise<{ payTo: `0x${string}`; atomicAmount: string }> {
@@ -163,24 +160,12 @@ export async function handleTip(c: ExtCtx): Promise<Response> {
 		const rs = getResourceServer(c.env);
 		const {response, settleResult} = await x402Workflow(c, requirements, resource, rs);
 
-		// 托管模式记录
-		if (settleResult?.success && tip.mode === "escrow" && settleResult.payer) {
-			const record: TipRecord = {
+		if (settleResult?.success && tip.isEscrow && settleResult.payer) {
+			c.executionCtx.waitUntil(recordEscrowTips(c.env.DB, {
 				xId: tip.xId,
-				mode: tip.mode,
 				amountAtomic: tip.atomicAmount,
-				payer: settleResult.payer,
-				txHash: settleResult.transaction,
-			};
-
-			try {
-				const id = await recordEscrowTips(c.env.DB, record);
-				console.log("new tip record id=", id);
-			} catch (e) {
-				console.warn("tip record error:", e);
-			}
+			}).catch(err=>{console.warn("tip record error:", err);}))
 		}
-
 		return response;
 	} catch (e: any) {
 		return c.json({error: e?.message ?? "Bad Request"}, 400);
