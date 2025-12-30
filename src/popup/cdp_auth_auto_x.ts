@@ -36,8 +36,8 @@ class AuthManager {
         const accessToken = await getAccessToken();
         this.updateUI("正在验证用户信息...");
         try {
-            const validationResult = await x402WorkerFetch("/validate-token", {accessToken: accessToken})
-            console.log("------>>> validation result:", validationResult);
+            const resp = await x402WorkerFetch("/validate-token", {accessToken: accessToken})
+            console.log("------>>> validation result:", resp);
         } catch (err) {
             console.error("Token 验证失败:", err);
         }

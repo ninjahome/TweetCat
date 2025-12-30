@@ -183,8 +183,8 @@ export async function apiX402UsdcTransfer(c: ExtCtx): Promise<Response> {
 		const rs = getResourceServer(c.env);
 		const settleResult = await x402Workflow(c, requirements, resource, rs);
 		return c.json({success: true, txHash: settleResult.transaction});
-
 	} catch (e: any) {
+		if (e instanceof PaymentRequiredError) return c.json({error: "Required"}, 402);
 		return c.json({error: e?.message ?? "Bad Request"}, 400);
 	}
 }

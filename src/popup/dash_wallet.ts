@@ -1,6 +1,6 @@
 import {
     $Id, $input, FIXED_ETH_TRANSFER_GAS_ETH,
-    FIXED_MINI_USDC_TRANSFER, hideLoading, showAlert, showLoading, showNotification, showPopupWindow
+    FIXED_MINI_USDC_TRANSFER, hideLoading, showAlert, showLoading, showNotification, showPopupWindow, x402WorkerGet
 } from "./common";
 import {t} from "../common/i18n";
 import {ethers} from "ethers";
@@ -10,7 +10,7 @@ import browser from "webextension-polyfill";
 import {getReadableNetworkName} from "./dash_setting";
 import {doSignOut, walletInfo, X402_FACILITATORS} from "../common/x402_obj";
 import {
-    getWalletAddress,
+    getWalletAddress, queryCdpUserID,
     queryCdpWalletInfo,
     transferETHEoa, transferUSDCByX402
 } from "../wallet/cdp_wallet";
@@ -214,6 +214,7 @@ function setupWalletActionButtons(): void {
 }
 
 export function initWalletOrCreate() {
+    initRewards().then()
     const walletCreateDiv = $Id("wallet-create-div") as HTMLButtonElement;//btn-create-wallet
     const walletInfoDiv = $Id("wallet-info-area") as HTMLDivElement;
     const walletMainMenu = $Id("wallet-main-menu") as HTMLDivElement;
@@ -338,3 +339,73 @@ export function initDashboardTexts(): void {
 }
 
 
+
+// 奖励数据接口
+interface ValidRewardsResponse {
+    success: boolean;
+    data: {
+        rewards: Array<{
+            id: number;
+            cdp_user_id: string;
+            asset_symbol: string;
+            amount_atomic: string;
+            status: number;
+            [key: string]: any;
+        }>;
+        totalAmount: string;
+        count: number;
+    };
+}
+
+async function initRewards(): Promise<void> {
+    const rewardsArea = $Id("rewards-area") as HTMLElement;
+
+    try {
+        const cdpUserId = await queryCdpUserID();
+        if (!cdpUserId) {
+            // 没有用户ID，隐藏奖励区域
+            rewardsArea.style.display = "none";
+            return;
+        }
+
+        const response: ValidRewardsResponse = await x402WorkerGet("/rewards/query_valid", {
+            cdp_user_id: cdpUserId
+        });
+
+        if (response.success && response.data) {
+            const { rewards } = response.data;
+            const rewardsCount = rewardsArea.querySelector(".rewards-count") as HTMLElement;
+            const rewardsAmount = rewardsArea.querySelector(".rewards-amount") as HTMLElement;
+
+            // 计算 USDC 总额
+            let totalUSDC = 0;
+            rewards.forEach(reward => {
+                if (reward.asset_symbol === "USDC") {
+                    totalUSDC += Number(reward.amount_atomic) / 1e6; // 精度为6
+                }
+            });
+
+            // 更新界面
+            rewardsCount.textContent = rewards.length.toString();
+            rewardsAmount.textContent = totalUSDC.toFixed(2);
+
+            // 显示奖励区域
+            rewardsArea.style.display = "block";
+
+            // 绑定点击事件
+            rewardsArea.onclick = async () => {
+                const status = rewards.length > 0 ? 0 : -1;
+                await browser.tabs.create({
+                    url: browser.runtime.getURL(`html/rewards.html?status=${status}`)
+                });
+            };
+        } else {
+            // API 返回失败，隐藏奖励区域
+            rewardsArea.style.display = "none";
+        }
+    } catch (error) {
+        console.error("获取奖励信息失败:", error);
+        // 发生错误时，隐藏奖励区域
+        rewardsArea.style.display = "none";
+    }
+}

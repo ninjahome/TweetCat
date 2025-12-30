@@ -52,15 +52,6 @@ export interface x402TipPayload {
     payTo?: string;
 }
 
-export async function tryGetSignedInUser() {
-    await initCDP();
-    try {
-        return await getCurrentUser();
-    } catch {
-        return null;
-    }
-}
-
 export async function doSignOut() {
     await initCDP();
     await signOut();

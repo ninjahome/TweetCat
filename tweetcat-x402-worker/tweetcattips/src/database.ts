@@ -106,42 +106,44 @@ export async function createKolBinding(
 	db: D1Database,
 	userInfo: ValidatedUserInfo
 ): Promise<void> {
-
-	const newUser = db.prepare(
-		`INSERT INTO kol_binding (x_id,
-								  cdp_user_id,
-								  wallet_address,
-								  email,
-								  username,
-								  evm_account_created_at)
-		 VALUES (?, ?, ?, ?, ?, ?)`
-	).bind(
+	// 1. 插入用户信息（增加 OR IGNORE 实现幂等，防止重复回调报错）
+	const insertUser = db.prepare(`
+		INSERT
+		OR IGNORE INTO kol_binding (
+      x_id, cdp_user_id, wallet_address, email, username, evm_account_created_at
+    ) VALUES (?, ?, ?, ?, ?, ?)
+	`).bind(
 		userInfo.xSub,
 		userInfo.userId,
 		userInfo.walletAddress,
 		userInfo.email,
 		userInfo.username,
 		userInfo.walletCreatedAt
-	)
+	);
 
+	// 2. 将 PENDING 状态的余额搬运到 user_rewards
+	// 这里的逻辑是：只搬运当前还是 PENDING 的记录
 	const moveEscrowToRewards = db.prepare(`
-		WITH moved AS (
+		INSERT INTO user_rewards (cdp_user_id, amount_atomic, reason)
+		SELECT kb.cdp_user_id, te.amount_atomic, 'Tips before account creation'
+		FROM tip_escrow te
+				 JOIN kol_binding kb ON kb.x_id = te.x_id
+		WHERE te.x_id = ?
+		  AND te.status = ?
+	`).bind(userInfo.xSub, TIP_RECORD_PENDING);
+
+	// 3. 统一更新状态
+	// 注意：即便 moveEscrowToRewards 没找到数据（即没有待领取打赏），这条 UPDATE 也只是执行成功但影响行数为 0，不会报错
+	const markAsClaimed = db.prepare(`
 		UPDATE tip_escrow
-		SET status     = ${TIP_RECORD_CLAIMED},
+		SET status     = ?,
 			updated_at = CURRENT_TIMESTAMP
 		WHERE x_id = ?
-		  AND status = ${TIP_RECORD_PENDING} RETURNING amount_atomic
-  )
-		INSERT
-		INTO user_rewards (cdp_user_id, amount_atomic, reason)
-		SELECT ?,
-			   amount_atomic,
-			   'Tips before account creation'
+		  AND status = ?
+	`).bind(TIP_RECORD_CLAIMED, userInfo.xSub, TIP_RECORD_PENDING);
 
-		FROM moved
-	`).bind(userInfo.xSub, userInfo.userId);
-
-	await db.batch([newUser, moveEscrowToRewards]);
+	// D1.batch 保证了这三步在同一个事务内
+	await db.batch([insertUser, moveEscrowToRewards, markAsClaimed]);
 }
 
 export interface UserReward {
