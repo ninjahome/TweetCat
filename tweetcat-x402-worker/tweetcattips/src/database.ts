@@ -145,7 +145,6 @@ export interface UserReward {
 
 export interface ValidRewardsResult {
 	rewards: UserReward[];
-	totalAmount: string;
 	count: number;
 }
 
@@ -167,15 +166,8 @@ export async function queryValidRewards(
 	const result = await stmt.all<UserReward>();
 	const rewards = result.results || [];
 
-	// 计算总额
-	let totalAmount = BigInt(0);
-	for (const reward of rewards) {
-		totalAmount += BigInt(reward.amount_atomic);
-	}
-
 	return {
 		rewards,
-		totalAmount: totalAmount.toString(),
 		count: rewards.length
 	};
 }

@@ -130,7 +130,7 @@ async function x402Workflow(
 	};
 }
 
-export async function handleTip(c: ExtCtx): Promise<Response> {
+export async function apiHandleTip(c: ExtCtx): Promise<Response> {
 	try {
 		const cfg = c.get("cfg");
 		const getResourceServer = c.get("getResourceServer");
@@ -172,7 +172,7 @@ export async function handleTip(c: ExtCtx): Promise<Response> {
 	}
 }
 
-export async function handleUsdcTransfer(c: ExtCtx): Promise<Response> {
+export async function apiX402UsdcTransfer(c: ExtCtx): Promise<Response> {
 	try {
 		const cfg = c.get("cfg");
 		const getResourceServer = c.get("getResourceServer");
@@ -266,7 +266,7 @@ export async function internalTreasurySettle(
 }
 
 
-export async function handleAutoClaim(c: ExtCtx): Promise<Response> {
+export async function adminClaimForUsr(c: ExtCtx): Promise<Response> {
 	try {
 		const cfg = c.get("cfg");
 		const getResourceServer = c.get("getResourceServer");

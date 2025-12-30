@@ -14,20 +14,18 @@ import {
 } from "./database";
 import {internalTreasurySettle} from "./api_srv_x402";
 
-export function registerUserInfoRoute(app: Hono<ExtendedEnv>) {
-	app.get("/user-info", async (c) => {
-		try {
-			const userId = c.req.query("userId"); // x:12345 或 uuid
-			if (!userId) return c.json({error: "Missing userId"}, 400);
+export async function testQueryUserDetails(c: ExtCtx) {
+	try {
+		const userId = c.req.query("userId"); // x:12345 或 uuid
+		if (!userId) return c.json({error: "Missing userId"}, 400);
 
-			const path = `/platform/v2/end-users/${userId}`;
-			const userData = await cdpFetch(c, path, "GET")
-			return c.json(userData);
+		const path = `/platform/v2/end-users/${userId}`;
+		const userData = await cdpFetch(c, path, "GET")
+		return c.json(userData);
 
-		} catch (err: any) {
-			return c.json({error: "Internal Server Error", detail: err?.message}, 500);
-		}
-	});
+	} catch (err: any) {
+		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
+	}
 }
 
 function parseXAuthEndUserSnapshot(validationResult: any): ValidatedUserInfo {
@@ -52,68 +50,53 @@ function parseXAuthEndUserSnapshot(validationResult: any): ValidatedUserInfo {
 	}
 }
 
-export function registerValidateTokenRoute(app: Hono<ExtendedEnv>) {
-	app.post("/validate-token", async (c) => {
+export async function apiValidateUser(c: ExtCtx) {
 
-		const body = await c.req.json().catch(() => ({}));
-		const accessToken = body?.accessToken;
-		if (!accessToken) {
-			return c.json({error: "Missing accessToken"}, 400);
+	const body = await c.req.json().catch(() => ({}));
+	const accessToken = body?.accessToken;
+	if (!accessToken) {
+		return c.json({error: "Missing accessToken"}, 400);
+	}
+
+	const path = `/platform/v2/end-users/auth/validate-token`;
+	try {
+		const validationResult = await cdpFetch(c, path, "POST", {accessToken: accessToken})
+		if (!!validationResult?.error) {
+			return c.json(validationResult)
 		}
 
-		const path = `/platform/v2/end-users/auth/validate-token`;
-		try {
-			const validationResult = await cdpFetch(c, path, "POST", {accessToken: accessToken})
-			if (!!validationResult?.error) {
-				return c.json(validationResult)
-			}
+		const userInfo = parseXAuthEndUserSnapshot(validationResult)
 
-			const userInfo = parseXAuthEndUserSnapshot(validationResult)
-
-			const existingUser = await getKolBindingByUserId(c.env.DB, userInfo.userId);
-			if (existingUser) {
-				await updateUserSigninTime(c.env.DB, userInfo.xSub);
-				return c.json({success: true, isNewUser: false});
-			}
-
-			await createKolBinding(c.env.DB, userInfo);
-
-			return c.json({success: true, isNewUser: true});
-		} catch (err: any) {
-			console.error("[Validate Token Error]", err);
-			return c.json({error: "Internal Server Error", detail: err?.message}, 500);
+		const existingUser = await getKolBindingByUserId(c.env.DB, userInfo.userId);
+		if (existingUser) {
+			await updateUserSigninTime(c.env.DB, userInfo.xSub);
+			return c.json({success: true, isNewUser: false});
 		}
-	});
+
+		await createKolBinding(c.env.DB, userInfo);
+
+		return c.json({success: true, isNewUser: true});
+	} catch (err: any) {
+		console.error("[Validate Token Error]", err);
+		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
+	}
 }
 
 /**
  * 接口 1: 查询待领取的奖励
  * GET /rewards/query_valid?cdp_user_id=xxx
  */
-export function registerQueryValidRewardsRoute(app: Hono<ExtendedEnv>) {
-	app.get("/rewards/query_valid", async (c) => {
-		try {
-			const cdpUserId = c.req.query("cdp_user_id");
-			if (!cdpUserId) {
-				return c.json({error: "Missing cdp_user_id"}, 400);
-			}
-
-			const result = await queryValidRewards(c.env.DB, cdpUserId);
-
-			return c.json({
-				success: true,
-				data: {
-					rewards: result.rewards,
-					totalAmount: result.totalAmount,
-					count: result.count
-				}
-			});
-
-		} catch (err: any) {
-			console.error("[Query Valid Rewards Error]", err);
-			return c.json({error: "Internal Server Error", detail: err?.message}, 500);
+export async function apiQueryValidRewards(c: ExtCtx) {
+	try {
+		const cdpUserId = c.req.query("cdp_user_id");
+		if (!cdpUserId) {
+			return c.json({error: "Missing cdp_user_id"}, 400);
 		}
-	});
+		return c.json({success: true, data: await queryValidRewards(c.env.DB, cdpUserId)});
+	} catch (err: any) {
+		console.error("[Query Valid Rewards Error]", err);
+		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
+	}
 }
 
 async function processRewardClaim(c: ExtCtx, rewardId: number, address: `0x${string}`, amount: string) {
@@ -160,9 +143,8 @@ async function processRewardClaim(c: ExtCtx, rewardId: number, address: `0x${str
 	}
 }
 
-export function registerClaimRewardRoute(app: Hono<ExtendedEnv>) {
+export async function apiClaimReward(c: ExtCtx) {
 
-	app.post("/rewards/claim_item", async (c) => {
 		try {
 			const body = await c.req.json().catch(() => ({}));
 			const cdpUserId = body?.cdp_user_id;
@@ -187,15 +169,13 @@ export function registerClaimRewardRoute(app: Hono<ExtendedEnv>) {
 			console.error("[Claim Reward Error]", err);
 			return c.json({error: "Internal Server Error", detail: err?.message}, 500);
 		}
-	});
 }
 
 /**
  * 接口 3: 查询奖励历史
  * GET /rewards/query_history?cdp_user_id=xxx&status=-1&page_start=0
  */
-export function registerQueryRewardHistoryRoute(app: Hono<ExtendedEnv>) {
-	app.get("/rewards/query_history", async (c) => {
+export async function apiQueryRewardHistory(c: ExtCtx) {
 		try {
 			const cdpUserId = c.req.query("cdp_user_id");
 			if (!cdpUserId) {
@@ -225,5 +205,4 @@ export function registerQueryRewardHistoryRoute(app: Hono<ExtendedEnv>) {
 			console.error("[Query Reward History Error]", err);
 			return c.json({error: "Internal Server Error", detail: err?.message}, 500);
 		}
-	});
 }
