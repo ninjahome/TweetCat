@@ -1,4 +1,4 @@
-import {getCurrentUser, initialize, signOut} from "@coinbase/cdp-core";
+import {initialize, signOut} from "@coinbase/cdp-core";
 
 export const ChainIDBaseSepolia = 84532 as const
 export const ChainIDBaseMain = 8453 as const
