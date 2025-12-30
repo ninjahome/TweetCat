@@ -82,14 +82,14 @@ export function decodeBase64Json<T = any>(b64: string): T {
 	return JSON.parse(json) as T;
 }
 
-/** 0.01 -> 10000 (USDC 6 decimals) */
-export function usdcToAtomic(amountStr: string): string {
-	const s = (amountStr || "0").trim();
-	const [intPartRaw, fracRaw = ""] = s.split(".");
-	const intPart = intPartRaw === "" ? "0" : intPartRaw;
-	const frac = (fracRaw + "000000").slice(0, 6);
-	const i = intPart.replace(/^0+(?=\d)/, "");
-	return `${i}${frac}`.replace(/^0+(?=\d)/, "") || "0";
+export function usdcToAtomicSafe(amountStr: string): string {
+	const s = (amountStr ?? "").trim();
+	if (!/^\d+(\.\d{0,6})?$/.test(s)) throw new Error("invalid usdc string")
+
+	const [intPart, frac = ""] = s.split(".");
+	const fracPadded = (frac + "000000").slice(0, 6);
+	const out = (intPart.replace(/^0+(?=\d)/, "") || "0") + fracPadded;
+	return out.replace(/^0+(?=\d)/, "") || "0";
 }
 
 export function getPaymentHeader(c: any): string | undefined {

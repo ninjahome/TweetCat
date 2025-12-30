@@ -22,30 +22,44 @@ export async function getKolBinding(db: D1Database, xId: string): Promise<string
 	return row?.wallet_address ?? null;
 }
 
+export async function getKolByUid(db: D1Database, uid: string): Promise<string | null> {
+	const stmt = db.prepare("SELECT wallet_address FROM kol_binding WHERE cdp_user_id = ?").bind(uid);
+	const row = await stmt.first<{ wallet_address: string }>();
+	return row?.wallet_address ?? null;
+}
+
 export interface TipRecord {
 	xId: string;
 	amountAtomic: string;
 }
 
-export async function recordEscrowTips(db: D1Database, params: TipRecord) {
-	const sql = `
-		INSERT INTO tip_escrow (x_id, amount_atomic)
-		VALUES (?, ?) ON CONFLICT(x_id) DO
-		UPDATE SET
-			amount_atomic = CAST (tip_escrow.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER),
-			updated_at = CURRENT_TIMESTAMP
-		WHERE status = ${TIP_RECORD_PENDING};
-	`;
+export async function usdcEscrowTips(db: D1Database, params: TipRecord) {
+	try {
+		const sql = `
+			INSERT INTO tip_escrow (x_id, amount_atomic)
+			VALUES (?, ?) ON CONFLICT(x_id) DO
+			UPDATE SET
+				amount_atomic = CAST (tip_escrow.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER),
+				updated_at = CURRENT_TIMESTAMP
+			WHERE status = ${TIP_RECORD_PENDING};
+		`;
 
-	const result = await db.prepare(sql)
-		.bind(params.xId, params.amountAtomic)
-		.run();
+		const result = await db.prepare(sql)
+			.bind(params.xId, params.amountAtomic)
+			.run();
 
-	if (!result.success || result.meta.changes === 0) {
-		throw new Error(`Failed to record tips: x_id ${params.xId} not found or status is not Pending.`);
+		if (!result.success || result.meta.changes === 0) {
+			console.error(`Failed to record tips [${params}]`);
+		}
+	} catch (err: any) {
+		console.error("tip record error:", err, " payment info:", params);
+		await logX402Failure(db, {
+			kind: "tip_action",
+			stage: "record escrow tips",
+			context: JSON.stringify(params),
+			message: err?.message
+		})
 	}
-
-	return result;
 }
 
 export interface ValidatedUserInfo {
@@ -147,9 +161,6 @@ export interface ValidRewardsResult {
 	rewards: UserReward[];
 }
 
-/**
- * 查询用户待领取的奖励（status = 0）
- */
 export async function queryValidRewards(
 	db: D1Database,
 	cdpUserId: string
@@ -170,9 +181,6 @@ export async function queryValidRewards(
 	};
 }
 
-/**
- * 查询用户历史奖励记录（分页）
- */
 export async function queryRewardHistory(
 	db: D1Database,
 	cdpUserId: string,
@@ -205,14 +213,12 @@ export async function queryRewardHistory(
 	return {rewards, hasMore};
 }
 
-/**
- * 更新奖励状态
- */
 export async function updateRewardStatus(
 	db: D1Database,
 	id: number,
 	status: number,
-	txHash?: string
+	txHash?: string,
+	reason?: string
 ): Promise<void> {
 	let sql = "UPDATE user_rewards SET status = ?, updated_at = CURRENT_TIMESTAMP";
 	const params: any[] = [status];
@@ -221,6 +227,10 @@ export async function updateRewardStatus(
 		sql += ", tx_hash = ?";
 		params.push(txHash);
 	}
+	if (txHash) {
+		sql += ", reason = ?";
+		params.push(reason);
+	}
 
 	sql += " WHERE id = ?";
 	params.push(id);
@@ -228,10 +238,6 @@ export async function updateRewardStatus(
 	await db.prepare(sql).bind(...params).run();
 }
 
-/**
- * 锁定并获取奖励（原子操作）
- * 将符合条件的奖励从 PENDING 改为 LOCKED 并返回该奖励
- */
 export async function lockAndGetReward(
 	db: D1Database,
 	id: number,
@@ -245,8 +251,7 @@ export async function lockAndGetReward(
 		 WHERE id = ?
 		   AND cdp_user_id = ?
 		   AND asset_symbol = ?
-		   AND status = ?
-		 RETURNING *`
+		   AND status = ? RETURNING *`
 	).bind(
 		REWARD_STATUS_LOCKED,
 		id,
@@ -256,4 +261,31 @@ export async function lockAndGetReward(
 	).first<UserReward>();
 
 	return result || null;
+}
+
+export interface X402FailureInput {
+	kind: string;
+	stage: string;
+	context?: string;
+	message?: string;
+	raw?: unknown;
+}
+
+const toNull = (v?: string) => (v === undefined ? null : v);
+
+export async function logX402Failure(db: D1Database, input: X402FailureInput): Promise<void> {
+	try {
+		await db.prepare(
+			`INSERT INTO x402_failures (kind, stage, context, message, raw_json)
+			 VALUES (?, ?, ?, ?, ?)`
+		).bind(
+			input.kind,
+			input.stage,
+			toNull(input.context),
+			toNull(input.message),
+			(input.raw)
+		).run();
+	} catch (err: any) {
+		console.error("[x402_failures] insert failed:", err?.message || err, {input});
+	}
 }

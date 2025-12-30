@@ -34,7 +34,6 @@ import {x402Client} from "@x402/core/client";
 import {registerExactEvmScheme} from "@x402/evm/exact/client";
 import {wrapFetchWithPayment} from "@x402/fetch";
 import {privateKeyToAccount} from "viem/accounts";
-import {t} from "../common/i18n";
 import {logX402} from "../common/debug_flags";
 
 const ERC20_BALANCE_ABI = [
