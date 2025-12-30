@@ -145,7 +145,6 @@ export interface UserReward {
 
 export interface ValidRewardsResult {
 	rewards: UserReward[];
-	count: number;
 }
 
 /**
@@ -168,7 +167,6 @@ export async function queryValidRewards(
 
 	return {
 		rewards,
-		count: rewards.length
 	};
 }
 

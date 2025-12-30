@@ -1,5 +1,4 @@
-import {Hono} from "hono";
-import {cdpFetch, ExtendedEnv, ExtCtx} from "./common";
+import {cdpFetch, ExtCtx} from "./common";
 import {
 	createKolBinding,
 	getKolBindingByUserId,
@@ -82,10 +81,6 @@ export async function apiValidateUser(c: ExtCtx) {
 	}
 }
 
-/**
- * 接口 1: 查询待领取的奖励
- * GET /rewards/query_valid?cdp_user_id=xxx
- */
 export async function apiQueryValidRewards(c: ExtCtx) {
 	try {
 		const cdpUserId = c.req.query("cdp_user_id");
@@ -171,10 +166,6 @@ export async function apiClaimReward(c: ExtCtx) {
 		}
 }
 
-/**
- * 接口 3: 查询奖励历史
- * GET /rewards/query_history?cdp_user_id=xxx&status=-1&page_start=0
- */
 export async function apiQueryRewardHistory(c: ExtCtx) {
 		try {
 			const cdpUserId = c.req.query("cdp_user_id");

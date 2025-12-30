@@ -111,6 +111,20 @@ export async function getWalletAddress(): Promise<string | null> {
     }
 }
 
+// 获取 CDP 用户 ID
+export async function queryCdpUserID(): Promise<string | null> {
+    try {
+        await initCDP();
+        if (!await isSignedIn()) return null;
+        
+        const user = await getCurrentUser();
+        return user.userId || null;
+    } catch (e) {
+        console.error('Failed to get CDP user ID:', e);
+        return null;
+    }
+}
+
 // ============ 余额查询 ============
 export async function queryWalletBalance(
     address: string,

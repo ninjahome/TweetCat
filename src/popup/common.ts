@@ -7,12 +7,12 @@ import {logX402} from "../common/debug_flags";
 let notificationTimer: number | null = null;
 let notificationBar: HTMLDivElement | null = null;
 
-export function showNotification(message: string, type: "info" | "error" = "info", duration = 4000) {
+export function showNotification(message: string, type: "info" | "error" | "success" = "info", duration = 4000) {
     if (!notificationBar) notificationBar = document.getElementById("notification") as HTMLDivElement | null;
 
     if (!notificationBar) return;
     notificationBar.textContent = message;
-    notificationBar.classList.remove("hidden", "info", "error");
+    notificationBar.classList.remove("hidden", "info", "error", "success");
     notificationBar.classList.add(type);
     if (notificationTimer) {
         window.clearTimeout(notificationTimer);
@@ -32,7 +32,7 @@ export function hideNotification() {
 
     notificationBar.textContent = "";
     notificationBar.classList.add("hidden");
-    notificationBar.classList.remove("info", "error");
+    notificationBar.classList.remove("info", "error", "success");
     if (notificationTimer) {
         window.clearTimeout(notificationTimer);
         notificationTimer = null;
@@ -160,6 +160,31 @@ export async function x402WorkerFetch(path: string, body: any): Promise<any> {
     if (!response.ok) {
         const errorData = await response.text();
         throw new Error(`x402worker fetch failed: ${response.status} - ${errorData}`);
+    }
+
+    return await response.json();
+}
+
+export async function x402WorkerGet(path: string, params?: Record<string, string>): Promise<any> {
+    const chainID = await getChainId()
+    let url = X402_FACILITATORS[chainID].endpoint + path
+    
+    if (params) {
+        const searchParams = new URLSearchParams(params);
+        url += "?" + searchParams.toString();
+    }
+
+    logX402("------>>> GET url:", url)
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`x402worker GET failed: ${response.status} - ${errorData}`);
     }
 
     return await response.json();

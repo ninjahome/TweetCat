@@ -53,11 +53,14 @@
 
 .notification.info {
     background: #1d9bf0;
-
 }
 
 .notification.error {
     background: #df3f3f;
+}
+
+.notification.success {
+    background: #16a34a;
 }
 
 .modal {
