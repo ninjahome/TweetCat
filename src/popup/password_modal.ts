@@ -1,8 +1,6 @@
 // password_modal.ts
 import {t} from "../common/i18n";
-import {$Id, showAlert} from "./common";
-import {sendMsgToService} from "../common/utils";
-import {MsgType} from "../common/consts";
+import {$Id} from "./common";
 
 let modalEl: HTMLDivElement | null = null;
 let inputEl: HTMLInputElement | null = null;

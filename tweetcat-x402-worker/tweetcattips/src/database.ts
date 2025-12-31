@@ -229,7 +229,7 @@ export async function updateRewardStatus(
 		sql += ", tx_hash = ?";
 		params.push(txHash);
 	}
-	if (txHash) {
+	if (reason) {
 		sql += ", reason = ?";
 		params.push(reason);
 	}

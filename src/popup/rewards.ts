@@ -319,10 +319,9 @@ function getStatusText(status: number): string {
     const statusMap: Record<number, string> = {
         0: "待领取",
         10: "锁定中",
-        20: "处理中",
-        30: "已完成",
-        40: "失败",
-        50: "已取消/过期"
+        20: "成功",
+        30: "失败",
+        40: "已取消"
     };
     return statusMap[status] || "未知";
 }

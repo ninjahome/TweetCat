@@ -110,10 +110,9 @@ async function x402Workflow(
 	const payerAddr = verifyResult.payer?.toLowerCase();
 	const payeeAddr = requirements.payTo.toLowerCase();
 	if (payerAddr === payeeAddr) {
+		console.warn("------>>> payer:", payerAddr, " receiver:", payeeAddr)
 		throw new Error("same payer and receiver")
 	}
-
-	console.log("------>>> payer:", payerAddr, " receiver:", payeeAddr)
 
 	const settleResult = (await resourceServer.settlePayment(paymentPayload, requirements)) as SettleResponse;
 	if (!settleResult.success) throw new Error(settleResult.errorReason);

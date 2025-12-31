@@ -127,24 +127,21 @@ body {
 }
 
 .reward-status.status-20 {
-    background: #dbeafe;
-    color: #2563eb;
-}
-
-.reward-status.status-30 {
     background: #dcfce7;
     color: #16a34a;
 }
 
-.reward-status.status-40 {
+.reward-status.status-30 {
     background: #fee2e2;
     color: #dc2626;
 }
 
-.reward-status.status-50 {
+.reward-status.status-40 {
     background: #f3f4f6;
     color: #6b7280;
 }
+
+
 
 .reward-expanded {
     display: none;
