@@ -21,7 +21,6 @@ export async function testQueryUserDetails(c: ExtCtx) {
 		const path = `/platform/v2/end-users/${userId}`;
 		const userData = await cdpFetch(c, path, "GET")
 		return c.json(userData);
-
 	} catch (err: any) {
 		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
 	}
@@ -60,11 +59,11 @@ export async function apiValidateUser(c: ExtCtx) {
 	const path = `/platform/v2/end-users/auth/validate-token`;
 	try {
 		const validationResult = await cdpFetch(c, path, "POST", {accessToken: accessToken})
-		if (!!validationResult?.error) {
-			return c.json(validationResult)
+		if (!validationResult.ok) {
+			return c.json(validationResult, validationResult.status)
 		}
 
-		const userInfo = parseXAuthEndUserSnapshot(validationResult)
+		const userInfo = parseXAuthEndUserSnapshot(validationResult.data)
 
 		const existingUser = await getKolBindingByUserId(c.env.DB, userInfo.userId);
 		if (existingUser) {

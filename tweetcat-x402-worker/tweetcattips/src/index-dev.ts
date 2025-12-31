@@ -1,18 +1,11 @@
-import {Hono} from "hono";
 import {HTTPFacilitatorClient, x402ResourceServer} from "@x402/core/server";
 import {ExactEvmScheme} from "@x402/evm/exact/server";
 
 import {
-	applyCors,
-	ExtendedEnv,
 	type Env,
-	type NetConfig,
+	type NetConfig, app,
 } from "./common";
 import {registerSrv} from "./api_srv";
-
-const app = new Hono<ExtendedEnv>();
-
-applyCors(app);
 
 const TESTNET_CFG: NetConfig = {
 	NETWORK: "eip155:84532",

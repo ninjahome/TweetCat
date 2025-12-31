@@ -2,15 +2,17 @@ import {Context, Hono} from "hono";
 import {cors} from "hono/cors";
 import {generateJwt, generateWalletJwt} from "@coinbase/cdp-sdk/auth";
 import type {x402ResourceServer} from "@x402/core/server";
+import {ContentfulStatusCode} from "hono/utils/http-status";
+import {CdpClient, EvmServerAccount} from "@coinbase/cdp-sdk";
 
 export interface Env {
 	CDP_API_KEY_ID: string;
 	CDP_API_KEY_SECRET: string;
 	CDP_WALLET_SECRET: string;
 	DB: D1Database;
-	TREASURY_ADDRESS: string;
-	TREASURY_PRIVATE_KEY: string;
 	REWARD_FOR_SIGNUP: string;
+	CDP_TREASURY_ACCOUNT_NAME: string;
+	CDP_TREASURY_ACCOUNT_POLICY_ID?: string;
 }
 
 export type ExtendedEnv = {
@@ -21,7 +23,6 @@ export type ExtendedEnv = {
 	};
 };
 export type ExtCtx = Context<ExtendedEnv>;
-
 /** CAIP-2 network id: e.g. "eip155:8453" */
 export type Caip2Network = `${string}:${string}`;
 
@@ -31,6 +32,24 @@ export interface NetConfig {
 	USDC: `0x${string}`;
 	USDC_EIP712_NAME: string;
 	USDC_EIP712_VERSION: string;
+}
+
+export const app = new Hono<ExtendedEnv>();
+applyCors(app);
+
+let _cdpInstance: CdpClient | null = null;
+export function getCdpClient(env: Env): CdpClient {
+	if (!_cdpInstance) {
+		if (!env.CDP_API_KEY_ID ||!env.CDP_WALLET_SECRET) {
+			throw new Error("CRITICAL_CONFIG_MISSING: CDP credentials not found in environment.");
+		}
+		_cdpInstance = new CdpClient({
+			apiKeyId: env.CDP_API_KEY_ID,
+			apiKeySecret: env.CDP_API_KEY_SECRET,
+			walletSecret: env.CDP_WALLET_SECRET,
+		});
+	}
+	return _cdpInstance;
 }
 
 export function applyCors(app: Hono<ExtendedEnv>) {
@@ -60,12 +79,10 @@ export function applyCors(app: Hono<ExtendedEnv>) {
 	);
 }
 
-/** 处理 wrangler secret 里 \n 转义 */
 export function normalizeMultilineSecret(s: string): string {
 	return (s ?? "").replace(/\\n/g, "\n");
 }
 
-/** UTF-8 安全的 base64(JSON) 编解码（避免 btoa/atob 遇到 unicode 报错） */
 export function encodeBase64Json(obj: unknown): string {
 	const json = JSON.stringify(obj);
 	const bytes = new TextEncoder().encode(json);
@@ -105,7 +122,6 @@ export function isHexAddress(addr: string): boolean {
 	return /^0x[a-fA-F0-9]{40}$/.test(addr);
 }
 
-/** 生成 CDP 平台 JWT Authorization 头（通用） */
 export async function createCdpJwtAuthHeader(params: {
 	apiKeyId: string;
 	apiKeySecret: string;
@@ -120,11 +136,9 @@ export async function createCdpJwtAuthHeader(params: {
 		requestHost: params.requestHost,
 		requestPath: params.requestPath,
 	});
-
 	return {Authorization: `Bearer ${token}`};
 }
 
-/** x402 主网 facilitator（CDP hosted）专用：/platform/v2/x402 + endpoint */
 export async function getX402AuthHeader(params: {
 	apiKeyId: string;
 	apiKeySecret: string;
@@ -177,26 +191,53 @@ export async function getCdpAuthHeader(
 	return headers;
 }
 
-
-export async function cdpFetch(c: ExtCtx, path: string, method: string, body?: any): Promise<any> {
-	const url = `https://api.cdp.coinbase.com${path}`;
-	const headers = await getCdpAuthHeader(c.env, method, path);
-	const options: RequestInit = {
-		method,
-		headers,
-	};
-
-	if (body) options.body = JSON.stringify(body)
-
-	const response = await fetch(url, options);
-	if (!response.ok) {
-		const errorData = await response.text();
-		console.error("[CDP Validate Token Error]", errorData);
-		return {error: "Failed to validate token", status: response.status, detail: errorData}
-	}
-
-	if (response.status === 204) return {error: "No Content", status: response.status};
-	return await response.json();
+export interface cdpFetchResult {
+	ok: boolean;
+	status: ContentfulStatusCode;
+	data: any;
+	raw: string;
 }
 
+export async function cdpFetch(c: ExtCtx, path: string, method: string, body?: any, requireWalletAuth: boolean = false,): Promise<cdpFetchResult> {
+	const url = `https://api.cdp.coinbase.com${path}`;
+	const headers = await getCdpAuthHeader(c.env, method, path, body ?? {}, requireWalletAuth);
+	const init: RequestInit = {method, headers: {...headers, "Content-Type": "application/json"}};
+	if (body && method !== "GET") init.body = JSON.stringify(body);
 
+	const res = await fetch(url, init);
+	const raw = await res.text();
+	let data: any;
+	try {
+		data = raw ? JSON.parse(raw) : null;
+	} catch {
+		data = raw;
+	}
+	return {ok: res.ok, status: res.status as ContentfulStatusCode, data, raw};
+}
+
+let treasuryAccountP: Promise<EvmServerAccount> | null = null;
+export async function getOrCreateTreasuryEOA(c: ExtCtx): Promise<EvmServerAccount> {
+	try {
+		if (!!treasuryAccountP) return treasuryAccountP
+
+		const cdp = getCdpClient(c.env)
+		const name = c.env.CDP_TREASURY_ACCOUNT_NAME;
+		const namedAccount = await cdp.evm.getOrCreateAccount({
+			name: name
+		});
+
+		const policyId = c.env.CDP_TREASURY_ACCOUNT_POLICY_ID
+		if (!policyId) return namedAccount
+
+		return await cdp.evm.updateAccount({
+			address: namedAccount.address,
+			update: {
+				accountPolicy: policyId,
+			},
+		})
+
+	} catch (err: any) {
+		console.error("------>>>[getOrCreateTreasuryEOA] failed:", err)
+		throw new Error("failed to get server account:",err)
+	}
+}

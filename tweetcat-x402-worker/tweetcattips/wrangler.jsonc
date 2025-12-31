@@ -14,7 +14,7 @@
 		}
 	],
 	"vars": {
-		"TREASURY_ADDRESS": "0x729e71ff357ccefAa31635931621531082A698f6",
+		"CDP_TREASURY_ACCOUNT_NAME": "tweetcat-treasury",
 		"REWARD_FOR_SIGNUP":0.1
 	},
 
@@ -30,8 +30,8 @@
 				}
 			],
 			"vars": {
-				"TREASURY_ADDRESS": "0x729e71ff357ccefAa31635931621531082A698f6",
-				"REWARD_FOR_SIGNUP":0.1
+				"REWARD_FOR_SIGNUP":0.2,
+				"CDP_TREASURY_ACCOUNT_NAME": "tweetcat-treasury-test"
 			}
 		}
 	}

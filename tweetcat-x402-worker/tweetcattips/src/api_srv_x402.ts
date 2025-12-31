@@ -1,8 +1,9 @@
 import {
 	decodeBase64Json,
 	encodeBase64Json,
-	ExtCtx,
-	getPaymentHeader, isHexAddress,
+	ExtCtx, getOrCreateTreasuryEOA,
+	getPaymentHeader,
+	isHexAddress,
 	NetConfig,
 	usdcToAtomicSafe
 } from "./common";
@@ -10,9 +11,9 @@ import {PaymentRequirements} from "@x402/hono";
 import {ResourceInfo, x402ResourceServer} from "@x402/core/server";
 import {SettleResponse} from "@x402/core/types";
 import {getKolBinding, usdcEscrowTips} from "./database";
-import {privateKeyToAccount} from "viem/accounts";
 import {x402Client} from "@x402/core/client";
 import {registerExactEvmScheme} from "@x402/evm/exact/client";
+import {toAccount} from "viem/accounts";
 
 interface TipRequestParams {
 	amount: string;
@@ -52,7 +53,8 @@ async function parseTipParams(c: ExtCtx): Promise<TipObj> {
 	const boundAddress = await getKolBinding(c.env.DB, xId);
 	const isEscrow = !boundAddress;
 
-	const payTo = isEscrow ? (c.env.TREASURY_ADDRESS as `0x${string}`) : (boundAddress as `0x${string}`);
+	const srvAddress = (await getOrCreateTreasuryEOA(c)).address
+	const payTo = isEscrow ? srvAddress : (boundAddress as `0x${string}`);
 	if (!isHexAddress(payTo)) {
 		throw new Error("Invalid payTo address (config error)");
 	}
@@ -104,6 +106,14 @@ async function x402Workflow(
 
 	const verifyResult = await resourceServer.verifyPayment(paymentPayload, requirements);
 	if (!verifyResult.isValid) throw new Error(verifyResult.invalidReason);
+
+	const payerAddr = verifyResult.payer?.toLowerCase();
+	const payeeAddr = requirements.payTo.toLowerCase();
+	if (payerAddr === payeeAddr) {
+		throw new Error("same payer and receiver")
+	}
+
+	console.log("------>>> payer:", payerAddr, " receiver:", payeeAddr)
 
 	const settleResult = (await resourceServer.settlePayment(paymentPayload, requirements)) as SettleResponse;
 	if (!settleResult.success) throw new Error(settleResult.errorReason);
@@ -197,15 +207,11 @@ export async function internalTreasurySettle(
 	atomicAmount: string,
 	resourceUrl: string
 ): Promise<SettleResponse> {
-	const privateKey = c.env.TREASURY_PRIVATE_KEY;
 
-	if (!privateKey) throw new Error("TREASURY_PRIVATE_KEY not set");
-
-	const rawKey = privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`;
-	const account = privateKeyToAccount(rawKey as `0x${string}`);
-
+	const treasuryAccount = await getOrCreateTreasuryEOA(c);
+	const signer = toAccount(treasuryAccount);
 	const client = new x402Client();
-	registerExactEvmScheme(client, {signer: account, networks: [cfg.NETWORK]});
+	registerExactEvmScheme(client, {signer, networks: [cfg.NETWORK]});
 
 	const requirements = {
 		scheme: "exact" as const,
