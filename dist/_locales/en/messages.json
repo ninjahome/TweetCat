@@ -935,5 +935,98 @@
   },
   "user_tip_button_title": {
     "message": "Tip($1)U"
+  },
+  "rewards_page_title": {
+    "message": "My Rewards"
+  },
+  "rewards_filter_label": {
+    "message": "Status Filter"
+  },
+  "rewards_filter_all": {
+    "message": "All"
+  },
+  "rewards_status_pending": {
+    "message": "Pending"
+  },
+  "rewards_status_locked": {
+    "message": "Locked"
+  },
+  "rewards_status_success": {
+    "message": "Success"
+  },
+  "rewards_status_failed": {
+    "message": "Failed"
+  },
+  "rewards_status_cancelled": {
+    "message": "Cancelled"
+  },
+  "rewards_status_unknown": {
+    "message": "Unknown"
+  },
+  "rewards_prev_page": {
+    "message": "Previous"
+  },
+  "rewards_next_page": {
+    "message": "Next"
+  },
+  "rewards_page_info": {
+    "message": "Page $1"
+  },
+  "rewards_empty_state": {
+    "message": "No rewards yet"
+  },
+  "rewards_loading": {
+    "message": "Loading..."
+  },
+  "rewards_user_id_not_found": {
+    "message": "User ID not found"
+  },
+  "rewards_load_failed": {
+    "message": "Failed to load rewards"
+  },
+  "rewards_claiming": {
+    "message": "Claiming reward..."
+  },
+  "rewards_claim_success": {
+    "message": "Claimed successfully!"
+  },
+  "rewards_claim_failed": {
+    "message": "Failed to claim"
+  },
+  "rewards_unknown_error": {
+    "message": "Unknown error"
+  },
+  "rewards_field_id": {
+    "message": "ID"
+  },
+  "rewards_field_asset": {
+    "message": "Asset"
+  },
+  "rewards_field_amount": {
+    "message": "Amount"
+  },
+  "rewards_field_status": {
+    "message": "Status"
+  },
+  "rewards_field_created_at": {
+    "message": "Created At"
+  },
+  "rewards_field_updated_at": {
+    "message": "Updated At"
+  },
+  "rewards_field_reason": {
+    "message": "Reason"
+  },
+  "rewards_field_tx_hash": {
+    "message": "Tx Hash"
+  },
+  "rewards_field_asset_address": {
+    "message": "Asset Address"
+  },
+  "rewards_btn_claim": {
+    "message": "Claim"
+  },
+  "rewards_btn_view_tx": {
+    "message": "View Transaction"
   }
 }

@@ -935,6 +935,99 @@
   },
   "user_tip_button_title": {
     "message": "打赏($1)U"
+  },
+  "rewards_page_title": {
+    "message": "我的奖励"
+  },
+  "rewards_filter_label": {
+    "message": "状态筛选"
+  },
+  "rewards_filter_all": {
+    "message": "全部"
+  },
+  "rewards_status_pending": {
+    "message": "待领取"
+  },
+  "rewards_status_locked": {
+    "message": "锁定中"
+  },
+  "rewards_status_success": {
+    "message": "成功"
+  },
+  "rewards_status_failed": {
+    "message": "失败"
+  },
+  "rewards_status_cancelled": {
+    "message": "已取消"
+  },
+  "rewards_status_unknown": {
+    "message": "未知"
+  },
+  "rewards_prev_page": {
+    "message": "上一页"
+  },
+  "rewards_next_page": {
+    "message": "下一页"
+  },
+  "rewards_page_info": {
+    "message": "第 $1 页"
+  },
+  "rewards_empty_state": {
+    "message": "暂无奖励记录"
+  },
+  "rewards_loading": {
+    "message": "加载中..."
+  },
+  "rewards_user_id_not_found": {
+    "message": "未找到用户ID"
+  },
+  "rewards_load_failed": {
+    "message": "加载奖励失败"
+  },
+  "rewards_claiming": {
+    "message": "正在领取奖励..."
+  },
+  "rewards_claim_success": {
+    "message": "领取成功!"
+  },
+  "rewards_claim_failed": {
+    "message": "领取失败"
+  },
+  "rewards_unknown_error": {
+    "message": "未知错误"
+  },
+  "rewards_field_id": {
+    "message": "ID"
+  },
+  "rewards_field_asset": {
+    "message": "资产"
+  },
+  "rewards_field_amount": {
+    "message": "金额"
+  },
+  "rewards_field_status": {
+    "message": "状态"
+  },
+  "rewards_field_created_at": {
+    "message": "创建时间"
+  },
+  "rewards_field_updated_at": {
+    "message": "更新时间"
+  },
+  "rewards_field_reason": {
+    "message": "原因"
+  },
+  "rewards_field_tx_hash": {
+    "message": "交易哈希"
+  },
+  "rewards_field_asset_address": {
+    "message": "资产地址"
+  },
+  "rewards_btn_claim": {
+    "message": "领取"
+  },
+  "rewards_btn_view_tx": {
+    "message": "查看交易"
   }
 }
 
