@@ -6,27 +6,23 @@
 /* 按钮主体 */
 .user-tip-btn{
     appearance: none;
-    border: 1px solid #d0d7de;
-    background: #fff;
-    color: #0f172a;
-    border-radius: 12px;
-    padding: 10px 12px;
+    background: linear-gradient(to right, #1d9bf0, #03CBAD);
+    color: #fff;
+    border-radius: 999px;
+    padding: 10px 16px;
     cursor: pointer;
-
     display: inline-flex;
     align-items: center;
     gap: 6px;
-
     font-size: 14px;
+    font-weight: 500;
     line-height: 1;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
     transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
 }
 
-.user-tip-btn:hover{
-    transform: translateY(-1px);
-    border-color: #94a3b8;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.16);
+.user-tip-btn:hover {
+
+    background: linear-gradient(to right, #1a8cd8, #03B69B);
 }
 
 .user-tip-btn:active{
