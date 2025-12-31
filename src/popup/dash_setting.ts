@@ -2,7 +2,7 @@ import {$Id, showNotification} from "./common";
 import {t} from "../common/i18n";
 
 import {defaultWalletSettings, loadWalletSettings, saveWalletSettings, WalletSettings} from "../wallet/wallet_setting";
-import {ChainIDBaseMain, ChainIDBaseSepolia, ChainNameBaseMain, ChainNetwork} from "../common/x402_obj";
+import {ChainNameBaseMain, ChainNetwork} from "../common/x402_obj";
 import {refreshBalances} from "./dash_wallet";
 
 

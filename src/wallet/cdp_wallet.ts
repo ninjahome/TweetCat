@@ -175,7 +175,7 @@ export async function queryCdpWalletInfo(chainId: number | null = null): Promise
             chainId
         };
     } catch (error) {
-        console.error('Failed to query CDP wallet info:', error);
+        console.warn('Failed to query CDP wallet info:', error);
         return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1};
     }
 }
