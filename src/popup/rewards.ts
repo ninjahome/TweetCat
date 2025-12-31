@@ -34,8 +34,67 @@ let hasMorePages = false;
 
 document.addEventListener("DOMContentLoaded", () => {
     initI18n();
+    initRewardsTexts();
     initRewardsPage().then();
 });
+
+function initRewardsTexts() {
+    // 页面标题
+    document.title = t('rewards_page_title');
+    const pageTitle = document.querySelector('.rewards-header h1');
+    if (pageTitle) {
+        pageTitle.textContent = t('rewards_page_title');
+    }
+    
+    // 筛选标签
+    const filterLabel = document.querySelector('.filter-container label');
+    if (filterLabel) {
+        filterLabel.textContent = t('rewards_filter_label') + ':';
+    }
+    
+    // 状态筛选下拉框选项
+    const statusFilter = document.getElementById('status-filter') as HTMLSelectElement;
+    if (statusFilter) {
+        const options = statusFilter.options;
+        if (options[0]) options[0].textContent = t('rewards_filter_all');
+        if (options[1]) options[1].textContent = t('rewards_status_pending');
+        if (options[2]) options[2].textContent = t('rewards_status_locked');
+        if (options[3]) options[3].textContent = t('rewards_status_success');
+        if (options[4]) options[4].textContent = t('rewards_status_failed');
+        if (options[5]) options[5].textContent = t('rewards_status_cancelled');
+    }
+    
+    // 分页按钮
+    const prevBtn = document.getElementById('prev-page');
+    if (prevBtn) {
+        prevBtn.textContent = t('rewards_prev_page');
+    }
+    
+    const nextBtn = document.getElementById('next-page');
+    if (nextBtn) {
+        nextBtn.textContent = t('rewards_next_page');
+    }
+    
+    const pageInfo = document.getElementById('page-info');
+    if (pageInfo) {
+        pageInfo.textContent = t('rewards_page_info', '1');
+    }
+    
+    // 空状态提示
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) {
+        const emptyText = emptyState.querySelector('p');
+        if (emptyText) {
+            emptyText.textContent = t('rewards_empty_state');
+        }
+    }
+    
+    // Loading 文本
+    const loadingMessage = document.querySelector('.loading-message');
+    if (loadingMessage) {
+        loadingMessage.textContent = t('rewards_loading');
+    }
+}
 
 async function initRewardsPage() {
     // 从 URL 获取参数

@@ -359,6 +359,17 @@ interface ValidRewardsResponse {
 
 async function initRewards(): Promise<void> {
     const rewardsArea = $Id("rewards-area") as HTMLElement;
+    
+    // 设置静态文本
+    const rewardsTitle = rewardsArea.querySelector(".rewards-title") as HTMLElement;
+    if (rewardsTitle) {
+        rewardsTitle.textContent = t('dashboard_rewards_title');
+    }
+    
+    const rewardsLabels = rewardsArea.querySelectorAll(".rewards-label");
+    if (rewardsLabels[0]) {
+        rewardsLabels[0].textContent = t('dashboard_rewards_pending');
+    }
 
     try {
         const cdpUserId = await queryCdpUserID();

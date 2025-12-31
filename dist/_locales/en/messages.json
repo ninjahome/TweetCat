@@ -1028,5 +1028,11 @@
   },
   "rewards_btn_view_tx": {
     "message": "View Transaction"
+  },
+  "dashboard_rewards_title": {
+    "message": "My Rewards"
+  },
+  "dashboard_rewards_pending": {
+    "message": "Pending"
   }
 }

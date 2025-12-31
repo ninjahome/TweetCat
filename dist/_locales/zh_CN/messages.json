@@ -1028,6 +1028,12 @@
   },
   "rewards_btn_view_tx": {
     "message": "查看交易"
+  },
+  "dashboard_rewards_title": {
+    "message": "我的奖励"
+  },
+  "dashboard_rewards_pending": {
+    "message": "待领取"
   }
 }
 

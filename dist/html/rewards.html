@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>__MSG_rewards_page_title__</title>
+    <title>My Rewards</title>
     <link rel="stylesheet" href="../css/common_utils.css"/>
     <link rel="stylesheet" href="../css/rewards.css"/>
     <script src="../js/rewards.js"></script>
@@ -12,17 +12,17 @@
 <div class="rewards-container">
     <!-- 头部 -->
     <header class="rewards-header">
-        <h1>__MSG_rewards_page_title__</h1>
+        <h1>My Rewards</h1>
         <!-- 过滤按钮 -->
         <div class="filter-container">
-            <label for="status-filter">__MSG_rewards_filter_label__:</label>
+            <label for="status-filter">Status Filter:</label>
             <select id="status-filter" class="status-filter">
-                <option value="-1">__MSG_rewards_filter_all__</option>
-                <option value="0">__MSG_rewards_status_pending__</option>
-                <option value="10">__MSG_rewards_status_locked__</option>
-                <option value="20">__MSG_rewards_status_success__</option>
-                <option value="30">__MSG_rewards_status_failed__</option>
-                <option value="40">__MSG_rewards_status_cancelled__</option>
+                <option value="-1">All</option>
+                <option value="0">Pending</option>
+                <option value="10">Locked</option>
+                <option value="20">Success</option>
+                <option value="30">Failed</option>
+                <option value="40">Cancelled</option>
             </select>
         </div>
     </header>
@@ -34,14 +34,14 @@
 
     <!-- 分页控制 -->
     <div id="pagination" class="pagination">
-        <button id="prev-page" class="btn-page" disabled>__MSG_rewards_prev_page__</button>
-        <span id="page-info" class="page-info">__MSG_rewards_page_info__</span>
-        <button id="next-page" class="btn-page">__MSG_rewards_next_page__</button>
+        <button id="prev-page" class="btn-page" disabled>Previous</button>
+        <span id="page-info" class="page-info">Page 1</span>
+        <button id="next-page" class="btn-page">Next</button>
     </div>
 
     <!-- 空状态提示 -->
     <div id="empty-state" class="empty-state" style="display: none;">
-        <p>__MSG_rewards_empty_state__</p>
+        <p>No rewards yet</p>
     </div>
 </div>
 
@@ -49,7 +49,7 @@
 <div id="loading-overlay" style="display: none;">
     <div id="loading-content">
         <div class="spinner"></div>
-        <div class="loading-message">__MSG_rewards_loading__</div>
+        <div class="loading-message">Loading...</div>
     </div>
 </div>
 
