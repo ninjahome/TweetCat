@@ -182,13 +182,16 @@
 #confirm-popup .popup-content,
 #alert-content {
     background: #fff;
-    border-radius: 8px;
-    width: 300px;
-    margin: 100px auto;
+    border-radius: 16px;
+    width: 72%;
     padding: 24px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* 偏移自身宽高的一半，实现真正居中 */
 }
 
 #confirm-popup .button-row {
@@ -205,7 +208,7 @@
 #btn-ok,
 #alert-ok,
 #btn-confirm-new-category {
-    padding: 12px 16px;
+    padding: 12px 32px;
     background-color: #1d9bf0;
     font-size: 15px;
     font-weight: 1000;
