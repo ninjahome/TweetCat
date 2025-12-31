@@ -7,8 +7,15 @@ import {ethers} from "ethers";
 import {showView} from "../common/utils";
 import {dashRouter} from "./dashboard";
 import browser from "webextension-polyfill";
-import {getReadableNetworkName} from "./dash_setting";
-import {doSignOut, walletInfo, X402_FACILITATORS} from "../common/x402_obj";
+import {currentSettings, getReadableNetworkName} from "./dash_setting";
+import {
+    ChainIDBaseMain,
+    ChainIDBaseSepolia,
+    ChainNameBaseMain,
+    doSignOut,
+    walletInfo,
+    X402_FACILITATORS
+} from "../common/x402_obj";
 import {
     getWalletAddress, queryCdpUserID,
     queryCdpWalletInfo,
@@ -85,7 +92,7 @@ function openTransferDialog(typ: "eth" | "usdc", wi: walletInfo): Promise<Transf
 
         const maxBtn = $Id("transfer-fill-max") as HTMLButtonElement;
         maxBtn.onclick = async () => {
-            const wi = await queryCdpWalletInfo()
+            const wi = await queryCdpWalletInfo(networkNameToId())
             if (!wi.hasCreated) return
             amountInput.value = isEth ? wi.ethVal : wi.usdcVal;
         }
@@ -103,7 +110,7 @@ function openTransferDialog(typ: "eth" | "usdc", wi: walletInfo): Promise<Transf
 async function __handleTransfer(typ: "eth" | "usdc", action: (chain: number, receipt: string, amount: string) => Promise<`0x${string}`>): Promise<void> {
     showLoading(t("syncing") || "");
     try {
-        const wi = await queryCdpWalletInfo()
+        const wi = await queryCdpWalletInfo(networkNameToId())
         if (!wi.hasCreated) {
             showAlert(t('tips_title'), t('wallet_error_no_wallet'))
             return
@@ -141,6 +148,9 @@ async function __handleTransfer(typ: "eth" | "usdc", action: (chain: number, rec
     }
 }
 
+function networkNameToId(): number {
+    return currentSettings.network === ChainNameBaseMain ? ChainIDBaseMain : ChainIDBaseSepolia
+}
 
 export async function refreshBalances(showStatus = true): Promise<void> {
     const ethSpan = document.querySelector(".wallet-eth-value") as HTMLSpanElement | null;
@@ -148,7 +158,7 @@ export async function refreshBalances(showStatus = true): Promise<void> {
 
     try {
         if (showStatus) showNotification(t('wallet_refreshing_balance'));
-        const walletInfo = await queryCdpWalletInfo()
+        const walletInfo = await queryCdpWalletInfo(networkNameToId())
         if (!walletInfo.hasCreated) {
             if (ethSpan) ethSpan.textContent = "--";
             if (usdcSpan) usdcSpan.textContent = "--";
@@ -339,7 +349,6 @@ export function initDashboardTexts(): void {
 }
 
 
-
 // 奖励数据接口
 interface ValidRewardsResponse {
     success: boolean;
@@ -359,13 +368,13 @@ interface ValidRewardsResponse {
 
 async function initRewards(): Promise<void> {
     const rewardsArea = $Id("rewards-area") as HTMLElement;
-    
+
     // 设置静态文本
     const rewardsTitle = rewardsArea.querySelector(".rewards-title") as HTMLElement;
     if (rewardsTitle) {
         rewardsTitle.textContent = t('dashboard_rewards_title');
     }
-    
+
     const rewardsLabels = rewardsArea.querySelectorAll(".rewards-label");
     if (rewardsLabels[0]) {
         rewardsLabels[0].textContent = t('dashboard_rewards_pending');
@@ -384,7 +393,7 @@ async function initRewards(): Promise<void> {
         });
 
         if (response.success && response.data) {
-            const { rewards } = response.data;
+            const {rewards} = response.data;
             const rewardsCount = rewardsArea.querySelector(".rewards-count") as HTMLElement;
             const rewardsAmount = rewardsArea.querySelector(".rewards-amount") as HTMLElement;
 

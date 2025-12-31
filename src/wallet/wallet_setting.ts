@@ -36,7 +36,6 @@ export async function saveWalletSettings(settings: WalletSettings): Promise<void
     await databaseUpdateOrAddItem(__tableWalletSettings, payload);
 }
 
-
 export async function loadWalletSettings(): Promise<WalletSettings> {
     await checkAndInitDatabase();
 

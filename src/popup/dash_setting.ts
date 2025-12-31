@@ -2,15 +2,11 @@ import {$Id, showNotification} from "./common";
 import {t} from "../common/i18n";
 
 import {defaultWalletSettings, loadWalletSettings, saveWalletSettings, WalletSettings} from "../wallet/wallet_setting";
-import {ChainNameBaseMain, ChainNetwork} from "../common/x402_obj";
+import {ChainIDBaseMain, ChainIDBaseSepolia, ChainNameBaseMain, ChainNetwork} from "../common/x402_obj";
 import {refreshBalances} from "./dash_wallet";
 
 
 export let currentSettings: WalletSettings = {...defaultWalletSettings};
-
-function notifySettingsChanged(): void {
-    console.log("------>>> infura setting changed.....", currentSettings);
-}
 
 export function getReadableNetworkName(): string {
     if (currentSettings.network === ChainNameBaseMain) {
@@ -19,12 +15,11 @@ export function getReadableNetworkName(): string {
     return t("wallet_network_option_base_sepolia");
 }
 
-export async function handleResetSettings(refreshBalances: () => Promise<void>): Promise<void> {
+export async function handleResetSettings(): Promise<void> {
     currentSettings = {...defaultWalletSettings};
     ($Id("wallet-network-select") as HTMLSelectElement).value = currentSettings.network;
     await saveWalletSettings(currentSettings);
     showNotification(t('wallet_node_settings_reset'));
-    notifySettingsChanged();
     await refreshBalances();
 }
 
@@ -51,7 +46,7 @@ export async function initSettingsPanel(): Promise<void> {
             currentSettings = {network: networkSelect.value as ChainNetwork, useDefaultRpc: true};
             await saveWalletSettings(currentSettings);
             showNotification(t("save_success"));
-            await refreshBalances();
+            await refreshBalances(false);
         }
     }
 
@@ -59,7 +54,7 @@ export async function initSettingsPanel(): Promise<void> {
     if (resetBtn) {
         resetBtn.textContent = t('wallet_reset_settings');
         resetBtn.addEventListener("click", () => {
-            handleResetSettings(refreshBalances).then();
+            handleResetSettings().then();
         });
     }
 

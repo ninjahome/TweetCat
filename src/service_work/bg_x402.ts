@@ -8,6 +8,7 @@ import {showPopupWindow} from "../popup/common";
 export async function restartOffScreen(): Promise<string> {
     await browser.offscreen.closeDocument();
     await ensureOffscreenWallet();
+    await browser.action.openPopup()
     return "success"
 }
 

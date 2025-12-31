@@ -115,7 +115,7 @@ export async function queryCdpUserID(): Promise<string | null> {
     try {
         await initCDP();
         if (!await isSignedIn()) return null;
-        
+
         const user = await getCurrentUser();
         return user.userId || null;
     } catch (e) {
@@ -160,10 +160,11 @@ export async function queryWalletBalance(
     };
 }
 
-export async function queryCdpWalletInfo(): Promise<walletInfo> {
+export async function queryCdpWalletInfo(chainId: number | null = null): Promise<walletInfo> {
     try {
+        if (!chainId) chainId = await getChainId();
         const eoa = await getEOA();
-        const chainId = await getChainId();
+        logX402("----->>> query wallet infor for:", chainId, " wallet:", eoa)
         const {eth, usdc} = await queryWalletBalance(eoa.address, chainId);
 
         return {
