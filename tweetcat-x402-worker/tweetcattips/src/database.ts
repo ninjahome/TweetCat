@@ -342,3 +342,136 @@ export async function creditRewardsBalance(
 		})
 	}
 }
+
+export interface PlatformFee {
+	id: number;
+	reward_id: number;
+	cdp_user_id: string;
+	gross_amount: string;          // 提现原始总额
+	fee_rate: number;              // 收费比例（0-100）
+	fee_amount: string;            // 平台收取的手续费
+	net_amount: string;            // 用户实际到账金额
+	asset_symbol: string;
+	asset_address: string | null;
+	tx_hash: string | null;
+	user_wallet_address: string | null;
+	platform_wallet_address: string | null;
+	status: number;
+	reason: string | null;
+	created_at: string;
+	updated_at: string;
+	settled_at: string | null;
+}
+
+export interface FeeCalculation {
+	grossAmount: string;           // 原始金额（atomic units）
+	feeRate: number;               // 收费比例（0-100）
+	feeAmount: string;             // 手续费金额（atomic units）
+	netAmount: string;             // 净额（atomic units）
+}
+
+/**
+ * 计算提现手续费
+ * @param grossAmount 原始提现金额（atomic units，字符串）
+ * @param feeRate 收费比例（0-100 的整数）
+ * @returns 包含 gross、fee、net 三个金额的对象
+ */
+export function calculateWithdrawFee(grossAmount: string, feeRate: number): FeeCalculation {
+	if (feeRate < 0 || feeRate > 100) {
+		throw new Error(`Invalid fee rate: ${feeRate}. Must be between 0 and 100.`);
+	}
+
+	if (!/^\d+$/.test(grossAmount) || grossAmount === "0") {
+		throw new Error(`Invalid gross amount: ${grossAmount}`);
+	}
+
+	const gross = BigInt(grossAmount);
+	const fee = (gross * BigInt(feeRate)) / BigInt(100);
+	const net = gross - fee;
+
+	return {
+		grossAmount: gross.toString(),
+		feeRate,
+		feeAmount: fee.toString(),
+		netAmount: net.toString()
+	};
+}
+
+/**
+ * 创建平台收费记录
+ * @param db D1 数据库实例
+ * @param params 收费记录参数
+ * @returns 创建的记录 ID
+ */
+export async function createPlatformFee(
+	db: D1Database,
+	params: {
+		rewardId: number;
+		cdpUserId: string;
+		grossAmount: string;
+		feeRate: number;
+		feeAmount: string;
+		netAmount: string;
+		userWalletAddress: string;
+		platformWalletAddress: string;
+		tx_hash: string;
+	}
+): Promise<number> {
+	const sql = `
+		INSERT INTO platform_fees (reward_id, cdp_user_id, gross_amount,
+								   fee_rate, fee_amount, net_amount,
+								   user_wallet_address, platform_wallet_address, tx_hash)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
+	`;
+
+	const result = await db.prepare(sql).bind(
+		params.rewardId,
+		params.cdpUserId,
+		params.grossAmount,
+		params.feeRate,
+		params.feeAmount,
+		params.netAmount,
+		params.userWalletAddress,
+		params.platformWalletAddress,
+		params.tx_hash,
+	).first<{ id: number }>();
+
+	if (!result) {
+		throw new Error("Failed to create platform fee record");
+	}
+
+	return result.id;
+}
+
+/**
+ * 查询用户的收费历史记录
+ * @param db D1 数据库实例
+ * @param cdpUserId 用户 ID
+ * @param pageStart 分页起始
+ * @param pageSize 分页大小
+ */
+export async function queryPlatformFees(
+	db: D1Database,
+	cdpUserId: string,
+	pageStart: number = 0,
+	pageSize: number = 20
+): Promise<{ fees: PlatformFee[]; hasMore: boolean }> {
+	const sql = `
+		SELECT *
+		FROM platform_fees
+		WHERE cdp_user_id = ?
+		ORDER BY created_at DESC LIMIT ?
+		OFFSET ?
+	`;
+
+	const stmt = db.prepare(sql).bind(cdpUserId, pageSize + 1, pageStart);
+	const result = await stmt.all<PlatformFee>();
+	const fees = result.results || [];
+
+	const hasMore = fees.length > pageSize;
+	if (hasMore) {
+		fees.pop(); // 移除多查询的一条
+	}
+
+	return {fees, hasMore};
+}

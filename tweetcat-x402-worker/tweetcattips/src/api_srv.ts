@@ -4,7 +4,7 @@ import {apiHandleTip, apiX402UsdcTransfer} from "./api_srv_x402";
 import {
 	testQueryUserDetails, apiValidateUser,
 	apiQueryValidRewards, apiClaimReward,
-	apiQueryRewardHistory
+	apiQueryRewardHistory, apiQueryPlatformFees
 } from "./api_srv_usr";
 
 export function registerSrv(app: Hono<ExtendedEnv>) {
@@ -13,6 +13,7 @@ export function registerSrv(app: Hono<ExtendedEnv>) {
 	app.get("/user-info", testQueryUserDetails);
 	app.post("/validate-token", apiValidateUser);
 	app.get("/rewards/query_valid", apiQueryValidRewards);
-	app.post("/rewards/claim_item", apiClaimReward)
-	app.get("/rewards/query_history", apiQueryRewardHistory)
+	app.post("/rewards/claim_item", apiClaimReward);
+	app.get("/rewards/query_history", apiQueryRewardHistory);
+	app.get("/fees/query_history", apiQueryPlatformFees);
 }

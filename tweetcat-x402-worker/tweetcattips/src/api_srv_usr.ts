@@ -1,4 +1,4 @@
-import {cdpFetch, ExtCtx} from "./common";
+import {cdpFetch, ExtCtx, getOrCreateTreasuryEOA} from "./common";
 import {
 	createKolBinding,
 	getKolBindingByUserId,
@@ -9,7 +9,10 @@ import {
 	lockAndGetReward,
 	updateRewardStatus,
 	REWARD_STATUS_SUCCESS,
-	REWARD_STATUS_FAILED
+	REWARD_STATUS_FAILED,
+	calculateWithdrawFee,
+	createPlatformFee,
+	queryPlatformFees
 } from "./database";
 import {internalTreasurySettle} from "./api_srv_x402";
 
@@ -93,20 +96,37 @@ export async function apiQueryValidRewards(c: ExtCtx) {
 	}
 }
 
-async function processRewardClaim(c: ExtCtx, rewardId: number, address: `0x${string}`, amount: string) {
+async function processRewardClaim(
+	c: ExtCtx,
+	rewardId: number,
+	cdpUserId: string,
+	userWalletAddress: `0x${string}`,
+	grossAmount: string
+) {
+
 	try {
+		const feeRate = c.env.FEE_FOR_WITHDRAW || 0;
+		const feeCalc = calculateWithdrawFee(grossAmount, feeRate);
+
+		console.log(`[Claim] Reward ${rewardId}: gross=${feeCalc.grossAmount}, fee=${feeCalc.feeAmount} (${feeRate}%), net=${feeCalc.netAmount}`);
+
+		const treasuryAccount = await getOrCreateTreasuryEOA(c);
+		const platformWalletAddress = treasuryAccount.address as `0x${string}`;
+
 		const cfg = c.get("cfg");
 		const getResourceServer = c.get("getResourceServer");
 		const rs = getResourceServer(c.env);
 		const resourceUrl = `user://claim/${rewardId}`;
+
 		const settleResult = await internalTreasurySettle(
 			c as ExtCtx,
 			cfg,
 			rs,
-			address,
-			amount,
+			userWalletAddress,
+			feeCalc.netAmount,  // 使用 net_amount 而不是 gross_amount
 			resourceUrl
 		);
+
 		if (!settleResult.success) {
 			await updateRewardStatus(c.env.DB, rewardId, REWARD_STATUS_FAILED, "", settleResult.errorReason);
 			return c.json({
@@ -117,12 +137,24 @@ async function processRewardClaim(c: ExtCtx, rewardId: number, address: `0x${str
 
 		await updateRewardStatus(c.env.DB, rewardId, REWARD_STATUS_SUCCESS, settleResult.transaction);
 
+		await createPlatformFee(c.env.DB, {
+			rewardId,
+			cdpUserId,
+			grossAmount: feeCalc.grossAmount,
+			feeRate: feeCalc.feeRate,
+			feeAmount: feeCalc.feeAmount,
+			netAmount: feeCalc.netAmount,
+			userWalletAddress,
+			platformWalletAddress,
+			tx_hash: settleResult.transaction
+		});
+
 		return c.json({
 			success: true,
 			data: {
 				txHash: settleResult.transaction,
 				payer: settleResult.payer,
-				rewardId: rewardId
+				rewardId: rewardId,
 			}
 		});
 
@@ -154,7 +186,13 @@ export async function apiClaimReward(c: ExtCtx) {
 			return c.json({error: "Reward not found"}, 404);
 		}
 
-		return await processRewardClaim(c, rewardId, kolBinding.wallet_address as `0x${string}`, reward.amount_atomic)
+		return await processRewardClaim(
+			c,
+			rewardId,
+			cdpUserId,
+			kolBinding.wallet_address as `0x${string}`,
+			reward.amount_atomic
+		)
 	} catch (err: any) {
 		console.error("[Claim Reward Error]", err);
 		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
@@ -189,6 +227,40 @@ export async function apiQueryRewardHistory(c: ExtCtx) {
 
 	} catch (err: any) {
 		console.error("[Query Reward History Error]", err);
+		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
+	}
+}
+
+/**
+ * 查询用户的平台收费历史记录
+ */
+export async function apiQueryPlatformFees(c: ExtCtx) {
+	try {
+		const cdpUserId = c.req.query("cdp_user_id");
+		if (!cdpUserId) {
+			return c.json({error: "Missing cdp_user_id"}, 400);
+		}
+
+		const pageStart = parseInt(c.req.query("page_start") || "0");
+
+		if (isNaN(pageStart) || pageStart < 0) {
+			return c.json({error: "Invalid page_start"}, 400);
+		}
+
+		const result = await queryPlatformFees(c.env.DB, cdpUserId, pageStart);
+
+		return c.json({
+			success: true,
+			data: {
+				fees: result.fees,
+				hasMore: result.hasMore,
+				pageStart: pageStart,
+				pageSize: result.fees.length
+			}
+		});
+
+	} catch (err: any) {
+		console.error("[Query Platform Fees Error]", err);
 		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
 	}
 }
