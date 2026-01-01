@@ -1,3 +1,5 @@
+import {CURRENCY_SYMBOL_USDC} from "./common";
+
 export const TIP_RECORD_PENDING = 0
 export const TIP_RECORD_CLAIMED = 10
 export type TIP_STATUS = typeof TIP_RECORD_PENDING | typeof TIP_RECORD_CLAIMED
@@ -16,19 +18,18 @@ export type REWARD_STATUS =
 	| typeof REWARD_STATUS_CANCELLED
 
 
-export async function getKolBinding(db: D1Database, xId: string): Promise<string | null> {
-	const stmt = db.prepare("SELECT wallet_address FROM kol_binding WHERE x_id = ?").bind(xId);
-	const row = await stmt.first<{ wallet_address: string }>();
-	return row?.wallet_address ?? null;
+export async function getKolBindingByXId(
+	db: D1Database,
+	xID: string
+): Promise<KolBindingRecord | null> {
+	const stmt = db.prepare(
+		"SELECT * FROM kol_binding WHERE x_id = ?"
+	).bind(xID);
+
+	return await stmt.first<KolBindingRecord>();
 }
 
-export async function getKolByUid(db: D1Database, uid: string): Promise<string | null> {
-	const stmt = db.prepare("SELECT wallet_address FROM kol_binding WHERE cdp_user_id = ?").bind(uid);
-	const row = await stmt.first<{ wallet_address: string }>();
-	return row?.wallet_address ?? null;
-}
-
-export interface TipRecord {
+interface TipRecord {
 	xId: string;
 	amountAtomic: string;
 }
@@ -121,15 +122,24 @@ export async function createKolBinding(
 		userInfo.walletCreatedAt
 	);
 
-	// 2. 将 PENDING 状态的余额搬运到 user_rewards
-	// 这里的逻辑是：只搬运当前还是 PENDING 的记录
+	// 2. 将 PENDING 状态的余额搬运到 user_rewards（使用 UPSERT 累加到 status=0 的余额行）
+	// 如果不存在 status=0 行则创建，存在则累加金额
 	const moveEscrowToRewards = db.prepare(`
-		INSERT INTO user_rewards (cdp_user_id, amount_atomic, reason)
-		SELECT kb.cdp_user_id, te.amount_atomic, 'Tips before account creation'
+		INSERT INTO user_rewards (cdp_user_id, asset_symbol, amount_atomic, status, reason)
+		SELECT kb.cdp_user_id,
+			   CURRENCY_SYMBOL_USDC,
+			   te.amount_atomic,
+			   ${REWARD_STATUS_PENDING},
+			   'Tips before account creation'
 		FROM tip_escrow te
 				 JOIN kol_binding kb ON kb.x_id = te.x_id
 		WHERE te.x_id = ?
-		  AND te.status = ?
+		  AND te.status = ? ON CONFLICT(cdp_user_id, asset_symbol)
+		WHERE status = ${REWARD_STATUS_PENDING}
+			DO
+		UPDATE SET
+			amount_atomic = CAST (CAST (user_rewards.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER) AS TEXT),
+			updated_at = CURRENT_TIMESTAMP
 	`).bind(userInfo.xSub, TIP_RECORD_PENDING);
 
 	// 3. 统一更新状态
@@ -244,7 +254,7 @@ export async function lockAndGetReward(
 	db: D1Database,
 	id: number,
 	cdpUserId: string,
-	assetSymbol: string = 'USDC'
+	assetSymbol: string = CURRENCY_SYMBOL_USDC
 ): Promise<UserReward | null> {
 	const result = await db.prepare(
 		`UPDATE user_rewards
@@ -289,5 +299,46 @@ export async function logX402Failure(db: D1Database, input: X402FailureInput): P
 		).run();
 	} catch (err: any) {
 		console.error("[x402_failures] insert failed:", err?.message || err, {input});
+	}
+}
+
+/**
+ * 将打赏金额累加到用户的余额行（status=0）
+ * 如果不存在 status=0 的行则自动创建，存在则累加金额
+ * 这是新的打赏累加逻辑，确保始终只有一行 status=0 作为当前余额
+ */
+export async function creditRewardsBalance(
+	db: D1Database,
+	cdpUserId: string,
+	amountAtomic: string,
+	assetSymbol: string = CURRENCY_SYMBOL_USDC,
+	reason: string = 'tip reward'
+): Promise<void> {
+	try {
+		const sql = `
+			INSERT INTO user_rewards (cdp_user_id, asset_symbol, amount_atomic, status, reason)
+			VALUES (?, ?, ?, ${REWARD_STATUS_PENDING}, ?) ON CONFLICT(cdp_user_id, asset_symbol)
+			WHERE status = ${REWARD_STATUS_PENDING}
+				DO
+			UPDATE SET
+				amount_atomic = CAST (CAST (user_rewards.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER) AS TEXT),
+				updated_at = CURRENT_TIMESTAMP
+		`;
+
+		const result = await db.prepare(sql)
+			.bind(cdpUserId, assetSymbol.toUpperCase(), amountAtomic, reason)
+			.run();
+
+		if (!result.success || result.meta.changes === 0) {
+			console.error(`Failed to credit rewards balance for user ${cdpUserId}，amount:${amountAtomic}`);
+		}
+	} catch (err: any) {
+		console.error("creditRewardsBalance error:", err, " params:", {cdpUserId, amountAtomic, assetSymbol, reason});
+		await logX402Failure(db, {
+			kind: "reward_action",
+			stage: "credit rewards balance",
+			context: JSON.stringify({cdpUserId, amountAtomic, assetSymbol, reason}),
+			message: err?.message
+		})
 	}
 }

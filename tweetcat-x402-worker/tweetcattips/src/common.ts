@@ -5,12 +5,15 @@ import type {x402ResourceServer} from "@x402/core/server";
 import {ContentfulStatusCode} from "hono/utils/http-status";
 import {CdpClient, EvmServerAccount} from "@coinbase/cdp-sdk";
 
+export const CURRENCY_SYMBOL_USDC = 'USDC'
+
 export interface Env {
 	CDP_API_KEY_ID: string;
 	CDP_API_KEY_SECRET: string;
 	CDP_WALLET_SECRET: string;
 	DB: D1Database;
-	REWARD_FOR_SIGNUP: string;
+	REWARD_FOR_SIGNUP: number;
+	FEE_FOR_WITHDRAW: number;
 	CDP_TREASURY_ACCOUNT_NAME: string;
 	CDP_TREASURY_ACCOUNT_POLICY_ID?: string;
 }
@@ -38,9 +41,10 @@ export const app = new Hono<ExtendedEnv>();
 applyCors(app);
 
 let _cdpInstance: CdpClient | null = null;
+
 export function getCdpClient(env: Env): CdpClient {
 	if (!_cdpInstance) {
-		if (!env.CDP_API_KEY_ID ||!env.CDP_WALLET_SECRET) {
+		if (!env.CDP_API_KEY_ID || !env.CDP_WALLET_SECRET) {
 			throw new Error("CRITICAL_CONFIG_MISSING: CDP credentials not found in environment.");
 		}
 		_cdpInstance = new CdpClient({
@@ -216,6 +220,7 @@ export async function cdpFetch(c: ExtCtx, path: string, method: string, body?: a
 }
 
 let treasuryAccountP: Promise<EvmServerAccount> | null = null;
+
 export async function getOrCreateTreasuryEOA(c: ExtCtx): Promise<EvmServerAccount> {
 	try {
 		if (!!treasuryAccountP) return treasuryAccountP
@@ -238,6 +243,6 @@ export async function getOrCreateTreasuryEOA(c: ExtCtx): Promise<EvmServerAccoun
 
 	} catch (err: any) {
 		console.error("------>>>[getOrCreateTreasuryEOA] failed:", err)
-		throw new Error("failed to get server account:",err)
+		throw new Error("failed to get server account:", err)
 	}
 }

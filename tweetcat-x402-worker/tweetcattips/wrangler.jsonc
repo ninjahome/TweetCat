@@ -15,7 +15,8 @@
 	],
 	"vars": {
 		"CDP_TREASURY_ACCOUNT_NAME": "tweetcat-treasury",
-		"REWARD_FOR_SIGNUP":0.1
+		"REWARD_FOR_SIGNUP":0.1,
+		"FEE_FOR_WITHDRAW": 10
 	},
 
 	"env": {
@@ -31,6 +32,7 @@
 			],
 			"vars": {
 				"REWARD_FOR_SIGNUP":0.2,
+				"FEE_FOR_WITHDRAW": 10,
 				"CDP_TREASURY_ACCOUNT_NAME": "tweetcat-treasury-test"
 			}
 		}

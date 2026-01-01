@@ -10,7 +10,7 @@ import {
 import {PaymentRequirements} from "@x402/hono";
 import {ResourceInfo, x402ResourceServer} from "@x402/core/server";
 import {SettleResponse} from "@x402/core/types";
-import {getKolBinding, usdcEscrowTips} from "./database";
+import {creditRewardsBalance, getKolBindingByXId, usdcEscrowTips} from "./database";
 import {x402Client} from "@x402/core/client";
 import {registerExactEvmScheme} from "@x402/evm/exact/client";
 import {toAccount} from "viem/accounts";
@@ -23,10 +23,10 @@ interface TipRequestParams {
 }
 
 interface TipObj {
-	isEscrow: boolean;
 	payTo: `0x${string}`;
 	atomicAmount: string;
 	xId: string;
+	cdpUsrId?: string;
 	tweetId?: string;
 }
 
@@ -50,16 +50,10 @@ async function parseTipParams(c: ExtCtx): Promise<TipObj> {
 		throw new Error("Invalid amount");
 	}
 
-	const boundAddress = await getKolBinding(c.env.DB, xId);
-	const isEscrow = !boundAddress;
+	const bindings = await getKolBindingByXId(c.env.DB, xId);
+	const payTo = (await getOrCreateTreasuryEOA(c)).address
 
-	const srvAddress = (await getOrCreateTreasuryEOA(c)).address
-	const payTo = isEscrow ? srvAddress : (boundAddress as `0x${string}`);
-	if (!isHexAddress(payTo)) {
-		throw new Error("Invalid payTo address (config error)");
-	}
-
-	return {isEscrow, payTo, atomicAmount, xId, tweetId};
+	return {payTo, atomicAmount, xId, cdpUsrId: bindings?.cdp_user_id, tweetId};
 }
 
 async function parseTransferParams(c: ExtCtx): Promise<{ payTo: `0x${string}`; atomicAmount: string }> {
@@ -151,7 +145,12 @@ export async function apiHandleTip(c: ExtCtx): Promise<Response> {
 		const rs = getResourceServer(c.env);
 		const settleResult = await x402Workflow(c, requirements, resource, rs);
 
-		if (tip.isEscrow) await usdcEscrowTips(c.env.DB, {xId: tip.xId, amountAtomic: tip.atomicAmount})
+		const cdp_user_id = tip.cdpUsrId
+		if (!cdp_user_id) {
+			await usdcEscrowTips(c.env.DB, {xId: tip.xId, amountAtomic: tip.atomicAmount})
+		} else {
+			await creditRewardsBalance(c.env.DB, cdp_user_id, tip.atomicAmount)
+		}
 
 		return c.json({success: true, txHash: settleResult.transaction});
 
