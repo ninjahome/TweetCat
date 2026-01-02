@@ -127,10 +127,10 @@ export async function createKolBinding(
 	const moveEscrowToRewards = db.prepare(`
 		INSERT INTO user_rewards (cdp_user_id, asset_symbol, amount_atomic, status, reason)
 		SELECT kb.cdp_user_id,
-			   CURRENCY_SYMBOL_USDC,
+			   '${CURRENCY_SYMBOL_USDC}',
 			   te.amount_atomic,
 			   ${REWARD_STATUS_PENDING},
-			   'Tips before account creation'
+			   'Tips rewards'
 		FROM tip_escrow te
 				 JOIN kol_binding kb ON kb.x_id = te.x_id
 		WHERE te.x_id = ?
@@ -312,7 +312,7 @@ export async function creditRewardsBalance(
 	cdpUserId: string,
 	amountAtomic: string,
 	assetSymbol: string = CURRENCY_SYMBOL_USDC,
-	reason: string = 'tip reward'
+	reason: string = 'tip rewards'
 ): Promise<void> {
 	try {
 		const sql = `
