@@ -1,4 +1,4 @@
-import {observeForElement, parseContentHtml, sendMsgToOffScreen, sendMsgToService} from "../common/utils";
+import {observeForElement, parseContentHtml, sendMsgToService} from "../common/utils";
 import {choseColorByID, MsgType} from "../common/consts";
 import {queryKolDetailByName, showPopupMenu} from "./twitter_observer";
 import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";

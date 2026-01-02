@@ -7,7 +7,6 @@ import {
 	NetConfig,
 	usdcToAtomicSafe
 } from "./common";
-import {PaymentRequirements} from "@x402/hono";
 import {ResourceInfo, x402ResourceServer} from "@x402/core/server";
 import {SettleResponse} from "@x402/core/types";
 import {creditRewardsBalance, getKolBindingByXId, usdcEscrowTips} from "./database";

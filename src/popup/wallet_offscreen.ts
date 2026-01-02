@@ -45,10 +45,6 @@ async function msgProc(port, msg) {
             port.postMessage({requestId: msg.requestId, result: {success: true, data: data}});
             return
 
-        case MsgType.TransferUSDCByTwitterId:
-            const transferResp = await transferByTwitterID(msg.data as string)
-            port.postMessage({requestId: msg.requestId, result: transferResp});
-            return
         default:
             port.postMessage({
                 requestId: msg.requestId,
@@ -56,14 +52,4 @@ async function msgProc(port, msg) {
             });
             return
     }
-}
-
-
-async function transferByTwitterID(tid: string) {
-    await initCDP();
-    if (!await isSignedIn()) {
-        return {success: true, data: "Please signed in first"}
-    }
-
-
 }

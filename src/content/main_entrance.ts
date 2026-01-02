@@ -21,7 +21,7 @@ import {queryProfileOfTwitterOwner} from "./tweet_user_info";
 import {initI18n} from "../common/i18n";
 import {performBulkUnfollow, syncFollowingsFromPage, syncOneFollowingsByScreenName} from "../object/following";
 import {addTipBtnForTweet} from "./content_x402";
-import {calculateLevelBreakdown, UserProfile} from "../object/user_info";
+import {UserProfile} from "../object/user_info";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 

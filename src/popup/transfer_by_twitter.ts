@@ -5,9 +5,6 @@ import {showPopupWindow} from "./common";
 import {getChainId} from "../wallet/wallet_setting";
 import {postToX402Srv} from "../wallet/cdp_wallet";
 import {logX402} from "../common/debug_flags";
-import {t} from "../common/i18n";
-import {v} from "vitest/dist/chunks/reporters.d.BFLkQcL6";
-import {openOrUpdateTab} from "../common/utils";
 
 // --- 类型定义 ---
 interface UserProfile {
