@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fee History</title>
+    <link rel="stylesheet" href="../css/common_utils.css"/>
+    <link rel="stylesheet" href="../css/fees.css"/>
+    <script src="../js/fees.js"></script>
+</head>
+<body>
+<div class="fees-container">
+    <!-- 头部 -->
+    <header class="fees-header">
+        <button class="button-back" id="fees-back-btn" aria-label="返回">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                <defs>
+                    <style>.cls-1 {
+                        fill: #191e24;
+                    }</style>
+                </defs>
+                <polygon class="cls-1"
+                         points="15.97 6.75 3.85 6.75 8.41 2.19 7 0.78 0.03 7.75 7.5 15.22 8.91 13.81 3.85 8.75 15.97 8.75 15.97 6.75"/>
+            </svg>
+        </button>
+        <h1 id="fees-page-title">Fee History</h1>
+    </header>
+
+    <!-- 统计卡片 -->
+    <div class="fees-summary">
+        <div class="summary-item">
+            <span class="summary-label" id="label-total-fees">Total Fees Paid</span>
+            <span class="summary-value" id="total-fees">--</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label" id="label-avg-fee-rate">Average Fee Rate</span>
+            <span class="summary-value" id="avg-fee-rate">--</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label" id="label-total-count">Total Transactions</span>
+            <span class="summary-value" id="total-count">--</span>
+        </div>
+    </div>
+
+    <!-- 费用列表 -->
+    <div id="fees-list" class="fees-list">
+        <!-- 动态生成费用项 -->
+    </div>
+
+    <!-- 分页控制 -->
+    <div id="pagination" class="pagination">
+        <button id="prev-page" class="btn-page" disabled>Previous</button>
+        <span id="page-info" class="page-info">Page 1</span>
+        <button id="next-page" class="btn-page">Next</button>
+    </div>
+
+    <!-- 空状态 -->
+    <div id="empty-state" class="empty-state" style="display: none;">
+        <p id="empty-state-text">No fee records yet</p>
+    </div>
+</div>
+
+<!-- Loading -->
+<div id="loading-overlay" style="display: none;">
+    <div id="loading-content">
+        <div class="spinner"></div>
+        <div class="loading-message">Loading...</div>
+    </div>
+</div>
+
+<!-- 通知 -->
+<div id="notification" class="notification hidden" role="alert"></div>
+
+<!-- 费用详情弹窗 -->
+<div id="fee-detail-modal" class="modal hidden">
+    <div class="modal-content fee-detail-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Fee Details</h3>
+            <button class="modal-close" id="close-fee-detail" aria-label="关闭">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label" id="label-detail-gross">Gross Amount</span>
+                    <span class="detail-value" id="detail-gross">--</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label" id="label-detail-rate">Fee Rate</span>
+                    <span class="detail-value" id="detail-rate">--</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label" id="label-detail-fee">Fee Amount</span>
+                    <span class="detail-value fee-highlight" id="detail-fee">--</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label" id="label-detail-net">Net Amount</span>
+                    <span class="detail-value success-text" id="detail-net">--</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label" id="label-detail-tx">Transaction Hash</span>
+                    <span class="detail-value mono" id="detail-tx">--</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label" id="label-detail-user-wallet">User Wallet</span>
+                    <span class="detail-value mono" id="detail-user-wallet">--</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label" id="label-detail-platform-wallet">Platform Wallet</span>
+                    <span class="detail-value mono" id="detail-platform-wallet">--</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label" id="label-detail-created">Created At</span>
+                    <span class="detail-value" id="detail-created">--</span>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" id="view-on-chain">View on Blockchain</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

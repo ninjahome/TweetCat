@@ -1034,6 +1034,66 @@
   },
   "dashboard_rewards_pending": {
     "message": "待领取"
+  },
+  "wallet_action_fee_history": {
+    "message": "平台费用"
+  },
+  "fees_page_title": {
+    "message": "费用历史"
+  },
+  "fees_total_paid": {
+    "message": "总计费用"
+  },
+  "fees_avg_rate": {
+    "message": "平均费率"
+  },
+  "fees_total_count": {
+    "message": "总交易数"
+  },
+  "fees_prev_page": {
+    "message": "上一页"
+  },
+  "fees_next_page": {
+    "message": "下一页"
+  },
+  "fees_page": {
+    "message": "第"
+  },
+  "fees_empty_state": {
+    "message": "暂无费用记录"
+  },
+  "fees_loading": {
+    "message": "加载费用历史中..."
+  },
+  "fees_user_id_not_found": {
+    "message": "未找到用户ID"
+  },
+  "fees_load_failed": {
+    "message": "加载费用历史失败"
+  },
+  "fees_reward_id": {
+    "message": "奖励"
+  },
+  "fees_fee_badge": {
+    "message": "费用"
+  },
+  "fees_field_gross": {
+    "message": "总额"
+  },
+  "fees_field_fee": {
+    "message": "费用"
+  },
+  "fees_field_net": {
+    "message": "到账"
+  },
+  "fees_field_date": {
+    "message": "日期"
+  },
+  "fees_detail_title": {
+    "message": "费用详情"
+  },
+  "fees_view_on_chain": {
+    "message": "查看链上交易"
   }
 }
 

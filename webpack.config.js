@@ -113,6 +113,7 @@ module.exports = (env, argv) => {
             x402_payment: path.resolve(__dirname, './src/popup/x402_payment.ts'),
             ipfs_local_content: path.resolve(__dirname, './src/content/ipfs_local.ts'),
             rewards: path.resolve(__dirname, './src/popup/rewards.ts'),
+            fees: path.resolve(__dirname, './src/popup/fees.ts'),
         },
         target: 'web',
     };

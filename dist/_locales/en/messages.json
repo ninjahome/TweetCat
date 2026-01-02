@@ -1034,5 +1034,65 @@
   },
   "dashboard_rewards_pending": {
     "message": "Pending"
+  },
+  "wallet_action_fee_history": {
+    "message": "Fee History"
+  },
+  "fees_page_title": {
+    "message": "Fee History"
+  },
+  "fees_total_paid": {
+    "message": "Total Fees Paid"
+  },
+  "fees_avg_rate": {
+    "message": "Average Fee Rate"
+  },
+  "fees_total_count": {
+    "message": "Total Transactions"
+  },
+  "fees_prev_page": {
+    "message": "Previous"
+  },
+  "fees_next_page": {
+    "message": "Next"
+  },
+  "fees_page": {
+    "message": "Page"
+  },
+  "fees_empty_state": {
+    "message": "No fee records yet"
+  },
+  "fees_loading": {
+    "message": "Loading fee history..."
+  },
+  "fees_user_id_not_found": {
+    "message": "User ID not found"
+  },
+  "fees_load_failed": {
+    "message": "Failed to load fee history"
+  },
+  "fees_reward_id": {
+    "message": "Reward"
+  },
+  "fees_fee_badge": {
+    "message": "Fee"
+  },
+  "fees_field_gross": {
+    "message": "Gross"
+  },
+  "fees_field_fee": {
+    "message": "Fee"
+  },
+  "fees_field_net": {
+    "message": "Net"
+  },
+  "fees_field_date": {
+    "message": "Date"
+  },
+  "fees_detail_title": {
+    "message": "Fee Details"
+  },
+  "fees_view_on_chain": {
+    "message": "View on Blockchain"
   }
 }

@@ -1,0 +1,460 @@
+/* 基础容器 */
+.fees-container {
+    padding: 16px;
+    max-width: 100%;
+    min-height: 100vh;
+    background: #f5f8fa;
+}
+
+/* 头部 */
+.fees-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.fees-header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    color: #14171a;
+}
+
+.button-back {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.button-back:hover {
+    background: rgba(29, 155, 240, 0.1);
+}
+
+/* 统计卡片 */
+.fees-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.summary-item {
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e1e8ed;
+    transition: all 0.2s;
+}
+
+.summary-item:hover {
+    box-shadow: 0 2px 8px rgba(29, 155, 240, 0.15);
+    border-color: rgb(29, 155, 240);
+}
+
+.summary-label {
+    display: block;
+    font-size: 11px;
+    color: #657786;
+    margin-bottom: 8px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.summary-value {
+    display: block;
+    font-size: 20px;
+    font-weight: 700;
+    color: rgb(29, 155, 240);
+}
+
+/* 费用列表 */
+.fees-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.fee-item {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.fee-item:hover {
+    border-color: rgb(29, 155, 240);
+    box-shadow: 0 2px 8px rgba(29, 155, 240, 0.15);
+    transform: translateY(-2px);
+}
+
+.fee-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.fee-item-id {
+    font-size: 14px;
+    font-weight: 600;
+    color: #14171a;
+}
+
+.fee-badge {
+    background: rgba(255, 152, 0, 0.1);
+    color: #ff9800;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.fee-item-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.fee-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fee-field-label {
+    font-size: 11px;
+    color: #657786;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.fee-field-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #14171a;
+}
+
+.fee-highlight {
+    color: #ff9800 !important;
+}
+
+.success-text {
+    color: #4caf50 !important;
+}
+
+/* 分页 */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 20px;
+    padding: 16px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-page {
+    padding: 8px 16px;
+    background: rgb(29, 155, 240);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.btn-page:hover:not(:disabled) {
+    background: rgb(26, 140, 216);
+    transform: translateY(-1px);
+}
+
+.btn-page:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.page-info {
+    font-size: 14px;
+    color: #657786;
+    font-weight: 500;
+    min-width: 80px;
+    text-align: center;
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state p {
+    color: #657786;
+    font-size: 16px;
+    margin: 0;
+}
+
+/* 弹窗 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.fee-detail-content {
+    background: #fff;
+    border-radius: 16px;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e1e8ed;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #14171a;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #657786;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    background: rgba(29, 155, 240, 0.1);
+    color: rgb(29, 155, 240);
+}
+
+.modal-body {
+    padding: 24px;
+    max-height: calc(80vh - 140px);
+    overflow-y: auto;
+}
+
+.detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.detail-label {
+    font-size: 13px;
+    color: #657786;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #14171a;
+    text-align: right;
+    max-width: 65%;
+    word-break: break-all;
+}
+
+.detail-value.mono {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.btn-primary {
+    background: rgb(29, 155, 240);
+    color: #fff;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 9999px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 15px;
+    transition: all 0.2s;
+}
+
+.btn-primary:hover {
+    background: rgb(26, 140, 216);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
+}
+
+/* Loading 样式 */
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+#loading-content {
+    text-align: center;
+}
+
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid rgb(29, 155, 240);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 12px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-message {
+    color: #657786;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* 通知样式 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 24px;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 300px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.notification.hidden {
+    display: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+    .fees-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .fee-item-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .fee-detail-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .detail-value {
+        max-width: 55%;
+    }
+}

@@ -220,6 +220,16 @@ function setupWalletActionButtons(): void {
         initWalletOrCreate();
     }
 
+    // Fee History 按钮
+    const feeHistoryBtn = $Id("btn-fee-history") as HTMLButtonElement;
+    if (feeHistoryBtn) {
+        feeHistoryBtn.onclick = async () => {
+            await browser.tabs.create({
+                url: browser.runtime.getURL("html/fees.html")
+            });
+        };
+    }
+
     console.log("----------->>>>> wallet action init success!!!!!!")
 }
 
@@ -332,6 +342,9 @@ export function initDashboardTexts(): void {
 
     const nodeSettingsLabel = $Id('wallet-action-open-settings-label');
     if (nodeSettingsLabel) nodeSettingsLabel.textContent = t('wallet_action_node_settings');
+
+    const feeHistoryLabel = $Id('wallet-action-fee-history-label');
+    if (feeHistoryLabel) feeHistoryLabel.textContent = t('wallet_action_fee_history') || '平台费用';
 
     // 网络选择
     const networkTitle = $Id('wallet-network-title');
