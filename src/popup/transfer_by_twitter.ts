@@ -151,8 +151,7 @@ async function init() {
     // 事件绑定：预设金额
     UI.presetBtns.forEach(btn => {
         btn.addEventListener("click", () => {
-            const val = btn.getAttribute("data-amt") || "";
-            UI.amountInput.value = val;
+            UI.amountInput.value = btn.getAttribute("data-amt") || "";
             UI.amountInput.dispatchEvent(new Event("input"));
             UI.amountInput.focus();
         });
