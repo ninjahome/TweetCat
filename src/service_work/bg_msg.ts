@@ -30,8 +30,14 @@ import {
 } from "../wallet/wallet_api";
 import {openOrUpdateTab} from "../common/utils";
 import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
-import {restartOffScreen, tipActionForTweet} from "./bg_x402";
-import {msgExportPriKye, msgSignMsg, msgTransferEth, msgTransferUsdc, msgUnlockWallet} from "./wallet_controller";
+import {msgTransferUsdcByTwitter, restartOffScreen, tipActionForTweet} from "./bg_x402";
+import {
+    msgExportPriKye,
+    msgSignMsg,
+    msgTransferEth,
+    msgTransferUsdc,
+    msgUnlockWallet
+} from "./wallet_controller";
 import {x402TipPayload} from "../common/x402_obj";
 
 export async function checkIfXIsOpen(): Promise<boolean> {
@@ -224,6 +230,10 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return await msgTransferUsdc(request.data as transUsdcParam);
         }
 
+        case MsgType.TransferUSDCByTwitterId: {
+            return await msgTransferUsdcByTwitter(request.data);
+        }
+
         case MsgType.WalletExportPrivateKey: {
             return await msgExportPriKye(request.data as string);
         }
@@ -241,7 +251,6 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return {success: false, data: "unsupportable message type"};
     }
 }
-
 
 export async function sendMessageToX(action: string, data: any, onlyFirstTab: boolean = true, url = '*://x.com/*'): Promise<any> {
     const tabs = await browser.tabs.query({

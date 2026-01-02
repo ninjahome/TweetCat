@@ -4,6 +4,7 @@ import {
 } from "../common/x402_obj";
 import {logX402} from "../common/debug_flags";
 import {showPopupWindow} from "../popup/common";
+import {UserProfile} from "../object/user_info";
 
 export async function restartOffScreen(): Promise<string> {
     await browser.offscreen.closeDocument();
@@ -107,3 +108,14 @@ export async function tipActionForTweet(payload: x402TipPayload) {
     }
 }
 
+
+export async function msgTransferUsdcByTwitter(userProfile: UserProfile) {
+    try {
+        const url = browser.runtime.getURL(`html/x402_transfer.html?payload=${encodeURIComponent(JSON.stringify(userProfile))}`)
+        await showPopupWindow(url)
+        return {success: true};
+    } catch (e) {
+        console.log("open payment url failed:", e)
+        return {success: false, data: e.toString()};
+    }
+}

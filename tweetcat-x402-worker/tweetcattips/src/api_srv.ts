@@ -1,6 +1,6 @@
 import {Hono} from "hono";
 import {ExtendedEnv} from "./common";
-import {apiHandleTip, apiX402UsdcTransfer} from "./api_srv_x402";
+import {apiHandleTip, apiTransferByTid, apiX402UsdcTransfer} from "./api_srv_x402";
 import {
 	testQueryUserDetails, apiValidateUser,
 	apiQueryValidRewards, apiClaimReward,
@@ -16,4 +16,5 @@ export function registerSrv(app: Hono<ExtendedEnv>) {
 	app.post("/rewards/claim_item", apiClaimReward);
 	app.get("/rewards/query_history", apiQueryRewardHistory);
 	app.get("/fees/query_history", apiQueryPlatformFees);
+	app.post("/user/transfer_by_twitter", apiTransferByTid);
 }

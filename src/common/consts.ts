@@ -82,6 +82,7 @@ export enum MsgType {
     WalletSignMessage = "WALLET_SIGN_MESSAGE",
     WalletTransferEth = "WALLET_TRANSFER_ETH",
     WalletTransferUSDC = "WALLET_TRANSFER_USDC",
+    TransferUSDCByTwitterId = "TransferUSDCByTwitterId",
     WalletExportPrivateKey = "WALLET_EXPORT_PRIVATE_KEY",
 
     OpenOrFocusUrl = "OpenOrFocusUrl",

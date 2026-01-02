@@ -475,3 +475,36 @@ export async function queryPlatformFees(
 
 	return {fees, hasMore};
 }
+
+export async function getPlatformFeesStats(
+	db: D1Database,
+	cdpUserId: string
+): Promise<{ totalFees: string; totalCount: number; avgRate: number }> {
+	const sql = `
+		SELECT COALESCE(CAST(SUM(CAST(fee_amount AS INTEGER)) AS TEXT), '0') AS total_fees,
+			   COALESCE(COUNT(*), 0)                                         AS total_count,
+			   COALESCE(AVG(fee_rate), 0)                                    AS avg_rate
+		FROM platform_fees
+		WHERE cdp_user_id = ?
+	`;
+
+	const row = await db.prepare(sql).bind(cdpUserId).first<{
+		total_fees: string | null;
+		total_count: number | string | null;
+		avg_rate: number | string | null;
+	}>();
+
+	const totalFees = row?.total_fees ?? "0";
+
+	const totalCount =
+		typeof row?.total_count === "string"
+			? parseInt(row.total_count, 10) || 0
+			: (row?.total_count ?? 0);
+
+	const avgRate =
+		typeof row?.avg_rate === "string"
+			? parseFloat(row.avg_rate) || 0
+			: (row?.avg_rate ?? 0);
+
+	return {totalFees, totalCount, avgRate};
+}

@@ -115,7 +115,6 @@ export function showConfirm(msg: string): Promise<boolean> {
     });
 }
 
-
 export async function showPopupWindow(url: string, width: number = 450, height: number = 650) {
 
     const currentWindow = await browser.windows.getLastFocused();
@@ -138,11 +137,8 @@ export async function showPopupWindow(url: string, width: number = 450, height: 
         focused: true
     });
 }
-
-
 export const FIXED_ETH_TRANSFER_GAS_ETH = 0.000002; // ETH转账所需Gas费
 export const FIXED_MINI_USDC_TRANSFER = 0.00001; // USDC转账所需Gas费
-
 
 export async function x402WorkerFetch(path: string, body: any): Promise<any> {
     const chainID = await getChainId()

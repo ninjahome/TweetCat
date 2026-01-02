@@ -1050,6 +1050,15 @@
   "fees_total_count": {
     "message": "总交易数"
   },
+  "fees_current_page_total": {
+    "message": "当前页费用"
+  },
+  "fees_current_page_avg_rate": {
+    "message": "平均费率"
+  },
+  "fees_current_page_count": {
+    "message": "当前页记录数"
+  },
   "fees_prev_page": {
     "message": "上一页"
   },
@@ -1094,6 +1103,9 @@
   },
   "fees_view_on_chain": {
     "message": "查看链上交易"
+  },
+  "transfer_usdc_btn_title": {
+    "message": "转账(USDC)"
   }
 }
 

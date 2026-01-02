@@ -1,5 +1,5 @@
-import {observeForElement, parseContentHtml} from "../common/utils";
-import {choseColorByID} from "../common/consts";
+import {observeForElement, parseContentHtml, sendMsgToOffScreen, sendMsgToService} from "../common/utils";
+import {choseColorByID, MsgType} from "../common/consts";
 import {queryKolDetailByName, showPopupMenu} from "./twitter_observer";
 import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
@@ -7,6 +7,7 @@ import {getUserIdByUsername} from "../timeline/twitter_api";
 import {logTPR} from "../common/debug_flags";
 import {calculateLevelBreakdown, LevelScoreBreakdown, UserProfile} from "../object/user_info";
 import {t} from "../common/i18n";
+import {showDialog} from "./common";
 
 let observing = false;
 
@@ -28,11 +29,11 @@ export async function appendFilterOnKolProfilePage(kolName: string) {
 
 const kolScoreCache = new Map<string, LevelScoreBreakdown>();
 
-export async function appendScoreInfoToProfilePage(profileData: any, userName: string) {
+export async function appendScoreInfoToProfilePage(usrProfile: UserProfile, userName: string) {
 
-    // console.log("[injection fetched data]------>>>screen name：", userName, "\n raw data:", profileData);
+    console.log("[injection fetched data]------>>>screen name：", userName, "\n raw data:", usrProfile);
+
     try {
-        const usrProfile = new UserProfile(profileData);
         const scoreData = calculateLevelBreakdown(usrProfile);
         // console.log("------>>> score data:", scoreData);
         kolScoreCache.set(userName, scoreData);
@@ -44,6 +45,24 @@ export async function appendScoreInfoToProfilePage(profileData: any, userName: s
             const tpl = await parseContentHtml("html/content.html");
             scoreDiv = tpl.content.getElementById("user-profile-score")?.cloneNode(true) as HTMLElement;
             userInfoArea?.appendChild(scoreDiv);
+        }
+
+        let transferDiv = document.getElementById("user-transfer-usdc") as HTMLElement;
+        if (!transferDiv) {
+            const tpl = await parseContentHtml("html/content.html");
+            transferDiv = tpl.content.getElementById("user-transfer-usdc")?.cloneNode(true) as HTMLElement;
+
+            const btn = transferDiv.querySelector(".transfer-btn") as HTMLButtonElement;
+            btn.onclick = async () =>{
+                if(!usrProfile.userId){
+                    showDialog(t('tips_title'),"无效的用户id")
+                    return
+                }
+                await sendMsgToService(usrProfile, MsgType.TransferUSDCByTwitterId)
+            }
+
+            (transferDiv.querySelector(".transfer-usdc-btn-title") as HTMLSpanElement).innerText = t("transfer_usdc_btn_title")
+            userInfoArea?.appendChild(transferDiv);
         }
 
         (scoreDiv.querySelector(".total-score-value") as HTMLElement).innerText = "" + scoreData.total;

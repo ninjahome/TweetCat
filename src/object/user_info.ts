@@ -96,7 +96,7 @@ export class UserProfile implements IUserScoreData {
     /* ====================== 填充 API 数据 ====================== */
     private fillFromApi(data: any): void {
         const u = data?.data?.user?.result;
-        if (!u) throw new Error('Invalid Twitter API payload');
+        if (!u) throw new Error('Invalid Twitter API payload', data);
 
         // 1. 核心 + 头像
         this.userName = u.core?.screen_name ?? '';

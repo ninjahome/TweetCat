@@ -17,7 +17,7 @@
   "description": "catch your favorite tweets",
   "devDependencies": {
     "@types/node": "^24.10.0",
-    "@types/webextension-polyfill": "^0.12.3",
+    "@types/webextension-polyfill": "^0.12.4",
     "cross-env": "^7.0.3",
     "dotenv-webpack": "^8.1.1",
     "ts-loader": "^9.5.2",
@@ -34,5 +34,5 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
-  "version": "3.3.18"
+  "version": "3.3.23"
 }

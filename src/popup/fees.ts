@@ -49,20 +49,20 @@ function initFeesTexts() {
         pageTitle.textContent = t('fees_page_title') || 'Fee History';
     }
 
-    // 统计标签
+    // 统计标签（当前页统计）
     const labelTotalFees = document.getElementById('label-total-fees');
     if (labelTotalFees) {
-        labelTotalFees.textContent = t('fees_total_paid') || 'Total Fees Paid';
+        labelTotalFees.textContent = t('fees_current_page_total') || 'Current Page Fees';
     }
 
     const labelAvgRate = document.getElementById('label-avg-fee-rate');
     if (labelAvgRate) {
-        labelAvgRate.textContent = t('fees_avg_rate') || 'Average Fee Rate';
+        labelAvgRate.textContent = t('fees_current_page_avg_rate') || 'Avg Fee Rate';
     }
 
     const labelTotalCount = document.getElementById('label-total-count');
     if (labelTotalCount) {
-        labelTotalCount.textContent = t('fees_total_count') || 'Total Transactions';
+        labelTotalCount.textContent = t('fees_current_page_count') || 'Records on Page';
     }
 
     // 分页按钮
@@ -186,15 +186,8 @@ async function loadFees() {
             const {fees, hasMore} = response.data;
             hasMorePages = hasMore;
             allFees = fees;
-
-            // 更新统计
             updateSummary(fees);
-
-            // 更新分页按钮
             updatePaginationButtons();
-
-            console.log("--------->>> fees data:", fees)
-            // 渲染列表
             renderFeesList(fees);
         }
     } catch (error) {
@@ -209,10 +202,9 @@ async function loadFees() {
 }
 
 function updateSummary(fees: PlatformFee[]) {
-    // 计算当前页的统计数据
     const totalFee = fees.reduce((sum, fee) => sum + Number(fee.fee_amount), 0) / 1e6;
-    const avgRate = fees.length > 0
-        ? fees.reduce((sum, fee) => sum + fee.fee_rate, 0) / fees.length
+    const avgRate = fees.length > 0 
+        ? fees.reduce((sum, fee) => sum + fee.fee_rate, 0) / fees.length 
         : 0;
 
     const totalFeesEl = document.getElementById("total-fees");
@@ -220,7 +212,7 @@ function updateSummary(fees: PlatformFee[]) {
     const totalCountEl = document.getElementById("total-count");
 
     if (totalFeesEl) {
-        totalFeesEl.textContent = totalFee.toFixed(2) + " USDC";
+        totalFeesEl.textContent = (totalFee >= 0.01 ? totalFee.toFixed(2) : totalFee.toFixed(6)) + " USDC";
     }
 
     if (avgFeeRateEl) {
@@ -282,7 +274,6 @@ function createFeeItem(fee: PlatformFee): HTMLElement {
     const div = document.createElement("div");
     div.className = "fee-item";
 
-    // 头部
     const header = document.createElement("div");
     header.className = "fee-item-header";
 
@@ -298,34 +289,32 @@ function createFeeItem(fee: PlatformFee): HTMLElement {
     header.appendChild(badge);
     div.appendChild(header);
 
-    // 内容网格
     const grid = document.createElement("div");
     grid.className = "fee-item-grid";
 
-    // Gross Amount
+    const grossAmount = Number(fee.gross_amount) / 1e6;
     const grossField = createField(
-        t('fees_field_gross') || "Gross",
-        (Number(fee.gross_amount) / 1e6).toFixed(2) + " USDC"
+    t('fees_field_gross') || "Gross", 
+        (grossAmount >= 0.01 ? grossAmount.toFixed(2) : grossAmount.toFixed(6)) + " USDC"
     );
     grid.appendChild(grossField);
 
-    // Fee Amount
+    const feeAmount = Number(fee.fee_amount) / 1e6;
     const feeField = createField(
-        t('fees_field_fee') || "Fee",
-        (Number(fee.fee_amount) / 1e6).toFixed(2) + " USDC"
+        t('fees_field_fee') || "Fee", 
+        (feeAmount >= 0.01 ? feeAmount.toFixed(2) : feeAmount.toFixed(6)) + " USDC"
     );
     feeField.querySelector(".fee-field-value")?.classList.add("fee-highlight");
     grid.appendChild(feeField);
 
-    // Net Amount
+    const netAmount = Number(fee.net_amount) / 1e6;
     const netField = createField(
-        t('fees_field_net') || "Net",
-        (Number(fee.net_amount) / 1e6).toFixed(2) + " USDC"
+        t('fees_field_net') || "Net", 
+        (netAmount >= 0.01 ? netAmount.toFixed(2) : netAmount.toFixed(6)) + " USDC"
     );
     netField.querySelector(".fee-field-value")?.classList.add("success-text");
     grid.appendChild(netField);
 
-    // Created At
     const createdField = createField(
         t('fees_field_date') || "Date",
         formatDate(fee.created_at)
@@ -334,7 +323,6 @@ function createFeeItem(fee: PlatformFee): HTMLElement {
 
     div.appendChild(grid);
 
-    // 点击显示详情
     div.onclick = () => {
         showFeeDetail(fee);
     };
@@ -363,7 +351,6 @@ function createField(label: string, value: string): HTMLElement {
 function showFeeDetail(fee: PlatformFee) {
     currentFee = fee;
 
-    // 填充详情
     const detailGross = document.getElementById("detail-gross");
     const detailRate = document.getElementById("detail-rate");
     const detailFee = document.getElementById("detail-fee");
@@ -411,7 +398,6 @@ function showFeeDetail(fee: PlatformFee) {
         detailCreated.textContent = formatDate(fee.created_at);
     }
 
-    // 显示弹窗
     const modal = document.getElementById("fee-detail-modal");
     if (modal) {
         modal.classList.remove("hidden");

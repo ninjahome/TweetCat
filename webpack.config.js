@@ -111,6 +111,7 @@ module.exports = (env, argv) => {
             cdp_auth: path.resolve(__dirname, './src/popup/cdp_auth.ts'),
             cdp_auth_auto_x: path.resolve(__dirname, './src/popup/cdp_auth_auto_x.ts'),
             x402_payment: path.resolve(__dirname, './src/popup/x402_payment.ts'),
+            transfer_by_twitter: path.resolve(__dirname, './src/popup/transfer_by_twitter.ts'),
             ipfs_local_content: path.resolve(__dirname, './src/content/ipfs_local.ts'),
             rewards: path.resolve(__dirname, './src/popup/rewards.ts'),
             fees: path.resolve(__dirname, './src/popup/fees.ts'),

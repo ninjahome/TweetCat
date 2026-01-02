@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+  <title>X402 转账</title>
+
+  <style>
+    :root {
+      --bg-page: #f6f7fb;
+      --bg-primary: #ffffff;
+      --bg-elevated: #f3f4f6;
+      --bg-hover: rgba(15, 20, 25, 0.08);
+      --bg-subtle: rgba(15, 20, 25, 0.06);
+      --text-primary: #0f1419;
+      --text-secondary: rgba(15, 20, 25, 0.72);
+      --text-muted: rgba(15, 20, 25, 0.55);
+      --border-subtle: rgba(15, 20, 25, 0.12);
+      --accent: #3b82f6;
+      --accent-subtle: rgba(59, 130, 246, 0.22);
+      --danger: #df3f3f;
+      --shadow: 0 18px 60px rgba(0, 0, 0, 0.2);
+      --radius: 18px;
+      --radius-sm: 14px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-page: #0b0e12;
+        --bg-primary: #0f141a;
+        --bg-elevated: rgba(255, 255, 255, 0.06);
+        --bg-hover: rgba(231, 233, 234, 0.08);
+        --bg-subtle: rgba(231, 233, 234, 0.06);
+        --text-primary: #e7e9ea;
+        --text-secondary: rgba(231, 233, 234, 0.78);
+        --text-muted: rgba(231, 233, 234, 0.58);
+        --border-subtle: rgba(231, 233, 234, 0.14);
+        --accent: #60a5fa;
+        --accent-subtle: rgba(96, 165, 250, 0.22);
+        --shadow: 0 18px 60px rgba(0, 0, 0, 0.4);
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(1200px 600px at 30% 10%, rgba(59,130,246,0.15), transparent 50%),
+      radial-gradient(1000px 500px at 70% 90%, rgba(99,102,241,0.12), transparent 50%),
+      var(--bg-page);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* 转账容器面板 */
+    .transfer-card {
+      width: 100%;
+      max-width: 440px;
+      border-radius: var(--radius);
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: slideUp 0.4s ease-out;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 850;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+      text-transform: uppercase;
+    }
+
+    .btn-close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .btn-close:hover { background: var(--bg-hover); }
+
+    .card-content {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* 用户信息栏 */
+    .user-profile {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--bg-elevated);
+      object-fit: cover;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .user-info {
+      min-width: 0;
+    }
+    .display-name { font-weight: 800; font-size: 15px; }
+    .user-handle { color: var(--text-secondary); font-size: 13px; }
+
+    /* 输入区域 */
+    .field-group { display: flex; flex-direction: column; gap: 8px; }
+    .field-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .input-main {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-size: 16px;
+      font-weight: 600;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .input-main:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle); }
+
+    .input-hint {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .presets { display: flex; gap: 6px; }
+    .chip {
+      padding: 4px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-primary);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+    .chip:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+    /* 状态信息 */
+    .message-area { min-height: 20px; font-size: 13px; line-height: 1.4; }
+    .text-error { color: var(--danger); font-weight: 500; }
+    .text-status { color: var(--accent); }
+
+    /* 操作栏 */
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 20px;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.2s;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary { background: transparent; color: var(--text-secondary); }
+    .btn-secondary:hover { color: var(--text-primary); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
+
+    /* 加载动画 */
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+    .loading .spinner { display: block; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<main class="transfer-card">
+  <header class="card-header">
+    <h2 class="card-title">转账 USDC <span class="badge">x402</span></h2>
+    <button class="btn-close" id="js-close" title="关闭">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </header>
+
+  <div class="card-content">
+    <section class="user-profile">
+      <img id="js-avatar" class="avatar" src="" alt="" />
+      <div class="user-info">
+        <div id="js-display-name" class="display-name">-</div>
+        <div id="js-user-handle" class="user-handle">-</div>
+      </div>
+    </section>
+
+    <div class="field-group">
+      <label class="field-label" for="js-amount">
+        金额 (USDC)
+        <span id="js-decimals-hint" class="badge">6 小数位</span>
+      </label>
+      <input
+              id="js-amount"
+              class="input-main"
+              type="text"
+              inputmode="decimal"
+              placeholder="0.00"
+              autocomplete="off"
+      />
+      <div class="input-hint">
+        <span class="max_amount_transfor">建议：不超过余额 100.00(USDC)</span>
+        <div class="presets">
+          <button class="chip" data-amt="0.1">0.1</button>
+          <button class="chip" data-amt="1">1</button>
+          <button class="chip" data-amt="5">5</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="message-area">
+      <div id="js-error" class="text-error" aria-live="polite"></div>
+      <div id="js-status" class="text-status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <footer class="card-actions">
+    <button id="js-cancel" class="btn btn-secondary">取消</button>
+    <button id="js-confirm" class="btn btn-primary" disabled>
+      <span class="spinner"></span>
+      <span id="js-confirm-text">确认转账</span>
+    </button>
+  </footer>
+</main>
+
+<script src="../js/transfer_by_twitter.js"></script>
+</body>
+</html>

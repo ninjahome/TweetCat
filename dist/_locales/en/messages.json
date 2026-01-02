@@ -1050,6 +1050,15 @@
   "fees_total_count": {
     "message": "Total Transactions"
   },
+  "fees_current_page_total": {
+    "message": "Current Page Fees"
+  },
+  "fees_current_page_avg_rate": {
+    "message": "Avg Fee Rate"
+  },
+  "fees_current_page_count": {
+    "message": "Records on Page"
+  },
   "fees_prev_page": {
     "message": "Previous"
   },
@@ -1094,5 +1103,8 @@
   },
   "fees_view_on_chain": {
     "message": "View on Blockchain"
+  },
+  "transfer_usdc_btn_title": {
+    "message": "Transfer(USDC)"
   }
 }
