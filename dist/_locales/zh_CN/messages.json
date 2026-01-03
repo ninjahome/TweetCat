@@ -1106,6 +1106,72 @@
   },
   "transfer_usdc_btn_title": {
     "message": "转账(USDC)"
+  },
+  "buy_usdc_title": {
+    "message": "购买 USDC"
+  },
+  "buy_usdc_button": {
+    "message": "立即购买 USDC"
+  },
+  "buy_usdc_no_fees": {
+    "message": "零费用"
+  },
+  "buy_usdc_your_wallet": {
+    "message": "您的钱包"
+  },
+  "buy_usdc_current_balance": {
+    "message": "当前余额"
+  },
+  "buy_usdc_select_amount": {
+    "message": "选择金额"
+  },
+  "buy_usdc_custom_amount": {
+    "message": "或者输入自定义金额 ($5 - $500)"
+  },
+  "buy_usdc_no_fees_feature": {
+    "message": "Base 网络零手续费"
+  },
+  "buy_usdc_fast_payment": {
+    "message": "Apple Pay 和借记卡"
+  },
+  "buy_usdc_secure": {
+    "message": "由 Coinbase 保护"
+  },
+  "buy_usdc_powered_by": {
+    "message": "由 Coinbase Onramp 提供支持"
+  },
+  "buy_usdc_funds_direct": {
+    "message": "资金将直接发送到您的钱包"
+  },
+  "buy_usdc_no_wallet": {
+    "message": "请先连接您的钱包"
+  },
+  "buy_usdc_load_wallet_failed": {
+    "message": "加载钱包信息失败"
+  },
+  "buy_usdc_amount_error": {
+    "message": "金额必须在 $5 到 $500 之间"
+  },
+  "buy_usdc_preparing": {
+    "message": "准备您的购买..."
+  },
+  "buy_usdc_no_wallet_address": {
+    "message": "未找到钱包地址"
+  },
+  "buy_usdc_no_user_id": {
+    "message": "未找到用户ID"
+  },
+  "buy_usdc_redirecting": {
+    "message": "跳转到 Coinbase Pay..."
+  },
+  "buy_usdc_session_failed": {
+    "message": "创建购买会话失败"
+  },
+  "buy_usdc_failed": {
+    "message": "初始化购买失败"
+  },
+  "register_account_error": {
+    "message": "请确保接收方已关联 Coinbase 账户。"
   }
 }
 

@@ -508,3 +508,140 @@ export async function getPlatformFeesStats(
 
 	return {totalFees, totalCount, avgRate};
 }
+
+// ==================== Onramp Purchase History ====================
+
+export interface OnrampPurchase {
+	id: number;
+	cdp_user_id: string;
+	destination_address: string;
+	amount_fiat: string;              // Fiat amount in cents (e.g., "5000" for $50.00)
+	amount_crypto: string | null;     // Crypto amount received (atomic units)
+	asset: string;                     // e.g., "USDC"
+	blockchain: string;                // e.g., "base"
+	coinbase_transaction_id: string | null;  // Coinbase's transaction ID
+	onramp_session_id: string | null;        // Session ID from Coinbase
+	status: string;                    // "pending", "completed", "failed"
+	tx_hash: string | null;            // Blockchain transaction hash
+	payment_method: string | null;     // "CARD_DEBIT", "APPLE_PAY", etc.
+	error_message: string | null;
+	created_at: string;
+	updated_at: string;
+	completed_at: string | null;
+}
+
+/**
+ * 创建 Onramp 购买记录
+ */
+export async function createOnrampPurchase(
+	db: D1Database,
+	params: {
+		cdpUserId: string;
+		destinationAddress: string;
+		amountFiat: string;
+		asset: string;
+		blockchain: string;
+		onrampSessionId?: string;
+	}
+): Promise<number> {
+	const sql = `
+		INSERT INTO onramp_purchases (cdp_user_id, destination_address, amount_fiat,
+									  asset, blockchain, onramp_session_id, status)
+		VALUES (?, ?, ?, ?, ?, ?, 'pending') RETURNING id
+	`;
+
+	const result = await db.prepare(sql).bind(
+		params.cdpUserId,
+		params.destinationAddress,
+		params.amountFiat,
+		params.asset,
+		params.blockchain,
+		params.onrampSessionId || null
+	).first<{ id: number }>();
+
+	if (!result) {
+		throw new Error("Failed to create onramp purchase record");
+	}
+
+	return result.id;
+}
+
+/**
+ * 更新 Onramp 购买记录状态（用于 Webhook）
+ */
+export async function updateOnrampPurchaseStatus(
+	db: D1Database,
+	coinbaseTransactionId: string,
+	updates: {
+		status?: string;
+		amountCrypto?: string;
+		txHash?: string;
+		paymentMethod?: string;
+		errorMessage?: string;
+	}
+): Promise<void> {
+	let sql = "UPDATE onramp_purchases SET updated_at = CURRENT_TIMESTAMP";
+	const params: any[] = [];
+
+	if (updates.status) {
+		sql += ", status = ?";
+		params.push(updates.status);
+		if (updates.status === "completed") {
+			sql += ", completed_at = CURRENT_TIMESTAMP";
+		}
+	}
+
+	if (updates.amountCrypto) {
+		sql += ", amount_crypto = ?";
+		params.push(updates.amountCrypto);
+	}
+
+	if (updates.txHash) {
+		sql += ", tx_hash = ?";
+		params.push(updates.txHash);
+	}
+
+	if (updates.paymentMethod) {
+		sql += ", payment_method = ?";
+		params.push(updates.paymentMethod);
+	}
+
+	if (updates.errorMessage) {
+		sql += ", error_message = ?";
+		params.push(updates.errorMessage);
+	}
+
+	sql += " WHERE coinbase_transaction_id = ?";
+	params.push(coinbaseTransactionId);
+
+	await db.prepare(sql).bind(...params).run();
+}
+
+/**
+ * 查询用户的 Onramp 购买历史
+ */
+export async function queryOnrampPurchases(
+	db: D1Database,
+	cdpUserId: string,
+	pageStart: number = 0,
+	pageSize: number = 20
+): Promise<{ purchases: OnrampPurchase[]; hasMore: boolean }> {
+	const sql = `
+		SELECT *
+		FROM onramp_purchases
+		WHERE cdp_user_id = ?
+		ORDER BY created_at DESC LIMIT ?
+		OFFSET ?
+	`;
+
+	const stmt = db.prepare(sql).bind(cdpUserId, pageSize + 1, pageStart);
+	const result = await stmt.all<OnrampPurchase>();
+	const purchases = result.results || [];
+
+	const hasMore = purchases.length > pageSize;
+	if (hasMore) {
+		purchases.pop();
+	}
+
+	return {purchases, hasMore};
+}

@@ -5,6 +5,7 @@ import {showPopupWindow} from "./common";
 import {getChainId} from "../wallet/wallet_setting";
 import {postToX402Srv} from "../wallet/cdp_wallet";
 import {logX402} from "../common/debug_flags";
+import {t} from "../common/i18n";
 
 // --- 类型定义 ---
 interface UserProfile {
@@ -91,17 +92,10 @@ async function performTransfer(profile: UserProfile, amount: string): Promise<vo
         amount: amount,
         xId: profile.userId
     })
-
-    if (!response.ok) {
-        const text = await response.text();
-        logX402("------>>>x402 error:", text);
-        throw new Error("process failed: status:" + response.status + "error:" + text)
-    }
-
     const result = await response.json()
     if (!result.success || !result.txHash) {
+        if (result.code === "RECIPIENT_NOT_FOUND") throw new Error(t('register_account_error'))
         throw new Error("failed create block chain tx， error=" + result)
-
     }
     const url = X402_FACILITATORS[chainId].browser + "/tx/" + result.txHash
     console.log("------>>>transfer success:", url, result.txHash)
@@ -168,8 +162,8 @@ async function init() {
         updateUIState(true, "正在请求钱包确认...");
         try {
             const hash = await performTransfer(profile, validation.value);
-            updateUIState(false, "✅ 转账成功:" + hash);
-            setTimeout(() => window.close(), 3_000);
+            updateUIState(true, "✅ 转账成功:" + hash);
+            setTimeout(() => window.close(), 1_500);
         } catch (err: any) {
             updateUIState(false, "", err.message || "转账失败，请稍后重试");
         }

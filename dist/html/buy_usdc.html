@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy USDC</title>
+    <link rel="stylesheet" href="../css/common_utils.css"/>
+    <link rel="stylesheet" href="../css/buy_usdc.css"/>
+    <script src="../js/buy_usdc.js"></script>
+</head>
+<body>
+<div class="buy-usdc-container">
+    <!-- 头部 -->
+    <header class="buy-header">
+        <button class="button-back" id="buy-back-btn" aria-label="返回">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                <defs>
+                    <style>.cls-1 {
+                        fill: #191e24;
+                    }</style>
+                </defs>
+                <polygon class="cls-1"
+                         points="15.97 6.75 3.85 6.75 8.41 2.19 7 0.78 0.03 7.75 7.5 15.22 8.91 13.81 3.85 8.75 15.97 8.75 15.97 6.75"/>
+            </svg>
+        </button>
+        <h1 id="buy-usdc-title">Buy USDC</h1>
+    </header>
+
+    <!-- 购买信息 -->
+    <div class="buy-info-card">
+        <div class="info-row">
+            <span class="info-label" id="label-your-wallet">Your Wallet</span>
+            <span class="info-value mono" id="user-wallet">--</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label" id="label-current-balance">Current Balance</span>
+            <span class="info-value" id="current-balance">-- USDC</span>
+        </div>
+    </div>
+
+    <!-- 金额选择 -->
+    <div class="amount-selector">
+        <h3 id="label-select-amount">Select Amount</h3>
+        <div class="amount-buttons">
+            <button class="amount-btn" data-amount="10">$10</button>
+            <button class="amount-btn" data-amount="50">$50</button>
+            <button class="amount-btn" data-amount="100">$100</button>
+            <button class="amount-btn" data-amount="500">$500</button>
+        </div>
+        <div class="custom-amount">
+            <label id="label-custom-amount">Or enter custom amount ($5 - $500)</label>
+            <input type="number" id="custom-amount" min="5" max="500" step="1" placeholder="Enter amount">
+        </div>
+    </div>
+
+    <!-- 特性说明 -->
+    <div class="features">
+        <div class="feature-item">
+            <span class="feature-icon">✅</span>
+            <span class="feature-text" id="feature-no-fees">No Fees on Base Network</span>
+        </div>
+        <div class="feature-item">
+            <span class="feature-icon">⚡</span>
+            <span class="feature-text" id="feature-fast-payment">Apple Pay & Debit Card</span>
+        </div>
+        <div class="feature-item">
+            <span class="feature-icon">🔒</span>
+            <span class="feature-text" id="feature-secure">Secured by Coinbase</span>
+        </div>
+    </div>
+
+    <!-- 购买按钮 -->
+    <button class="btn-buy-now" id="btn-buy-now">
+        <span id="btn-buy-text">Buy USDC Now</span>
+    </button>
+
+    <!-- 说明 -->
+    <div class="disclaimer">
+        <p id="powered-by">Powered by Coinbase Onramp</p>
+        <p id="funds-direct">Funds will be sent directly to your wallet</p>
+    </div>
+</div>
+
+<!-- Loading -->
+<div id="loading-overlay" style="display: none;">
+    <div id="loading-content">
+        <div class="spinner"></div>
+        <div class="loading-message">Preparing purchase...</div>
+    </div>
+</div>
+
+<!-- 通知 -->
+<div id="notification" class="notification hidden" role="alert"></div>
+</body>
+</html>

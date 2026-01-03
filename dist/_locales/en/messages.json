@@ -1106,5 +1106,71 @@
   },
   "transfer_usdc_btn_title": {
     "message": "Transfer(USDC)"
+  },
+  "buy_usdc_title": {
+    "message": "Buy USDC"
+  },
+  "buy_usdc_button": {
+    "message": "Buy USDC Now"
+  },
+  "buy_usdc_no_fees": {
+    "message": "No Fees"
+  },
+  "buy_usdc_your_wallet": {
+    "message": "Your Wallet"
+  },
+  "buy_usdc_current_balance": {
+    "message": "Current Balance"
+  },
+  "buy_usdc_select_amount": {
+    "message": "Select Amount"
+  },
+  "buy_usdc_custom_amount": {
+    "message": "Or enter custom amount ($5 - $500)"
+  },
+  "buy_usdc_no_fees_feature": {
+    "message": "No Fees on Base Network"
+  },
+  "buy_usdc_fast_payment": {
+    "message": "Apple Pay & Debit Card"
+  },
+  "buy_usdc_secure": {
+    "message": "Secured by Coinbase"
+  },
+  "buy_usdc_powered_by": {
+    "message": "Powered by Coinbase Onramp"
+  },
+  "buy_usdc_funds_direct": {
+    "message": "Funds will be sent directly to your wallet"
+  },
+  "buy_usdc_no_wallet": {
+    "message": "Please connect your wallet first"
+  },
+  "buy_usdc_load_wallet_failed": {
+    "message": "Failed to load wallet info"
+  },
+  "buy_usdc_amount_error": {
+    "message": "Amount must be between $5 and $500"
+  },
+  "buy_usdc_preparing": {
+    "message": "Preparing your purchase..."
+  },
+  "buy_usdc_no_wallet_address": {
+    "message": "Wallet address not found"
+  },
+  "buy_usdc_no_user_id": {
+    "message": "User ID not found"
+  },
+  "buy_usdc_redirecting": {
+    "message": "Redirecting to Coinbase Pay..."
+  },
+  "buy_usdc_session_failed": {
+    "message": "Failed to create purchase session"
+  },
+  "buy_usdc_failed": {
+    "message": "Failed to initialize purchase"
+  },
+  "register_account_error": {
+    "message": "Please ensure the recipient has a linked Coinbase account."
   }
 }

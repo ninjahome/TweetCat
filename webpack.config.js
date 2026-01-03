@@ -115,6 +115,7 @@ module.exports = (env, argv) => {
             ipfs_local_content: path.resolve(__dirname, './src/content/ipfs_local.ts'),
             rewards: path.resolve(__dirname, './src/popup/rewards.ts'),
             fees: path.resolve(__dirname, './src/popup/fees.ts'),
+            buy_usdc: path.resolve(__dirname, './src/popup/buy_usdc.ts'),
         },
         target: 'web',
     };

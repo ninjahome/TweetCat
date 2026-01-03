@@ -246,3 +246,11 @@ export async function getOrCreateTreasuryEOA(c: ExtCtx): Promise<EvmServerAccoun
 		throw new Error("failed to get server account:", err)
 	}
 }
+
+
+export function toFiat2dp(amount: any): string {
+	const s = (amount ?? "").toString().trim();
+	const n = Number(s);
+	if (!Number.isFinite(n) || n <= 0) return "";
+	return n.toFixed(2);
+}

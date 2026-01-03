@@ -34,6 +34,19 @@ async function initDashBoard(): Promise<void> {
     initWalletOrCreate();
     initIpfsSettingsView();
     await initSettingsPanel();
+
+    initBuyUsdcButton();
+}
+
+function initBuyUsdcButton() {
+    const buyUsdcBtn = document.getElementById("btn-buy-usdc");
+    if (buyUsdcBtn) {
+        buyUsdcBtn.addEventListener("click", async () => {
+            await browser.tabs.create({
+                url: browser.runtime.getURL("html/buy_usdc.html")
+            });
+        });
+    }
 }
 
 

@@ -1,4 +1,4 @@
-import {cdpFetch, ExtCtx, getOrCreateTreasuryEOA} from "./common";
+import {cdpFetch, ExtCtx, getOrCreateTreasuryEOA, isHexAddress, toFiat2dp} from "./common";
 import {
 	createKolBinding,
 	getKolBindingByUserId,
@@ -231,9 +231,6 @@ export async function apiQueryRewardHistory(c: ExtCtx) {
 	}
 }
 
-/**
- * 查询用户的平台收费历史记录
- */
 export async function apiQueryPlatformFees(c: ExtCtx) {
 	try {
 		const cdpUserId = c.req.query("cdp_user_id");
@@ -261,6 +258,125 @@ export async function apiQueryPlatformFees(c: ExtCtx) {
 
 	} catch (err: any) {
 		console.error("[Query Platform Fees Error]", err);
+		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
+	}
+}
+
+export async function apiCreateOnrampSession(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		const { destination_address, amount } = body;
+
+		if (!destination_address) return c.json({ error: "Missing destination_address" }, 400);
+		if (!isHexAddress(destination_address)) return c.json({ error: "Invalid EVM address" }, 400);
+		const paymentAmount = toFiat2dp(amount);
+		if(!paymentAmount){
+			return c.json({ error: "Invalid amount" }, 400);
+		}
+
+		// Cloudflare 上尽量用 cf-connecting-ip
+		const clientIp =
+			c.req.header("cf-connecting-ip") ||
+			c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ||
+			undefined;
+
+		// ✅ 正确的 CDP v2 Onramp Session API
+		// Required: destinationAddress, purchaseCurrency, destinationNetwork
+		// One-click: + paymentAmount, paymentCurrency
+		const payload: any = {
+			destinationAddress: destination_address,
+			purchaseCurrency: "USDC",
+			destinationNetwork: "base",
+			paymentAmount,
+			paymentCurrency: "USD",
+			clientIp,
+			// 可选：你想关联用户就加一个引用（不强制）
+			// partnerUserRef: body.cdp_user_id ?? undefined,
+			// redirectUrl: body.redirect_url ?? undefined,
+		};
+
+		const resp = await cdpFetch(c, "/platform/v2/onramp/sessions", "POST", payload, false);
+
+		if (!resp.ok) {
+			console.error("[Onramp Session Error]", resp.data);
+			return c.json({ error: "Failed to create onramp session", detail: resp.data }, 500);
+		}
+
+		const onrampUrl = resp.data?.session?.onrampUrl;
+		if (!onrampUrl) {
+			return c.json({ error: "No onrampUrl returned", detail: resp.data }, 500);
+		}
+
+		return c.json({
+			success: true,
+			data: { onrampUrl },
+		});
+	} catch (err: any) {
+		console.error("[Create Onramp Session Error]", err);
+		return c.json({ error: "Internal Server Error", detail: err?.message }, 500);
+	}
+}
+
+export async function apiOnrampWebhook(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		console.log("[Onramp Webhook] Received:", JSON.stringify(body, null, 2));
+
+		// Coinbase Webhook 格式：
+		// {
+		//   "event_type": "onramp_transaction_completed",
+		//   "data": {
+		//     "transaction_id": "...",
+		//     "status": "completed",
+		//     "destination_address": "...",
+		//     "amount": { "value": "...", "currency": "USDC" },
+		//     "blockchain_tx_hash": "...",
+		//     "payment_method": "CARD_DEBIT"
+		//   }
+		// }
+
+		const eventType = body.event_type;
+		const data = body.data;
+
+		if (!data || !data.transaction_id) {
+			console.error("[Onramp Webhook] Invalid payload");
+			return c.json({error: "Invalid payload"}, 400);
+		}
+
+		// 更新购买记录
+		const {updateOnrampPurchaseStatus} = await import('./database');
+
+		const updates: any = {};
+
+		if (eventType === "onramp_transaction_completed") {
+			updates.status = "completed";
+		} else if (eventType === "onramp_transaction_failed") {
+			updates.status = "failed";
+			updates.errorMessage = data.error_message || "Transaction failed";
+		}
+
+		if (data.amount?.value) {
+			// 将 crypto 金额转为 atomic units
+			const cryptoAmount = parseFloat(data.amount.value);
+			updates.amountCrypto = Math.floor(cryptoAmount * 1e6).toString();
+		}
+
+		if (data.blockchain_tx_hash) {
+			updates.txHash = data.blockchain_tx_hash;
+		}
+
+		if (data.payment_method) {
+			updates.paymentMethod = data.payment_method;
+		}
+
+		await updateOnrampPurchaseStatus(c.env.DB, data.transaction_id, updates);
+
+		console.log(`[Onramp Webhook] Updated transaction ${data.transaction_id}`);
+
+		return c.json({success: true});
+
+	} catch (err: any) {
+		console.error("[Onramp Webhook Error]", err);
 		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
 	}
 }

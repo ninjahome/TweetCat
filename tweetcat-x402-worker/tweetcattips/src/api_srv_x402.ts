@@ -227,7 +227,11 @@ export async function apiTransferByTid(c: ExtCtx) {
 		const kolBinding = await getKolBindingByXId(c.env.DB, xId);
 		const payTo = kolBinding?.wallet_address
 		if (!payTo) {
-			return c.json({error: "no bound account found", detail: xId}, 404);
+			return c.json({
+				success: false, code: "RECIPIENT_NOT_FOUND",
+				error: "Address not found",
+				message: "address not found, please make sure this user already have a coinbase account",
+			}, 400);
 		}
 
 		const settleResult = await x402Workflow(c, payTo, atomicAmount, "USDC Transfer By Twitter Account");
@@ -235,6 +239,6 @@ export async function apiTransferByTid(c: ExtCtx) {
 	} catch (err: any) {
 		if (err instanceof PaymentRequiredError) return c.json({error: "Required"}, 402);
 		console.error("[Transfer By Twitter Account Error]", err);
-		return c.json({error: "Transfer By Twitter Account Error", detail: err?.message}, 500);
+		return c.json({success: false, error: "Transfer By Twitter Account Error", message: err?.message}, 500);
 	}
 }

@@ -1,0 +1,370 @@
+/* 基础容器 */
+.buy-usdc-container {
+    padding: 20px;
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: #f5f8fa;
+}
+
+/* 头部 */
+.buy-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.buy-header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    color: #14171a;
+}
+
+.button-back {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.button-back:hover {
+    background: rgba(29, 155, 240, 0.1);
+}
+
+/* 购买信息卡片 */
+.buy-info-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e1e8ed;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+}
+
+.info-row:not(:last-child) {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.info-label {
+    font-size: 14px;
+    color: #657786;
+    font-weight: 500;
+}
+
+.info-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #14171a;
+}
+
+.info-value.mono {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+/* 金额选择 */
+.amount-selector {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.amount-selector h3 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+    color: #14171a;
+}
+
+.amount-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.amount-btn {
+    padding: 20px;
+    background: #fff;
+    border: 2px solid #e1e8ed;
+    border-radius: 12px;
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #14171a;
+}
+
+.amount-btn.selected {
+    border-color: rgb(29, 155, 240);
+    background: rgba(29, 155, 240, 0.1);
+    color: rgb(29, 155, 240);
+    box-shadow: 0 2px 8px rgba(29, 155, 240, 0.2);
+}
+
+.amount-btn:hover {
+    border-color: rgb(29, 155, 240);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.custom-amount {
+    margin-top: 20px;
+}
+
+.custom-amount label {
+    display: block;
+    font-size: 14px;
+    color: #657786;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.custom-amount input {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #e1e8ed;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.custom-amount input:focus {
+    outline: none;
+    border-color: rgb(29, 155, 240);
+    box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.1);
+}
+
+/* 特性说明 */
+.features {
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+}
+
+.feature-item:not(:last-child) {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.feature-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.feature-text {
+    font-size: 15px;
+    font-weight: 500;
+    color: #14171a;
+}
+
+/* 购买按钮 */
+.btn-buy-now {
+    width: 100%;
+    padding: 18px;
+    background: rgb(29, 155, 240);
+    color: #fff;
+    border: none;
+    border-radius: 9999px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(29, 155, 240, 0.3);
+}
+
+.btn-buy-now:hover {
+    background: rgb(26, 140, 216);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(29, 155, 240, 0.4);
+}
+
+.btn-buy-now:active {
+    transform: translateY(0);
+}
+
+/* 说明文字 */
+.disclaimer {
+    text-align: center;
+    margin-top: 24px;
+    padding: 16px;
+}
+
+.disclaimer p {
+    font-size: 13px;
+    color: #657786;
+    margin: 8px 0;
+}
+
+/* Dashboard 按钮样式 */
+.buy-usdc-banner {
+    margin: 16px;
+}
+
+.btn-buy-usdc {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-buy-usdc:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-buy-usdc:active {
+    transform: translateY(0);
+}
+
+.buy-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.buy-text {
+    flex: 1;
+    text-align: left;
+    margin-left: 12px;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.buy-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* Loading 样式 */
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+#loading-content {
+    text-align: center;
+}
+
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid rgb(29, 155, 240);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 12px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-message {
+    color: #657786;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* 通知样式 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 16px 24px;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    font-size: 14px;
+    font-weight: 500;
+    max-width: 300px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.notification.hidden {
+    display: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+    .buy-usdc-container {
+        padding: 16px;
+    }
+    
+    .amount-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .btn-buy-usdc {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .buy-text {
+        margin-left: 0;
+    }
+}

@@ -1254,3 +1254,54 @@ input.category-input:focus {
 .tc-link-button:hover {
     text-decoration: underline;
 }
+
+/* Buy USDC Banner */
+.buy-usdc-banner {
+    margin: 16px;
+}
+
+.btn-buy-usdc {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-buy-usdc:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-buy-usdc:active {
+    transform: translateY(0);
+}
+
+.buy-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.buy-text {
+    flex: 1;
+    text-align: left;
+    margin-left: 12px;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.buy-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}

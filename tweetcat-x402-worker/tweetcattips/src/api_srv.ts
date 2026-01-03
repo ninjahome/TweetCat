@@ -4,7 +4,8 @@ import {apiHandleTip, apiTransferByTid, apiX402UsdcTransfer} from "./api_srv_x40
 import {
 	testQueryUserDetails, apiValidateUser,
 	apiQueryValidRewards, apiClaimReward,
-	apiQueryRewardHistory, apiQueryPlatformFees
+	apiQueryRewardHistory, apiQueryPlatformFees,
+	apiCreateOnrampSession, apiOnrampWebhook
 } from "./api_srv_usr";
 
 export function registerSrv(app: Hono<ExtendedEnv>) {
@@ -17,4 +18,6 @@ export function registerSrv(app: Hono<ExtendedEnv>) {
 	app.get("/rewards/query_history", apiQueryRewardHistory);
 	app.get("/fees/query_history", apiQueryPlatformFees);
 	app.post("/user/transfer_by_twitter", apiTransferByTid);
+	app.post("/onramp/create_session", apiCreateOnrampSession);
+	app.post("/onramp/webhook", apiOnrampWebhook);
 }
