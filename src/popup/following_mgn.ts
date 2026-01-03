@@ -32,6 +32,7 @@ import {SnapshotV1} from "../common/msg_obj";
 import {loadWallet} from "../wallet/wallet_api";
 import {getManifest, updateFollowingSnapshot} from "../wallet/ipfs_manifest";
 import {openPasswordModal} from "./password_modal";
+import {getEOA} from "../wallet/cdp_wallet";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -278,18 +279,12 @@ function bindEvents() {
 
     document.addEventListener("keydown", handleGlobalKeydown);
 
-    exportIpfsBtn?.addEventListener("click", async () => {
-        const w = await loadWallet();
-        if (!w) {
-            showAlert(t('tips_title'), t('wallet_error_no_wallet'))
-            return
-        }
-
-        await handleExportSnapshotToIpfs(w.address, (cid) => {
+    exportIpfsBtn.onclick=async ()=>{
+        await handleExportSnapshotToIpfs( (cid) => {
             latestSnapshotCid = cid;
             updateIpfsLatestUI();
         });
-    });
+    }
 
     ipfsLatestOpenBtn?.addEventListener("click", () => {
         if (!latestSnapshotCid) return;
@@ -1366,10 +1361,8 @@ async function loadLatestSnapshotCid(walletAddress: string): Promise<void> {
 
 
 async function handleExportSnapshotToIpfs(
-    walletAddress: string,
     onSuccess?: (cid: string) => void
 ): Promise<void> {
-    const wallet = walletAddress.toLowerCase();
     let settings: any;
     let password: string | undefined;
 
@@ -1408,6 +1401,12 @@ async function handleExportSnapshotToIpfs(
 
         const {createdAt, ...snapshotCore} = snapshot;
 
+        const w = await getEOA();
+        if (!w) {
+            showAlert(t('tips_title'), t('wallet_error_no_wallet'))
+            return
+        }
+        const wallet = w.address.toLowerCase();
         const snapshotCid = await uploadJson(settings, snapshotCore, wallet, password);
         showNotification(t("ipfs_snapshot_uploaded_copied", snapshotCid), "info");
         onSuccess?.(snapshotCid);
