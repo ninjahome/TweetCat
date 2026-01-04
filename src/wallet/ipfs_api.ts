@@ -265,7 +265,7 @@ export async function uploadJson(settings: IpfsSettings, obj: any, wallet: strin
         }, 30_000);
         if (!resp.ok) {
             const respJson = await resp.json()
-            const errMsg= respJson?.details || respJson?.error||""
+            const errMsg = respJson?.details || respJson?.error || ""
             throw new Error(`Lighthouse 上传失败: HTTP ${resp.status} ${errMsg}`);
         }
         const data = await resp.json();
@@ -351,12 +351,12 @@ export async function uploadFile(file: File, password?: string): Promise<string>
     return ipfsAddBytes(new Uint8Array(buffer), {wrapWithDirectory: false}, auth);
 }
 
-async function tryFetch(url: string): Promise<Uint8Array> {
+async function tryFetch(url: string): Promise<any> {
     const resp = await fetchWithTimeout(url, {}, 15_000);
     if (!resp.ok) {
         throw new Error(`HTTP ${resp.status}`);
     }
-    return await readResponseAsBytes(resp);
+    return await resp.json();
 }
 
 async function catFromNode(cid: string, settings: IpfsSettings | null): Promise<Uint8Array> {
@@ -380,60 +380,26 @@ async function catFromNode(cid: string, settings: IpfsSettings | null): Promise<
     return result;
 }
 
-export async function download(cid: string): Promise<Uint8Array> {
+export async function download(cid: string): Promise<any> {
     if (!cid) throw new Error('CID 不能为空');
     const settings = await ensureSettings();
-    const provider = settings?.provider ?? PROVIDER_TYPE_CUSTOM;
-    const triedErrors: string[] = [];
+    if (!settings) return await tryFetch(`https://ipfs.io/ipfs/${cid}`);
 
-    const pushError = (err: Error) => {
-        triedErrors.push(err.message);
-    };
+    const provider = settings?.provider ?? PROVIDER_TYPE_CUSTOM;
 
     if (provider === PROVIDER_TYPE_TWEETCAT) {
-        try {
-            return await tryFetch(`${TWEETCAT_PINATA.GATEWAY}/${cid}`);
-        } catch (err) {
-            pushError(err as Error);
-        }
-    }
-
-    if (provider === PROVIDER_TYPE_PINATA) {
-        try {
-            return await tryFetch(`${PINATA_GATEWAY}/${cid}`);
-        } catch (err) {
-            pushError(err as Error);
-        }
+        return await tryFetch(`${TWEETCAT_PINATA.GATEWAY}/${cid}`);
+    } else if (provider === PROVIDER_TYPE_PINATA) {
+        return await tryFetch(`${PINATA_GATEWAY}/${cid}`);
     } else if (provider === PROVIDER_TYPE_LIGHTHOUSE) {
-        try {
-            return await tryFetch(`${LIGHTHOUSE_GATEWAY}/${cid}`);
-        } catch (err) {
-            pushError(err as Error);
-        }
+        return await tryFetch(`${LIGHTHOUSE_GATEWAY}/${cid}`);
     } else if (provider === PROVIDER_TYPE_CUSTOM) {
         if (settings?.custom?.gatewayUrl) {
-            try {
-                return await tryFetch(sanitizeGateway(settings.custom.gatewayUrl, cid));
-            } catch (err) {
-                pushError(err as Error);
-            }
+            return await tryFetch(sanitizeGateway(settings.custom.gatewayUrl, cid));
         }
-        try {
-            return await catFromNode(cid, settings);
-        } catch (err) {
-            pushError(err as Error);
-        }
+        return await catFromNode(cid, settings);
     }
-
-    for (const builder of PUBLIC_GATEWAYS) {
-        try {
-            return await tryFetch(builder(cid));
-        } catch (err) {
-            pushError(err as Error);
-        }
-    }
-
-    throw new Error(`下载失败：${triedErrors.join('；')}`);
+    return await tryFetch(`https://ipfs.io/ipfs/${cid}`);
 }
 
 export async function buildGatewayUrls(cid: string): Promise<string[]> {

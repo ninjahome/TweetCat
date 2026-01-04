@@ -534,6 +534,12 @@
   "ipfs_latest_copy_cid": {
     "message": "Copy CID"
   },
+  "ipfs_sync_data": {
+    "message": "Sync From IPFS"
+  },
+  "ipfs_confirm_sync_from_ipfs_overwrite": {
+    "message": "Are you sure you want to use IPFS data to overwrite local data?"
+  },
   "category_delete_tooltip": {
     "message": "Delete category"
   },
@@ -1172,5 +1178,50 @@
   },
   "register_account_error": {
     "message": "Please ensure the recipient has a linked Coinbase account."
+  },
+  "ipfs_sync_step_downloading": {
+    "message": "Downloading snapshot from IPFS..."
+  },
+  "ipfs_sync_step_clearing_categories": {
+    "message": "Clearing old categories..."
+  },
+  "ipfs_sync_step_importing_categories": {
+    "message": "Importing new categories..."
+  },
+  "ipfs_sync_step_updating_assignments": {
+    "message": "Updating category assignments..."
+  },
+  "ipfs_sync_step_refreshing": {
+    "message": "Refreshing data..."
+  },
+  "ipfs_sync_success": {
+    "message": "Data synchronized successfully"
+  },
+  "ipfs_sync_success_with_count": {
+    "message": "Data synchronized: $1 followings updated"
+  },
+  "ipfs_sync_failed": {
+    "message": "Failed to synchronize from IPFS"
+  },
+  "ipfs_invalid_snapshot_data": {
+    "message": "Invalid snapshot data"
+  },
+  "ipfs_invalid_snapshot_format": {
+    "message": "Invalid snapshot format: missing categories or assignments"
+  },
+  "resetting_local_data": {
+    "message": "Resetting local data..."
+  },
+  "creating_new_following": {
+    "message": "Processing followings..."
+  },
+  "ipfs_looking_for_snapshot": {
+    "message": "Looking for IPFS snapshot..."
+  },
+  "ipfs_no_available_gateway": {
+    "message": "No available IPFS gateways"
+  },
+  "ipfs_open_snapshot_failed": {
+    "message": "Failed to open snapshot"
   }
 }

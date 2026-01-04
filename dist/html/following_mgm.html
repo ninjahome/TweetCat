@@ -47,6 +47,10 @@
                                         class="ipfs-latest-copy-btn" disabled>
                                     Copy CID
                                 </button>
+                                <button id="ipfs-latest-sync" type="button"
+                                        class="ipfs-latest-copy-btn ipfs-latest-sync-btn hidden" disabled>
+                                    Sync From IPFS
+                                </button>
 
                             </div>
                         </div>
@@ -224,6 +228,17 @@
         <h3 id="alert-title">__MSG_alert_title__</h3>
         <p id="alert-message">__MSG_alert_message__</p>
         <button id="alert-ok">__MSG_ok__</button>
+    </div>
+</div>
+
+
+<div id="confirm-popup" style="display: none">
+    <div class="popup-content">
+        <p id="confirm-message" class="confirm-message">__MSG_confirm_message__</p>
+        <div class="button-row">
+            <button id="btn-cancel" class="btn-cancel">__MSG_cancel__</button>
+            <button id="btn-ok" class="btn-ok">__MSG_confirm__</button>
+        </div>
     </div>
 </div>
 

@@ -19,8 +19,8 @@ import {FollowingUser, removeLocalFollowings, replaceFollowingsPreservingCategor
 import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
-import {$Id, hideLoading, showAlert, showLoading, showNotification} from "./common";
-import {buildGatewayUrls, ensureSettings, LIGHTHOUSE_GATEWAY, unpinCid, uploadJson} from "../wallet/ipfs_api";
+import {$Id, hideLoading, showAlert, showConfirm, showLoading, showNotification} from "./common";
+import {buildGatewayUrls, download, ensureSettings, LIGHTHOUSE_GATEWAY, unpinCid, uploadJson} from "../wallet/ipfs_api";
 import {
     ERR_LOCAL_IPFS_HANDOFF,
     PROVIDER_TYPE_CUSTOM,
@@ -114,6 +114,7 @@ let exportIpfsBtn: HTMLButtonElement | null;
 let ipfsLatestCidSpan: HTMLSpanElement | null;
 let ipfsLatestOpenBtn: HTMLButtonElement | null;
 let ipfsLatestCopyBtn: HTMLButtonElement | null;
+let ipfsLatestSyncBtn: HTMLButtonElement | null = null;
 let latestSnapshotCid: string | null = null;
 
 // ===== DOM 初始化封装 =====
@@ -203,6 +204,11 @@ function initDomRefs(): void {
     ipfsLatestCopyBtn = $Id("ipfs-latest-copy") as HTMLButtonElement | null;
     if (ipfsLatestCopyBtn) {
         ipfsLatestCopyBtn.textContent = t("ipfs_latest_copy_cid");
+    }
+
+    ipfsLatestSyncBtn = $Id("ipfs-latest-sync") as HTMLButtonElement | null;
+    if (ipfsLatestSyncBtn) {
+        ipfsLatestSyncBtn.textContent = t("ipfs_sync_data");
     }
 
     const processingText = $Id("processing-overlay-text") as HTMLSpanElement | null;
@@ -297,6 +303,82 @@ function bindEvents() {
             .then(() => showNotification("CID 已复制到剪贴板", "info"))
             .catch(() => showNotification("复制失败，请手动复制", "error"));
     });
+
+    ipfsLatestSyncBtn?.addEventListener("click", handleSyncFromIpfsClick);
+}
+
+async function handleSyncFromIpfsClick() {
+    if (!latestSnapshotCid) return;
+
+    if (!(await showConfirm(t("ipfs_confirm_sync_from_ipfs_overwrite")))) return;
+
+    try {
+        showLoading(t("syncing"))
+        const jsonObj = await download(latestSnapshotCid)
+        console.log(jsonObj)
+
+        if (!jsonObj || typeof jsonObj !== 'object') {
+            showNotification(t("ipfs_invalid_snapshot_data") || 'Invalid snapshot data')
+            return
+        }
+
+        const {version, categories: importedCategories, assignments: importedAssignments} = jsonObj as any;
+
+        if (!Array.isArray(importedCategories) || !Array.isArray(importedAssignments)) {
+            showNotification(t("ipfs_invalid_snapshot_format") || 'Invalid snapshot format: missing categories or assignments');
+            return
+        }
+
+        showLoading(t("resetting_local_data"))
+
+        for (const cat of categories) {
+            if (cat.id) {
+                await removeCategory(cat.id);
+            }
+        }
+
+        // 2. 添加新分类，并建立 ID 映射
+        const newCatMap = new Map<number, number>(); // 映射导入分类 ID 到新分类 ID
+        for (const importedCat of importedCategories) {
+            const newCat = new Category(importedCat.name || importedCat.catName);
+            const newId = await databaseAddItem(__tableCategory, newCat);
+            newCatMap.set(importedCat.id, Number(newId));
+        }
+
+        showLoading(t("creating_new_following"))
+
+        // 3. 获取所有现有的 followings，并建立 userId 到 assignment 的映射
+        const allFollowings = await fetchFollowings();
+        const userIdToAssignment = new Map<string, any>();
+        for (const assignment of importedAssignments) {
+            if (assignment.userId) {
+                userIdToAssignment.set(assignment.userId, assignment);
+            }
+        }
+
+        // 4. 更新所有 followings 的分类信息
+        for (const following of allFollowings) {
+            const assignment = userIdToAssignment.get(following.userId);
+            if (assignment && assignment.categoryId) {
+                // 使用新分类 ID
+                following.categoryId = newCatMap.get(assignment.categoryId) || null;
+            } else {
+                following.categoryId = null;
+            }
+            await databaseUpdateOrAddItem(__tableFollowings, following);
+        }
+
+        showNotification(t("ipfs_sync_success") || "Data synchronized successfully", "info");
+        selectedKeys.clear();
+        await refreshData();
+
+    } catch (e) {
+        const err = e as Error;
+        showNotification(err.message ?? (t("ipfs_sync_failed") || "Failed to synchronize from IPFS"), "error");
+        console.warn("------>>> handleSyncFromIpfsClick failed", e);
+    } finally {
+        hideLoading()
+    }
 }
 
 function openModal(modal: HTMLElement | null) {
@@ -1448,39 +1530,19 @@ function updateIpfsLatestUI(): void {
     if (ipfsLatestCopyBtn) {
         ipfsLatestCopyBtn.disabled = !hasCid;
     }
-}
 
-async function openSnapshotInGateway(cid: string): Promise<void> {
-    try {
-        showLoading("正在寻找 IPFS 快照…");
-        const canUseIpfsIo = await canReachViaIpfsIo(cid, 3000);
-
-        if (canUseIpfsIo) {
-            const url = `https://ipfs.io/ipfs/${cid}`;
-            window.open(url, "_blank");
-            return;
-        }
-        const lighthouseUrl = `${LIGHTHOUSE_GATEWAY}/${cid}`
-        window.open(lighthouseUrl, "_blank");
-    } catch (err) {
-        console.error("[IPFS] openSnapshotInGateway failed", err);
-        const urls = await buildGatewayUrls(cid);
-        if (urls.length === 0) {
-            return;
-        }
-        window.open(urls[0], "_blank");
-    } finally {
-        hideLoading();
+    if (ipfsLatestSyncBtn) {
+        ipfsLatestSyncBtn.disabled = !hasCid;
+        ipfsLatestSyncBtn.classList.toggle("hidden", !hasCid);
     }
 }
 
-
-async function canReachViaIpfsIo(cid: string, timeoutMs: number = 3000): Promise<boolean> {
+async function canReachGateway(url: string, timeoutMs: number = 5000): Promise<boolean> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-        const resp = await fetch(`https://ipfs.io/ipfs/${cid}`, {
+        const resp = await fetch(url, {
             method: "HEAD",
             signal: controller.signal,
         });
@@ -1489,6 +1551,39 @@ async function canReachViaIpfsIo(cid: string, timeoutMs: number = 3000): Promise
         return false;
     } finally {
         clearTimeout(timer);
+    }
+}
+
+async function openSnapshotInGateway(cid: string): Promise<void> {
+    try {
+        showLoading(t("ipfs_looking_for_snapshot"));
+        
+        // 获取所有网关列表（已按优先级排序）
+        const gatewayUrls = await buildGatewayUrls(cid);
+        
+        if (gatewayUrls.length === 0) {
+            showNotification(t("ipfs_no_available_gateway") || "No available gateways", "error");
+            return;
+        }
+        
+        // 依次测试每个网关的可达性
+        let reachableUrl: string | null = null;
+        for (const url of gatewayUrls) {
+            if (await canReachGateway(url, 5000)) {
+                reachableUrl = url;
+                break;
+            }
+        }
+        
+        // 打开第一个可达的网关，如果都不可达就打开第一个 URL（网络问题交给浏览器处理）
+        const urlToOpen = reachableUrl || gatewayUrls[0];
+        window.open(urlToOpen, "_blank");
+        
+    } catch (err) {
+        console.error("[IPFS] openSnapshotInGateway failed", err);
+        showNotification(t("ipfs_open_snapshot_failed") || "Failed to open snapshot", "error");
+    } finally {
+        hideLoading();
     }
 }
 

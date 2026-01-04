@@ -534,6 +534,12 @@
   "ipfs_latest_copy_cid": {
     "message": "复制 CID"
   },
+  "ipfs_sync_data": {
+    "message": "同步IPFS数据"
+  },
+  "ipfs_confirm_sync_from_ipfs_overwrite": {
+    "message": "确认使用 IPFS 数据覆盖本地数据吗？"
+  },
   "category_delete_tooltip": {
     "message": "删除分类"
   },
@@ -1172,6 +1178,51 @@
   },
   "register_account_error": {
     "message": "请确保接收方已关联 Coinbase 账户。"
+  },
+  "ipfs_sync_step_downloading": {
+    "message": "从 IPFS 下载快照中..."
+  },
+  "ipfs_sync_step_clearing_categories": {
+    "message": "清除旧分类中..."
+  },
+  "ipfs_sync_step_importing_categories": {
+    "message": "导入新分类中..."
+  },
+  "ipfs_sync_step_updating_assignments": {
+    "message": "更新分类关联中..."
+  },
+  "ipfs_sync_step_refreshing": {
+    "message": "刷新数据中..."
+  },
+  "ipfs_sync_success": {
+    "message": "数据同步成功"
+  },
+  "ipfs_sync_success_with_count": {
+    "message": "数据已同步：$1 个账户已更新"
+  },
+  "ipfs_sync_failed": {
+    "message": "从 IPFS 同步失败"
+  },
+  "ipfs_invalid_snapshot_data": {
+    "message": "无效的快照数据"
+  },
+  "ipfs_invalid_snapshot_format": {
+    "message": "无效的快照格式：缺少分类或分配信息"
+  },
+  "resetting_local_data": {
+    "message": "重置本地数据中..."
+  },
+  "creating_new_following": {
+    "message": "处理账户关系中..."
+  },
+  "ipfs_looking_for_snapshot": {
+    "message": "正在寻找 IPFS 快照..."
+  },
+  "ipfs_no_available_gateway": {
+    "message": "没有可用的 IPFS 网关"
+  },
+  "ipfs_open_snapshot_failed": {
+    "message": "打开快照失败"
   }
 }
 

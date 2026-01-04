@@ -322,6 +322,7 @@ body.modal-open {
     cursor: default;
 }
 
+.ipfs-latest-sync-btn { margin-left: 6px; }
 /* 小屏幕时 toolbar 竖排 */
 @media (max-width: 900px) {
     .toolbar {
