@@ -20,7 +20,7 @@ import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
 import {$Id, hideLoading, showAlert, showConfirm, showLoading, showNotification} from "./common";
-import {buildGatewayUrls, download, ensureSettings, LIGHTHOUSE_GATEWAY, unpinCid, uploadJson} from "../wallet/ipfs_api";
+import {buildGatewayUrls, download, ensureSettings, unpinCid, uploadJson} from "../wallet/ipfs_api";
 import {
     ERR_LOCAL_IPFS_HANDOFF,
     PROVIDER_TYPE_CUSTOM,

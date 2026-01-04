@@ -59,15 +59,6 @@ function assertPassword(password?: string): asserts password is string {
         throw new Error('需要输入口令以解密凭据');
     }
 }
-
-async function readResponseAsBytes(resp: Response): Promise<Uint8Array> {
-    if (!resp.ok) {
-        throw new Error(`下载失败: HTTP ${resp.status}`);
-    }
-    const buffer = await resp.arrayBuffer();
-    return new Uint8Array(buffer);
-}
-
 async function pinataHeaders(settings: IpfsSettings | null, password?: string): Promise<Record<string, string>> {
     if (!settings || settings.provider !== PROVIDER_TYPE_PINATA || !settings.pinata) {
         throw new Error('尚未配置 Pinata 凭据');
