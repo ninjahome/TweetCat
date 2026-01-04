@@ -40,7 +40,7 @@ button {
 
 .btn-mgn-category,
 .btn-create-wallet {
-    padding: 16px;
+    padding: 14px 16px;
     width: 100%;
     border-radius: 9999px;
     background-color: #1d9bf0;
@@ -50,6 +50,11 @@ button {
     border: 0;
     cursor: pointer;
     margin-top: 16px;
+}
+/* Rewards: zero value -> gray */
+.rewards-count.is-zero,
+.rewards-amount.is-zero {
+    color: #9ca3af; /* gray */
 }
 
 .btn-create-wallet {
@@ -91,21 +96,23 @@ button {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    background-color: rgba(255, 193, 7, 0.1);
+    background-color: #fff;
+    border: 1px solid rgba(161, 164, 168, 0.2);
     border-radius: 16px;
-    padding: 16px;
 }
 
 .rewards-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    border-bottom: 1px solid rgba(161, 164, 168, 0.2);
+    padding: 12px 16px;
 }
 
 .rewards-title {
     font-size: 14px;
-    font-weight: 600;
-    color: #f59e0b;
+    font-weight: 500;
+    color: #5b7083;
 }
 
 .rewards-content {
@@ -123,7 +130,7 @@ button {
 
 .rewards-label {
     color: #5b7083;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 400;
 }
 
@@ -131,9 +138,21 @@ button {
 .rewards-amount {
     font-size: 18px;
     font-weight: 600;
-    color: #f59e0b;
+    color: #FF4646;
+    background-color: rgba(255, 70, 70, 0.2);
+    margin-top: 4px;
+    padding: 4px 18px;
+    border-radius: 999px;
 }
-
+.rewards-amount {
+    font-size: 18px;
+    font-weight: 600;
+    margin-top: 4px;
+    color: #FFB900;
+    background-color: rgba(255, 185, 0, 0.2);
+    padding: 4px 18px;
+    border-radius: 999px;
+}
 .wallet-summary {
     display: flex;
     flex-direction: column;
@@ -178,7 +197,33 @@ button {
     font-weight: 600;
     margin-top: 4px;
 }
+.rewards-content {
+    display: flex;
+    gap: 0;              /* 原来是 16px */
+    position: relative;  /* 给伪元素定位用 */
+    padding: 8px 16px;
+}
 
+.rewards-content::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 6px;            /* 竖线不顶到边，可按需调 */
+    bottom: 6px;
+    width: 1px;
+    transform: translateX(-0.5px);
+    background:  #e5e7eb; /* 灰色 */
+    pointer-events: none;
+}
+
+/* 让左右两列与竖线保持间距 */
+.rewards-item:first-child {
+    padding-right: 16px;
+}
+
+.rewards-item:last-child {
+    padding-left: 16px;
+}
 .wallet-actions button {
     width: 100%;
     padding: 16px 0;
@@ -239,6 +284,10 @@ button {
 .settings-actions {
     display: flex;
     gap: 8px;
+}
+/* USDT: zero value -> gray (override inline color) */
+.wallet-usdt-value.is-zero {
+    color: #9ca3af !important;
 }
 
 .settings-actions button {
