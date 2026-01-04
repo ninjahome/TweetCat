@@ -154,6 +154,10 @@ http://127.0.0.1:8787/tip?payTo=0xE400dfed2E03D5AFE012cCB4b4cAa74bfdB5A257&amoun
 
 
 ## database
-	-wrangler d1 execute tweetcat_db_test --file=tip_escrow.sql --remote  --env dev
-
-	-wrangler d1 execute tweetcat_db --file=tip_escrow.sql --remote
+	-wrangler d1 execute tweetcat_db_test --file=a.sql --remote  --env dev
+	-wrangler d1 execute tweetcat_db --file=a.sql --remote
+	-npx wrangler secret put CDP_WALLET_SECRET --env dev
+	-SELECT name, type, sql
+	FROM sqlite_master
+	WHERE tbl_name = 'user_rewards'
+	ORDER BY type, name;

@@ -1,4 +1,4 @@
-import {cdpFetch, ExtCtx, getOrCreateTreasuryEOA, isHexAddress, toFiat2dp} from "./common";
+import {cdpFetch, ExtCtx, getCdpClient, getOrCreateTreasuryEOA, isHexAddress, toFiat2dp} from "./common";
 import {
 	createKolBinding,
 	getKolBindingByUserId,
@@ -51,6 +51,20 @@ function parseXAuthEndUserSnapshot(validationResult: any): ValidatedUserInfo {
 	}
 }
 
+async function foundUser(c: ExtCtx, usr: ValidatedUserInfo) {
+	const cfg = c.get("cfg");
+	if (cfg.NETWORK !== "eip155:84532") return
+
+	const cdp = getCdpClient(c.env)
+	const usdcFaucetResponse = await cdp.evm.requestFaucet({
+		address: usr.walletAddress,
+		network: "base-sepolia",
+		token: "usdc"
+	});
+
+	console.log("fund user " + usr.walletAddress + " on base-sepolia" + " tx:" + usdcFaucetResponse.transactionHash)
+}
+
 export async function apiValidateUser(c: ExtCtx) {
 
 	const body = await c.req.json().catch(() => ({}));
@@ -75,6 +89,8 @@ export async function apiValidateUser(c: ExtCtx) {
 		}
 
 		await createKolBinding(c.env.DB, userInfo);
+
+		await foundUser(c, userInfo)
 
 		return c.json({success: true, isNewUser: true});
 	} catch (err: any) {
@@ -265,13 +281,13 @@ export async function apiQueryPlatformFees(c: ExtCtx) {
 export async function apiCreateOnrampSession(c: ExtCtx) {
 	try {
 		const body = await c.req.json().catch(() => ({}));
-		const { destination_address, amount } = body;
+		const {destination_address, amount} = body;
 
-		if (!destination_address) return c.json({ error: "Missing destination_address" }, 400);
-		if (!isHexAddress(destination_address)) return c.json({ error: "Invalid EVM address" }, 400);
+		if (!destination_address) return c.json({error: "Missing destination_address"}, 400);
+		if (!isHexAddress(destination_address)) return c.json({error: "Invalid EVM address"}, 400);
 		const paymentAmount = toFiat2dp(amount);
-		if(!paymentAmount){
-			return c.json({ error: "Invalid amount" }, 400);
+		if (!paymentAmount) {
+			return c.json({error: "Invalid amount"}, 400);
 		}
 
 		// Cloudflare 上尽量用 cf-connecting-ip
@@ -299,21 +315,21 @@ export async function apiCreateOnrampSession(c: ExtCtx) {
 
 		if (!resp.ok) {
 			console.error("[Onramp Session Error]", resp.data);
-			return c.json({ error: "Failed to create onramp session", detail: resp.data }, 500);
+			return c.json({error: "Failed to create onramp session", detail: resp.data}, 500);
 		}
 
 		const onrampUrl = resp.data?.session?.onrampUrl;
 		if (!onrampUrl) {
-			return c.json({ error: "No onrampUrl returned", detail: resp.data }, 500);
+			return c.json({error: "No onrampUrl returned", detail: resp.data}, 500);
 		}
 
 		return c.json({
 			success: true,
-			data: { onrampUrl },
+			data: {onrampUrl},
 		});
 	} catch (err: any) {
 		console.error("[Create Onramp Session Error]", err);
-		return c.json({ error: "Internal Server Error", detail: err?.message }, 500);
+		return c.json({error: "Internal Server Error", detail: err?.message}, 500);
 	}
 }
 

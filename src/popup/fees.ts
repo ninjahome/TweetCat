@@ -99,7 +99,11 @@ async function initFeesPage() {
     const backBtn = document.getElementById("fees-back-btn");
     if (backBtn) {
         backBtn.addEventListener("click", () => {
-            window.history.back();
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.close();
+            }
         });
     }
 
@@ -212,7 +216,7 @@ function updateSummary(fees: PlatformFee[]) {
     const totalCountEl = document.getElementById("total-count");
 
     if (totalFeesEl) {
-        totalFeesEl.textContent = (totalFee >= 0.01 ? totalFee.toFixed(2) : totalFee.toFixed(6)) + " USDC";
+        totalFeesEl.textContent = totalFee.toFixed(4) + " USDC";
     }
 
     if (avgFeeRateEl) {
@@ -295,14 +299,14 @@ function createFeeItem(fee: PlatformFee): HTMLElement {
     const grossAmount = Number(fee.gross_amount) / 1e6;
     const grossField = createField(
     t('fees_field_gross') || "Gross", 
-        (grossAmount >= 0.01 ? grossAmount.toFixed(2) : grossAmount.toFixed(6)) + " USDC"
+        grossAmount.toFixed(4) + " USDC"
     );
     grid.appendChild(grossField);
 
     const feeAmount = Number(fee.fee_amount) / 1e6;
     const feeField = createField(
         t('fees_field_fee') || "Fee", 
-        (feeAmount >= 0.01 ? feeAmount.toFixed(2) : feeAmount.toFixed(6)) + " USDC"
+        feeAmount.toFixed(4) + " USDC"
     );
     feeField.querySelector(".fee-field-value")?.classList.add("fee-highlight");
     grid.appendChild(feeField);
@@ -310,7 +314,7 @@ function createFeeItem(fee: PlatformFee): HTMLElement {
     const netAmount = Number(fee.net_amount) / 1e6;
     const netField = createField(
         t('fees_field_net') || "Net", 
-        (netAmount >= 0.01 ? netAmount.toFixed(2) : netAmount.toFixed(6)) + " USDC"
+        netAmount.toFixed(4) + " USDC"
     );
     netField.querySelector(".fee-field-value")?.classList.add("success-text");
     grid.appendChild(netField);

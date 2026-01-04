@@ -127,7 +127,7 @@ export async function createKolBinding(
 	const moveEscrowToRewards = db.prepare(`
 		INSERT INTO user_rewards (cdp_user_id, asset_symbol, amount_atomic, status, reason)
 		SELECT kb.cdp_user_id,
-			   '${CURRENCY_SYMBOL_USDC}',
+			   ?,
 			   te.amount_atomic,
 			   ${REWARD_STATUS_PENDING},
 			   'Tips rewards'
@@ -140,7 +140,7 @@ export async function createKolBinding(
 		UPDATE SET
 			amount_atomic = CAST (CAST (user_rewards.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER) AS TEXT),
 			updated_at = CURRENT_TIMESTAMP
-	`).bind(userInfo.xSub, TIP_RECORD_PENDING);
+	`).bind(CURRENCY_SYMBOL_USDC, userInfo.xSub, TIP_RECORD_PENDING);
 
 	// 3. 统一更新状态
 	// 注意：即便 moveEscrowToRewards 没找到数据（即没有待领取打赏），这条 UPDATE 也只是执行成功但影响行数为 0，不会报错
