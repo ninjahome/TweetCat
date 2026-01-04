@@ -100,7 +100,9 @@ button {
     border: 1px solid rgba(161, 164, 168, 0.2);
     border-radius: 16px;
 }
-
+.rewards-summary:hover {
+    background-color: rgba(161, 164, 168, 0.1);
+}
 .rewards-header {
     display: flex;
     align-items: center;

@@ -1,27 +1,23 @@
 /* 基础容器 */
 .fees-container {
-    padding: 16px;
-    max-width: 100%;
-    min-height: 100vh;
-    background: #f5f8fa;
+    max-width: 800px;
+    margin: 32px auto;
+    padding: 16px 32px;
+    border: 1px solid rgb(239, 243, 244);
+    border-radius: 16px;
 }
 
 /* 头部 */
 .fees-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
-    background: #fff;
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    gap: 4px;
+    border-bottom: 1px solid rgb(239, 243, 244);
 }
 
 .fees-header h1 {
     font-size: 20px;
     font-weight: 600;
-    margin: 0;
     color: #14171a;
 }
 
@@ -45,8 +41,8 @@
 .fees-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 16px;
+    margin: 16px 0;
 }
 
 .summary-item {
@@ -54,14 +50,12 @@
     padding: 16px;
     border-radius: 12px;
     text-align: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border: 1px solid #e1e8ed;
     transition: all 0.2s;
 }
 
 .summary-item:hover {
-    box-shadow: 0 2px 8px rgba(29, 155, 240, 0.15);
-    border-color: rgb(29, 155, 240);
+    background-color: rgba(15, 20, 25, 0.03);
 }
 
 .summary-label {
@@ -79,13 +73,17 @@
     font-weight: 700;
     color: rgb(29, 155, 240);
 }
-
+.summary-value-free {
+    color: #FFB900 !important
+}
+.summary-value-count{
+    color: #03CBAD !important
+}
 /* 费用列表 */
 .fees-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 16px;
 }
 
 .fee-item {
@@ -95,13 +93,10 @@
     padding: 16px;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .fee-item:hover {
-    border-color: rgb(29, 155, 240);
-    box-shadow: 0 2px 8px rgba(29, 155, 240, 0.15);
-    transform: translateY(-2px);
+    background-color: rgba(161, 164, 168, 0.1);
 }
 
 .fee-item-header {
@@ -154,11 +149,11 @@
 }
 
 .fee-highlight {
-    color: #ff9800 !important;
+    color: #FFB900 !important;
 }
 
 .success-text {
-    color: #4caf50 !important;
+    color: #03CBAD !important;
 }
 
 /* 分页 */
@@ -167,11 +162,9 @@
     justify-content: center;
     align-items: center;
     gap: 16px;
-    margin-top: 20px;
     padding: 16px;
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .btn-page {
@@ -211,7 +204,7 @@
     padding: 80px 20px;
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
 }
 
 .empty-state p {
@@ -247,7 +240,6 @@
     width: 90%;
     max-height: 80vh;
     overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     animation: slideUp 0.3s ease-out;
 }
 
@@ -366,7 +358,6 @@
 .btn-primary:hover {
     background: rgb(26, 140, 216);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(29, 155, 240, 0.3);
 }
 
 /* Loading 样式 */
@@ -411,17 +402,36 @@
 /* 通知样式 */
 .notification {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 16px 24px;
-    border-radius: 8px;
-    background: #fff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    /* 防止被其它全屏样式影响 */
+    inset: auto;
+    right: auto;
+    bottom: auto;
+    top: 16px;
+    left: 50%;
+    transform: translate(-50%, 0);
     z-index: 10000;
+
+    /* 关键：根据内容自适应尺寸 */
+    display: inline-flex;
+    width: fit-content;
+    height: auto;
+    max-width: min(560px, calc(100vw - 32px));
+    box-sizing: border-box;
+    padding: 12px 16px 12px 22px;
+    border-radius: 12px;
     font-size: 14px;
-    font-weight: 500;
-    max-width: 300px;
-    animation: slideIn 0.3s ease-out;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.2px;
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    opacity: 1;
+    visibility: visible;
+    white-space: normal;
+    word-break: break-word;
+    transition:
+            transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+            opacity 220ms ease,
+            visibility 0s linear 0s;
 }
 
 @keyframes slideIn {
