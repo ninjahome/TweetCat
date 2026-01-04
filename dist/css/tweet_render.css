@@ -944,14 +944,15 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     font-weight:700;
     transition: background var(--tweet-toast-speed);
 }
+
 .tw-dialog-btn-confirm {
     borde: none;
-    background: var(--accent);
+    background: rgb(29, 155, 240);
     color: #fff;
 }
 .tw-dialog-btn-confirm:hover {
     background: var(--accent-subtle);
-    color: var(--accent);
+    color: rgb(29, 155, 240);
 }
 
 .dpi-progress::-moz-progress-bar {

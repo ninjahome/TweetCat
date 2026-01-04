@@ -1770,7 +1770,7 @@ html[data-bg="lightsout"] {
 .user-profile-score {
     display: inline-flex;
     align-items: center;
-    margin: 0 0.375rem;
+    margin-right: 0.375rem;
     font-size: 14px;
     font-weight: 400;
     color: #1d9bf0; /* Twitter 蓝 */
@@ -1781,12 +1781,25 @@ html[data-bg="lightsout"] {
     transition: background 0.2s ease;
     border:  1px solid var(--border-subtle);
     height: 1.75rem;
+    margin-top: .375rem;
 }
 
 .user-profile-score:hover {
     background: rgba(29, 155, 240, 0.15);
 }
-
+.transfer-btn{
+    background: linear-gradient(to right, #1d9bf0, #03CBAD);
+    border-radius: 999px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 2px 8px;
+    margin-right: 0.375rem;
+    margin-top: .375rem;
+}
+.transfer-btn:hover{
+    background: linear-gradient(to right, #1a8cd8, #03B69B);
+}
 .user-profile-score-details {
     position: absolute;
     display: flex;
