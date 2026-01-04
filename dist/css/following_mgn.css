@@ -3,17 +3,18 @@
         --side-padding: 140px;
     }
 }
+
 @media (min-width: 1100px) {
     .follow-manager {
         min-width: 1100px;
     }
 }
+
 @media (min-width: 0) {
     .follow-manager {
         min-width: 1100px;
     }
 }
-
 
 
 body {
@@ -26,6 +27,7 @@ body {
 p {
     margin: 0;
 }
+
 .hidden {
     display: none !important;
 }
@@ -37,7 +39,7 @@ body.modal-open {
 .follow-manager {
     padding: 0 140px;
     display: flex;
-    min-height: 100vh;      /* ✅ 替换 height: 100vh; */
+    min-height: 100vh; /* ✅ 替换 height: 100vh; */
 }
 
 .sidebar {
@@ -76,6 +78,7 @@ body.modal-open {
     flex: 1;
     overflow-y: auto;
 }
+
 .category-actions .icon {
     display: block;
     fill: currentColor;
@@ -86,12 +89,14 @@ body.modal-open {
     width: 16px;
     height: 16px;
 }
+
 .icon-rename path {
     stroke: currentColor;
     stroke-width: 30;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
+
 .icon-delete {
     width: 12px;
     height: 12px;
@@ -121,7 +126,7 @@ body.modal-open {
 
 /* hover 时显示 */
 .category-list li:hover button {
-    display: inline-flex;   /* 或 inline-block / flex 都可以 */
+    display: inline-flex; /* 或 inline-block / flex 都可以 */
 }
 
 
@@ -213,9 +218,9 @@ body.modal-open {
 .toolbar-ops {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr)); /* 一行两列 */
-    column-gap: 32px;                                 /* 中间间距 32px */
+    column-gap: 32px; /* 中间间距 32px */
     align-items: center;
-    flex: 1;  /* 作为 .toolbar 的子项继续占满横向空间 */
+    flex: 1; /* 作为 .toolbar 的子项继续占满横向空间 */
 }
 
 .toolbar-section {
@@ -231,9 +236,11 @@ body.modal-open {
 .toolbar-section-ipfs {
     background: #f2f7f3;
 }
+
 .toolbar-section-x {
     background-color: rgba(29, 155, 240, 0.1);
 }
+
 .ipfs-latest,
 .web2-area-info {
     width: calc(100% - 32px);
@@ -246,10 +253,12 @@ body.modal-open {
     background: rgba(6, 203, 173, 0.1);
     border-radius: 16px;
 }
+
 .ipfs-latest {
     background: rgba(6, 203, 173, 0.1);
 }
-.web2-area-info{
+
+.web2-area-info {
     background: rgba(29, 155, 240, 0.1);
 }
 
@@ -258,10 +267,12 @@ body.modal-open {
     color: #657786;
     margin-bottom: 4px;
 }
+
 #web2-following-no-title {
     color: #657786;
 }
-#web2-following-no-val{
+
+#web2-following-no-val {
     color: #1d9bf0;
     font-size: 20px;
     font-weight: 600;
@@ -269,7 +280,7 @@ body.modal-open {
 
 /* 显示 CID 的“药丸”按钮 */
 .ipfs-latest-pill {
-    border:none;
+    border: none;
     background: transparent;
     font-size: 14px;
     font-weight: 600;
@@ -278,6 +289,13 @@ body.modal-open {
     white-space: nowrap;
     cursor: pointer;
     padding: 0;
+    text-decoration: none;
+}
+
+.ipfs-latest-pill:not(:disabled) {
+    text-decoration: underline;
+    text-decoration-color: #1890ff;
+    text-decoration-thickness: 2px;
 }
 
 .ipfs-latest-pill:disabled {
@@ -294,9 +312,11 @@ body.modal-open {
     color: rgb(6, 203, 173);
     border-radius: 999px;
 }
+
 .ipfs-latest-copy-btn:hover {
     color: #0aa68e;
 }
+
 .ipfs-latest-copy-btn:disabled {
     opacity: 0.5;
     cursor: default;
@@ -348,16 +368,18 @@ body.modal-open {
     appearance: none;
     /* 给右侧箭头留空间 */
     padding: 11px 56px 11px 11px;
-  /* ✅ 自定义 SVG 箭头，颜色改为 #d0d7de */
+    /* ✅ 自定义 SVG 箭头，颜色改为 #d0d7de */
     background-image: url("data:image/svg+xml,%3Csvg width='18' height='14' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7l5 6 5-6' fill='none' stroke='%23d0d7de' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 18px center;
     background-size: 16px 16px;
 }
+
 /* hover 时仍旧使用相同边框色，只稍微调一下亮度也可以，或者直接不改 */
 .batch-actions select:hover {
-    border-color: #1d9bf0;            /* ✅ 保持一致 */
+    border-color: #1d9bf0; /* ✅ 保持一致 */
 }
+
 .batch-actions button {
     border: none;
     background: #eff3f4;
@@ -374,6 +396,7 @@ body.modal-open {
 #assign-category-btn:not(:disabled) {
     background: #1d9bf0;
 }
+
 #assign-category-btn:hover:not(:disabled) {
     background: #1784d4;
 }
@@ -382,6 +405,7 @@ body.modal-open {
 #clear-selection-btn:not(:disabled) {
     background: #0cae95;
 }
+
 #clear-selection-btn:hover:not(:disabled) {
     background: #0aa68e;
 }
@@ -391,6 +415,7 @@ body.modal-open {
     background: #df3f3f;
     color: #ffffff;
 }
+
 #unfollow-selected-btn.danger:hover:not(:disabled) {
     background: #ca3131;
 }
@@ -423,14 +448,17 @@ body.modal-open {
     background-color: rgb(6, 203, 173);
     color: #fff;
 }
-.primary-IPFS:hover{
+
+.primary-IPFS:hover {
     background-color: #0aa68e;
 }
+
 .primary-sync {
     border-radius: 999px;
     background-color: #1d9bf0;
     color: #fff;
 }
+
 .primary-sync:hover {
     background-color: #428ad2;
 }
@@ -558,8 +586,8 @@ body.processing-blocked {
     display: grid;
     overflow: visible; /* ✅ tooltip 不再被裁切 */
     padding-bottom: 16px;
-    grid-auto-rows: auto;   /* ✅ 行高=内容高度 */
-    align-items: start;     /* ✅ 不再把卡片拉满行高 */
+    grid-auto-rows: auto; /* ✅ 行高=内容高度 */
+    align-items: start; /* ✅ 不再把卡片拉满行高 */
 }
 
 
@@ -606,9 +634,10 @@ body.processing-blocked {
     cursor: pointer;
     flex-shrink: 0;
 }
+
 /* 选中状态：填充主题色 */
 .user-card .user-select:checked {
-    background-color: #1d9bf0;   /* 你的主题蓝 */
+    background-color: #1d9bf0; /* 你的主题蓝 */
     border-color: #1d9bf0;
 }
 
@@ -659,10 +688,11 @@ body.processing-blocked {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: inline-block;  /* 或 flex: 1; */
+    display: inline-block; /* 或 flex: 1; */
     max-width: 100%;
-    min-width: 0;           /* 在 flex 里允许缩小 */
+    min-width: 0; /* 在 flex 里允许缩小 */
 }
+
 .user-card .handle {
     font-size: 14px;
     font-weight: 400;
@@ -761,7 +791,7 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
     max-width: 280px;
     display: none;
     white-space: pre-line;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .bio-wrapper:hover .bio-tooltip {
@@ -797,7 +827,7 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 /* hover 时：背景主题蓝，文字/图标白色 */
 .sync-btn:hover {
     background-color: #1d9bf0;
-    color: #ffffff;            /* currentColor = 白色 → 图标也变白 */
+    color: #ffffff; /* currentColor = 白色 → 图标也变白 */
 }
 
 /* ============ 分类颜色与关注状态融合 ============ */
@@ -831,12 +861,12 @@ html[style*="color-scheme: dark"] .user-card.is-local-only {
 .user-card.is-following::before {
     content: "";
     position: absolute;
-    left: 0;          /* 紧贴左侧 */
-    top: 12px;        /* 留一点上下内边距，看起来不顶到圆角 */
+    left: 0; /* 紧贴左侧 */
+    top: 12px; /* 留一点上下内边距，看起来不顶到圆角 */
     bottom: 12px;
-    width: 2px;       /* 竖线的粗细 */
+    width: 2px; /* 竖线的粗细 */
     border-radius: 999px;
-    background-color: #1d9bf0;  /* 主题色竖线；想要绿色就改成 #2ecc71 */
+    background-color: #1d9bf0; /* 主题色竖线；想要绿色就改成 #2ecc71 */
 }
 
 /* ========== Rename Category Dialog ========== */

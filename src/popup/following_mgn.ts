@@ -3,7 +3,6 @@ import {choseColorByID, MsgType, noXTabError, SNAPSHOT_TYPE} from "../common/con
 import {
     __tableCategory,
     __tableFollowings,
-    checkAndInitDatabase,
     databaseAddItem,
     databaseUpdateOrAddItem
 } from "../common/database";
@@ -29,7 +28,6 @@ import {
     PROVIDER_TYPE_PINATA
 } from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
-import {loadWallet} from "../wallet/wallet_api";
 import {getManifest, updateFollowingSnapshot} from "../wallet/ipfs_manifest";
 import {openPasswordModal} from "./password_modal";
 import {getEOA} from "../wallet/cdp_wallet";
@@ -224,16 +222,18 @@ document.addEventListener("DOMContentLoaded", initFollowingManager as EventListe
 async function initFollowingManager() {
     initDomRefs();
     document.title = t("mgn_following");
-    await checkAndInitDatabase();
     bindEvents();
 
-    loadWallet().then((wallet) => {
-        if (!wallet) return;
-        loadLatestSnapshotCid(wallet.address).catch(e => {
+    getEOA().then((acc) => {
+        if (!acc) return;
+        loadLatestSnapshotCid(acc.address).catch(e => {
             console.warn("[IPFS] skip loading latest snapshot cid:", e);
             updateIpfsLatestUI();
         });
+    }).catch(err => {
+        showNotification(err.message, "error")
     });
+
     await refreshData();
 }
 
@@ -279,8 +279,8 @@ function bindEvents() {
 
     document.addEventListener("keydown", handleGlobalKeydown);
 
-    exportIpfsBtn.onclick=async ()=>{
-        await handleExportSnapshotToIpfs( (cid) => {
+    exportIpfsBtn.onclick = async () => {
+        await handleExportSnapshotToIpfs((cid) => {
             latestSnapshotCid = cid;
             updateIpfsLatestUI();
         });
@@ -1367,19 +1367,14 @@ async function handleExportSnapshotToIpfs(
     let password: string | undefined;
 
     try {
-        // 1️⃣ 先拿设置 & 询问密码，这一步不显示全局 loading
-        settings = await ensureSettings(); // 不解密，仅拿配置判断
+        settings = await ensureSettings();
         const needPassword = ipfsNeedsPassword(settings);
         if (needPassword) {
-            password = await promptPasswordOnce(); // 这里会弹你自定义的密码弹窗
+            password = await promptPasswordOnce();
         }
 
-        // 如果上面用户取消了，会 throw "已取消：未输入口令" 被下面 catch 掉
-
-        // 2️⃣ 真正开始上传时再显示全局 loading
         showLoading("正在上传 IPFS 快照…");
 
-        // 3️⃣ 组装快照（直接用内存中的 categories / unifiedKols）
         const cats = categories
             .filter(c => typeof c.id === "number")
             .map(c => ({id: c.id!, name: c.catName}));
@@ -1419,20 +1414,15 @@ async function handleExportSnapshotToIpfs(
         }
     } catch (err) {
         const e = err as Error;
-
-        // 本地节点接管：沿用你原来的特殊分支
         if (e.message === ERR_LOCAL_IPFS_HANDOFF) {
             return;
         }
-
-        // 用户在密码弹窗里取消：这里我按“静默取消”处理，不弹 error
         if (e.message === "已取消：未输入口令") {
             return;
         }
 
         showNotification(e.message ?? "上传失败", "error");
     } finally {
-        // 即使前面因为没 showLoading，这里 hideLoading 也无害
         hideLoading();
     }
 }
@@ -1485,7 +1475,6 @@ async function openSnapshotInGateway(cid: string): Promise<void> {
 }
 
 
-/** 用 HEAD 简单测试这个 CID 是否能通过 ipfs.io 访问 */
 async function canReachViaIpfsIo(cid: string, timeoutMs: number = 3000): Promise<boolean> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
