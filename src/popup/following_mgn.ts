@@ -313,71 +313,101 @@ async function handleSyncFromIpfsClick() {
     if (!(await showConfirm(t("ipfs_confirm_sync_from_ipfs_overwrite")))) return;
 
     try {
-        showLoading(t("syncing"))
-        const jsonObj = await download(latestSnapshotCid)
-        console.log(jsonObj)
+        // 第1步：下载快照数据
+        showLoading(t("ipfs_sync_step_downloading"));
+        const jsonObj = await download(latestSnapshotCid);
+        console.log("------>>> Downloaded snapshot:", jsonObj);
 
         if (!jsonObj || typeof jsonObj !== 'object') {
-            showNotification(t("ipfs_invalid_snapshot_data") || 'Invalid snapshot data')
-            return
+            showNotification(t("ipfs_invalid_snapshot_data") || 'Invalid snapshot data', "error");
+            return;
         }
 
         const {version, categories: importedCategories, assignments: importedAssignments} = jsonObj as any;
 
         if (!Array.isArray(importedCategories) || !Array.isArray(importedAssignments)) {
-            showNotification(t("ipfs_invalid_snapshot_format") || 'Invalid snapshot format: missing categories or assignments');
-            return
+            showNotification(t("ipfs_invalid_snapshot_format") || 'Invalid snapshot format', "error");
+            return;
         }
 
-        showLoading(t("resetting_local_data"))
-
+        // 第2步：清除旧分类
+        showLoading(t("ipfs_sync_step_clearing_categories"));
         for (const cat of categories) {
             if (cat.id) {
                 await removeCategory(cat.id);
             }
         }
 
-        // 2. 添加新分类，并建立 ID 映射
-        const newCatMap = new Map<number, number>(); // 映射导入分类 ID 到新分类 ID
+        // 第3步：导入新分类，并建立 ID 映射
+        showLoading(t("ipfs_sync_step_importing_categories"));
+        const newCatMap = new Map<number, number>();
         for (const importedCat of importedCategories) {
-            const newCat = new Category(importedCat.name || importedCat.catName);
+            const catName = importedCat.name || importedCat.catName;
+            if (!catName) continue;
+
+            const newCat = new Category(catName);
+            // 不设置 id，让数据库自动生成
+            delete (newCat as any).id;
             const newId = await databaseAddItem(__tableCategory, newCat);
             newCatMap.set(importedCat.id, Number(newId));
+            console.log(`------>>> Category mapped: ${importedCat.id} -> ${newId}`);
         }
 
-        showLoading(t("creating_new_following"))
+        // 第4步：更新 followings 的分类关联
+        showLoading(t("ipfs_sync_step_updating_assignments"));
 
-        // 3. 获取所有现有的 followings，并建立 userId 到 assignment 的映射
-        const allFollowings = await fetchFollowings();
-        const userIdToAssignment = new Map<string, any>();
-        for (const assignment of importedAssignments) {
-            if (assignment.userId) {
-                userIdToAssignment.set(assignment.userId, assignment);
+        // 建立 userId -> 新分类 ID 的映射
+        const assignmentMap = new Map<string, number | null>();
+        for (const assign of importedAssignments) {
+            if (assign.userId) {
+                const newCatId = assign.categoryId ? newCatMap.get(assign.categoryId) || null : null;
+                assignmentMap.set(assign.userId, newCatId);
             }
         }
 
-        // 4. 更新所有 followings 的分类信息
+        // 从后台脚本获取所有 followings
+        const allFollowings = await fetchFollowings();
+        let updatedCount = 0;
+
+        // 遍历所有 followings，更新分类
         for (const following of allFollowings) {
-            const assignment = userIdToAssignment.get(following.userId);
-            if (assignment && assignment.categoryId) {
-                // 使用新分类 ID
-                following.categoryId = newCatMap.get(assignment.categoryId) || null;
+            if (!following.userId) continue;
+
+            // 如果在导入的 assignments 中，使用新的分类ID
+            // 如果不在，则设为 null（未分类）
+            if (assignmentMap.has(following.userId)) {
+                following.categoryId = assignmentMap.get(following.userId) || null;
             } else {
                 following.categoryId = null;
             }
+
+            // 保存到数据库
             await databaseUpdateOrAddItem(__tableFollowings, following);
+            updatedCount++;
         }
 
-        showNotification(t("ipfs_sync_success") || "Data synchronized successfully", "info");
+        console.log(`------>>> Updated ${updatedCount} followings`);
+
+        // 第5步：刷新界面
+        showLoading(t("ipfs_sync_step_refreshing"));
         selectedKeys.clear();
         await refreshData();
 
+        showNotification(
+            t("ipfs_sync_success_with_count", updatedCount.toString()) ||
+            `Data synchronized: ${updatedCount} followings updated`,
+            "info"
+        );
+
     } catch (e) {
         const err = e as Error;
-        showNotification(err.message ?? (t("ipfs_sync_failed") || "Failed to synchronize from IPFS"), "error");
-        console.warn("------>>> handleSyncFromIpfsClick failed", e);
+        console.error("------>>> handleSyncFromIpfsClick error details:", e);
+        showNotification(
+            err.message || (t("ipfs_sync_failed") || "Failed to synchronize from IPFS"),
+            "error"
+        );
     } finally {
-        hideLoading()
+        hideLoading();
     }
 }
 
@@ -1341,22 +1371,26 @@ function fillUserSyncButton(card: HTMLElement, user: UnifiedKOL) {
     syncBtn.title = t("sync_user_now");
     syncBtn.addEventListener("click", async (ev) => {
         ev.stopPropagation();
-        try {
-            showNotification(t("syncing_user", user.displayName ?? user.screenName ?? user.key));
-            const resp = await sendMsgToService(user.screenName ?? user.key, MsgType.FollowingFetchOne);
-
-            if (resp?.success && resp.data) {
-                const updated = {...user, ...resp.data, categoryId: user.categoryId ?? null, lastSyncedAt: Date.now()};
-                await databaseUpdateOrAddItem(__tableFollowings, updated);
-                showNotification(t("account_updated"), "info");
-                await refreshData();
-            } else {
-                handleSyncError(resp);
-            }
-        } catch (err) {
-            showNotification(t("sync_failed_with_error", (err as Error).message), "error");
-        }
+        await syncFollowingFromTwitterSrv(user);
     });
+}
+
+async function syncFollowingFromTwitterSrv(user: UnifiedKOL) {
+    try {
+        showNotification(t("syncing_user", user.displayName ?? user.screenName ?? user.key));
+        const resp = await sendMsgToService(user.screenName ?? user.key, MsgType.FollowingFetchOne);
+
+        if (resp?.success && resp.data) {
+            const updated = {...user, ...resp.data, categoryId: user.categoryId ?? null, lastSyncedAt: Date.now()};
+            await databaseUpdateOrAddItem(__tableFollowings, updated);
+            showNotification(t("account_updated"), "info");
+            await refreshData();
+        } else {
+            handleSyncError(resp);
+        }
+    } catch (err) {
+        showNotification(t("sync_failed_with_error", (err as Error).message), "error");
+    }
 }
 
 function handleSyncError(resp: any) {
@@ -1557,15 +1591,15 @@ async function canReachGateway(url: string, timeoutMs: number = 5000): Promise<b
 async function openSnapshotInGateway(cid: string): Promise<void> {
     try {
         showLoading(t("ipfs_looking_for_snapshot"));
-        
+
         // 获取所有网关列表（已按优先级排序）
         const gatewayUrls = await buildGatewayUrls(cid);
-        
+
         if (gatewayUrls.length === 0) {
             showNotification(t("ipfs_no_available_gateway") || "No available gateways", "error");
             return;
         }
-        
+
         // 依次测试每个网关的可达性
         let reachableUrl: string | null = null;
         for (const url of gatewayUrls) {
@@ -1574,11 +1608,11 @@ async function openSnapshotInGateway(cid: string): Promise<void> {
                 break;
             }
         }
-        
+
         // 打开第一个可达的网关，如果都不可达就打开第一个 URL（网络问题交给浏览器处理）
         const urlToOpen = reachableUrl || gatewayUrls[0];
         window.open(urlToOpen, "_blank");
-        
+
     } catch (err) {
         console.error("[IPFS] openSnapshotInGateway failed", err);
         showNotification(t("ipfs_open_snapshot_failed") || "Failed to open snapshot", "error");

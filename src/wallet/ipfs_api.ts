@@ -345,7 +345,7 @@ export async function uploadFile(file: File, password?: string): Promise<string>
 
 async function tryFetch(url: string): Promise<any> {
     console.log("----->>>ipfs try to fetch:", url)
-    const resp = await fetchWithTimeout(url, {}, 60_000);  // 增加到 60 秒
+    const resp = await fetchWithTimeout(url, {}, 30_000);  // 增加到 60 秒
     if (!resp.ok) {
         throw new Error(`HTTP ${resp.status}`);
     }

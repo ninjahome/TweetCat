@@ -79,27 +79,27 @@ export interface IpfsSettings {
 const SETTINGS_ID: IpfsSettings['id'] = 'ipfs';
 
 let cachedSettings: IpfsSettings | null = null;
-let pendingSettingsLoad: Promise<IpfsSettings | null> | null = null;
 
 export async function loadIpfsSettings(): Promise<IpfsSettings | null> {
     await checkAndInitDatabase();
     const rows = await databaseQueryAll(__tableIpfsSettings) as Array<IpfsSettings & { id: string }>;
-    const found = rows.find(item => item.id === SETTINGS_ID) ?? null;
+    let found = rows.find(item => item.id === SETTINGS_ID) ?? null;
+    if (!found){
+        found = {
+            id: SETTINGS_ID,
+            provider: PROVIDER_TYPE_TWEETCAT,
+            updatedAt: Date.now(),
+        };
+        await databaseUpdateOrAddItem(__tableIpfsSettings, found);
+    }
     cachedSettings = found;
     return found;
 }
 
 export async function getCachedIpfsSettings(): Promise<IpfsSettings | null> {
     if (cachedSettings) return cachedSettings;
-
-    if (!pendingSettingsLoad) {
-        pendingSettingsLoad = loadIpfsSettings()
-            .catch((_e) => null)
-            .finally(() => { pendingSettingsLoad = null; });
-    }
-    // loadIpfsSettings 内部会同步刷新 cachedSettings，这里返回其结果即可
-    const loaded = await pendingSettingsLoad;
-    return cachedSettings ?? loaded;
+    cachedSettings = await loadIpfsSettings()
+    return cachedSettings;
 }
 
 export async function saveIpfsSettings(settings: IpfsSettings): Promise<void> {
