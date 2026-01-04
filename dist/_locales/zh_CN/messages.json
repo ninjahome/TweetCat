@@ -1223,6 +1223,8 @@
   },
   "ipfs_open_snapshot_failed": {
     "message": "打开快照失败"
+  },
+  "ipfs_sync_no_local_followings": {
+  "message": "需要先从推特同步账户。是否需要现在同步？"
   }
 }
-

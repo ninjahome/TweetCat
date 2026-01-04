@@ -1223,5 +1223,8 @@
   },
   "ipfs_open_snapshot_failed": {
     "message": "Failed to open snapshot"
+  },
+  "ipfs_sync_no_local_followings": {
+    "message": "You need to sync followings from Twitter first. Would you like to sync now?"
   }
 }

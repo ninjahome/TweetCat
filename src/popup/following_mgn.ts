@@ -310,6 +310,19 @@ function bindEvents() {
 async function handleSyncFromIpfsClick() {
     if (!latestSnapshotCid) return;
 
+    // 第0步：检查本地是否有 followings 数据
+    const localFollowings = await fetchFollowings();
+    if (!localFollowings || localFollowings.length === 0) {
+        if (!(await showConfirm(t("ipfs_sync_no_local_followings")))) return;
+
+        if (syncButtons && syncButtons[0]) {
+            console.log("------>>> Auto-triggering sync followings");
+            syncButtons[0].click();
+        }
+        return;
+    }
+
+
     if (!(await showConfirm(t("ipfs_confirm_sync_from_ipfs_overwrite")))) return;
 
     try {
@@ -743,6 +756,7 @@ function updateEmptyState() {
 }
 
 async function handleSyncClick() {
+    showLoading(t("sync_followings"))
     setSyncLoading(true);
     try {
         const rsp = await sendMsgToService({}, MsgType.FollowingSync)// browser.runtime.sendMessage({action: MsgType.FollowingSync});
@@ -771,6 +785,7 @@ async function handleSyncClick() {
         showNotification(err.message ?? "Failed to sync followings.", "error");
     } finally {
         setSyncLoading(false);
+        hideLoading()
     }
 }
 
