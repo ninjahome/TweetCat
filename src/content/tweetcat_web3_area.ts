@@ -274,8 +274,6 @@ export async function initWeb3IdentityArea(): Promise<void> {
     });
 
     host.querySelector(".web3-title-text").textContent = t('web3_id_tittle');
-    // host.querySelector("#web3-refresh-btn").textContent = t('refresh');
-    // host.querySelector("#web3-copy").textContent = t('copy');
     host.querySelector(".web3-gas-balance-hint").textContent = t('gas_balance');
     host.querySelector(".web3-usdt-balance-hint").textContent = t('usdt_balance');
 
@@ -287,15 +285,18 @@ async function fetchWeb3Identity() {
     if (!host) return;
     const state = host.querySelector("#web3-state") as HTMLElement;
     const card = host.querySelector("#web3-wallet-card") as HTMLElement;
-
+    const statusTips = host.querySelector(".wallet-status-error") as HTMLElement;
     state.style.display = "block";
     card.style.display = "none";
+    statusTips.style.display = "none"
 
     try {
         const resp = await sendMsgToOffScreen({}, MsgType.WalletInfoQuery)
         if (!resp || resp.success === false || !resp.data) {
             state.style.display = "none";
-            showToastMsg(resp.error || resp.data || t('wallet_refresh_balance_failed'))
+            // showToastMsg(resp.error || resp.data || t('wallet_refresh_balance_failed'))
+            statusTips.style.display='block'
+            statusTips.querySelector(".wallet-status-txt").textContent = (resp.error || resp.data || t('wallet_refresh_balance_failed'));
             return;
         }
 

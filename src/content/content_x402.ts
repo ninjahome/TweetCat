@@ -71,7 +71,7 @@ export function addTipBtnForTweet(statusId: string, isTryAgain: boolean = false)
         if (isTryAgain) return;
         setTimeout(() => {
             addTipBtnForTweet(statusId, true)
-        }, 5_000)
+        }, 1_500)
         return;
     }
 

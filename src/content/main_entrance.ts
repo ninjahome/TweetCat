@@ -124,7 +124,8 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
                 if (getTweetCatFlag()) {
                     navigateToTweetCat();
                 }
-            }else if(linkInfo.kind==="tweet"){
+            } else if (linkInfo.kind === "tweet") {
+                console.log("------>>>link info:", linkInfo)
                 addTipBtnForTweet(linkInfo.tweetId)
             }
             checkFilterStatusAfterUrlChanged();
@@ -178,7 +179,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
             return true;
         }
 
-        case MsgType.FollowingFetchOne:{
+        case MsgType.FollowingFetchOne: {
             syncOneFollowingsByScreenName(request.data as string)
                 .then((result) => sendResponse({success: true, data: result}))
                 .catch((err) =>

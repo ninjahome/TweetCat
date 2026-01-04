@@ -216,6 +216,7 @@ function setupWalletActionButtons(): void {
     const signOutBtn = $Id("btn-sign-out") as HTMLButtonElement;
     signOutBtn.textContent = t('wallet_action_sign_out');
     signOutBtn.onclick = async () => {
+        await browser.offscreen.closeDocument();
         await doSignOut();
         initWalletOrCreate();
     }
