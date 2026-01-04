@@ -59,6 +59,7 @@ function assertPassword(password?: string): asserts password is string {
         throw new Error('需要输入口令以解密凭据');
     }
 }
+
 async function pinataHeaders(settings: IpfsSettings | null, password?: string): Promise<Record<string, string>> {
     if (!settings || settings.provider !== PROVIDER_TYPE_PINATA || !settings.pinata) {
         throw new Error('尚未配置 Pinata 凭据');
@@ -343,7 +344,8 @@ export async function uploadFile(file: File, password?: string): Promise<string>
 }
 
 async function tryFetch(url: string): Promise<any> {
-    const resp = await fetchWithTimeout(url, {}, 15_000);
+    console.log("----->>>ipfs try to fetch:", url)
+    const resp = await fetchWithTimeout(url, {}, 60_000);  // 增加到 60 秒
     if (!resp.ok) {
         throw new Error(`HTTP ${resp.status}`);
     }
