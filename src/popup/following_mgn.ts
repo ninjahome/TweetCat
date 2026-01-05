@@ -19,7 +19,7 @@ import {FollowingUser, removeLocalFollowings, replaceFollowingsPreservingCategor
 import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
-import {$Id, hideLoading, showAlert, showConfirm, showLoading, showNotification} from "./common";
+import {$Id, hideLoading, showAlert, showLoading, showNotification} from "./common";
 import {buildGatewayUrls, download, ensureSettings, unpinCid, uploadJson} from "../wallet/ipfs_api";
 import {
     ERR_LOCAL_IPFS_HANDOFF,
@@ -313,115 +313,115 @@ async function handleSyncFromIpfsClick() {
     // 第0步：检查本地是否有 followings 数据
     const localFollowings = await fetchFollowings();
     if (!localFollowings || localFollowings.length === 0) {
-        if (!(await showConfirm(t("ipfs_sync_no_local_followings")))) return;
-
-        if (syncButtons && syncButtons[0]) {
-            console.log("------>>> Auto-triggering sync followings");
-            syncButtons[0].click();
-        }
+        showConfirmModal(t("ipfs_sync_no_local_followings"), () => {
+            if (syncButtons && syncButtons[0]) {
+                console.log("------>>> Auto-triggering sync followings");
+                syncButtons[0].click();
+            }
+        })
         return;
     }
 
+    showConfirmModal(t("ipfs_confirm_sync_from_ipfs_overwrite"), async () => {
+        try {
+            // 第1步：下载快照数据
+            showLoading(t("ipfs_sync_step_downloading"));
+            const jsonObj = await download(latestSnapshotCid);
+            console.log("------>>> Downloaded snapshot:", jsonObj);
 
-    if (!(await showConfirm(t("ipfs_confirm_sync_from_ipfs_overwrite")))) return;
-
-    try {
-        // 第1步：下载快照数据
-        showLoading(t("ipfs_sync_step_downloading"));
-        const jsonObj = await download(latestSnapshotCid);
-        console.log("------>>> Downloaded snapshot:", jsonObj);
-
-        if (!jsonObj || typeof jsonObj !== 'object') {
-            showNotification(t("ipfs_invalid_snapshot_data") || 'Invalid snapshot data', "error");
-            return;
-        }
-
-        const {version, categories: importedCategories, assignments: importedAssignments} = jsonObj as any;
-
-        if (!Array.isArray(importedCategories) || !Array.isArray(importedAssignments)) {
-            showNotification(t("ipfs_invalid_snapshot_format") || 'Invalid snapshot format', "error");
-            return;
-        }
-
-        // 第2步：清除旧分类
-        showLoading(t("ipfs_sync_step_clearing_categories"));
-        for (const cat of categories) {
-            if (cat.id) {
-                await removeCategory(cat.id);
-            }
-        }
-
-        // 第3步：导入新分类，并建立 ID 映射
-        showLoading(t("ipfs_sync_step_importing_categories"));
-        const newCatMap = new Map<number, number>();
-        for (const importedCat of importedCategories) {
-            const catName = importedCat.name || importedCat.catName;
-            if (!catName) continue;
-
-            const newCat = new Category(catName);
-            // 不设置 id，让数据库自动生成
-            delete (newCat as any).id;
-            const newId = await databaseAddItem(__tableCategory, newCat);
-            newCatMap.set(importedCat.id, Number(newId));
-            console.log(`------>>> Category mapped: ${importedCat.id} -> ${newId}`);
-        }
-
-        // 第4步：更新 followings 的分类关联
-        showLoading(t("ipfs_sync_step_updating_assignments"));
-
-        // 建立 userId -> 新分类 ID 的映射
-        const assignmentMap = new Map<string, number | null>();
-        for (const assign of importedAssignments) {
-            if (assign.userId) {
-                const newCatId = assign.categoryId ? newCatMap.get(assign.categoryId) || null : null;
-                assignmentMap.set(assign.userId, newCatId);
-            }
-        }
-
-        // 从后台脚本获取所有 followings
-        const allFollowings = await fetchFollowings();
-        let updatedCount = 0;
-
-        // 遍历所有 followings，更新分类
-        for (const following of allFollowings) {
-            if (!following.userId) continue;
-
-            // 如果在导入的 assignments 中，使用新的分类ID
-            // 如果不在，则设为 null（未分类）
-            if (assignmentMap.has(following.userId)) {
-                following.categoryId = assignmentMap.get(following.userId) || null;
-            } else {
-                following.categoryId = null;
+            if (!jsonObj || typeof jsonObj !== 'object') {
+                showNotification(t("ipfs_invalid_snapshot_data") || 'Invalid snapshot data', "error");
+                return;
             }
 
-            // 保存到数据库
-            await databaseUpdateOrAddItem(__tableFollowings, following);
-            updatedCount++;
+            const {version, categories: importedCategories, assignments: importedAssignments} = jsonObj as any;
+            console.log("------>>>current snapshot version:", version)
+            if (!Array.isArray(importedCategories) || !Array.isArray(importedAssignments)) {
+                showNotification(t("ipfs_invalid_snapshot_format") || 'Invalid snapshot format', "error");
+                return;
+            }
+
+            // 第2步：清除旧分类
+            showLoading(t("ipfs_sync_step_clearing_categories"));
+            for (const cat of categories) {
+                if (cat.id) {
+                    await removeCategory(cat.id);
+                }
+            }
+
+            // 第3步：导入新分类，并建立 ID 映射
+            showLoading(t("ipfs_sync_step_importing_categories"));
+            const newCatMap = new Map<number, number>();
+            for (const importedCat of importedCategories) {
+                const catName = importedCat.name || importedCat.catName;
+                if (!catName) continue;
+
+                const newCat = new Category(catName);
+                // 不设置 id，让数据库自动生成
+                delete (newCat as any).id;
+                const newId = await databaseAddItem(__tableCategory, newCat);
+                newCatMap.set(importedCat.id, Number(newId));
+                console.log(`------>>> Category mapped: ${importedCat.id} -> ${newId}`);
+            }
+
+            // 第4步：更新 followings 的分类关联
+            showLoading(t("ipfs_sync_step_updating_assignments"));
+
+            // 建立 userId -> 新分类 ID 的映射
+            const assignmentMap = new Map<string, number | null>();
+            for (const assign of importedAssignments) {
+                if (assign.userId) {
+                    const newCatId = assign.categoryId ? newCatMap.get(assign.categoryId) || null : null;
+                    assignmentMap.set(assign.userId, newCatId);
+                }
+            }
+
+            // 从后台脚本获取所有 followings
+            const allFollowings = await fetchFollowings();
+            let updatedCount = 0;
+
+            // 遍历所有 followings，更新分类
+            for (const following of allFollowings) {
+                if (!following.userId) continue;
+
+                // 如果在导入的 assignments 中，使用新的分类ID
+                // 如果不在，则设为 null（未分类）
+                if (assignmentMap.has(following.userId)) {
+                    following.categoryId = assignmentMap.get(following.userId) || null;
+                } else {
+                    following.categoryId = null;
+                }
+
+                // 保存到数据库
+                await databaseUpdateOrAddItem(__tableFollowings, following);
+                updatedCount++;
+            }
+
+            console.log(`------>>> Updated ${updatedCount} followings`);
+
+            // 第5步：刷新界面
+            showLoading(t("ipfs_sync_step_refreshing"));
+            selectedKeys.clear();
+            await refreshData();
+
+            showNotification(
+                t("ipfs_sync_success_with_count", updatedCount.toString()) ||
+                `Data synchronized: ${updatedCount} followings updated`,
+                "info"
+            );
+
+        } catch (e) {
+            const err = e as Error;
+            console.error("------>>> handleSyncFromIpfsClick error details:", e);
+            showNotification(
+                err.message || (t("ipfs_sync_failed") || "Failed to synchronize from IPFS"),
+                "error"
+            );
+        } finally {
+            hideLoading();
         }
+    })
 
-        console.log(`------>>> Updated ${updatedCount} followings`);
-
-        // 第5步：刷新界面
-        showLoading(t("ipfs_sync_step_refreshing"));
-        selectedKeys.clear();
-        await refreshData();
-
-        showNotification(
-            t("ipfs_sync_success_with_count", updatedCount.toString()) ||
-            `Data synchronized: ${updatedCount} followings updated`,
-            "info"
-        );
-
-    } catch (e) {
-        const err = e as Error;
-        console.error("------>>> handleSyncFromIpfsClick error details:", e);
-        showNotification(
-            err.message || (t("ipfs_sync_failed") || "Failed to synchronize from IPFS"),
-            "error"
-        );
-    } finally {
-        hideLoading();
-    }
 }
 
 function openModal(modal: HTMLElement | null) {
