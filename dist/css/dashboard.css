@@ -718,9 +718,10 @@ input.category-input:focus {
 
 /* 输入框通用样式 */
 #view-ipfs-settings input[type="text"],
-#view-ipfs-settings input[type="password"] {
+#view-ipfs-settings input[type="password"],
+#transfer-to[type="text"]{
     width: 100%;
-    border-radius: 16px;
+    border-radius: 8px;
     border: 1px solid var(--border-subtle, #e5e7eb);
     background: var(--surface, #fff);
     color: var(--text-primary, #111827);
@@ -1154,8 +1155,7 @@ input.category-input:focus {
 }
 
 .tc-modal__dialog {
-    width: 100%;
-    max-width: 480px;
+    max-width: 260px;
     background: #ffffff;
     border-radius: 16px;
     box-shadow: 0 18px 45px rgba(15, 23, 42, 0.25);
@@ -1208,7 +1208,7 @@ input.category-input:focus {
 .tc-modal__footer {
     margin-top: 8px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 8px;
 }
 
@@ -1229,16 +1229,15 @@ input.category-input:focus {
 .tc-field__hint {
     font-size: 12px;
     color: #9ca3af;
+    font-weight: 400;
+    margin-top: 4px;
 }
 
 .tc-field__row {
     display: flex;
     align-items: center;
-    gap: 8px;
-}
-
-.tc-field__row--space-between {
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 6px;
 }
 
 .tc-field__control {
@@ -1253,7 +1252,9 @@ input.category-input:focus {
     padding: 0 8px;
     background-color: #f9fafb;
 }
-
+.tc-field__row--space-between{
+    justify-content: space-between;
+}
 .tc-field__suffix {
     font-size: 13px;
     color: #6b7280;
@@ -1264,7 +1265,7 @@ input.category-input:focus {
     flex: 1;
     border: none;
     background: transparent;
-    padding: 8px 0;
+    padding: 12px 0;
     font-size: 13px;
     color: #111827;
 }
@@ -1278,7 +1279,9 @@ input.category-input:focus {
     font-size: 12px;
     color: #b91c1c;
 }
-
+#transfer-error:empty {
+    display: none;
+}
 /* 小标签 */
 .tc-tag {
     border-radius: 999px;
@@ -1288,8 +1291,8 @@ input.category-input:focus {
 }
 
 .tc-tag--subtle {
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: rgba(239, 246, 255, 0.2);
+    color: #4592EF;
 }
 
 /* 链接样式按钮 */
@@ -1297,8 +1300,9 @@ input.category-input:focus {
     padding: 0;
     border: none;
     background: none;
-    font-size: 12px;
-    color: #2563eb;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4592EF;
     cursor: pointer;
 }
 
@@ -1355,4 +1359,22 @@ input.category-input:focus {
     font-size: 12px;
     font-weight: 700;
     flex-shrink: 0;
+}
+.btn {
+    padding: 12px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+}
+.btn-primary {
+    background: #1d9bf0;
+    color: #fff;
+    font-weight: 500;
+
+}
+.btn-secondary{
+    border: 1px solid var(--border-subtle, #e5e7eb);
+    background: var(--surface, #fff);
+    color: var(--text-secondary, #374151);
+
 }
