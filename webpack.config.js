@@ -19,9 +19,7 @@ module.exports = (env, argv) => {
             'process.env.NODE_ENV': JSON.stringify(mode),
         }),
         new Dotenv({
-            systemvars: true,   // 允许从 CI 的 env 读取
-            // path: 默认会自动寻找 .env、.env.development、.env.production 等
-            // safe: true, // 如需与 .env.example 做键校验可打开
+            systemvars: true,
         }),
     ];
 
@@ -37,6 +35,13 @@ module.exports = (env, argv) => {
                 },
             ],
         },
+        // --- 新增：调整性能限制以消除 [big] 告警 ---
+        performance: {
+            hints: mode === 'production' ? 'warning' : false, // 仅在生产模式显示警告
+            maxAssetSize: 2000000, // 提高限额到 2MB (你目前最大是 ~961KB)
+            maxEntrypointSize: 2000000,
+        },
+        // ---------------------------------------
         optimization: {
             minimize: mode === 'production',
             usedExports: true,
@@ -44,8 +49,9 @@ module.exports = (env, argv) => {
                 new TerserPlugin({
                     terserOptions: {
                         compress: {
-                            drop_console: true,
+                            drop_console: mode === 'production', // 仅生产环境删除 log
                             unused: true,
+                            dead_code: true,
                         },
                         format: {
                             comments: false,
