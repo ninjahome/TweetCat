@@ -255,6 +255,11 @@ export function initWalletOrCreate() {
             walletInfoDiv.style.display = "block";
             const addressSpan = walletInfoDiv.querySelector(".wallet-address-value") as HTMLSpanElement;
             addressSpan.textContent = address;
+            addressSpan.onclick = () => {
+                navigator.clipboard.writeText(address).then(() => {
+                    showNotification(t("copy_success"), "info", 1_000)
+                });
+            }
             refreshBalances(false).then()
         }
     }));
