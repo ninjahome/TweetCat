@@ -553,13 +553,16 @@
         <form id="transfer-form" class="tc-modal__body">
             <div class="tc-field">
                 <label for="transfer-to" id="transfer-to-label" class="tc-field__label"></label>
-                <input id="transfer-to" type="text" class="tc-input" autocomplete="off"/>
+                <input id="transfer-to" type="text" class="tc-input" autocomplete="off" placeholder="Please enter an address"/>
                 <p id="transfer-to-hint" class="tc-field__hint"></p>
             </div>
             <div class="tc-field">
-                <div class="tc-field__row">
+                <div class="tc-field__row tc-field__row--space-between">
                     <label for="transfer-amount" id="transfer-amount-label" class="tc-field__label"></label>
-                    <span id="transfer-balance" class="tc-field__hint"></span>
+                    <div class="tc-field">
+                        <span id="transfer-network-label" class="tc-tag tc-tag--subtle"></span>
+                    </div>
+
                 </div>
 
                 <div class="tc-field__control tc-field__control--with-suffix">
@@ -574,16 +577,13 @@
                     <span id="tc-field__suffix" class="tc-field__suffix">ETH</span>
                 </div>
 
-                <div class="tc-field__row tc-field__row--space-between">
+                <div class="tc-field__row">
+                    <span id="transfer-balance" class="tc-field__hint"></span>
                     <button type="button" id="transfer-fill-max" class="tc-link-button">
                         Max
                     </button>
-                    <span id="transfer-gas-fee-hint" class="tc-field__hint"></span>
                 </div>
-            </div>
-
-            <div class="tc-field">
-                <span id="transfer-network-label" class="tc-tag tc-tag--subtle"></span>
+                <span id="transfer-gas-fee-hint" class="tc-field__hint"></span>
             </div>
 
             <p id="transfer-error" class="tc-form-error" aria-live="polite"></p>
