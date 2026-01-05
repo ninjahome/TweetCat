@@ -369,10 +369,16 @@ async function handleSyncFromIpfsClick() {
 
             // 建立 userId -> 新分类 ID 的映射
             const assignmentMap = new Map<string, number | null>();
+            const kolAssignmentMap = new Map<string, number | null>(); // KOL 的 screenName -> 新分类 ID 的映射
             for (const assign of importedAssignments) {
                 if (assign.userId) {
                     const newCatId = assign.categoryId ? newCatMap.get(assign.categoryId) || null : null;
                     assignmentMap.set(assign.userId, newCatId);
+                }
+                // 同时为 KOL 建立映射（使用 screenName 作为 key）
+                if (assign.screenName) {
+                    const newCatId = assign.categoryId ? newCatMap.get(assign.categoryId) || null : null;
+                    kolAssignmentMap.set(assign.screenName.toLowerCase(), newCatId);
                 }
             }
 
@@ -398,6 +404,36 @@ async function handleSyncFromIpfsClick() {
             }
 
             console.log(`------>>> Updated ${updatedCount} followings`);
+
+            // 第4.5步：重新导入 KOL 数据（修复 __tableKolsInCategory 表）
+            showLoading(t("ipfs_sync_step_updating_assignments"));
+            let kolUpdatedCount = 0;
+            for (const assign of importedAssignments) {
+                if (!assign.screenName) continue;
+                
+                const newCatId = assign.categoryId ? newCatMap.get(assign.categoryId) || null : null;
+                
+                // 如果有 newCatId（即在新分类中），才需要重新导入
+                if (newCatId !== null) {
+                    try {
+                        const kolSnapshot = {
+                            kolName: assign.screenName,
+                            displayName: assign.screenName,
+                            kolUserId: assign.userId,
+                            catID: newCatId,
+                        };
+                        
+                        await browser.runtime.sendMessage({
+                            action: MsgType.KolUpdate,
+                            data: kolSnapshot,
+                        });
+                        kolUpdatedCount++;
+                    } catch (e) {
+                        console.warn(`------>>> Failed to update KOL ${assign.screenName}:`, e);
+                    }
+                }
+            }
+            console.log(`------>>> Updated ${kolUpdatedCount} KOLs`);
 
             // 第5步：刷新界面
             showLoading(t("ipfs_sync_step_refreshing"));
