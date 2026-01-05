@@ -4,12 +4,15 @@ import {getChainId} from "../wallet/wallet_setting";
 import {logX402} from "../common/debug_flags";
 import {t} from "../common/i18n";
 import {postToX402Srv} from "../wallet/cdp_wallet";
+import browser from "webextension-polyfill";
 
 // DOM 元素
 let statusDiv: HTMLElement;
 let loadingDiv: HTMLElement;
 let tweetInfoDiv: HTMLElement;
 let btnClose: HTMLElement;
+let btnBrowser: HTMLElement;
+let currentHashVal: string = ""
 
 // 翻译函数
 function translateStaticTexts() {
@@ -57,10 +60,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadingDiv = document.getElementById('loading')!;
     tweetInfoDiv = document.getElementById('tweetInfo')!;
     btnClose = document.getElementById('btnClose')!;
+    btnBrowser = document.getElementById('btn-visited-blockchain');
 
     translateStaticTexts();
 
     btnClose.onclick = () => window.close();
+    btnBrowser.onclick = async () => {
+        if (!currentHashVal) return;
+        const chainId = await getChainId();
+        const url = X402_FACILITATORS[chainId].browser + "/tx/" + currentHashVal
+        await browser.tabs.create({url});
+        window.close()
+    }
+    btnBrowser.style.display='none';
 
     // 从 URL 参数获取 payload
     const params = new URLSearchParams(window.location.search);
@@ -132,7 +144,8 @@ async function processTipPayment(payload: x402TipPayload) {
         const txHash = result.txHash || result.transactionHash;
         logX402("-------x402>>>result,", result)
         showSuccess(t('tip_success'), txHash);
-
+        currentHashVal = txHash
+        btnBrowser.style.display='block';
         setTimeout(() => {
             window.close();
         }, 10000);
