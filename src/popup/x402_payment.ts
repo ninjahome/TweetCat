@@ -52,6 +52,7 @@ function translateStaticTexts() {
     if (defaultStatusText) {
         statusDiv.textContent = t('initializing_status');
     }
+    btnBrowser.textContent = t("wallet_action_show_on_browser");
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -72,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         await browser.tabs.create({url});
         window.close()
     }
-    btnBrowser.style.display='none';
+    btnBrowser.style.display = 'none';
 
     // 从 URL 参数获取 payload
     const params = new URLSearchParams(window.location.search);
@@ -145,7 +146,7 @@ async function processTipPayment(payload: x402TipPayload) {
         logX402("-------x402>>>result,", result)
         showSuccess(t('tip_success'), txHash);
         currentHashVal = txHash
-        btnBrowser.style.display='block';
+        btnBrowser.style.display = 'block';
         setTimeout(() => {
             window.close();
         }, 10000);
