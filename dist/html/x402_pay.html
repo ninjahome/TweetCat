@@ -13,7 +13,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(to bottom, #1d9bf0, #03CBAD);
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -27,7 +27,9 @@
       padding: 32px;
       max-width: 400px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     h1 {
@@ -39,10 +41,10 @@
 
     .status {
       text-align: center;
-      padding: 20px;
-      font-size: 16px;
+      font-size: 14px;
       color: #666;
       line-height: 1.5;
+      font-family: 'Courier New', monospace;
     }
 
     .status.error {
@@ -68,10 +70,11 @@
       100% { transform: rotate(360deg); }
     }
 
-    .tweet-info {
+    .tweet-info,
+    .amount-container {
       background: #f8f9fa;
       border-radius: 8px;
-      padding: 16px;
+      padding:12px 16px;
       margin-bottom: 20px;
     }
 
@@ -81,19 +84,22 @@
       color: #666;
     }
 
-    .tweet-info .amount {
+ .amount {
       font-size: 32px;
-      font-weight: bold;
-      color: #667eea;
+      font-weight: 400;
+      color: #4592EF;
       text-align: center;
       margin: 16px 0;
     }
+.amount span {
+    font-weight: 700;
+}
 
     .btn-close {
       display: none;
       width: 100%;
       padding: 12px;
-      background: #667eea;
+      background: #4592EF;
       color: white;
       border: none;
       border-radius: 8px;
@@ -103,34 +109,48 @@
     }
 
     .btn-close:hover {
-      background: #5568d3;
+      background: #428ad2;
     }
 
     .txhash {
       background: #f8f9fa;
       padding: 12px;
-      border-radius: 8px;
       word-break: break-all;
       font-family: 'Courier New', monospace;
-      font-size: 12px;
+      font-size: 14px;
       margin-top: 12px;
+      border: 1px solid rgba(161, 164, 168, 0.2);
+      color: #5b7083;
+        border-radius: 8px;
+    }
+    .btn-visited {
+        background-color: #4592EF;
+        padding: 12px 16px;
+        border-radius: 999px;
+        border: none;
+        color: white;
+        font-size: 16px;
+        font-weight: 500;
+    }
+    .btn-visited:hover {
+        background-color: #428ad2;
     }
   </style>
 </head>
 <body>
 <div class="container">
   <h1 id="pageHeader">💎 X402 打赏支付</h1>
-
+    <div class="amount">$<span id="amount"></span> <span id="currencyUnit" style="font-size: 14px">USDC</span></div>
   <div id="tweetInfo" class="tweet-info" style="display: none;">
     <p><strong><span id="tweetIdLabel">推文 ID:</span></strong> <span id="tweetId"></span></p>
     <p><strong><span id="authorIdLabel">作者 ID:</span></strong> <span id="authorId"></span></p>
-    <div class="amount">$<span id="amount"></span> <span id="currencyUnit">USDC</span></div>
   </div>
-
-  <div class="loading" id="loading"></div>
-  <div class="status" id="status" data-default-text="正在初始化...">正在初始化...</div>
-
-  <button class="btn-close" id="btnClose">关闭</button>
+<div class="amount-container">
+    <div class="loading" id="loading"></div>
+    <div class="status" id="status" data-default-text="正在初始化...">正在初始化...</div>
+    <button class="btn-close" id="btnClose">关闭</button>
+</div>
+    <button class="btn-visited" id=" ">查看区块链浏览器</button>
 </div>
 <script src="../js/x402_payment.js"></script>
 </body>

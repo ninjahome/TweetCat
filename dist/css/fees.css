@@ -234,8 +234,8 @@
 
 .fee-detail-content {
     background: #fff;
-    border-radius: 16px;
-    padding: 0;
+    border-radius: 32px;
+    padding: 16px 32px;
     max-width: 500px;
     width: 90%;
     max-height: 80vh;
@@ -258,8 +258,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
+    padding: 16px 0;
     border-bottom: 1px solid #e1e8ed;
+    width: 100%;
 }
 
 .modal-header h3 {
@@ -272,7 +273,7 @@
 .modal-close {
     background: none;
     border: none;
-    font-size: 24px;
+    font-size: 18px;
     cursor: pointer;
     padding: 0;
     width: 32px;
@@ -291,8 +292,8 @@
 }
 
 .modal-body {
-    padding: 24px;
-    max-height: calc(80vh - 140px);
+    padding-bottom: 24px;
+    max-height: calc(1200vh - 140px);
     overflow-y: auto;
 }
 
@@ -317,14 +318,14 @@
 }
 
 .detail-label {
-    font-size: 13px;
+    font-size: 14px;
     color: #657786;
-    font-weight: 500;
+    font-weight: 400;
     flex-shrink: 0;
 }
 
 .detail-value {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     color: #14171a;
     text-align: right;
