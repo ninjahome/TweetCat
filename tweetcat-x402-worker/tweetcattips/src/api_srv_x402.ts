@@ -227,6 +227,7 @@ export async function apiTransferByTid(c: ExtCtx) {
 		const kolBinding = await getKolBindingByXId(c.env.DB, xId);
 		const payTo = kolBinding?.wallet_address
 		if (!payTo) {
+			// console.log("------>>> why failed:", xId, payTo)
 			return c.json({
 				success: false, code: "RECIPIENT_NOT_FOUND",
 				error: "Address not found",
