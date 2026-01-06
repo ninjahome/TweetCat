@@ -38,25 +38,33 @@
                     <div class="ipfs-latest">
                         <div>
                             <span id="ipfs-latest-label" class="ipfs-latest-label">Latest Snapshot</span>
-                            <div>
+                            <div style="display: flex; align-items: center; gap: 4px">
                                 <button id="ipfs-latest-open" type="button"
                                         class="ipfs-latest-pill" disabled>
                                     <span id="ipfs-latest-cid">None</span>
                                 </button>
                                 <button id="ipfs-latest-copy" type="button"
-                                        class="ipfs-latest-copy-btn" disabled>
-                                    Copy CID
-                                </button>
-                                <button id="ipfs-latest-sync" type="button"
-                                        class="ipfs-latest-copy-btn ipfs-latest-sync-btn hidden" disabled>
-                                    Sync From IPFS
+                                        class="ipfs-latest-copy-btn"
+                                        title="Copy CID"
+                                        aria-label="Copy CID" disabled>
+                                    <svg t="1763697332262" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="11796" width="200" height="200">
+                                        <path d="M234.794667 197.418667L234.666667 288v448.170667a138.666667 138.666667 0 0 0 138.666666 138.666666h367.616a96.042667 96.042667 0 0 1-90.538666 64H373.333333A202.666667 202.666667 0 0 1 170.666667 736.170667V288c0-41.813333 26.752-77.44 64.128-90.581333zM757.333333 85.333333A96 96 0 0 1 853.333333 181.333333v554.666667a96 96 0 0 1-96 96h-384a96 96 0 0 1-96-96v-554.666667A96 96 0 0 1 373.333333 85.333333h384z m0 64h-384a32 32 0 0 0-32 32v554.666667c0 17.664 14.336 32 32 32h384a32 32 0 0 0 32-32v-554.666667a32 32 0 0 0-32-32z" fill="#212121" p-id="11797"></path>
+                                    </svg>
                                 </button>
 
                             </div>
                         </div>
-                        <button id="export-ipfs-btn" class="primary primary-IPFS" type="button"
-                                title="Export categories &amp; KOLs to IPFS (v1)">IPFS Snapshot
-                        </button>
+                        <div style="display: flex; flex-direction: column-reverse;align-items: center; gap: 4px">
+                            <button id="ipfs-latest-sync" type="button"
+                                    class="ipfs-latest-copy-btn ipfs-latest-sync-btn hidden" disabled>
+                                Sync From IPFS
+                            </button>
+                            <button id="export-ipfs-btn" class="primary primary-IPFS" type="button"
+                                    title="Export categories &amp; KOLs to IPFS (v1)">IPFS Snapshot
+                            </button>
+
+
+                        </div>
 
                     </div>
                 </div>

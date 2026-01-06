@@ -27,6 +27,10 @@ body {
 p {
     margin: 0;
 }
+button {
+    white-space: nowrap;   /* 按钮文字不换行 */
+    word-break: keep-all;  /* 防止被全局 word-break 影响 */
+}
 
 .hidden {
     display: none !important;
@@ -219,7 +223,7 @@ body.modal-open {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr)); /* 一行两列 */
     column-gap: 32px; /* 中间间距 32px */
-    align-items: center;
+    align-items: stretch;
     flex: 1; /* 作为 .toolbar 的子项继续占满横向空间 */
 }
 
@@ -249,7 +253,7 @@ body.modal-open {
     justify-content: space-between;
     gap: 4px;
     font-size: 14px;
-    padding: 8px 16px;
+    padding: 16px;
     background: rgba(6, 203, 173, 0.1);
     border-radius: 16px;
 }
@@ -292,9 +296,10 @@ body.modal-open {
     text-decoration: none;
 }
 
-.ipfs-latest-pill:not(:disabled) {
+.ipfs-latest-pill:not(:disabled) ,
+.ipfs-latest-sync-btn {
     text-decoration: underline;
-    text-decoration-color: #1890ff;
+    text-decoration-color: rgb(6, 203, 173);
     text-decoration-thickness: 2px;
 }
 
@@ -311,10 +316,20 @@ body.modal-open {
     cursor: pointer;
     color: rgb(6, 203, 173);
     border-radius: 999px;
+    padding: 6px;
+}
+.ipfs-latest-copy-btn .icon{
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+.ipfs-latest-copy-btn .icon path{
+    fill: currentColor;
 }
 
 .ipfs-latest-copy-btn:hover {
-    color: #0aa68e;
+    background-color: rgba(10, 166, 142, 0.2);
 }
 
 .ipfs-latest-copy-btn:disabled {
@@ -322,7 +337,11 @@ body.modal-open {
     cursor: default;
 }
 
-.ipfs-latest-sync-btn { margin-left: 6px; }
+.ipfs-latest-sync-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+}
 /* 小屏幕时 toolbar 竖排 */
 @media (max-width: 900px) {
     .toolbar {
@@ -422,7 +441,7 @@ body.modal-open {
 }
 
 .primary {
-    padding: 14px 16px;
+    padding: 10px 16px;
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
@@ -588,7 +607,7 @@ body.processing-blocked {
     overflow: visible; /* ✅ tooltip 不再被裁切 */
     padding-bottom: 16px;
     grid-auto-rows: auto; /* ✅ 行高=内容高度 */
-    align-items: start; /* ✅ 不再把卡片拉满行高 */
+    align-items: stretch; /* ✅ 不再把卡片拉满行高 */
 }
 
 

@@ -771,7 +771,10 @@ span.duration-badge {
     width: 16px;
     height: 16px;
     display: block;
-    fill: currentColor;
+    fill: currentColor !important;
+}
+.web3-row-content .web3-copy-btn .icon path {
+    fill: currentColor !important;
 }
 
 .web3-row-content .web3-copy-btn:hover {

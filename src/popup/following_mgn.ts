@@ -203,7 +203,9 @@ function initDomRefs(): void {
     ipfsLatestOpenBtn = $Id("ipfs-latest-open") as HTMLButtonElement | null;
     ipfsLatestCopyBtn = $Id("ipfs-latest-copy") as HTMLButtonElement | null;
     if (ipfsLatestCopyBtn) {
-        ipfsLatestCopyBtn.textContent = t("ipfs_latest_copy_cid");
+        const label = t("ipfs_latest_copy_cid");
+        ipfsLatestCopyBtn.title = label;
+        ipfsLatestCopyBtn.setAttribute("aria-label", label);
     }
 
     ipfsLatestSyncBtn = $Id("ipfs-latest-sync") as HTMLButtonElement | null;
