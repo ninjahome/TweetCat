@@ -2,7 +2,7 @@ import browser from "webextension-polyfill";
 import {choseColorByID, MsgType, noXTabError, SNAPSHOT_TYPE} from "../common/consts";
 import {
     __tableCategory,
-    __tableFollowings,
+    __tableFollowings, checkAndInitDatabase,
     databaseAddItem,
     databaseUpdateOrAddItem
 } from "../common/database";
@@ -228,6 +228,7 @@ let isProcessingUnfollow = false;
 document.addEventListener("DOMContentLoaded", initFollowingManager as EventListener);
 
 async function initFollowingManager() {
+    await checkAndInitDatabase()
     initDomRefs();
     document.title = t("mgn_following");
     bindEvents();
