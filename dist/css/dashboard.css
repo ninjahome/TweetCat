@@ -1034,14 +1034,44 @@ input.category-input:focus {
 
 .wallet-action-div{
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     gap: 6px;
-    padding: 8px 0;
     border-bottom: 1px solid var(--border-subtle, #e5e7eb);
 }
+.wallet-network-pill  {
+    background-color: rgba(161, 164, 168, 0.1);
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+}
 
-.wallet-action-div > button{
+/* Network badge: online dot */
+.wallet-network-pill__text{
+    display: inline-flex;
+    align-items: center;
+    gap: 2px; /* 圆点和文字间距 */
+
+}
+
+.wallet-network-pill__text::before{
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--accent, #1d9bf0); /* green: online */
+    flex: 0 0 auto;
+}
+.wallet-top-actions{
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 0;
+}
+
+.wallet-top-actions > button{
     width: 32px;
     height: 32px;
     border: none;
@@ -1054,12 +1084,12 @@ input.category-input:focus {
     justify-content: center;
 }
 /* 顶部右侧两个 SVG 图标统一样式 */
-.wallet-action-div > button {
+.wallet-top-actions > button {
     color: #374151; /* 默认图标颜色（深灰） */
 }
 
 /* 控制 SVG 的尺寸 */
-.wallet-action-div > button svg {
+.wallet-top-actions > button svg {
     width: 22px;
     height: 22px;
     font-weight: 600;
@@ -1071,7 +1101,7 @@ input.category-input:focus {
     background-color: rgba(29, 155, 240, 0.1) ;
 }
 /* hover 高亮 */
-.wallet-action-div > button:hover {
+.wallet-top-actions> button:hover {
     background-color: rgba(15, 20, 25, 0.03);
 }
 .wallet-main-menu-list {

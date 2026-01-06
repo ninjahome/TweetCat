@@ -34,6 +34,7 @@ async function initDashBoard(): Promise<void> {
     initWalletOrCreate();
     initIpfsSettingsView();
     await initSettingsPanel();
+    initNetworkBadgeSync();
 
     initBuyUsdcButton();
 }
@@ -87,4 +88,27 @@ function initSettings() {
         await switchAdOn(isEnabled);
         await sendMessageToX(MsgType.AdsBlockChanged, isEnabled);
     };
+}
+function initNetworkBadgeSync() {
+    const badgeEl = document.getElementById("wallet-current-network") as HTMLSpanElement | null;
+    const selectEl = document.getElementById("wallet-network-select") as HTMLSelectElement | null;
+    if (!badgeEl || !selectEl) return;
+
+    const apply = () => {
+        const v = (selectEl.value || "").toLowerCase();
+        if (v === "base-mainnet") {
+            badgeEl.textContent = "Base mainnet";
+            return;
+        }
+        if (v === "base-sepolia") {
+            badgeEl.textContent = "Base Sepolia testnet";
+            return;
+        }
+        // fallback：如果未来新增网络，直接用 option 文本
+        badgeEl.textContent =
+            selectEl.options[selectEl.selectedIndex]?.textContent?.trim() || "Network";
+    };
+
+    apply(); // 初始化同步一次（initSettingsPanel 会先把 select.value 设好）
+    selectEl.addEventListener("change", apply); // 不覆盖你原来的 onchange
 }
