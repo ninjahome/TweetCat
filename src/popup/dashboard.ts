@@ -97,16 +97,17 @@ function initNetworkBadgeSync() {
     const apply = () => {
         const v = (selectEl.value || "").toLowerCase();
         if (v === "base-mainnet") {
-            badgeEl.textContent = "Base mainnet";
+            badgeEl.textContent = t("wallet_network_option_base_mainnet");
             return;
         }
         if (v === "base-sepolia") {
-            badgeEl.textContent = "Base Sepolia testnet";
+            badgeEl.textContent = t("wallet_network_option_base_sepolia");
             return;
         }
-        // fallback：如果未来新增网络，直接用 option 文本
+// fallback：如果未来新增网络，直接用 option 文本；再不行就用“Network/网络”
         badgeEl.textContent =
-            selectEl.options[selectEl.selectedIndex]?.textContent?.trim() || "Network";
+            selectEl.options[selectEl.selectedIndex]?.textContent?.trim() || t("wallet_network_title");
+
     };
 
     apply(); // 初始化同步一次（initSettingsPanel 会先把 select.value 设好）

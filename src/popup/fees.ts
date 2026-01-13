@@ -35,10 +35,10 @@ let hasMorePages = false;
 let currentFee: PlatformFee | null = null;
 let allFees: PlatformFee[] = [];
 
-document.addEventListener("DOMContentLoaded", () => {
-    initI18n();
+document.addEventListener("DOMContentLoaded", async () => {
+    await initI18n();
     initFeesTexts();
-    initFeesPage().then();
+    await initFeesPage();
 });
 
 function initFeesTexts() {
@@ -91,6 +91,53 @@ function initFeesTexts() {
     const viewOnChainBtn = document.getElementById('view-on-chain');
     if (viewOnChainBtn) {
         viewOnChainBtn.textContent = t('fees_view_on_chain') || 'View on Blockchain';
+    }
+
+    // ✅ 费用详情弹框字段标签（中英）
+    const labelDetailGross = document.getElementById('label-detail-gross');
+    if (labelDetailGross) {
+        labelDetailGross.textContent = t('label_detail_gross') || 'Gross Amount';
+    }
+
+    const labelDetailRate = document.getElementById('label-detail-rate');
+    if (labelDetailRate) {
+        labelDetailRate.textContent = t('label_detail_rate') || 'Fee Rate';
+    }
+
+    const labelDetailFee = document.getElementById('label-detail-fee');
+    if (labelDetailFee) {
+        labelDetailFee.textContent = t('label_detail_fee') || 'Fee Amount';
+    }
+
+    const labelDetailNet = document.getElementById('label-detail-net');
+    if (labelDetailNet) {
+        labelDetailNet.textContent = t('label_detail_net') || 'Net Amount';
+    }
+
+    const labelDetailTx = document.getElementById('label-detail-tx');
+    if (labelDetailTx) {
+        labelDetailTx.textContent = t('label_detail_tx') || 'Transaction Hash';
+    }
+
+    const labelDetailUserWallet = document.getElementById('label-detail-user-wallet');
+    if (labelDetailUserWallet) {
+        labelDetailUserWallet.textContent = t('label_detail_user_wallet') || 'User Wallet';
+    }
+
+    const labelDetailPlatformWallet = document.getElementById('label-detail-platform-wallet');
+    if (labelDetailPlatformWallet) {
+        labelDetailPlatformWallet.textContent = t('label_detail_platform_wallet') || 'Platform Wallet';
+    }
+
+    const labelDetailCreated = document.getElementById('label-detail-created');
+    if (labelDetailCreated) {
+        labelDetailCreated.textContent = t('label_detail_created') || 'Created At';
+    }
+
+    // ✅ 关闭按钮 aria-label（可访问性）
+    const closeFeeDetailBtn = document.getElementById('close-fee-detail');
+    if (closeFeeDetailBtn) {
+        closeFeeDetailBtn.setAttribute('aria-label', t('close_button') || 'Close');
     }
 }
 
@@ -408,17 +455,34 @@ function showFeeDetail(fee: PlatformFee) {
     }
 }
 
-function formatDate(dateString: string): string {
-    try {
-        const date = new Date(dateString);
-        return date.toLocaleString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-    } catch {
-        return dateString;
+function formatDate(dateStr: string): string {
+    if (!dateStr) return "--";
+
+    let s = String(dateStr).trim();
+
+    // D1 / SQLite 常见： "YYYY-MM-DD HH:MM:SS"（无时区）
+    // 这种我们按 UTC 解释，然后再转成中国时区显示
+    const hasTimezone = /[zZ]|[+\-]\d{2}:\d{2}$/.test(s);
+    if (!hasTimezone) {
+        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
+            s = s.replace(" ", "T");
+            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) s += ":00";
+            s += "Z";
+        }
     }
+
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return dateStr;
+
+    const locale = document.documentElement.lang || navigator.language || "zh-CN";
+
+    return d.toLocaleString(locale, {
+        timeZone: "Asia/Shanghai",
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: locale.toLowerCase().startsWith("en"),
+    });
 }

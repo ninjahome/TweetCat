@@ -1226,5 +1226,29 @@
   },
   "ipfs_sync_no_local_followings": {
   "message": "需要先从推特同步账户。是否需要现在同步？"
+  },
+  "label_detail_gross": {
+    "message": "总金额"
+  },
+  "label_detail_rate": {
+    "message": "费率"
+  },
+  "label_detail_fee": {
+    "message": "手续费"
+  },
+  "label_detail_net": {
+    "message": "到手金额"
+  },
+  "label_detail_tx": {
+    "message": "交易哈希"
+  },
+  "label_detail_user_wallet": {
+    "message": "用户钱包"
+  },
+  "label_detail_platform_wallet": {
+    "message": "平台钱包"
+  },
+  "label_detail_created": {
+    "message": "创建时间"
   }
 }

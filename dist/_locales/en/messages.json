@@ -1226,5 +1226,29 @@
   },
   "ipfs_sync_no_local_followings": {
     "message": "You need to sync followings from Twitter first. Would you like to sync now?"
+  },
+  "label_detail_gross": {
+    "message": "Gross Amount"
+  },
+  "label_detail_rate": {
+    "message": "Fee Rate"
+  },
+  "label_detail_fee": {
+    "message": "Fee Amount"
+  },
+  "label_detail_net": {
+    "message": "Net Amount"
+  },
+  "label_detail_tx": {
+    "message": "Transaction Hash"
+  },
+  "label_detail_user_wallet": {
+    "message": "User Wallet"
+  },
+  "label_detail_platform_wallet": {
+    "message": "Platform Wallet"
+  },
+  "label_detail_created": {
+    "message": "Created At"
   }
 }
