@@ -123,6 +123,7 @@ module.exports = (env, argv) => {
             fees: path.resolve(__dirname, './src/popup/fees.ts'),
             buy_usdc: path.resolve(__dirname, './src/popup/buy_usdc.ts'),
             ad_plaza: path.resolve(__dirname, './src/popup/ad_plaza.ts'),
+            ad_advertise: path.resolve(__dirname, './src/popup/ad_advertise.ts'),
         },
         target: 'web',
     };
