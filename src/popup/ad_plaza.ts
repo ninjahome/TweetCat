@@ -99,10 +99,10 @@ const fakeEarnAds: EarnAd[] = [
     }
 ];
 
-const fakeWithdrawableUSDC = 12.34;
-const fakeTotalEarnedUSDC = 23.45;
-const fakeTodayEarnedUSDC = 1.25;
-const fakePendingUSDC = 0.75;
+let fakeWithdrawableUSDC = 12.34;
+let fakeTotalEarnedUSDC = 23.45;
+let fakeTodayEarnedUSDC = 1.25;
+let fakePendingUSDC = 0.75;
 
 // ========= 工具函数 =========
 
@@ -112,6 +112,92 @@ const categoryIcon: Record<AdCategory, string> = {
     register: "🧾",
     share: "🔁"
 };
+
+// ========= 假事件：状态 & Activity =========
+
+type EarnActivityType = "task_start" | "task_complete" | "withdraw" | "open_activity";
+
+interface EarnActivityItem {
+    at: number;
+    type: EarnActivityType;
+    title: string;
+    detail?: string;
+}
+
+const fakeActivities: EarnActivityItem[] = [];
+
+// 每个任务的临时状态：避免重复点击导致瞬间 +N
+const taskRunState: Record<string, "idle" | "running"> = {};
+
+function pushActivity(type: EarnActivityType, title: string, detail?: string) {
+    fakeActivities.unshift({ at: Date.now(), type, title, detail });
+    // 控制长度，防止无限增长
+    if (fakeActivities.length > 50) fakeActivities.length = 50;
+}
+
+function round2(n: number) {
+    return Math.round(n * 100) / 100;
+}
+
+/**
+ * 假完成一次任务：更新 summary + 更新该 ad 的 completed
+ * - 不改变你过滤/排序逻辑，只改数据并重新 render
+ */
+function fakeCompleteTask(ad: EarnAd) {
+    // 额度用完就不再增长
+    if (ad.completed >= ad.totalQuota) {
+        showNotification("This task is fully completed (fake).");
+        return;
+    }
+
+    // 1) 更新广告进度
+    ad.completed += 1;
+
+    // 2) 更新收益：这里给一个“可见的假逻辑”
+    fakeTodayEarnedUSDC = round2(fakeTodayEarnedUSDC + ad.rewardUSDC);
+    fakeTotalEarnedUSDC = round2(fakeTotalEarnedUSDC + ad.rewardUSDC);
+
+    // 3) 进入 pending，再“延迟转入 withdrawable”
+    fakePendingUSDC = round2(fakePendingUSDC + ad.rewardUSDC);
+
+    pushActivity("task_complete", `Complete: ${ad.title}`, `+${formatUSDC(ad.rewardUSDC)}`);
+
+    // 4) 模拟后端结算：800ms 后把 pending -> withdrawable
+    setTimeout(() => {
+        // 这里用快照式转移，避免多次点击时 pending 被重复转
+        const move = ad.rewardUSDC;
+        fakePendingUSDC = round2(Math.max(0, fakePendingUSDC - move));
+        fakeWithdrawableUSDC = round2(fakeWithdrawableUSDC + move);
+
+        // 刷新 UI（仍然用你的函数）
+        renderEarnSummary();
+        renderEarnAds();
+    }, 800);
+}
+
+/**
+ * 点击 Start Task 的假流程：
+ * - 先提示 start
+ * - 禁用按钮 600ms（模拟执行）
+ * - 自动执行一次 fakeCompleteTask
+ */
+function fakeStartTask(ad: EarnAd) {
+    if (taskRunState[ad.id] === "running") return;
+
+    taskRunState[ad.id] = "running";
+    pushActivity("task_start", `Start: ${ad.title}`, ad.detailUrl);
+
+    showNotification(`Start task (fake): ${ad.title}`);
+
+    setTimeout(() => {
+        fakeCompleteTask(ad);
+        taskRunState[ad.id] = "idle";
+        // 刷新 UI（按钮状态/额度/列表）
+        renderEarnSummary();
+        renderEarnAds();
+    }, 600);
+}
+
 
 // ========= Earn 模式：筛选 =========
 
@@ -290,11 +376,20 @@ function renderEarnAds() {
 
         // button
         const btn = $2<HTMLButtonElement>(card, ".btn-start-task");
+        btn.disabled = taskRunState[ad.id] === "running" || ad.completed >= ad.totalQuota;
+        btn.textContent = ad.completed >= ad.totalQuota
+            ? "Completed"
+            : (taskRunState[ad.id] === "running" ? "Running..." : "Start Task");
+
         btn.addEventListener("click", (ev) => {
             ev.stopPropagation();
-            showNotification(`Start task: ${ad.title}`);
-            openDetail();
+            // 不改变你的 openDetail 逻辑，你可以决定要不要打开详情
+            // openDetail();
+
+            // 用假流程驱动数据变化
+            fakeStartTask(ad);
         });
+
 
         // card click
         card.addEventListener("click", openDetail);
@@ -353,11 +448,33 @@ function initEarnFiltersEvents() {
 
 function initEarnActions() {
     document.querySelector<HTMLButtonElement>("#btn-withdraw")?.addEventListener("click", () => {
-        showNotification("Withdraw request submitted (fake).");
+        if (fakeWithdrawableUSDC <= 0) {
+            showNotification("Nothing to withdraw (fake).");
+            return;
+        }
+
+        const amount = fakeWithdrawableUSDC;
+        fakeWithdrawableUSDC = 0;
+
+        pushActivity("withdraw", `Withdraw: ${formatUSDC(amount)}`);
+
+        renderEarnSummary();
+        showNotification(`Withdraw submitted (fake): ${formatUSDC(amount)}`);
     });
 
     document.querySelector<HTMLButtonElement>("#btn-earn-activity")?.addEventListener("click", () => {
-        showNotification("Open earn activity (fake).");
+        pushActivity("open_activity", "Open Activity (fake)");
+
+        // 你目前 HTML 没有 activity 模态框，所以先用 console 输出，测试流程足够
+        const list = fakeActivities.slice(0, 10).map(a => ({
+            time: new Date(a.at).toLocaleString(),
+            type: a.type,
+            title: a.title,
+            detail: a.detail || ""
+        }));
+        console.table(list);
+
+        showNotification("Activity opened (fake). Check console.");
     });
 
     document.querySelector<HTMLButtonElement>("#btn-open-advertise")?.addEventListener("click", () => {
