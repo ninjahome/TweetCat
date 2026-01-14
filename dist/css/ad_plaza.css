@@ -218,6 +218,105 @@ body {
 }
 
 /* ==================== Filters Sidebar ==================== */
+
+/* Search + Clear (Filters) */
+.filter-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.filter-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.filter-search-icon {
+    font-size: 14px;
+    opacity: 0.75;
+    user-select: none;
+}
+
+.filter-search-input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 14px;
+    background: transparent;
+}
+
+/* Hide native clear button of <input type="search"> (Chrome/Safari/Edge) */
+.filter-search-input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+}
+
+.filter-search-input[type="search"]::-webkit-search-decoration,
+.filter-search-input[type="search"]::-webkit-search-results-button,
+.filter-search-input[type="search"]::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+}
+
+/* Edge/IE legacy */
+.filter-search-input::-ms-clear {
+    display: none;
+}
+
+.filter-search-clear {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    color: #6b7280;
+    visibility: hidden; /* TS 控制显示 */
+}
+
+.filter-search-clear:hover {
+    background: #f3f4f6;
+}
+
+/* 鼠标悬停：提示这里可输入 */
+.filter-search:hover {
+    border-color: #c7d2fe;
+}
+
+/* 聚焦：最关键，让人一眼知道正在输入 */
+.filter-search:focus-within {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.btn-clear-filters {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-clear-filters:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.btn-clear-filters:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
 .filters-sidebar {
     background: white;
     padding: 24px;
@@ -336,11 +435,36 @@ body {
     transition: all 0.3s;
     display: flex;
     flex-direction: column;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ad-card::after {
+    content: "Click to open";
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(17, 24, 39, 0.82);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 999px;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
 }
 
 .ad-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.ad-card:hover::after {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .ad-card-image {

@@ -258,12 +258,85 @@ function getSortOption(): string {
     return select?.value || "reward-high";
 }
 
+const DEFAULT_SORT = "reward-high";
+
+/** 读取搜索关键词 */
+function getSearchQuery(): string {
+    const input = document.querySelector<HTMLInputElement>("#ad-search");
+    return (input?.value || "").trim().toLowerCase();
+}
+
+/** 搜索匹配：title/brand/description/tags */
+function matchAdSearch(ad: EarnAd, qstr: string): boolean {
+    if (!qstr) return true;
+    const hay = [
+        ad.title,
+        ad.brand,
+        ad.description,
+        ...(ad.tags || [])
+    ].join(" ").toLowerCase();
+    return hay.includes(qstr);
+}
+
+/** 当前过滤是否仍是默认状态（用于启用/禁用 Clear filters 按钮） */
+function isDefaultFilters(): boolean {
+    const qstr = getSearchQuery();
+    if (qstr) return false;
+
+    const catInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="category"]'));
+    const rewardInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="reward"]'));
+
+    const allCatChecked = catInputs.length > 0 && catInputs.every(i => i.checked);
+    const allRewardChecked = rewardInputs.length > 0 && rewardInputs.every(i => i.checked);
+
+    const sort = getSortOption();
+    return allCatChecked && allRewardChecked && sort === DEFAULT_SORT;
+}
+
+/** 更新搜索清除按钮可见性 + Clear filters 按钮可点状态 */
+function updateFilterToolsUI(): void {
+    const clearFiltersBtn = document.querySelector<HTMLButtonElement>("#btn-clear-filters");
+    if (clearFiltersBtn) clearFiltersBtn.disabled = isDefaultFilters();
+
+    const searchInput = document.querySelector<HTMLInputElement>("#ad-search");
+    const clearSearchBtn = document.querySelector<HTMLButtonElement>("#btn-clear-search");
+
+    if (clearSearchBtn) {
+        const hasText = !!(searchInput?.value || "").trim();
+        // 你的 CSS 用的是 visibility hidden，所以这里保持一致
+        clearSearchBtn.style.visibility = hasText ? "visible" : "hidden";
+    }
+}
+
+/** 重置所有过滤条件到默认状态 */
+function resetAllFilters(): void {
+    // 清空搜索
+    const searchInput = document.querySelector<HTMLInputElement>("#ad-search");
+    if (searchInput) searchInput.value = "";
+
+    // 全选所有 category/reward
+    document.querySelectorAll<HTMLInputElement>('input[name="category"]').forEach(i => i.checked = true);
+    document.querySelectorAll<HTMLInputElement>('input[name="reward"]').forEach(i => i.checked = true);
+
+    // 还原排序
+    const sort = document.querySelector<HTMLSelectElement>("#sort-select");
+    if (sort) sort.value = DEFAULT_SORT;
+
+    updateFilterToolsUI();
+    renderEarnAds();
+}
+
 function filterAndSortAds(): EarnAd[] {
     const categories = getSelectedCategories();
     const rewardRanges = getSelectedRewardRanges();
     const sortBy = getSortOption();
+    const qstr = getSearchQuery();
 
-    let result = fakeEarnAds.filter((ad) => categories.includes(ad.category) && rewardRanges.includes(ad.rewardRange));
+    let result = fakeEarnAds.filter((ad) =>
+        categories.includes(ad.category) &&
+        rewardRanges.includes(ad.rewardRange) &&
+        matchAdSearch(ad, qstr)
+    );
 
     switch (sortBy) {
         case "reward-high":
@@ -725,9 +798,35 @@ function initModeSwitch() {
 // ========= 事件绑定：筛选 / Wizard =========
 
 function initEarnFiltersEvents() {
-    document.querySelectorAll<HTMLInputElement>('input[name="category"]').forEach((cb) => cb.addEventListener("change", renderEarnAds));
-    document.querySelectorAll<HTMLInputElement>('input[name="reward"]').forEach((cb) => cb.addEventListener("change", renderEarnAds));
-    document.querySelector<HTMLSelectElement>("#sort-select")?.addEventListener("change", renderEarnAds);
+    const onAnyFilterChanged = () => {
+        updateFilterToolsUI();
+        renderEarnAds();
+    };
+
+    document.querySelectorAll<HTMLInputElement>('input[name="category"]').forEach((cb) =>
+        cb.addEventListener("change", onAnyFilterChanged)
+    );
+    document.querySelectorAll<HTMLInputElement>('input[name="reward"]').forEach((cb) =>
+        cb.addEventListener("change", onAnyFilterChanged)
+    );
+    document.querySelector<HTMLSelectElement>("#sort-select")?.addEventListener("change", onAnyFilterChanged);
+
+    // 搜索：输入实时过滤（也可改成 debounce，但你现在假数据不需要）
+    const searchInput = document.querySelector<HTMLInputElement>("#ad-search");
+    searchInput?.addEventListener("input", onAnyFilterChanged);
+
+    // 清除搜索
+    document.querySelector<HTMLButtonElement>("#btn-clear-search")?.addEventListener("click", () => {
+        if (searchInput) searchInput.value = "";
+        updateFilterToolsUI();
+        renderEarnAds();
+        searchInput?.focus();
+    });
+
+    // 一键清除过滤
+    document.querySelector<HTMLButtonElement>("#btn-clear-filters")?.addEventListener("click", () => {
+        resetAllFilters();
+    });
 }
 
 function initWizardEvents() {
@@ -757,6 +856,7 @@ function initAdPlaza() {
     initWizardEvents();
     initRechargeModalEvents();
     initHistoryModalEvents();
+    updateFilterToolsUI();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
