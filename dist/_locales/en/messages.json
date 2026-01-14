@@ -361,7 +361,7 @@
     "message": "Gas Fee"
   },
   "usdt_balance": {
-    "message": "USDT Balance"
+    "message": "USDC Balance"
   },
   "web3_id_tittle": {
     "message": "Web3 ID Infos"

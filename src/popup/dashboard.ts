@@ -37,6 +37,7 @@ async function initDashBoard(): Promise<void> {
     initNetworkBadgeSync();
 
     initBuyUsdcButton();
+    initAdPlazaButton();
 }
 
 function initBuyUsdcButton() {
@@ -45,6 +46,17 @@ function initBuyUsdcButton() {
         buyUsdcBtn.addEventListener("click", async () => {
             await browser.tabs.create({
                 url: browser.runtime.getURL("html/buy_usdc.html")
+            });
+        });
+    }
+}
+
+function initAdPlazaButton() {
+    const adPlazaBtn = document.getElementById("btn-ad-plaza");
+    if (adPlazaBtn) {
+        adPlazaBtn.addEventListener("click", async () => {
+            await browser.tabs.create({
+                url: browser.runtime.getURL("html/ad_plaza.html")
             });
         });
     }

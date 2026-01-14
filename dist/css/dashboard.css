@@ -1390,6 +1390,50 @@ input.category-input:focus {
     font-weight: 700;
     flex-shrink: 0;
 }
+
+/* Ad Plaza Button Styles */
+.ad-plaza-container {
+    margin: 16px 0;
+    padding: 0;
+}
+
+.btn-ad-plaza {
+    width: 100%;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    font-size: 15px;
+}
+
+.btn-ad-plaza:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-ad-plaza:active {
+    transform: translateY(0);
+}
+
+.plaza-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.plaza-text {
+    flex: 1;
+    text-align: left;
+    margin-left: 12px;
+    font-weight: 600;
+    font-size: 15px;
+}
 .btn {
     padding: 12px 16px;
     border-radius: 999px;

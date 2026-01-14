@@ -361,7 +361,7 @@
     "message": "Gas 费"
   },
   "usdt_balance": {
-    "message": "USDT 余额"
+    "message": "USDC 余额"
   },
   "web3_id_tittle": {
     "message": "Web3身份信息"

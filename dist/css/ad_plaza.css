@@ -1,0 +1,126 @@
+/* Ad Plaza CSS Styles */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+.ad-plaza-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.ad-plaza-header {
+    text-align: center;
+    color: white;
+    margin-bottom: 60px;
+    animation: fadeInDown 0.6s ease-out;
+}
+
+.ad-plaza-header h1 {
+    font-size: 48px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.ad-plaza-header .subtitle {
+    font-size: 20px;
+    opacity: 0.9;
+    margin: 0;
+}
+
+.ad-plaza-content {
+    background: white;
+    border-radius: 20px;
+    padding: 80px 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: fadeInUp 0.8s ease-out;
+}
+
+.placeholder-message {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.placeholder-icon {
+    font-size: 120px;
+    margin-bottom: 30px;
+    animation: bounce 2s infinite;
+}
+
+.placeholder-message h2 {
+    font-size: 36px;
+    color: #333;
+    margin: 0 0 20px 0;
+}
+
+.placeholder-message p {
+    font-size: 18px;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .ad-plaza-header h1 {
+        font-size: 36px;
+    }
+    
+    .ad-plaza-header .subtitle {
+        font-size: 16px;
+    }
+    
+    .ad-plaza-content {
+        padding: 60px 20px;
+    }
+    
+    .placeholder-icon {
+        font-size: 80px;
+    }
+    
+    .placeholder-message h2 {
+        font-size: 28px;
+    }
+    
+    .placeholder-message p {
+        font-size: 16px;
+    }
+}
