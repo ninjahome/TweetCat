@@ -59,7 +59,7 @@
                 <div class="card-label">Pending</div>
                 <div class="card-value">0.00 USDC</div>
             </div>
-            <div class="overview-card">
+            <div class="overview-actions">
                 <button id="btn-my-earnings" class="btn-view-details">My Earnings</button>
             </div>
         </div>
@@ -511,6 +511,105 @@
             </div>
         </div>
     </div>
+
+
+    <!-- ==================== Hidden Templates (for TS clone) ==================== -->
+    <template id="tpl-ad-card">
+        <div class="ad-card" data-ad-id="">
+            <div class="ad-card-image">
+                <span class="ad-card-icon" aria-hidden="true">📢</span>
+            </div>
+
+            <div class="ad-card-content">
+                <div class="ad-card-header">
+                    <h3 class="ad-card-title"></h3>
+                    <div class="ad-card-brand"></div>
+                </div>
+
+                <p class="ad-card-description"></p>
+
+                <div class="ad-card-meta">
+                    <span class="meta-item meta-time"></span>
+                    <span class="meta-item meta-quota"></span>
+                    <span class="meta-item meta-deadline"></span>
+                </div>
+
+                <div class="ad-card-tags">
+                    <span class="tag tpl-tag">Tag</span>
+                </div>
+            </div>
+
+            <div class="ad-card-footer">
+                <div class="ad-card-reward">
+                    <span class="reward-label">Earn:</span>
+                    <span class="reward-value"></span>
+                </div>
+                <button class="btn-start-task">Start Task</button>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-my-ad-row">
+        <tr class="my-ad-row" data-ad-id="">
+            <td class="td-name"></td>
+            <td class="td-status"></td>
+            <td class="td-reward"></td>
+            <td class="td-completed"></td>
+            <td class="td-spent"></td>
+            <td class="td-remaining"></td>
+            <td class="td-actions">
+                <button class="btn-secondary btn-view" type="button">View</button>
+                <button class="btn-secondary btn-toggle" type="button">Pause</button>
+            </td>
+        </tr>
+    </template>
+
+    <template id="tpl-empty-my-ads-row">
+        <tr class="empty-row">
+            <td colspan="7">
+                <div class="empty-state-small">
+                    <p>No ads published yet. Click "Publish New Ad" to get started!</p>
+                </div>
+            </td>
+        </tr>
+    </template>
+
+    <template id="tpl-spend-row">
+        <tr class="spend-row" data-id="">
+            <td class="td-time"></td>
+            <td class="td-ad"></td>
+            <td class="td-event"></td>
+            <td class="td-amount"></td>
+            <td class="td-fee"></td>
+            <td class="td-status"></td>
+        </tr>
+    </template>
+
+    <template id="tpl-empty-spend-row">
+        <tr class="empty-row">
+            <td colspan="6">
+                <div class="empty-state-small">
+                    <p>No spending records yet.</p>
+                </div>
+            </td>
+        </tr>
+    </template>
+
+    <template id="tpl-history-row">
+        <tr class="history-row">
+            <td class="td-time"></td>
+            <td class="td-name"></td>
+            <td class="td-amount"></td>
+            <td class="td-status"></td>
+        </tr>
+    </template>
+
+    <template id="tpl-empty-history-row">
+        <tr class="empty-row">
+            <td colspan="4" class="td-empty">No records</td>
+        </tr>
+    </template>
+
 
 </body>
 </html>

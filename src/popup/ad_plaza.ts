@@ -1,5 +1,6 @@
 // ad_plaza.ts
 // 用假数据驱动 Ad Plaza 的所有界面和按钮交互
+// ✅ 已移除所有 document.createElement：全部改为 HTML <template> + cloneNode
 
 // ========= 类型定义 =========
 
@@ -54,7 +55,6 @@ interface HistoryRow {
 
 // ========= 假数据 =========
 
-// Earn 模式的广告列表
 const fakeEarnAds: EarnAd[] = [
     {
         id: "ad_1",
@@ -126,11 +126,9 @@ const fakeEarnAds: EarnAd[] = [
     }
 ];
 
-// 广告主的假账户余额（头部 + Advertise 仪表盘共用）
-let fakeUserBalanceUSDC = 123.45; // 顶部 Balance
-let fakeAdAccountBalanceUSDC = 80.0; // Advertise 仪表盘里的 Ad Account Balance
+let fakeUserBalanceUSDC = 123.45;     // 顶部 Balance
+let fakeAdAccountBalanceUSDC = 80.0;  // Advertise 仪表盘里的 Ad Account Balance
 
-// 我的广告列表
 let myAds: MyAdRow[] = [
     {
         id: "my_ad_1",
@@ -152,7 +150,6 @@ let myAds: MyAdRow[] = [
     }
 ];
 
-// 最近消费记录
 let spendRecords: SpendRecord[] = [
     {
         id: "sp_1",
@@ -174,7 +171,6 @@ let spendRecords: SpendRecord[] = [
     }
 ];
 
-// 历史记录（简单用假数组）
 const historyEarnings: HistoryRow[] = [
     { time: "2026-01-14 10:12", adNameOrMethod: "Twitter Followers Campaign", amount: 0.5, status: "Completed" },
     { time: "2026-01-14 09:30", adNameOrMethod: "Landing Page Visit", amount: 0.2, status: "Completed" }
@@ -189,27 +185,38 @@ const historyRecharge: HistoryRow[] = [
     { time: "2026-01-13 18:20", adNameOrMethod: "Onramp (Card)", amount: 100, status: "Success" }
 ];
 
-// 假钱包地址
 const fakeWalletAddress = "0xDEMO1234567890abcdef1234567890ABCDEF0000";
 
 // ========= 工具函数 =========
 
 function $(selector: string): HTMLElement {
     const el = document.querySelector<HTMLElement>(selector);
-    if (!el) {
-        throw new Error(`Element not found: ${selector}`);
-    }
+    if (!el) throw new Error(`Element not found: ${selector}`);
     return el;
 }
 
-function formatUSDC(amount: number): string {
-    return amount.toFixed(2) + " USDC";
+function q<T extends Element>(root: ParentNode, selector: string): T {
+    const el = root.querySelector<T>(selector);
+    if (!el) throw new Error(`Element not found: ${selector}`);
+    return el;
 }
 
-// 简单 toast，可以后续改成你自己的 notification 组件
+function cloneTemplate(id: string): HTMLElement {
+    const tpl = document.querySelector<HTMLTemplateElement>(`#${id}`);
+    if (!tpl) throw new Error(`Template not found: #${id}`);
+    const first = tpl.content.firstElementChild as HTMLElement | null;
+    if (!first) throw new Error(`Template #${id} has no root element`);
+    return first.cloneNode(true) as HTMLElement;
+}
+
+function formatUSDC(amount: number): string {
+    const n = Number(amount);
+    if (!Number.isFinite(n)) return "0.00 USDC";
+    return n.toFixed(2) + " USDC";
+}
+
 function showToast(message: string) {
-    // 先尝试使用现有的 notification DOM（如果有）
-    let notification = document.querySelector<HTMLElement>("#notification");
+    const notification = document.querySelector<HTMLElement>("#notification");
     if (!notification) {
         alert(message);
         return;
@@ -219,11 +226,18 @@ function showToast(message: string) {
     notification.classList.add("info");
     notification.style.opacity = "1";
     setTimeout(() => {
-        notification && (notification.style.opacity = "0");
+        if (notification) notification.style.opacity = "0";
     }, 2000);
 }
 
-// ========= Earn 模式：广告列表渲染 & 筛选 =========
+const categoryIcon: Record<AdCategory, string> = {
+    follow: "👤",
+    visit: "🔗",
+    register: "🧾",
+    share: "🔁"
+};
+
+// ========= Earn 模式：筛选 =========
 
 function getSelectedCategories(): AdCategory[] {
     const checked = Array.from(
@@ -249,11 +263,7 @@ function filterAndSortAds(): EarnAd[] {
     const rewardRanges = getSelectedRewardRanges();
     const sortBy = getSortOption();
 
-    let result = fakeEarnAds.filter((ad) => {
-        const inCat = categories.includes(ad.category);
-        const inRange = rewardRanges.includes(ad.rewardRange);
-        return inCat && inRange;
-    });
+    let result = fakeEarnAds.filter((ad) => categories.includes(ad.category) && rewardRanges.includes(ad.rewardRange));
 
     switch (sortBy) {
         case "reward-high":
@@ -271,149 +281,74 @@ function filterAndSortAds(): EarnAd[] {
         default:
             break;
     }
-
     return result;
 }
+
+// ========= Earn 模式：渲染广告卡片（模板 clone） =========
 
 function renderEarnAds() {
     const grid = document.querySelector<HTMLElement>(".ad-cards-grid");
     if (!grid) return;
 
     const emptyState = grid.querySelector<HTMLElement>(".empty-state");
-    // 删除旧的卡片（保留 emptyState 节点）
-    Array.from(grid.children).forEach((child) => {
-        if (child !== emptyState) {
-            grid.removeChild(child);
-        }
-    });
+    // 清理旧卡片：只删 .ad-card，保留 empty-state
+    grid.querySelectorAll<HTMLElement>(".ad-card").forEach((n) => n.remove());
+
+    if (!emptyState) return;
 
     const ads = filterAndSortAds();
-
-    if (!emptyState) {
-        return;
-    }
-
     if (ads.length === 0) {
         emptyState.style.display = "block";
         return;
     }
-
     emptyState.style.display = "none";
 
     ads.forEach((ad) => {
-        const card = document.createElement("div");
-        card.className = "ad-card";
+        const card = cloneTemplate("tpl-ad-card");
+        card.dataset.adId = ad.id;
 
-        // 图片区域
-        const imgDiv = document.createElement("div");
-        imgDiv.className = "ad-card-image";
-        const imgSpan = document.createElement("span");
-        imgSpan.textContent = "📢";
-        imgSpan.style.fontSize = "40px";
-        imgDiv.appendChild(imgSpan);
+        // icon
+        const iconEl = q<HTMLElement>(card, ".ad-card-icon");
+        iconEl.textContent = categoryIcon[ad.category] || "📢";
 
-        // 内容区域
-        const content = document.createElement("div");
-        content.className = "ad-card-content";
+        // text fields
+        q<HTMLElement>(card, ".ad-card-title").textContent = ad.title;
+        q<HTMLElement>(card, ".ad-card-brand").textContent = ad.brand;
+        q<HTMLElement>(card, ".ad-card-description").textContent = ad.description;
 
-        const header = document.createElement("div");
-        header.className = "ad-card-header";
+        q<HTMLElement>(card, ".meta-time").textContent = `⏱️ ${ad.durationMinutes} min`;
+        q<HTMLElement>(card, ".meta-quota").textContent = `👥 ${ad.completed}/${ad.totalQuota}`;
+        q<HTMLElement>(card, ".meta-deadline").textContent = `📅 ${ad.deadlineText}`;
 
-        const title = document.createElement("h3");
-        title.className = "ad-card-title";
-        title.textContent = ad.title;
+        q<HTMLElement>(card, ".reward-value").textContent = formatUSDC(ad.rewardUSDC);
 
-        const brand = document.createElement("div");
-        brand.className = "ad-card-brand";
-        brand.textContent = ad.brand;
-
-        header.appendChild(title);
-        header.appendChild(brand);
-
-        const desc = document.createElement("p");
-        desc.className = "ad-card-description";
-        desc.textContent = ad.description;
-
-        const meta = document.createElement("div");
-        meta.className = "ad-card-meta";
-
-        const mTime = document.createElement("span");
-        mTime.className = "meta-item";
-        mTime.textContent = `⏱️ ${ad.durationMinutes} min`;
-
-        const mQuota = document.createElement("span");
-        mQuota.className = "meta-item";
-        mQuota.textContent = `👥 ${ad.completed}/${ad.totalQuota}`;
-
-        const mDeadline = document.createElement("span");
-        mDeadline.className = "meta-item";
-        mDeadline.textContent = `📅 ${ad.deadlineText}`;
-
-        meta.appendChild(mTime);
-        meta.appendChild(mQuota);
-        meta.appendChild(mDeadline);
-
-        const tagsDiv = document.createElement("div");
-        tagsDiv.className = "ad-card-tags";
-        ad.tags.forEach((tagText) => {
-            const tag = document.createElement("span");
+        // tags
+        const tagsContainer = q<HTMLElement>(card, ".ad-card-tags");
+        const tagTpl = q<HTMLElement>(tagsContainer, ".tpl-tag");
+        tagTpl.remove(); // 移除占位
+        ad.tags.forEach((t) => {
+            const tag = tagTpl.cloneNode(true) as HTMLElement;
             tag.className = "tag";
-            if (tagText.toLowerCase().includes("new")) {
-                tag.classList.add("tag-new");
-            } else if (tagText.toLowerCase().includes("easy")) {
-                tag.classList.add("tag-easy");
-            } else if (tagText.toLowerCase().includes("high")) {
-                tag.classList.add("tag-high");
-            }
-            tag.textContent = tagText;
-            tagsDiv.appendChild(tag);
+            const low = t.toLowerCase();
+            if (low.includes("new")) tag.classList.add("tag-new");
+            else if (low.includes("easy")) tag.classList.add("tag-easy");
+            else if (low.includes("high")) tag.classList.add("tag-high");
+            tag.textContent = t;
+            tagsContainer.appendChild(tag);
         });
 
-        content.appendChild(header);
-        content.appendChild(desc);
-        content.appendChild(meta);
-        content.appendChild(tagsDiv);
+        const openDetail = () => window.open(ad.detailUrl, "_blank");
 
-        // 底部区域
-        const footer = document.createElement("div");
-        footer.className = "ad-card-footer";
-
-        const rewardDiv = document.createElement("div");
-        rewardDiv.className = "ad-card-reward";
-
-        const rLabel = document.createElement("span");
-        rLabel.className = "reward-label";
-        rLabel.textContent = "Earn:";
-
-        const rValue = document.createElement("span");
-        rValue.className = "reward-value";
-        rValue.textContent = `${ad.rewardUSDC.toFixed(2)} USDC`;
-
-        rewardDiv.appendChild(rLabel);
-        rewardDiv.appendChild(rValue);
-
-        const btn = document.createElement("button");
-        btn.className = "btn-start-task";
-        btn.textContent = "Start Task";
-
+        // button
+        const btn = q<HTMLButtonElement>(card, ".btn-start-task");
         btn.addEventListener("click", (ev) => {
             ev.stopPropagation();
             showToast(`Start task: ${ad.title}`);
-            // 假逻辑：打开一个新的 tab，模拟广告详情页
-            window.open(ad.detailUrl, "_blank");
+            openDetail();
         });
 
-        footer.appendChild(rewardDiv);
-        footer.appendChild(btn);
-
-        // 整个卡片点击也可以进入
-        card.addEventListener("click", () => {
-            window.open(ad.detailUrl, "_blank");
-        });
-
-        card.appendChild(imgDiv);
-        card.appendChild(content);
-        card.appendChild(footer);
+        // card click
+        card.addEventListener("click", openDetail);
 
         grid.appendChild(card);
     });
@@ -423,9 +358,7 @@ function renderEarnAds() {
 
 function renderHeaderBalance() {
     const balanceSpan = document.querySelector<HTMLElement>(".balance-value");
-    if (balanceSpan) {
-        balanceSpan.textContent = formatUSDC(fakeUserBalanceUSDC);
-    }
+    if (balanceSpan) balanceSpan.textContent = formatUSDC(fakeUserBalanceUSDC);
 }
 
 function renderEarnOverview() {
@@ -444,81 +377,56 @@ function renderEarnOverview() {
     if (pendingCard) pendingCard.textContent = formatUSDC(0.75);
 }
 
-// ========= Advertise 仪表盘 & 我的广告 & 消费记录 =========
+// ========= Advertise 仪表盘 =========
 
 function renderAdvertiseDashboard() {
     const cards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card");
 
-    // Card1: Ad Account Balance + 按钮
     const card1Value = cards[0]?.querySelector<HTMLElement>(".card-value");
     if (card1Value) card1Value.textContent = formatUSDC(fakeAdAccountBalanceUSDC);
 
-    // Card2: Active Ads
     const activeCount = myAds.filter((ad) => ad.status === "Active").length;
     const card2Value = cards[1]?.querySelector<HTMLElement>(".card-value");
     if (card2Value) card2Value.textContent = activeCount.toString();
 
-    // Card3 & Card4：简单用假数据
     const todaySpend = spendRecords.reduce((sum, r) => sum + (r.amount + r.fee), 0);
     const card3Value = cards[2]?.querySelector<HTMLElement>(".card-value");
     if (card3Value) card3Value.textContent = formatUSDC(todaySpend);
 
-    const weekSpend = todaySpend * 3; // 随便乘个系数
+    const weekSpend = todaySpend * 3;
     const card4Value = cards[3]?.querySelector<HTMLElement>(".card-value");
     if (card4Value) card4Value.textContent = formatUSDC(weekSpend);
 }
+
+// ========= My Ads 表格（模板 clone） =========
 
 function renderMyAdsTable() {
     const tbody = document.querySelector<HTMLTableSectionElement>("#my-ads-tbody");
     if (!tbody) return;
 
-    tbody.innerHTML = "";
+    tbody.replaceChildren();
 
     if (myAds.length === 0) {
-        const tr = document.createElement("tr");
-        tr.className = "empty-row";
-        const td = document.createElement("td");
-        td.colSpan = 7;
-        td.innerHTML =
-            '<div class="empty-state-small"><p>No ads published yet. Click "Publish New Ad" to get started!</p></div>';
-        tr.appendChild(td);
-        tbody.appendChild(tr);
+        tbody.appendChild(cloneTemplate("tpl-empty-my-ads-row") as any);
         return;
     }
 
     myAds.forEach((ad) => {
-        const tr = document.createElement("tr");
+        const tr = cloneTemplate("tpl-my-ad-row") as HTMLTableRowElement;
+        tr.dataset.adId = ad.id;
 
-        const nameTd = document.createElement("td");
-        nameTd.textContent = ad.name;
+        q<HTMLElement>(tr, ".td-name").textContent = ad.name;
+        q<HTMLElement>(tr, ".td-status").textContent = ad.status;
+        q<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(ad.rewardPerTask);
+        q<HTMLElement>(tr, ".td-completed").textContent = ad.completed.toString();
+        q<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(ad.spent);
+        q<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(ad.remainingBudget);
 
-        const statusTd = document.createElement("td");
-        statusTd.textContent = ad.status;
+        const btnView = q<HTMLButtonElement>(tr, ".btn-view");
+        const btnToggle = q<HTMLButtonElement>(tr, ".btn-toggle");
 
-        const rewardTd = document.createElement("td");
-        rewardTd.textContent = formatUSDC(ad.rewardPerTask);
+        btnView.addEventListener("click", () => showToast(`View ad: ${ad.name}`));
 
-        const completedTd = document.createElement("td");
-        completedTd.textContent = ad.completed.toString();
-
-        const spentTd = document.createElement("td");
-        spentTd.textContent = formatUSDC(ad.spent);
-
-        const remainTd = document.createElement("td");
-        remainTd.textContent = formatUSDC(ad.remainingBudget);
-
-        const actionsTd = document.createElement("td");
-
-        const btnView = document.createElement("button");
-        btnView.className = "btn-secondary";
-        btnView.style.marginRight = "8px";
-        btnView.textContent = "View";
-        btnView.addEventListener("click", () => {
-            showToast(`View ad: ${ad.name}`);
-        });
-
-        const btnToggle = document.createElement("button");
-        btnToggle.className = "btn-secondary";
         btnToggle.textContent = ad.status === "Active" ? "Pause" : "Resume";
         btnToggle.addEventListener("click", () => {
             ad.status = ad.status === "Active" ? "Paused" : "Active";
@@ -526,65 +434,33 @@ function renderMyAdsTable() {
             renderAdvertiseDashboard();
         });
 
-        actionsTd.appendChild(btnView);
-        actionsTd.appendChild(btnToggle);
-
-        tr.appendChild(nameTd);
-        tr.appendChild(statusTd);
-        tr.appendChild(rewardTd);
-        tr.appendChild(completedTd);
-        tr.appendChild(spentTd);
-        tr.appendChild(remainTd);
-        tr.appendChild(actionsTd);
-
         tbody.appendChild(tr);
     });
 }
+
+// ========= Recent Spending 表格（模板 clone） =========
 
 function renderSpendTable() {
     const tbody = document.querySelector<HTMLTableSectionElement>("#spending-tbody");
     if (!tbody) return;
 
-    tbody.innerHTML = "";
+    tbody.replaceChildren();
 
     if (spendRecords.length === 0) {
-        const tr = document.createElement("tr");
-        tr.className = "empty-row";
-        const td = document.createElement("td");
-        td.colSpan = 6;
-        td.innerHTML = '<div class="empty-state-small"><p>No spending records yet.</p></div>';
-        tr.appendChild(td);
-        tbody.appendChild(tr);
+        tbody.appendChild(cloneTemplate("tpl-empty-spend-row") as any);
         return;
     }
 
     spendRecords.forEach((r) => {
-        const tr = document.createElement("tr");
+        const tr = cloneTemplate("tpl-spend-row") as HTMLTableRowElement;
+        tr.dataset.id = r.id;
 
-        const tTime = document.createElement("td");
-        tTime.textContent = r.time;
-
-        const tAd = document.createElement("td");
-        tAd.textContent = r.adName;
-
-        const tEvent = document.createElement("td");
-        tEvent.textContent = r.event;
-
-        const tAmount = document.createElement("td");
-        tAmount.textContent = formatUSDC(r.amount);
-
-        const tFee = document.createElement("td");
-        tFee.textContent = formatUSDC(r.fee);
-
-        const tStatus = document.createElement("td");
-        tStatus.textContent = r.status;
-
-        tr.appendChild(tTime);
-        tr.appendChild(tAd);
-        tr.appendChild(tEvent);
-        tr.appendChild(tAmount);
-        tr.appendChild(tFee);
-        tr.appendChild(tStatus);
+        q<HTMLElement>(tr, ".td-time").textContent = r.time;
+        q<HTMLElement>(tr, ".td-ad").textContent = r.adName;
+        q<HTMLElement>(tr, ".td-event").textContent = r.event;
+        q<HTMLElement>(tr, ".td-amount").textContent = formatUSDC(r.amount);
+        q<HTMLElement>(tr, ".td-fee").textContent = formatUSDC(r.fee);
+        q<HTMLElement>(tr, ".td-status").textContent = r.status;
 
         tbody.appendChild(tr);
     });
@@ -598,17 +474,14 @@ const wizardMaxStep = 4;
 function openWizard() {
     wizardCurrentStep = 1;
     updateWizardUI();
-    const modal = document.querySelector<HTMLElement>("#publish-wizard-modal");
-    modal?.classList.add("active");
+    document.querySelector<HTMLElement>("#publish-wizard-modal")?.classList.add("active");
 }
 
 function closeWizard() {
-    const modal = document.querySelector<HTMLElement>("#publish-wizard-modal");
-    modal?.classList.remove("active");
+    document.querySelector<HTMLElement>("#publish-wizard-modal")?.classList.remove("active");
 }
 
 function updateWizardUI() {
-    // 步骤指示器
     const steps = document.querySelectorAll<HTMLElement>(".wizard-step");
     steps.forEach((stepEl) => {
         const step = Number(stepEl.dataset.step);
@@ -616,14 +489,12 @@ function updateWizardUI() {
         stepEl.classList.toggle("completed", step < wizardCurrentStep);
     });
 
-    // 内容
     const contents = document.querySelectorAll<HTMLElement>(".wizard-content");
     contents.forEach((c) => {
         const step = Number(c.dataset.step);
         c.classList.toggle("active", step === wizardCurrentStep);
     });
 
-    // 底部按钮
     const prevBtn = $("#btn-wizard-prev") as HTMLButtonElement;
     const nextBtn = $("#btn-wizard-next") as HTMLButtonElement;
     const submitBtn = $("#btn-wizard-submit") as HTMLButtonElement;
@@ -635,7 +506,6 @@ function updateWizardUI() {
     } else {
         nextBtn.style.display = "none";
         submitBtn.style.display = "inline-flex";
-        // 最后一步实时更新预算/余额检查
         updateBudgetSummaryAndBalance();
     }
 }
@@ -654,7 +524,6 @@ function goWizardPrev() {
     }
 }
 
-// 预算计算
 function updateBudgetSummaryAndBalance() {
     const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
     const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
@@ -662,29 +531,24 @@ function updateBudgetSummaryAndBalance() {
     const reward = Number(rewardInput?.value || "0");
     const tasks = Number(taskLimitInput?.value || "0");
 
-    const rewardSpan = $("#summary-reward");
-    const tasksSpan = $("#summary-tasks");
-    const feeSpan = $("#summary-fee");
-    const totalSpan = $("#summary-total");
-    const currentBalSpan = $("#current-balance");
-    const balanceStatus = $("#balance-status");
-
-    const base = reward * tasks;
+    const base = (Number.isFinite(reward) ? reward : 0) * (Number.isFinite(tasks) ? tasks : 0);
     const fee = base * 0.05;
     const total = base + fee;
 
-    rewardSpan.textContent = formatUSDC(isNaN(reward) ? 0 : reward);
-    tasksSpan.textContent = isNaN(tasks) ? "0" : tasks.toString();
-    feeSpan.textContent = formatUSDC(isNaN(fee) ? 0 : fee);
-    totalSpan.textContent = formatUSDC(isNaN(total) ? 0 : total);
+    $("#summary-reward").textContent = formatUSDC(reward);
+    $("#summary-tasks").textContent = Number.isFinite(tasks) ? tasks.toString() : "0";
+    $("#summary-fee").textContent = formatUSDC(fee);
+    $("#summary-total").textContent = formatUSDC(total);
 
-    currentBalSpan.textContent = formatUSDC(fakeAdAccountBalanceUSDC);
+    $("#current-balance").textContent = formatUSDC(fakeAdAccountBalanceUSDC);
 
+    const balanceStatus = $("#balance-status");
     balanceStatus.className = "balance-status";
-    if (!isNaN(total) && total > 0 && total <= fakeAdAccountBalanceUSDC) {
+
+    if (total > 0 && total <= fakeAdAccountBalanceUSDC) {
         balanceStatus.classList.add("sufficient");
         balanceStatus.textContent = "Your balance is sufficient to publish this ad.";
-    } else if (!isNaN(total) && total > fakeAdAccountBalanceUSDC) {
+    } else if (total > fakeAdAccountBalanceUSDC) {
         balanceStatus.classList.add("insufficient");
         balanceStatus.textContent = "Insufficient balance. Please recharge before publishing.";
     } else {
@@ -693,7 +557,6 @@ function updateBudgetSummaryAndBalance() {
 }
 
 function submitWizard() {
-    // 简单收集几个字段，创建一条新的 MyAdRow 假数据
     const nameInput = document.querySelector<HTMLInputElement>("#ad-name");
     const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
     const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
@@ -722,7 +585,7 @@ function submitWizard() {
     };
 
     myAds.unshift(newAd);
-    fakeAdAccountBalanceUSDC -= total * 0.1; // 只是演示：随便扣一点，避免变成负数
+    fakeAdAccountBalanceUSDC -= total * 0.1; // 演示：随便扣一点
 
     renderMyAdsTable();
     renderAdvertiseDashboard();
@@ -742,22 +605,15 @@ function openRechargeModal() {
 }
 
 function closeRechargeModal() {
-    const modal = document.querySelector<HTMLElement>("#recharge-modal");
-    modal?.classList.remove("active");
+    document.querySelector<HTMLElement>("#recharge-modal")?.classList.remove("active");
 }
 
 function initRechargeModalEvents() {
-    const btnRechargeHeader = document.querySelector<HTMLButtonElement>("#btn-recharge");
-    const btnRechargeDashboard = document.querySelector<HTMLButtonElement>("#btn-recharge-dashboard");
-    const closeBtn = document.querySelector<HTMLButtonElement>("#close-recharge");
-    const copyBtn = document.querySelector<HTMLButtonElement>("#copy-address");
-    const buyBtn = document.querySelector<HTMLButtonElement>("#btn-buy-card");
+    document.querySelector<HTMLButtonElement>("#btn-recharge")?.addEventListener("click", openRechargeModal);
+    document.querySelector<HTMLButtonElement>("#btn-recharge-dashboard")?.addEventListener("click", openRechargeModal);
+    document.querySelector<HTMLButtonElement>("#close-recharge")?.addEventListener("click", closeRechargeModal);
 
-    btnRechargeHeader?.addEventListener("click", openRechargeModal);
-    btnRechargeDashboard?.addEventListener("click", openRechargeModal);
-    closeBtn?.addEventListener("click", closeRechargeModal);
-
-    copyBtn?.addEventListener("click", async () => {
+    document.querySelector<HTMLButtonElement>("#copy-address")?.addEventListener("click", async () => {
         try {
             if (navigator.clipboard) {
                 await navigator.clipboard.writeText(fakeWalletAddress);
@@ -770,101 +626,73 @@ function initRechargeModalEvents() {
         }
     });
 
-    buyBtn?.addEventListener("click", () => {
+    document.querySelector<HTMLButtonElement>("#btn-buy-card")?.addEventListener("click", () => {
         showToast("Open onramp (fake).");
     });
 }
 
-// ========= 历史记录弹窗 =========
+// ========= 历史记录弹窗（模板 clone） =========
 
 function openHistoryModal(defaultTab: "earnings" | "spending" | "recharge" = "earnings") {
-    const modal = document.querySelector<HTMLElement>("#history-modal");
-    modal?.classList.add("active");
+    document.querySelector<HTMLElement>("#history-modal")?.classList.add("active");
     switchHistoryTab(defaultTab);
 }
 
 function closeHistoryModal() {
-    const modal = document.querySelector<HTMLElement>("#history-modal");
-    modal?.classList.remove("active");
+    document.querySelector<HTMLElement>("#history-modal")?.classList.remove("active");
 }
 
-function switchHistoryTab(tab: string) {
-    const tabButtons = document.querySelectorAll<HTMLButtonElement>(".history-tab");
-    const contents = document.querySelectorAll<HTMLElement>(".history-tab-content");
-
-    tabButtons.forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.tab === tab);
-    });
-    contents.forEach((c) => {
-        c.classList.toggle("active", c.dataset.tab === tab);
-    });
-
-    // 渲染对应表格
-    if (tab === "earnings") {
-        renderHistoryTable("earnings", historyEarnings);
-    } else if (tab === "spending") {
-        renderHistoryTable("spending", historySpending);
-    } else if (tab === "recharge") {
-        renderHistoryTable("recharge", historyRecharge);
-    }
-}
-
-function renderHistoryTable(tab: string, rows: HistoryRow[]) {
+function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: HistoryRow[]) {
     const tbody = document.querySelector<HTMLTableSectionElement>(
         `.history-tab-content[data-tab="${tab}"] tbody`
     );
     if (!tbody) return;
 
-    tbody.innerHTML = "";
+    tbody.replaceChildren();
 
     if (rows.length === 0) {
-        const tr = document.createElement("tr");
-        tr.className = "empty-row";
-        const td = document.createElement("td");
-        td.colSpan = 4;
-        td.textContent = "No records";
-        tr.appendChild(td);
+        const tr = cloneTemplate("tpl-empty-history-row") as HTMLTableRowElement;
+        const msg =
+            tab === "earnings" ? "No earnings yet" :
+                tab === "spending" ? "No spending yet" :
+                    "No recharge records";
+        q<HTMLElement>(tr, ".td-empty").textContent = msg;
         tbody.appendChild(tr);
         return;
     }
 
     rows.forEach((row) => {
-        const tr = document.createElement("tr");
-
-        const tdTime = document.createElement("td");
-        tdTime.textContent = row.time;
-
-        const tdName = document.createElement("td");
-        tdName.textContent = row.adNameOrMethod;
-
-        const tdAmount = document.createElement("td");
-        tdAmount.textContent = formatUSDC(row.amount);
-
-        const tdStatus = document.createElement("td");
-        tdStatus.textContent = row.status;
-
-        tr.appendChild(tdTime);
-        tr.appendChild(tdName);
-        tr.appendChild(tdAmount);
-        tr.appendChild(tdStatus);
-
+        const tr = cloneTemplate("tpl-history-row") as HTMLTableRowElement;
+        q<HTMLElement>(tr, ".td-time").textContent = row.time;
+        q<HTMLElement>(tr, ".td-name").textContent = row.adNameOrMethod;
+        q<HTMLElement>(tr, ".td-amount").textContent = formatUSDC(row.amount);
+        q<HTMLElement>(tr, ".td-status").textContent = row.status;
         tbody.appendChild(tr);
     });
 }
 
+function switchHistoryTab(tab: "earnings" | "spending" | "recharge") {
+    document.querySelectorAll<HTMLButtonElement>(".history-tab").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.tab === tab);
+    });
+
+    document.querySelectorAll<HTMLElement>(".history-tab-content").forEach((c) => {
+        c.classList.toggle("active", c.dataset.tab === tab);
+    });
+
+    if (tab === "earnings") renderHistoryTable("earnings", historyEarnings);
+    if (tab === "spending") renderHistoryTable("spending", historySpending);
+    if (tab === "recharge") renderHistoryTable("recharge", historyRecharge);
+}
+
 function initHistoryModalEvents() {
-    const btnHistory = document.querySelector<HTMLButtonElement>("#btn-history");
-    const btnMyEarnings = document.querySelector<HTMLButtonElement>("#btn-my-earnings");
-    const closeBtn = document.querySelector<HTMLButtonElement>("#close-history");
+    document.querySelector<HTMLButtonElement>("#btn-history")?.addEventListener("click", () => openHistoryModal("spending"));
+    document.querySelector<HTMLButtonElement>("#btn-my-earnings")?.addEventListener("click", () => openHistoryModal("earnings"));
+    document.querySelector<HTMLButtonElement>("#close-history")?.addEventListener("click", closeHistoryModal);
 
-    btnHistory?.addEventListener("click", () => openHistoryModal("spending"));
-    btnMyEarnings?.addEventListener("click", () => openHistoryModal("earnings"));
-    closeBtn?.addEventListener("click", closeHistoryModal);
-
-    const tabButtons = document.querySelectorAll<HTMLButtonElement>(".history-tab");
-    tabButtons.forEach((btn) => {
+    document.querySelectorAll<HTMLButtonElement>(".history-tab").forEach((btn) => {
         btn.addEventListener("click", () => {
-            const tab = btn.dataset.tab || "earnings";
+            const tab = (btn.dataset.tab || "earnings") as any;
             switchHistoryTab(tab);
         });
     });
@@ -877,7 +705,6 @@ function initModeSwitch() {
     const btnAdv = document.querySelector<HTMLButtonElement>("#mode-advertise");
     const viewEarn = document.querySelector<HTMLElement>("#view-earn");
     const viewAdv = document.querySelector<HTMLElement>("#view-advertise");
-
     if (!btnEarn || !btnAdv || !viewEarn || !viewAdv) return;
 
     btnEarn.addEventListener("click", () => {
@@ -895,37 +722,23 @@ function initModeSwitch() {
     });
 }
 
-// ========= 事件绑定：筛选 / 排序 / Wizard / 其它 =========
+// ========= 事件绑定：筛选 / Wizard =========
 
 function initEarnFiltersEvents() {
-    const categoryCheckboxes = document.querySelectorAll<HTMLInputElement>('input[name="category"]');
-    const rewardCheckboxes = document.querySelectorAll<HTMLInputElement>('input[name="reward"]');
-    const sortSelect = document.querySelector<HTMLSelectElement>("#sort-select");
-
-    categoryCheckboxes.forEach((cb) => cb.addEventListener("change", renderEarnAds));
-    rewardCheckboxes.forEach((cb) => cb.addEventListener("change", renderEarnAds));
-    sortSelect?.addEventListener("change", renderEarnAds);
+    document.querySelectorAll<HTMLInputElement>('input[name="category"]').forEach((cb) => cb.addEventListener("change", renderEarnAds));
+    document.querySelectorAll<HTMLInputElement>('input[name="reward"]').forEach((cb) => cb.addEventListener("change", renderEarnAds));
+    document.querySelector<HTMLSelectElement>("#sort-select")?.addEventListener("change", renderEarnAds);
 }
 
 function initWizardEvents() {
-    const openBtn = document.querySelector<HTMLButtonElement>("#btn-publish-ad");
-    const closeBtn = document.querySelector<HTMLButtonElement>("#close-wizard");
-    const prevBtn = document.querySelector<HTMLButtonElement>("#btn-wizard-prev");
-    const nextBtn = document.querySelector<HTMLButtonElement>("#btn-wizard-next");
-    const submitBtn = document.querySelector<HTMLButtonElement>("#btn-wizard-submit");
+    document.querySelector<HTMLButtonElement>("#btn-publish-ad")?.addEventListener("click", openWizard);
+    document.querySelector<HTMLButtonElement>("#close-wizard")?.addEventListener("click", closeWizard);
+    document.querySelector<HTMLButtonElement>("#btn-wizard-prev")?.addEventListener("click", goWizardPrev);
+    document.querySelector<HTMLButtonElement>("#btn-wizard-next")?.addEventListener("click", goWizardNext);
+    document.querySelector<HTMLButtonElement>("#btn-wizard-submit")?.addEventListener("click", submitWizard);
 
-    openBtn?.addEventListener("click", openWizard);
-    closeBtn?.addEventListener("click", closeWizard);
-    prevBtn?.addEventListener("click", goWizardPrev);
-    nextBtn?.addEventListener("click", goWizardNext);
-    submitBtn?.addEventListener("click", submitWizard);
-
-    // 当 reward 或 task 输入变化时，实时更新预算信息（即便不在第4步也没关系）
-    const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
-    const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
-
-    rewardInput?.addEventListener("input", updateBudgetSummaryAndBalance);
-    taskLimitInput?.addEventListener("input", updateBudgetSummaryAndBalance);
+    document.querySelector<HTMLInputElement>("#reward-amount")?.addEventListener("input", updateBudgetSummaryAndBalance);
+    document.querySelector<HTMLInputElement>("#task-limit")?.addEventListener("input", updateBudgetSummaryAndBalance);
 }
 
 // ========= 初始化入口 =========
@@ -946,13 +759,10 @@ function initAdPlaza() {
     initHistoryModalEvents();
 }
 
-// DOM Ready
 document.addEventListener("DOMContentLoaded", () => {
     try {
         initAdPlaza();
     } catch (err) {
-        // 如果有报错，至少保证页面不会完全挂掉
-        // eslint-disable-next-line no-console
         console.error("Ad Plaza init error:", err);
     }
 });

@@ -278,6 +278,25 @@ body {
 }
 
 /* ==================== Ad Cards Grid ==================== */
+.ad-card-icon {
+    font-size: 40px;
+}
+
+/* Make My Earnings feel like an action area, not a KPI card */
+.earnings-overview {
+    grid-template-columns: repeat(3, 1fr) 220px;
+    align-items: stretch;
+}
+
+.overview-actions {
+    display: flex;
+    align-items: stretch;
+}
+
+.overview-actions .btn-view-details {
+    height: 100%;
+}
+
 .ad-cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
