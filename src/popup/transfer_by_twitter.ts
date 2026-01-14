@@ -13,6 +13,31 @@ interface UserProfile {
     userId?: string;
     avatar?: string;
 }
+const isZh = (() => {
+    const lang = (document.documentElement.lang || navigator.language || "").toLowerCase();
+    return lang.startsWith("zh");
+})();
+
+function safeStringify(v: any): string {
+    try {
+        if (typeof v === "string") return v;
+        return JSON.stringify(v);
+    } catch {
+        return String(v);
+    }
+}
+
+function msgRegisterAccountError(): string {
+    return isZh
+        ? "请确保接收方已关联 Coinbase 账户。"
+        : "Please ensure the recipient has a linked Coinbase account.";
+}
+
+function msgCreateTxFailed(detail: string): string {
+    return isZh
+        ? `创建链上交易失败：${detail}`
+        : `Failed to create blockchain transaction: ${detail}`;
+}
 
 interface ValidationResult {
     isValid: boolean;
@@ -93,9 +118,12 @@ async function performTransfer(profile: UserProfile, amount: string): Promise<vo
     })
     const result = await response.json()
     if (!result.success || !result.txHash) {
-        if (result.code === "RECIPIENT_NOT_FOUND") throw new Error(t('register_account_error'))
-        throw new Error("failed create block chain tx， error=" + result)
+        if (result.code === "RECIPIENT_NOT_FOUND") {
+            throw new Error(msgRegisterAccountError());
+        }
+        throw new Error(msgCreateTxFailed(safeStringify(result)));
     }
+
     const url = X402_FACILITATORS[chainId].browser + "/tx/" + result.txHash
     console.log("------>>>transfer success:", url, result.txHash)
     await browser.tabs.create({url});

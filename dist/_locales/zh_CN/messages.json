@@ -1250,5 +1250,8 @@
   },
   "label_detail_created": {
     "message": "创建时间"
+  },
+  "transfer_create_tx_failed": {
+    "message": "创建链上交易失败，请稍后重试。"
   }
 }

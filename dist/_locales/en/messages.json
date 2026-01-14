@@ -1250,5 +1250,8 @@
   },
   "label_detail_created": {
     "message": "Created At"
+  },
+  "transfer_create_tx_failed": {
+    "message": "Failed to create blockchain transaction. Please try again."
   }
 }

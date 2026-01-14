@@ -64,7 +64,6 @@
       border-radius: var(--radius);
       background: var(--bg-primary);
       border: 1px solid var(--border-subtle);
-      box-shadow: var(--shadow);
       overflow: hidden;
       animation: slideUp 0.4s ease-out;
     }
@@ -79,7 +78,6 @@
       align-items: center;
       justify-content: space-between;
       padding: 16px 20px;
-      border-bottom: 1px solid var(--border-subtle);
     }
 
     .card-title {
@@ -87,7 +85,7 @@
       font-weight: 850;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
     }
 
     .badge {
@@ -113,24 +111,24 @@
       justify-content: center;
       transition: background 0.2s;
     }
-    .btn-close:hover { background: var(--bg-hover); }
+    .btn-close:hover { background-color: rgba(69, 146, 239, 0.2)
+    }
 
     .card-content {
       padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
     }
 
     /* 用户信息栏 */
     .user-profile {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 6px;
       padding: 12px;
-      border-radius: var(--radius-sm);
-      background: var(--bg-subtle);
       border: 1px solid var(--border-subtle);
+        border-radius: 16px;
     }
 
     .avatar {
@@ -163,7 +161,6 @@
       padding: 14px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-subtle);
-      background: var(--bg-elevated);
       color: var(--text-primary);
       font-size: 16px;
       font-weight: 600;
@@ -201,10 +198,11 @@
     /* 操作栏 */
     .card-actions {
       display: flex;
-      justify-content: flex-end;
+      justify-content: center;
+      align-items: center;
       gap: 12px;
       padding: 16px 20px;
-      background: var(--bg-subtle);
+      background: #fff;
       border-top: 1px solid var(--border-subtle);
     }
 
