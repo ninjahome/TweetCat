@@ -4,6 +4,8 @@
 
 // ========= 类型定义 =========
 
+import {$2, cloneTemplate, formatUSDC, showNotification} from "./common";
+
 type AdCategory = "follow" | "visit" | "register" | "share";
 
 interface EarnAd {
@@ -103,41 +105,6 @@ const fakeTodayEarnedUSDC = 1.25;
 const fakePendingUSDC = 0.75;
 
 // ========= 工具函数 =========
-
-function q<T extends Element>(root: ParentNode, selector: string): T {
-    const el = root.querySelector<T>(selector);
-    if (!el) throw new Error(`Element not found: ${selector}`);
-    return el;
-}
-
-function cloneTemplate(id: string): HTMLElement {
-    const tpl = document.querySelector<HTMLTemplateElement>(`#${id}`);
-    if (!tpl) throw new Error(`Template not found: #${id}`);
-    const first = tpl.content.firstElementChild as HTMLElement | null;
-    if (!first) throw new Error(`Template #${id} has no root element`);
-    return first.cloneNode(true) as HTMLElement;
-}
-
-function formatUSDC(amount: number): string {
-    const n = Number(amount);
-    if (!Number.isFinite(n)) return "0.00 USDC";
-    return n.toFixed(2) + " USDC";
-}
-
-function showToast(message: string) {
-    const notification = document.querySelector<HTMLElement>("#notification");
-    if (!notification) {
-        alert(message);
-        return;
-    }
-    notification.textContent = message;
-    notification.classList.remove("error", "success");
-    notification.classList.add("info");
-    notification.style.opacity = "1";
-    setTimeout(() => {
-        if (notification) notification.style.opacity = "0";
-    }, 2000);
-}
 
 const categoryIcon: Record<AdCategory, string> = {
     follow: "👤",
@@ -290,23 +257,23 @@ function renderEarnAds() {
         card.dataset.adId = ad.id;
 
         // icon
-        const iconEl = q<HTMLElement>(card, ".ad-card-icon");
+        const iconEl = $2<HTMLElement>(card, ".ad-card-icon");
         iconEl.textContent = categoryIcon[ad.category] || "📢";
 
         // text fields
-        q<HTMLElement>(card, ".ad-card-title").textContent = ad.title;
-        q<HTMLElement>(card, ".ad-card-brand").textContent = ad.brand;
-        q<HTMLElement>(card, ".ad-card-description").textContent = ad.description;
+        $2<HTMLElement>(card, ".ad-card-title").textContent = ad.title;
+        $2<HTMLElement>(card, ".ad-card-brand").textContent = ad.brand;
+        $2<HTMLElement>(card, ".ad-card-description").textContent = ad.description;
 
-        q<HTMLElement>(card, ".meta-time").textContent = `⏱️ ${ad.durationMinutes} min`;
-        q<HTMLElement>(card, ".meta-quota").textContent = `👥 ${ad.completed}/${ad.totalQuota}`;
-        q<HTMLElement>(card, ".meta-deadline").textContent = `📅 ${ad.deadlineText}`;
+        $2<HTMLElement>(card, ".meta-time").textContent = `⏱️ ${ad.durationMinutes} min`;
+        $2<HTMLElement>(card, ".meta-quota").textContent = `👥 ${ad.completed}/${ad.totalQuota}`;
+        $2<HTMLElement>(card, ".meta-deadline").textContent = `📅 ${ad.deadlineText}`;
 
-        q<HTMLElement>(card, ".reward-value").textContent = formatUSDC(ad.rewardUSDC);
+        $2<HTMLElement>(card, ".reward-value").textContent = formatUSDC(ad.rewardUSDC);
 
         // tags
-        const tagsContainer = q<HTMLElement>(card, ".ad-card-tags");
-        const tagTpl = q<HTMLElement>(tagsContainer, ".tpl-tag");
+        const tagsContainer = $2<HTMLElement>(card, ".ad-card-tags");
+        const tagTpl = $2<HTMLElement>(tagsContainer, ".tpl-tag");
         tagTpl.remove(); // 移除占位
         ad.tags.forEach((t) => {
             const tag = tagTpl.cloneNode(true) as HTMLElement;
@@ -322,10 +289,10 @@ function renderEarnAds() {
         const openDetail = () => window.open(ad.detailUrl, "_blank");
 
         // button
-        const btn = q<HTMLButtonElement>(card, ".btn-start-task");
+        const btn = $2<HTMLButtonElement>(card, ".btn-start-task");
         btn.addEventListener("click", (ev) => {
             ev.stopPropagation();
-            showToast(`Start task: ${ad.title}`);
+            showNotification(`Start task: ${ad.title}`);
             openDetail();
         });
 
@@ -386,11 +353,11 @@ function initEarnFiltersEvents() {
 
 function initEarnActions() {
     document.querySelector<HTMLButtonElement>("#btn-withdraw")?.addEventListener("click", () => {
-        showToast("Withdraw request submitted (fake).");
+        showNotification("Withdraw request submitted (fake).");
     });
 
     document.querySelector<HTMLButtonElement>("#btn-earn-activity")?.addEventListener("click", () => {
-        showToast("Open earn activity (fake).");
+        showNotification("Open earn activity (fake).");
     });
 
     document.querySelector<HTMLButtonElement>("#btn-open-advertise")?.addEventListener("click", () => {

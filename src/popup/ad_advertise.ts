@@ -4,6 +4,8 @@
 
 // ========= 类型定义 =========
 
+import {$, $2, cloneTemplate, formatUSDC, showNotification} from "./common";
+
 type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
 
 interface MyAdRow {
@@ -80,63 +82,20 @@ let spendRecords: SpendRecord[] = [
 ];
 
 const historyEarnings: HistoryRow[] = [
-    { time: "2026-01-14 10:12", adNameOrMethod: "Twitter Followers Campaign", amount: 0.5, status: "Completed" },
-    { time: "2026-01-14 09:30", adNameOrMethod: "Landing Page Visit", amount: 0.2, status: "Completed" }
+    {time: "2026-01-14 10:12", adNameOrMethod: "Twitter Followers Campaign", amount: 0.5, status: "Completed"},
+    {time: "2026-01-14 09:30", adNameOrMethod: "Landing Page Visit", amount: 0.2, status: "Completed"}
 ];
 
 const historySpending: HistoryRow[] = [
-    { time: "2026-01-14 10:12", adNameOrMethod: "Twitter Followers Campaign", amount: -0.525, status: "Success" },
-    { time: "2026-01-14 09:30", adNameOrMethod: "Landing Page Visit", amount: -0.21, status: "Success" }
+    {time: "2026-01-14 10:12", adNameOrMethod: "Twitter Followers Campaign", amount: -0.525, status: "Success"},
+    {time: "2026-01-14 09:30", adNameOrMethod: "Landing Page Visit", amount: -0.21, status: "Success"}
 ];
 
 const historyRecharge: HistoryRow[] = [
-    { time: "2026-01-13 18:20", adNameOrMethod: "Onramp (Card)", amount: 100, status: "Success" }
+    {time: "2026-01-13 18:20", adNameOrMethod: "Onramp (Card)", amount: 100, status: "Success"}
 ];
 
 const fakeWalletAddress = "0xDEMO1234567890abcdef1234567890ABCDEF0000";
-
-// ========= 工具函数 =========
-
-function $(selector: string): HTMLElement {
-    const el = document.querySelector<HTMLElement>(selector);
-    if (!el) throw new Error(`Element not found: ${selector}`);
-    return el;
-}
-
-function q<T extends Element>(root: ParentNode, selector: string): T {
-    const el = root.querySelector<T>(selector);
-    if (!el) throw new Error(`Element not found: ${selector}`);
-    return el;
-}
-
-function cloneTemplate(id: string): HTMLElement {
-    const tpl = document.querySelector<HTMLTemplateElement>(`#${id}`);
-    if (!tpl) throw new Error(`Template not found: #${id}`);
-    const first = tpl.content.firstElementChild as HTMLElement | null;
-    if (!first) throw new Error(`Template #${id} has no root element`);
-    return first.cloneNode(true) as HTMLElement;
-}
-
-function formatUSDC(amount: number): string {
-    const n = Number(amount);
-    if (!Number.isFinite(n)) return "0.00 USDC";
-    return n.toFixed(2) + " USDC";
-}
-
-function showToast(message: string) {
-    const notification = document.querySelector<HTMLElement>("#notification");
-    if (!notification) {
-        alert(message);
-        return;
-    }
-    notification.textContent = message;
-    notification.classList.remove("error", "success");
-    notification.classList.add("info");
-    notification.style.opacity = "1";
-    setTimeout(() => {
-        if (notification) notification.style.opacity = "0";
-    }, 2000);
-}
 
 // ========= 顶部余额 & Advertise 仪表盘 =========
 
@@ -181,17 +140,17 @@ function renderMyAdsTable() {
         const tr = cloneTemplate("tpl-my-ad-row") as HTMLTableRowElement;
         tr.dataset.adId = ad.id;
 
-        q<HTMLElement>(tr, ".td-name").textContent = ad.name;
-        q<HTMLElement>(tr, ".td-status").textContent = ad.status;
-        q<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(ad.rewardPerTask);
-        q<HTMLElement>(tr, ".td-completed").textContent = ad.completed.toString();
-        q<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(ad.spent);
-        q<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(ad.remainingBudget);
+        $2<HTMLElement>(tr, ".td-name").textContent = ad.name;
+        $2<HTMLElement>(tr, ".td-status").textContent = ad.status;
+        $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(ad.rewardPerTask);
+        $2<HTMLElement>(tr, ".td-completed").textContent = ad.completed.toString();
+        $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(ad.spent);
+        $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(ad.remainingBudget);
 
-        const btnView = q<HTMLButtonElement>(tr, ".btn-view");
-        const btnToggle = q<HTMLButtonElement>(tr, ".btn-toggle");
+        const btnView = $2<HTMLButtonElement>(tr, ".btn-view");
+        const btnToggle = $2<HTMLButtonElement>(tr, ".btn-toggle");
 
-        btnView.addEventListener("click", () => showToast(`View ad: ${ad.name}`));
+        btnView.addEventListener("click", () => showNotification(`View ad: ${ad.name}`));
 
         btnToggle.textContent = ad.status === "Active" ? "Pause" : "Resume";
         btnToggle.addEventListener("click", () => {
@@ -221,12 +180,12 @@ function renderSpendTable() {
         const tr = cloneTemplate("tpl-spend-row") as HTMLTableRowElement;
         tr.dataset.id = r.id;
 
-        q<HTMLElement>(tr, ".td-time").textContent = r.time;
-        q<HTMLElement>(tr, ".td-ad").textContent = r.adName;
-        q<HTMLElement>(tr, ".td-event").textContent = r.event;
-        q<HTMLElement>(tr, ".td-amount").textContent = formatUSDC(r.amount);
-        q<HTMLElement>(tr, ".td-fee").textContent = formatUSDC(r.fee);
-        q<HTMLElement>(tr, ".td-status").textContent = r.status;
+        $2<HTMLElement>(tr, ".td-time").textContent = r.time;
+        $2<HTMLElement>(tr, ".td-ad").textContent = r.adName;
+        $2<HTMLElement>(tr, ".td-event").textContent = r.event;
+        $2<HTMLElement>(tr, ".td-amount").textContent = formatUSDC(r.amount);
+        $2<HTMLElement>(tr, ".td-fee").textContent = formatUSDC(r.fee);
+        $2<HTMLElement>(tr, ".td-status").textContent = r.status;
 
         tbody.appendChild(tr);
     });
@@ -336,7 +295,7 @@ function submitWizard() {
     const total = base + fee;
 
     if (total > fakeAdAccountBalanceUSDC) {
-        showToast("Insufficient ad account balance (fake check).");
+        showNotification("Insufficient ad account balance (fake check).");
         return;
     }
 
@@ -358,7 +317,7 @@ function submitWizard() {
     renderHeaderBalance();
 
     closeWizard();
-    showToast("Ad published (fake).");
+    showNotification("Ad published (fake).");
 }
 
 // ========= 充值弹窗 =========
@@ -383,17 +342,17 @@ function initRechargeModalEvents() {
         try {
             if (navigator.clipboard) {
                 await navigator.clipboard.writeText(fakeWalletAddress);
-                showToast("Address copied (fake).");
+                showNotification("Address copied (fake).");
             } else {
-                showToast(fakeWalletAddress);
+                showNotification(fakeWalletAddress);
             }
         } catch {
-            showToast(fakeWalletAddress);
+            showNotification(fakeWalletAddress);
         }
     });
 
     document.querySelector<HTMLButtonElement>("#btn-buy-card")?.addEventListener("click", () => {
-        showToast("Open onramp (fake).");
+        showNotification("Open onramp (fake).");
     });
 }
 
@@ -422,17 +381,17 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
             tab === "earnings" ? "No earnings yet" :
                 tab === "spending" ? "No spending yet" :
                     "No recharge records";
-        q<HTMLElement>(tr, ".td-empty").textContent = msg;
+        $2<HTMLElement>(tr, ".td-empty").textContent = msg;
         tbody.appendChild(tr);
         return;
     }
 
     rows.forEach((row) => {
         const tr = cloneTemplate("tpl-history-row") as HTMLTableRowElement;
-        q<HTMLElement>(tr, ".td-time").textContent = row.time;
-        q<HTMLElement>(tr, ".td-name").textContent = row.adNameOrMethod;
-        q<HTMLElement>(tr, ".td-amount").textContent = formatUSDC(row.amount);
-        q<HTMLElement>(tr, ".td-status").textContent = row.status;
+        $2<HTMLElement>(tr, ".td-time").textContent = row.time;
+        $2<HTMLElement>(tr, ".td-name").textContent = row.adNameOrMethod;
+        $2<HTMLElement>(tr, ".td-amount").textContent = formatUSDC(row.amount);
+        $2<HTMLElement>(tr, ".td-status").textContent = row.status;
         tbody.appendChild(tr);
     });
 }

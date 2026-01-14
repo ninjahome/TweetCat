@@ -63,6 +63,26 @@ export function $(sel: string) {
     return document.querySelector(sel) as HTMLElement | null;
 }
 
+export function $2<T extends Element>(root: ParentNode, selector: string): T {
+    const el = root.querySelector<T>(selector);
+    if (!el) throw new Error(`Element not found: ${selector}`);
+    return el;
+}
+
+export function cloneTemplate(id: string): HTMLElement {
+    const tpl = document.querySelector<HTMLTemplateElement>(`#${id}`);
+    if (!tpl) throw new Error(`Template not found: #${id}`);
+    const first = tpl.content.firstElementChild as HTMLElement | null;
+    if (!first) throw new Error(`Template #${id} has no root element`);
+    return first.cloneNode(true) as HTMLElement;
+}
+
+export function formatUSDC(amount: number): string {
+    const n = Number(amount);
+    if (!Number.isFinite(n)) return "0.00 USDC";
+    return n.toFixed(2) + " USDC";
+}
+
 export function $input(sel: string) {
     return document.querySelector(sel) as HTMLInputElement | null;
 }
@@ -137,6 +157,7 @@ export async function showPopupWindow(url: string, width: number = 450, height: 
         focused: true
     });
 }
+
 export const FIXED_ETH_TRANSFER_GAS_ETH = 0.000002; // ETH转账所需Gas费
 export const FIXED_MINI_USDC_TRANSFER = 0.00001; // USDC转账所需Gas费
 
@@ -164,7 +185,7 @@ export async function x402WorkerFetch(path: string, body: any): Promise<any> {
 export async function x402WorkerGet(path: string, params?: Record<string, string>): Promise<any> {
     const chainID = await getChainId()
     let url = X402_FACILITATORS[chainID].endpoint + path
-    
+
     if (params) {
         const searchParams = new URLSearchParams(params);
         url += "?" + searchParams.toString();

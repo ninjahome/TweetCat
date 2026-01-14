@@ -9,203 +9,207 @@
     <script src="../js/ad_plaza.js"></script>
 </head>
 <body>
-    <!-- Top Navigation -->
-    <header class="plaza-header">
-        <div class="plaza-header-left">
-            <div class="plaza-logo">
-                <span class="logo-icon">🏪</span>
-                <span class="logo-text">Ad Plaza</span>
-            </div>
-        </div>
-
-        <div class="plaza-header-right">
-            <button id="btn-open-advertise" class="btn-open-advertise">Publish Ad / Advertise</button>
-        </div>
-    </header>
-
-    <!-- Earn Mode View -->
-    <div id="view-earn" class="plaza-view active">
-        <div class="earn-layout">
-            <aside class="earn-left">
-                <section class="withdraw-card">
-                    <div class="withdraw-card-header">
-                        <div>
-                            <div class="card-label">Withdrawable</div>
-                            <div class="card-value" id="withdrawable-amount">0.00 USDC</div>
-                        </div>
-                        <span class="withdraw-status">Updated today</span>
-                    </div>
-                    <div class="withdraw-actions">
-                        <button id="btn-withdraw" class="btn-primary">Withdraw</button>
-                        <button id="btn-earn-activity" class="btn-secondary">Activity</button>
-                    </div>
-                    <div class="earn-summary">
-                        <div class="summary-item">
-                            <span class="summary-label">Total Earned</span>
-                            <span class="summary-value" id="total-earned">0.00 USDC</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Today Earned</span>
-                            <span class="summary-value" id="today-earned">0.00 USDC</span>
-                        </div>
-                        <div class="summary-item">
-                            <span class="summary-label">Pending</span>
-                            <span class="summary-value" id="pending-earned">0.00 USDC</span>
-                        </div>
-                    </div>
-                </section>
-
-                <div class="filters-sidebar">
-                    <h3 class="filter-title">Filters</h3>
-
-                    <!-- Search + Clear (Filters tools) -->
-                    <div class="filter-tools">
-                        <div class="filter-search" role="search">
-                            <span class="filter-search-icon">🔎</span>
-                            <input
-                                    id="ad-search"
-                                    class="filter-search-input"
-                                    type="search"
-                                    placeholder="Search ads..."
-                                    autocomplete="off"
-                                    spellcheck="false"
-                            />
-                            <button id="btn-clear-search" class="filter-search-clear" type="button" aria-label="Clear search">✕</button>
-                        </div>
-
-                        <button id="btn-clear-filters" class="btn-clear-filters" type="button" disabled>
-                            Clear filters
-                        </button>
-                    </div>
-
-                    <div class="filter-group">
-                        <h4 class="filter-group-title">Category</h4>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="category" value="follow" checked>
-                            <span>Follow</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="category" value="visit" checked>
-                            <span>Visit</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="category" value="register" checked>
-                            <span>Register</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="category" value="share" checked>
-                            <span>Share</span>
-                        </label>
-                    </div>
-
-                    <div class="filter-group">
-                        <h4 class="filter-group-title">Reward Range</h4>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="reward" value="0.1-0.5" checked>
-                            <span>0.1 - 0.5 USDC</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="reward" value="0.5-1" checked>
-                            <span>0.5 - 1.0 USDC</span>
-                        </label>
-                        <label class="filter-checkbox">
-                            <input type="checkbox" name="reward" value="1+" checked>
-                            <span>1.0+ USDC</span>
-                        </label>
-                    </div>
-
-                    <div class="filter-group">
-                        <h4 class="filter-group-title">Sort By</h4>
-                        <select id="sort-select" class="filter-select">
-                            <option value="reward-high">Highest Reward</option>
-                            <option value="newest">Newest</option>
-                            <option value="time-short">Shortest Time</option>
-                            <option value="popular">Most Popular</option>
-                        </select>
-                    </div>
-                </div>
-            </aside>
-
-            <main class="earn-right">
-                <div class="ad-cards-grid">
-                    <div class="empty-state">
-                        <div class="empty-icon">📭</div>
-                        <h3>No Ads Available</h3>
-                        <p>Check back later for new earning opportunities!</p>
-                    </div>
-
-                    <!-- Example Ad Card (will be dynamically generated) -->
-                    <!-- 
-                    <div class="ad-card">
-                        <div class="ad-card-image">
-                            <img src="placeholder.jpg" alt="Ad">
-                        </div>
-                        <div class="ad-card-content">
-                            <div class="ad-card-header">
-                                <h3 class="ad-card-title">Follow Twitter Account</h3>
-                                <div class="ad-card-brand">@BrandName</div>
-                            </div>
-                            <p class="ad-card-description">Follow our Twitter account and earn rewards instantly!</p>
-                            <div class="ad-card-meta">
-                                <span class="meta-item">⏱️ 2 min</span>
-                                <span class="meta-item">👥 120/500</span>
-                                <span class="meta-item">📅 Ends: Jan 30</span>
-                            </div>
-                            <div class="ad-card-tags">
-                                <span class="tag tag-new">New</span>
-                                <span class="tag tag-easy">Easy</span>
-                            </div>
-                        </div>
-                        <div class="ad-card-footer">
-                            <div class="ad-card-reward">
-                                <span class="reward-label">Earn:</span>
-                                <span class="reward-value">0.50 USDC</span>
-                            </div>
-                            <button class="btn-start-task">Start Task</button>
-                        </div>
-                    </div>
-                    -->
-                </div>
-            </main>
+<!-- Top Navigation -->
+<header class="plaza-header">
+    <div class="plaza-header-left">
+        <div class="plaza-logo">
+            <span class="logo-icon">🏪</span>
+            <span class="logo-text">Ad Plaza</span>
         </div>
     </div>
 
+    <div class="plaza-header-right">
+        <button id="btn-open-advertise" class="btn-open-advertise">Publish Ad / Advertise</button>
+    </div>
+</header>
 
-    <!-- ==================== Hidden Templates (for TS clone) ==================== -->
-    <template id="tpl-ad-card">
-        <div class="ad-card" data-ad-id="">
-            <div class="ad-card-image">
-                <span class="ad-card-icon" aria-hidden="true">📢</span>
+<!-- Earn Mode View -->
+<div id="view-earn" class="plaza-view active">
+    <div class="earn-layout">
+        <aside class="earn-left">
+            <section class="withdraw-card">
+                <div class="withdraw-card-header">
+                    <div>
+                        <div class="card-label">Withdrawable</div>
+                        <div class="card-value" id="withdrawable-amount">0.00 USDC</div>
+                    </div>
+                    <span class="withdraw-status">Updated today</span>
+                </div>
+                <div class="withdraw-actions">
+                    <button id="btn-withdraw" class="btn-primary">Withdraw</button>
+                    <button id="btn-earn-activity" class="btn-secondary">Activity</button>
+                </div>
+                <div class="earn-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Total Earned</span>
+                        <span class="summary-value" id="total-earned">0.00 USDC</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Today Earned</span>
+                        <span class="summary-value" id="today-earned">0.00 USDC</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Pending</span>
+                        <span class="summary-value" id="pending-earned">0.00 USDC</span>
+                    </div>
+                </div>
+            </section>
+
+            <div class="filters-sidebar">
+                <h3 class="filter-title">Filters</h3>
+
+                <!-- Search + Clear (Filters tools) -->
+                <div class="filter-tools">
+                    <div class="filter-search" role="search">
+                        <span class="filter-search-icon">🔎</span>
+                        <input
+                                id="ad-search"
+                                class="filter-search-input"
+                                type="search"
+                                placeholder="Search ads..."
+                                autocomplete="off"
+                                spellcheck="false"
+                        />
+                        <button id="btn-clear-search" class="filter-search-clear" type="button"
+                                aria-label="Clear search">✕
+                        </button>
+                    </div>
+
+                    <button id="btn-clear-filters" class="btn-clear-filters" type="button" disabled>
+                        Clear filters
+                    </button>
+                </div>
+
+                <div class="filter-group">
+                    <h4 class="filter-group-title">Category</h4>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" name="category" value="follow" checked>
+                        <span>Follow</span>
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" name="category" value="visit" checked>
+                        <span>Visit</span>
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" name="category" value="register" checked>
+                        <span>Register</span>
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" name="category" value="share" checked>
+                        <span>Share</span>
+                    </label>
+                </div>
+
+                <div class="filter-group">
+                    <h4 class="filter-group-title">Reward Range</h4>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" name="reward" value="0.1-0.5" checked>
+                        <span>0.1 - 0.5 USDC</span>
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" name="reward" value="0.5-1" checked>
+                        <span>0.5 - 1.0 USDC</span>
+                    </label>
+                    <label class="filter-checkbox">
+                        <input type="checkbox" name="reward" value="1+" checked>
+                        <span>1.0+ USDC</span>
+                    </label>
+                </div>
+
+                <div class="filter-group">
+                    <h4 class="filter-group-title">Sort By</h4>
+                    <select id="sort-select" class="filter-select">
+                        <option value="reward-high">Highest Reward</option>
+                        <option value="newest">Newest</option>
+                        <option value="time-short">Shortest Time</option>
+                        <option value="popular">Most Popular</option>
+                    </select>
+                </div>
+            </div>
+        </aside>
+
+        <main class="earn-right">
+            <div class="ad-cards-grid">
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <h3>No Ads Available</h3>
+                    <p>Check back later for new earning opportunities!</p>
+                </div>
+
+                <!-- Example Ad Card (will be dynamically generated) -->
+                <!--
+                <div class="ad-card">
+                    <div class="ad-card-image">
+                        <img src="placeholder.jpg" alt="Ad">
+                    </div>
+                    <div class="ad-card-content">
+                        <div class="ad-card-header">
+                            <h3 class="ad-card-title">Follow Twitter Account</h3>
+                            <div class="ad-card-brand">@BrandName</div>
+                        </div>
+                        <p class="ad-card-description">Follow our Twitter account and earn rewards instantly!</p>
+                        <div class="ad-card-meta">
+                            <span class="meta-item">⏱️ 2 min</span>
+                            <span class="meta-item">👥 120/500</span>
+                            <span class="meta-item">📅 Ends: Jan 30</span>
+                        </div>
+                        <div class="ad-card-tags">
+                            <span class="tag tag-new">New</span>
+                            <span class="tag tag-easy">Easy</span>
+                        </div>
+                    </div>
+                    <div class="ad-card-footer">
+                        <div class="ad-card-reward">
+                            <span class="reward-label">Earn:</span>
+                            <span class="reward-value">0.50 USDC</span>
+                        </div>
+                        <button class="btn-start-task">Start Task</button>
+                    </div>
+                </div>
+                -->
+            </div>
+        </main>
+    </div>
+</div>
+
+
+<!-- ==================== Hidden Templates (for TS clone) ==================== -->
+<template id="tpl-ad-card">
+    <div class="ad-card" data-ad-id="">
+        <div class="ad-card-image">
+            <span class="ad-card-icon" aria-hidden="true">📢</span>
+        </div>
+
+        <div class="ad-card-content">
+            <div class="ad-card-header">
+                <h3 class="ad-card-title"></h3>
+                <div class="ad-card-brand"></div>
             </div>
 
-            <div class="ad-card-content">
-                <div class="ad-card-header">
-                    <h3 class="ad-card-title"></h3>
-                    <div class="ad-card-brand"></div>
-                </div>
+            <p class="ad-card-description"></p>
 
-                <p class="ad-card-description"></p>
-
-                <div class="ad-card-meta">
-                    <span class="meta-item meta-time"></span>
-                    <span class="meta-item meta-quota"></span>
-                    <span class="meta-item meta-deadline"></span>
-                </div>
-
-                <div class="ad-card-tags">
-                    <span class="tag tpl-tag">Tag</span>
-                </div>
+            <div class="ad-card-meta">
+                <span class="meta-item meta-time"></span>
+                <span class="meta-item meta-quota"></span>
+                <span class="meta-item meta-deadline"></span>
             </div>
 
-            <div class="ad-card-footer">
-                <div class="ad-card-reward">
-                    <span class="reward-label">Earn:</span>
-                    <span class="reward-value"></span>
-                </div>
-                <button class="btn-start-task">Start Task</button>
+            <div class="ad-card-tags">
+                <span class="tag tpl-tag">Tag</span>
             </div>
         </div>
-    </template>
 
+        <div class="ad-card-footer">
+            <div class="ad-card-reward">
+                <span class="reward-label">Earn:</span>
+                <span class="reward-value"></span>
+            </div>
+            <button class="btn-start-task">Start Task</button>
+        </div>
+    </div>
+</template>
+
+
+<div id="notification" class="notification hidden" role="alert"></div>
 </body>
 </html>

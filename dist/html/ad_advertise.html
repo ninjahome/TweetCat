@@ -9,438 +9,444 @@
     <script src="../js/ad_advertise.js"></script>
 </head>
 <body>
-    <!-- Top Navigation -->
-    <header class="plaza-header">
-        <div class="plaza-header-left">
-            <div class="plaza-logo">
-                <span class="logo-icon">🏪</span>
-                <span class="logo-text">Advertise</span>
+<!-- Top Navigation -->
+<header class="plaza-header">
+    <div class="plaza-header-left">
+        <div class="plaza-logo">
+            <span class="logo-icon">🏪</span>
+            <span class="logo-text">Advertise</span>
+        </div>
+    </div>
+
+    <div class="plaza-header-right">
+        <div class="account-info">
+            <div class="account-balance">
+                <span class="balance-label">Balance:</span>
+                <span class="balance-value">0.00 USDC</span>
+            </div>
+            <button id="btn-recharge" class="btn-recharge">Recharge</button>
+            <button id="btn-history" class="btn-history">History</button>
+        </div>
+    </div>
+</header>
+
+<div id="view-advertise" class="plaza-view active">
+    <!-- Dashboard Cards -->
+    <div class="dashboard-overview">
+        <div class="dashboard-card">
+            <div class="card-icon">💳</div>
+            <div class="card-content">
+                <div class="card-label">Ad Account Balance</div>
+                <div class="card-value">0.00 USDC</div>
+            </div>
+            <button id="btn-recharge-dashboard" class="btn-card-action">Recharge</button>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">📊</div>
+            <div class="card-content">
+                <div class="card-label">Active Ads</div>
+                <div class="card-value">0</div>
+            </div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">📉</div>
+            <div class="card-content">
+                <div class="card-label">Today's Spend</div>
+                <div class="card-value">0.00 USDC</div>
+            </div>
+        </div>
+        <div class="dashboard-card">
+            <div class="card-icon">📈</div>
+            <div class="card-content">
+                <div class="card-label">This Week's Spend</div>
+                <div class="card-value">0.00 USDC</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Publish Ad Button -->
+    <div class="publish-ad-section">
+        <button id="btn-publish-ad" class="btn-publish-ad">
+            <span class="publish-icon">➕</span>
+            <span class="publish-text">Publish New Ad</span>
+        </button>
+    </div>
+
+    <!-- My Ads List -->
+    <div class="my-ads-section">
+        <h2 class="section-title">My Ads</h2>
+        <div class="ads-table-container">
+            <table class="ads-table">
+                <thead>
+                <tr>
+                    <th>Ad Name</th>
+                    <th>Status</th>
+                    <th>Reward per Task</th>
+                    <th>Completed</th>
+                    <th>Spent</th>
+                    <th>Remaining Budget</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody id="my-ads-tbody">
+                <tr class="empty-row">
+                    <td colspan="7">
+                        <div class="empty-state-small">
+                            <p>No ads published yet. Click "Publish New Ad" to get started!</p>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Recent Spending -->
+    <div class="spending-section">
+        <h2 class="section-title">Recent Spending</h2>
+        <div class="spending-table-container">
+            <table class="spending-table">
+                <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Ad</th>
+                    <th>Event</th>
+                    <th>Amount</th>
+                    <th>Service Fee</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody id="spending-tbody">
+                <tr class="empty-row">
+                    <td colspan="6">
+                        <div class="empty-state-small">
+                            <p>No spending records yet.</p>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Publish Ad Wizard Modal -->
+<div id="publish-wizard-modal" class="modal">
+    <div class="modal-dialog modal-wizard">
+        <div class="modal-header">
+            <h2 class="modal-title">Publish New Ad</h2>
+            <button id="close-wizard" class="btn-close">✕</button>
+        </div>
+
+        <!-- Wizard Steps Indicator -->
+        <div class="wizard-steps">
+            <div class="wizard-step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-label">Basic Info</div>
+            </div>
+            <div class="wizard-step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-label">Creative</div>
+            </div>
+            <div class="wizard-step" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-label">Task & Reward</div>
+            </div>
+            <div class="wizard-step" data-step="4">
+                <div class="step-number">4</div>
+                <div class="step-label">Budget</div>
             </div>
         </div>
 
-        <div class="plaza-header-right">
-            <div class="account-info">
-                <div class="account-balance">
-                    <span class="balance-label">Balance:</span>
-                    <span class="balance-value">0.00 USDC</span>
+        <div class="modal-body">
+            <!-- Step 1: Basic Info -->
+            <div class="wizard-content active" data-step="1">
+                <h3>Basic Information</h3>
+                <div class="form-group">
+                    <label for="ad-name">Ad Name (for your reference)</label>
+                    <input type="text" id="ad-name" class="form-input" placeholder="e.g., Twitter Follow Campaign"
+                           required>
                 </div>
-                <button id="btn-recharge" class="btn-recharge">Recharge</button>
-                <button id="btn-history" class="btn-history">History</button>
+                <div class="form-group">
+                    <label for="ad-type">Ad Type</label>
+                    <select id="ad-type" class="form-select" required>
+                        <option value="">Select type...</option>
+                        <option value="traffic">Traffic</option>
+                        <option value="follow">Follow/Subscribe</option>
+                        <option value="register">Registration</option>
+                        <option value="download">Download</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ad-category">Category</label>
+                    <select id="ad-category" class="form-select" required>
+                        <option value="">Select category...</option>
+                        <option value="follow">Follow</option>
+                        <option value="visit">Visit</option>
+                        <option value="register">Register</option>
+                        <option value="share">Share</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Step 2: Creative -->
+            <div class="wizard-content" data-step="2">
+                <h3>Creative Materials</h3>
+                <div class="form-group">
+                    <label for="ad-title">Ad Title</label>
+                    <input type="text" id="ad-title" class="form-input" placeholder="e.g., Follow us on Twitter!"
+                           required>
+                </div>
+                <div class="form-group">
+                    <label for="ad-description">Description</label>
+                    <textarea id="ad-description" class="form-textarea" rows="3"
+                              placeholder="Describe what users need to do..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="ad-image">Ad Image/Icon (optional)</label>
+                    <input type="file" id="ad-image" class="form-input" accept="image/*">
+                    <small class="form-hint">Recommended: 300x300px, max 2MB</small>
+                </div>
+                <div class="form-group">
+                    <label for="ad-url">Landing Page URL</label>
+                    <input type="url" id="ad-url" class="form-input" placeholder="https://..." required>
+                </div>
+            </div>
+
+            <!-- Step 3: Task & Reward -->
+            <div class="wizard-content" data-step="3">
+                <h3>Task Settings & Reward</h3>
+                <div class="form-group">
+                    <label for="task-action">User Action Required</label>
+                    <select id="task-action" class="form-select" required>
+                        <option value="">Select action...</option>
+                        <option value="visit">Visit page</option>
+                        <option value="click">Click button</option>
+                        <option value="follow">Follow account</option>
+                        <option value="register">Register account</option>
+                        <option value="share">Share content</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="reward-amount">Reward per Task (USDC)</label>
+                    <input type="number" id="reward-amount" class="form-input" min="0.01" step="0.01" placeholder="0.50"
+                           required>
+                </div>
+                <div class="form-group">
+                    <label for="task-limit">Total Task Limit</label>
+                    <input type="number" id="task-limit" class="form-input" min="1" placeholder="500" required>
+                </div>
+                <div class="form-group">
+                    <label for="start-time">Start Time</label>
+                    <input type="datetime-local" id="start-time" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="end-time">End Time</label>
+                    <input type="datetime-local" id="end-time" class="form-input">
+                </div>
+            </div>
+
+            <!-- Step 4: Budget -->
+            <div class="wizard-content" data-step="4">
+                <h3>Budget & Confirmation</h3>
+                <div class="budget-summary">
+                    <div class="summary-row">
+                        <span class="summary-label">Reward per Task:</span>
+                        <span class="summary-value" id="summary-reward">0.00 USDC</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Total Tasks:</span>
+                        <span class="summary-value" id="summary-tasks">0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Platform Fee (5%):</span>
+                        <span class="summary-value" id="summary-fee">0.00 USDC</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span class="summary-label">Total Budget:</span>
+                        <span class="summary-value" id="summary-total">0.00 USDC</span>
+                    </div>
+                </div>
+                <div class="balance-check">
+                    <div class="balance-check-row">
+                        <span>Current Balance:</span>
+                        <span id="current-balance">0.00 USDC</span>
+                    </div>
+                    <div class="balance-status" id="balance-status">
+                        <!-- Will be updated by JS -->
+                    </div>
+                </div>
             </div>
         </div>
-    </header>
 
-    <div id="view-advertise" class="plaza-view active">
-        <!-- Dashboard Cards -->
-        <div class="dashboard-overview">
-            <div class="dashboard-card">
-                <div class="card-icon">💳</div>
-                <div class="card-content">
-                    <div class="card-label">Ad Account Balance</div>
-                    <div class="card-value">0.00 USDC</div>
+        <div class="modal-footer">
+            <button id="btn-wizard-prev" class="btn-secondary" style="display: none;">Previous</button>
+            <button id="btn-wizard-next" class="btn-primary">Next</button>
+            <button id="btn-wizard-submit" class="btn-primary" style="display: none;">Publish Ad</button>
+        </div>
+    </div>
+</div>
+
+<!-- Recharge Modal -->
+<div id="recharge-modal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h2 class="modal-title">Recharge Account</h2>
+            <button id="close-recharge" class="btn-close">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="recharge-content">
+                <h3>Recharge Methods</h3>
+                <div class="recharge-method">
+                    <h4>Transfer USDC</h4>
+                    <p>Transfer USDC to your wallet address:</p>
+                    <div class="wallet-address">
+                        <code id="wallet-address-display">Loading...</code>
+                        <button id="copy-address" class="btn-copy">Copy</button>
+                    </div>
                 </div>
-                <button id="btn-recharge-dashboard" class="btn-card-action">Recharge</button>
-            </div>
-            <div class="dashboard-card">
-                <div class="card-icon">📊</div>
-                <div class="card-content">
-                    <div class="card-label">Active Ads</div>
-                    <div class="card-value">0</div>
-                </div>
-            </div>
-            <div class="dashboard-card">
-                <div class="card-icon">📉</div>
-                <div class="card-content">
-                    <div class="card-label">Today's Spend</div>
-                    <div class="card-value">0.00 USDC</div>
-                </div>
-            </div>
-            <div class="dashboard-card">
-                <div class="card-icon">📈</div>
-                <div class="card-content">
-                    <div class="card-label">This Week's Spend</div>
-                    <div class="card-value">0.00 USDC</div>
+                <div class="recharge-method">
+                    <h4>Buy with Card</h4>
+                    <p>Purchase USDC directly with credit card or Apple Pay</p>
+                    <button id="btn-buy-card" class="btn-primary">Buy USDC</button>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Publish Ad Button -->
-        <div class="publish-ad-section">
-            <button id="btn-publish-ad" class="btn-publish-ad">
-                <span class="publish-icon">➕</span>
-                <span class="publish-text">Publish New Ad</span>
-            </button>
+<!-- History Modal -->
+<div id="history-modal" class="modal">
+    <div class="modal-dialog modal-large">
+        <div class="modal-header">
+            <h2 class="modal-title">Transaction History</h2>
+            <button id="close-history" class="btn-close">✕</button>
         </div>
-
-        <!-- My Ads List -->
-        <div class="my-ads-section">
-            <h2 class="section-title">My Ads</h2>
-            <div class="ads-table-container">
-                <table class="ads-table">
-                    <thead>
-                        <tr>
-                            <th>Ad Name</th>
-                            <th>Status</th>
-                            <th>Reward per Task</th>
-                            <th>Completed</th>
-                            <th>Spent</th>
-                            <th>Remaining Budget</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="my-ads-tbody">
-                        <tr class="empty-row">
-                            <td colspan="7">
-                                <div class="empty-state-small">
-                                    <p>No ads published yet. Click "Publish New Ad" to get started!</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+        <div class="modal-body">
+            <div class="history-tabs">
+                <button class="history-tab active" data-tab="earnings">Earnings</button>
+                <button class="history-tab" data-tab="spending">Spending</button>
+                <button class="history-tab" data-tab="recharge">Recharge</button>
             </div>
-        </div>
-
-        <!-- Recent Spending -->
-        <div class="spending-section">
-            <h2 class="section-title">Recent Spending</h2>
-            <div class="spending-table-container">
-                <table class="spending-table">
-                    <thead>
+            <div class="history-content">
+                <div class="history-tab-content active" data-tab="earnings">
+                    <table class="history-table">
+                        <thead>
                         <tr>
                             <th>Time</th>
                             <th>Ad</th>
-                            <th>Event</th>
                             <th>Amount</th>
-                            <th>Service Fee</th>
                             <th>Status</th>
                         </tr>
-                    </thead>
-                    <tbody id="spending-tbody">
+                        </thead>
+                        <tbody>
                         <tr class="empty-row">
-                            <td colspan="6">
-                                <div class="empty-state-small">
-                                    <p>No spending records yet.</p>
-                                </div>
-                            </td>
+                            <td colspan="4">No earnings yet</td>
                         </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Publish Ad Wizard Modal -->
-    <div id="publish-wizard-modal" class="modal">
-        <div class="modal-dialog modal-wizard">
-            <div class="modal-header">
-                <h2 class="modal-title">Publish New Ad</h2>
-                <button id="close-wizard" class="btn-close">✕</button>
-            </div>
-
-            <!-- Wizard Steps Indicator -->
-            <div class="wizard-steps">
-                <div class="wizard-step active" data-step="1">
-                    <div class="step-number">1</div>
-                    <div class="step-label">Basic Info</div>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="wizard-step" data-step="2">
-                    <div class="step-number">2</div>
-                    <div class="step-label">Creative</div>
+                <div class="history-tab-content" data-tab="spending">
+                    <table class="history-table">
+                        <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Ad</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr class="empty-row">
+                            <td colspan="4">No spending yet</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="wizard-step" data-step="3">
-                    <div class="step-number">3</div>
-                    <div class="step-label">Task & Reward</div>
-                </div>
-                <div class="wizard-step" data-step="4">
-                    <div class="step-number">4</div>
-                    <div class="step-label">Budget</div>
-                </div>
-            </div>
-
-            <div class="modal-body">
-                <!-- Step 1: Basic Info -->
-                <div class="wizard-content active" data-step="1">
-                    <h3>Basic Information</h3>
-                    <div class="form-group">
-                        <label for="ad-name">Ad Name (for your reference)</label>
-                        <input type="text" id="ad-name" class="form-input" placeholder="e.g., Twitter Follow Campaign" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="ad-type">Ad Type</label>
-                        <select id="ad-type" class="form-select" required>
-                            <option value="">Select type...</option>
-                            <option value="traffic">Traffic</option>
-                            <option value="follow">Follow/Subscribe</option>
-                            <option value="register">Registration</option>
-                            <option value="download">Download</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="ad-category">Category</label>
-                        <select id="ad-category" class="form-select" required>
-                            <option value="">Select category...</option>
-                            <option value="follow">Follow</option>
-                            <option value="visit">Visit</option>
-                            <option value="register">Register</option>
-                            <option value="share">Share</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Step 2: Creative -->
-                <div class="wizard-content" data-step="2">
-                    <h3>Creative Materials</h3>
-                    <div class="form-group">
-                        <label for="ad-title">Ad Title</label>
-                        <input type="text" id="ad-title" class="form-input" placeholder="e.g., Follow us on Twitter!" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="ad-description">Description</label>
-                        <textarea id="ad-description" class="form-textarea" rows="3" placeholder="Describe what users need to do..." required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="ad-image">Ad Image/Icon (optional)</label>
-                        <input type="file" id="ad-image" class="form-input" accept="image/*">
-                        <small class="form-hint">Recommended: 300x300px, max 2MB</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="ad-url">Landing Page URL</label>
-                        <input type="url" id="ad-url" class="form-input" placeholder="https://..." required>
-                    </div>
-                </div>
-
-                <!-- Step 3: Task & Reward -->
-                <div class="wizard-content" data-step="3">
-                    <h3>Task Settings & Reward</h3>
-                    <div class="form-group">
-                        <label for="task-action">User Action Required</label>
-                        <select id="task-action" class="form-select" required>
-                            <option value="">Select action...</option>
-                            <option value="visit">Visit page</option>
-                            <option value="click">Click button</option>
-                            <option value="follow">Follow account</option>
-                            <option value="register">Register account</option>
-                            <option value="share">Share content</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="reward-amount">Reward per Task (USDC)</label>
-                        <input type="number" id="reward-amount" class="form-input" min="0.01" step="0.01" placeholder="0.50" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="task-limit">Total Task Limit</label>
-                        <input type="number" id="task-limit" class="form-input" min="1" placeholder="500" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="start-time">Start Time</label>
-                        <input type="datetime-local" id="start-time" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label for="end-time">End Time</label>
-                        <input type="datetime-local" id="end-time" class="form-input">
-                    </div>
-                </div>
-
-                <!-- Step 4: Budget -->
-                <div class="wizard-content" data-step="4">
-                    <h3>Budget & Confirmation</h3>
-                    <div class="budget-summary">
-                        <div class="summary-row">
-                            <span class="summary-label">Reward per Task:</span>
-                            <span class="summary-value" id="summary-reward">0.00 USDC</span>
-                        </div>
-                        <div class="summary-row">
-                            <span class="summary-label">Total Tasks:</span>
-                            <span class="summary-value" id="summary-tasks">0</span>
-                        </div>
-                        <div class="summary-row">
-                            <span class="summary-label">Platform Fee (5%):</span>
-                            <span class="summary-value" id="summary-fee">0.00 USDC</span>
-                        </div>
-                        <div class="summary-row total">
-                            <span class="summary-label">Total Budget:</span>
-                            <span class="summary-value" id="summary-total">0.00 USDC</span>
-                        </div>
-                    </div>
-                    <div class="balance-check">
-                        <div class="balance-check-row">
-                            <span>Current Balance:</span>
-                            <span id="current-balance">0.00 USDC</span>
-                        </div>
-                        <div class="balance-status" id="balance-status">
-                            <!-- Will be updated by JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="modal-footer">
-                <button id="btn-wizard-prev" class="btn-secondary" style="display: none;">Previous</button>
-                <button id="btn-wizard-next" class="btn-primary">Next</button>
-                <button id="btn-wizard-submit" class="btn-primary" style="display: none;">Publish Ad</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recharge Modal -->
-    <div id="recharge-modal" class="modal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h2 class="modal-title">Recharge Account</h2>
-                <button id="close-recharge" class="btn-close">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="recharge-content">
-                    <h3>Recharge Methods</h3>
-                    <div class="recharge-method">
-                        <h4>Transfer USDC</h4>
-                        <p>Transfer USDC to your wallet address:</p>
-                        <div class="wallet-address">
-                            <code id="wallet-address-display">Loading...</code>
-                            <button id="copy-address" class="btn-copy">Copy</button>
-                        </div>
-                    </div>
-                    <div class="recharge-method">
-                        <h4>Buy with Card</h4>
-                        <p>Purchase USDC directly with credit card or Apple Pay</p>
-                        <button id="btn-buy-card" class="btn-primary">Buy USDC</button>
-                    </div>
+                <div class="history-tab-content" data-tab="recharge">
+                    <table class="history-table">
+                        <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Method</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr class="empty-row">
+                            <td colspan="4">No recharge records</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- History Modal -->
-    <div id="history-modal" class="modal">
-        <div class="modal-dialog modal-large">
-            <div class="modal-header">
-                <h2 class="modal-title">Transaction History</h2>
-                <button id="close-history" class="btn-close">✕</button>
+<!-- ==================== Hidden Templates (for TS clone) ==================== -->
+<template id="tpl-my-ad-row">
+    <tr class="my-ad-row" data-ad-id="">
+        <td class="td-name"></td>
+        <td class="td-status"></td>
+        <td class="td-reward"></td>
+        <td class="td-completed"></td>
+        <td class="td-spent"></td>
+        <td class="td-remaining"></td>
+        <td class="td-actions">
+            <button class="btn-secondary btn-view" type="button">View</button>
+            <button class="btn-secondary btn-toggle" type="button">Pause</button>
+        </td>
+    </tr>
+</template>
+
+<template id="tpl-empty-my-ads-row">
+    <tr class="empty-row">
+        <td colspan="7">
+            <div class="empty-state-small">
+                <p>No ads published yet. Click "Publish New Ad" to get started!</p>
             </div>
-            <div class="modal-body">
-                <div class="history-tabs">
-                    <button class="history-tab active" data-tab="earnings">Earnings</button>
-                    <button class="history-tab" data-tab="spending">Spending</button>
-                    <button class="history-tab" data-tab="recharge">Recharge</button>
-                </div>
-                <div class="history-content">
-                    <div class="history-tab-content active" data-tab="earnings">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Ad</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="empty-row">
-                                    <td colspan="4">No earnings yet</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="history-tab-content" data-tab="spending">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Ad</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="empty-row">
-                                    <td colspan="4">No spending yet</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="history-tab-content" data-tab="recharge">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>Time</th>
-                                    <th>Method</th>
-                                    <th>Amount</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="empty-row">
-                                    <td colspan="4">No recharge records</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        </td>
+    </tr>
+</template>
+
+<template id="tpl-spend-row">
+    <tr class="spend-row" data-id="">
+        <td class="td-time"></td>
+        <td class="td-ad"></td>
+        <td class="td-event"></td>
+        <td class="td-amount"></td>
+        <td class="td-fee"></td>
+        <td class="td-status"></td>
+    </tr>
+</template>
+
+<template id="tpl-empty-spend-row">
+    <tr class="empty-row">
+        <td colspan="6">
+            <div class="empty-state-small">
+                <p>No spending records yet.</p>
             </div>
-        </div>
-    </div>
+        </td>
+    </tr>
+</template>
 
-    <!-- ==================== Hidden Templates (for TS clone) ==================== -->
-    <template id="tpl-my-ad-row">
-        <tr class="my-ad-row" data-ad-id="">
-            <td class="td-name"></td>
-            <td class="td-status"></td>
-            <td class="td-reward"></td>
-            <td class="td-completed"></td>
-            <td class="td-spent"></td>
-            <td class="td-remaining"></td>
-            <td class="td-actions">
-                <button class="btn-secondary btn-view" type="button">View</button>
-                <button class="btn-secondary btn-toggle" type="button">Pause</button>
-            </td>
-        </tr>
-    </template>
+<template id="tpl-history-row">
+    <tr class="history-row">
+        <td class="td-time"></td>
+        <td class="td-name"></td>
+        <td class="td-amount"></td>
+        <td class="td-status"></td>
+    </tr>
+</template>
 
-    <template id="tpl-empty-my-ads-row">
-        <tr class="empty-row">
-            <td colspan="7">
-                <div class="empty-state-small">
-                    <p>No ads published yet. Click "Publish New Ad" to get started!</p>
-                </div>
-            </td>
-        </tr>
-    </template>
+<template id="tpl-empty-history-row">
+    <tr class="empty-row">
+        <td colspan="4" class="td-empty">No records</td>
+    </tr>
+</template>
 
-    <template id="tpl-spend-row">
-        <tr class="spend-row" data-id="">
-            <td class="td-time"></td>
-            <td class="td-ad"></td>
-            <td class="td-event"></td>
-            <td class="td-amount"></td>
-            <td class="td-fee"></td>
-            <td class="td-status"></td>
-        </tr>
-    </template>
-
-    <template id="tpl-empty-spend-row">
-        <tr class="empty-row">
-            <td colspan="6">
-                <div class="empty-state-small">
-                    <p>No spending records yet.</p>
-                </div>
-            </td>
-        </tr>
-    </template>
-
-    <template id="tpl-history-row">
-        <tr class="history-row">
-            <td class="td-time"></td>
-            <td class="td-name"></td>
-            <td class="td-amount"></td>
-            <td class="td-status"></td>
-        </tr>
-    </template>
-
-    <template id="tpl-empty-history-row">
-        <tr class="empty-row">
-            <td colspan="4" class="td-empty">No records</td>
-        </tr>
-    </template>
+<div id="notification" class="notification hidden" role="alert"></div>
 </body>
 </html>
