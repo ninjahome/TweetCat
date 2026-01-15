@@ -3,8 +3,28 @@ import {initCDP} from "../common/x402_obj";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {x402WorkerFetch} from "./common";
+import {initI18n, t} from "../common/i18n";
 
 type UIState = 'loading' | 'success' | 'error' | 'idle';
+function translateAuto() {
+    // 设置页面标题
+    document.title = t('cdp_auth_page_title');
+    // 设置页面标题
+    const containerHeader = document.getElementById('container-title');
+    if (containerHeader) {
+        containerHeader.textContent = t('cdp_auth_page_title_header');
+    }
+
+    const ButtonClose = document.getElementById('btnClose');
+    if (ButtonClose) {
+        ButtonClose.textContent = t('cdp_auth_action_close');
+    }
+    const ButtonRetry = document.getElementById('btnRetry');
+    if (ButtonRetry) {
+        ButtonRetry.textContent = t('cdp_auth_action_retry');
+    }
+
+}
 
 class AuthManager {
     private textEl = document.getElementById("statusText")!;
@@ -85,6 +105,8 @@ class AuthManager {
 
 document.addEventListener("DOMContentLoaded", () => {
     const manager = new AuthManager();
+    initI18n();
+    translateAuto()
 
     document.getElementById("btnRetry")!.onclick = () => manager.run();
     document.getElementById("btnClose")!.onclick = () => window.close();

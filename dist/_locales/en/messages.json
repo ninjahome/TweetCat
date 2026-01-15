@@ -1308,7 +1308,7 @@
   "cdp_auth_action_retry": {
     "message":"Retry"
   },
-  "cdp_auth_page_title_transfer": {
+  "cdp_auth_page_title": {
     "message": "Connect Coinbase Wallet "
   },
   "cdp_auth_page_title_header": {
