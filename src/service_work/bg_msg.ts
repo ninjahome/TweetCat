@@ -48,7 +48,29 @@ export async function checkIfXIsOpen(): Promise<boolean> {
     return tabs.length > 0;
 }
 
+const HIGH_RISK_ACTIONS = [
+    MsgType.WalletTransferUSDC,
+    MsgType.TransferUSDCByTwitterId,
+    MsgType.WalletExportPrivateKey,
+    MsgType.WalletSignMessage,
+    MsgType.WalletTransferEth
+]
+
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
+
+    const senderUrl = _sender.url || "";
+    const isInternalSource =
+        senderUrl.startsWith(browser.runtime.getURL("")) &&
+        _sender.id === browser.runtime.id;
+
+    // 针对高危动作的防火墙
+    if (HIGH_RISK_ACTIONS.includes(request.action)) {
+        if (!isInternalSource) {
+            console.error(`🚨 [Security] 拦截到跨域支付攻击! 来源: ${senderUrl}`);
+            return {success: false, data: "Security Error: Action only allowed from Extension UI."};
+        }
+    }
+
     switch (request.action) {
 
         case MsgType.FollowingBulkUnfollow: {

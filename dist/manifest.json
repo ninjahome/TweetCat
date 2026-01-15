@@ -1,12 +1,7 @@
 {
   "manifest_version": 3,
-  "externally_connectable": {
-    "matches": [
-      "https://tweetcattips.ribencong.workers.dev/*"
-    ]
-  },
   "name": "TweetCat",
-  "version": "3.6.0",
+  "version": "3.6.1",
   "default_locale": "en",
   "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {
@@ -72,7 +67,7 @@
     {
       "resources": [
         "css/*.css",
-        "html/*.html",
+        "html/content.html",
         "images/tweetcat.svg",
         "js/injection.js"
       ],
@@ -82,17 +77,9 @@
         "http://127.0.0.1/*",
         "http://localhost/*"
       ]
-    },
-    {
-      "resources": [
-        "html/cdp_auth.html"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'none'; base-uri 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'none';frame-ancestors 'none'; base-uri 'self'"
   }
 }
