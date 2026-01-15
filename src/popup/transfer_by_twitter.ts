@@ -14,7 +14,7 @@ interface UserProfile {
     avatar?: string;
 }
 const isZh = (() => {
-    const lang = (document.documentElement.lang || navigator.language || "").toLowerCase();
+    const lang = (navigator.language || document.documentElement.lang || "").toLowerCase();
     return lang.startsWith("zh");
 })();
 

@@ -1253,5 +1253,56 @@
   },
   "transfer_create_tx_failed": {
     "message": "Failed to create blockchain transaction. Please try again."
+  },
+  "transfer_confirm_processing": {
+    "message": "Processing..."
+  },
+  "confirm_transfer": {
+    "message": "Confirm transfer"
+  },
+  "missing_profile_error": {
+    "message": "Error: unable to load user information. Please reopen."
+  },
+  "please_connect_wallet_auto_close": {
+    "message": "Please connect your wallet. This window will close automatically in 3 seconds."
+  },
+  "service_init_failed": {
+    "message": "Service initialization failed."
+  },
+  "amount_invalid_format": {
+    "message": "Please enter a valid amount (up to 6 decimal places)."
+  },
+  "amount_must_greater_than_zero": {
+    "message": "Amount must be greater than 0."
+  },
+  "transfer_create_tx_failed_detail": {
+    "message": "Failed to create blockchain transaction: $1"
+  },
+  "transfer_success": {
+    "message": "✅ Transfer successful: $1"
+  },
+  "transfer_failed_try_again": {
+    "message": "Transfer failed, please try again later."
+  },
+  "transfer_page_title": {
+    "message": "X402 Transfer"
+  },
+  "transfer_usdc_title": {
+    "message": "Transfer USDC"
+  },
+  "amount_usdc_label": {
+    "message": "Amount (USDC)"
+  },
+  "decimals_hint": {
+    "message": "6 decimals"
+  },
+  "suggest_not_exceed_balance": {
+    "message": "Suggested: do not exceed balance $1 (USDC)"
+  },
+  "requesting_wallet_confirmation": {
+    "message": "Requesting wallet confirmation..."
+  },
+  "unknown": {
+    "message": "Unknown"
   }
 }
