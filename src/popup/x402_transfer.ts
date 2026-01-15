@@ -4,7 +4,7 @@ import browser from "webextension-polyfill";
 import {showPopupWindow} from "./common";
 import {getChainId} from "../wallet/wallet_setting";
 import {postToX402Srv} from "../wallet/cdp_wallet";
-import {t} from "../common/i18n";
+import {initI18n, t} from "../common/i18n";
 
 // --- 类型定义 ---
 interface UserProfile {
@@ -13,10 +13,6 @@ interface UserProfile {
     userId?: string;
     avatar?: string;
 }
-const isZh = (() => {
-    const lang = (navigator.language || document.documentElement.lang || "").toLowerCase();
-    return lang.startsWith("zh");
-})();
 
 function safeStringify(v: any): string {
     try {
@@ -25,18 +21,6 @@ function safeStringify(v: any): string {
     } catch {
         return String(v);
     }
-}
-
-function msgRegisterAccountError(): string {
-    return isZh
-        ? "请确保接收方已关联 Coinbase 账户。"
-        : "Please ensure the recipient has a linked Coinbase account.";
-}
-
-function msgCreateTxFailed(detail: string): string {
-    return isZh
-        ? `创建链上交易失败：${detail}`
-        : `Failed to create blockchain transaction: ${detail}`;
 }
 
 interface ValidationResult {
@@ -58,6 +42,20 @@ const UI = {
     closeBtns: [document.getElementById("js-close"), document.getElementById("js-cancel")],
     presetBtns: document.querySelectorAll("[data-amt]")
 };
+function translateStaticTexts() {
+    // 设置页面标题
+    document.title = t('page_title_transfer');
+    // 设置页面标题
+    const pageHeader = document.getElementById('pageHeader');
+    if (pageHeader) {
+        pageHeader.textContent = t('page_header_transfer');
+    }
+
+    const decimalsHint = document.getElementById('js-decimals-hint');
+    if (decimalsHint) {
+        decimalsHint.textContent = t('x402_transfer_decimals_hint');
+    }
+}
 
 // --- 工具函数 ---
 const getQueryParam = (name: string): string | null =>
@@ -98,9 +96,9 @@ const updateUIState = (loading: boolean, status?: string, error?: string) => {
     UI.errorMsg.textContent = error || "";
 
     if (loading) {
-        UI.confirmText.textContent = "处理中...";
+        UI.confirmText.textContent = t('processing');
     } else {
-        UI.confirmText.textContent = "确认转账";
+        UI.confirmText.textContent = t('x402_transfer_confirm');
     }
 };
 
@@ -119,9 +117,9 @@ async function performTransfer(profile: UserProfile, amount: string): Promise<vo
     const result = await response.json()
     if (!result.success || !result.txHash) {
         if (result.code === "RECIPIENT_NOT_FOUND") {
-            throw new Error(msgRegisterAccountError());
+            throw new Error(t("register_account_error"));
         }
-        throw new Error(msgCreateTxFailed(safeStringify(result)));
+        throw new Error(t('transfer_create_tx_failed') + safeStringify(result));
     }
 
     const url = X402_FACILITATORS[chainId].browser + "/tx/" + result.txHash
@@ -132,6 +130,8 @@ async function performTransfer(profile: UserProfile, amount: string): Promise<vo
 
 // --- 初始化控制器 ---
 async function init() {
+    initI18n();
+    translateStaticTexts();
     const profile = parseProfile();
 
     if (!profile) {

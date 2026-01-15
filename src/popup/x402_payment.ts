@@ -2,7 +2,7 @@ import {isSignedIn} from "@coinbase/cdp-core";
 import {initCDP, X402_FACILITATORS, x402TipPayload} from "../common/x402_obj";
 import {getChainId} from "../wallet/wallet_setting";
 import {logX402} from "../common/debug_flags";
-import {t} from "../common/i18n";
+import {t, initI18n} from "../common/i18n";
 import {postToX402Srv} from "../wallet/cdp_wallet";
 import browser from "webextension-polyfill";
 
@@ -17,12 +17,12 @@ let currentHashVal: string = ""
 // 翻译函数
 function translateStaticTexts() {
     // 设置页面标题
-    document.title = t('page_title');
+    document.title = t('page_title_payment');
 
     // 设置页面标题
     const pageHeader = document.getElementById('pageHeader');
     if (pageHeader) {
-        pageHeader.textContent = t('page_header');
+        pageHeader.textContent = t('page_header_payment');
     }
 
     // 设置推文标签
@@ -56,6 +56,8 @@ function translateStaticTexts() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // 初始化 i18n - 必须先调用这个来检测语言环境
+    initI18n();
     // 获取 DOM 元素
     statusDiv = document.getElementById('status')!;
     loadingDiv = document.getElementById('loading')!;

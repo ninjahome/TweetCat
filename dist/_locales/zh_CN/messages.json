@@ -870,10 +870,10 @@
   "window_auto_close": {
     "message": "窗口将在 10 秒后自动关闭"
   },
-  "page_title": {
+  "page_title_payment": {
     "message": "X402 支付确认"
   },
-  "page_header": {
+  "page_header_payment": {
     "message": "💎 X402 打赏支付"
   },
   "tweet_id_label": {
@@ -1254,56 +1254,16 @@
   "transfer_create_tx_failed": {
     "message": "创建链上交易失败，请稍后重试。"
   },
-  "transfer_confirm_processing": {
-    "message": "处理中..."
-  },
-  "confirm_transfer": {
-    "message": "确认转账"
-  },
-  "missing_profile_error": {
-    "message": "错误：无法加载用户信息，请重新打开。"
-  },
-  "please_connect_wallet_auto_close": {
-    "message": "请先连接钱包。3秒后自动关闭该窗口"
-  },
-  "service_init_failed": {
-    "message": "服务初始化失败。"
-  },
-  "amount_invalid_format": {
-    "message": "请输入有效的金额（最多6位小数）"
-  },
-  "amount_must_greater_than_zero": {
-    "message": "金额必须大于 0"
-  },
-  "transfer_create_tx_failed_detail": {
-    "message": "创建链上交易失败：$1"
-  },
-  "transfer_success": {
-    "message": "✅ 转账成功：$1"
-  },
-  "transfer_failed_try_again": {
-    "message": "转账失败，请稍后重试"
-  },
-  "transfer_page_title": {
+  "page_title_transfer": {
     "message": "X402 转账"
   },
-  "transfer_usdc_title": {
+  "page_header_transfer": {
     "message": "转账 USDC"
   },
-  "amount_usdc_label": {
-    "message": "金额 (USDC)"
+  "x402_transfer_confirm": {
+    "message": "确认转账"
   },
-  "decimals_hint": {
-    "message": "6 小数位"
-  },
-  "suggest_not_exceed_balance": {
-    "message": "建议：不超过余额 $1 (USDC)"
-  },
-  "requesting_wallet_confirmation": {
-    "message": "正在请求钱包确认..."
-  },
-  "unknown": {
-    "message": "未知"
+  "x402_transfer_decimals_hint": {
+    "message": "精度:6 小数"
   }
-
 }
