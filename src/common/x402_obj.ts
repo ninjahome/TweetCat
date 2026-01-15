@@ -63,11 +63,10 @@ export async function initCDP() {
     await initialize({
         projectId: PROJECT_ID,
         ethereum: {
-            createOnLogin: "smart",
+            createOnLogin: "eoa",
         },
     });
 }
-
 
 export interface walletInfo {
     hasCreated: boolean;

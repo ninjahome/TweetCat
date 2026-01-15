@@ -314,7 +314,7 @@ export async function transferUSDCByX402(
     }
 
     const end_point = X402_FACILITATORS[chainId].endpoint + "/usdc-transfer";
-    const response = await postToX402Srv(end_point, {amount: amountUsdc, to: toAddress})
+    const response = await postToX402SrvByPri(end_point, {amount: amountUsdc, to: toAddress})
     if (!response.ok) {
         const text = await response.text();
         logX402("------>>>x402 transfer error:", text);
@@ -470,6 +470,9 @@ export async function initX402ClientWithPrivateKey(): Promise<typeof fetch> {
 
     // 4. 创建账户
     const account = privateKeyToAccount(rawKey as `0x${string}`);
+    rawKey = "0x0000000000000000000000000000000000000000000000000000000000000000";
+    exportResult.privateKey = null;
+    console.debug("Sensitive cleanup done.", rawKey);
     // 5. 初始化 x402 客户端
     const client = new x402Client();
     registerExactEvmScheme(client, {
@@ -494,7 +497,7 @@ export async function postToX402Srv(urlPath: string, body: any) {
 
 
 export async function postToX402SrvByPri(urlPath: string, body: any) {
-
+    logX402("------>>> using private key to sign x402")
     const x402Fetch = await initX402ClientWithPrivateKey()
     return x402Fetch(urlPath, {
         method: 'POST',

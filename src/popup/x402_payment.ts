@@ -3,7 +3,7 @@ import {initCDP, X402_FACILITATORS, x402TipPayload} from "../common/x402_obj";
 import {getChainId} from "../wallet/wallet_setting";
 import {logX402} from "../common/debug_flags";
 import {t, initI18n} from "../common/i18n";
-import {postToX402Srv} from "../wallet/cdp_wallet";
+import {postToX402Srv, postToX402SrvByPri} from "../wallet/cdp_wallet";
 import browser from "webextension-polyfill";
 
 // DOM 元素
@@ -130,7 +130,7 @@ async function processTipPayment(payload: x402TipPayload) {
 
         updateStatus(t('requesting_payment'));
 
-        const response = await postToX402Srv(end_point, {
+        const response = await postToX402SrvByPri(end_point, {
             amount: payload.usdcVal,
             tweetId: payload.tweetId,
             xId: payload.authorId
