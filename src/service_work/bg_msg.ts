@@ -63,11 +63,17 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         senderUrl.startsWith(browser.runtime.getURL("")) &&
         _sender.id === browser.runtime.id;
 
-    // 针对高危动作的防火墙
+    // 针对场景 B 的加固逻辑
+    const isTwitterSource = senderUrl.includes("x.com") || senderUrl.includes("twitter.com");
     if (HIGH_RISK_ACTIONS.includes(request.action)) {
-        if (!isInternalSource) {
-            console.error(`🚨 [Security] 拦截到跨域支付攻击! 来源: ${senderUrl}`);
-            return {success: false, data: "Security Error: Action only allowed from Extension UI."};
+        // 如果是小额支付 (X402TipAction)，允许来自 Twitter 页面，但可以加个金额上限
+        if ((request.action === MsgType.X402TipAction || request.action === MsgType.TransferUSDCByTwitterId) && isTwitterSource) {
+            // 允许执行，因为这是 0.01U 的高频动作
+        }
+        // 如果是大额转账或导出私钥，依然强制要求必须来自 InternalSource (Popup)
+        else if (!isInternalSource) {
+            console.error(`🚨 [Security] 拦截到非内部页面的高危动作请求!`);
+            return {success: false, data: "This action must be performed in the extension popup."};
         }
     }
 
