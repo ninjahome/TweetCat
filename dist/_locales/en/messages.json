@@ -1255,15 +1255,63 @@
     "message": "Failed to create blockchain transaction. Please try again."
   },
   "page_title_transfer": {
-    "message": "X402 Transfer Confirmation"
+    "message": "X402 Transfer"
   },
   "page_header_transfer": {
     "message": "USDC Transfer"
   },
   "x402_transfer_confirm": {
-    "message": "Transfer Confirmed"
+    "message": "Confirm Transfer"
   },
   "x402_transfer_decimals_hint": {
     "message": "Precision: 6 decimals"
+  },
+  "x402_usdt_balance_title": {
+    "message": "USDC Balance"
+  },
+  "x402_transfer_hint_max_balance_prefix": {
+    "message": "Suggestion: do not exceed balance "
+  },
+  "x402_transfer_amount_must_number": {
+    "message": "Amount must be a number"
+  },
+  "x402_transfer_amount_gt0": {
+    "message": "Amount must be greater than 0"
+  },
+  "x402_transfer_amount_max_decimals_6": {
+    "message": "Amount cannot have more than 6 decimals"
+  },
+  "x402_transfer_missing_recipient_info": {
+    "message": "Recipient info not found"
+  },
+  "x402_transfer_missing_recipient_address": {
+    "message": "Recipient wallet address missing"
+  },
+  "x402_transfer_wallet_required_auto_close": {
+    "message": "Please connect your wallet first. This window will close automatically in 3 seconds."
+  },
+  "x402_transfer_request_wallet_confirm": {
+    "message": "Requesting wallet confirmation..."
+  },
+  "x402_transfer_load_user_failed": {
+    "message": "Failed to load recipient info"
+  },
+  "x402_transfer_success_prefix": {
+    "message": "✅ Transfer succeeded: "
+  },
+  "x402_transfer_profile_load_failed": {
+    "message": "Error: failed to load user info. Please reopen this page."
+  },
+  "cdp_auth_action_close": {
+    "message":"Close"
+  },
+  "cdp_auth_action_retry": {
+    "message":"Retry"
+  },
+  "cdp_auth_page_title_transfer": {
+    "message": "Connect Coinbase Wallet "
+  },
+  "cdp_auth_page_title_header": {
+    "message": "Coinbase Wallet "
   }
 }

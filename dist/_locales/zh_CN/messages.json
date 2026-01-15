@@ -1264,6 +1264,57 @@
     "message": "确认转账"
   },
   "x402_transfer_decimals_hint": {
-    "message": "精度:6 小数"
+    "message": "精度：6 位小数"
+  },
+  "x402_usdt_balance_title": {
+    "message": "USDC 余额"
+  },
+  "x402_transfer_hint_max_balance_prefix": {
+    "message": "建议：不超过余额 "
+  },
+  "x402_transfer_amount_must_number": {
+    "message": "金额必须是数字"
+  },
+  "x402_transfer_amount_gt0": {
+    "message": "金额需大于 0"
+  },
+  "x402_transfer_amount_max_decimals_6": {
+    "message": "金额不能超过 6 位小数"
+  },
+  "x402_transfer_missing_recipient_info": {
+    "message": "未找到接收方信息"
+  },
+  "x402_transfer_missing_recipient_address": {
+    "message": "接收方钱包地址缺失"
+  },
+  "x402_transfer_wallet_required_auto_close": {
+    "message": "请先连接钱包。该窗口将在 3 秒后自动关闭。"
+  },
+  "x402_transfer_request_wallet_confirm": {
+    "message": "正在请求钱包确认..."
+  },
+  "x402_transfer_load_user_failed": {
+    "message": "加载接收方信息失败"
+  },
+  "x402_transfer_success_prefix": {
+    "message": "✅ 转账成功: "
+  },
+  "x402_transfer_profile_load_failed": {
+    "message": "错误：无法加载用户信息，请重新打开。"
+  },
+  "cdp_auth_action_close": {
+    "message":"关闭窗口"
+  },
+  "cdp_auth_action_retry": {
+    "message":"重试"
+  },
+  "cdp_auth_status_init": {
+    "message":"初始化中..."
+  },
+  "cdp_auth_page_title_transfer": {
+    "message": "Coinbase 钱包连结 "
+  },
+  "cdp_auth_page_title_header": {
+    "message": "Coinbase 钱包"
   }
 }

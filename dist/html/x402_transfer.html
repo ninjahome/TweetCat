@@ -265,8 +265,8 @@
 
     <div class="field-group">
       <label class="field-label" for="js-amount">
-        金额 (USDC)
-        <span id="js-decimals-hint" class="badge">6 小数位</span>
+        <span id="js-label-usdc" class="balance-title-usdt">金额 (USDC)</span>
+        <span id="js-decimals-hint" class="badge">6小数位</span>
       </label>
       <input
               id="js-amount"
@@ -277,8 +277,13 @@
               autocomplete="off"
       />
       <div class="input-hint">
-        <span class="max_amount_transfor">建议：不超过余额 100.00(USDC)</span>
-        <div class="presets">
+          <span
+                  id="js-max-amount_transfor"
+                  class="max_amount_transfor"
+                  data-max="100.00"
+          >建议：不超过余额 100.00(USDC)</span>
+
+          <div class="presets">
           <button class="chip" data-amt="0.1">0.1</button>
           <button class="chip" data-amt="1">1</button>
           <button class="chip" data-amt="5">5</button>

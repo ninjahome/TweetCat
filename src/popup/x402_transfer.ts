@@ -55,6 +55,21 @@ function translateStaticTexts() {
     if (decimalsHint) {
         decimalsHint.textContent = t('x402_transfer_decimals_hint');
     }
+    const labelUsdc = document.getElementById('js-label-usdc');
+    if (labelUsdc) {
+        labelUsdc.textContent = t('x402_usdt_balance_title');
+    }
+    const maxHint = document.getElementById('js-max-amount_transfor') as HTMLSpanElement | null;
+    if (maxHint) {
+        const max = maxHint.dataset.max || '100.00';
+        maxHint.textContent = `${t('x402_transfer_hint_max_balance_prefix')}${max}(${t('currency_unit')})`;
+    }
+
+    const cancelBtn = document.getElementById('js-cancel');
+    if (cancelBtn) cancelBtn.textContent = t('cancel');
+    const confirmText = document.getElementById('js-confirm-text');
+    if (confirmText) confirmText.textContent = t('x402_transfer_confirm');
+
 }
 
 // --- 工具函数 ---
@@ -77,12 +92,20 @@ const validateAmount = (raw: string): ValidationResult => {
 
     if (!cleanValue) return {isValid: false, value: "", message: ""}; // 初始状态不显报错
     if (!/^\d*(\.\d{0,6})?$/.test(cleanValue)) {
-        return {isValid: false, value: cleanValue, message: "请输入有效的金额（最多6位小数）"};
+        return {
+            isValid: false,
+            value: cleanValue,
+            message: t("x402_transfer_amount_max_decimals_6") // 或者你更细分一个 key
+        };
     }
 
     const num = parseFloat(cleanValue);
     if (isNaN(num) || num <= 0) {
-        return {isValid: false, value: cleanValue, message: "金额必须大于 0"};
+        return {
+            isValid: false,
+            value: cleanValue,
+            message: t("x402_transfer_amount_gt0")
+        };
     }
 
     return {isValid: true, value: cleanValue};
@@ -135,7 +158,7 @@ async function init() {
     const profile = parseProfile();
 
     if (!profile) {
-        updateUIState(false, "", "错误：无法加载用户信息，请重新打开。");
+        updateUIState(false, "", t("x402_transfer_profile_load_failed"));
         UI.confirmBtn.disabled = true;
         return;
     }
@@ -150,7 +173,7 @@ async function init() {
         await initCDP();
         const loggedIn = await isSignedIn();
         if (!loggedIn) {
-            updateUIState(false, "", "请先连接钱包。3秒后自动关闭该窗口");
+            updateUIState(false, "", t("x402_transfer_wallet_required_auto_close"));
             setTimeout(async () => {
                 const url = browser.runtime.getURL("html/cdp_auth_auto_x.html");
                 await showPopupWindow(url)
@@ -159,7 +182,7 @@ async function init() {
             return;
         }
     } catch (e) {
-        updateUIState(false, "", "服务初始化失败。");
+        updateUIState(false, "", t("initialization_failed"));
     }
 
     // 事件绑定：输入校验
@@ -186,13 +209,13 @@ async function init() {
         const validation = validateAmount(UI.amountInput.value);
         if (!validation.isValid) return;
 
-        updateUIState(true, "正在请求钱包确认...");
+        updateUIState(true, t("x402_transfer_request_wallet_confirm"));
         try {
             const hash = await performTransfer(profile, validation.value);
             updateUIState(true, "✅ 转账成功:" + hash);
             setTimeout(() => window.close(), 1_500);
         } catch (err: any) {
-            updateUIState(false, "", err.message || "转账失败，请稍后重试");
+            updateUIState(false, "", err.message || t("wallet_transfer_failed"));
         }
     });
 
