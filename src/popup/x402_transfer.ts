@@ -3,7 +3,7 @@ import {isSignedIn} from "@coinbase/cdp-core";
 import browser from "webextension-polyfill";
 import {showPopupWindow} from "./common";
 import {getChainId} from "../wallet/wallet_setting";
-import {postToX402Srv} from "../wallet/cdp_wallet";
+import {postToX402SrvByPri} from "../wallet/cdp_wallet";
 import {initI18n, t} from "../common/i18n";
 
 // --- 类型定义 ---
@@ -133,7 +133,7 @@ async function performTransfer(profile: UserProfile, amount: string): Promise<vo
     const chainId = await getChainId();
     const end_point = X402_FACILITATORS[chainId].endpoint + "/user/transfer_by_twitter";
 
-    const response = await postToX402Srv(end_point, {
+    const response = await postToX402SrvByPri(end_point, {
         amount: amount,
         xId: profile.userId
     })
