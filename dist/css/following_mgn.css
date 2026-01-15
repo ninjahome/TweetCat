@@ -32,10 +32,6 @@ button {
     word-break: keep-all;  /* 防止被全局 word-break 影响 */
 }
 
-.hidden {
-    display: none !important;
-}
-
 body.modal-open {
     overflow: hidden;
 }
