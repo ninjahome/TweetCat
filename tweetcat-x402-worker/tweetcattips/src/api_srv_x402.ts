@@ -9,7 +9,7 @@ import {
 } from "./common";
 import {ResourceInfo, x402ResourceServer} from "@x402/core/server";
 import {SettleResponse} from "@x402/core/types";
-import {creditRewardsBalance, getKolBindingByXId, usdcEscrowTips} from "./database";
+import {creditRewardsBalance, getKolBindingByXId, usdcEscrowTips} from "./database_402";
 import {x402Client} from "@x402/core/client";
 import {registerExactEvmScheme} from "@x402/evm/exact/client";
 import {toAccount} from "viem/accounts";

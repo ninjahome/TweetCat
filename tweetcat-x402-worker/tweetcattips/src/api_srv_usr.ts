@@ -13,7 +13,7 @@ import {
 	calculateWithdrawFee,
 	createPlatformFee,
 	queryPlatformFees
-} from "./database";
+} from "./database_402";
 import {internalTreasurySettle} from "./api_srv_x402";
 
 export async function testQueryUserDetails(c: ExtCtx) {
@@ -360,7 +360,7 @@ export async function apiOnrampWebhook(c: ExtCtx) {
 		}
 
 		// 更新购买记录
-		const {updateOnrampPurchaseStatus} = await import('./database');
+		const {updateOnrampPurchaseStatus} = await import('./database_402');
 
 		const updates: any = {};
 

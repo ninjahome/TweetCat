@@ -553,6 +553,116 @@ body {
     background: #f9fafb;
 }
 
+/* ==================== Activity Modal ==================== */
+.earn-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 200;
+}
+
+.earn-modal.active {
+    display: flex;
+}
+
+.earn-modal-content {
+    background: #fff;
+    width: min(680px, 92vw);
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: 80vh;
+}
+
+.earn-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.earn-modal-header h3 {
+    font-size: 18px;
+    color: #111827;
+}
+
+.btn-close {
+    border: none;
+    background: #f3f4f6;
+    color: #374151;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.earn-activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: auto;
+}
+
+.activity-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f9fafb;
+}
+
+.activity-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.activity-title {
+    font-weight: 600;
+    color: #111827;
+}
+
+.activity-meta {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.activity-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.activity-status {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1f2937;
+    background: #e0e7ff;
+    padding: 4px 8px;
+    border-radius: 999px;
+}
+
+.activity-reward {
+    font-weight: 700;
+    color: #10b981;
+}
+
+.activity-empty {
+    text-align: center;
+    padding: 24px 12px;
+    color: #6b7280;
+}
+
 /* ==================== Responsive Design ==================== */
 @media (max-width: 1200px) {
     .earn-layout {

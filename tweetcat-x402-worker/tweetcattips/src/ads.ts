@@ -1,15 +1,34 @@
 import {Hono} from "hono";
 import {ExtCtx, ExtendedEnv, jsonError, requireStringField, parsePositiveInt, parsePositiveAtomic} from "./common";
+import {
+	AdCategory,
+	CATEGORY_DURATION,
+	CATEGORY_TAGS,
+	formatDeadlineText,
+	getRewardRange,
+	computePopularityScore,
+	toSqliteDate,
+	getAdAccountBalance,
+	getAccountBalanceAtomic,
+	deductAdAccountBalance,
+	createAd,
+	getMyAds,
+	getActiveAdsList,
+	getAdById,
+	incrementAdQuota,
+	getExistingClaim,
+	createClaim,
+	getMyClaimsList,
+	type AdCreatePayload,
+	type ClaimCreatePayload,
+} from "./database_ad";
 
 export async function apiAdsBalance(c: ExtCtx) {
 	try {
 		const aXId = c.req.query("a_x_id");
 		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 
-		const stmt = c.env.DB.prepare(
-			"SELECT a_x_id, asset_symbol, balance_atomic FROM ad_account WHERE a_x_id = ?"
-		).bind(aXId);
-		const row = await stmt.first<{a_x_id: string; asset_symbol: string; balance_atomic: string}>();
+		const row = await getAdAccountBalance(c, aXId);
 		if (!row) {
 			return c.json({a_x_id: aXId, asset_symbol: "USDC", balance_atomic: "0"});
 		}
@@ -44,22 +63,10 @@ export async function apiAdsCreate(c: ExtCtx) {
 
 		const requiredAtomic = (BigInt(unitPriceAtomic) * BigInt(quotaTotal)).toString();
 
-		const updateSql = `
-			UPDATE ad_account
-			SET balance_atomic = CAST(balance_atomic AS INTEGER) - ?,
-				updated_at = datetime('now')
-			WHERE a_x_id = ?
-			  AND CAST(balance_atomic AS INTEGER) >= ?
-		`;
-		const updateResult = await c.env.DB.prepare(updateSql)
-			.bind(requiredAtomic, aXId, requiredAtomic)
-			.run();
-
-		if (!updateResult.success || updateResult.meta.changes === 0) {
-			const balanceRow = await c.env.DB.prepare(
-				"SELECT balance_atomic FROM ad_account WHERE a_x_id = ?"
-			).bind(aXId).first<{balance_atomic: string}>();
-			const current = balanceRow?.balance_atomic ?? "0";
+		// 尝试扣减余额
+		const deducted = await deductAdAccountBalance(c, aXId, requiredAtomic);
+		if (!deducted) {
+			const current = await getAccountBalanceAtomic(c, aXId);
 			return jsonError(
 				c,
 				400,
@@ -68,29 +75,27 @@ export async function apiAdsCreate(c: ExtCtx) {
 			);
 		}
 
+		// 创建广告
 		const adId = crypto.randomUUID();
-		const insertSql = `
-			INSERT INTO ads (
-				ad_id, a_x_id, ad_type, category, name, title, description, detail_url,
-				unit_price_atomic, quota_total, start_at, end_at
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		`;
-		await c.env.DB.prepare(insertSql)
-			.bind(
-				adId,
-				aXId,
-				adType,
-				category,
-				name,
-				title,
-				description,
-				detailUrl,
-				unitPriceAtomic,
-				quotaTotal,
-				body?.start_at ?? null,
-				body?.end_at ?? null
-			)
-			.run();
+		const payload: AdCreatePayload = {
+			adId,
+			aXId,
+			adType,
+			category,
+			name,
+			title,
+			description,
+			detailUrl,
+			unitPriceAtomic,
+			quotaTotal,
+			startAt: body?.start_at ?? null,
+			endAt: body?.end_at ?? null,
+		};
+
+		const created = await createAd(c, payload);
+		if (!created) {
+			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to create ad");
+		}
 
 		return c.json({ok: true, ad_id: adId, required_atomic: requiredAtomic});
 	} catch (err: any) {
@@ -103,22 +108,131 @@ export async function apiAdsMyAds(c: ExtCtx) {
 		const aXId = c.req.query("a_x_id");
 		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 
-		const stmt = c.env.DB.prepare(
-			"SELECT * FROM ads WHERE a_x_id = ? ORDER BY created_at DESC LIMIT 200"
-		).bind(aXId);
-		const result = await stmt.all();
-		return c.json(result.results ?? []);
+		const ads = await getMyAds(c, aXId);
+		return c.json(ads);
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+export async function apiAdsList(c: ExtCtx) {
+	try {
+		const rows = await getActiveAdsList(c);
+
+		const ads = rows.map((row) => {
+			const rewardUSDC = Number(row.unit_price_atomic || 0) / 1_000_000;
+			const createdAt = row.created_at ? Date.parse(row.created_at) : Date.now();
+			const category = (row.category as AdCategory) || "visit";
+			return {
+				id: row.ad_id,
+				title: row.title,
+				brand: `@${row.a_x_id}`,
+				description: row.description,
+				category,
+				rewardUSDC,
+				durationMinutes: CATEGORY_DURATION[category] ?? 3,
+				completed: row.quota_used,
+				totalQuota: row.quota_total,
+				deadlineText: formatDeadlineText(row.end_at),
+				tags: CATEGORY_TAGS[category] ?? [],
+				rewardRange: getRewardRange(rewardUSDC),
+				popularityScore: computePopularityScore(row.quota_used, row.quota_total),
+				createdAt: Number.isFinite(createdAt) ? createdAt : Date.now(),
+				detailUrl: row.detail_url,
+			};
+		});
+
+		return c.json(ads);
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+export async function apiAdsClaim(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		const adId = body?.ad_id;
+		const bXId = body?.b_x_id;
+		const bWallet = body?.b_wallet;
+
+		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
+		if (!requireStringField(bXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
+		if (!requireStringField(bWallet)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_wallet");
+
+		// 获取广告信息
+		const adRow = await getAdById(c, adId);
+		if (!adRow) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+		if (adRow.status !== "ACTIVE") {
+			return jsonError(c, 400, "AD_NOT_ACTIVE", "Ad is not active");
+		}
+		if (adRow.quota_used >= adRow.quota_total) {
+			return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full");
+		}
+
+		// 检查是否已经领取过
+		const existingClaim = await getExistingClaim(c, adId, bXId);
+		if (existingClaim) return c.json(existingClaim);
+
+		// 增加配额
+		const quotaIncremented = await incrementAdQuota(c, adId);
+		if (!quotaIncremented) {
+			return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full or inactive");
+		}
+
+		// 创建领取记录
+		const claimId = crypto.randomUUID();
+		const expiresAt = toSqliteDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
+
+		const claimPayload: ClaimCreatePayload = {
+			claimId,
+			adId: adRow.ad_id,
+			aXId: adRow.a_x_id,
+			bXId,
+			bWallet,
+			unitPriceAtomic: adRow.unit_price_atomic,
+			expiresAt,
+		};
+
+		const claimCreated = await createClaim(c, claimPayload);
+		if (!claimCreated) {
+			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to create claim");
+		}
+
+		return c.json({
+			claim_id: claimId,
+			ad_id: adRow.ad_id,
+			a_x_id: adRow.a_x_id,
+			b_x_id: bXId,
+			b_wallet: bWallet,
+			status: "CLAIMED",
+			unit_price_atomic: adRow.unit_price_atomic,
+			expires_at: expiresAt,
+		});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+export async function apiAdsMyClaims(c: ExtCtx) {
+	try {
+		const bXId = c.req.query("b_x_id");
+		if (!bXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
+
+		const claims = await getMyClaimsList(c, bXId);
+		return c.json(claims);
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
 	}
 }
 
 /**
- * 保留 registerAdsRoutes 函数用于向后兼容
- * 使用导出的处理器函数来注册路由
+ * 注册广告相关路由
  */
 export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
 	app.get("/ads/balance", apiAdsBalance);
 	app.post("/ads/create", apiAdsCreate);
 	app.get("/ads/my_ads", apiAdsMyAds);
+	app.get("/ads/list", apiAdsList);
+	app.post("/ads/claim", apiAdsClaim);
+	app.get("/ads/my_claims", apiAdsMyClaims);
 }

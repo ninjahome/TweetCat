@@ -1,10 +1,11 @@
 // ad_plaza.ts
-// 用假数据驱动 Earn 页面的界面和按钮交互
+// Earn 页面：优先使用后端广告与 Claim 数据，失败时回退到假数据
 // ✅ 已移除所有 document.createElement：全部改为 HTML <template> + cloneNode
 
 // ========= 类型定义 =========
 
-import {$2, cloneTemplate, formatUSDC, showNotification} from "./common";
+import {$2, cloneTemplate, formatUSDC, showNotification, x402WorkerFetch, x402WorkerGet, atomicToUsdcNumber} from "./common";
+import {localGet, localSet} from "../common/local_storage";
 
 type AdCategory = "follow" | "visit" | "register" | "share";
 
@@ -103,6 +104,7 @@ let fakeWithdrawableUSDC = 12.34;
 let fakeTotalEarnedUSDC = 23.45;
 let fakeTodayEarnedUSDC = 1.25;
 let fakePendingUSDC = 0.75;
+let earnAds: EarnAd[] = [];
 
 // ========= 工具函数 =========
 
@@ -113,89 +115,140 @@ const categoryIcon: Record<AdCategory, string> = {
     share: "🔁"
 };
 
-// ========= 假事件：状态 & Activity =========
-
-type EarnActivityType = "task_start" | "task_complete" | "withdraw" | "open_activity";
-
-interface EarnActivityItem {
-    at: number;
-    type: EarnActivityType;
-    title: string;
-    detail?: string;
-}
-
-const fakeActivities: EarnActivityItem[] = [];
-
 // 每个任务的临时状态：避免重复点击导致瞬间 +N
 const taskRunState: Record<string, "idle" | "running"> = {};
 
-function pushActivity(type: EarnActivityType, title: string, detail?: string) {
-    fakeActivities.unshift({ at: Date.now(), type, title, detail });
-    // 控制长度，防止无限增长
-    if (fakeActivities.length > 50) fakeActivities.length = 50;
+interface EarnClaim {
+    claim_id: string;
+    ad_id: string;
+    status: string;
+    created_at: string;
+    expires_at: string;
+    unit_price_atomic: string;
+    ad_title?: string;
 }
 
-function round2(n: number) {
-    return Math.round(n * 100) / 100;
+const CATEGORY_DURATION: Record<AdCategory, number> = {
+    follow: 2,
+    visit: 3,
+    register: 5,
+    share: 4,
+};
+
+const CATEGORY_TAGS: Record<AdCategory, string[]> = {
+    follow: ["New", "Easy"],
+    visit: ["Explore"],
+    register: ["High Reward"],
+    share: ["Popular"],
+};
+
+function getRewardRange(rewardUSDC: number): "0.1-0.5" | "0.5-1" | "1+" {
+    if (rewardUSDC < 0.5) return "0.1-0.5";
+    if (rewardUSDC < 1) return "0.5-1";
+    return "1+";
 }
 
-/**
- * 假完成一次任务：更新 summary + 更新该 ad 的 completed
- * - 不改变你过滤/排序逻辑，只改数据并重新 render
- */
-function fakeCompleteTask(ad: EarnAd) {
-    // 额度用完就不再增长
-    if (ad.completed >= ad.totalQuota) {
-        showNotification("This task is fully completed (fake).");
+async function getBuyerIdentity(): Promise<{ bXId: string; bWallet: string; usedFallback: boolean }> {
+    const storedXId = await localGet("earn_b_x_id");
+    const storedWallet = await localGet("earn_b_wallet");
+    if (storedXId && storedWallet) {
+        return { bXId: storedXId, bWallet: storedWallet, usedFallback: false };
+    }
+
+    const fallbackId = (await localGet("earn_dev_b_x_id")) || `dev_b_${Math.random().toString(36).slice(2, 8)}`;
+    const fallbackWallet = (await localGet("earn_dev_b_wallet")) || "0x000000000000000000000000000000000000dEaD";
+    await localSet("earn_dev_b_x_id", fallbackId);
+    await localSet("earn_dev_b_wallet", fallbackWallet);
+    return { bXId: fallbackId, bWallet: fallbackWallet, usedFallback: true };
+}
+
+async function loadAds(): Promise<void> {
+    try {
+        const response = await x402WorkerGet("/ads/list");
+        if (!Array.isArray(response)) {
+            throw new Error("Invalid ads payload");
+        }
+        earnAds = (response as EarnAd[]).map((ad) => ({
+            ...ad,
+            durationMinutes: ad.durationMinutes || CATEGORY_DURATION[ad.category] || 3,
+            tags: ad.tags?.length ? ad.tags : (CATEGORY_TAGS[ad.category] || []),
+            rewardRange: ad.rewardRange || getRewardRange(ad.rewardUSDC),
+        }));
+    } catch (err) {
+        console.error("Failed to load ads list:", err);
+        earnAds = fakeEarnAds.slice();
+        showNotification("Failed to load ads, showing demo list.", "error");
+    }
+}
+
+async function startTask(ad: EarnAd) {
+    if (taskRunState[ad.id] === "running") return;
+    taskRunState[ad.id] = "running";
+
+    try {
+        const { bXId, bWallet, usedFallback } = await getBuyerIdentity();
+        if (usedFallback) {
+            showNotification("Using dev identity for claim. Please bind your account.", "error");
+        }
+
+        const claim = await x402WorkerFetch("/ads/claim", {
+            ad_id: ad.id,
+            b_x_id: bXId,
+            b_wallet: bWallet,
+        });
+
+        showNotification(`Claim created: ${claim.claim_id}`, "success");
+        await loadAds();
+        renderEarnAds();
+    } catch (err) {
+        console.error("Failed to claim ad:", err);
+        showNotification((err as Error).message || "Failed to claim ad.", "error");
+    } finally {
+        taskRunState[ad.id] = "idle";
+        renderEarnAds();
+    }
+}
+
+async function loadClaims(): Promise<EarnClaim[]> {
+    const { bXId, usedFallback } = await getBuyerIdentity();
+    if (usedFallback) {
+        showNotification("Using dev identity for activity. Please bind your account.", "error");
+    }
+    const response = await x402WorkerGet("/ads/my_claims", { b_x_id: bXId });
+    return Array.isArray(response) ? (response as EarnClaim[]) : [];
+}
+
+function formatClaimTime(value?: string): string {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleString();
+}
+
+function renderActivityList(claims: EarnClaim[]) {
+    const list = document.querySelector<HTMLElement>("#earn-activity-list");
+    if (!list) return;
+    list.innerHTML = "";
+
+    if (claims.length === 0) {
+        list.innerHTML = `<div class="activity-empty">No activity yet.</div>`;
         return;
     }
 
-    // 1) 更新广告进度
-    ad.completed += 1;
-
-    // 2) 更新收益：这里给一个“可见的假逻辑”
-    fakeTodayEarnedUSDC = round2(fakeTodayEarnedUSDC + ad.rewardUSDC);
-    fakeTotalEarnedUSDC = round2(fakeTotalEarnedUSDC + ad.rewardUSDC);
-
-    // 3) 进入 pending，再“延迟转入 withdrawable”
-    fakePendingUSDC = round2(fakePendingUSDC + ad.rewardUSDC);
-
-    pushActivity("task_complete", `Complete: ${ad.title}`, `+${formatUSDC(ad.rewardUSDC)}`);
-
-    // 4) 模拟后端结算：800ms 后把 pending -> withdrawable
-    setTimeout(() => {
-        // 这里用快照式转移，避免多次点击时 pending 被重复转
-        const move = ad.rewardUSDC;
-        fakePendingUSDC = round2(Math.max(0, fakePendingUSDC - move));
-        fakeWithdrawableUSDC = round2(fakeWithdrawableUSDC + move);
-
-        // 刷新 UI（仍然用你的函数）
-        renderEarnSummary();
-        renderEarnAds();
-    }, 800);
+    claims.forEach((claim) => {
+        const item = cloneTemplate("tpl-activity-item");
+        $2<HTMLElement>(item, ".activity-title").textContent = claim.ad_title || claim.ad_id;
+        $2<HTMLElement>(item, ".activity-status").textContent = claim.status;
+        $2<HTMLElement>(item, ".activity-meta").textContent = `Created: ${formatClaimTime(claim.created_at)} · Expires: ${formatClaimTime(claim.expires_at)}`;
+        $2<HTMLElement>(item, ".activity-reward").textContent = formatUSDC(atomicToUsdcNumber(claim.unit_price_atomic));
+        list.appendChild(item);
+    });
 }
 
-/**
- * 点击 Start Task 的假流程：
- * - 先提示 start
- * - 禁用按钮 600ms（模拟执行）
- * - 自动执行一次 fakeCompleteTask
- */
-function fakeStartTask(ad: EarnAd) {
-    if (taskRunState[ad.id] === "running") return;
-
-    taskRunState[ad.id] = "running";
-    pushActivity("task_start", `Start: ${ad.title}`, ad.detailUrl);
-
-    showNotification(`Start task (fake): ${ad.title}`);
-
-    setTimeout(() => {
-        fakeCompleteTask(ad);
-        taskRunState[ad.id] = "idle";
-        // 刷新 UI（按钮状态/额度/列表）
-        renderEarnSummary();
-        renderEarnAds();
-    }, 600);
+function toggleActivityModal(open: boolean) {
+    const modal = document.querySelector<HTMLElement>("#earn-activity-modal");
+    if (!modal) return;
+    modal.classList.toggle("active", open);
 }
 
 
@@ -294,7 +347,7 @@ function filterAndSortAds(): EarnAd[] {
     const sortBy = getSortOption();
     const qstr = getSearchQuery();
 
-    let result = fakeEarnAds.filter((ad) =>
+    let result = (earnAds.length > 0 ? earnAds : fakeEarnAds).filter((ad) =>
         categories.includes(ad.category) &&
         rewardRanges.includes(ad.rewardRange) &&
         matchAdSearch(ad, qstr)
@@ -386,8 +439,9 @@ function renderEarnAds() {
             // 不改变你的 openDetail 逻辑，你可以决定要不要打开详情
             // openDetail();
 
-            // 用假流程驱动数据变化
-            fakeStartTask(ad);
+            startTask(ad).catch((err) => {
+                console.error("Start task error:", err);
+            });
         });
 
 
@@ -456,25 +510,28 @@ function initEarnActions() {
         const amount = fakeWithdrawableUSDC;
         fakeWithdrawableUSDC = 0;
 
-        pushActivity("withdraw", `Withdraw: ${formatUSDC(amount)}`);
-
         renderEarnSummary();
         showNotification(`Withdraw submitted (fake): ${formatUSDC(amount)}`);
     });
 
     document.querySelector<HTMLButtonElement>("#btn-earn-activity")?.addEventListener("click", () => {
-        pushActivity("open_activity", "Open Activity (fake)");
+        toggleActivityModal(true);
+        loadClaims()
+            .then(renderActivityList)
+            .catch((err) => {
+                console.error("Load claims failed:", err);
+                showNotification((err as Error).message || "Failed to load activity.", "error");
+            });
+    });
 
-        // 你目前 HTML 没有 activity 模态框，所以先用 console 输出，测试流程足够
-        const list = fakeActivities.slice(0, 10).map(a => ({
-            time: new Date(a.at).toLocaleString(),
-            type: a.type,
-            title: a.title,
-            detail: a.detail || ""
-        }));
-        console.table(list);
+    document.querySelector<HTMLButtonElement>("#earn-activity-modal .btn-close")?.addEventListener("click", () => {
+        toggleActivityModal(false);
+    });
 
-        showNotification("Activity opened (fake). Check console.");
+    document.querySelector<HTMLElement>("#earn-activity-modal")?.addEventListener("click", (ev) => {
+        if ((ev.target as HTMLElement).id === "earn-activity-modal") {
+            toggleActivityModal(false);
+        }
     });
 
     document.querySelector<HTMLButtonElement>("#btn-open-advertise")?.addEventListener("click", () => {
@@ -484,7 +541,8 @@ function initEarnActions() {
 
 // ========= 初始化入口 =========
 
-function initAdPlaza() {
+async function initAdPlaza() {
+    await loadAds();
     renderEarnSummary();
     renderEarnAds();
 
