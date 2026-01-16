@@ -1,20 +1,6 @@
 import browser from "webextension-polyfill";
 import {localGet, localSet} from "./local_storage";
 import {__DBK_Bearer_Token, DEFAULT_BEARER} from "./consts";
-
-
-export function isLikelyCorsError(err: unknown): boolean {
-    const name = String((err as any)?.name ?? '').toLowerCase();
-    const msg  = String((err as any)?.message ?? err ?? '').toLowerCase();
-    return (
-        name === 'typeerror' && msg.includes('failed to fetch') ||   // 最常见：TypeError: Failed to fetch
-        msg.includes('blocked by') ||                                 // “blocked by CORS policy”
-        msg.includes('cors') ||                                       // 显式出现 “cors”
-        msg.includes('net::err_failed') ||                            // 控制台里经常能看到
-        msg.includes('403') || msg.includes('forbidden')              // 少数情况下会把 403 透出来
-    );
-}
-
 export async function openOrUpdateTab(uiUrl:string){
     const base = uiUrl.split('#')[0];
     const tabs = await browser.tabs.query({url: base + '*'});

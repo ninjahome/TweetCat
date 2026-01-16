@@ -1393,6 +1393,7 @@ input.category-input:focus {
 
 /* Ad Plaza Button Styles */
 .ad-plaza-container {
+    display: none;
     margin: 16px 0;
     padding: 0;
 }

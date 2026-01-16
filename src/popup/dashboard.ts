@@ -14,6 +14,7 @@ import {initIpfsSettingsView} from "./dash_ipfs";
 import {showView} from "../common/utils";
 import {initSettingsPanel} from "./dash_setting";
 
+
 console.log('------>>>Happy developing ✨')
 document.addEventListener("DOMContentLoaded", initDashBoard as EventListener);
 
@@ -37,7 +38,6 @@ async function initDashBoard(): Promise<void> {
     initNetworkBadgeSync();
 
     initBuyUsdcButton();
-    initAdPlazaButton();
 }
 
 function initBuyUsdcButton() {
@@ -46,17 +46,6 @@ function initBuyUsdcButton() {
         buyUsdcBtn.addEventListener("click", async () => {
             await browser.tabs.create({
                 url: browser.runtime.getURL("html/buy_usdc.html")
-            });
-        });
-    }
-}
-
-function initAdPlazaButton() {
-    const adPlazaBtn = document.getElementById("btn-ad-plaza");
-    if (adPlazaBtn) {
-        adPlazaBtn.addEventListener("click", async () => {
-            await browser.tabs.create({
-                url: browser.runtime.getURL("html/ad_plaza.html")
             });
         });
     }

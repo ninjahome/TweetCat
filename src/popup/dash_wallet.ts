@@ -216,9 +216,12 @@ function setupWalletActionButtons(): void {
     const signOutBtn = $Id("btn-sign-out") as HTMLButtonElement;
     signOutBtn.textContent = t('wallet_action_sign_out');
     signOutBtn.onclick = async () => {
-        await browser.offscreen.closeDocument();
-        await doSignOut();
-        initWalletOrCreate();
+        browser.offscreen.closeDocument().catch((err: any) => {
+            console.warn("close document failed:", err)
+        });
+        doSignOut().then(() => {
+            initWalletOrCreate();
+        });
     }
 
     // Fee History 按钮
@@ -236,6 +239,7 @@ function setupWalletActionButtons(): void {
 
 export function initWalletOrCreate() {
     initRewards().then()
+    initAdPlaza().then()
     const walletCreateDiv = $Id("wallet-create-div") as HTMLButtonElement;//btn-create-wallet
     const walletInfoDiv = $Id("wallet-info-area") as HTMLDivElement;
     const walletMainMenu = $Id("wallet-main-menu") as HTMLDivElement;
@@ -446,5 +450,33 @@ async function initRewards(): Promise<void> {
         console.error("获取奖励信息失败:", error);
         // 发生错误时，隐藏奖励区域
         rewardsArea.style.display = "none";
+    }
+}
+
+async function initAdPlaza(): Promise<void> {
+    const adPlazaContainer = document.querySelector(".ad-plaza-container") as HTMLElement;
+    const adPlazaBtn = document.getElementById("btn-ad-plaza");
+
+    if (!adPlazaContainer || !adPlazaBtn) return;
+
+    adPlazaBtn.onclick = async () => {
+        await browser.tabs.create({
+            url: browser.runtime.getURL("html/ad_plaza.html")
+        })
+    }
+
+    try {
+        // 检查钱包是否已登录
+        const address = await getWalletAddress();
+
+        if (address) {
+            adPlazaContainer.style.display = "block";
+        } else {
+            adPlazaContainer.style.display = "none";
+        }
+    } catch (error) {
+        console.error("初始化 Ad Plaza 失败:", error);
+        // 发生错误时，隐藏 Ad Plaza 容器
+        adPlazaContainer.style.display = "none";
     }
 }
