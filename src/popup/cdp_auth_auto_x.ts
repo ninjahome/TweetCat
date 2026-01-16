@@ -43,7 +43,7 @@ class AuthManager {
         const flowId = params.get("flow_id");
         const provider = (params.get("provider_type") || "x") as OAuth2ProviderType;
 
-        this.updateUI("正在验证授权结果...");
+        this.updateUI(t("cdp_auth_verifying_authorization_result"));
         await initCDP();
 
         const user = await getCurrentUser()
@@ -54,16 +54,17 @@ class AuthManager {
         }
 
         const accessToken = await getAccessToken();
-        this.updateUI("正在验证用户信息...");
+        this.updateUI(t("cdp_auth_verifying_user_info"));
+
         try {
             const resp = await x402WorkerFetch("/validate-token", {accessToken: accessToken})
             console.log("------>>> validation result:", resp);
         } catch (err) {
-            console.error("Token 验证失败:", err);
+            console.error(t("wallet_verify_failed"), err);
         }
 
         await sendMsgToService({code, flowId, provider}, MsgType.X402EmbeddWalletSignIn);
-        this.updateUI("✅ 登录成功，正在关闭...", "success");
+        this.updateUI(t("login_success_window_closing"), "success");
         setTimeout(() => window.close(), 3_000);
     }
 
@@ -78,17 +79,17 @@ class AuthManager {
                 return;
             }
 
-            this.updateUI("正在连接 Coinbase 服务...");
+            this.updateUI(t("cdp_auth_connecting_coinbase_service"));
             await initCDP();
 
             const user = await getCurrentUser();
             if (user) {
-                this.updateUI("✅ 已检测到连接，即将关闭...", "success");
+                this.updateUI(t("cdp_auth_connection_detected_closing"), "success");
                 setTimeout(() => window.close(), 3_000);
                 return;
             }
 
-            this.updateUI("正在跳转 X (Twitter) 登录...");
+            this.updateUI(t("cdp_auth_redirecting_to_x_login"));
             signInWithOAuth("x").catch((err: Error) => {
                 this.btnRetry.classList.remove("btn-hidden");
                 throw err;
@@ -96,7 +97,10 @@ class AuthManager {
 
         } catch (e: any) {
             console.error("Auth Error:", e);
-            this.updateUI(`❌ 错误: ${e.message || "初始化失败"}`, "error");
+            this.updateUI(
+                t("cdp_auth_error_with_detail", e?.message || t("initialization_failed")),
+                "error"
+            );
         } finally {
             this.btnRetry.disabled = false;
         }

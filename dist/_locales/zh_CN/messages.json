@@ -1316,5 +1316,21 @@
   },
   "cdp_auth_page_title_header": {
     "message": "Coinbase 钱包"
+  },
+  "cdp_auth_verifying_authorization_result": {
+    "message": "正在验证授权结果..."
+  },
+  "cdp_auth_verifying_user_info": {
+    "message": "正在验证用户信息..."
+  },
+  "cdp_auth_connecting_coinbase_service": {
+    "message": "正在连接 Coinbase 服务..."
+  },
+  "cdp_auth_connection_detected_closing": {
+    "message": "✅ 已检测到连接，即将关闭..."
+  },
+  "cdp_auth_redirecting_to_x_login": {
+    "message": "正在跳转 X (Twitter) 登录..."
   }
+
 }

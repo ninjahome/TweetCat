@@ -1313,5 +1313,21 @@
   },
   "cdp_auth_page_title_header": {
     "message": "Coinbase Wallet "
+  },
+  "cdp_auth_verifying_authorization_result": {
+    "message": "Verifying authorization result..."
+  },
+  "cdp_auth_verifying_user_info": {
+    "message": "Verifying user info..."
+  },
+  "cdp_auth_connecting_coinbase_service": {
+    "message": "Connecting to Coinbase service..."
+  },
+  "cdp_auth_connection_detected_closing": {
+    "message": "✅ Connection detected. Closing soon..."
+  },
+  "cdp_auth_redirecting_to_x_login": {
+    "message": "Redirecting to X (Twitter) login..."
   }
+
 }
