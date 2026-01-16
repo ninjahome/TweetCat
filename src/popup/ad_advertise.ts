@@ -4,7 +4,20 @@
 
 // ========= 类型定义 =========
 
-import {$, $2, cloneTemplate, formatUSDC, showNotification} from "./common";
+import {
+    $,
+    $2,
+    cloneTemplate,
+    formatUSDC,
+    showNotification,
+    atomicToUsdcNumber,
+    multiplyAtomic,
+    usdcToAtomic
+} from "./common";
+import {getCurrentUser} from "@coinbase/cdp-core";
+import {initCDP, X402_FACILITATORS} from "../common/x402_obj";
+import {getChainId} from "../wallet/wallet_setting";
+import {logAd} from "../common/debug_flags";
 
 type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
 
@@ -16,6 +29,24 @@ interface MyAdRow {
     completed: number;
     spent: number;
     remainingBudget: number;
+}
+
+interface AdRecord {
+    ad_id: string;
+    a_x_id: string;
+    ad_type: string;
+    category: string;
+    name: string;
+    title: string;
+    description: string;
+    detail_url: string;
+    unit_price_atomic: string;
+    quota_total: number;
+    quota_used: number;
+    status: string;
+    start_at?: string | null;
+    end_at?: string | null;
+    created_at: string;
 }
 
 interface SpendRecord {
@@ -37,28 +68,8 @@ interface HistoryRow {
 
 // ========= 假数据 =========
 
-let fakeAdAccountBalanceUSDC = 80.0;
-
-let myAds: MyAdRow[] = [
-    {
-        id: "my_ad_1",
-        name: "Twitter Followers Campaign",
-        status: "Active",
-        rewardPerTask: 0.5,
-        completed: 150,
-        spent: 75,
-        remainingBudget: 25
-    },
-    {
-        id: "my_ad_2",
-        name: "Landing Page Visit",
-        status: "Paused",
-        rewardPerTask: 0.2,
-        completed: 300,
-        spent: 60,
-        remainingBudget: 10
-    }
-];
+let adAccountBalanceAtomic = "0";
+let myAds: AdRecord[] = [];
 
 let spendRecords: SpendRecord[] = [
     {
@@ -97,20 +108,81 @@ const historyRecharge: HistoryRow[] = [
 
 const fakeWalletAddress = "0xDEMO1234567890abcdef1234567890ABCDEF0000";
 
+let currentAXId: string | null = null;
+
+// ========= API helpers =========
+
+async function getAXId(): Promise<string | null> {
+    await initCDP();
+    const user = await getCurrentUser();
+    return user?.authenticationMethods?.x?.sub ?? null;
+}
+
+async function fetchAdsBalance(aXId: string) {
+    const chainId = await getChainId();
+    const url = X402_FACILITATORS[chainId].endpoint + "/ads/balance";
+    const response = await fetch(`${url}?a_x_id=${encodeURIComponent(aXId)}`);
+    if (!response.ok) throw new Error(await response.text());
+    return await response.json();
+}
+
+async function fetchMyAds(aXId: string): Promise<AdRecord[]> {
+    const chainId = await getChainId();
+    const url = X402_FACILITATORS[chainId].endpoint + "/ads/my_ads";
+    const response = await fetch(`${url}?a_x_id=${encodeURIComponent(aXId)}`);
+    if (!response.ok) throw new Error(await response.text());
+    return (await response.json()) as AdRecord[];
+}
+
+async function createAd(payload: Record<string, any>): Promise<{ ok: boolean; data?: any; error?: any }> {
+    const chainId = await getChainId();
+    const url = X402_FACILITATORS[chainId].endpoint + "/ads/create";
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        return {ok: false, error: data};
+    }
+    return {ok: true, data};
+}
+
+async function refreshAdsData() {
+    if (!currentAXId) return;
+    const [balance, ads] = await Promise.all([
+        fetchAdsBalance(currentAXId),
+        fetchMyAds(currentAXId),
+    ]);
+    adAccountBalanceAtomic = balance?.balance_atomic ?? "0";
+    myAds = Array.isArray(ads) ? ads : [];
+
+    logAd("------>>> balance:", balance, " my ads:", myAds)
+
+    renderHeaderBalance();
+    renderAdvertiseDashboard();
+    renderMyAdsTable();
+    updateBudgetSummaryAndBalance();
+}
+
 // ========= 顶部余额 & Advertise 仪表盘 =========
 
 function renderHeaderBalance() {
     const balanceSpan = document.querySelector<HTMLElement>(".balance-value");
-    if (balanceSpan) balanceSpan.textContent = formatUSDC(fakeAdAccountBalanceUSDC);
+    if (balanceSpan) balanceSpan.textContent = formatUSDC(atomicToUsdcNumber(adAccountBalanceAtomic));
 }
 
 function renderAdvertiseDashboard() {
     const cards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card");
 
     const card1Value = cards[0]?.querySelector<HTMLElement>(".card-value");
-    if (card1Value) card1Value.textContent = formatUSDC(fakeAdAccountBalanceUSDC);
+    if (card1Value) card1Value.textContent = formatUSDC(atomicToUsdcNumber(adAccountBalanceAtomic));
 
-    const activeCount = myAds.filter((ad) => ad.status === "Active").length;
+    const activeCount = myAds.filter((ad) => ad.status === "ACTIVE").length;
     const card2Value = cards[1]?.querySelector<HTMLElement>(".card-value");
     if (card2Value) card2Value.textContent = activeCount.toString();
 
@@ -125,6 +197,31 @@ function renderAdvertiseDashboard() {
 
 // ========= My Ads 表格（模板 clone） =========
 
+function mapStatus(status: string): AdStatus {
+    if (status === "ACTIVE") return "Active";
+    if (status === "PAUSED") return "Paused";
+    return "Ended";
+}
+
+function buildMyAdRow(ad: AdRecord): MyAdRow {
+    const rewardPerTask = atomicToUsdcNumber(ad.unit_price_atomic);
+    const completed = Number.isFinite(ad.quota_used) ? ad.quota_used : 0;
+    const quotaTotal = Number.isFinite(ad.quota_total) ? ad.quota_total : 0;
+
+    const spentAtomic = multiplyAtomic(ad.unit_price_atomic, completed);
+    const remainingAtomic = multiplyAtomic(ad.unit_price_atomic, Math.max(quotaTotal - completed, 0));
+
+    return {
+        id: ad.ad_id,
+        name: ad.name,
+        status: mapStatus(ad.status),
+        rewardPerTask,
+        completed,
+        spent: atomicToUsdcNumber(spentAtomic),
+        remainingBudget: atomicToUsdcNumber(remainingAtomic),
+    };
+}
+
 function renderMyAdsTable() {
     const tbody = document.querySelector<HTMLTableSectionElement>("#my-ads-tbody");
     if (!tbody) return;
@@ -136,7 +233,7 @@ function renderMyAdsTable() {
         return;
     }
 
-    myAds.forEach((ad) => {
+    myAds.map(buildMyAdRow).forEach((ad) => {
         const tr = cloneTemplate("tpl-my-ad-row") as HTMLTableRowElement;
         tr.dataset.adId = ad.id;
 
@@ -152,12 +249,8 @@ function renderMyAdsTable() {
 
         btnView.addEventListener("click", () => showNotification(`View ad: ${ad.name}`));
 
-        btnToggle.textContent = ad.status === "Active" ? "Pause" : "Resume";
-        btnToggle.addEventListener("click", () => {
-            ad.status = ad.status === "Active" ? "Paused" : "Active";
-            renderMyAdsTable();
-            renderAdvertiseDashboard();
-        });
+        btnToggle.textContent = "N/A";
+        btnToggle.disabled = true;
 
         tbody.appendChild(tr);
     });
@@ -253,27 +346,30 @@ function updateBudgetSummaryAndBalance() {
     const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
     const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
 
-    const reward = Number(rewardInput?.value || "0");
+    const reward = rewardInput?.value || "0";
     const tasks = Number(taskLimitInput?.value || "0");
 
-    const base = (Number.isFinite(reward) ? reward : 0) * (Number.isFinite(tasks) ? tasks : 0);
-    const fee = base * 0.05;
-    const total = base + fee;
+    const unitAtomic = usdcToAtomic(reward);
+    const requiredAtomic = unitAtomic && Number.isFinite(tasks) ? multiplyAtomic(unitAtomic, tasks) : "0";
+    const requiredUsdc = atomicToUsdcNumber(requiredAtomic);
 
-    $("#summary-reward").textContent = formatUSDC(reward);
+    const fee = 0;
+    const total = requiredUsdc + fee;
+
+    $("#summary-reward").textContent = formatUSDC(Number(reward) || 0);
     $("#summary-tasks").textContent = Number.isFinite(tasks) ? tasks.toString() : "0";
     $("#summary-fee").textContent = formatUSDC(fee);
     $("#summary-total").textContent = formatUSDC(total);
 
-    $("#current-balance").textContent = formatUSDC(fakeAdAccountBalanceUSDC);
+    $("#current-balance").textContent = formatUSDC(atomicToUsdcNumber(adAccountBalanceAtomic));
 
     const balanceStatus = $("#balance-status");
     balanceStatus.className = "balance-status";
 
-    if (total > 0 && total <= fakeAdAccountBalanceUSDC) {
+    if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(adAccountBalanceAtomic) >= BigInt(requiredAtomic)) {
         balanceStatus.classList.add("sufficient");
         balanceStatus.textContent = "Your balance is sufficient to publish this ad.";
-    } else if (total > fakeAdAccountBalanceUSDC) {
+    } else if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(adAccountBalanceAtomic) < BigInt(requiredAtomic)) {
         balanceStatus.classList.add("insufficient");
         balanceStatus.textContent = "Insufficient balance. Please recharge before publishing.";
     } else {
@@ -281,43 +377,67 @@ function updateBudgetSummaryAndBalance() {
     }
 }
 
-function submitWizard() {
-    const nameInput = document.querySelector<HTMLInputElement>("#ad-name");
-    const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
-    const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
-
-    const name = nameInput?.value?.trim() || "Untitled Ad";
-    const reward = Number(rewardInput?.value || "0");
-    const tasks = Number(taskLimitInput?.value || "0");
-
-    const base = reward * tasks;
-    const fee = base * 0.05;
-    const total = base + fee;
-
-    if (total > fakeAdAccountBalanceUSDC) {
-        showNotification("Insufficient ad account balance (fake check).");
+async function submitWizard() {
+    if (!currentAXId) {
+        showNotification("Please sign in with X first.", "error");
         return;
     }
 
-    const newAd: MyAdRow = {
-        id: "my_ad_" + (myAds.length + 1),
+    const nameInput = document.querySelector<HTMLInputElement>("#ad-name");
+    const adTypeInput = document.querySelector<HTMLSelectElement>("#ad-type");
+    const adCategoryInput = document.querySelector<HTMLSelectElement>("#ad-category");
+    const adTitleInput = document.querySelector<HTMLInputElement>("#ad-title");
+    const adDescriptionInput = document.querySelector<HTMLTextAreaElement>("#ad-description");
+    const adUrlInput = document.querySelector<HTMLInputElement>("#ad-url");
+    const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
+    const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
+    const startAtInput = document.querySelector<HTMLInputElement>("#start-time");
+    const endAtInput = document.querySelector<HTMLInputElement>("#end-time");
+    const taskActionInput = document.querySelector<HTMLSelectElement>("#task-action");
+
+    const name = nameInput?.value?.trim() || "";
+    const adType = adTypeInput?.value?.trim() || "";
+    const category = adCategoryInput?.value?.trim() || taskActionInput?.value?.trim() || "";
+    const title = adTitleInput?.value?.trim() || "";
+    const description = adDescriptionInput?.value?.trim() || "";
+    const detailUrl = adUrlInput?.value?.trim() || "";
+
+    const reward = rewardInput?.value || "";
+    const quotaTotal = Number(taskLimitInput?.value || "0");
+    const unitPriceAtomic = usdcToAtomic(reward);
+
+    if (!name || !adType || !category || !title || !description || !detailUrl || !unitPriceAtomic || quotaTotal <= 0) {
+        showNotification("Please complete required fields.", "error");
+        return;
+    }
+
+    const payload = {
+        a_x_id: currentAXId,
+        ad_type: adType,
+        category,
         name,
-        status: "Active",
-        rewardPerTask: reward || 0,
-        completed: 0,
-        spent: 0,
-        remainingBudget: total
+        title,
+        description,
+        detail_url: detailUrl,
+        unit_price_atomic: unitPriceAtomic,
+        quota_total: quotaTotal,
+        start_at: startAtInput?.value || null,
+        end_at: endAtInput?.value || null,
     };
 
-    myAds.unshift(newAd);
-    fakeAdAccountBalanceUSDC -= total * 0.1; // 演示：随便扣一点
+    const result = await createAd(payload);
+    if (!result.ok) {
+        if (result.error?.error === "INSUFFICIENT_BALANCE") {
+            showNotification(`余额不足。需要 ${result.error?.detail || ""}`.trim(), "error");
+            return;
+        }
+        showNotification("Failed to create ad.", "error");
+        return;
+    }
 
-    renderMyAdsTable();
-    renderAdvertiseDashboard();
-    renderHeaderBalance();
-
+    showNotification("创建成功", "success");
     closeWizard();
-    showNotification("Ad published (fake).");
+    await refreshAdsData();
 }
 
 // ========= 充值弹窗 =========
@@ -437,7 +557,7 @@ function initWizardEvents() {
 
 // ========= 初始化入口 =========
 
-function initAdvertise() {
+async function initAdvertise() {
     renderHeaderBalance();
     renderAdvertiseDashboard();
     renderMyAdsTable();
@@ -446,12 +566,18 @@ function initAdvertise() {
     initWizardEvents();
     initRechargeModalEvents();
     initHistoryModalEvents();
+
+    currentAXId = await getAXId();
+    if (!currentAXId) {
+        showNotification("Please sign in with X first.", "error");
+        return;
+    }
+    logAd("------>>> current ax id:", currentAXId)
+    await refreshAdsData();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    try {
-        initAdvertise();
-    } catch (err) {
+    initAdvertise().catch((err) => {
         console.error("Advertise init error:", err);
-    }
+    });
 });

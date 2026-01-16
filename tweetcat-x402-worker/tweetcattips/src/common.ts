@@ -254,3 +254,52 @@ export function toFiat2dp(amount: any): string {
 	if (!Number.isFinite(n) || n <= 0) return "";
 	return n.toFixed(2);
 }
+
+/**
+ * 返回 JSON 格式的错误响应
+ * @param c - Hono 上下文
+ * @param status - HTTP 状态码（200-599 的数字）
+ * @param code - 错误代码
+ * @param detail - 错误详情
+ */
+export function jsonError(c: ExtCtx, status: ContentfulStatusCode, code: string, detail: string) {
+	return c.json({error: code, detail}, status);
+}
+
+/**
+ * 检查值是否为有效的非空字符串
+ */
+export function requireStringField(value: unknown): value is string {
+	return typeof value === "string" && value.trim().length > 0;
+}
+
+/**
+ * 解析正整数
+ * @returns 如果有效返回正整数，否则返回 null
+ */
+export function parsePositiveInt(value: unknown): number | null {
+	if (typeof value === "number" && Number.isInteger(value)) {
+		return value > 0 ? value : null;
+	}
+	if (typeof value === "string" && value.trim() !== "") {
+		const parsed = Number.parseInt(value, 10);
+		if (!Number.isNaN(parsed) && parsed > 0) return parsed;
+	}
+	return null;
+}
+
+/**
+ * 解析正原子单位数值（用于 Token 精度）
+ * @returns 如果有效返回字符串格式的 BigInt，否则返回 null
+ */
+export function parsePositiveAtomic(value: unknown): string | null {
+	if (!requireStringField(value)) return null;
+	if (!/^\d+$/.test(value)) return null;
+	try {
+		const big = BigInt(value);
+		if (big <= 0n) return null;
+		return big.toString();
+	} catch {
+		return null;
+	}
+}

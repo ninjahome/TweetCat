@@ -206,3 +206,52 @@ export async function x402WorkerGet(path: string, params?: Record<string, string
 
     return await response.json();
 }
+
+/**
+ * 将原子单位数值转换为 USDC 数字
+ * @param atomic - 原子单位的字符串表示（精度为 6）
+ * @returns 转换后的 USDC 数字，如果输入无效则返回 0
+ * @example
+ * atomicToUsdcNumber("1000000") => 1
+ * atomicToUsdcNumber("1500000") => 1.5
+ * atomicToUsdcNumber("0") => 0
+ */
+export function atomicToUsdcNumber(atomic: string): number {
+    if (!/^\d+$/.test(atomic)) return 0;
+    const big = BigInt(atomic);
+    const whole = big / 1_000_000n;
+    const fraction = (big % 1_000_000n).toString().padStart(6, "0");
+    return Number(`${whole}.${fraction}`);
+}
+
+/**
+ * 两个原子单位数值相乘
+ * @param unitAtomic - 单位价格（原子单位）
+ * @param quota - 数量
+ * @returns 乘积的字符串表示（原子单位）
+ * @example
+ * multiplyAtomic("1000000", 10) => "10000000"
+ */
+export function multiplyAtomic(unitAtomic: string, quota: number): string {
+    return (BigInt(unitAtomic) * BigInt(quota)).toString();
+}
+
+/**
+ * 将 USDC 金额转换为原子单位
+ * @param amountStr - USDC 金额的字符串表示
+ * @returns 转换后的原子单位字符串，如果输入无效则返回 null
+ * @example
+ * usdcToAtomic("1") => "1000000"
+ * usdcToAtomic("1.5") => "1500000"
+ * usdcToAtomic("0.000001") => "1"
+ * usdcToAtomic("invalid") => null
+ */
+export function usdcToAtomic(amountStr: string): string | null {
+    const s = (amountStr ?? "").trim();
+    if (!/^\d+(\.\d{0,6})?$/.test(s)) return null;
+
+    const [intPart, frac = ""] = s.split(".");
+    const fracPadded = (frac + "000000").slice(0, 6);
+    const out = (intPart.replace(/^0+(?=\d)/, "") || "0") + fracPadded;
+    return out.replace(/^0+(?=\d)/, "") || "0";
+}

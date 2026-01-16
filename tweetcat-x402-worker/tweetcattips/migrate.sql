@@ -197,3 +197,40 @@ CREATE TABLE IF NOT EXISTS ad_account (
 										  balance_atomic TEXT NOT NULL DEFAULT '0',
 										  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 	);
+
+
+
+
+CREATE TABLE IF NOT EXISTS claims (
+									  claim_id TEXT PRIMARY KEY,
+									  ad_id TEXT NOT NULL,
+									  a_x_id TEXT NOT NULL,
+									  b_x_id TEXT NOT NULL,
+									  b_wallet TEXT NOT NULL,
+									  status TEXT NOT NULL, -- CLAIMED / PENDING_CONFIRM / CONFIRMED / REJECTED / SETTLED_TIMEOUT
+									  unit_price_atomic TEXT NOT NULL,
+									  fee_rate REAL NOT NULL DEFAULT 0.05,
+									  follow_receipt_sig TEXT,
+									  a_confirm_sig TEXT,
+									  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+	expires_at TEXT NOT NULL,
+	confirmed_at TEXT
+	);
+
+-- 防止同一 B 对同一 ad 并发刷 pending
+CREATE UNIQUE INDEX IF NOT EXISTS idx_claims_ad_b_pending
+	ON claims(ad_id, b_x_id)
+	WHERE status IN ('CLAIMED','PENDING_CONFIRM');
+
+CREATE INDEX IF NOT EXISTS idx_claims_axid_status ON claims(a_x_id, status, expires_at);
+CREATE INDEX IF NOT EXISTS idx_claims_bxid_created ON claims(b_x_id, created_at);
+
+-- B 的广告收益账本（阶段5结算时会更新）
+CREATE TABLE IF NOT EXISTS ad_user_balances (
+												b_x_id TEXT PRIMARY KEY,
+												asset_symbol TEXT NOT NULL DEFAULT 'USDC',
+												withdrawable_atomic TEXT NOT NULL DEFAULT '0',
+												pending_atomic TEXT NOT NULL DEFAULT '0',
+												total_earned_atomic TEXT NOT NULL DEFAULT '0',
+												updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+	);
