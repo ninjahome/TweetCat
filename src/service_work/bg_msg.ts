@@ -63,10 +63,8 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         senderUrl.startsWith(browser.runtime.getURL("")) &&
         _sender.id === browser.runtime.id;
 
-    // 针对场景 B 的加固逻辑
     const isTwitterSource = senderUrl.includes("x.com") || senderUrl.includes("twitter.com");
     if (HIGH_RISK_ACTIONS.includes(request.action)) {
-        // 如果是小额支付 (X402TipAction)，允许来自 Twitter 页面，但可以加个金额上限
         if ((request.action === MsgType.X402TipAction || request.action === MsgType.TransferUSDCByTwitterId) && isTwitterSource) {
             // 允许执行，因为这是 0.01U 的高频动作
         }

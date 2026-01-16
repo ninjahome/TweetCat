@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TweetCat",
-  "version": "3.6.1",
+  "version": "3.6.2",
   "default_locale": "en",
   "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {
@@ -68,6 +68,7 @@
       "resources": [
         "css/*.css",
         "html/content.html",
+        "html/cdp_auth_auto_x.html",
         "images/tweetcat.svg",
         "js/injection.js"
       ],
