@@ -152,3 +152,48 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_onramp_purchases_coinbase_tx
 -- 按状态查询
 CREATE INDEX IF NOT EXISTS idx_onramp_purchases_status
 	ON onramp_purchases(status, created_at DESC);
+
+
+
+
+-- 先删除旧表（如果已存在）
+DROP TABLE IF EXISTS ads;
+
+-- ads
+CREATE TABLE IF NOT EXISTS ads (
+								   ad_id TEXT PRIMARY KEY,
+								   a_x_id TEXT NOT NULL,
+								   ad_type TEXT NOT NULL,              -- e.g. FOLLOW_BLUE_V
+								   category TEXT NOT NULL,             -- follow/visit/register/share
+								   name TEXT NOT NULL,                 -- Ad Name (for your reference)
+								   title TEXT NOT NULL,
+								   description TEXT NOT NULL,
+								   detail_url TEXT NOT NULL,
+								   unit_price_atomic TEXT NOT NULL,    -- USDC atomic
+								   quota_total INTEGER NOT NULL,
+								   quota_used INTEGER NOT NULL DEFAULT 0,
+								   status TEXT NOT NULL DEFAULT 'ACTIVE',
+								   start_at TEXT,
+								   end_at TEXT,
+								   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+
+CREATE INDEX IF NOT EXISTS idx_ads_status_created ON ads(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_ads_axid_created ON ads(a_x_id, created_at);
+
+-- ad_account：先做账本余额（后续再接充值/链上）
+CREATE TABLE IF NOT EXISTS ad_account (
+										  a_x_id TEXT PRIMARY KEY,
+										  asset_symbol TEXT NOT NULL DEFAULT 'USDC',
+										  balance_atomic TEXT NOT NULL DEFAULT '0',
+										  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+
+
+DROP TABLE IF EXISTS ad_account;
+CREATE TABLE IF NOT EXISTS ad_account (
+										  a_x_id TEXT PRIMARY KEY,
+										  asset_symbol TEXT NOT NULL DEFAULT 'USDC',
+										  balance_atomic TEXT NOT NULL DEFAULT '0',
+										  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+	);
