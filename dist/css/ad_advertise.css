@@ -18,7 +18,7 @@ body {
 .plaza-header {
     background: white;
     border-bottom: 1px solid #e5e7eb;
-    padding: 16px 32px;
+    padding: 14px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -26,23 +26,64 @@ body {
     top: 0;
     z-index: 100;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    gap: 16px;
 }
 
 .plaza-header-left {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.btn-back-plaza {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
     flex: 0 0 auto;
+}
+
+.btn-back-plaza:hover {
+    background: #f9fafb;
 }
 
 .plaza-logo {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    align-items: baseline;
+    gap: 10px;
     font-size: 20px;
-    font-weight: 700;
+    font-weight: 800;
     color: #667eea;
+    min-width: 0;
 }
 
 .logo-icon {
-    font-size: 28px;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.logo-text {
+    white-space: nowrap;
+}
+
+.logo-sub {
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 12px;
+    padding: 4px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    background: #fafafa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .plaza-header-right {
@@ -52,35 +93,36 @@ body {
 .account-info {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 .account-balance {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 16px;
+    padding: 8px 14px;
     background: #f3f4f6;
-    border-radius: 8px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
 }
 
 .balance-label {
-    font-size: 14px;
+    font-size: 12px;
     color: #6b7280;
 }
 
 .balance-value {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 800;
     color: #10b981;
 }
 
 .btn-recharge, .btn-history {
-    padding: 8px 16px;
+    padding: 8px 14px;
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -92,7 +134,7 @@ body {
 
 .btn-recharge:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
 }
 
 .btn-history {
@@ -107,121 +149,260 @@ body {
 
 /* ==================== Plaza Views ==================== */
 .plaza-view {
-    padding: 32px;
-    max-width: 1400px;
+    padding: 22px 24px 32px;
+    max-width: 1440px;
     margin: 0 auto;
 }
 
-/* ==================== Dashboard Overview (Advertise Mode) ==================== */
-.dashboard-overview {
+/* ==================== New Layout (Main / Sidebar) ==================== */
+.advertise-layout {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-bottom: 32px;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 18px;
+    align-items: start;
+}
+
+.advertise-main {
+    min-width: 0;
+}
+
+.advertise-side {
+    min-width: 0;
+}
+
+.side-sticky {
+    position: sticky;
+    top: 82px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.side-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #374151;
+    letter-spacing: 0.2px;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #fff;
+}
+
+/* ==================== Dashboard Overview (Sidebar) ==================== */
+.dashboard-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 .dashboard-card {
     background: white;
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     display: flex;
-    align-items: center;
-    gap: 16px;
-    transition: transform 0.2s;
+    align-items: flex-start;
+    gap: 12px;
+    transition: transform 0.15s;
 }
 
 .dashboard-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .dashboard-card .card-icon {
-    font-size: 36px;
-    flex-shrink: 0;
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
 }
 
 .dashboard-card .card-content {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .dashboard-card .card-label {
-    font-size: 13px;
+    font-size: 12px;
     color: #6b7280;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
+    font-weight: 700;
 }
 
 .dashboard-card .card-value {
-    font-size: 24px;
-    font-weight: 700;
-    color: #374151;
-}
-
-.btn-card-action {
-    padding: 8px 16px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    flex-shrink: 0;
-}
-
-.btn-card-action:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-/* ==================== Publish Ad Section ==================== */
-.publish-ad-section {
-    margin-bottom: 32px;
-    text-align: center;
-}
-
-.btn-publish-ad {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 40px;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.btn-publish-ad:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
-}
-
-.publish-icon {
     font-size: 20px;
+    font-weight: 900;
+    color: #111827;
+    line-height: 1.2;
+}
+
+.card-meta {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* Hide the duplicate recharge button in wallet card (still keeps id for TS) */
+.dashboard-card-wallet #btn-recharge-dashboard {
+    display: none;
+}
+
+/* Spend group = one module */
+.dashboard-group {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+}
+
+.dashboard-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 12px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    background: #fcfcfd;
+}
+
+.dashboard-group-title {
+    font-size: 13px;
+    font-weight: 900;
+    color: #111827;
+}
+
+.dashboard-tabs {
+    display: flex;
+    gap: 6px;
+}
+
+.dashboard-tab {
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.dashboard-tab.active {
+    color: #111827;
+    background: #f3f4f6;
+}
+
+.dashboard-card--row {
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 14px 12px;
+}
+
+.dashboard-card--row + .dashboard-card--row {
+    border-top: 1px solid #f3f4f6;
+}
+
+.dashboard-card.is-hidden {
+    display: none;
+}
+
+.side-note {
+    font-size: 12px;
+    color: #6b7280;
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px dashed #e5e7eb;
+    background: #fff;
 }
 
 /* ==================== Sections ==================== */
 .my-ads-section, .spending-section {
-    margin-bottom: 32px;
+    margin-bottom: 18px;
+}
+
+.section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.section-header--compact {
+    align-items: center;
+    margin-top: 18px;
+}
+
+.section-header-left {
+    min-width: 0;
 }
 
 .section-title {
-    font-size: 22px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 900;
+    color: #111827;
+    margin-bottom: 2px;
+}
+
+.section-subtitle {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.section-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Publish button (small variant) */
+.btn-publish-ad {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 22px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.22);
+}
+
+.btn-publish-ad:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 28px rgba(16, 185, 129, 0.30);
+}
+
+.btn-publish-ad--sm {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.18);
+}
+
+.publish-icon {
+    font-size: 16px;
 }
 
 /* ==================== Tables ==================== */
 .ads-table-container, .spending-table-container {
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     overflow: hidden;
 }
 
@@ -231,40 +412,83 @@ body {
 }
 
 .ads-table thead, .spending-table thead {
-    background: #f9fafb;
+    background: #fafafa;
 }
 
 .ads-table th, .spending-table th {
-    padding: 12px 16px;
+    padding: 12px 14px;
     text-align: left;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 900;
     color: #374151;
     border-bottom: 1px solid #e5e7eb;
 }
 
 .ads-table td, .spending-table td {
-    padding: 16px;
-    font-size: 14px;
+    padding: 14px;
+    font-size: 13px;
     color: #6b7280;
     border-bottom: 1px solid #f3f4f6;
 }
 
 .ads-table tbody tr:hover, .spending-table tbody tr:hover {
-    background: #f9fafb;
+    background: #fbfbfb;
 }
 
 .empty-row td {
     text-align: center;
-    padding: 40px;
+    padding: 34px;
 }
 
 .empty-state-small {
     color: #9ca3af;
-    font-size: 14px;
+    font-size: 13px;
 }
 
-/* ==================== Modal Styles ==================== */
+/* Recent table compact (scroll preview) */
+.spending-table-container--compact {
+    max-height: 320px;
+    overflow: auto;
+}
+
+/* ==================== Buttons ==================== */
+.btn-primary, .btn-secondary {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: white;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+}
+
+.btn-secondary:hover {
+    background: #f9fafb;
+}
+
+/* ==================== Modal Styles (keep original) ==================== */
 .modal {
     display: none;
     position: fixed;
@@ -310,9 +534,9 @@ body {
 }
 
 .modal-title {
-    font-size: 22px;
-    font-weight: 600;
-    color: #374151;
+    font-size: 20px;
+    font-weight: 900;
+    color: #111827;
 }
 
 .btn-close {
@@ -323,7 +547,7 @@ body {
     font-size: 24px;
     color: #6b7280;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 10px;
     transition: all 0.2s;
 }
 
@@ -382,7 +606,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
+    font-weight: 800;
     font-size: 16px;
     transition: all 0.3s;
 }
@@ -400,7 +624,7 @@ body {
 .step-label {
     font-size: 12px;
     color: #9ca3af;
-    font-weight: 500;
+    font-weight: 700;
 }
 
 .wizard-step.active .step-label {
@@ -417,21 +641,21 @@ body {
 }
 
 .wizard-content h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 900;
+    color: #111827;
+    margin-bottom: 16px;
 }
 
 /* ==================== Form Styles ==================== */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .form-group label {
     display: block;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 800;
     color: #374151;
     margin-bottom: 8px;
 }
@@ -440,7 +664,7 @@ body {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 14px;
     transition: all 0.2s;
 }
@@ -448,12 +672,12 @@ body {
 .form-input:focus, .form-select:focus, .form-textarea:focus {
     outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.10);
 }
 
 .form-hint {
     display: block;
-    margin-top: 4px;
+    margin-top: 6px;
     font-size: 12px;
     color: #9ca3af;
 }
@@ -461,9 +685,10 @@ body {
 /* ==================== Budget Summary ==================== */
 .budget-summary {
     background: #f9fafb;
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
+    padding: 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    border: 1px solid #e5e7eb;
 }
 
 .summary-row {
@@ -477,7 +702,7 @@ body {
     border-top: 2px solid #e5e7eb;
     margin-top: 8px;
     padding-top: 12px;
-    font-weight: 600;
+    font-weight: 900;
     font-size: 16px;
 }
 
@@ -486,15 +711,15 @@ body {
 }
 
 .summary-value {
-    color: #374151;
-    font-weight: 500;
+    color: #111827;
+    font-weight: 800;
 }
 
 /* ==================== Balance Check ==================== */
 .balance-check {
-    padding: 16px;
+    padding: 14px;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    border-radius: 12px;
 }
 
 .balance-check-row {
@@ -506,7 +731,7 @@ body {
 
 .balance-status {
     padding: 12px;
-    border-radius: 6px;
+    border-radius: 10px;
     font-size: 14px;
     text-align: center;
 }
@@ -521,69 +746,32 @@ body {
     color: #991b1b;
 }
 
-/* ==================== Buttons ==================== */
-.btn-primary, .btn-secondary {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.btn-primary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
-.btn-secondary {
-    background: white;
-    color: #374151;
-    border: 1px solid #e5e7eb;
-}
-
-.btn-secondary:hover {
-    background: #f9fafb;
-}
-
 /* ==================== Recharge Content ==================== */
 .recharge-content h3 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 20px;
-}
-
-.recharge-method {
-    padding: 20px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 900;
+    color: #111827;
     margin-bottom: 16px;
 }
 
+.recharge-method {
+    padding: 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 12px;
+}
+
 .recharge-method h4 {
-    font-size: 16px;
-    font-weight: 600;
-    color: #374151;
+    font-size: 14px;
+    font-weight: 900;
+    color: #111827;
     margin-bottom: 8px;
 }
 
 .recharge-method p {
-    font-size: 14px;
+    font-size: 13px;
     color: #6b7280;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .wallet-address {
@@ -597,19 +785,20 @@ body {
     padding: 10px;
     background: #f9fafb;
     border: 1px solid #e5e7eb;
-    border-radius: 6px;
+    border-radius: 10px;
     font-size: 13px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .btn-copy {
-    padding: 8px 16px;
+    padding: 8px 14px;
     background: #667eea;
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     font-size: 13px;
+    font-weight: 800;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -627,11 +816,11 @@ body {
 }
 
 .history-tab {
-    padding: 12px 24px;
+    padding: 12px 18px;
     border: none;
     background: transparent;
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 800;
     color: #6b7280;
     cursor: pointer;
     border-bottom: 2px solid transparent;
@@ -663,45 +852,45 @@ body {
 .history-table th {
     padding: 12px;
     text-align: left;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 900;
     color: #374151;
-    background: #f9fafb;
+    background: #fafafa;
     border-bottom: 1px solid #e5e7eb;
 }
 
 .history-table td {
     padding: 12px;
-    font-size: 14px;
+    font-size: 13px;
     color: #6b7280;
     border-bottom: 1px solid #f3f4f6;
 }
 
 /* ==================== Responsive Design ==================== */
 @media (max-width: 1200px) {
-    .dashboard-overview {
-        grid-template-columns: repeat(2, 1fr);
+    .advertise-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .side-sticky {
+        position: static;
     }
 }
 
 @media (max-width: 768px) {
     .plaza-header {
         flex-direction: column;
-        gap: 16px;
-        padding: 16px;
+        align-items: stretch;
+        gap: 10px;
     }
 
     .account-info {
         width: 100%;
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .dashboard-overview {
-        grid-template-columns: 1fr;
-    }
-
-    .wizard-steps {
         flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    .logo-sub {
+        display: none;
     }
 }

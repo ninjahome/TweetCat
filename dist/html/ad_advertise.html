@@ -12,14 +12,21 @@
 <!-- Top Navigation -->
 <header class="plaza-header">
     <div class="plaza-header-left">
+        <button id="btn-back-plaza" class="btn-back-plaza" type="button">← Plaza</button>
+
         <div class="plaza-logo">
             <span class="logo-icon">🏪</span>
             <span class="logo-text">Advertise</span>
+            <span class="logo-sub">P2P on-chain campaigns</span>
         </div>
     </div>
 
     <div class="plaza-header-right">
         <div class="account-info">
+            <div class="chain-info">
+                <span id="header-network" class="chain-pill chain-pill--net" title="Current network">—</span>
+                <span id="header-account" class="chain-pill chain-pill--addr" title="Account">—</span>
+            </div>
             <div class="account-balance">
                 <span class="balance-label">Balance:</span>
                 <span class="balance-value">0.00 USDC</span>
@@ -31,102 +38,159 @@
 </header>
 
 <div id="view-advertise" class="plaza-view active">
-    <!-- Dashboard Cards -->
-    <div class="dashboard-overview">
-        <div class="dashboard-card">
-            <div class="card-icon">💳</div>
-            <div class="card-content">
-                <div class="card-label">Ad Account Balance</div>
-                <div class="card-value">0.00 USDC</div>
-            </div>
-            <button id="btn-recharge-dashboard" class="btn-card-action">Recharge</button>
-        </div>
-        <div class="dashboard-card">
-            <div class="card-icon">📊</div>
-            <div class="card-content">
-                <div class="card-label">Active Ads</div>
-                <div class="card-value">0</div>
-            </div>
-        </div>
-        <div class="dashboard-card">
-            <div class="card-icon">📉</div>
-            <div class="card-content">
-                <div class="card-label">Today's Spend</div>
-                <div class="card-value">0.00 USDC</div>
-            </div>
-        </div>
-        <div class="dashboard-card">
-            <div class="card-icon">📈</div>
-            <div class="card-content">
-                <div class="card-label">This Week's Spend</div>
-                <div class="card-value">0.00 USDC</div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Publish Ad Button -->
-    <div class="publish-ad-section">
-        <button id="btn-publish-ad" class="btn-publish-ad">
-            <span class="publish-icon">➕</span>
-            <span class="publish-text">Publish New Ad</span>
-        </button>
-    </div>
+    <div class="advertise-layout">
+        <!-- Main (Left) -->
+        <main class="advertise-main">
+            <!-- My Ads List -->
+            <div class="my-ads-section">
+                <div class="section-header">
+                    <div class="section-header-left">
+                        <h2 class="section-title">My Ads</h2>
+                        <p class="section-subtitle">Create campaigns, lock budgets, and track delivery.</p>
+                    </div>
 
-    <!-- My Ads List -->
-    <div class="my-ads-section">
-        <h2 class="section-title">My Ads</h2>
-        <div class="ads-table-container">
-            <table class="ads-table">
-                <thead>
-                <tr>
-                    <th>Ad Name</th>
-                    <th>Status</th>
-                    <th>Reward per Task</th>
-                    <th>Completed</th>
-                    <th>Spent</th>
-                    <th>Remaining Budget</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody id="my-ads-tbody">
-                <tr class="empty-row">
-                    <td colspan="7">
-                        <div class="empty-state-small">
-                            <p>No ads published yet. Click "Publish New Ad" to get started!</p>
+                    <!-- Publish CTA moved here (keeps same id for TS) -->
+                    <div class="section-header-actions">
+                        <button id="btn-publish-ad" class="btn-publish-ad btn-publish-ad--sm" type="button">
+                            <span class="publish-icon">➕</span>
+                            <span class="publish-text">Publish New Ad</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="ads-table-container">
+                    <table class="ads-table">
+                        <thead>
+                        <tr>
+                            <th>Ad Name</th>
+                            <th>Status</th>
+                            <th>Reward per Task</th>
+                            <th>Completed</th>
+                            <th>Spent</th>
+                            <th>Remaining Budget</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="my-ads-tbody">
+                        <tr class="empty-row">
+                            <td colspan="7">
+                                <div class="empty-state-small">
+                                    <p>No ads published yet. Click "Publish New Ad" to get started!</p>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Spending -->
+            <div class="spending-section">
+                <div class="section-header section-header--compact">
+                    <div class="section-header-left">
+                        <h2 class="section-title">Recent Activity</h2>
+                        <p class="section-subtitle">Latest spending records (preview).</p>
+                    </div>
+                    <div class="section-header-actions">
+                        <!-- reuse History as “View all” without changing existing id -->
+                        <button class="btn-secondary btn-view-all" type="button"
+                                onclick="document.getElementById('btn-history')?.click()">
+                            View all
+                        </button>
+                    </div>
+                </div>
+
+                <div class="spending-table-container spending-table-container--compact">
+                    <table class="spending-table">
+                        <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Ad</th>
+                            <th>Event</th>
+                            <th>Amount</th>
+                            <th>Service Fee</th>
+                            <th>Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="spending-tbody">
+                        <tr class="empty-row">
+                            <td colspan="6">
+                                <div class="empty-state-small">
+                                    <p>No spending records yet.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <!-- Sidebar (Right) -->
+        <aside class="advertise-side">
+            <div class="side-sticky">
+                <div class="side-title">Wallet & Insights</div>
+
+                <!-- Dashboard Cards (same .dashboard-card count/order for TS) -->
+                <div class="dashboard-overview">
+                    <!-- 0: Wallet balance (keep .dashboard-card) -->
+                    <div class="dashboard-card dashboard-card-wallet">
+                        <div class="card-icon">💳</div>
+                        <div class="card-content">
+                            <div class="card-label">Available Balance</div>
+                            <div class="card-value">0.00 USDC</div>
+                            <div class="card-meta">For on-chain escrowed campaigns</div>
                         </div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
+                        <!-- keep id for TS, but visually hidden by CSS -->
+                        <button id="btn-recharge-dashboard" class="btn-card-action" type="button">Recharge</button>
+                    </div>
 
-    <!-- Recent Spending -->
-    <div class="spending-section">
-        <h2 class="section-title">Recent Spending</h2>
-        <div class="spending-table-container">
-            <table class="spending-table">
-                <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Ad</th>
-                    <th>Event</th>
-                    <th>Amount</th>
-                    <th>Service Fee</th>
-                    <th>Status</th>
-                </tr>
-                </thead>
-                <tbody id="spending-tbody">
-                <tr class="empty-row">
-                    <td colspan="6">
-                        <div class="empty-state-small">
-                            <p>No spending records yet.</p>
+                    <!-- 1: Active ads -->
+                    <div class="dashboard-card dashboard-card-active">
+                        <div class="card-icon">📊</div>
+                        <div class="card-content">
+                            <div class="card-label">Active Campaigns</div>
+                            <div class="card-value">0</div>
+                            <div class="card-meta">Running / deliverable</div>
                         </div>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+                    </div>
+
+                    <!-- Spend group: visually one module, but keeps 2 cards for TS indexes 2 & 3 -->
+                    <div class="dashboard-group spend-group" data-group="spend">
+                        <div class="dashboard-group-header">
+                            <div class="dashboard-group-title">Spend</div>
+                            <div class="dashboard-tabs">
+                                <button class="dashboard-tab active" type="button" data-range="today">Today</button>
+                                <button class="dashboard-tab" type="button" data-range="week">7D</button>
+                            </div>
+                        </div>
+
+                        <!-- 2: Today's Spend -->
+                        <div class="dashboard-card dashboard-card-spend dashboard-card--row" data-range="today">
+                            <div class="card-icon">📉</div>
+                            <div class="card-content">
+                                <div class="card-label">Today's Spend</div>
+                                <div class="card-value">0.00 USDC</div>
+                            </div>
+                        </div>
+
+                        <!-- 3: This Week's Spend -->
+                        <div class="dashboard-card dashboard-card-spend dashboard-card--row" data-range="week">
+                            <div class="card-icon">📈</div>
+                            <div class="card-content">
+                                <div class="card-label">This Week's Spend</div>
+                                <div class="card-value">0.00 USDC</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-note">
+                    Tips: Your budget is locked for campaign delivery; activity is queryable via History.
+                </div>
+            </div>
+        </aside>
     </div>
 </div>
 
@@ -272,9 +336,7 @@
                         <span>Current Balance:</span>
                         <span id="current-balance">0.00 USDC</span>
                     </div>
-                    <div class="balance-status" id="balance-status">
-                        <!-- Will be updated by JS -->
-                    </div>
+                    <div class="balance-status" id="balance-status"></div>
                 </div>
             </div>
         </div>

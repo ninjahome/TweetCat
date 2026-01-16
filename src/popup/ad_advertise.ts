@@ -522,6 +522,38 @@ function initHistoryModalEvents() {
 }
 
 // ========= 事件绑定：Wizard =========
+function initNavEvents() {
+    document.querySelector<HTMLButtonElement>("#btn-back-plaza")?.addEventListener("click", () => {
+        window.location.href = "ad_plaza.html";
+    });
+}
+
+function initSpendTabs() {
+    const group = document.querySelector<HTMLElement>('.dashboard-group[data-group="spend"]');
+    if (!group) return;
+
+    const tabs = Array.from(group.querySelectorAll<HTMLButtonElement>(".dashboard-tab"));
+    const cards = Array.from(group.querySelectorAll<HTMLElement>('.dashboard-card[data-range]'));
+
+    if (tabs.length === 0 || cards.length === 0) return;
+
+    const setRange = (range: string) => {
+        tabs.forEach((t) => t.classList.toggle("active", (t.dataset.range || "") === range));
+        cards.forEach((c) => c.classList.toggle("is-hidden", (c.dataset.range || "") !== range));
+    };
+
+    // 初始状态：以 DOM 上默认 active tab 为准，否则用第一个
+    const defaultRange =
+        tabs.find((t) => t.classList.contains("active"))?.dataset.range ||
+        tabs[0].dataset.range ||
+        "today";
+
+    setRange(defaultRange);
+
+    tabs.forEach((t) => {
+        t.addEventListener("click", () => setRange(t.dataset.range || "today"));
+    });
+}
 
 function initWizardEvents() {
     document.querySelector<HTMLButtonElement>("#btn-publish-ad")?.addEventListener("click", openWizard);
@@ -541,6 +573,9 @@ async function initAdvertise() {
     renderAdvertiseDashboard();
     renderMyAdsTable();
     renderSpendTable();
+
+    initNavEvents();
+    initSpendTabs();
 
     initWizardEvents();
     initRechargeModalEvents();

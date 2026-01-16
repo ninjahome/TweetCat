@@ -163,20 +163,31 @@ export async function queryWalletBalance(
 export async function queryCdpWalletInfo(chainId: number | null = null): Promise<walletInfo> {
     try {
         if (!chainId) chainId = await getChainId();
-        const eoa = await getEOA();
+
+        await initCDP();
+        if (!await isSignedIn()) throw new Error("Not signed in");
+
+        const user = await getCurrentUser();
+        const eoa = user.evmAccountObjects?.[0];
+        if (!eoa) {
+            throw new Error("EOA account not found");
+        }
+
         logX402("----->>> query wallet infor for:", chainId, " wallet:", eoa)
         const {eth, usdc} = await queryWalletBalance(eoa.address, chainId);
+        const xId = user?.authenticationMethods?.x?.sub || null;
 
         return {
             address: eoa.address,
             ethVal: eth,
             usdcVal: usdc,
             hasCreated: true,
-            chainId
+            chainId,
+            xId,
         };
     } catch (error) {
         console.warn('Failed to query CDP wallet info:', error);
-        return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1};
+        return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null};
     }
 }
 
