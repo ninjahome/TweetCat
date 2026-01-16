@@ -96,6 +96,33 @@ body {
     gap: 10px;
 }
 
+.chain-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.chain-pill {
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    color: #374151;
+}
+
+.chain-pill--net {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+}
+
+.chain-pill--addr {
+    font-family: 'Courier New', monospace;
+    letter-spacing: -0.5px;
+}
+
 .account-balance {
     display: flex;
     align-items: center;
@@ -253,6 +280,24 @@ body {
 /* Hide the duplicate recharge button in wallet card (still keeps id for TS) */
 .dashboard-card-wallet #btn-recharge-dashboard {
     display: none;
+}
+
+/* Twitter Avatar Styles */
+.card-avatar-container {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex: 0 0 auto;
+    border: 2px solid #e5e7eb;
+    background: #f3f4f6;
+}
+
+.card-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 /* Spend group = one module */

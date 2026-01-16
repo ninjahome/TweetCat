@@ -322,7 +322,7 @@ export async function queryBasicInfo(): Promise<walletInfo> {
     try {
         const wallet = await loadWallet();
         if (!wallet) {
-            return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1}
+            return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null}
         }
 
         const address = wallet.address;
@@ -335,9 +335,9 @@ export async function queryBasicInfo(): Promise<walletInfo> {
             settings.network === ChainNameBaseMain
                 ? ChainIDBaseMain
                 : ChainIDBaseSepolia;
-        return {address: address, ethVal: eth, usdcVal: usdc, hasCreated: true, chainId}
+        return {address: address, ethVal: eth, usdcVal: usdc, hasCreated: true, chainId, xId: null}
     } catch (e) {
         console.warn("query basic info of wallet failed:", e)
-        return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1}
+        return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null}
     }
 }

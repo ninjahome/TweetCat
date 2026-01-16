@@ -28,8 +28,8 @@
                 <span id="header-account" class="chain-pill chain-pill--addr" title="Account">—</span>
             </div>
             <div class="account-balance">
-                <span class="balance-label">Balance:</span>
-                <span class="balance-value">0.00 USDC</span>
+                <span id="balance-label" class="balance-label">Balance:</span>
+                <span id="balance-value" class="balance-value">0.00 USDC</span>
             </div>
             <button id="btn-recharge" class="btn-recharge">Recharge</button>
             <button id="btn-history" class="btn-history">History</button>
@@ -136,7 +136,10 @@
                 <div class="dashboard-overview">
                     <!-- 0: Wallet balance (keep .dashboard-card) -->
                     <div class="dashboard-card dashboard-card-wallet">
-                        <div class="card-icon">💳</div>
+                        <div class="card-avatar-container">
+                            <span><img id="twitter-avatar" class="card-avatar" src="" alt="Avatar"/></span>
+                            <span id="twitter-user-name" class="twitter-user-name">Twitter</span>
+                        </div>
                         <div class="card-content">
                             <div class="card-label">Available Balance</div>
                             <div class="card-value">0.00 USDC</div>

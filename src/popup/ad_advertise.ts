@@ -1,22 +1,16 @@
-// ad_advertise.ts
-// 用假数据驱动 Advertise 页面的界面和按钮交互
-// ✅ 已移除所有 document.createElement：全部改为 HTML <template> + cloneNode
-
-// ========= 类型定义 =========
-
 import {
     $,
     $2,
+    atomicToUsdcNumber,
     cloneTemplate,
     formatUSDC,
-    showNotification,
-    atomicToUsdcNumber,
     multiplyAtomic,
-    usdcToAtomic,
-    getCurrentUserInfo
+    showNotification,
+    usdcToAtomic
 } from "./common";
-import {X402_FACILITATORS} from "../common/x402_obj";
+import {ChainNameBaseMain, walletInfo, X402_FACILITATORS} from "../common/x402_obj";
 import {getChainId} from "../wallet/wallet_setting";
+import {queryCdpWalletInfo} from "../wallet/cdp_wallet";
 import {logAdP} from "../common/debug_flags";
 
 type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
@@ -74,22 +68,86 @@ let spendRecords: SpendRecord[] = [];
 let historyEarnings: HistoryRow[] = [];
 let historySpending: HistoryRow[] = [];
 let historyRecharge: HistoryRow[] = [];
-
-const fakeWalletAddress = "0xDEMO1234567890abcdef1234567890ABCDEF0000";
-
-let currentAXId: string | null = null;
-let currentWalletAddress: string | null = null;
+let walletInfoCache: walletInfo | null = null;
 
 // ========= API helpers =========
 
 /**
- * 获取当前用户的 X ID 和钱包地址
+ * 初始化钱包信息并更新 UI
  * @throws 如果用户未登录
  */
-async function initCurrentUser(): Promise<void> {
-    const userInfo = await getCurrentUserInfo();
-    currentAXId = userInfo.xId;
-    currentWalletAddress = userInfo.walletAddress;
+async function initWalletInfo(): Promise<void> {
+    const chainId = await getChainId();
+    walletInfoCache = await queryCdpWalletInfo(chainId);
+
+    if (!walletInfoCache.hasCreated) {
+        throw new Error("Please sign in and create wallet first");
+    }
+
+    if (!walletInfoCache.xId) {
+        throw new Error("X account not connected. Please sign in with X");
+    }
+
+    // 更新头部信息
+    updateHeaderInfo();
+    // 更新推特头像
+    updateTwitterAvatar();
+}
+
+/**
+ * 更新头部的网络和地址显示
+ */
+function updateHeaderInfo(): void {
+    if (!walletInfoCache) return;
+
+    const networkEl = document.querySelector<HTMLElement>("#header-network");
+    const accountEl = document.querySelector<HTMLElement>("#header-account");
+    const BalanceEl = document.querySelector<HTMLElement>("#balance-value");
+
+    if (networkEl) {
+        const cfg = X402_FACILITATORS[walletInfoCache.chainId]
+        networkEl.textContent = cfg.network || ChainNameBaseMain;
+    }
+
+    if (accountEl && walletInfoCache.address) {
+        const addr = walletInfoCache.address;
+        accountEl.textContent = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+        accountEl.title = addr;
+    }
+    if (BalanceEl) {
+        BalanceEl.textContent = walletInfoCache.usdcVal
+    }
+}
+
+/**
+ * 更新推特头像
+ */
+function updateTwitterAvatar(): void {
+    if (!walletInfoCache?.username) return;
+
+    const avatarImg = document.querySelector<HTMLImageElement>("#twitter-avatar");
+    const userNameEl = document.querySelector<HTMLImageElement>("#twitter-user-name");
+
+    if (avatarImg) {
+        avatarImg.src = `https://unavatar.io/twitter/${walletInfoCache.username}`;
+        avatarImg.onerror = () => {
+            avatarImg.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23e5e7eb'/%3E%3Ctext x='50' y='65' text-anchor='middle' fill='%239ca3af' font-size='40' font-family='sans-serif'%3E👤%3C/text%3E%3C/svg%3E";
+        };
+    }
+
+    if (userNameEl) {
+        userNameEl.textContent = walletInfoCache.username;
+    }
+}
+
+/**
+ * 获取当前用户的 X ID
+ */
+function getCurrentXId(): string {
+    if (!walletInfoCache?.xId) {
+        throw new Error("X ID not available");
+    }
+    return walletInfoCache.xId;
 }
 
 async function fetchAdsBalance(aXId: string) {
@@ -127,10 +185,10 @@ async function createAd(payload: Record<string, any>): Promise<{ ok: boolean; da
 }
 
 async function refreshAdsData() {
-    if (!currentAXId) return;
+    const currentXId = getCurrentXId();
     const [balance, ads] = await Promise.all([
-        fetchAdsBalance(currentAXId),
-        fetchMyAds(currentAXId),
+        fetchAdsBalance(currentXId),
+        fetchMyAds(currentXId),
     ]);
     adAccountBalanceAtomic = balance?.balance_atomic ?? "0";
     myAds = Array.isArray(ads) ? ads : [];
@@ -357,10 +415,7 @@ function updateBudgetSummaryAndBalance() {
 }
 
 async function submitWizard() {
-    if (!currentAXId) {
-        showNotification("Please sign in with X first.", "error");
-        return;
-    }
+    const currentXId = getCurrentXId();
 
     const nameInput = document.querySelector<HTMLInputElement>("#ad-name");
     const adTypeInput = document.querySelector<HTMLSelectElement>("#ad-type");
@@ -391,7 +446,7 @@ async function submitWizard() {
     }
 
     const payload = {
-        a_x_id: currentAXId,
+        a_x_id: currentXId,
         ad_type: adType,
         category,
         name,
@@ -424,7 +479,9 @@ async function submitWizard() {
 function openRechargeModal() {
     const modal = document.querySelector<HTMLElement>("#recharge-modal");
     const addrEl = document.querySelector<HTMLElement>("#wallet-address-display");
-    if (addrEl) addrEl.textContent = fakeWalletAddress;
+    if (addrEl && walletInfoCache?.address) {
+        addrEl.textContent = walletInfoCache.address;
+    }
     modal?.classList.add("active");
 }
 
@@ -438,15 +495,16 @@ function initRechargeModalEvents() {
     document.querySelector<HTMLButtonElement>("#close-recharge")?.addEventListener("click", closeRechargeModal);
 
     document.querySelector<HTMLButtonElement>("#copy-address")?.addEventListener("click", async () => {
+        if (!walletInfoCache?.address) return;
         try {
             if (navigator.clipboard) {
-                await navigator.clipboard.writeText(fakeWalletAddress);
-                showNotification("Address copied (fake).");
+                await navigator.clipboard.writeText(walletInfoCache.address);
+                showNotification("Address copied.");
             } else {
-                showNotification(fakeWalletAddress);
+                showNotification(walletInfoCache.address);
             }
         } catch {
-            showNotification(fakeWalletAddress);
+            showNotification(walletInfoCache.address);
         }
     });
 
@@ -476,11 +534,9 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
 
     if (rows.length === 0) {
         const tr = cloneTemplate("tpl-empty-history-row") as HTMLTableRowElement;
-        const msg =
-            tab === "earnings" ? "No earnings yet" :
-                tab === "spending" ? "No spending yet" :
-                    "No recharge records";
-        $2<HTMLElement>(tr, ".td-empty").textContent = msg;
+        $2<HTMLElement>(tr, ".td-empty").textContent = tab === "earnings" ? "No earnings yet" :
+            tab === "spending" ? "No spending yet" :
+                "No recharge records";
         tbody.appendChild(tr);
         return;
     }
@@ -582,11 +638,11 @@ async function initAdvertise() {
     initHistoryModalEvents();
 
     try {
-        await initCurrentUser();
-        logAdP("------>>> current user: xId=", currentAXId, " wallet=", currentWalletAddress);
+        await initWalletInfo();
+        logAdP("------>>> wallet info:", walletInfoCache);
         await refreshAdsData();
     } catch (err) {
-        console.error("Failed to initialize user:", err);
+        console.error("Failed to initialize wallet info:", err);
         showNotification((err as Error).message || "Please sign in first.", "error");
     }
 }
