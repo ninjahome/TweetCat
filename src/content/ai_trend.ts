@@ -1,6 +1,6 @@
 import {queryFilterFromBG} from "../object/tweet_kol";
 import {t} from "../common/i18n";
-import {addGrokResponse, createGrokConversation, deleteGrokConversation} from "../timeline/twitter_api";
+import {addGrokResponse, createGrokConversation, deleteGrokConversation} from "../x_api/twitter_api";
 import {defaultAllCategoryID} from "../common/consts";
 import {logATA} from "../common/debug_flags";
 import {sleep} from "../common/utils";

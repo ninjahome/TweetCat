@@ -1,6 +1,6 @@
 import {parseContentHtml, sendMsgToOffScreen, sendMsgToService} from "../common/utils";
 import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
-import {EntryObj} from "../timeline/tweet_entry";
+import {EntryObj} from "../x_api/tweet_entry";
 import {switchCategory} from "./tweetcat_timeline";
 import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {logTPR} from "../common/debug_flags";

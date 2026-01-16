@@ -1,4 +1,4 @@
-import {EntryObj} from "../timeline/tweet_entry";
+import {EntryObj} from "../x_api/tweet_entry";
 import {_contentTemplate} from "./twitter_observer";
 import {logX402} from "../common/debug_flags";
 import {sendMsgToOffScreen, sendMsgToService} from "../common/utils";

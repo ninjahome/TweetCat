@@ -1,4 +1,4 @@
-import {TweetCard} from "./tweet_entry";
+import {TweetCard} from "../x_api/tweet_entry";
 import {
     bindTwitterInternalLink,
     isTwitterStatusUrl

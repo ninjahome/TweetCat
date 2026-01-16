@@ -4,7 +4,7 @@ import {isAdTweetNode, parseContentHtml, parseTwitterPath, sendMsgToService} fro
 import {localGet, localSet} from "../common/local_storage";
 import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
-import {getUserIdByUsername} from "../timeline/twitter_api";
+import {getUserIdByUsername} from "../x_api/twitter_api";
 import {fetchImmediateInNextRound, videoParamForTweets} from "../timeline/tweet_fetcher";
 import {logAD, logTPR} from "../common/debug_flags";
 import {blockedAdNumIncrease} from "../object/system_setting";

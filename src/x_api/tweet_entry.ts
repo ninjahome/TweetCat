@@ -1,4 +1,4 @@
-import {WrapEntryObj} from "./db_raw_tweet";
+import {WrapEntryObj} from "../timeline/db_raw_tweet";
 import {logRC, logTOP} from "../common/debug_flags";
 import {isXArticle, toHttps} from "../common/utils";
 

@@ -1,10 +1,10 @@
-import {fetchTweets, getUserIdByUsername} from "./twitter_api";
+import {fetchTweets, getUserIdByUsername} from "../x_api/twitter_api";
 import {sendMsgToService, sleep} from "../common/utils";
 import {logFT, logIC} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW, WrapEntryObj} from "./db_raw_tweet";
 import {MsgType} from "../common/consts";
-import {EntryObj, parseTimelineFromGraphQL, TweetMediaEntity, TweetObj} from "./tweet_entry";
+import {EntryObj, parseTimelineFromGraphQL, TweetMediaEntity, TweetObj} from "../x_api/tweet_entry";
 import {queryKolById, updateKolIdToSw} from "../object/tweet_kol";
 import {resetNewestTweet, showNewestTweets} from "../content/tweetcat_web3_area";
 import {setLatestFetchAt} from "./tweet_pager";

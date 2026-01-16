@@ -3,7 +3,7 @@ import {choseColorByID, MsgType} from "../common/consts";
 import {queryKolDetailByName, showPopupMenu} from "./twitter_observer";
 import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
 import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
-import {getUserIdByUsername} from "../timeline/twitter_api";
+import {getUserIdByUsername} from "../x_api/twitter_api";
 import {logTPR} from "../common/debug_flags";
 import {calculateLevelBreakdown, LevelScoreBreakdown, UserProfile} from "../object/user_info";
 import {t} from "../common/i18n";

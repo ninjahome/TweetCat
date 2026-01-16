@@ -1,12 +1,12 @@
 /* ------------------------------------------------------------------ *
  * Tweet Pager State
  * ------------------------------------------------------------------ */
-import {EntryObj} from "./tweet_entry";
+import {EntryObj} from "../x_api/tweet_entry";
 import {logPager} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {defaultAllCategoryID, MsgType} from "../common/consts";
 import {initBootstrapData, needBootStrap, WrapEntryObj} from "./db_raw_tweet";
-import {fetchHomeTimeline} from "./twitter_api";
+import {fetchHomeTimeline} from "../x_api/twitter_api";
 import {KolCursor} from "../object/kol_cursor";
 import {startToFetchTweets} from "./tweet_fetcher";
 import {tweetFetchParam} from "../common/msg_obj";

@@ -1,5 +1,5 @@
 import {logTCR} from "../common/debug_flags";
-import {TweetContent, TweetObj} from "./tweet_entry";
+import {TweetContent, TweetObj} from "../x_api/tweet_entry";
 import {
     onVideoDownloadAbort,
     onVideoDownloadError,
@@ -9,7 +9,7 @@ import {
 } from "../content/tweetcat_web3_area";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {bookmarkApi} from "./twitter_api";
+import {bookmarkApi} from "../x_api/twitter_api";
 import {indexToGrade, resolutionToNearestP} from "./render_common";
 import { t } from "../common/i18n";
 import {showToastMsg} from "../content/common";

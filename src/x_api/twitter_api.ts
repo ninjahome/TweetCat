@@ -4,10 +4,10 @@ import {
     __DBK_query_id_map,
     BlueVerifiedFollowers,
     Bookmarks,
+    ConversationItem_DeleteConversationMutation,
     CreateBookmark,
     CreateGrokConversation,
     DeleteBookmark,
-    ConversationItem_DeleteConversationMutation,
     Followers,
     Following,
     HomeTimeline,
@@ -21,7 +21,7 @@ import {
     parseTimelineFromGraphQL,
     TweetResult
 } from "./tweet_entry";
-import {getTransactionIdFor} from "../content/txid";
+import {getTransactionIdFor} from "./txid";
 import {logATA} from "../common/debug_flags";
 import {buildFeatures, extractMissingFeature} from "./feature_manager";
 import {UserProfile} from "../object/user_info";
@@ -97,8 +97,7 @@ async function generateHeaders(): Promise<Record<string, string>> {
 
 export async function getUserIdByUsername(username: string): Promise<string | null> {
     const userProfile = await getUserByUsername(username);
-    const userId = userProfile?.userId ?? null;
-    return userId;
+    return userProfile?.userId ?? null;
 }
 
 export async function getUserByUsername(username: string): Promise<UserProfile | null> {
