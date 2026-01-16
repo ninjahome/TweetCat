@@ -166,6 +166,9 @@ export function onVideoDownloadStart(total: number, filename: string, controller
 
     if (!hostDiv) {
         hostDiv = document.querySelector(".download-progress-list") as HTMLElement;
+        if (!hostDiv) return;
+
+        hostDiv.style.display = 'block';
     }
     const processBar = document.querySelector(".download-progress-item")?.cloneNode(true) as HTMLElement;
     if (!processBar) return;
