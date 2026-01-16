@@ -12,12 +12,12 @@ import {
     showNotification,
     atomicToUsdcNumber,
     multiplyAtomic,
-    usdcToAtomic
+    usdcToAtomic,
+    getCurrentUserInfo
 } from "./common";
-import {getCurrentUser} from "@coinbase/cdp-core";
-import {initCDP, X402_FACILITATORS} from "../common/x402_obj";
+import {X402_FACILITATORS} from "../common/x402_obj";
 import {getChainId} from "../wallet/wallet_setting";
-import {logAd} from "../common/debug_flags";
+import {logAdP} from "../common/debug_flags";
 
 type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
 
@@ -66,56 +66,30 @@ interface HistoryRow {
     status: string;
 }
 
-// ========= 假数据 =========
+// ========= 数据存储 =========
 
 let adAccountBalanceAtomic = "0";
 let myAds: AdRecord[] = [];
-
-let spendRecords: SpendRecord[] = [
-    {
-        id: "sp_1",
-        time: "2026-01-14 10:12",
-        adName: "Twitter Followers Campaign",
-        event: "Task completed",
-        amount: 0.5,
-        fee: 0.025,
-        status: "Success"
-    },
-    {
-        id: "sp_2",
-        time: "2026-01-14 09:30",
-        adName: "Landing Page Visit",
-        event: "Task completed",
-        amount: 0.2,
-        fee: 0.01,
-        status: "Success"
-    }
-];
-
-const historyEarnings: HistoryRow[] = [
-    {time: "2026-01-14 10:12", adNameOrMethod: "Twitter Followers Campaign", amount: 0.5, status: "Completed"},
-    {time: "2026-01-14 09:30", adNameOrMethod: "Landing Page Visit", amount: 0.2, status: "Completed"}
-];
-
-const historySpending: HistoryRow[] = [
-    {time: "2026-01-14 10:12", adNameOrMethod: "Twitter Followers Campaign", amount: -0.525, status: "Success"},
-    {time: "2026-01-14 09:30", adNameOrMethod: "Landing Page Visit", amount: -0.21, status: "Success"}
-];
-
-const historyRecharge: HistoryRow[] = [
-    {time: "2026-01-13 18:20", adNameOrMethod: "Onramp (Card)", amount: 100, status: "Success"}
-];
+let spendRecords: SpendRecord[] = [];
+let historyEarnings: HistoryRow[] = [];
+let historySpending: HistoryRow[] = [];
+let historyRecharge: HistoryRow[] = [];
 
 const fakeWalletAddress = "0xDEMO1234567890abcdef1234567890ABCDEF0000";
 
 let currentAXId: string | null = null;
+let currentWalletAddress: string | null = null;
 
 // ========= API helpers =========
 
-async function getAXId(): Promise<string | null> {
-    await initCDP();
-    const user = await getCurrentUser();
-    return user?.authenticationMethods?.x?.sub ?? null;
+/**
+ * 获取当前用户的 X ID 和钱包地址
+ * @throws 如果用户未登录
+ */
+async function initCurrentUser(): Promise<void> {
+    const userInfo = await getCurrentUserInfo();
+    currentAXId = userInfo.xId;
+    currentWalletAddress = userInfo.walletAddress;
 }
 
 async function fetchAdsBalance(aXId: string) {
@@ -161,7 +135,7 @@ async function refreshAdsData() {
     adAccountBalanceAtomic = balance?.balance_atomic ?? "0";
     myAds = Array.isArray(ads) ? ads : [];
 
-    logAd("------>>> balance:", balance, " my ads:", myAds)
+    logAdP("------>>> balance:", balance, " my ads:", myAds)
 
     renderHeaderBalance();
     renderAdvertiseDashboard();
@@ -186,11 +160,16 @@ function renderAdvertiseDashboard() {
     const card2Value = cards[1]?.querySelector<HTMLElement>(".card-value");
     if (card2Value) card2Value.textContent = activeCount.toString();
 
-    const todaySpend = spendRecords.reduce((sum, r) => sum + (r.amount + r.fee), 0);
+    // 计算今日支出：从 myAds 中统计所有已使用的配额
+    const todaySpend = myAds.reduce((sum, ad) => {
+        const spent = atomicToUsdcNumber(multiplyAtomic(ad.unit_price_atomic, ad.quota_used));
+        return sum + spent;
+    }, 0);
     const card3Value = cards[2]?.querySelector<HTMLElement>(".card-value");
     if (card3Value) card3Value.textContent = formatUSDC(todaySpend);
 
-    const weekSpend = todaySpend * 3;
+    // 本周支出暂时使用相同的值（需要服务器支持日期过滤）
+    const weekSpend = todaySpend;
     const card4Value = cards[3]?.querySelector<HTMLElement>(".card-value");
     if (card4Value) card4Value.textContent = formatUSDC(weekSpend);
 }
@@ -567,13 +546,14 @@ async function initAdvertise() {
     initRechargeModalEvents();
     initHistoryModalEvents();
 
-    currentAXId = await getAXId();
-    if (!currentAXId) {
-        showNotification("Please sign in with X first.", "error");
-        return;
+    try {
+        await initCurrentUser();
+        logAdP("------>>> current user: xId=", currentAXId, " wallet=", currentWalletAddress);
+        await refreshAdsData();
+    } catch (err) {
+        console.error("Failed to initialize user:", err);
+        showNotification((err as Error).message || "Please sign in first.", "error");
     }
-    logAd("------>>> current ax id:", currentAXId)
-    await refreshAdsData();
 }
 
 document.addEventListener("DOMContentLoaded", () => {

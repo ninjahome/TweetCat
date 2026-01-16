@@ -1,8 +1,10 @@
 import {t} from "../common/i18n";
 import browser from "webextension-polyfill";
 import {getChainId} from "../wallet/wallet_setting";
-import {X402_FACILITATORS} from "../common/x402_obj";
+import {initCDP, X402_FACILITATORS} from "../common/x402_obj";
 import {logX402} from "../common/debug_flags";
+import {getCurrentUser} from "@coinbase/cdp-core";
+import {getEOA} from "../wallet/cdp_wallet";
 
 let notificationTimer: number | null = null;
 let notificationBar: HTMLDivElement | null = null;
@@ -254,4 +256,36 @@ export function usdcToAtomic(amountStr: string): string | null {
     const fracPadded = (frac + "000000").slice(0, 6);
     const out = (intPart.replace(/^0+(?=\d)/, "") || "0") + fracPadded;
     return out.replace(/^0+(?=\d)/, "") || "0";
+}
+
+/**
+ * 获取当前登录用户的信息
+ * @returns 用户的 X ID 和 EOA 钱包地址
+ * @throws 如果用户未登录或获取信息失败
+ * @example
+ * const { xId, walletAddress } = await getCurrentUserInfo();
+ */
+export async function getCurrentUserInfo(): Promise<{ xId: string; walletAddress: string }> {
+
+    await initCDP();
+
+    const user = await getCurrentUser();
+    if (!user) {
+        throw new Error("Please sign in first");
+    }
+
+    const xId = user?.authenticationMethods?.x?.sub;
+    if (!xId) {
+        throw new Error("X account not connected. Please sign in with X");
+    }
+
+    const eoa = await getEOA();
+    if (!eoa?.address) {
+        throw new Error("Wallet not found. Please create a wallet first");
+    }
+
+    return {
+        xId,
+        walletAddress: eoa.address,
+    };
 }

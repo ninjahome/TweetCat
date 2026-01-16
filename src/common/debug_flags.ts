@@ -67,4 +67,4 @@ export const logFM = makeLogger('FollowMgn', 'FollowMgn');
 export const logUI = makeLogger('UserIfo', 'UserIfo');
 export const logX402 = makeLogger('X402', 'X402');
 export const logW = makeLogger('Wallet', 'Wallet');
-export const logAd = makeLogger('AdPlaza', 'AdPlaza');
+export const logAdP = makeLogger('AdPlaza', 'AdPlaza');

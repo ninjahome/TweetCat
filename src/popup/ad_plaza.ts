@@ -1,11 +1,14 @@
-// ad_plaza.ts
-// Earn 页面：优先使用后端广告与 Claim 数据，失败时回退到假数据
-// ✅ 已移除所有 document.createElement：全部改为 HTML <template> + cloneNode
-
-// ========= 类型定义 =========
-
-import {$2, cloneTemplate, formatUSDC, showNotification, x402WorkerFetch, x402WorkerGet, atomicToUsdcNumber} from "./common";
-import {localGet, localSet} from "../common/local_storage";
+import {
+    $2,
+    cloneTemplate,
+    formatUSDC,
+    showNotification,
+    x402WorkerFetch,
+    x402WorkerGet,
+    atomicToUsdcNumber,
+    getCurrentUserInfo
+} from "./common";
+import {logAdP} from "../common/debug_flags";
 
 type AdCategory = "follow" | "visit" | "register" | "share";
 
@@ -27,84 +30,13 @@ interface EarnAd {
     detailUrl: string;
 }
 
-// ========= 假数据 =========
+// ========= 数据存储 =========
 
-const fakeEarnAds: EarnAd[] = [
-    {
-        id: "ad_1",
-        title: "Follow Our DeFi Twitter",
-        brand: "@OpenDeFiLab",
-        description: "Follow our official Twitter account to get the latest alpha and earn instant rewards.",
-        category: "follow",
-        rewardUSDC: 0.5,
-        durationMinutes: 2,
-        completed: 128,
-        totalQuota: 500,
-        deadlineText: "Ends: Jan 31",
-        tags: ["New", "Easy"],
-        rewardRange: "0.5-1",
-        popularityScore: 90,
-        createdAt: Date.now() - 1000 * 60 * 60 * 6,
-        detailUrl: "https://example.com/ad/1"
-    },
-    {
-        id: "ad_2",
-        title: "Visit NFT Marketplace",
-        brand: "@NFTUniverse",
-        description: "Visit our brand new NFT marketplace and explore trending collections.",
-        category: "visit",
-        rewardUSDC: 0.2,
-        durationMinutes: 3,
-        completed: 320,
-        totalQuota: 1000,
-        deadlineText: "Ends: Feb 2",
-        tags: ["Popular"],
-        rewardRange: "0.1-0.5",
-        popularityScore: 75,
-        createdAt: Date.now() - 1000 * 60 * 60 * 24,
-        detailUrl: "https://example.com/ad/2"
-    },
-    {
-        id: "ad_3",
-        title: "Register New Web3 Wallet",
-        brand: "@WalletX",
-        description: "Create a new Web3 wallet in 2 minutes and get rewarded.",
-        category: "register",
-        rewardUSDC: 1.2,
-        durationMinutes: 5,
-        completed: 45,
-        totalQuota: 200,
-        deadlineText: "Ends: Feb 10",
-        tags: ["High Reward"],
-        rewardRange: "1+",
-        popularityScore: 60,
-        createdAt: Date.now() - 1000 * 60 * 30,
-        detailUrl: "https://example.com/ad/3"
-    },
-    {
-        id: "ad_4",
-        title: "Share Our Trading Bot",
-        brand: "@TradeBotPro",
-        description: "Share our trading bot tweet to your followers and earn rewards.",
-        category: "share",
-        rewardUSDC: 0.8,
-        durationMinutes: 4,
-        completed: 200,
-        totalQuota: 400,
-        deadlineText: "Ends: Jan 28",
-        tags: ["Easy", "Popular"],
-        rewardRange: "0.5-1",
-        popularityScore: 85,
-        createdAt: Date.now() - 1000 * 60 * 60 * 2,
-        detailUrl: "https://example.com/ad/4"
-    }
-];
-
-let fakeWithdrawableUSDC = 12.34;
-let fakeTotalEarnedUSDC = 23.45;
-let fakeTodayEarnedUSDC = 1.25;
-let fakePendingUSDC = 0.75;
 let earnAds: EarnAd[] = [];
+let withdrawableUSDC = 0;
+let totalEarnedUSDC = 0;
+let todayEarnedUSDC = 0;
+let pendingUSDC = 0;
 
 // ========= 工具函数 =========
 
@@ -148,36 +80,25 @@ function getRewardRange(rewardUSDC: number): "0.1-0.5" | "0.5-1" | "1+" {
     return "1+";
 }
 
-async function getBuyerIdentity(): Promise<{ bXId: string; bWallet: string; usedFallback: boolean }> {
-    const storedXId = await localGet("earn_b_x_id");
-    const storedWallet = await localGet("earn_b_wallet");
-    if (storedXId && storedWallet) {
-        return { bXId: storedXId, bWallet: storedWallet, usedFallback: false };
-    }
-
-    const fallbackId = (await localGet("earn_dev_b_x_id")) || `dev_b_${Math.random().toString(36).slice(2, 8)}`;
-    const fallbackWallet = (await localGet("earn_dev_b_wallet")) || "0x000000000000000000000000000000000000dEaD";
-    await localSet("earn_dev_b_x_id", fallbackId);
-    await localSet("earn_dev_b_wallet", fallbackWallet);
-    return { bXId: fallbackId, bWallet: fallbackWallet, usedFallback: true };
-}
-
 async function loadAds(): Promise<void> {
     try {
         const response = await x402WorkerGet("/ads/list");
         if (!Array.isArray(response)) {
-            throw new Error("Invalid ads payload");
+            showNotification("Invalid ads payload", "error");
+            return;
         }
+
         earnAds = (response as EarnAd[]).map((ad) => ({
             ...ad,
             durationMinutes: ad.durationMinutes || CATEGORY_DURATION[ad.category] || 3,
             tags: ad.tags?.length ? ad.tags : (CATEGORY_TAGS[ad.category] || []),
             rewardRange: ad.rewardRange || getRewardRange(ad.rewardUSDC),
         }));
+        logAdP("------>>>ad of plaza:", response)
     } catch (err) {
         console.error("Failed to load ads list:", err);
-        earnAds = fakeEarnAds.slice();
-        showNotification("Failed to load ads, showing demo list.", "error");
+        earnAds = [];
+        showNotification("Failed to load ads.", "error");
     }
 }
 
@@ -186,19 +107,18 @@ async function startTask(ad: EarnAd) {
     taskRunState[ad.id] = "running";
 
     try {
-        const { bXId, bWallet, usedFallback } = await getBuyerIdentity();
-        if (usedFallback) {
-            showNotification("Using dev identity for claim. Please bind your account.", "error");
-        }
+
+        const {xId, walletAddress} = await getCurrentUserInfo();
 
         const claim = await x402WorkerFetch("/ads/claim", {
             ad_id: ad.id,
-            b_x_id: bXId,
-            b_wallet: bWallet,
+            b_x_id: xId,
+            b_wallet: walletAddress,
         });
 
         showNotification(`Claim created: ${claim.claim_id}`, "success");
         await loadAds();
+        await loadEarnSummary();
         renderEarnAds();
     } catch (err) {
         console.error("Failed to claim ad:", err);
@@ -210,12 +130,49 @@ async function startTask(ad: EarnAd) {
 }
 
 async function loadClaims(): Promise<EarnClaim[]> {
-    const { bXId, usedFallback } = await getBuyerIdentity();
-    if (usedFallback) {
-        showNotification("Using dev identity for activity. Please bind your account.", "error");
-    }
-    const response = await x402WorkerGet("/ads/my_claims", { b_x_id: bXId });
+    const {xId} = await getCurrentUserInfo();
+    const response = await x402WorkerGet("/ads/my_claims", {b_x_id: xId});
     return Array.isArray(response) ? (response as EarnClaim[]) : [];
+}
+
+async function loadEarnSummary(): Promise<void> {
+    try {
+        const claims = await loadClaims();
+
+        // 计算总收益和待处理收益
+        totalEarnedUSDC = 0;
+        pendingUSDC = 0;
+        withdrawableUSDC = 0;
+        todayEarnedUSDC = 0;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayTimestamp = today.getTime();
+
+        claims.forEach(claim => {
+            const amount = atomicToUsdcNumber(claim.unit_price_atomic);
+
+            if (claim.status === "CLAIMED" || claim.status === "PENDING_CONFIRM") {
+                pendingUSDC += amount;
+                totalEarnedUSDC += amount;
+            } else if (claim.status === "CONFIRMED") {
+                withdrawableUSDC += amount;
+                totalEarnedUSDC += amount;
+            }
+
+            // 计算今日收益
+            if (claim.created_at) {
+                const claimDate = new Date(claim.created_at);
+                if (claimDate.getTime() >= todayTimestamp) {
+                    todayEarnedUSDC += amount;
+                }
+            }
+        });
+
+        renderEarnSummary();
+    } catch (err) {
+        console.error("Failed to load earn summary:", err);
+    }
 }
 
 function formatClaimTime(value?: string): string {
@@ -347,7 +304,7 @@ function filterAndSortAds(): EarnAd[] {
     const sortBy = getSortOption();
     const qstr = getSearchQuery();
 
-    let result = (earnAds.length > 0 ? earnAds : fakeEarnAds).filter((ad) =>
+    let result = earnAds.filter((ad) =>
         categories.includes(ad.category) &&
         rewardRanges.includes(ad.rewardRange) &&
         matchAdSearch(ad, qstr)
@@ -460,10 +417,10 @@ function renderEarnSummary() {
     const today = document.querySelector<HTMLElement>("#today-earned");
     const pending = document.querySelector<HTMLElement>("#pending-earned");
 
-    if (withdrawable) withdrawable.textContent = formatUSDC(fakeWithdrawableUSDC);
-    if (total) total.textContent = formatUSDC(fakeTotalEarnedUSDC);
-    if (today) today.textContent = formatUSDC(fakeTodayEarnedUSDC);
-    if (pending) pending.textContent = formatUSDC(fakePendingUSDC);
+    if (withdrawable) withdrawable.textContent = formatUSDC(withdrawableUSDC);
+    if (total) total.textContent = formatUSDC(totalEarnedUSDC);
+    if (today) today.textContent = formatUSDC(todayEarnedUSDC);
+    if (pending) pending.textContent = formatUSDC(pendingUSDC);
 }
 
 // ========= 事件绑定：筛选 / 按钮 =========
@@ -502,16 +459,16 @@ function initEarnFiltersEvents() {
 
 function initEarnActions() {
     document.querySelector<HTMLButtonElement>("#btn-withdraw")?.addEventListener("click", () => {
-        if (fakeWithdrawableUSDC <= 0) {
-            showNotification("Nothing to withdraw (fake).");
+        if (withdrawableUSDC <= 0) {
+            showNotification("Nothing to withdraw.");
             return;
         }
 
-        const amount = fakeWithdrawableUSDC;
-        fakeWithdrawableUSDC = 0;
+        const amount = withdrawableUSDC;
+        withdrawableUSDC = 0;
 
         renderEarnSummary();
-        showNotification(`Withdraw submitted (fake): ${formatUSDC(amount)}`);
+        showNotification(`Withdraw submitted: ${formatUSDC(amount)}`);
     });
 
     document.querySelector<HTMLButtonElement>("#btn-earn-activity")?.addEventListener("click", () => {
@@ -543,7 +500,7 @@ function initEarnActions() {
 
 async function initAdPlaza() {
     await loadAds();
-    renderEarnSummary();
+    await loadEarnSummary();
     renderEarnAds();
 
     initEarnFiltersEvents();
