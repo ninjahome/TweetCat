@@ -1,7 +1,7 @@
 import {
 	decodeBase64Json,
 	encodeBase64Json,
-	ExtCtx, getOrCreateTreasuryEOA,
+	ExtCtx,
 	getPaymentHeader,
 	isHexAddress,
 	NetConfig,
@@ -12,7 +12,7 @@ import {SettleResponse} from "@x402/core/types";
 import {creditRewardsBalance, getKolBindingByXId, usdcEscrowTips} from "./database_402";
 import {x402Client} from "@x402/core/client";
 import {registerExactEvmScheme} from "@x402/evm/exact/client";
-import {toAccount} from "viem/accounts";
+import {privateKeyToAccount} from "viem/accounts";
 
 interface TipRequestParams {
 	amount: string;
@@ -50,8 +50,7 @@ async function parseTipParams(c: ExtCtx): Promise<TipObj> {
 	}
 
 	const bindings = await getKolBindingByXId(c.env.DB, xId);
-	const payTo = (await getOrCreateTreasuryEOA(c)).address
-
+	const payTo = (c.env.TREASURY_ADDRESS as `0x${string}`)//(await getOrCreateTreasuryEOA(c)).address
 	return {payTo, atomicAmount, xId, cdpUsrId: bindings?.cdp_user_id, tweetId};
 }
 
@@ -172,8 +171,15 @@ export async function internalTreasurySettle(
 	resourceUrl: string
 ): Promise<SettleResponse> {
 
-	const treasuryAccount = await getOrCreateTreasuryEOA(c);
-	const signer = toAccount(treasuryAccount);
+	const privateKey = c.env.TREASURY_PRIVATE_KEY;
+
+	if (!privateKey) throw new Error("TREASURY_PRIVATE_KEY not set");
+	const rawKey = privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`;
+	const signer = privateKeyToAccount(rawKey as `0x${string}`);
+	/*
+		const treasuryAccount = await getOrCreateTreasuryEOA(c);
+		const signer = toAccount(treasuryAccount);
+	*/
 	const client = new x402Client();
 	registerExactEvmScheme(client, {signer, networks: [cfg.NETWORK]});
 

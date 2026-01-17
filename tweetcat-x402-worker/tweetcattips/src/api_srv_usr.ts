@@ -1,4 +1,4 @@
-import {cdpFetch, ExtCtx, getCdpClient, getOrCreateTreasuryEOA, isHexAddress, toFiat2dp} from "./common";
+import {cdpFetch, ExtCtx, getCdpClient, isHexAddress, toFiat2dp} from "./common";
 import {
 	createKolBinding,
 	getKolBindingByUserId,
@@ -126,9 +126,6 @@ async function processRewardClaim(
 
 		console.log(`[Claim] Reward ${rewardId}: gross=${feeCalc.grossAmount}, fee=${feeCalc.feeAmount} (${feeRate}%), net=${feeCalc.netAmount}`);
 
-		const treasuryAccount = await getOrCreateTreasuryEOA(c);
-		const platformWalletAddress = treasuryAccount.address as `0x${string}`;
-
 		const cfg = c.get("cfg");
 		const getResourceServer = c.get("getResourceServer");
 		const rs = getResourceServer(c.env);
@@ -153,6 +150,7 @@ async function processRewardClaim(
 
 		await updateRewardStatus(c.env.DB, rewardId, REWARD_STATUS_SUCCESS, settleResult.transaction);
 
+		const platformWalletAddress = (c.env.TREASURY_ADDRESS as `0x${string}`)
 		await createPlatformFee(c.env.DB, {
 			rewardId,
 			cdpUserId,

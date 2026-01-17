@@ -16,6 +16,8 @@ export interface Env {
 	FEE_FOR_WITHDRAW: number;
 	CDP_TREASURY_ACCOUNT_NAME: string;
 	CDP_TREASURY_ACCOUNT_POLICY_ID?: string;
+	TREASURY_ADDRESS: string;
+	TREASURY_PRIVATE_KEY: string;
 }
 
 export type ExtendedEnv = {
@@ -221,7 +223,7 @@ export async function cdpFetch(c: ExtCtx, path: string, method: string, body?: a
 
 let treasuryAccountP: Promise<EvmServerAccount> | null = null;
 
-export async function getOrCreateTreasuryEOA(c: ExtCtx): Promise<EvmServerAccount> {
+export async function getOrCreateTreasuryEOA2(c: ExtCtx): Promise<EvmServerAccount> {
 	try {
 		if (!!treasuryAccountP) return treasuryAccountP
 
