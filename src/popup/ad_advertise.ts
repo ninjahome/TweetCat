@@ -69,8 +69,6 @@ interface HistoryRow {
 let adAccountInfo: AdAccountInfo = {balanceAtomic: "0"};
 let myAds: AdRecord[] = [];
 let spendRecords: SpendRecord[] = [];
-let historyEarnings: HistoryRow[] = [];
-let historySpending: HistoryRow[] = [];
 let historyRecharge: HistoryRow[] = [];
 let walletInfoCache: walletInfo | null = null;
 
@@ -117,11 +115,18 @@ function updateHeaderInfo(): void {
         const addr = walletInfoCache.address;
         accountEl.textContent = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
         accountEl.title = addr;
+        accountEl.style.cursor = "pointer";
+        accountEl.addEventListener("click", async () => {
+            await navigator.clipboard.writeText(addr);
+            showNotification("Copy Success", "success");
+        });
     }
     if (balanceEl) {
         balanceEl.textContent = walletInfoCache.usdcVal
     }
 }
+
+
 
 /**
  * 更新推特头像
@@ -405,13 +410,13 @@ function updateBudgetSummaryAndBalance() {
 
     const summaryReward = $Id("summary-reward");
     if (summaryReward) summaryReward.textContent = formatUSDC(Number(reward) || 0);
-    
+
     const summaryTasks = $Id("summary-tasks");
     if (summaryTasks) summaryTasks.textContent = Number.isFinite(tasks) ? tasks.toString() : "0";
-    
+
     const summaryFee = $Id("summary-fee");
     if (summaryFee) summaryFee.textContent = formatUSDC(fee);
-    
+
     const summaryTotal = $Id("summary-total");
     if (summaryTotal) summaryTotal.textContent = formatUSDC(total);
 
@@ -513,10 +518,10 @@ function closeRechargeModal() {
 function initRechargeModalEvents() {
     const btnRecharge = $Id("btn-recharge") as HTMLButtonElement | null;
     if (btnRecharge) btnRecharge.addEventListener("click", openRechargeModal);
-    
+
     const btnRechargeDashboard = $Id("btn-recharge-dashboard") as HTMLButtonElement | null;
     if (btnRechargeDashboard) btnRechargeDashboard.addEventListener("click", openRechargeModal);
-    
+
     const closeRecharge = $Id("close-recharge") as HTMLButtonElement | null;
     if (closeRecharge) closeRecharge.addEventListener("click", closeRechargeModal);
 
@@ -555,18 +560,17 @@ function closeHistoryModal() {
 }
 
 function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: HistoryRow[]) {
-    const tbody = document.querySelector<HTMLTableSectionElement>(
-        `.history-tab-content[data-tab="${tab}"] tbody`
-    );
+    // 现在仅镜不查看 charging 记录
+    if (tab !== "recharge") return;
+
+    const tbody = document.querySelector<HTMLTableSectionElement>("#recharge-history-tbody");
     if (!tbody) return;
 
     tbody.replaceChildren();
 
     if (rows.length === 0) {
         const tr = cloneTemplate("tpl-empty-history-row") as HTMLTableRowElement;
-        $2<HTMLElement>(tr, ".td-empty").textContent = tab === "earnings" ? "No earnings yet" :
-            tab === "spending" ? "No spending yet" :
-                "No recharge records";
+        $2<HTMLElement>(tr, ".td-empty").textContent = "No recharge records yet";
         tbody.appendChild(tr);
         return;
     }
@@ -582,32 +586,16 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
 }
 
 function switchHistoryTab(tab: "earnings" | "spending" | "recharge") {
-    document.querySelectorAll<HTMLButtonElement>(".history-tab").forEach((btn) => {
-        btn.classList.toggle("active", btn.dataset.tab === tab);
-    });
-
-    document.querySelectorAll<HTMLElement>(".history-tab-content").forEach((c) => {
-        c.classList.toggle("active", c.dataset.tab === tab);
-    });
-
-    if (tab === "earnings") renderHistoryTable("earnings", historyEarnings);
-    if (tab === "spending") renderHistoryTable("spending", historySpending);
+    // 现在仅仅显示 recharge 欄位
     if (tab === "recharge") renderHistoryTable("recharge", historyRecharge);
 }
 
 function initHistoryModalEvents() {
     const btnHistory = $Id("btn-history") as HTMLButtonElement | null;
-    if (btnHistory) btnHistory.addEventListener("click", () => openHistoryModal("spending"));
-    
+    if (btnHistory) btnHistory.addEventListener("click", () => openHistoryModal("recharge"));
+
     const closeHistory = $Id("close-history") as HTMLButtonElement | null;
     if (closeHistory) closeHistory.addEventListener("click", closeHistoryModal);
-
-    document.querySelectorAll<HTMLButtonElement>(".history-tab").forEach((btn) => {
-        btn.addEventListener("click", () => {
-            const tab = (btn.dataset.tab || "spending") as any;
-            switchHistoryTab(tab);
-        });
-    });
 }
 
 // ========= 事件绑定：Wizard =========
@@ -648,22 +636,22 @@ function initSpendTabs() {
 function initWizardEvents() {
     const btnPublish = $Id("btn-publish-ad") as HTMLButtonElement | null;
     if (btnPublish) btnPublish.addEventListener("click", openWizard);
-    
+
     const closeWizardBtn = $Id("close-wizard") as HTMLButtonElement | null;
     if (closeWizardBtn) closeWizardBtn.addEventListener("click", closeWizard);
-    
+
     const btnPrev = $Id("btn-wizard-prev") as HTMLButtonElement | null;
     if (btnPrev) btnPrev.addEventListener("click", goWizardPrev);
-    
+
     const btnNext = $Id("btn-wizard-next") as HTMLButtonElement | null;
     if (btnNext) btnNext.addEventListener("click", goWizardNext);
-    
+
     const btnSubmit = $Id("btn-wizard-submit") as HTMLButtonElement | null;
     if (btnSubmit) btnSubmit.addEventListener("click", submitWizard);
 
     const rewardAmount = document.querySelector<HTMLInputElement>("#reward-amount");
     if (rewardAmount) rewardAmount.addEventListener("input", updateBudgetSummaryAndBalance);
-    
+
     const taskLimit = document.querySelector<HTMLInputElement>("#task-limit");
     if (taskLimit) taskLimit.addEventListener("input", updateBudgetSummaryAndBalance);
 }

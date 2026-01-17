@@ -32,7 +32,6 @@
                 <span id="balance-value" class="balance-value">0.00 USDC</span>
             </div>
             <button id="btn-recharge" class="btn-recharge">Recharge</button>
-            <button id="btn-history" class="btn-history">History</button>
         </div>
     </div>
 </header>
@@ -375,76 +374,38 @@
                     <p>Purchase USDC directly with credit card or Apple Pay</p>
                     <button id="btn-buy-card" class="btn-primary">Buy USDC</button>
                 </div>
+                <div class="recharge-history-section">
+                    <button id="btn-history" class="btn-history-inline">📋 View Recharge History</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- History Modal -->
+<!-- History Modal - Only Recharge Tab -->
 <div id="history-modal" class="modal">
     <div class="modal-dialog modal-large">
         <div class="modal-header">
-            <h2 class="modal-title">Transaction History</h2>
+            <h2 class="modal-title">Recharge History</h2>
             <button id="close-history" class="btn-close">✕</button>
         </div>
         <div class="modal-body">
-            <div class="history-tabs">
-                <button class="history-tab active" data-tab="earnings">Earnings</button>
-                <button class="history-tab" data-tab="spending">Spending</button>
-                <button class="history-tab" data-tab="recharge">Recharge</button>
-            </div>
-            <div class="history-content">
-                <div class="history-tab-content active" data-tab="earnings">
-                    <table class="history-table">
-                        <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Ad</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr class="empty-row">
-                            <td colspan="4">No earnings yet</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="history-tab-content" data-tab="spending">
-                    <table class="history-table">
-                        <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Ad</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr class="empty-row">
-                            <td colspan="4">No spending yet</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="history-tab-content" data-tab="recharge">
-                    <table class="history-table">
-                        <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>Method</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr class="empty-row">
-                            <td colspan="4">No recharge records</td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="history-content-recharge-only">
+                <table class="history-table">
+                    <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Method</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody id="recharge-history-tbody">
+                    <tr class="empty-row">
+                        <td colspan="4">No recharge records yet</td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
