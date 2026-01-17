@@ -120,9 +120,9 @@ async function x402Workflow(c: ExtCtx, payTo: string, atomicAmount: string, desc
 	if (!verifyResult.isValid) throw new Error(verifyResult.invalidReason);
 
 	const payerAddr = verifyResult.payer?.toLowerCase();
-	const payeeAddr = requirements.payTo.toLowerCase();
-	if (payerAddr === payeeAddr) {
-		console.warn("------>>> payer:", payerAddr, " receiver:", payeeAddr)
+	const receiverAddr = requirements.payTo.toLowerCase();
+	if (payerAddr === receiverAddr) {
+		console.warn("------>>> payer:", payerAddr, " receiver:", receiverAddr)
 		throw new Error("same payer and receiver")
 	}
 
