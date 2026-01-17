@@ -1,8 +1,12 @@
-import {ExtCtx} from "./common";
+import type {D1Database} from "@cloudflare/workers-types";
 
 // ========= 类型定义 =========
 
 export type AdCategory = "follow" | "visit" | "register" | "share";
+
+export interface AdAccountInfo {
+	balanceAtomic: string;
+}
 
 export const CATEGORY_DURATION: Record<AdCategory, number> = {
 	follow: 2,
@@ -108,12 +112,12 @@ export function computePopularityScore(completed: number, total: number): number
 
 /**
  * 获取广告账户余额
- * @param c - Hono 上下文
+ * @param db - D1 数据库实例
  * @param aXId - 广告主 X ID
  * @returns 账户信息或 null
  */
-export async function getAdAccountBalance(c: ExtCtx, aXId: string): Promise<AdAccountRow | null> {
-	const stmt = c.env.DB.prepare(
+export async function getAdAccountBalance(db: D1Database, aXId: string): Promise<AdAccountRow | null> {
+	const stmt = db.prepare(
 		"SELECT a_x_id, asset_symbol, balance_atomic FROM ad_account WHERE a_x_id = ?"
 	).bind(aXId);
 	return await stmt.first<AdAccountRow>();
@@ -121,12 +125,12 @@ export async function getAdAccountBalance(c: ExtCtx, aXId: string): Promise<AdAc
 
 /**
  * 扣减广告账户余额（仅当余额足够时）
- * @param c - Hono 上下文
+ * @param db - D1 数据库实例
  * @param aXId - 广告主 X ID
  * @param amount - 要扣减的金额（原子单位）
  * @returns 操作是否成功
  */
-export async function deductAdAccountBalance(c: ExtCtx, aXId: string, amount: string): Promise<boolean> {
+export async function deductAdAccountBalance(db: D1Database, aXId: string, amount: string): Promise<boolean> {
 	const updateSql = `
 		UPDATE ad_account
 		SET balance_atomic = CAST(balance_atomic AS INTEGER) - ?,
@@ -134,7 +138,7 @@ export async function deductAdAccountBalance(c: ExtCtx, aXId: string, amount: st
 		WHERE a_x_id = ?
 		  AND CAST(balance_atomic AS INTEGER) >= ?
 	`;
-	const updateResult = await c.env.DB.prepare(updateSql)
+	const updateResult = await db.prepare(updateSql)
 		.bind(amount, aXId, amount)
 		.run();
 
@@ -142,34 +146,36 @@ export async function deductAdAccountBalance(c: ExtCtx, aXId: string, amount: st
 }
 
 /**
- * 获取账户当前余额
- * @param c - Hono 上下文
+ * 获取账户信息
+ * @param db - D1 数据库实例
  * @param aXId - 广告主 X ID
- * @returns 余额字符串（原子单位）
+ * @returns 账户信息结构体
  */
-export async function getAccountBalanceAtomic(c: ExtCtx, aXId: string): Promise<string> {
-	const balanceRow = await c.env.DB.prepare(
+export async function getAccountBalanceAtomic(db: D1Database, aXId: string): Promise<AdAccountInfo> {
+	const balanceRow = await db.prepare(
 		"SELECT balance_atomic FROM ad_account WHERE a_x_id = ?"
 	).bind(aXId).first<{balance_atomic: string}>();
-	return balanceRow?.balance_atomic ?? "0";
+	return {
+		balanceAtomic: balanceRow?.balance_atomic ?? "0"
+	};
 }
 
 // ========= 广告操作 =========
 
 /**
  * 创建新广告
- * @param c - Hono 上下文
+ * @param db - D1 数据库实例
  * @param payload - 广告创建数据
  * @returns 创建是否成功
  */
-export async function createAd(c: ExtCtx, payload: AdCreatePayload): Promise<boolean> {
+export async function createAd(db: D1Database, payload: AdCreatePayload): Promise<boolean> {
 	const insertSql = `
 		INSERT INTO ads (
 			ad_id, a_x_id, ad_type, category, name, title, description, detail_url,
 			unit_price_atomic, quota_total, start_at, end_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`;
-	const result = await c.env.DB.prepare(insertSql)
+	const result = await db.prepare(insertSql)
 		.bind(
 			payload.adId,
 			payload.aXId,
@@ -191,12 +197,12 @@ export async function createAd(c: ExtCtx, payload: AdCreatePayload): Promise<boo
 
 /**
  * 获取用户的所有广告
- * @param c - Hono 上下文
+ * @param db - D1 数据库实例
  * @param aXId - 广告主 X ID
  * @returns 广告列表
  */
-export async function getMyAds(c: ExtCtx, aXId: string): Promise<AdRow[]> {
-	const stmt = c.env.DB.prepare(
+export async function getMyAds(db: D1Database, aXId: string): Promise<AdRow[]> {
+	const stmt = db.prepare(
 		"SELECT * FROM ads WHERE a_x_id = ? ORDER BY created_at DESC LIMIT 200"
 	).bind(aXId);
 	const result = await stmt.all<AdRow>();
@@ -205,10 +211,10 @@ export async function getMyAds(c: ExtCtx, aXId: string): Promise<AdRow[]> {
 
 /**
  * 获取所有活跃广告列表（用于用户浏览）
- * @param c - Hono 上下文
+ * @param db - D1 数据库实例
  * @returns 活跃广告列表
  */
-export async function getActiveAdsList(c: ExtCtx): Promise<AdRow[]> {
+export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 	const sql = `
 		SELECT ad_id, title, a_x_id, description, category, unit_price_atomic,
 		       quota_used, quota_total, end_at, created_at, detail_url
@@ -219,18 +225,18 @@ export async function getActiveAdsList(c: ExtCtx): Promise<AdRow[]> {
 		ORDER BY created_at DESC
 		LIMIT 100
 	`;
-	const result = await c.env.DB.prepare(sql).all<AdRow>();
+	const result = await db.prepare(sql).all<AdRow>();
 	return result.results ?? [];
 }
 
 /**
  * 根据 ID 获取单个广告
- * @param c - Hono 上下文
+ * @param db - D1 数据库实例
  * @param adId - 广告 ID
  * @returns 广告信息或 null
  */
-export async function getAdById(c: ExtCtx, adId: string): Promise<AdRow | null> {
-	const adRow = await c.env.DB.prepare(
+export async function getAdById(db: D1Database, adId: string): Promise<AdRow | null> {
+	const adRow = await db.prepare(
 		`SELECT ad_id, a_x_id, unit_price_atomic, status, quota_used, quota_total,
 		        ad_type, category, name, title, description, detail_url,
 		        start_at, end_at, created_at
@@ -243,12 +249,12 @@ export async function getAdById(c: ExtCtx, adId: string): Promise<AdRow | null> 
 
 /**
  * 增加广告的使用配额（领取任务时调用）
- * @param c - Hono 上下文
+ * @param db - D1 数据库实例
  * @param adId - 广告 ID
  * @returns 操作是否成功
  */
-export async function incrementAdQuota(c: ExtCtx, adId: string): Promise<boolean> {
-	const updateResult = await c.env.DB.prepare(
+export async function incrementAdQuota(db: D1Database, adId: string): Promise<boolean> {
+	const updateResult = await db.prepare(
 		`UPDATE ads
 		 SET quota_used = quota_used + 1
 		 WHERE ad_id = ? AND status = 'ACTIVE' AND quota_used < quota_total`
@@ -261,13 +267,13 @@ export async function incrementAdQuota(c: ExtCtx, adId: string): Promise<boolean
 
 /**
  * 检查用户是否已经领取过某个广告
- * @param c - Hono 上下文
+ * @param db - D1 数据库实例
  * @param adId - 广告 ID
  * @param bXId - 用户 X ID
  * @returns 现有的领取记录或 null
  */
-export async function getExistingClaim(c: ExtCtx, adId: string, bXId: string): Promise<ClaimRow | null> {
-	const existingClaim = await c.env.DB.prepare(
+export async function getExistingClaim(db: D1Database, adId: string, bXId: string): Promise<ClaimRow | null> {
+	const existingClaim = await db.prepare(
 		`SELECT claim_id, ad_id, a_x_id, b_x_id, b_wallet, status, unit_price_atomic,
 		        created_at, expires_at
 		 FROM claims
@@ -282,17 +288,17 @@ export async function getExistingClaim(c: ExtCtx, adId: string, bXId: string): P
 
 /**
  * 创建新的领取记录
- * @param c - Hono 上下文
+ * @param db - D1 数据库实例
  * @param payload - 领取记录创建数据
  * @returns 创建是否成功
  */
-export async function createClaim(c: ExtCtx, payload: ClaimCreatePayload): Promise<boolean> {
+export async function createClaim(db: D1Database, payload: ClaimCreatePayload): Promise<boolean> {
 	const insertSql = `
 		INSERT INTO claims (
 			claim_id, ad_id, a_x_id, b_x_id, b_wallet, status, unit_price_atomic, expires_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`;
-	const result = await c.env.DB.prepare(insertSql)
+	const result = await db.prepare(insertSql)
 		.bind(
 			payload.claimId,
 			payload.adId,
@@ -310,11 +316,11 @@ export async function createClaim(c: ExtCtx, payload: ClaimCreatePayload): Promi
 
 /**
  * 获取用户的所有领取记录
- * @param c - Hono 上下文
+ * @param db - D1 数据库实例
  * @param bXId - 用户 X ID
  * @returns 领取记录列表
  */
-export async function getMyClaimsList(c: ExtCtx, bXId: string): Promise<ClaimRow[]> {
+export async function getMyClaimsList(db: D1Database, bXId: string): Promise<ClaimRow[]> {
 	const sql = `
 		SELECT c.claim_id, c.ad_id, c.a_x_id, c.b_x_id, c.b_wallet, c.status,
 		       c.created_at, c.expires_at, c.unit_price_atomic,
@@ -325,6 +331,6 @@ export async function getMyClaimsList(c: ExtCtx, bXId: string): Promise<ClaimRow
 		ORDER BY c.created_at DESC
 		LIMIT 50
 	`;
-	const result = await c.env.DB.prepare(sql).bind(bXId).all<ClaimRow>();
+	const result = await db.prepare(sql).bind(bXId).all<ClaimRow>();
 	return result.results ?? [];
 }

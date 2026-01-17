@@ -28,7 +28,7 @@ export async function apiAdsBalance(c: ExtCtx) {
 		const aXId = c.req.query("a_x_id");
 		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 
-		const row = await getAdAccountBalance(c, aXId);
+		const row = await getAdAccountBalance(c.env.DB, aXId);
 		if (!row) {
 			return c.json({a_x_id: aXId, asset_symbol: "USDC", balance_atomic: "0"});
 		}
@@ -64,14 +64,14 @@ export async function apiAdsCreate(c: ExtCtx) {
 		const requiredAtomic = (BigInt(unitPriceAtomic) * BigInt(quotaTotal)).toString();
 
 		// 尝试扣减余额
-		const deducted = await deductAdAccountBalance(c, aXId, requiredAtomic);
+		const deducted = await deductAdAccountBalance(c.env.DB, aXId, requiredAtomic);
 		if (!deducted) {
-			const current = await getAccountBalanceAtomic(c, aXId);
+			const accountInfo = await getAccountBalanceAtomic(c.env.DB, aXId);
 			return jsonError(
 				c,
 				400,
 				"INSUFFICIENT_BALANCE",
-				`Required ${requiredAtomic}, current ${current}.`
+				`Required ${requiredAtomic}, current ${accountInfo.balanceAtomic}.`
 			);
 		}
 
@@ -92,7 +92,7 @@ export async function apiAdsCreate(c: ExtCtx) {
 			endAt: body?.end_at ?? null,
 		};
 
-		const created = await createAd(c, payload);
+		const created = await createAd(c.env.DB, payload);
 		if (!created) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to create ad");
 		}
@@ -108,7 +108,7 @@ export async function apiAdsMyAds(c: ExtCtx) {
 		const aXId = c.req.query("a_x_id");
 		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 
-		const ads = await getMyAds(c, aXId);
+		const ads = await getMyAds(c.env.DB, aXId);
 		return c.json(ads);
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
@@ -117,7 +117,7 @@ export async function apiAdsMyAds(c: ExtCtx) {
 
 export async function apiAdsList(c: ExtCtx) {
 	try {
-		const rows = await getActiveAdsList(c);
+		const rows = await getActiveAdsList(c.env.DB);
 
 		const ads = rows.map((row) => {
 			const rewardUSDC = Number(row.unit_price_atomic || 0) / 1_000_000;
@@ -160,7 +160,7 @@ export async function apiAdsClaim(c: ExtCtx) {
 		if (!requireStringField(bWallet)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_wallet");
 
 		// 获取广告信息
-		const adRow = await getAdById(c, adId);
+		const adRow = await getAdById(c.env.DB, adId);
 		if (!adRow) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
 		if (adRow.status !== "ACTIVE") {
 			return jsonError(c, 400, "AD_NOT_ACTIVE", "Ad is not active");
@@ -170,11 +170,11 @@ export async function apiAdsClaim(c: ExtCtx) {
 		}
 
 		// 检查是否已经领取过
-		const existingClaim = await getExistingClaim(c, adId, bXId);
+		const existingClaim = await getExistingClaim(c.env.DB, adId, bXId);
 		if (existingClaim) return c.json(existingClaim);
 
 		// 增加配额
-		const quotaIncremented = await incrementAdQuota(c, adId);
+		const quotaIncremented = await incrementAdQuota(c.env.DB, adId);
 		if (!quotaIncremented) {
 			return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full or inactive");
 		}
@@ -193,7 +193,7 @@ export async function apiAdsClaim(c: ExtCtx) {
 			expiresAt,
 		};
 
-		const claimCreated = await createClaim(c, claimPayload);
+		const claimCreated = await createClaim(c.env.DB, claimPayload);
 		if (!claimCreated) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to create claim");
 		}
@@ -218,7 +218,7 @@ export async function apiAdsMyClaims(c: ExtCtx) {
 		const bXId = c.req.query("b_x_id");
 		if (!bXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
 
-		const claims = await getMyClaimsList(c, bXId);
+		const claims = await getMyClaimsList(c.env.DB, bXId);
 		return c.json(claims);
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");

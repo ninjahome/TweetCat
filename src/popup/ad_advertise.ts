@@ -1,5 +1,5 @@
 import {
-    $,
+    $Id,
     $2,
     atomicToUsdcNumber,
     cloneTemplate,
@@ -14,6 +14,10 @@ import {queryCdpWalletInfo} from "../wallet/cdp_wallet";
 import {logAdP} from "../common/debug_flags";
 
 type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
+
+export interface AdAccountInfo {
+    balanceAtomic: string;
+}
 
 interface MyAdRow {
     id: string;
@@ -62,7 +66,7 @@ interface HistoryRow {
 
 // ========= 数据存储 =========
 
-let adAccountBalanceAtomic = "0";
+let adAccountInfo: AdAccountInfo = {balanceAtomic: "0"};
 let myAds: AdRecord[] = [];
 let spendRecords: SpendRecord[] = [];
 let historyEarnings: HistoryRow[] = [];
@@ -100,9 +104,9 @@ async function initWalletInfo(): Promise<void> {
 function updateHeaderInfo(): void {
     if (!walletInfoCache) return;
 
-    const networkEl = document.querySelector<HTMLElement>("#header-network");
-    const accountEl = document.querySelector<HTMLElement>("#header-account");
-    const BalanceEl = document.querySelector<HTMLElement>("#balance-value");
+    const networkEl = $Id("header-network");
+    const accountEl = $Id("header-account");
+    const balanceEl = $Id("balance-value");
 
     if (networkEl) {
         const cfg = X402_FACILITATORS[walletInfoCache.chainId]
@@ -114,8 +118,8 @@ function updateHeaderInfo(): void {
         accountEl.textContent = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
         accountEl.title = addr;
     }
-    if (BalanceEl) {
-        BalanceEl.textContent = walletInfoCache.usdcVal
+    if (balanceEl) {
+        balanceEl.textContent = walletInfoCache.usdcVal
     }
 }
 
@@ -190,7 +194,9 @@ async function refreshAdsData() {
         fetchAdsBalance(currentXId),
         fetchMyAds(currentXId),
     ]);
-    adAccountBalanceAtomic = balance?.balance_atomic ?? "0";
+    adAccountInfo = {
+        balanceAtomic: balance?.balance_atomic ?? "0"
+    };
     myAds = Array.isArray(ads) ? ads : [];
 
     logAdP("------>>> balance:", balance, " my ads:", myAds)
@@ -204,18 +210,18 @@ async function refreshAdsData() {
 // ========= 顶部余额 & Advertise 仪表盘 =========
 
 function renderHeaderBalance() {
-    const balanceSpan = document.querySelector<HTMLElement>(".balance-value");
-    if (balanceSpan) balanceSpan.textContent = formatUSDC(atomicToUsdcNumber(adAccountBalanceAtomic));
+    const balanceEl = $Id("ad-account-balance-value");
+    if (balanceEl) balanceEl.textContent = formatUSDC(atomicToUsdcNumber(adAccountInfo.balanceAtomic));
 }
 
 function renderAdvertiseDashboard() {
-    const cards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card");
+    const cards = Array.from(document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card"));
 
-    const card1Value = cards[0]?.querySelector<HTMLElement>(".card-value");
-    if (card1Value) card1Value.textContent = formatUSDC(atomicToUsdcNumber(adAccountBalanceAtomic));
+    const card1Value = cards[0] ? $2<HTMLElement>(cards[0], ".card-value") : null;
+    if (card1Value) card1Value.textContent = formatUSDC(atomicToUsdcNumber(adAccountInfo.balanceAtomic));
 
     const activeCount = myAds.filter((ad) => ad.status === "ACTIVE").length;
-    const card2Value = cards[1]?.querySelector<HTMLElement>(".card-value");
+    const card2Value = cards[1] ? $2<HTMLElement>(cards[1], ".card-value") : null;
     if (card2Value) card2Value.textContent = activeCount.toString();
 
     // 计算今日支出：从 myAds 中统计所有已使用的配额
@@ -223,12 +229,12 @@ function renderAdvertiseDashboard() {
         const spent = atomicToUsdcNumber(multiplyAtomic(ad.unit_price_atomic, ad.quota_used));
         return sum + spent;
     }, 0);
-    const card3Value = cards[2]?.querySelector<HTMLElement>(".card-value");
+    const card3Value = cards[2] ? $2<HTMLElement>(cards[2], ".card-value") : null;
     if (card3Value) card3Value.textContent = formatUSDC(todaySpend);
 
     // 本周支出暂时使用相同的值（需要服务器支持日期过滤）
     const weekSpend = todaySpend;
-    const card4Value = cards[3]?.querySelector<HTMLElement>(".card-value");
+    const card4Value = cards[3] ? $2<HTMLElement>(cards[3], ".card-value") : null;
     if (card4Value) card4Value.textContent = formatUSDC(weekSpend);
 }
 
@@ -329,11 +335,13 @@ const wizardMaxStep = 4;
 function openWizard() {
     wizardCurrentStep = 1;
     updateWizardUI();
-    document.querySelector<HTMLElement>("#publish-wizard-modal")?.classList.add("active");
+    const modal = $Id("publish-wizard-modal");
+    if (modal) modal.classList.add("active");
 }
 
 function closeWizard() {
-    document.querySelector<HTMLElement>("#publish-wizard-modal")?.classList.remove("active");
+    const modal = $Id("publish-wizard-modal");
+    if (modal) modal.classList.remove("active");
 }
 
 function updateWizardUI() {
@@ -350,18 +358,20 @@ function updateWizardUI() {
         c.classList.toggle("active", step === wizardCurrentStep);
     });
 
-    const prevBtn = $("#btn-wizard-prev") as HTMLButtonElement;
-    const nextBtn = $("#btn-wizard-next") as HTMLButtonElement;
-    const submitBtn = $("#btn-wizard-submit") as HTMLButtonElement;
+    const prevBtn = $Id("btn-wizard-prev") as HTMLButtonElement | null;
+    const nextBtn = $Id("btn-wizard-next") as HTMLButtonElement | null;
+    const submitBtn = $Id("btn-wizard-submit") as HTMLButtonElement | null;
 
-    prevBtn.style.display = wizardCurrentStep > 1 ? "inline-flex" : "none";
-    if (wizardCurrentStep < wizardMaxStep) {
-        nextBtn.style.display = "inline-flex";
-        submitBtn.style.display = "none";
-    } else {
-        nextBtn.style.display = "none";
-        submitBtn.style.display = "inline-flex";
-        updateBudgetSummaryAndBalance();
+    if (prevBtn) prevBtn.style.display = wizardCurrentStep > 1 ? "inline-flex" : "none";
+    if (nextBtn && submitBtn) {
+        if (wizardCurrentStep < wizardMaxStep) {
+            nextBtn.style.display = "inline-flex";
+            submitBtn.style.display = "none";
+        } else {
+            nextBtn.style.display = "none";
+            submitBtn.style.display = "inline-flex";
+            updateBudgetSummaryAndBalance();
+        }
     }
 }
 
@@ -393,24 +403,34 @@ function updateBudgetSummaryAndBalance() {
     const fee = 0;
     const total = requiredUsdc + fee;
 
-    $("#summary-reward").textContent = formatUSDC(Number(reward) || 0);
-    $("#summary-tasks").textContent = Number.isFinite(tasks) ? tasks.toString() : "0";
-    $("#summary-fee").textContent = formatUSDC(fee);
-    $("#summary-total").textContent = formatUSDC(total);
+    const summaryReward = $Id("summary-reward");
+    if (summaryReward) summaryReward.textContent = formatUSDC(Number(reward) || 0);
+    
+    const summaryTasks = $Id("summary-tasks");
+    if (summaryTasks) summaryTasks.textContent = Number.isFinite(tasks) ? tasks.toString() : "0";
+    
+    const summaryFee = $Id("summary-fee");
+    if (summaryFee) summaryFee.textContent = formatUSDC(fee);
+    
+    const summaryTotal = $Id("summary-total");
+    if (summaryTotal) summaryTotal.textContent = formatUSDC(total);
 
-    $("#current-balance").textContent = formatUSDC(atomicToUsdcNumber(adAccountBalanceAtomic));
+    const currentBalance = $Id("current-balance");
+    if (currentBalance) currentBalance.textContent = formatUSDC(atomicToUsdcNumber(adAccountInfo.balanceAtomic));
 
-    const balanceStatus = $("#balance-status");
-    balanceStatus.className = "balance-status";
+    const balanceStatus = $Id("balance-status");
+    if (balanceStatus) {
+        balanceStatus.className = "balance-status";
 
-    if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(adAccountBalanceAtomic) >= BigInt(requiredAtomic)) {
-        balanceStatus.classList.add("sufficient");
-        balanceStatus.textContent = "Your balance is sufficient to publish this ad.";
-    } else if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(adAccountBalanceAtomic) < BigInt(requiredAtomic)) {
-        balanceStatus.classList.add("insufficient");
-        balanceStatus.textContent = "Insufficient balance. Please recharge before publishing.";
-    } else {
-        balanceStatus.textContent = "";
+        if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(adAccountInfo.balanceAtomic) >= BigInt(requiredAtomic)) {
+            balanceStatus.classList.add("sufficient");
+            balanceStatus.textContent = "Your balance is sufficient to publish this ad.";
+        } else if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(adAccountInfo.balanceAtomic) < BigInt(requiredAtomic)) {
+            balanceStatus.classList.add("insufficient");
+            balanceStatus.textContent = "Insufficient balance. Please recharge before publishing.";
+        } else {
+            balanceStatus.textContent = "";
+        }
     }
 }
 
@@ -477,24 +497,31 @@ async function submitWizard() {
 // ========= 充值弹窗 =========
 
 function openRechargeModal() {
-    const modal = document.querySelector<HTMLElement>("#recharge-modal");
-    const addrEl = document.querySelector<HTMLElement>("#wallet-address-display");
+    const modal = $Id("recharge-modal");
+    const addrEl = $Id("wallet-address-display");
     if (addrEl && walletInfoCache?.address) {
         addrEl.textContent = walletInfoCache.address;
     }
-    modal?.classList.add("active");
+    if (modal) modal.classList.add("active");
 }
 
 function closeRechargeModal() {
-    document.querySelector<HTMLElement>("#recharge-modal")?.classList.remove("active");
+    const modal = $Id("recharge-modal");
+    if (modal) modal.classList.remove("active");
 }
 
 function initRechargeModalEvents() {
-    document.querySelector<HTMLButtonElement>("#btn-recharge")?.addEventListener("click", openRechargeModal);
-    document.querySelector<HTMLButtonElement>("#btn-recharge-dashboard")?.addEventListener("click", openRechargeModal);
-    document.querySelector<HTMLButtonElement>("#close-recharge")?.addEventListener("click", closeRechargeModal);
+    const btnRecharge = $Id("btn-recharge") as HTMLButtonElement | null;
+    if (btnRecharge) btnRecharge.addEventListener("click", openRechargeModal);
+    
+    const btnRechargeDashboard = $Id("btn-recharge-dashboard") as HTMLButtonElement | null;
+    if (btnRechargeDashboard) btnRechargeDashboard.addEventListener("click", openRechargeModal);
+    
+    const closeRecharge = $Id("close-recharge") as HTMLButtonElement | null;
+    if (closeRecharge) closeRecharge.addEventListener("click", closeRechargeModal);
 
-    document.querySelector<HTMLButtonElement>("#copy-address")?.addEventListener("click", async () => {
+    const copyAddress = $Id("copy-address") as HTMLButtonElement | null;
+    if (copyAddress) copyAddress.addEventListener("click", async () => {
         if (!walletInfoCache?.address) return;
         try {
             if (navigator.clipboard) {
@@ -508,7 +535,8 @@ function initRechargeModalEvents() {
         }
     });
 
-    document.querySelector<HTMLButtonElement>("#btn-buy-card")?.addEventListener("click", () => {
+    const buyCard = $Id("btn-buy-card") as HTMLButtonElement | null;
+    if (buyCard) buyCard.addEventListener("click", () => {
         showNotification("Open onramp (fake).");
     });
 }
@@ -516,12 +544,14 @@ function initRechargeModalEvents() {
 // ========= 历史记录弹窗（模板 clone） =========
 
 function openHistoryModal(defaultTab: "earnings" | "spending" | "recharge" = "spending") {
-    document.querySelector<HTMLElement>("#history-modal")?.classList.add("active");
+    const modal = $Id("history-modal");
+    if (modal) modal.classList.add("active");
     switchHistoryTab(defaultTab);
 }
 
 function closeHistoryModal() {
-    document.querySelector<HTMLElement>("#history-modal")?.classList.remove("active");
+    const modal = $Id("history-modal");
+    if (modal) modal.classList.remove("active");
 }
 
 function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: HistoryRow[]) {
@@ -566,8 +596,11 @@ function switchHistoryTab(tab: "earnings" | "spending" | "recharge") {
 }
 
 function initHistoryModalEvents() {
-    document.querySelector<HTMLButtonElement>("#btn-history")?.addEventListener("click", () => openHistoryModal("spending"));
-    document.querySelector<HTMLButtonElement>("#close-history")?.addEventListener("click", closeHistoryModal);
+    const btnHistory = $Id("btn-history") as HTMLButtonElement | null;
+    if (btnHistory) btnHistory.addEventListener("click", () => openHistoryModal("spending"));
+    
+    const closeHistory = $Id("close-history") as HTMLButtonElement | null;
+    if (closeHistory) closeHistory.addEventListener("click", closeHistoryModal);
 
     document.querySelectorAll<HTMLButtonElement>(".history-tab").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -579,7 +612,8 @@ function initHistoryModalEvents() {
 
 // ========= 事件绑定：Wizard =========
 function initNavEvents() {
-    document.querySelector<HTMLButtonElement>("#btn-back-plaza")?.addEventListener("click", () => {
+    const btnBack = $Id("btn-back-plaza") as HTMLButtonElement | null;
+    if (btnBack) btnBack.addEventListener("click", () => {
         window.location.href = "ad_plaza.html";
     });
 }
@@ -612,14 +646,26 @@ function initSpendTabs() {
 }
 
 function initWizardEvents() {
-    document.querySelector<HTMLButtonElement>("#btn-publish-ad")?.addEventListener("click", openWizard);
-    document.querySelector<HTMLButtonElement>("#close-wizard")?.addEventListener("click", closeWizard);
-    document.querySelector<HTMLButtonElement>("#btn-wizard-prev")?.addEventListener("click", goWizardPrev);
-    document.querySelector<HTMLButtonElement>("#btn-wizard-next")?.addEventListener("click", goWizardNext);
-    document.querySelector<HTMLButtonElement>("#btn-wizard-submit")?.addEventListener("click", submitWizard);
+    const btnPublish = $Id("btn-publish-ad") as HTMLButtonElement | null;
+    if (btnPublish) btnPublish.addEventListener("click", openWizard);
+    
+    const closeWizardBtn = $Id("close-wizard") as HTMLButtonElement | null;
+    if (closeWizardBtn) closeWizardBtn.addEventListener("click", closeWizard);
+    
+    const btnPrev = $Id("btn-wizard-prev") as HTMLButtonElement | null;
+    if (btnPrev) btnPrev.addEventListener("click", goWizardPrev);
+    
+    const btnNext = $Id("btn-wizard-next") as HTMLButtonElement | null;
+    if (btnNext) btnNext.addEventListener("click", goWizardNext);
+    
+    const btnSubmit = $Id("btn-wizard-submit") as HTMLButtonElement | null;
+    if (btnSubmit) btnSubmit.addEventListener("click", submitWizard);
 
-    document.querySelector<HTMLInputElement>("#reward-amount")?.addEventListener("input", updateBudgetSummaryAndBalance);
-    document.querySelector<HTMLInputElement>("#task-limit")?.addEventListener("input", updateBudgetSummaryAndBalance);
+    const rewardAmount = document.querySelector<HTMLInputElement>("#reward-amount");
+    if (rewardAmount) rewardAmount.addEventListener("input", updateBudgetSummaryAndBalance);
+    
+    const taskLimit = document.querySelector<HTMLInputElement>("#task-limit");
+    if (taskLimit) taskLimit.addEventListener("input", updateBudgetSummaryAndBalance);
 }
 
 // ========= 初始化入口 =========
