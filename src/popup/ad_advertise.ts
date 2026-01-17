@@ -17,6 +17,7 @@ type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
 
 export interface AdAccountInfo {
     balanceAtomic: string;
+    frozenAtomic: string;    // frozen
 }
 
 interface MyAdRow {
@@ -66,7 +67,7 @@ interface HistoryRow {
 
 // ========= 数据存储 =========
 
-let adAccountInfo: AdAccountInfo = {balanceAtomic: "0"};
+let adAccountInfo: AdAccountInfo = {balanceAtomic: "0", frozenAtomic: "0"};
 let myAds: AdRecord[] = [];
 let spendRecords: SpendRecord[] = [];
 let historyRecharge: HistoryRow[] = [];
@@ -127,7 +128,6 @@ function updateHeaderInfo(): void {
 }
 
 
-
 /**
  * 更新推特头像
  */
@@ -135,8 +135,7 @@ function updateTwitterAvatar(): void {
     if (!walletInfoCache?.username) return;
 
     const avatarImg = document.querySelector<HTMLImageElement>("#twitter-avatar");
-    const userNameEl = document.querySelector<HTMLImageElement>("#twitter-user-name");
-
+    const userNameEl = document.querySelector<HTMLElement>("#twitter-user-name");
     if (avatarImg) {
         avatarImg.src = `https://unavatar.io/twitter/${walletInfoCache.username}`;
         avatarImg.onerror = () => {
@@ -200,7 +199,8 @@ async function refreshAdsData() {
         fetchMyAds(currentXId),
     ]);
     adAccountInfo = {
-        balanceAtomic: balance?.balance_atomic ?? "0"
+        balanceAtomic: balance?.balance_atomic ?? "0",
+        frozenAtomic: balance?.frozen_atomic ?? "0",
     };
     myAds = Array.isArray(ads) ? ads : [];
 
@@ -213,11 +213,14 @@ async function refreshAdsData() {
 }
 
 // ========= 顶部余额 & Advertise 仪表盘 =========
-
 function renderHeaderBalance() {
-    const balanceEl = $Id("ad-account-balance-value");
-    if (balanceEl) balanceEl.textContent = formatUSDC(atomicToUsdcNumber(adAccountInfo.balanceAtomic));
+    const availableEl = $Id("ad-account-balance-value");
+    if (availableEl) availableEl.textContent = formatUSDC(atomicToUsdcNumber(adAccountInfo.balanceAtomic));
+
+    const frozenEl = $Id("ad-account-frozen-value");
+    if (frozenEl) frozenEl.textContent = formatUSDC(atomicToUsdcNumber(adAccountInfo.frozenAtomic ?? "0"));
 }
+
 
 function renderAdvertiseDashboard() {
     const cards = Array.from(document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card"));
@@ -499,15 +502,65 @@ async function submitWizard() {
     await refreshAdsData();
 }
 
-// ========= 充值弹窗 =========
+// ========= Transfer 弹窗（Wallet ⇄ Ads） =========
+
+type TransferDirection = "wallet_to_ads" | "ads_to_wallet";
+let transferDirection: TransferDirection = "wallet_to_ads";
+
+function normalizeWalletUsdcDisplay(v: string): string {
+    const s = (v ?? "").trim();
+    if (!s) return "0.00 USDC";
+    return s.toUpperCase().includes("USDC") ? s : `${s} USDC`;
+}
+
+function parseUsdcNumber(v: string): number {
+    const cleaned = (v ?? "").replace(/[^0-9.]/g, "");
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function setTransferDirection(dir: TransferDirection) {
+    transferDirection = dir;
+
+    const btnA = $Id("transfer-dir-wallet-to-ads");
+    const btnB = $Id("transfer-dir-ads-to-wallet");
+    btnA?.classList.toggle("active", dir === "wallet_to_ads");
+    btnB?.classList.toggle("active", dir === "ads_to_wallet");
+
+    const submitBtn = $Id("btn-transfer-submit") as HTMLButtonElement | null;
+    if (submitBtn) {
+        submitBtn.textContent = dir === "wallet_to_ads" ? "Transfer to Ads" : "Transfer to Wallet";
+    }
+
+    const indicator = $Id("transfer-direction-indicator");
+    if (indicator) {
+        indicator.textContent =
+            dir === "wallet_to_ads"
+                ? "On-chain Wallet → Ads Account"
+                : "Ads Account → On-chain Wallet";
+    }
+}
+
+function syncTransferModalUI() {
+    const walletBal = $Id("transfer-wallet-balance");
+    if (walletBal) walletBal.textContent = normalizeWalletUsdcDisplay(walletInfoCache?.usdcVal ?? "0.00");
+
+    const adsAvail = $Id("transfer-ads-available");
+    if (adsAvail) adsAvail.textContent = formatUSDC(atomicToUsdcNumber(adAccountInfo.balanceAtomic));
+
+    const adsFrozen = $Id("transfer-ads-frozen");
+    if (adsFrozen) adsFrozen.textContent = formatUSDC(atomicToUsdcNumber(adAccountInfo.frozenAtomic ?? "0"));
+
+    const amountInput = $Id("transfer-amount") as HTMLInputElement | null;
+    if (amountInput) amountInput.value = "";
+}
 
 function openRechargeModal() {
     const modal = $Id("recharge-modal");
-    const addrEl = $Id("wallet-address-display");
-    if (addrEl && walletInfoCache?.address) {
-        addrEl.textContent = walletInfoCache.address;
-    }
     if (modal) modal.classList.add("active");
+
+    syncTransferModalUI();
+    setTransferDirection("wallet_to_ads");
 }
 
 function closeRechargeModal() {
@@ -519,30 +572,59 @@ function initRechargeModalEvents() {
     const btnRecharge = $Id("btn-recharge") as HTMLButtonElement | null;
     if (btnRecharge) btnRecharge.addEventListener("click", openRechargeModal);
 
-    const btnRechargeDashboard = $Id("btn-recharge-dashboard") as HTMLButtonElement | null;
-    if (btnRechargeDashboard) btnRechargeDashboard.addEventListener("click", openRechargeModal);
-
     const closeRecharge = $Id("close-recharge") as HTMLButtonElement | null;
     if (closeRecharge) closeRecharge.addEventListener("click", closeRechargeModal);
 
-    const copyAddress = $Id("copy-address") as HTMLButtonElement | null;
-    if (copyAddress) copyAddress.addEventListener("click", async () => {
-        if (!walletInfoCache?.address) return;
-        try {
-            if (navigator.clipboard) {
-                await navigator.clipboard.writeText(walletInfoCache.address);
-                showNotification("Address copied.");
-            } else {
-                showNotification(walletInfoCache.address);
-            }
-        } catch {
-            showNotification(walletInfoCache.address);
-        }
+    const dirA = $Id("transfer-dir-wallet-to-ads") as HTMLButtonElement | null;
+    if (dirA) dirA.addEventListener("click", () => setTransferDirection("wallet_to_ads"));
+
+    const dirB = $Id("transfer-dir-ads-to-wallet") as HTMLButtonElement | null;
+    if (dirB) dirB.addEventListener("click", () => setTransferDirection("ads_to_wallet"));
+
+    const btnMax = $Id("transfer-max") as HTMLButtonElement | null;
+    if (btnMax) btnMax.addEventListener("click", () => {
+        const input = $Id("transfer-amount") as HTMLInputElement | null;
+        if (!input) return;
+
+        const max =
+            transferDirection === "wallet_to_ads"
+                ? parseUsdcNumber(walletInfoCache?.usdcVal ?? "0")
+                : atomicToUsdcNumber(adAccountInfo.balanceAtomic);
+
+        input.value = Math.max(0, max).toFixed(2);
     });
 
-    const buyCard = $Id("btn-buy-card") as HTMLButtonElement | null;
-    if (buyCard) buyCard.addEventListener("click", () => {
-        showNotification("Open onramp (fake).");
+    const btnSubmit = $Id("btn-transfer-submit") as HTMLButtonElement | null;
+    if (btnSubmit) btnSubmit.addEventListener("click", () => {
+        const input = $Id("transfer-amount") as HTMLInputElement | null;
+        const amount = Number(input?.value || "0");
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            showNotification("Please enter a valid amount.", "error");
+            return;
+        }
+
+        // 简单限额校验（Ads → Wallet 时不能超过 Ads Available）
+        if (transferDirection === "ads_to_wallet") {
+            const maxAds = atomicToUsdcNumber(adAccountInfo.balanceAtomic);
+            if (amount > maxAds + 1e-9) {
+                showNotification("Amount exceeds Ads Available.", "error");
+                return;
+            }
+        }
+
+        // ===== 业务逻辑：先 stub =====
+        const directionLabel = transferDirection === "wallet_to_ads" ? "Wallet → Ads" : "Ads → Wallet";
+
+        historyRecharge.unshift({
+            time: new Date().toLocaleString(),
+            adNameOrMethod: directionLabel,
+            amount,
+            status: "Pending",
+        });
+
+        switchHistoryTab("recharge");
+        showNotification("Transfer submitted (stub).", "success");
     });
 }
 
@@ -570,7 +652,7 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
 
     if (rows.length === 0) {
         const tr = cloneTemplate("tpl-empty-history-row") as HTMLTableRowElement;
-        $2<HTMLElement>(tr, ".td-empty").textContent = "No recharge records yet";
+        $2<HTMLElement>(tr, ".td-empty").textContent = "No transfer records yet";
         tbody.appendChild(tr);
         return;
     }

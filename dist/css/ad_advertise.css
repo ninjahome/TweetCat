@@ -133,6 +133,15 @@ body {
     border: 1px solid #e5e7eb;
 }
 
+/* ===== Header USDC unit ===== */
+.usdc-unit-header {
+    font-size: 12px;
+    font-weight: 900;
+    color: #6b7280;
+    margin-left: 2px;
+    letter-spacing: 0.2px;
+}
+
 .balance-label {
     font-size: 12px;
     color: #6b7280;
@@ -287,15 +296,11 @@ body {
     color: #9ca3af;
 }
 
-/* Hide the duplicate recharge button in wallet card (still keeps id for TS) */
-.dashboard-card-wallet #btn-recharge-dashboard {
-    display: none;
-}
-
 /* Twitter Avatar Styles */
 .card-avatar-container {
-    width: 48px;
-    height: 48px;
+    width: 32px;
+    min-width: 32px;
+    height: auto;
     border-radius: 50%;
     overflow: visible;
     flex: 0 0 auto;
@@ -306,8 +311,8 @@ body {
 }
 
 .card-avatar {
-    width: 48px;
-    height: 48px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     border: 2px solid #e5e7eb;
     background: #f3f4f6;
@@ -316,15 +321,21 @@ body {
 }
 
 .twitter-user-name {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 84px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #fafafa;
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 900;
     color: #374151;
-    text-align: center;
+    line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
-    line-height: 1.2;
 }
 
 /* Spend group = one module */
@@ -394,6 +405,148 @@ body {
     border-radius: 16px;
     border: 1px dashed #e5e7eb;
     background: #fff;
+}
+
+/* ===== Wallet card: exchange-like layout (no squeeze) ===== */
+.dashboard-card-wallet {
+    position: relative;
+    padding-top: 18px;
+}
+
+.dashboard-card-wallet .card-content {
+    padding-right: 128px; /* ✅ 给右上角按钮留空间 */
+}
+
+/* 让按钮像交易所那种“悬浮操作” */
+.dashboard-card-wallet #btn-recharge {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 900;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.18);
+}
+
+/* balances block: Available 主信息 + Frozen 次信息 */
+.wallet-balance-lines {
+    display: grid;
+    gap: 10px;
+}
+
+/* Available：更突出 */
+.wallet-balance-line:first-child .card-label {
+    font-size: 11px;
+    font-weight: 900;
+    color: #9ca3af;
+    margin-bottom: 4px;
+}
+
+.wallet-balance-line:first-child .card-value {
+    font-size: 22px;
+    font-weight: 950;
+    letter-spacing: -0.3px;
+}
+
+/* Frozen：做成一条“次级行”，更像交易所资产明细 */
+.wallet-balance-line:last-child {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.wallet-balance-line:last-child .card-label {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 900;
+    color: #6b7280;
+}
+
+.wallet-balance-line:last-child .card-value {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 900;
+    color: #6b7280;
+}
+
+/* Frozen 文字再弱一点 */
+.card-value--sub {
+    color: #9ca3af;
+}
+
+/* ===== Transfer modal UI ===== */
+.transfer-switch {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.transfer-dir-btn {
+    flex: 1;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.transfer-dir-btn.active {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.transfer-summary {
+    margin-top: 12px;
+}
+
+.transfer-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 6px 0;
+    color: #6b7280;
+}
+
+.transfer-summary-value {
+    font-weight: 900;
+    color: #111827;
+}
+
+.transfer-summary-value--muted {
+    color: #9ca3af;
+}
+
+.transfer-amount-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.btn-max {
+    padding: 10px 12px;
+    border-radius: 10px;
+}
+
+.transfer-hint {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.transfer-actions {
+    margin-top: 14px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 /* ==================== Sections ==================== */
@@ -979,4 +1132,20 @@ body {
     .logo-sub {
         display: none;
     }
+}
+
+/* ===== Direction indicator (exchange style) ===== */
+.transfer-direction-indicator {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #fafafa;
+    font-size: 12px;
+    font-weight: 900;
+    color: #374151;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    letter-spacing: 0.2px;
 }

@@ -23,15 +23,18 @@
 
     <div class="plaza-header-right">
         <div class="account-info">
+            <div class="card-avatar-container">
+                <span><img id="twitter-avatar" class="card-avatar" src="" alt="Avatar"/></span>
+                <span id="twitter-user-name" class="twitter-user-name">Twitter</span>
+            </div>
             <div class="chain-info">
                 <span id="header-network" class="chain-pill chain-pill--net" title="Current network">—</span>
                 <span id="header-account" class="chain-pill chain-pill--addr" title="Account">—</span>
             </div>
             <div class="account-balance">
                 <span id="balance-label" class="balance-label">Balance:</span>
-                <span id="balance-value" class="balance-value">0.00 USDC</span>
+                <span id="balance-value" class="balance-value">0.00 </span><span class="usdc-unit-header">USDC</span>
             </div>
-            <button id="btn-recharge" class="btn-recharge">Recharge</button>
         </div>
     </div>
 </header>
@@ -126,27 +129,29 @@
             </div>
         </main>
 
-        <!-- Sidebar (Right) -->
         <aside class="advertise-side">
             <div class="side-sticky">
                 <div class="side-title">Wallet & Insights</div>
-
-                <!-- Dashboard Cards (same .dashboard-card count/order for TS) -->
                 <div class="dashboard-overview">
-                    <!-- 0: Wallet balance (keep .dashboard-card) -->
                     <div class="dashboard-card dashboard-card-wallet">
-                        <div class="card-avatar-container">
-                            <span><img id="twitter-avatar" class="card-avatar" src="" alt="Avatar"/></span>
-                            <span id="twitter-user-name" class="twitter-user-name">Twitter</span>
-                        </div>
+                        <div class="card-icon">💵</div>
                         <div class="card-content">
-                            <div class="card-label">Available Balance</div>
-                            <div id="ad-account-balance-value" class="card-value">0.00 USDC</div>
-                            <div class="card-meta">For on-chain escrowed campaigns</div>
+                            <div class="wallet-balance-lines">
+                                <div class="wallet-balance-line">
+                                    <div class="card-label">Available</div>
+                                    <div id="ad-account-balance-value" class="card-value">0.00 USDC</div>
+                                </div>
+
+                                <div class="wallet-balance-line">
+                                    <div class="card-label">Frozen</div>
+                                    <div id="ad-account-frozen-value" class="card-value card-value--sub">0.00 USDC</div>
+                                </div>
+                            </div>
+                            <div class="card-meta">Frozen funds cannot be transferred</div>
                         </div>
-                        <!-- keep id for TS, but visually hidden by CSS -->
-                        <button id="btn-recharge-dashboard" class="btn-card-action" type="button">Recharge</button>
+                        <button id="btn-recharge" class="btn-card-action btn-recharge" type="button">⇄ Transfer</button>
                     </div>
+
 
                     <!-- 1: Active ads -->
                     <div class="dashboard-card dashboard-card-active">
@@ -360,22 +365,60 @@
         </div>
         <div class="modal-body">
             <div class="recharge-content">
-                <h3>Recharge Methods</h3>
+                <h3>Transfer between Wallet and Ads</h3>
+
                 <div class="recharge-method">
-                    <h4>Transfer USDC</h4>
-                    <p>Transfer USDC to your wallet address:</p>
-                    <div class="wallet-address">
-                        <code id="wallet-address-display">Loading...</code>
-                        <button id="copy-address" class="btn-copy">Copy</button>
+                    <h4>Direction</h4>
+
+                    <div class="transfer-switch">
+                        <button id="transfer-dir-wallet-to-ads" class="transfer-dir-btn active" type="button">Wallet →
+                            Ads
+                        </button>
+                        <button id="transfer-dir-ads-to-wallet" class="transfer-dir-btn" type="button">Ads → Wallet
+                        </button>
+                    </div>
+
+                    <div class="transfer-summary">
+                        <div class="transfer-summary-row">
+                            <span class="transfer-summary-label">Wallet USDC</span>
+                            <span id="transfer-wallet-balance" class="transfer-summary-value">0.00 USDC</span>
+                        </div>
+                        <div class="transfer-summary-row">
+                            <span class="transfer-summary-label">Ads Available</span>
+                            <span id="transfer-ads-available" class="transfer-summary-value">0.00 USDC</span>
+                        </div>
+                        <div class="transfer-summary-row">
+                            <span class="transfer-summary-label">Ads Frozen</span>
+                            <span id="transfer-ads-frozen" class="transfer-summary-value transfer-summary-value--muted">0.00 USDC</span>
+                        </div>
                     </div>
                 </div>
-                <div class="recharge-method">
-                    <h4>Buy with Card</h4>
-                    <p>Purchase USDC directly with credit card or Apple Pay</p>
-                    <button id="btn-buy-card" class="btn-primary">Buy USDC</button>
+
+                <div id="transfer-direction-indicator" class="transfer-direction-indicator">
+                    On-chain Wallet → Ads Account
                 </div>
+
+                <div class="recharge-method">
+                    <h4>Amount</h4>
+                    <p>Enter the amount to transfer (USDC). Business logic is stubbed for now.</p>
+
+                    <div class="transfer-amount-row">
+                        <input id="transfer-amount" class="form-input" type="number" min="0" step="0.01"
+                               placeholder="0.00"/>
+                        <button id="transfer-max" class="btn-secondary btn-max" type="button">Max</button>
+                    </div>
+
+                    <div id="transfer-hint" class="transfer-hint">
+                        Frozen funds are not transferable.
+                    </div>
+
+                    <div class="transfer-actions">
+                        <button id="btn-transfer-submit" class="btn-primary" type="button">Transfer</button>
+                    </div>
+                </div>
+
                 <div class="recharge-history-section">
-                    <button id="btn-history" class="btn-history-inline">📋 View Recharge History</button>
+                    <button id="btn-history" class="btn-history-inline">📋 View Transfer History</button>
                 </div>
             </div>
         </div>
@@ -386,7 +429,7 @@
 <div id="history-modal" class="modal">
     <div class="modal-dialog modal-large">
         <div class="modal-header">
-            <h2 class="modal-title">Recharge History</h2>
+            <h2 class="modal-title">Transfer History</h2>
             <button id="close-history" class="btn-close">✕</button>
         </div>
         <div class="modal-body">
@@ -395,7 +438,7 @@
                     <thead>
                     <tr>
                         <th>Time</th>
-                        <th>Method</th>
+                        <th>Direction</th>
                         <th>Amount</th>
                         <th>Status</th>
                     </tr>
