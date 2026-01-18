@@ -12,7 +12,6 @@ import {ChainNameBaseMain, walletInfo, X402_FACILITATORS} from "../common/x402_o
 import {getChainId} from "../wallet/wallet_setting";
 import {postToX402SrvByPri, queryCdpWalletInfo} from "../wallet/cdp_wallet";
 import {logAdP} from "../common/debug_flags";
-import browser from "webextension-polyfill";
 
 type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
 
@@ -690,7 +689,7 @@ async function handleAdsEscrowTransfer(btnSubmit?: HTMLButtonElement | null): Pr
         }
 
         const text = await resp.text();
-        let data: any = {};
+        let data: any;
         try {
             data = text ? JSON.parse(text) : {};
         } catch {
