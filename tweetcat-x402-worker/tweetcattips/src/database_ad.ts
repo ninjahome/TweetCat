@@ -32,7 +32,6 @@ export interface AdEscrowAccountRow {
 export interface AdRow {
 	ad_id: string;
 	a_x_id: string;
-	ad_type: string;
 	category: string;
 	name: string;
 	title: string;
@@ -45,6 +44,8 @@ export interface AdRow {
 	start_at?: string | null;
 	end_at?: string | null;
 	created_at?: string | null;
+	rules_json?: string | null;
+	updated_at?: string | null;
 }
 
 export interface ClaimRow {
@@ -63,7 +64,6 @@ export interface ClaimRow {
 export interface AdCreatePayload {
 	adId: string;
 	aXId: string;
-	adType: string;
 	category: string;
 	name: string;
 	title: string;
@@ -73,6 +73,7 @@ export interface AdCreatePayload {
 	quotaTotal: number;
 	startAt?: string | null;
 	endAt?: string | null;
+	rulesJson?: string | null;
 }
 
 export interface ClaimCreatePayload {
@@ -192,16 +193,15 @@ export async function getAccountBalanceAtomic(db: D1Database, aXId: string): Pro
  */
 export async function createAd(db: D1Database, payload: AdCreatePayload): Promise<boolean> {
 	const insertSql = `
-		INSERT INTO ads (
-			ad_id, a_x_id, ad_type, category, name, title, description, detail_url,
-			unit_price_atomic, quota_total, start_at, end_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO ad_campaigns (
+			ad_id, a_x_id, category, name, title, description, detail_url,
+			unit_price_atomic, quota_total, rules_json, start_at, end_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
 	`;
 	const result = await db.prepare(insertSql)
 		.bind(
 			payload.adId,
 			payload.aXId,
-			payload.adType,
 			payload.category,
 			payload.name,
 			payload.title,
@@ -209,6 +209,7 @@ export async function createAd(db: D1Database, payload: AdCreatePayload): Promis
 			payload.detailUrl,
 			payload.unitPriceAtomic,
 			payload.quotaTotal,
+			payload.rulesJson ?? null,
 			payload.startAt ?? null,
 			payload.endAt ?? null
 		)
@@ -225,7 +226,7 @@ export async function createAd(db: D1Database, payload: AdCreatePayload): Promis
  */
 export async function getMyAds(db: D1Database, aXId: string): Promise<AdRow[]> {
 	const stmt = db.prepare(
-		"SELECT * FROM ads WHERE a_x_id = ? ORDER BY created_at DESC LIMIT 200"
+		"SELECT * FROM ad_campaigns WHERE a_x_id = ? ORDER BY created_at DESC LIMIT 200"
 	).bind(aXId);
 	const result = await stmt.all<AdRow>();
 	return result.results ?? [];
@@ -240,7 +241,7 @@ export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 	const sql = `
 		SELECT ad_id, title, a_x_id, description, category, unit_price_atomic,
 		       quota_used, quota_total, end_at, created_at, detail_url
-		FROM ads
+		FROM ad_campaigns
 		WHERE status = 'ACTIVE'
 		  AND quota_used < quota_total
 		  AND (end_at IS NULL OR end_at = '' OR datetime(end_at) > datetime('now'))
@@ -260,9 +261,9 @@ export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 export async function getAdById(db: D1Database, adId: string): Promise<AdRow | null> {
 	const adRow = await db.prepare(
 		`SELECT ad_id, a_x_id, unit_price_atomic, status, quota_used, quota_total,
-		        ad_type, category, name, title, description, detail_url,
-		        start_at, end_at, created_at
-		 FROM ads
+		        category, name, title, description, detail_url, rules_json,
+		        start_at, end_at, created_at, updated_at
+		 FROM ad_campaigns
 		 WHERE ad_id = ?`
 	).bind(adId).first<AdRow>();
 
@@ -277,8 +278,9 @@ export async function getAdById(db: D1Database, adId: string): Promise<AdRow | n
  */
 export async function incrementAdQuota(db: D1Database, adId: string): Promise<boolean> {
 	const updateResult = await db.prepare(
-		`UPDATE ads
-		 SET quota_used = quota_used + 1
+		`UPDATE ad_campaigns
+		 SET quota_used = quota_used + 1,
+		     updated_at = datetime('now')
 		 WHERE ad_id = ? AND status = 'ACTIVE' AND quota_used < quota_total`
 	).bind(adId).run();
 
@@ -348,7 +350,7 @@ export async function getMyClaimsList(db: D1Database, bXId: string): Promise<Cla
 		       c.created_at, c.expires_at, c.unit_price_atomic,
 		       a.title AS ad_title
 		FROM claims c
-		LEFT JOIN ads a ON c.ad_id = a.ad_id
+		LEFT JOIN ad_campaigns a ON c.ad_id = a.ad_id
 		WHERE c.b_x_id = ?
 		ORDER BY c.created_at DESC
 		LIMIT 50

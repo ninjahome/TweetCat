@@ -34,7 +34,6 @@ interface MyAdRow {
 interface AdRecord {
     ad_id: string;
     a_x_id: string;
-    ad_type: string;
     category: string;
     name: string;
     title: string;
@@ -47,6 +46,8 @@ interface AdRecord {
     start_at?: string | null;
     end_at?: string | null;
     created_at: string;
+    rules_json?: string | null;
+    updated_at?: string | null;
 }
 
 interface SpendRecord {
@@ -419,8 +420,7 @@ function updateBudgetSummaryAndBalance() {
     const summaryTasks = $Id("summary-tasks");
     if (summaryTasks) summaryTasks.textContent = Number.isFinite(tasks) ? tasks.toString() : "0";
 
-    const summaryFee = $Id("summary-fee");
-    if (summaryFee) summaryFee.textContent = formatUSDC(fee);
+    // Fee is now 0 and hidden from UI
 
     const summaryTotal = $Id("summary-total");
     if (summaryTotal) summaryTotal.textContent = formatUSDC(total);
@@ -448,7 +448,6 @@ async function submitWizard() {
     const currentXId = getCurrentXId();
 
     const nameInput = document.querySelector<HTMLInputElement>("#ad-name");
-    const adTypeInput = document.querySelector<HTMLSelectElement>("#ad-type");
     const adCategoryInput = document.querySelector<HTMLSelectElement>("#ad-category");
     const adTitleInput = document.querySelector<HTMLInputElement>("#ad-title");
     const adDescriptionInput = document.querySelector<HTMLTextAreaElement>("#ad-description");
@@ -457,27 +456,46 @@ async function submitWizard() {
     const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
     const startAtInput = document.querySelector<HTMLInputElement>("#start-time");
     const endAtInput = document.querySelector<HTMLInputElement>("#end-time");
-    const taskActionInput = document.querySelector<HTMLSelectElement>("#task-action");
+    const rulesJsonInput = document.querySelector<HTMLTextAreaElement>("#rules-json");
 
     const name = nameInput?.value?.trim() || "";
-    const adType = adTypeInput?.value?.trim() || "";
-    const category = adCategoryInput?.value?.trim() || taskActionInput?.value?.trim() || "";
+    const category = adCategoryInput?.value?.trim() || "";
     const title = adTitleInput?.value?.trim() || "";
     const description = adDescriptionInput?.value?.trim() || "";
     const detailUrl = adUrlInput?.value?.trim() || "";
+    let rulesJson: string | null = null;
 
     const reward = rewardInput?.value || "";
     const quotaTotal = Number(taskLimitInput?.value || "0");
     const unitPriceAtomic = usdcToAtomic(reward);
 
-    if (!name || !adType || !category || !title || !description || !detailUrl || !unitPriceAtomic || quotaTotal <= 0) {
+    // Validate required fields
+    if (!name || !category || !title || !description || !detailUrl || !unitPriceAtomic || quotaTotal <= 0) {
         showNotification("Please complete required fields.", "error");
         return;
     }
 
+    // Validate category
+    const validCategories = ["follow", "visit", "register", "share"];
+    if (!validCategories.includes(category)) {
+        showNotification("Invalid category selected.", "error");
+        return;
+    }
+
+    // Parse and validate rules_json (optional)
+    const rulesRaw = rulesJsonInput?.value?.trim() || "";
+    if (rulesRaw) {
+        try {
+            const parsed = JSON.parse(rulesRaw);
+            rulesJson = JSON.stringify(parsed);
+        } catch (e) {
+            showNotification("Invalid rules JSON format.", "error");
+            return;
+        }
+    }
+
     const payload = {
         a_x_id: currentXId,
-        ad_type: adType,
         category,
         name,
         title,
@@ -487,19 +505,20 @@ async function submitWizard() {
         quota_total: quotaTotal,
         start_at: startAtInput?.value || null,
         end_at: endAtInput?.value || null,
+        ...(rulesJson ? { rules_json: rulesJson } : {}),
     };
 
     const result = await createAd(payload);
     if (!result.ok) {
         if (result.error?.error === "INSUFFICIENT_BALANCE") {
-            showNotification(`余额不足。需要 ${result.error?.detail || ""}`.trim(), "error");
+            showNotification(`Insufficient balance. ${result.error?.detail || ""}`.trim(), "error");
             return;
         }
         showNotification("Failed to create ad.", "error");
         return;
     }
 
-    showNotification("创建成功", "success");
+    showNotification("Ad created successfully", "success");
     closeWizard();
     await refreshAdsData();
 }

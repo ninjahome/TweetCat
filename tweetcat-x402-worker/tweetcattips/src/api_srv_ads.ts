@@ -155,7 +155,6 @@ export async function apiAdsCreate(c: ExtCtx) {
 	try {
 		const body = await c.req.json().catch(() => ({}));
 		const aXId = body?.a_x_id;
-		const adType = body?.ad_type;
 		const category = body?.category;
 		const name = body?.name;
 		const title = body?.title;
@@ -163,9 +162,9 @@ export async function apiAdsCreate(c: ExtCtx) {
 		const detailUrl = body?.detail_url;
 		const unitPriceAtomic = parsePositiveAtomic(body?.unit_price_atomic);
 		const quotaTotal = parsePositiveInt(body?.quota_total);
+		let rulesJson: string | null = null;
 
 		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
-		if (!requireStringField(adType)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_type");
 		if (!requireStringField(category)) return jsonError(c, 400, "INVALID_REQUEST", "Missing category");
 		if (!requireStringField(name)) return jsonError(c, 400, "INVALID_REQUEST", "Missing name");
 		if (!requireStringField(title)) return jsonError(c, 400, "INVALID_REQUEST", "Missing title");
@@ -173,6 +172,34 @@ export async function apiAdsCreate(c: ExtCtx) {
 		if (!requireStringField(detailUrl)) return jsonError(c, 400, "INVALID_REQUEST", "Missing detail_url");
 		if (!unitPriceAtomic) return jsonError(c, 400, "INVALID_REQUEST", "Invalid unit_price_atomic");
 		if (!quotaTotal) return jsonError(c, 400, "INVALID_REQUEST", "Invalid quota_total");
+
+		// Validate category
+		const validCategories: AdCategory[] = ["follow", "visit", "register", "share"];
+		if (!validCategories.includes(category as AdCategory)) {
+			return jsonError(c, 400, "INVALID_REQUEST", "Invalid category. Must be: follow, visit, register, or share");
+		}
+
+		// Parse and validate rules_json (optional)
+		if (body?.rules_json) {
+			const rulesRaw = body.rules_json;
+			try {
+				// Accept both string and object
+				if (typeof rulesRaw === "string") {
+					const parsed = JSON.parse(rulesRaw);
+					rulesJson = JSON.stringify(parsed);
+				} else if (typeof rulesRaw === "object" && rulesRaw !== null) {
+					rulesJson = JSON.stringify(rulesRaw);
+				} else {
+					return jsonError(c, 400, "INVALID_REQUEST", "Invalid rules_json format");
+				}
+				// Check length (limit to 8KB)
+				if (rulesJson.length > 8192) {
+					return jsonError(c, 400, "INVALID_REQUEST", "rules_json exceeds maximum size (8KB)");
+				}
+			} catch (e) {
+				return jsonError(c, 400, "INVALID_REQUEST", "Invalid rules_json: must be valid JSON");
+			}
+		}
 
 		const requiredAtomic = (BigInt(unitPriceAtomic) * BigInt(quotaTotal)).toString();
 
@@ -193,8 +220,7 @@ export async function apiAdsCreate(c: ExtCtx) {
 		const payload: AdCreatePayload = {
 			adId,
 			aXId,
-			adType,
-			category,
+			category: category as AdCategory,
 			name,
 			title,
 			description,
@@ -203,6 +229,7 @@ export async function apiAdsCreate(c: ExtCtx) {
 			quotaTotal,
 			startAt: body?.start_at ?? null,
 			endAt: body?.end_at ?? null,
+			rulesJson,
 		};
 
 		const created = await createAd(c.env.DB, payload);
