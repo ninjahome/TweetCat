@@ -6,7 +6,8 @@ import {
     formatUSDC,
     multiplyAtomic,
     showNotification,
-    usdcToAtomic, openTxInExplorer, x402WorkerFetch
+    usdcToAtomic,
+    x402WorkerFetch
 } from "./common";
 import {ChainNameBaseMain, walletInfo, X402_FACILITATORS} from "../common/x402_obj";
 import {getChainId} from "../wallet/wallet_setting";
@@ -72,6 +73,7 @@ let myAds: AdRecord[] = [];
 let spendRecords: SpendRecord[] = [];
 let historyRecharge: HistoryRow[] = [];
 let walletInfoCache: walletInfo | null = null;
+let isTransferBusy = false;
 
 // ========= API helpers =========
 
@@ -561,6 +563,7 @@ function openRechargeModal() {
 
     syncTransferModalUI();
     setTransferDirection("wallet_to_ads");
+    setTransferInlineError(null);
 }
 
 function closeRechargeModal() {
@@ -598,11 +601,62 @@ function initRechargeModalEvents() {
     if (btnSubmit) {
         // ✅ 不使用 addEventListener：按要求直接赋值 onclick
         btnSubmit.onclick = () => {
-            void handleAdsEscrowTransfer(btnSubmit);
+            void handleAdsEscrowTransfer();
         };
     }
 }
 
+function setTransferBusy(isBusy: boolean, label?: string): void {
+    isTransferBusy = isBusy;
+
+    const overlay = $Id("loading-overlay");
+    if (overlay) overlay.style.display = isBusy ? "flex" : "none";
+
+    const controls: Array<HTMLInputElement | HTMLButtonElement | null> = [
+        $Id("btn-transfer-submit") as HTMLButtonElement | null,
+        $Id("transfer-amount") as HTMLInputElement | null,
+        $Id("transfer-max") as HTMLButtonElement | null,
+        $Id("transfer-dir-wallet-to-ads") as HTMLButtonElement | null,
+        $Id("transfer-dir-ads-to-wallet") as HTMLButtonElement | null,
+        $Id("close-recharge") as HTMLButtonElement | null,
+    ];
+
+    controls.forEach((control) => {
+        if (!control) return;
+        control.disabled = isBusy;
+    });
+
+    const submitBtn = $Id("btn-transfer-submit") as HTMLButtonElement | null;
+    if (submitBtn) {
+        if (isBusy) {
+            submitBtn.dataset.defaultLabel = submitBtn.textContent || "";
+            if (label) submitBtn.textContent = label;
+        } else if (submitBtn.dataset.defaultLabel) {
+            submitBtn.textContent = submitBtn.dataset.defaultLabel;
+        }
+    }
+}
+
+function setTransferInlineError(message: string | null): void {
+    const inlineError = $Id("transfer-inline-error");
+    if (!inlineError) return;
+
+    if (!message) {
+        inlineError.textContent = "";
+        inlineError.classList.add("hidden");
+        return;
+    }
+
+    inlineError.textContent = message;
+    inlineError.classList.remove("hidden");
+}
+
+function openTxInExplorer(txHash: string): void {
+    const networkLabel = ($Id("header-network")?.textContent || "").toLowerCase();
+    const isSepolia = networkLabel.includes("sepolia");
+    const baseUrl = isSepolia ? "https://sepolia.basescan.org/tx/" : "https://basescan.org/tx/";
+    window.open(`${baseUrl}${txHash}`, "_blank");
+}
 
 function getErrMsgFromResponse(resp: Response, data: any, fallbackText: string): string {
     const msg =
@@ -627,7 +681,9 @@ async function refreshWalletAndAdsUI(): Promise<void> {
  * - wallet_to_ads  => POST /ads/publisher/recharge (x402 用户支付)
  * - ads_to_wallet  => POST /ads/publisher/withdraw (服务器金库支付)
  */
-async function handleAdsEscrowTransfer(btnSubmit?: HTMLButtonElement | null): Promise<void> {
+async function handleAdsEscrowTransfer(): Promise<void> {
+    if (isTransferBusy) return;
+
     const input = $Id("transfer-amount") as HTMLInputElement | null;
     const amountStr = (input?.value || "").trim();
     const amount = Number(amountStr);
@@ -676,7 +732,9 @@ async function handleAdsEscrowTransfer(btnSubmit?: HTMLButtonElement | null): Pr
         amount: amountStr, // 服务器端会 usdcToAtomicSafe
     };
 
-    if (btnSubmit) btnSubmit.disabled = true;
+    setTransferInlineError(null);
+    setTransferBusy(true, "Processing...");
+
     try {
         let resp: Response;
 
@@ -685,7 +743,7 @@ async function handleAdsEscrowTransfer(btnSubmit?: HTMLButtonElement | null): Pr
             resp = await postToX402SrvByPri(endpoint, payload);
         } else {
             // ✅ 提现：服务器金库侧支付（普通 POST 即可）
-            resp = await  x402WorkerFetch(endpoint,payload)
+            resp = await x402WorkerFetch(endpoint, payload);
         }
 
         const text = await resp.text();
@@ -696,15 +754,21 @@ async function handleAdsEscrowTransfer(btnSubmit?: HTMLButtonElement | null): Pr
             data = {};
         }
 
-        if (!resp.ok) {
+        if (!resp.ok || data?.success !== true) {
             historyItem.status = "Failed";
             switchHistoryTab("recharge");
-            showNotification(getErrMsgFromResponse(resp, data, text), "error");
+            setTransferInlineError(getErrMsgFromResponse(resp, data, text));
             return;
         }
 
         // 成功：更新历史 + 打开浏览器
         const txHash = data?.txHash || data?.tx_hash || data?.transaction || data?.transactionHash;
+        if (!txHash) {
+            historyItem.status = "Failed";
+            switchHistoryTab("recharge");
+            setTransferInlineError("Transfer succeeded but no transaction hash was returned.");
+            return;
+        }
 
         historyItem.status = "Success";
         switchHistoryTab("recharge");
@@ -716,16 +780,17 @@ async function handleAdsEscrowTransfer(btnSubmit?: HTMLButtonElement | null): Pr
         showNotification(msg, "success");
 
         if (txHash) {
-            await openTxInExplorer(String(txHash));
+            openTxInExplorer(String(txHash));
         }
 
+        closeRechargeModal();
         await refreshWalletAndAdsUI();
     } catch (e: any) {
         historyItem.status = "Failed";
         switchHistoryTab("recharge");
-        showNotification(e?.message || "Transfer failed", "error");
+        setTransferInlineError(e?.message || "Transfer failed");
     } finally {
-        if (btnSubmit) btnSubmit.disabled = false;
+        setTransferBusy(false);
     }
 }
 

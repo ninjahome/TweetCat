@@ -412,6 +412,8 @@
                         Frozen funds are not transferable.
                     </div>
 
+                    <div id="transfer-inline-error" class="transfer-inline-error hidden" aria-live="polite"></div>
+
                     <div class="transfer-actions">
                         <button id="btn-transfer-submit" class="btn-primary" type="button">Transfer</button>
                     </div>
@@ -515,6 +517,13 @@
         <td colspan="4" class="td-empty">No records</td>
     </tr>
 </template>
+
+<div id="loading-overlay">
+    <div id="loading-content">
+        <div class="spinner"></div>
+        <div id="loading-text">Processing...</div>
+    </div>
+</div>
 
 <div id="notification" class="notification hidden" role="alert"></div>
 </body>

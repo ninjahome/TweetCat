@@ -179,3 +179,58 @@ CREATE TABLE IF NOT EXISTS ad_escrow_accounts (
 -- 如你未来要做后台列表按更新时间排序，可加：
 CREATE INDEX IF NOT EXISTS idx_ad_escrow_accounts_updated_at
 	ON ad_escrow_accounts(updated_at);
+
+
+CREATE TABLE IF NOT EXISTS ad_escrow_ledger (
+												id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+	-- 业务唯一ID（服务端生成 UUID，方便对外引用）
+												ledger_id TEXT NOT NULL,
+
+	-- 广告主X账号（你的业务主键）
+												a_x_id TEXT NOT NULL,
+
+	-- 方向：充值/提现
+												direction TEXT NOT NULL, -- 'DEPOSIT' | 'WITHDRAW'
+
+	-- 资产
+												asset_symbol TEXT NOT NULL DEFAULT 'USDC',
+
+	-- 金额（atomic, string integer）
+												amount_atomic TEXT NOT NULL,
+
+	-- x402 验证/结算中可拿到的地址信息（便于审计）
+												payer_address TEXT,       -- 充值=用户钱包，提现=平台金库
+												receiver_address TEXT,    -- 充值=平台金库，提现=用户钱包
+
+	-- 链上交易hash（x402 settle返回）
+												tx_hash TEXT,
+
+	-- 状态：提现建议走 PENDING -> SETTLED/FAILED
+												status TEXT NOT NULL DEFAULT 'PENDING', -- 'PENDING' | 'SETTLED' | 'FAILED'
+
+	-- 幂等键：提现必须带；充值可选（充值主要靠 tx_hash 去重）
+												request_id TEXT,
+
+												memo TEXT,
+												error_reason TEXT,
+
+												created_at TEXT NOT NULL DEFAULT (datetime('now')),
+	updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+
+	CHECK (direction IN ('DEPOSIT','WITHDRAW')),
+	CHECK (status IN ('PENDING','SETTLED','FAILED')),
+	CHECK (CAST(amount_atomic AS INTEGER) > 0),
+
+	-- tx_hash 去重（同一笔链上转账不能重复入账）
+	UNIQUE (tx_hash),
+
+	-- 幂等：同一用户同一方向同一 request_id 只能出现一次
+	UNIQUE (a_x_id, direction, request_id)
+	);
+
+CREATE INDEX IF NOT EXISTS idx_ad_escrow_ledger_axid_created_at
+	ON ad_escrow_ledger(a_x_id, created_at);
+
+CREATE INDEX IF NOT EXISTS idx_ad_escrow_ledger_direction_created_at
+	ON ad_escrow_ledger(direction, created_at);

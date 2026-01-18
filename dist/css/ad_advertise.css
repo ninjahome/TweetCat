@@ -543,6 +543,12 @@ body {
     color: #9ca3af;
 }
 
+.transfer-inline-error {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #ef4444;
+}
+
 .transfer-actions {
     margin-top: 14px;
     display: flex;
