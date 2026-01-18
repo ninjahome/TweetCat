@@ -1,6 +1,6 @@
 import {Hono} from "hono";
 import {ContentfulStatusCode} from "hono/utils/http-status";
-import {ExtCtx, ExtendedEnv, jsonError, requireStringField, parsePositiveInt, parsePositiveAtomic, usdcToAtomicSafe, isHexAddress, getPaymentHeader, decodeBase64Json, encodeBase64Json} from "./common";
+import {ExtCtx, ExtendedEnv, jsonError, requireStringField, parsePositiveInt, parsePositiveAtomic, usdcToAtomicSafe} from "./common";
 import {
 	AdCategory,
 	CATEGORY_DURATION,
@@ -68,11 +68,11 @@ export class EscrowRequestError extends Error {
 
 /**
  * 从请求体解析托管账户操作的参数（a_x_id 和 amount）
- * 
+ *
  * @param c - Hono 请求上下文
  * @returns ParsedEscrowRequest 包含 aXId 和 amountAtomic
  * @throws EscrowRequestError 当参数无效时抛出
- * 
+ *
  * @example
  * try {
  *   const params = await parseEscrowRequestParams(c);
