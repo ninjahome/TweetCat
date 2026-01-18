@@ -65,6 +65,7 @@ interface HistoryRow {
     adNameOrMethod: string;
     amount: number;
     status: string;
+    txHash?: string | null;
 }
 
 // ========= 数据存储 =========
@@ -175,6 +176,27 @@ async function fetchMyAds(aXId: string): Promise<AdRecord[]> {
     const response = await fetch(`${url}?a_x_id=${encodeURIComponent(aXId)}`);
     if (!response.ok) throw new Error(await response.text());
     return (await response.json()) as AdRecord[];
+}
+
+async function fetchAdEscrowLedger(aXId: string, limit: number = 50, offset: number = 0): Promise<any[]> {
+    try {
+        const chainId = await getChainId();
+        const endpoint = X402_FACILITATORS[chainId].endpoint + "/ads/publisher/ledger";
+        const url = `${endpoint}?a_x_id=${encodeURIComponent(aXId)}&limit=${limit}&offset=${offset}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        const data = await response.json();
+        if (!data.success || !Array.isArray(data.rows)) {
+            throw new Error(data.error || "Invalid response format");
+        }
+        
+        return data.rows;
+    } catch (err: any) {
+        console.error("[fetchAdEscrowLedger Error]", err);
+        throw err;
+    }
 }
 
 async function createAd(payload: Record<string, any>): Promise<{ ok: boolean; data?: any; error?: any }> {
@@ -828,7 +850,7 @@ function closeHistoryModal() {
 }
 
 function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: HistoryRow[]) {
-    // 现在仅镜不查看 charging 记录
+    // 现在仅显示 recharge 记录
     if (tab !== "recharge") return;
 
     const tbody = document.querySelector<HTMLTableSectionElement>("#recharge-history-tbody");
@@ -849,6 +871,22 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
         $2<HTMLElement>(tr, ".td-name").textContent = row.adNameOrMethod;
         $2<HTMLElement>(tr, ".td-amount").textContent = formatUSDC(row.amount);
         $2<HTMLElement>(tr, ".td-status").textContent = row.status;
+        
+        // 如果有 tx_hash，行可点击打开区块浏览器
+        if (row.txHash) {
+            tr.style.cursor = "pointer";
+            tr.style.opacity = "0.9";
+            tr.addEventListener("mouseenter", () => {
+                tr.style.opacity = "1";
+                tr.style.backgroundColor = "rgba(100, 150, 255, 0.05)";
+            });
+            tr.addEventListener("mouseleave", () => {
+                tr.style.opacity = "0.9";
+                tr.style.backgroundColor = "";
+            });
+            tr.addEventListener("click", () => openTxInExplorer(row.txHash!));
+        }
+        
         tbody.appendChild(tr);
     });
 }
@@ -858,9 +896,88 @@ function switchHistoryTab(tab: "earnings" | "spending" | "recharge") {
     if (tab === "recharge") renderHistoryTable("recharge", historyRecharge);
 }
 
+/**
+ * 加载和渲染转账历史记录（从真实的 ad_escrow_ledger）
+ */
+async function loadAndRenderTransferHistory(): Promise<void> {
+    try {
+        const currentXId = getCurrentXId();
+        
+        // 显示 Loading 状态
+        const tbody = document.querySelector<HTMLTableSectionElement>("#recharge-history-tbody");
+        if (tbody) {
+            tbody.replaceChildren();
+            const loadingTr = cloneTemplate("tpl-empty-history-row") as HTMLTableRowElement;
+            $2<HTMLElement>(loadingTr, ".td-empty").textContent = "Loading transfer history...";
+            tbody.appendChild(loadingTr);
+        }
+        
+        // 从服务器拉取数据
+        const ledgerRows = await fetchAdEscrowLedger(currentXId, 50, 0);
+        
+        // 映射到 UI 模型
+        const mappedRows: HistoryRow[] = ledgerRows.map((row: any) => {
+            // 格式化时间
+            const time = row.created_at 
+                ? new Date(row.created_at).toLocaleString()
+                : new Date().toLocaleString();
+            
+            // 根据 direction（后端返回字段为 op）映射操作名
+            const op = row.op || row.direction || "UNKNOWN";
+            const adNameOrMethod = op === "DEPOSIT" 
+                ? "Wallet → Ads" 
+                : op === "WITHDRAW" 
+                ? "Ads → Wallet" 
+                : op;
+            
+            // 金额转换
+            const amount = atomicToUsdcNumber(row.amount_atomic || "0");
+            
+            // 状态处理
+            let status = row.status || "UNKNOWN";
+            if (status === "FAILED" && row.error_reason) {
+                // 截断错误信息（最多 30 字符）
+                const errorMsg = String(row.error_reason).slice(0, 30);
+                status = `Failed: ${errorMsg}`;
+            }
+            
+            return {
+                time,
+                adNameOrMethod,
+                amount,
+                status,
+                txHash: row.tx_hash || null
+            };
+        });
+        
+        // 更新全局缓存
+        historyRecharge = mappedRows;
+        
+        // 渲染表格
+        renderHistoryTable("recharge", mappedRows);
+    } catch (err: any) {
+        console.error("[loadAndRenderTransferHistory Error]", err);
+        
+        // 错误时显示错误提示
+        const tbody = document.querySelector<HTMLTableSectionElement>("#recharge-history-tbody");
+        if (tbody) {
+            tbody.replaceChildren();
+            const errorTr = cloneTemplate("tpl-empty-history-row") as HTMLTableRowElement;
+            const errorMsg = err?.message || "Failed to load history";
+            $2<HTMLElement>(errorTr, ".td-empty").textContent = `Error: ${errorMsg}`;
+            tbody.appendChild(errorTr);
+        }
+    }
+}
+
 function initHistoryModalEvents() {
     const btnHistory = $Id("btn-history") as HTMLButtonElement | null;
-    if (btnHistory) btnHistory.addEventListener("click", () => openHistoryModal("recharge"));
+    if (btnHistory) {
+        btnHistory.addEventListener("click", async () => {
+            openHistoryModal("recharge");
+            await loadAndRenderTransferHistory();
+        });
+    }
 
     const closeHistory = $Id("close-history") as HTMLButtonElement | null;
     if (closeHistory) closeHistory.addEventListener("click", closeHistoryModal);

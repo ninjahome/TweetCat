@@ -30,6 +30,7 @@ import {
 	settleWithdrawLedger,
 	failWithdrawLedger,
 	refundEscrowBalance,
+	listAdEscrowLedger,
 	type AdCreatePayload,
 	type ClaimCreatePayload,
 } from "./database_ad";
@@ -532,6 +533,35 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 }
 
 /**
+ * 查询广告托管账本列表（充值/提现历史）
+ */
+export async function apiAdsPublisherLedger(c: ExtCtx) {
+	try {
+		const aXId = c.req.query("a_x_id");
+		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		const limitStr = c.req.query("limit") || "50";
+		const offsetStr = c.req.query("offset") || "0";
+
+		let limit = parseInt(limitStr, 10);
+		let offset = parseInt(offsetStr, 10);
+
+		if (!Number.isFinite(limit) || limit < 1) limit = 50;
+		if (!Number.isFinite(offset) || offset < 0) offset = 0;
+
+		const rows = await listAdEscrowLedger(c.env.DB, aXId, limit, offset);
+
+		return c.json({
+			success: true,
+			rows
+		});
+	} catch (err: any) {
+		console.error("[apiAdsPublisherLedger Error]", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
  * 注册广告相关路由
  */
 export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
@@ -543,4 +573,5 @@ export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
 	app.get("/ads/my_claims", apiAdsMyClaims);
 	app.post("/ads/publisher/recharge", apiRechargeToAdEscrowAccount);
 	app.post("/ads/publisher/withdraw", apiWithdrawFromAdsEscrowAccount);
+	app.get("/ads/publisher/ledger", apiAdsPublisherLedger);
 }

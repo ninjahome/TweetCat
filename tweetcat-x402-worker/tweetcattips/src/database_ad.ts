@@ -589,3 +589,40 @@ export async function refundEscrowBalance(
 
 	return result.success ?? false;
 }
+
+/**
+ * 查询广告托管账本记录列表（充值/提现历史）
+ * @param db - D1 数据库实例
+ * @param aXId - 广告主 X ID
+ * @param limit - 返回记录数（最大 200）
+ * @param offset - 分页偏移
+ * @returns 账本记录列表
+ */
+export async function listAdEscrowLedger(
+	db: D1Database,
+	aXId: string,
+	limit: number = 50,
+	offset: number = 0
+): Promise<AdEscrowLedgerRow[]> {
+	// 限制 limit 的最大值
+	const safeLim = Math.min(Math.max(limit, 1), 200);
+	const safeOffset = Math.max(offset, 0);
+
+	const sql = `
+		SELECT 
+			ledger_id, a_x_id, direction as op, asset_symbol, amount_atomic,
+			payer_address as payer, receiver_address as to_address,
+			tx_hash, request_id, status, error_reason,
+			created_at, updated_at
+		FROM ad_escrow_ledger
+		WHERE a_x_id = ?
+		ORDER BY created_at DESC
+		LIMIT ? OFFSET ?
+	`;
+
+	const result = await db.prepare(sql)
+		.bind(aXId, safeLim, safeOffset)
+		.all<AdEscrowLedgerRow>();
+
+	return result.results ?? [];
+}
