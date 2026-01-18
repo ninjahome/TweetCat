@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 import {queryCdpUserID} from "../wallet/cdp_wallet";
-import {showLoading, hideLoading, showNotification, x402WorkerGet} from "./common";
+import {showLoading, hideLoading, showNotification, x402WorkerGet, openTxInExplorer} from "./common";
 import {getChainId} from "../wallet/wallet_setting";
 import {X402_FACILITATORS} from "../common/x402_obj";
 import {initI18n, t} from "../common/i18n";
@@ -192,10 +192,7 @@ async function initFeesPage() {
     if (viewOnChain) {
         viewOnChain.addEventListener("click", async () => {
             if (currentFee && currentFee.tx_hash) {
-                const chainId = await getChainId();
-                await browser.tabs.create({
-                    url: X402_FACILITATORS[chainId].browser + "/tx/" + currentFee.tx_hash
-                });
+                await openTxInExplorer(currentFee.tx_hash);
             }
         });
     }

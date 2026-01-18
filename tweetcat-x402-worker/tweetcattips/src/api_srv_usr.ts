@@ -126,15 +126,10 @@ async function processRewardClaim(
 
 		console.log(`[Claim] Reward ${rewardId}: gross=${feeCalc.grossAmount}, fee=${feeCalc.feeAmount} (${feeRate}%), net=${feeCalc.netAmount}`);
 
-		const cfg = c.get("cfg");
-		const getResourceServer = c.get("getResourceServer");
-		const rs = getResourceServer(c.env);
 		const resourceUrl = `user://claim/${rewardId}`;
 
 		const settleResult = await internalTreasurySettle(
 			c as ExtCtx,
-			cfg,
-			rs,
 			userWalletAddress,
 			feeCalc.netAmount,  // 使用 net_amount 而不是 gross_amount
 			resourceUrl

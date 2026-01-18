@@ -1,7 +1,7 @@
 import {initCDP, X402_FACILITATORS} from "../common/x402_obj";
 import {isSignedIn} from "@coinbase/cdp-core";
 import browser from "webextension-polyfill";
-import {showPopupWindow} from "./common";
+import {openTxInExplorer, showPopupWindow} from "./common";
 import {getChainId} from "../wallet/wallet_setting";
 import {postToX402SrvByPri} from "../wallet/cdp_wallet";
 import {initI18n, t} from "../common/i18n";
@@ -42,6 +42,7 @@ const UI = {
     closeBtns: [document.getElementById("js-close"), document.getElementById("js-cancel")],
     presetBtns: document.querySelectorAll("[data-amt]")
 };
+
 function translateStaticTexts() {
     // 设置页面标题
     document.title = t('page_title_transfer');
@@ -144,10 +145,8 @@ async function performTransfer(profile: UserProfile, amount: string): Promise<vo
         }
         throw new Error(t('transfer_create_tx_failed') + safeStringify(result));
     }
-
-    const url = X402_FACILITATORS[chainId].browser + "/tx/" + result.txHash
-    console.log("------>>>transfer success:", url, result.txHash)
-    await browser.tabs.create({url});
+    console.log("------>>>transfer success:", result.txHash)
+    await openTxInExplorer(result.txHash, chainId)
     return result.txHash
 }
 

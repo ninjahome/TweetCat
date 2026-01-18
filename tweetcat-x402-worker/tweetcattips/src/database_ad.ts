@@ -85,6 +85,24 @@ export interface ClaimCreatePayload {
 	expiresAt: string;
 }
 
+export interface AdEscrowLedgerRow {
+	id?: number;
+	ledger_id: string;
+	a_x_id: string;
+	direction: 'DEPOSIT' | 'WITHDRAW';
+	asset_symbol: string;
+	amount_atomic: string;
+	payer_address?: string | null;
+	receiver_address?: string | null;
+	tx_hash?: string | null;
+	status: 'PENDING' | 'SETTLED' | 'FAILED';
+	request_id?: string | null;
+	memo?: string | null;
+	error_reason?: string | null;
+	created_at?: string;
+	updated_at?: string;
+}
+
 // ========= 辅助函数 =========
 
 export function toSqliteDate(date: Date): string {
@@ -337,4 +355,235 @@ export async function getMyClaimsList(db: D1Database, bXId: string): Promise<Cla
 	`;
 	const result = await db.prepare(sql).bind(bXId).all<ClaimRow>();
 	return result.results ?? [];
+}
+
+// ========= 广告托管账户和账本操作 =========
+
+/**
+ * 检查或创建广告托管账户（确保账户存在）
+ * @param db - D1 数据库实例
+ * @param aXId - 广告主 X ID
+ * @returns 操作是否成功
+ */
+export async function ensureEscrowAccount(db: D1Database, aXId: string): Promise<boolean> {
+	const result = await db.prepare(`
+		INSERT OR IGNORE INTO ad_escrow_accounts(a_x_id, asset_symbol, available_atomic, frozen_atomic, created_at, updated_at)
+		VALUES(?, 'USDC', '0', '0', datetime('now'), datetime('now'))
+	`).bind(aXId).run();
+	return result.success ?? false;
+}
+
+/**
+ * 查询现有的托管账本记录（用于幂等性检查）
+ * @param db - D1 数据库实例
+ * @param aXId - 广告主 X ID
+ * @param direction - 方向: DEPOSIT 或 WITHDRAW
+ * @param requestId - 请求 ID（对于 WITHDRAW）或 null（对于 DEPOSIT，使用 txHash）
+ * @returns 账本记录或 null
+ */
+export async function getEscrowLedgerByRequestId(
+	db: D1Database,
+	aXId: string,
+	direction: 'DEPOSIT' | 'WITHDRAW',
+	requestId: string | null
+): Promise<AdEscrowLedgerRow | null> {
+	if (!requestId) return null;
+
+	const stmt = db.prepare(`
+		SELECT * FROM ad_escrow_ledger
+		WHERE a_x_id = ? AND direction = ? AND request_id = ?
+		LIMIT 1
+	`).bind(aXId, direction, requestId);
+	return await stmt.first<AdEscrowLedgerRow>();
+}
+
+/**
+ * 查询现有的托管账本记录（根据 tx_hash）
+ * @param db - D1 数据库实例
+ * @param txHash - 交易哈希
+ * @returns 账本记录或 null
+ */
+export async function getEscrowLedgerByTxHash(
+	db: D1Database,
+	txHash: string
+): Promise<AdEscrowLedgerRow | null> {
+	const stmt = db.prepare(`
+		SELECT * FROM ad_escrow_ledger
+		WHERE tx_hash = ?
+		LIMIT 1
+	`).bind(txHash);
+	return await stmt.first<AdEscrowLedgerRow>();
+}
+
+/**
+ * 插入新的托管账本记录（存款）
+ * 使用 ON CONFLICT 防止重复计费
+ * @param db - D1 数据库实例
+ * @param ledgerId - 账本 ID (UUID)
+ * @param aXId - 广告主 X ID
+ * @param amountAtomic - 金额（原子单位）
+ * @param txHash - 交易哈希
+ * @param payerAddress - 支付者地址
+ * @param treasuryAddress - 库账户地址
+ * @returns 是否实际插入了新行 (changes > 0)
+ */
+export async function insertDepositLedger(
+	db: D1Database,
+	ledgerId: string,
+	aXId: string,
+	amountAtomic: string,
+	txHash: string,
+	payerAddress: string,
+	treasuryAddress: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		INSERT INTO ad_escrow_ledger(
+			ledger_id, a_x_id, direction, asset_symbol, amount_atomic,
+			payer_address, receiver_address, tx_hash, status, created_at, updated_at
+		)
+		VALUES(?, ?, 'DEPOSIT', 'USDC', ?, ?, ?, ?, 'SETTLED', datetime('now'), datetime('now'))
+		ON CONFLICT(tx_hash) DO NOTHING
+	`).bind(ledgerId, aXId, amountAtomic, payerAddress, treasuryAddress, txHash).run();
+
+	return result.success && (result.meta.changes ?? 0) > 0;
+}
+
+/**
+ * 增加托管账户的可用余额（用于存款）
+ * @param db - D1 数据库实例
+ * @param aXId - 广告主 X ID
+ * @param amountAtomic - 金额（原子单位）
+ * @returns 操作是否成功
+ */
+export async function creditEscrowBalance(
+	db: D1Database,
+	aXId: string,
+	amountAtomic: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		UPDATE ad_escrow_accounts
+		SET available_atomic = CAST(available_atomic AS INTEGER) + ?,
+		    updated_at = datetime('now')
+		WHERE a_x_id = ? AND asset_symbol = 'USDC'
+	`).bind(amountAtomic, aXId).run();
+
+	return result.success ?? false;
+}
+
+/**
+ * 插入新的提现账本记录（待处理）
+ * @param db - D1 数据库实例
+ * @param ledgerId - 账本 ID (UUID)
+ * @param aXId - 广告主 X ID
+ * @param amountAtomic - 金额（原子单位）
+ * @param receiverAddress - 接收者地址
+ * @param requestId - 请求 ID（幂等性密钥）
+ * @returns 是否实际插入了新行
+ */
+export async function insertWithdrawLedger(
+	db: D1Database,
+	ledgerId: string,
+	aXId: string,
+	amountAtomic: string,
+	receiverAddress: string,
+	requestId: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		INSERT INTO ad_escrow_ledger(
+			ledger_id, a_x_id, direction, asset_symbol, amount_atomic,
+			receiver_address, status, request_id, created_at, updated_at
+		)
+		VALUES(?, ?, 'WITHDRAW', 'USDC', ?, ?, 'PENDING', ?, datetime('now'), datetime('now'))
+	`).bind(ledgerId, aXId, amountAtomic, receiverAddress, requestId).run();
+
+	return result.success && (result.meta.changes ?? 0) > 0;
+}
+
+/**
+ * 扣减托管账户的可用余额（用于提现）
+ * @param db - D1 数据库实例
+ * @param aXId - 广告主 X ID
+ * @param amountAtomic - 金额（原子单位）
+ * @returns 操作是否成功
+ */
+export async function debitEscrowBalance(
+	db: D1Database,
+	aXId: string,
+	amountAtomic: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		UPDATE ad_escrow_accounts
+		SET available_atomic = CAST(available_atomic AS INTEGER) - ?,
+		    updated_at = datetime('now')
+		WHERE a_x_id = ? AND asset_symbol = 'USDC'
+		  AND CAST(available_atomic AS INTEGER) >= ?
+	`).bind(amountAtomic, aXId, amountAtomic).run();
+
+	return result.success && (result.meta.changes ?? 0) > 0;
+}
+
+/**
+ * 更新提现账本记录为已结算
+ * @param db - D1 数据库实例
+ * @param ledgerId - 账本 ID
+ * @param txHash - 交易哈希
+ * @param payerAddress - 支付者地址
+ * @returns 操作是否成功
+ */
+export async function settleWithdrawLedger(
+	db: D1Database,
+	ledgerId: string,
+	txHash: string,
+	payerAddress: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		UPDATE ad_escrow_ledger
+		SET tx_hash = ?, payer_address = ?, status = 'SETTLED', updated_at = datetime('now')
+		WHERE ledger_id = ?
+	`).bind(txHash, payerAddress, ledgerId).run();
+
+	return result.success ?? false;
+}
+
+/**
+ * 更新提现账本记录为失败并退款
+ * @param db - D1 数据库实例
+ * @param ledgerId - 账本 ID
+ * @param errorReason - 错误原因
+ * @returns 操作是否成功
+ */
+export async function failWithdrawLedger(
+	db: D1Database,
+	ledgerId: string,
+	errorReason: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		UPDATE ad_escrow_ledger
+		SET status = 'FAILED', error_reason = ?, updated_at = datetime('now')
+		WHERE ledger_id = ?
+	`).bind(errorReason, ledgerId).run();
+
+	return result.success ?? false;
+}
+
+/**
+ * 退款：增加余额（用于提现失败）
+ * @param db - D1 数据库实例
+ * @param aXId - 广告主 X ID
+ * @param amountAtomic - 金额（原子单位）
+ * @returns 操作是否成功
+ */
+export async function refundEscrowBalance(
+	db: D1Database,
+	aXId: string,
+	amountAtomic: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		UPDATE ad_escrow_accounts
+		SET available_atomic = CAST(available_atomic AS INTEGER) + ?,
+		    updated_at = datetime('now')
+		WHERE a_x_id = ? AND asset_symbol = 'USDC'
+	`).bind(amountAtomic, aXId).run();
+
+	return result.success ?? false;
 }

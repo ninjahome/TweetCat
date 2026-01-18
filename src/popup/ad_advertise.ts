@@ -6,12 +6,13 @@ import {
     formatUSDC,
     multiplyAtomic,
     showNotification,
-    usdcToAtomic
+    usdcToAtomic, openTxInExplorer, x402WorkerFetch
 } from "./common";
 import {ChainNameBaseMain, walletInfo, X402_FACILITATORS} from "../common/x402_obj";
 import {getChainId} from "../wallet/wallet_setting";
-import {queryCdpWalletInfo} from "../wallet/cdp_wallet";
+import {postToX402SrvByPri, queryCdpWalletInfo} from "../wallet/cdp_wallet";
 import {logAdP} from "../common/debug_flags";
+import browser from "webextension-polyfill";
 
 type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
 
@@ -595,38 +596,140 @@ function initRechargeModalEvents() {
     });
 
     const btnSubmit = $Id("btn-transfer-submit") as HTMLButtonElement | null;
-    if (btnSubmit) btnSubmit.addEventListener("click", () => {
-        const input = $Id("transfer-amount") as HTMLInputElement | null;
-        const amount = Number(input?.value || "0");
+    if (btnSubmit) {
+        // ✅ 不使用 addEventListener：按要求直接赋值 onclick
+        btnSubmit.onclick = () => {
+            void handleAdsEscrowTransfer(btnSubmit);
+        };
+    }
+}
 
-        if (!Number.isFinite(amount) || amount <= 0) {
-            showNotification("Please enter a valid amount.", "error");
+
+function getErrMsgFromResponse(resp: Response, data: any, fallbackText: string): string {
+    const msg =
+        data?.detail ||
+        data?.message ||
+        (typeof data?.error === "string" ? data.error : "") ||
+        fallbackText ||
+        `HTTP ${resp.status}`;
+    return String(msg).trim() || `HTTP ${resp.status}`;
+}
+
+async function refreshWalletAndAdsUI(): Promise<void> {
+    const chainId = await getChainId();
+    walletInfoCache = await queryCdpWalletInfo(chainId);
+    updateHeaderInfo();
+    await refreshAdsData();
+    syncTransferModalUI();
+}
+
+/**
+ * 处理 Ads 托管账户的充值 / 提现
+ * - wallet_to_ads  => POST /ads/publisher/recharge (x402 用户支付)
+ * - ads_to_wallet  => POST /ads/publisher/withdraw (服务器金库支付)
+ */
+async function handleAdsEscrowTransfer(btnSubmit?: HTMLButtonElement | null): Promise<void> {
+    const input = $Id("transfer-amount") as HTMLInputElement | null;
+    const amountStr = (input?.value || "").trim();
+    const amount = Number(amountStr);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        showNotification("Please enter a valid amount.", "error");
+        return;
+    }
+
+    // Ads → Wallet：不能超过 Ads Available
+    if (transferDirection === "ads_to_wallet") {
+        const maxAds = atomicToUsdcNumber(adAccountInfo.balanceAtomic);
+        if (amount > maxAds + 1e-9) {
+            showNotification("Amount exceeds Ads Available.", "error");
+            return;
+        }
+    }
+
+    // Wallet → Ads：不能超过 Wallet USDC
+    if (transferDirection === "wallet_to_ads") {
+        const maxWallet = parseUsdcNumber(walletInfoCache?.usdcVal ?? "0");
+        if (amount > maxWallet + 1e-9) {
+            showNotification("Amount exceeds Wallet USDC.", "error");
+            return;
+        }
+    }
+
+    // 历史记录：先写 Pending
+    const directionLabel = transferDirection === "wallet_to_ads" ? "Wallet → Ads" : "Ads → Wallet";
+    const historyItem: HistoryRow = {
+        time: new Date().toLocaleString(),
+        adNameOrMethod: directionLabel,
+        amount,
+        status: "Pending",
+    };
+    historyRecharge.unshift(historyItem);
+    switchHistoryTab("recharge");
+
+    const chainId = await getChainId();
+    const base = X402_FACILITATORS[chainId].endpoint;
+    const path = transferDirection === "wallet_to_ads" ? "/ads/publisher/recharge" : "/ads/publisher/withdraw";
+    const endpoint = `${base}${path}`;
+
+    const payload = {
+        a_x_id: getCurrentXId(),
+        amount: amountStr, // 服务器端会 usdcToAtomicSafe
+    };
+
+    if (btnSubmit) btnSubmit.disabled = true;
+    try {
+        let resp: Response;
+
+        if (transferDirection === "wallet_to_ads") {
+            // ✅ 充值：x402 用户侧支付（需要签名/支付 402 challenge）
+            resp = await postToX402SrvByPri(endpoint, payload);
+        } else {
+            // ✅ 提现：服务器金库侧支付（普通 POST 即可）
+            resp = await  x402WorkerFetch(endpoint,payload)
+        }
+
+        const text = await resp.text();
+        let data: any = {};
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch {
+            data = {};
+        }
+
+        if (!resp.ok) {
+            historyItem.status = "Failed";
+            switchHistoryTab("recharge");
+            showNotification(getErrMsgFromResponse(resp, data, text), "error");
             return;
         }
 
-        // 简单限额校验（Ads → Wallet 时不能超过 Ads Available）
-        if (transferDirection === "ads_to_wallet") {
-            const maxAds = atomicToUsdcNumber(adAccountInfo.balanceAtomic);
-            if (amount > maxAds + 1e-9) {
-                showNotification("Amount exceeds Ads Available.", "error");
-                return;
-            }
+        // 成功：更新历史 + 打开浏览器
+        const txHash = data?.txHash || data?.tx_hash || data?.transaction || data?.transactionHash;
+
+        historyItem.status = "Success";
+        switchHistoryTab("recharge");
+
+        const msg =
+            (typeof data?.message === "string" && data.message.trim())
+                ? data.message
+                : "Transfer submitted.";
+        showNotification(msg, "success");
+
+        if (txHash) {
+            await openTxInExplorer(String(txHash));
         }
 
-        // ===== 业务逻辑：先 stub =====
-        const directionLabel = transferDirection === "wallet_to_ads" ? "Wallet → Ads" : "Ads → Wallet";
-
-        historyRecharge.unshift({
-            time: new Date().toLocaleString(),
-            adNameOrMethod: directionLabel,
-            amount,
-            status: "Pending",
-        });
-
+        await refreshWalletAndAdsUI();
+    } catch (e: any) {
+        historyItem.status = "Failed";
         switchHistoryTab("recharge");
-        showNotification("Transfer submitted (stub).", "success");
-    });
+        showNotification(e?.message || "Transfer failed", "error");
+    } finally {
+        if (btnSubmit) btnSubmit.disabled = false;
+    }
 }
+
 
 // ========= 历史记录弹窗（模板 clone） =========
 

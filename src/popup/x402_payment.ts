@@ -5,6 +5,7 @@ import {logX402} from "../common/debug_flags";
 import {t, initI18n} from "../common/i18n";
 import {postToX402Srv, postToX402SrvByPri} from "../wallet/cdp_wallet";
 import browser from "webextension-polyfill";
+import {openTxInExplorer} from "./common";
 
 // DOM 元素
 let statusDiv: HTMLElement;
@@ -70,9 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     btnClose.onclick = () => window.close();
     btnBrowser.onclick = async () => {
         if (!currentHashVal) return;
-        const chainId = await getChainId();
-        const url = X402_FACILITATORS[chainId].browser + "/tx/" + currentHashVal
-        await browser.tabs.create({url});
+        openTxInExplorer(currentHashVal).then()
         window.close()
     }
     btnBrowser.style.display = 'none';

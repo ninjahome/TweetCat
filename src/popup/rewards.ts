@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
 import {queryCdpUserID} from "../wallet/cdp_wallet";
-import {showLoading, hideLoading, showNotification, x402WorkerFetch, x402WorkerGet} from "./common";
+import {showLoading, hideLoading, showNotification, x402WorkerFetch, x402WorkerGet, openTxInExplorer} from "./common";
 import {getChainId} from "../wallet/wallet_setting";
 import {X402_FACILITATORS} from "../common/x402_obj";
 import {initI18n, t} from "../common/i18n";
@@ -45,13 +45,13 @@ function initRewardsTexts() {
     if (pageTitle) {
         pageTitle.textContent = t('rewards_page_title');
     }
-    
+
     // 筛选标签
     const filterLabel = document.querySelector('.filter-container label');
     if (filterLabel) {
         filterLabel.textContent = t('rewards_filter_label') + ':';
     }
-    
+
     // 状态筛选下拉框选项
     const statusFilter = document.getElementById('status-filter') as HTMLSelectElement;
     if (statusFilter) {
@@ -63,23 +63,23 @@ function initRewardsTexts() {
         if (options[4]) options[4].textContent = t('rewards_status_failed');
         if (options[5]) options[5].textContent = t('rewards_status_cancelled');
     }
-    
+
     // 分页按钮
     const prevBtn = document.getElementById('prev-page');
     if (prevBtn) {
         prevBtn.textContent = t('rewards_prev_page');
     }
-    
+
     const nextBtn = document.getElementById('next-page');
     if (nextBtn) {
         nextBtn.textContent = t('rewards_next_page');
     }
-    
+
     const pageInfo = document.getElementById('page-info');
     if (pageInfo) {
         pageInfo.textContent = t('rewards_page_info', '1');
     }
-    
+
     // 空状态提示
     const emptyState = document.getElementById('empty-state');
     if (emptyState) {
@@ -88,7 +88,7 @@ function initRewardsTexts() {
             emptyText.textContent = t('rewards_empty_state');
         }
     }
-    
+
     // Loading 文本
     const loadingMessage = document.querySelector('.loading-message');
     if (loadingMessage) {
@@ -323,10 +323,7 @@ function createRewardItem(reward: Reward): HTMLElement {
         viewTxBtn.textContent = t('rewards_btn_view_tx');
         viewTxBtn.onclick = async (e) => {
             e.stopPropagation();
-            const chainId = await getChainId();
-            await browser.tabs.create({
-                url: X402_FACILITATORS[chainId].browser + "/tx/" + reward.tx_hash
-            });
+            await openTxInExplorer(reward.tx_hash)
         };
 
         actions.appendChild(viewTxBtn);
@@ -422,14 +419,7 @@ async function handleClaimReward(rewardId: number) {
         if (response.success && response.data) {
             const {txHash} = response.data;
             showNotification(t('rewards_claim_success'), "success");
-
-            // 打开区块链浏览器
-            const chainId = await getChainId();
-            await browser.tabs.create({
-                url: X402_FACILITATORS[chainId].browser + "/tx/" + txHash
-            });
-
-            // 刷新奖励列表
+            await openTxInExplorer(txHash)
             currentPageStart = 0;
             await loadRewards();
         } else {

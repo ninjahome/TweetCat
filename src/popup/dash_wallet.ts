@@ -1,6 +1,7 @@
 import {
     $Id, $input, FIXED_ETH_TRANSFER_GAS_ETH,
-    FIXED_MINI_USDC_TRANSFER, hideLoading, showAlert, showLoading, showNotification, showPopupWindow, x402WorkerGet
+    FIXED_MINI_USDC_TRANSFER, hideLoading,
+    openTxInExplorer, showAlert, showLoading, showNotification, showPopupWindow, x402WorkerGet
 } from "./common";
 import {t} from "../common/i18n";
 import {ethers} from "ethers";
@@ -135,7 +136,7 @@ async function __handleTransfer(typ: "eth" | "usdc", action: (chain: number, rec
         const {to, amount} = formValues;
         const chainID = await getChainId()
         const hash = await action(chainID, to, amount)
-        browser.tabs.create({url: X402_FACILITATORS[chainID].browser + "/tx/" + hash}).then()
+        openTxInExplorer(hash, chainID).then()
         refreshBalances(false).then();
     } catch (error) {
         console.log(error)

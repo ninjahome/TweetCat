@@ -7,7 +7,7 @@ import {
 	apiQueryRewardHistory, apiQueryPlatformFees,
 	apiCreateOnrampSession, apiOnrampWebhook
 } from "./api_srv_usr";
-import {apiAdsBalance, apiAdsCreate, apiAdsMyAds, apiAdsList, apiAdsClaim, apiAdsMyClaims} from "./api_srv_ads";
+import {registerAdsRoutes} from "./api_srv_ads";
 
 export function registerSrv(app: Hono<ExtendedEnv>) {
 	// X402 相关 API
@@ -34,10 +34,5 @@ export function registerSrv(app: Hono<ExtendedEnv>) {
 	app.post("/onramp/webhook", apiOnrampWebhook);
 
 	// 广告相关 API
-	app.get("/ads/balance", apiAdsBalance);
-	app.post("/ads/create", apiAdsCreate);
-	app.get("/ads/my_ads", apiAdsMyAds);
-	app.get("/ads/list", apiAdsList);
-	app.post("/ads/claim", apiAdsClaim);
-	app.get("/ads/my_claims", apiAdsMyClaims);
+	registerAdsRoutes(app);
 }

@@ -289,3 +289,14 @@ export async function getCurrentUserInfo(): Promise<{ xId: string; walletAddress
         walletAddress: eoa.address,
     };
 }
+
+
+export async function openTxInExplorer(txHash: string, chainId?: number): Promise<void> {
+    if (!txHash) return;
+    if (!chainId) chainId = await getChainId();
+
+    const browserBase = X402_FACILITATORS[chainId]?.browser;
+    if (!browserBase) return;
+    const url = `${browserBase}/tx/${txHash}`;
+    await browser.tabs.create({url});
+}

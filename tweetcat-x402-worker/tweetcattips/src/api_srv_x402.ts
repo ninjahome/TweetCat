@@ -4,10 +4,9 @@ import {
 	ExtCtx,
 	getPaymentHeader,
 	isHexAddress,
-	NetConfig,
 	usdcToAtomicSafe
 } from "./common";
-import {ResourceInfo, x402ResourceServer} from "@x402/core/server";
+import {ResourceInfo} from "@x402/core/server";
 import {SettleResponse} from "@x402/core/types";
 import {creditRewardsBalance, getKolBindingByXId, usdcEscrowTips} from "./database_402";
 import {x402Client} from "@x402/core/client";
@@ -73,13 +72,13 @@ async function parseTransferParams(c: ExtCtx): Promise<{ payTo: `0x${string}`; a
 	return {payTo: to as `0x${string}`, atomicAmount};
 }
 
-class PaymentRequiredError extends Error {
+export class PaymentRequiredError extends Error {
 	constructor() {
 		super("402");
 	}
 }
 
-async function x402Workflow(c: ExtCtx, payTo: string, atomicAmount: string, desc: string = "x402 transfer",): Promise<SettleResponse> {
+export async function x402Workflow(c: ExtCtx, payTo: string, atomicAmount: string, desc: string = "x402 transfer",): Promise<SettleResponse> {
 
 	const cfg = c.get("cfg");
 	const getResourceServer = c.get("getResourceServer");
@@ -145,7 +144,7 @@ export async function apiHandleTip(c: ExtCtx): Promise<Response> {
 		}
 		return c.json({success: true, txHash: settleResult.transaction});
 	} catch (e: any) {
-		if (e instanceof PaymentRequiredError) return c.json({error: "Required"}, 402);
+		if (e instanceof PaymentRequiredError) return c.json({error: "PAYMENT_REQUIRED"}, 402);
 
 		return c.json({error: e.message}, 400);
 	}
@@ -164,12 +163,14 @@ export async function apiX402UsdcTransfer(c: ExtCtx): Promise<Response> {
 
 export async function internalTreasurySettle(
 	c: ExtCtx,
-	cfg: NetConfig,
-	rs: x402ResourceServer,
 	payTo: `0x${string}`,
 	atomicAmount: string,
 	resourceUrl: string
 ): Promise<SettleResponse> {
+
+	const cfg = c.get("cfg");
+	const getResourceServer = c.get("getResourceServer");
+	const rs = getResourceServer(c.env);
 
 	const privateKey = c.env.TREASURY_PRIVATE_KEY;
 
