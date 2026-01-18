@@ -10,7 +10,7 @@ import {
 	toSqliteDate,
 	getAdAccountBalance,
 	getAccountBalanceAtomic,
-	deductAdAccountBalance,
+	reserveAdBudget,
 	createAd,
 	getMyAds,
 	getActiveAdsList,
@@ -30,9 +30,19 @@ export async function apiAdsBalance(c: ExtCtx) {
 
 		const row = await getAdAccountBalance(c.env.DB, aXId);
 		if (!row) {
-			return c.json({a_x_id: aXId, asset_symbol: "USDC", balance_atomic: "0"});
+			return c.json({
+				a_x_id: aXId,
+				asset_symbol: "USDC",
+				balance_atomic: "0",
+				frozen_atomic: "0"
+			});
 		}
-		return c.json(row);
+		return c.json({
+			a_x_id: row.a_x_id,
+			asset_symbol: row.asset_symbol,
+			balance_atomic: row.available_atomic,
+			frozen_atomic: row.frozen_atomic
+		});
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
 	}
@@ -63,15 +73,15 @@ export async function apiAdsCreate(c: ExtCtx) {
 
 		const requiredAtomic = (BigInt(unitPriceAtomic) * BigInt(quotaTotal)).toString();
 
-		// 尝试扣减余额
-		const deducted = await deductAdAccountBalance(c.env.DB, aXId, requiredAtomic);
-		if (!deducted) {
+		// 尝试预留预算（从可用余额移至冻结余额）
+		const reserved = await reserveAdBudget(c.env.DB, aXId, requiredAtomic);
+		if (!reserved) {
 			const accountInfo = await getAccountBalanceAtomic(c.env.DB, aXId);
 			return jsonError(
 				c,
 				400,
 				"INSUFFICIENT_BALANCE",
-				`Required ${requiredAtomic}, current ${accountInfo.balanceAtomic}.`
+				`Required ${requiredAtomic}, available ${accountInfo.balanceAtomic}.`
 			);
 		}
 
@@ -223,16 +233,4 @@ export async function apiAdsMyClaims(c: ExtCtx) {
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
 	}
-}
-
-/**
- * 注册广告相关路由
- */
-export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
-	app.get("/ads/balance", apiAdsBalance);
-	app.post("/ads/create", apiAdsCreate);
-	app.get("/ads/my_ads", apiAdsMyAds);
-	app.get("/ads/list", apiAdsList);
-	app.post("/ads/claim", apiAdsClaim);
-	app.get("/ads/my_claims", apiAdsMyClaims);
 }

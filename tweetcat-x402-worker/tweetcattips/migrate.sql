@@ -154,83 +154,28 @@ CREATE INDEX IF NOT EXISTS idx_onramp_purchases_status
 	ON onramp_purchases(status, created_at DESC);
 
 
+-->>todo:release environment
 
+CREATE TABLE IF NOT EXISTS ad_escrow_accounts (
+												  a_x_id TEXT NOT NULL,
+												  asset_symbol TEXT NOT NULL DEFAULT 'USDC',
 
--- 先删除旧表（如果已存在）
-DROP TABLE IF EXISTS ads;
+	-- 可撤回余额（原 ad_account.balance_atomic）
+												  available_atomic TEXT NOT NULL DEFAULT '0',
 
--- ads
-CREATE TABLE IF NOT EXISTS ads (
-								   ad_id TEXT PRIMARY KEY,
-								   a_x_id TEXT NOT NULL,
-								   ad_type TEXT NOT NULL,              -- e.g. FOLLOW_BLUE_V
-								   category TEXT NOT NULL,             -- follow/visit/register/share
-								   name TEXT NOT NULL,                 -- Ad Name (for your reference)
-								   title TEXT NOT NULL,
-								   description TEXT NOT NULL,
-								   detail_url TEXT NOT NULL,
-								   unit_price_atomic TEXT NOT NULL,    -- USDC atomic
-								   quota_total INTEGER NOT NULL,
-								   quota_used INTEGER NOT NULL DEFAULT 0,
-								   status TEXT NOT NULL DEFAULT 'ACTIVE',
-								   start_at TEXT,
-								   end_at TEXT,
-								   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+	-- 冻结余额（用于预算锁定/结算中等）
+												  frozen_atomic TEXT NOT NULL DEFAULT '0',
+
+												  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+	updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+
+	PRIMARY KEY (a_x_id, asset_symbol),
+
+	CHECK (CAST(available_atomic AS INTEGER) >= 0),
+	CHECK (CAST(frozen_atomic AS INTEGER) >= 0)
 	);
 
-CREATE INDEX IF NOT EXISTS idx_ads_status_created ON ads(status, created_at);
-CREATE INDEX IF NOT EXISTS idx_ads_axid_created ON ads(a_x_id, created_at);
-
--- ad_account：先做账本余额（后续再接充值/链上）
-CREATE TABLE IF NOT EXISTS ad_account (
-										  a_x_id TEXT PRIMARY KEY,
-										  asset_symbol TEXT NOT NULL DEFAULT 'USDC',
-										  balance_atomic TEXT NOT NULL DEFAULT '0',
-										  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-	);
-
-
-DROP TABLE IF EXISTS ad_account;
-CREATE TABLE IF NOT EXISTS ad_account (
-										  a_x_id TEXT PRIMARY KEY,
-										  asset_symbol TEXT NOT NULL DEFAULT 'USDC',
-										  balance_atomic TEXT NOT NULL DEFAULT '0',
-										  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-	);
-
-
-
-
-CREATE TABLE IF NOT EXISTS claims (
-									  claim_id TEXT PRIMARY KEY,
-									  ad_id TEXT NOT NULL,
-									  a_x_id TEXT NOT NULL,
-									  b_x_id TEXT NOT NULL,
-									  b_wallet TEXT NOT NULL,
-									  status TEXT NOT NULL, -- CLAIMED / PENDING_CONFIRM / CONFIRMED / REJECTED / SETTLED_TIMEOUT
-									  unit_price_atomic TEXT NOT NULL,
-									  fee_rate REAL NOT NULL DEFAULT 0.05,
-									  follow_receipt_sig TEXT,
-									  a_confirm_sig TEXT,
-									  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-	expires_at TEXT NOT NULL,
-	confirmed_at TEXT
-	);
-
--- 防止同一 B 对同一 ad 并发刷 pending
-CREATE UNIQUE INDEX IF NOT EXISTS idx_claims_ad_b_pending
-	ON claims(ad_id, b_x_id)
-	WHERE status IN ('CLAIMED','PENDING_CONFIRM');
-
-CREATE INDEX IF NOT EXISTS idx_claims_axid_status ON claims(a_x_id, status, expires_at);
-CREATE INDEX IF NOT EXISTS idx_claims_bxid_created ON claims(b_x_id, created_at);
-
--- B 的广告收益账本（阶段5结算时会更新）
-CREATE TABLE IF NOT EXISTS ad_user_balances (
-												b_x_id TEXT PRIMARY KEY,
-												asset_symbol TEXT NOT NULL DEFAULT 'USDC',
-												withdrawable_atomic TEXT NOT NULL DEFAULT '0',
-												pending_atomic TEXT NOT NULL DEFAULT '0',
-												total_earned_atomic TEXT NOT NULL DEFAULT '0',
-												updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-	);
+-- 说明：PRIMARY KEY (a_x_id, asset_symbol) 本身就是索引
+-- 如你未来要做后台列表按更新时间排序，可加：
+CREATE INDEX IF NOT EXISTS idx_ad_escrow_accounts_updated_at
+	ON ad_escrow_accounts(updated_at);

@@ -22,10 +22,11 @@ export const CATEGORY_TAGS: Record<AdCategory, string[]> = {
 	share: ["Popular"],
 };
 
-export interface AdAccountRow {
+export interface AdEscrowAccountRow {
 	a_x_id: string;
 	asset_symbol: string;
-	balance_atomic: string;
+	available_atomic: string;
+	frozen_atomic: string;
 }
 
 export interface AdRow {
@@ -111,52 +112,55 @@ export function computePopularityScore(completed: number, total: number): number
 // ========= 广告账户操作 =========
 
 /**
- * 获取广告账户余额
+ * 获取广告托管账户信息（包含可用和冻结余额）
  * @param db - D1 数据库实例
  * @param aXId - 广告主 X ID
  * @returns 账户信息或 null
  */
-export async function getAdAccountBalance(db: D1Database, aXId: string): Promise<AdAccountRow | null> {
+export async function getAdAccountBalance(db: D1Database, aXId: string): Promise<AdEscrowAccountRow | null> {
 	const stmt = db.prepare(
-		"SELECT a_x_id, asset_symbol, balance_atomic FROM ad_account WHERE a_x_id = ?"
+		"SELECT a_x_id, asset_symbol, available_atomic, frozen_atomic FROM ad_escrow_accounts WHERE a_x_id = ? AND asset_symbol = 'USDC'"
 	).bind(aXId);
-	return await stmt.first<AdAccountRow>();
+	return await stmt.first<AdEscrowAccountRow>();
 }
 
 /**
- * 扣减广告账户余额（仅当余额足够时）
+ * 预留广告预算（将可用余额移至冻结余额）
+ * 仅当可用余额足够时执行
  * @param db - D1 数据库实例
  * @param aXId - 广告主 X ID
- * @param amount - 要扣减的金额（原子单位）
+ * @param amountAtomic - 要预留的金额（原子单位）
  * @returns 操作是否成功
  */
-export async function deductAdAccountBalance(db: D1Database, aXId: string, amount: string): Promise<boolean> {
+export async function reserveAdBudget(db: D1Database, aXId: string, amountAtomic: string): Promise<boolean> {
 	const updateSql = `
-		UPDATE ad_account
-		SET balance_atomic = CAST(balance_atomic AS INTEGER) - ?,
+		UPDATE ad_escrow_accounts
+		SET available_atomic = CAST(available_atomic AS INTEGER) - ?,
+			frozen_atomic = CAST(frozen_atomic AS INTEGER) + ?,
 			updated_at = datetime('now')
 		WHERE a_x_id = ?
-		  AND CAST(balance_atomic AS INTEGER) >= ?
+		  AND asset_symbol = 'USDC'
+		  AND CAST(available_atomic AS INTEGER) >= ?
 	`;
 	const updateResult = await db.prepare(updateSql)
-		.bind(amount, aXId, amount)
+		.bind(amountAtomic, amountAtomic, aXId, amountAtomic)
 		.run();
 
 	return updateResult.success && (updateResult.meta.changes ?? 0) > 0;
 }
 
 /**
- * 获取账户信息
+ * 获取账户信息（仅返回可用余额）
  * @param db - D1 数据库实例
  * @param aXId - 广告主 X ID
  * @returns 账户信息结构体
  */
 export async function getAccountBalanceAtomic(db: D1Database, aXId: string): Promise<AdAccountInfo> {
 	const balanceRow = await db.prepare(
-		"SELECT balance_atomic FROM ad_account WHERE a_x_id = ?"
-	).bind(aXId).first<{balance_atomic: string}>();
+		"SELECT available_atomic FROM ad_escrow_accounts WHERE a_x_id = ? AND asset_symbol = 'USDC'"
+	).bind(aXId).first<{available_atomic: string}>();
 	return {
-		balanceAtomic: balanceRow?.balance_atomic ?? "0"
+		balanceAtomic: balanceRow?.available_atomic ?? "0"
 	};
 }
 
