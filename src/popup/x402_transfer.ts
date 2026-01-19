@@ -1,8 +1,7 @@
-import {initCDP, X402_FACILITATORS} from "../common/x402_obj";
+import {initCDP} from "../common/x402_obj";
 import {isSignedIn} from "@coinbase/cdp-core";
 import browser from "webextension-polyfill";
 import {openTxInExplorer, showPopupWindow} from "./common";
-import {getChainId} from "../wallet/wallet_setting";
 import {postToX402SrvByPri} from "../wallet/cdp_wallet";
 import {initI18n, t} from "../common/i18n";
 import {logX402} from "../common/debug_flags";
