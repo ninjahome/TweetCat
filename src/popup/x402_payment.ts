@@ -122,25 +122,13 @@ async function processTipPayment(payload: x402TipPayload) {
             return
         }
 
-        updateStatus(t('fetching_network_info'));
-        const chainId = await getChainId();
-        const end_point = X402_FACILITATORS[chainId].endpoint + "/tip";
 
         updateStatus(t('requesting_payment'));
-
-        const response = await postToX402SrvByPri(end_point, {
+        const result = await postToX402SrvByPri("/tip", {
             amount: payload.usdcVal,
             tweetId: payload.tweetId,
             xId: payload.authorId
         })
-
-        if (!response.ok) {
-            const text = await response.text();
-            logX402("------>>>x402 error:", text);
-            showError(`${t('post_payment_failure')} (${response.status}): ${text}`);
-            return
-        }
-        const result = await response.json();
 
         const txHash = result.txHash || result.transactionHash;
         logX402("-------x402>>>result,", result)

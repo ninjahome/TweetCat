@@ -35,6 +35,7 @@ import {registerExactEvmScheme} from "@x402/evm/exact/client";
 import {wrapFetchWithPayment} from "@x402/fetch";
 import {privateKeyToAccount} from "viem/accounts";
 import {logX402} from "../common/debug_flags";
+import {t} from "../common/i18n";
 
 const ERC20_BALANCE_ABI = [
     {
@@ -325,16 +326,7 @@ export async function transferUSDCByX402(
     if (!isAddress(toAddress)) {
         throw new Error(`Invalid recipient address: ${toAddress}`);
     }
-
-    const end_point = X402_FACILITATORS[chainId].endpoint + "/usdc-transfer";
-    const response = await postToX402SrvByPri(end_point, {amount: amountUsdc, to: toAddress})
-    if (!response.ok) {
-        const text = await response.text();
-        logX402("------>>>x402 transfer error:", text);
-        throw new Error(`transfer failed: ${text}`);
-    }
-
-    const result = await response.json();
+    const result = await postToX402SrvByPri("/usdc-transfer", {amount: amountUsdc, to: toAddress})
     const txHash = result.txHash;
     logX402("-------x402>>>transfer result,", result)
     return txHash;
@@ -509,14 +501,25 @@ export async function postToX402Srv(urlPath: string, body: any) {
 }
 
 
-export async function postToX402SrvByPri(urlPath: string, body: any) {
-    logX402("------>>> using private key to sign x402")
+export async function postToX402SrvByPri(path: string, body: any) {
+    const chainId = await getChainId();
+    const end_point = X402_FACILITATORS[chainId].endpoint + path;
+
+    logX402("------>>> using private key to sign x402:", end_point)
     const x402Fetch = await initX402ClientWithPrivateKey()
-    return x402Fetch(urlPath, {
+    const response = await x402Fetch(end_point, {
         method: 'POST',
         headers: {
             "Content-Type": "application/json"
         },
         body: JSON.stringify(body)
     });
+
+    if (!response.ok) {
+        const text = await response.text();
+        logX402("------>>>x402 error:", text);
+        throw new Error(`${t('post_payment_failure')} (${response.status}): ${text}`)
+    }
+
+    return await response.json();
 }

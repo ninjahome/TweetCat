@@ -582,7 +582,7 @@ function setTransferDirection(dir: TransferDirection) {
                 ? "On-chain Wallet → Ads Account"
                 : "Ads Account → On-chain Wallet";
     }
-    
+
     // 显示/隐藏月度限制警告
     const monthlyWarning = $Id("monthly-limit-warning");
     if (monthlyWarning) {
@@ -592,12 +592,12 @@ function setTransferDirection(dir: TransferDirection) {
             monthlyWarning.classList.add("hidden");
         }
     }
-    
+
     // 隐藏月度限制详情（切换方向时总是隐藏）
     const limitDetails = $Id("monthly-limit-details");
     if (limitDetails) {
         limitDetails.classList.add("hidden");
-        
+
         // 重置按钮状态
         const viewTxBtn = $Id("btn-view-previous-tx") as HTMLButtonElement | null;
         if (viewTxBtn) {
@@ -605,7 +605,7 @@ function setTransferDirection(dir: TransferDirection) {
             viewTxBtn.onclick = null;
         }
     }
-    
+
     // 清除错误信息
     setTransferInlineError(null);
 }
@@ -631,12 +631,12 @@ function openRechargeModal() {
     syncTransferModalUI();
     setTransferDirection("wallet_to_ads");
     setTransferInlineError(null);
-    
+
     // 重置月度限制详情显示
     const limitDetails = $Id("monthly-limit-details");
     if (limitDetails) {
         limitDetails.classList.add("hidden");
-        
+
         // 重置按钮状态
         const viewTxBtn = $Id("btn-view-previous-tx") as HTMLButtonElement | null;
         if (viewTxBtn) {
@@ -720,7 +720,7 @@ function setTransferBusy(isBusy: boolean, label?: string): void {
 function setTransferInlineError(message: string | null): void {
     const inlineError = $Id("transfer-inline-error");
     const errorText = $Id("error-message-text");
-    
+
     if (!inlineError) return;
 
     if (!message) {
@@ -749,152 +749,124 @@ async function refreshWalletAndAdsUI(): Promise<void> {
     syncTransferModalUI();
 }
 
-/**
- * 处理 Ads 托管账户的充值 / 提现
- * - wallet_to_ads  => POST /ads/publisher/recharge (x402 用户支付)
- * - ads_to_wallet  => POST /ads/publisher/withdraw (服务器金库支付)
- */
-async function handleAdsEscrowTransfer(): Promise<void> {
-    // ---- 读取输入 ----
+function handleMonthlyWithdrawLimitIfNeeded(result: any) {
+    if (!result || result.alreadyWithdrawn !== true) return;
+
+    // 隐藏 inline error
+    setTransferInlineError(null);
+
+    // 显示月度限制详情
+    const limitDetails = $Id("monthly-limit-details");
+    if (limitDetails) {
+        limitDetails.classList.remove("hidden");
+
+        // 设置提现日期
+        if (result.withdrawnAt) {
+            const withdrawDate = new Date(result.withdrawnAt).toLocaleString();
+            const prevDateEl = $Id("previous-withdraw-date");
+            if (prevDateEl) prevDateEl.textContent = withdrawDate;
+        }
+
+        // 设置下次可用日期
+        if (result.nextAvailableDate) {
+            const nextDate = new Date(result.nextAvailableDate).toLocaleDateString();
+            const nextDateEl = $Id("next-available-date");
+            if (nextDateEl) nextDateEl.textContent = nextDate;
+        }
+
+        // 设置查看交易按钮
+        const viewTxBtn = $Id("btn-view-previous-tx") as HTMLButtonElement | null;
+        if (viewTxBtn) {
+            if (result.previousTxHash) {
+                viewTxBtn.classList.remove("hidden");
+                viewTxBtn.onclick = () => openTxInExplorer(result.previousTxHash);
+            } else {
+                viewTxBtn.classList.add("hidden");
+                viewTxBtn.onclick = null;
+            }
+        }
+    }
+
+    // toast
+    const nextDateText = result.nextAvailableDate
+        ? new Date(result.nextAvailableDate).toLocaleDateString()
+        : "next month";
+    showNotification(`Monthly withdrawal limit reached. Next available: ${nextDateText}`, "error");
+}
+
+
+function prepareEscrowTransferParam(): any {
     const input = $Id("transfer-amount") as HTMLInputElement | null;
     const amount = Number((input?.value || "0").trim());
 
     if (!Number.isFinite(amount) || amount <= 0) {
-        showNotification("Please enter a valid amount.", "error");
-        return;
+        throw new Error("Please enter a valid amount.")
     }
 
     if (!walletInfoCache?.xId) {
-        showNotification("Missing user xId. Please sign in again.", "error");
-        return;
+        throw new Error("Missing user xId. Please sign in again.")
     }
 
     // Ads → Wallet：不能超过可用余额
     if (transferDirection === "ads_to_wallet") {
         const maxAds = atomicToUsdcNumber(adAccountInfo.balanceAtomic);
         if (amount > maxAds + 1e-9) {
-            showNotification("Amount exceeds Ads Available.", "error");
-            return;
+            throw new Error("Amount exceeds Ads Available.")
         }
     }
 
-    const chainId = await getChainId();
-    const base = X402_FACILITATORS[chainId].endpoint;
-
-    const path =
-        transferDirection === "wallet_to_ads"
-            ? "/ads/publisher/recharge"
-            : "/ads/publisher/withdraw";
-
-    const url = `${base}${path}`;
-
-    // 服务器 parseEscrowRequestParams 需要：a_x_id + amount(十进制字符串)
-    const payload = {
+    return {
         a_x_id: walletInfoCache.xId,
         amount: amount.toFixed(2),
-    };
+    }
+}
 
-    // ✅ 强制避免“旧 hash / 缓存响应”干扰
-    const fetchInit: RequestInit = {
-        method: "POST",
-        cache: "no-store",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(payload),
-    };
+/**
+ * 处理 Ads 托管账户的充值 / 提现
+ * - wallet_to_ads  => POST /ads/publisher/recharge (x402 用户支付)
+ * - ads_to_wallet  => POST /ads/publisher/withdraw (服务器金库支付)
+ */
+
+async function handleAdsEscrowTransfer(): Promise<void> {
 
     setTransferInlineError(""); // 清空旧错误
-    setTransferBusy(true, transferDirection === "wallet_to_ads" ? "Processing deposit..." : "Processing withdraw...");
 
     try {
-        let ok = false;
-        let data: any = null;
-        let rawText = "";
+        const payload = prepareEscrowTransferParam();
+        let result: any;
 
         if (transferDirection === "wallet_to_ads") {
+            setTransferBusy(true, "Processing deposit...");
             // 充值：客户端需要走 x402 支付（用户 -> 平台库账户）
-            const resp = await postToX402SrvByPri(url, payload);
-            ok = resp.ok;
-            rawText = await resp.text();
-            try { data = rawText ? JSON.parse(rawText) : null; } catch { data = null; }
+            result = await postToX402SrvByPri("/ads/publisher/recharge", payload);
         } else {
             // 提现：服务器侧用 treasury 私钥结算（平台库账户 -> 用户钱包）
-            const resp = await fetch(url, fetchInit);
-            ok = resp.ok;
-            rawText = await resp.text();
-            try { data = rawText ? JSON.parse(rawText) : null; } catch { data = null; }
-        }
-
-        if (!ok) {
-            const msg = (data?.detail || data?.message || data?.error || rawText || "Request failed").toString();
-            setTransferInlineError(msg);
-            showNotification(msg, "error");
-            return;
+            setTransferBusy(true, "Processing withdraw...");
+            result = await x402WorkerFetch("/ads/publisher/withdraw", payload);
         }
 
         // ✅ 处理月度限制情况（提现专用）
-        if (transferDirection === "ads_to_wallet" && data?.alreadyWithdrawn === true) {
-            // 隐藏 inline error
-            setTransferInlineError(null);
-            
-            // 显示月度限制详情
-            const limitDetails = $Id("monthly-limit-details");
-            if (limitDetails) {
-                limitDetails.classList.remove("hidden");
-                
-                // 设置提现日期
-                if (data.withdrawnAt) {
-                    const withdrawDate = new Date(data.withdrawnAt).toLocaleString();
-                    const prevDateEl = $Id("previous-withdraw-date");
-                    if (prevDateEl) prevDateEl.textContent = withdrawDate;
-                }
-                
-                // 设置下次可用日期
-                if (data.nextAvailableDate) {
-                    const nextDate = new Date(data.nextAvailableDate).toLocaleDateString();
-                    const nextDateEl = $Id("next-available-date");
-                    if (nextDateEl) nextDateEl.textContent = nextDate;
-                }
-                
-                // 设置查看交易按钮
-                if (data.previousTxHash) {
-                    const viewTxBtn = $Id("btn-view-previous-tx") as HTMLButtonElement | null;
-                    if (viewTxBtn) {
-                        viewTxBtn.classList.remove("hidden");
-                        viewTxBtn.onclick = () => {
-                            openTxInExplorer(data.previousTxHash);
-                        };
-                    }
-                }
-            }
-            
-            // 显示 toast 通知
-            const nextDate = data.nextAvailableDate 
-                ? new Date(data.nextAvailableDate).toLocaleDateString() 
-                : "next month";
-            showNotification(`Monthly withdrawal limit reached. Next available: ${nextDate}`, "error");
-            
+        if (transferDirection === "ads_to_wallet" && result.alreadyWithdrawn === true) {
+            handleMonthlyWithdrawLimitIfNeeded(result)
             return;
         }
-        
+
         // 清除月度限制详情（如果显示了）
         const limitDetails = $Id("monthly-limit-details");
         if (limitDetails) limitDetails.classList.add("hidden");
 
-        if (!data?.success || !data?.txHash) {
-            const msg = (data?.detail || data?.message || data?.error || rawText || "Invalid response").toString();
+        if (!result.success || !result.txHash) {
+            const msg = (result.detail || result.message || result.error || "Invalid response").toString();
             setTransferInlineError(msg);
             showNotification(msg, "error");
             return;
         }
 
-        const txHash = String(data.txHash);
+        const txHash = String(result.txHash);
 
-        // ✅ 成功：关闭弹窗 + 打开区块链浏览器 + 刷新余额
         closeRechargeModal();
         openTxInExplorer(txHash);
-
-        await refreshWalletAndAdsUI();
-
+        refreshWalletAndAdsUI().then();
         showNotification("Transfer submitted successfully.", "success");
     } catch (e: any) {
         const msg = (e?.message || "Transfer failed").toString();
@@ -936,20 +908,20 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
 
     rows.forEach((row) => {
         const tr = cloneTemplate("tpl-history-row") as HTMLTableRowElement;
-        
+
         // 判断方向类型
         const isDeposit = row.adNameOrMethod.includes("Wallet → Ads");
         const isWithdraw = row.adNameOrMethod.includes("Ads → Wallet");
-        
+
         // 为不同方向的行添加不同的class
         if (isDeposit) {
             tr.classList.add("history-row--deposit");
         } else if (isWithdraw) {
             tr.classList.add("history-row--withdraw");
         }
-        
+
         $2<HTMLElement>(tr, ".td-time").textContent = row.time;
-        
+
         // Direction 列添加样式
         const directionCell = $2<HTMLElement>(tr, ".td-name");
         directionCell.textContent = row.adNameOrMethod;
@@ -958,7 +930,7 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
         } else if (isWithdraw) {
             directionCell.classList.add("direction-withdraw");
         }
-        
+
         // Amount 列添加样式
         const amountCell = $2<HTMLElement>(tr, ".td-amount");
         amountCell.textContent = formatUSDC(row.amount);
@@ -967,15 +939,15 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
         } else if (isWithdraw) {
             amountCell.classList.add("amount-withdraw");
         }
-        
+
         $2<HTMLElement>(tr, ".td-status").textContent = row.status;
-        
+
         // 添加 txHash 显示
         const txHashCell = $2<HTMLElement>(tr, ".td-txhash");
         if (row.txHash) {
             const shortHash = `${row.txHash.slice(0, 6)}...${row.txHash.slice(-4)}`;
             txHashCell.innerHTML = `<span class="tx-hash-link" title="Click to view on block explorer\n${row.txHash}">${shortHash}</span>`;
-            
+
             // 只有 txHash 单元格可点击
             const linkSpan = txHashCell.querySelector(".tx-hash-link") as HTMLElement;
             if (linkSpan) {

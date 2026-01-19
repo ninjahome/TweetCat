@@ -5,6 +5,7 @@ import {openTxInExplorer, showPopupWindow} from "./common";
 import {getChainId} from "../wallet/wallet_setting";
 import {postToX402SrvByPri} from "../wallet/cdp_wallet";
 import {initI18n, t} from "../common/i18n";
+import {logX402} from "../common/debug_flags";
 
 // --- 类型定义 ---
 interface UserProfile {
@@ -128,25 +129,21 @@ const updateUIState = (loading: boolean, status?: string, error?: string) => {
 
 // --- 核心业务：转账桩函数 ---
 async function performTransfer(profile: UserProfile, amount: string): Promise<void> {
-    console.log(`[Transfer] To: ${profile.userId}, Amount: ${amount} USDC`);
-    // 模拟异步操作
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    const chainId = await getChainId();
-    const end_point = X402_FACILITATORS[chainId].endpoint + "/user/transfer_by_twitter";
-
-    const response = await postToX402SrvByPri(end_point, {
+    logX402(`[Transfer] To: ${profile.userId}, Amount: ${amount} USDC`);
+    const result = await postToX402SrvByPri("/user/transfer_by_twitter", {
         amount: amount,
         xId: profile.userId
     })
-    const result = await response.json()
+
     if (!result.success || !result.txHash) {
         if (result.code === "RECIPIENT_NOT_FOUND") {
             throw new Error(t("register_account_error"));
         }
         throw new Error(t('transfer_create_tx_failed') + safeStringify(result));
     }
-    console.log("------>>>transfer success:", result.txHash)
-    await openTxInExplorer(result.txHash, chainId)
+
+    logX402("------>>>transfer success:", result.txHash)
+    await openTxInExplorer(result.txHash)
     return result.txHash
 }
 
