@@ -592,6 +592,22 @@ function setTransferDirection(dir: TransferDirection) {
             monthlyWarning.classList.add("hidden");
         }
     }
+    
+    // 隐藏月度限制详情（切换方向时总是隐藏）
+    const limitDetails = $Id("monthly-limit-details");
+    if (limitDetails) {
+        limitDetails.classList.add("hidden");
+        
+        // 重置按钮状态
+        const viewTxBtn = $Id("btn-view-previous-tx") as HTMLButtonElement | null;
+        if (viewTxBtn) {
+            viewTxBtn.classList.add("hidden");
+            viewTxBtn.onclick = null;
+        }
+    }
+    
+    // 清除错误信息
+    setTransferInlineError(null);
 }
 
 function syncTransferModalUI() {
