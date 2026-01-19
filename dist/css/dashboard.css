@@ -130,7 +130,9 @@ button {
     flex: 1;
 }
 
-.rewards-label {
+.rewards-label,
+.ad-plaza-earnings-label,
+.ad-plaza-withdrawable-label{
     color: #5b7083;
     font-size: 14px;
     font-weight: 400;
@@ -1394,35 +1396,93 @@ input.category-input:focus {
 /* Ad Plaza Button Styles */
 .ad-plaza-container {
     display: none;
-    margin: 16px 0;
-    padding: 0;
-}
-
-.btn-ad-plaza {
-    width: 100%;
-    padding: 16px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
+    margin-top: 16px;
+    padding: 16px;
     border-radius: 16px;
+    flex-direction: column;
+    background: linear-gradient(135deg,
+    #1d9bf0 0%,
+    #1d9bf0 35%,
+    rgba(3, 203, 173, 1) 100%
+    );
+}
+.ad-plaza-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 16px;
+    color: white;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+.btn-ad-plaza {
+    border: none;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: flex-start;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    font-size: 14px;
+    color: white;
+}
+.ad-plaza-arrow-icon{
+    width: 14px;
+    height: 14px;
+    flex: 0 0 22px;
+}
+
+.ad-plaza-stats{
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    justify-content: space-between;
+    flex-direction: row;
+    transition: all 0.3s ease;
     font-size: 15px;
 }
-
-.btn-ad-plaza:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+.ad-plaza-earnings{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 28px;
+}
+.ad-plaza-earnings-value,
+.ad-plaza-withdrawable-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
 }
 
-.btn-ad-plaza:active {
-    transform: translateY(0);
+.ad-plaza-withdrawable,
+.ad-plaza-earnings-item{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
 }
 
+.ad-plaza-earnings-label,
+.ad-plaza-withdrawable-label{
+    color: rgba(255, 255, 255, 0.76);
+}
+.ad-plaza-earnings-item{
+    position: relative;
+
+
+}
+.ad-plaza-earnings-item.ad-plaza-earnings-today::after {
+    content: "";
+    position: absolute;
+    top: 6px;               /* 控制线的上下留白 */
+    bottom: 6px;
+    right: -14px;           /* = gap/2，线在中间 */
+    width: 1px;
+    background: rgba(255, 255, 255, .3); /* 灰色分割线（可调） */
+    border-radius: 1px;
+}
 .plaza-icon {
     font-size: 24px;
     flex-shrink: 0;
@@ -1431,7 +1491,7 @@ input.category-input:focus {
 .plaza-text {
     flex: 1;
     text-align: left;
-    margin-left: 12px;
+    margin-left: 4px;
     font-weight: 600;
     font-size: 15px;
 }

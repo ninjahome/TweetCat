@@ -471,7 +471,7 @@ async function initAdPlaza(): Promise<void> {
         const address = await getWalletAddress();
 
         if (address) {
-            adPlazaContainer.style.display = "block";
+            adPlazaContainer.style.display = "flex";
         } else {
             adPlazaContainer.style.display = "none";
         }

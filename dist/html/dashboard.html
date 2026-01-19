@@ -121,10 +121,45 @@
         </div>
     </div>
     <div class="ad-plaza-container">
-        <button id="btn-ad-plaza" class="btn-ad-plaza">
-            <span class="plaza-icon">🏪</span>
-            <span class="plaza-text">Ad Plaza</span>
-        </button>
+        <div id="ad-plaza-entry" class="ad-plaza-entry">
+            <button id="btn-ad-plaza" class="btn-ad-plaza">
+                <span class="plaza-icon">🏪</span>
+                <span class="plaza-text">Ad Plaza</span>
+            </button>
+            <div class="ad-plaza-entry-right">
+                <svg
+                        class="ad-plaza-arrow-icon"
+                        viewBox="0 0 1024 1024"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="22"
+                        height="22"
+                        aria-hidden="true"
+                        focusable="false"
+                >
+                    <path
+                            d="M672 512l-384 384c-12.8 12.8-12.8 32 0 44.8 12.8 12.8 32 12.8 44.8 0l403.2-403.2c6.4-6.4 12.8-19.2 12.8-25.6 0-6.4 0-19.2-6.4-25.6L332.8 83.2C320 70.4 300.8 70.4 288 83.2S275.2 115.2 288 128L672 512z"
+                            fill="rgba(255, 255, 255, 0.9)"
+                    />
+                </svg>
+            </div>
+        </div>
+        <div  class="ad-plaza-stats">
+            <div id="ad-plaza-withdrawable" class="ad-plaza-withdrawable">
+                <span class="ad-plaza-withdrawable-label">待提取</span>
+                <span class="ad-plaza-withdrawable-value">100</span>
+            </div>
+            <div class="ad-plaza-earnings">
+                <div class="ad-plaza-earnings-item ad-plaza-earnings-today">
+                    <span class="ad-plaza-earnings-label">今日收益</span>
+                    <span class="ad-plaza-earnings-value">90</span>
+                </div>
+                <div class="ad-plaza-earnings-item ad-plaza-earnings-total">
+                    <span class="ad-plaza-earnings-label">总收益</span>
+                    <span class="ad-plaza-earnings-value">990</span>
+
+                </div>
+            </div>
+        </div>
     </div>
     <div class="category-show-area" id="category-show-area">
         <button id="btn-mgn-category" class="btn-mgn-category"></button>
