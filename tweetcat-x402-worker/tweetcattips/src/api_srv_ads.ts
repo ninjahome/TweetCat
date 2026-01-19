@@ -161,9 +161,12 @@ export async function apiAdsCreate(c: ExtCtx) {
 		const title = body?.title;
 		const description = body?.description;
 		const detailUrl = body?.detail_url;
+		const imageUrl = body?.image_url || null;
+		const callbackUrl = body?.callback_url || null;
+		const customData = body?.custom_data || null;
 		const unitPriceAtomic = parsePositiveAtomic(body?.unit_price_atomic);
 		const quotaTotal = parsePositiveInt(body?.quota_total);
-		let rulesJson: string | null = null;
+		const durationDays = parsePositiveInt(body?.duration_days) ?? 0;
 
 		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 		if (!requireStringField(category)) return jsonError(c, 400, "INVALID_REQUEST", "Missing category");
@@ -180,25 +183,19 @@ export async function apiAdsCreate(c: ExtCtx) {
 			return jsonError(c, 400, "INVALID_REQUEST", "Invalid category. Must be: follow, visit, register, or share");
 		}
 
-		// Parse and validate rules_json (optional)
-		if (body?.rules_json) {
-			const rulesRaw = body.rules_json;
+		// Validate custom_data if provided
+		if (customData) {
 			try {
-				// Accept both string and object
-				if (typeof rulesRaw === "string") {
-					const parsed = JSON.parse(rulesRaw);
-					rulesJson = JSON.stringify(parsed);
-				} else if (typeof rulesRaw === "object" && rulesRaw !== null) {
-					rulesJson = JSON.stringify(rulesRaw);
-				} else {
-					return jsonError(c, 400, "INVALID_REQUEST", "Invalid rules_json format");
+				if (typeof customData === "string") {
+					JSON.parse(customData);
+				} else if (typeof customData !== "object") {
+					return jsonError(c, 400, "INVALID_REQUEST", "Invalid custom_data format");
 				}
-				// Check length (limit to 8KB)
-				if (rulesJson.length > 8192) {
-					return jsonError(c, 400, "INVALID_REQUEST", "rules_json exceeds maximum size (8KB)");
+				if (JSON.stringify(customData).length > 8192) {
+					return jsonError(c, 400, "INVALID_REQUEST", "custom_data exceeds maximum size (8KB)");
 				}
 			} catch (e) {
-				return jsonError(c, 400, "INVALID_REQUEST", "Invalid rules_json: must be valid JSON");
+				return jsonError(c, 400, "INVALID_REQUEST", "Invalid custom_data: must be valid JSON");
 			}
 		}
 
@@ -226,11 +223,12 @@ export async function apiAdsCreate(c: ExtCtx) {
 			title,
 			description,
 			detailUrl,
+			imageUrl,
+			callbackUrl,
+			customData: typeof customData === 'string' ? customData : (customData ? JSON.stringify(customData) : null),
 			unitPriceAtomic,
 			quotaTotal,
-			startAt: body?.start_at ?? null,
-			endAt: body?.end_at ?? null,
-			rulesJson,
+			durationDays,
 		};
 
 		const created = await createAd(c.env.DB, payload);
@@ -274,7 +272,7 @@ export async function apiAdsList(c: ExtCtx) {
 				durationMinutes: CATEGORY_DURATION[category] ?? 3,
 				completed: row.quota_used,
 				totalQuota: row.quota_total,
-				deadlineText: formatDeadlineText(row.end_at),
+				deadlineText: formatDeadlineText(row.duration_days, row.created_at),
 				tags: CATEGORY_TAGS[category] ?? [],
 				rewardRange: getRewardRange(rewardUSDC),
 				popularityScore: computePopularityScore(row.quota_used, row.quota_total),

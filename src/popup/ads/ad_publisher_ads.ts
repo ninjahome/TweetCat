@@ -1,6 +1,6 @@
 import {
     createAd,
-    fetchAdsBalance,
+    fetchAdsBalance, getCurrentXUserName,
     isZeroAtomic
 } from "./ad_publisher_common";
 import {getCurrentXId} from "./ad_publisher_common";
@@ -61,6 +61,17 @@ function updateWizardUI() {
 }
 
 function goWizardNext() {
+    // Step 1 validation: ad-category must be selected
+    if (wizardCurrentStep === 1) {
+        const adCategoryInput = document.querySelector<HTMLSelectElement>("#ad-category");
+        const categoryValue = adCategoryInput?.value?.trim() || "";
+        
+        if (!categoryValue) {
+            showNotification("Please select a category before proceeding.", "error");
+            return;
+        }
+    }
+    
     if (wizardCurrentStep < wizardMaxStep) {
         wizardCurrentStep++;
         updateWizardUI();
@@ -111,23 +122,27 @@ async function submitWizard() {
     const adCategoryInput = document.querySelector<HTMLSelectElement>("#ad-category");
     const adTitleInput = document.querySelector<HTMLInputElement>("#ad-title");
     const adDescriptionInput = document.querySelector<HTMLTextAreaElement>("#ad-description");
+    const adImageInput = document.querySelector<HTMLInputElement>("#ad-image");
     const adUrlInput = document.querySelector<HTMLInputElement>("#ad-url");
     const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
     const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
-    const startAtInput = document.querySelector<HTMLInputElement>("#start-time");
-    const endAtInput = document.querySelector<HTMLInputElement>("#end-time");
-    const rulesJsonInput = document.querySelector<HTMLTextAreaElement>("#rules-json");
+    const durationDaysInput = document.querySelector<HTMLInputElement>("#duration-days");
+    const callbackUrlInput = document.querySelector<HTMLInputElement>("#callback-url");
+    const customDataInput = document.querySelector<HTMLTextAreaElement>("#custom-data");
 
     const name = nameInput?.value?.trim() || "";
     const category = adCategoryInput?.value?.trim() || "";
     const title = adTitleInput?.value?.trim() || "";
     const description = adDescriptionInput?.value?.trim() || "";
+    const imageUrl = adImageInput?.value?.trim() || null;
     const detailUrl = adUrlInput?.value?.trim() || "";
-    let rulesJson: string | null = null;
+    const callbackUrl = callbackUrlInput?.value?.trim() || null;
+    let customData: string | null = null;
 
     const reward = rewardInput?.value || "";
     const quotaTotal = Number(taskLimitInput?.value || "0");
     const unitPriceAtomic = usdcToAtomic(reward);
+    const durationDays = Number(durationDaysInput?.value || "0");
 
     if (!name || !category || !title || !description || !detailUrl || !unitPriceAtomic || quotaTotal <= 0) {
         showNotification("Please complete required fields.", "error");
@@ -140,13 +155,14 @@ async function submitWizard() {
         return;
     }
 
-    const rulesRaw = rulesJsonInput?.value?.trim() || "";
-    if (rulesRaw) {
+    // Validate and parse custom_data JSON if provided
+    const customDataRaw = customDataInput?.value?.trim() || "";
+    if (customDataRaw) {
         try {
-            const parsed = JSON.parse(rulesRaw);
-            rulesJson = JSON.stringify(parsed);
+            const parsed = JSON.parse(customDataRaw);
+            customData = JSON.stringify(parsed);
         } catch {
-            showNotification("Invalid rules JSON format.", "error");
+            showNotification("Invalid custom data JSON format.", "error");
             return;
         }
     }
@@ -158,11 +174,12 @@ async function submitWizard() {
         title,
         description,
         detail_url: detailUrl,
+        image_url: imageUrl,
+        callback_url: callbackUrl,
+        custom_data: customData,
         unit_price_atomic: unitPriceAtomic,
         quota_total: quotaTotal,
-        start_at: startAtInput?.value || null,
-        end_at: endAtInput?.value || null,
-        ...(rulesJson ? {rules_json: rulesJson} : {}),
+        duration_days: durationDays,
     };
 
     const result = await createAd(payload);
@@ -201,6 +218,23 @@ export function initWizardEvents() {
 
     const taskLimit = document.querySelector<HTMLInputElement>("#task-limit");
     if (taskLimit) taskLimit.addEventListener("input", updateBudgetSummaryAndBalance);
+
+    const adCategoryInput = document.querySelector<HTMLSelectElement>("#ad-category");
+    const adUrlInput = document.querySelector<HTMLInputElement>("#ad-url");
+    if (adCategoryInput && adUrlInput) {
+        adCategoryInput.addEventListener("change", () => {
+            const category = adCategoryInput.value.trim();
+            if (category === "follow") {
+                const xName = getCurrentXUserName();
+                if (xName) {
+                    adUrlInput.value = `https://x.com/${xName}`;
+                    adUrlInput.style.backgroundColor = "#f5f5f5";
+                }
+            } else {
+                adUrlInput.style.backgroundColor = "";
+            }
+        });
+    }
 }
 
 

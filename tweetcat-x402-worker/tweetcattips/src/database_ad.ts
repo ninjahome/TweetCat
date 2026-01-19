@@ -37,14 +37,15 @@ export interface AdRow {
 	title: string;
 	description: string;
 	detail_url: string;
+	image_url?: string | null;
+	callback_url?: string | null;
+	custom_data?: string | null;
 	unit_price_atomic: string;
 	quota_total: number;
 	quota_used: number;
 	status: string;
-	start_at?: string | null;
-	end_at?: string | null;
+	duration_days: number;
 	created_at?: string | null;
-	rules_json?: string | null;
 	updated_at?: string | null;
 }
 
@@ -69,11 +70,12 @@ export interface AdCreatePayload {
 	title: string;
 	description: string;
 	detailUrl: string;
+	imageUrl?: string | null;
+	callbackUrl?: string | null;
+	customData?: string | null;
 	unitPriceAtomic: string;
 	quotaTotal: number;
-	startAt?: string | null;
-	endAt?: string | null;
-	rulesJson?: string | null;
+	durationDays: number;
 }
 
 export interface ClaimCreatePayload {
@@ -110,10 +112,20 @@ export function toSqliteDate(date: Date): string {
 	return date.toISOString().replace("T", " ").replace("Z", "");
 }
 
-export function formatDeadlineText(endAt?: string | null): string {
-	if (!endAt) return "Ends: -";
-	const dateText = endAt.toString().trim().slice(0, 10);
-	return `Ends: ${dateText || "-"}`;
+export function formatDeadlineText(durationDays?: number, createdAt?: string | null): string {
+	if (durationDays === undefined || durationDays === null) return "Ends: -";
+	if (durationDays === 0) return "Ends: Never";
+	
+	if (!createdAt) return "Ends: -";
+	
+	try {
+		const created = new Date(createdAt);
+		const endDate = new Date(created.getTime() + durationDays * 24 * 60 * 60 * 1000);
+		const dateText = endDate.toISOString().slice(0, 10);
+		return `Ends: ${dateText}`;
+	} catch {
+		return "Ends: -";
+	}
 }
 
 export function getRewardRange(rewardUSDC: number): "0.1-0.5" | "0.5-1" | "1+" {
@@ -194,9 +206,9 @@ export async function getAccountBalanceAtomic(db: D1Database, aXId: string): Pro
 export async function createAd(db: D1Database, payload: AdCreatePayload): Promise<boolean> {
 	const insertSql = `
 		INSERT INTO ad_campaigns (
-			ad_id, a_x_id, category, name, title, description, detail_url,
-			unit_price_atomic, quota_total, rules_json, start_at, end_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+			ad_id, a_x_id, category, name, title, description, detail_url, image_url,
+			callback_url, custom_data, unit_price_atomic, quota_total, duration_days, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
 	`;
 	const result = await db.prepare(insertSql)
 		.bind(
@@ -207,11 +219,12 @@ export async function createAd(db: D1Database, payload: AdCreatePayload): Promis
 			payload.title,
 			payload.description,
 			payload.detailUrl,
+			payload.imageUrl ?? null,
+			payload.callbackUrl ?? null,
+			payload.customData ?? null,
 			payload.unitPriceAtomic,
 			payload.quotaTotal,
-			payload.rulesJson ?? null,
-			payload.startAt ?? null,
-			payload.endAt ?? null
+			payload.durationDays
 		)
 		.run();
 
@@ -240,11 +253,14 @@ export async function getMyAds(db: D1Database, aXId: string): Promise<AdRow[]> {
 export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 	const sql = `
 		SELECT ad_id, title, a_x_id, description, category, unit_price_atomic,
-		       quota_used, quota_total, end_at, created_at, detail_url
+		       quota_used, quota_total, duration_days, created_at, detail_url
 		FROM ad_campaigns
 		WHERE status = 'ACTIVE'
 		  AND quota_used < quota_total
-		  AND (end_at IS NULL OR end_at = '' OR datetime(end_at) > datetime('now'))
+		  AND (
+		      duration_days = 0 
+		      OR datetime(created_at, '+' || duration_days || ' days') > datetime('now')
+		  )
 		ORDER BY created_at DESC
 		LIMIT 100
 	`;
@@ -261,8 +277,8 @@ export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 export async function getAdById(db: D1Database, adId: string): Promise<AdRow | null> {
 	const adRow = await db.prepare(
 		`SELECT ad_id, a_x_id, unit_price_atomic, status, quota_used, quota_total,
-		        category, name, title, description, detail_url, rules_json,
-		        start_at, end_at, created_at, updated_at
+		        category, name, title, description, detail_url, callback_url, custom_data,
+		        duration_days, created_at, updated_at
 		 FROM ad_campaigns
 		 WHERE ad_id = ?`
 	).bind(adId).first<AdRow>();

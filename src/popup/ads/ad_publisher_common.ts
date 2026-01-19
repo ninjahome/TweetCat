@@ -18,14 +18,15 @@ export interface AdRecord {
     title: string;
     description: string;
     detail_url: string;
+    image_url?: string | null;
+    callback_url?: string | null;
+    custom_data?: string | null;
     unit_price_atomic: string;
     quota_total: number;
     quota_used: number;
     status: string;
-    start_at?: string | null;
-    end_at?: string | null;
+    duration_days: number;
     created_at: string;
-    rules_json?: string | null;
     updated_at?: string | null;
 }
 
@@ -140,6 +141,13 @@ export function getCurrentXId(): string {
     if (!w?.xId) throw new Error("X ID not available");
     return w.xId;
 }
+
+export function getCurrentXUserName(): string {
+    const w = publisherState.walletInfoCache;
+    if (!w?.username) throw new Error("X ID not available");
+    return w.username;
+}
+
 
 export function isZeroAtomic(v: string | null | undefined): boolean {
     try {
