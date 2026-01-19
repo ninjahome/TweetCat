@@ -183,15 +183,15 @@ async function fetchAdEscrowLedger(aXId: string, limit: number = 50, offset: num
         const chainId = await getChainId();
         const endpoint = X402_FACILITATORS[chainId].endpoint + "/ads/publisher/ledger";
         const url = `${endpoint}?a_x_id=${encodeURIComponent(aXId)}&limit=${limit}&offset=${offset}`;
-        
+
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
+
         const data = await response.json();
         if (!data.success || !Array.isArray(data.rows)) {
             throw new Error(data.error || "Invalid response format");
         }
-        
+
         return data.rows;
     } catch (err: any) {
         console.error("[fetchAdEscrowLedger Error]", err);
@@ -527,7 +527,7 @@ async function submitWizard() {
         quota_total: quotaTotal,
         start_at: startAtInput?.value || null,
         end_at: endAtInput?.value || null,
-        ...(rulesJson ? { rules_json: rulesJson } : {}),
+        ...(rulesJson ? {rules_json: rulesJson} : {}),
     };
 
     const result = await createAd(payload);
@@ -582,6 +582,16 @@ function setTransferDirection(dir: TransferDirection) {
                 ? "On-chain Wallet → Ads Account"
                 : "Ads Account → On-chain Wallet";
     }
+    
+    // 显示/隐藏月度限制警告
+    const monthlyWarning = $Id("monthly-limit-warning");
+    if (monthlyWarning) {
+        if (dir === "ads_to_wallet") {
+            monthlyWarning.classList.remove("hidden");
+        } else {
+            monthlyWarning.classList.add("hidden");
+        }
+    }
 }
 
 function syncTransferModalUI() {
@@ -605,6 +615,19 @@ function openRechargeModal() {
     syncTransferModalUI();
     setTransferDirection("wallet_to_ads");
     setTransferInlineError(null);
+    
+    // 重置月度限制详情显示
+    const limitDetails = $Id("monthly-limit-details");
+    if (limitDetails) {
+        limitDetails.classList.add("hidden");
+        
+        // 重置按钮状态
+        const viewTxBtn = $Id("btn-view-previous-tx") as HTMLButtonElement | null;
+        if (viewTxBtn) {
+            viewTxBtn.classList.add("hidden");
+            viewTxBtn.onclick = null;
+        }
+    }
 }
 
 function closeRechargeModal() {
@@ -680,15 +703,17 @@ function setTransferBusy(isBusy: boolean, label?: string): void {
 
 function setTransferInlineError(message: string | null): void {
     const inlineError = $Id("transfer-inline-error");
+    const errorText = $Id("error-message-text");
+    
     if (!inlineError) return;
 
     if (!message) {
-        inlineError.textContent = "";
+        if (errorText) errorText.textContent = "";
         inlineError.classList.add("hidden");
         return;
     }
 
-    inlineError.textContent = message;
+    if (errorText) errorText.textContent = message;
     inlineError.classList.remove("hidden");
 }
 
@@ -699,15 +724,6 @@ function openTxInExplorer(txHash: string): void {
     window.open(`${baseUrl}${txHash}`, "_blank");
 }
 
-function getErrMsgFromResponse(resp: Response, data: any, fallbackText: string): string {
-    const msg =
-        data?.detail ||
-        data?.message ||
-        (typeof data?.error === "string" ? data.error : "") ||
-        fallbackText ||
-        `HTTP ${resp.status}`;
-    return String(msg).trim() || `HTTP ${resp.status}`;
-}
 
 async function refreshWalletAndAdsUI(): Promise<void> {
     const chainId = await getChainId();
@@ -723,18 +739,21 @@ async function refreshWalletAndAdsUI(): Promise<void> {
  * - ads_to_wallet  => POST /ads/publisher/withdraw (服务器金库支付)
  */
 async function handleAdsEscrowTransfer(): Promise<void> {
-    if (isTransferBusy) return;
-
+    // ---- 读取输入 ----
     const input = $Id("transfer-amount") as HTMLInputElement | null;
-    const amountStr = (input?.value || "").trim();
-    const amount = Number(amountStr);
+    const amount = Number((input?.value || "0").trim());
 
     if (!Number.isFinite(amount) || amount <= 0) {
         showNotification("Please enter a valid amount.", "error");
         return;
     }
 
-    // Ads → Wallet：不能超过 Ads Available
+    if (!walletInfoCache?.xId) {
+        showNotification("Missing user xId. Please sign in again.", "error");
+        return;
+    }
+
+    // Ads → Wallet：不能超过可用余额
     if (transferDirection === "ads_to_wallet") {
         const maxAds = atomicToUsdcNumber(adAccountInfo.balanceAtomic);
         if (amount > maxAds + 1e-9) {
@@ -743,98 +762,132 @@ async function handleAdsEscrowTransfer(): Promise<void> {
         }
     }
 
-    // Wallet → Ads：不能超过 Wallet USDC
-    if (transferDirection === "wallet_to_ads") {
-        const maxWallet = parseUsdcNumber(walletInfoCache?.usdcVal ?? "0");
-        if (amount > maxWallet + 1e-9) {
-            showNotification("Amount exceeds Wallet USDC.", "error");
-            return;
-        }
-    }
-
-    // 历史记录：先写 Pending
-    const directionLabel = transferDirection === "wallet_to_ads" ? "Wallet → Ads" : "Ads → Wallet";
-    const historyItem: HistoryRow = {
-        time: new Date().toLocaleString(),
-        adNameOrMethod: directionLabel,
-        amount,
-        status: "Pending",
-    };
-    historyRecharge.unshift(historyItem);
-    switchHistoryTab("recharge");
-
     const chainId = await getChainId();
     const base = X402_FACILITATORS[chainId].endpoint;
-    const path = transferDirection === "wallet_to_ads" ? "/ads/publisher/recharge" : "/ads/publisher/withdraw";
-    const endpoint = `${base}${path}`;
 
+    const path =
+        transferDirection === "wallet_to_ads"
+            ? "/ads/publisher/recharge"
+            : "/ads/publisher/withdraw";
+
+    const url = `${base}${path}`;
+
+    // 服务器 parseEscrowRequestParams 需要：a_x_id + amount(十进制字符串)
     const payload = {
-        a_x_id: getCurrentXId(),
-        amount: amountStr, // 服务器端会 usdcToAtomicSafe
+        a_x_id: walletInfoCache.xId,
+        amount: amount.toFixed(2),
     };
 
-    setTransferInlineError(null);
-    setTransferBusy(true, "Processing...");
+    // ✅ 强制避免“旧 hash / 缓存响应”干扰
+    const fetchInit: RequestInit = {
+        method: "POST",
+        cache: "no-store",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+    };
+
+    setTransferInlineError(""); // 清空旧错误
+    setTransferBusy(true, transferDirection === "wallet_to_ads" ? "Processing deposit..." : "Processing withdraw...");
 
     try {
-        let resp: Response;
+        let ok = false;
+        let data: any = null;
+        let rawText = "";
 
         if (transferDirection === "wallet_to_ads") {
-            // ✅ 充值：x402 用户侧支付（需要签名/支付 402 challenge）
-            resp = await postToX402SrvByPri(endpoint, payload);
+            // 充值：客户端需要走 x402 支付（用户 -> 平台库账户）
+            const resp = await postToX402SrvByPri(url, payload);
+            ok = resp.ok;
+            rawText = await resp.text();
+            try { data = rawText ? JSON.parse(rawText) : null; } catch { data = null; }
         } else {
-            // ✅ 提现：服务器金库侧支付（普通 POST 即可）
-            resp = await x402WorkerFetch(endpoint, payload);
+            // 提现：服务器侧用 treasury 私钥结算（平台库账户 -> 用户钱包）
+            const resp = await fetch(url, fetchInit);
+            ok = resp.ok;
+            rawText = await resp.text();
+            try { data = rawText ? JSON.parse(rawText) : null; } catch { data = null; }
         }
 
-        const text = await resp.text();
-        let data: any;
-        try {
-            data = text ? JSON.parse(text) : {};
-        } catch {
-            data = {};
-        }
-
-        if (!resp.ok || data?.success !== true) {
-            historyItem.status = "Failed";
-            switchHistoryTab("recharge");
-            setTransferInlineError(getErrMsgFromResponse(resp, data, text));
+        if (!ok) {
+            const msg = (data?.detail || data?.message || data?.error || rawText || "Request failed").toString();
+            setTransferInlineError(msg);
+            showNotification(msg, "error");
             return;
         }
 
-        // 成功：更新历史 + 打开浏览器
-        const txHash = data?.txHash || data?.tx_hash || data?.transaction || data?.transactionHash;
-        if (!txHash) {
-            historyItem.status = "Failed";
-            switchHistoryTab("recharge");
-            setTransferInlineError("Transfer succeeded but no transaction hash was returned.");
+        // ✅ 处理月度限制情况（提现专用）
+        if (transferDirection === "ads_to_wallet" && data?.alreadyWithdrawn === true) {
+            // 隐藏 inline error
+            setTransferInlineError(null);
+            
+            // 显示月度限制详情
+            const limitDetails = $Id("monthly-limit-details");
+            if (limitDetails) {
+                limitDetails.classList.remove("hidden");
+                
+                // 设置提现日期
+                if (data.withdrawnAt) {
+                    const withdrawDate = new Date(data.withdrawnAt).toLocaleString();
+                    const prevDateEl = $Id("previous-withdraw-date");
+                    if (prevDateEl) prevDateEl.textContent = withdrawDate;
+                }
+                
+                // 设置下次可用日期
+                if (data.nextAvailableDate) {
+                    const nextDate = new Date(data.nextAvailableDate).toLocaleDateString();
+                    const nextDateEl = $Id("next-available-date");
+                    if (nextDateEl) nextDateEl.textContent = nextDate;
+                }
+                
+                // 设置查看交易按钮
+                if (data.previousTxHash) {
+                    const viewTxBtn = $Id("btn-view-previous-tx") as HTMLButtonElement | null;
+                    if (viewTxBtn) {
+                        viewTxBtn.classList.remove("hidden");
+                        viewTxBtn.onclick = () => {
+                            openTxInExplorer(data.previousTxHash);
+                        };
+                    }
+                }
+            }
+            
+            // 显示 toast 通知
+            const nextDate = data.nextAvailableDate 
+                ? new Date(data.nextAvailableDate).toLocaleDateString() 
+                : "next month";
+            showNotification(`Monthly withdrawal limit reached. Next available: ${nextDate}`, "error");
+            
+            return;
+        }
+        
+        // 清除月度限制详情（如果显示了）
+        const limitDetails = $Id("monthly-limit-details");
+        if (limitDetails) limitDetails.classList.add("hidden");
+
+        if (!data?.success || !data?.txHash) {
+            const msg = (data?.detail || data?.message || data?.error || rawText || "Invalid response").toString();
+            setTransferInlineError(msg);
+            showNotification(msg, "error");
             return;
         }
 
-        historyItem.status = "Success";
-        switchHistoryTab("recharge");
+        const txHash = String(data.txHash);
 
-        const msg =
-            (typeof data?.message === "string" && data.message.trim())
-                ? data.message
-                : "Transfer submitted.";
-        showNotification(msg, "success");
-
-        if (txHash) {
-            openTxInExplorer(String(txHash));
-        }
-
+        // ✅ 成功：关闭弹窗 + 打开区块链浏览器 + 刷新余额
         closeRechargeModal();
+        openTxInExplorer(txHash);
+
         await refreshWalletAndAdsUI();
+
+        showNotification("Transfer submitted successfully.", "success");
     } catch (e: any) {
-        historyItem.status = "Failed";
-        switchHistoryTab("recharge");
-        setTransferInlineError(e?.message || "Transfer failed");
+        const msg = (e?.message || "Transfer failed").toString();
+        setTransferInlineError(msg);
+        showNotification(msg, "error");
     } finally {
         setTransferBusy(false);
     }
 }
-
 
 // ========= 历史记录弹窗（模板 clone） =========
 
@@ -867,26 +920,60 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
 
     rows.forEach((row) => {
         const tr = cloneTemplate("tpl-history-row") as HTMLTableRowElement;
-        $2<HTMLElement>(tr, ".td-time").textContent = row.time;
-        $2<HTMLElement>(tr, ".td-name").textContent = row.adNameOrMethod;
-        $2<HTMLElement>(tr, ".td-amount").textContent = formatUSDC(row.amount);
-        $2<HTMLElement>(tr, ".td-status").textContent = row.status;
         
-        // 如果有 tx_hash，行可点击打开区块浏览器
-        if (row.txHash) {
-            tr.style.cursor = "pointer";
-            tr.style.opacity = "0.9";
-            tr.addEventListener("mouseenter", () => {
-                tr.style.opacity = "1";
-                tr.style.backgroundColor = "rgba(100, 150, 255, 0.05)";
-            });
-            tr.addEventListener("mouseleave", () => {
-                tr.style.opacity = "0.9";
-                tr.style.backgroundColor = "";
-            });
-            tr.addEventListener("click", () => openTxInExplorer(row.txHash!));
+        // 判断方向类型
+        const isDeposit = row.adNameOrMethod.includes("Wallet → Ads");
+        const isWithdraw = row.adNameOrMethod.includes("Ads → Wallet");
+        
+        // 为不同方向的行添加不同的class
+        if (isDeposit) {
+            tr.classList.add("history-row--deposit");
+        } else if (isWithdraw) {
+            tr.classList.add("history-row--withdraw");
         }
         
+        $2<HTMLElement>(tr, ".td-time").textContent = row.time;
+        
+        // Direction 列添加样式
+        const directionCell = $2<HTMLElement>(tr, ".td-name");
+        directionCell.textContent = row.adNameOrMethod;
+        if (isDeposit) {
+            directionCell.classList.add("direction-deposit");
+        } else if (isWithdraw) {
+            directionCell.classList.add("direction-withdraw");
+        }
+        
+        // Amount 列添加样式
+        const amountCell = $2<HTMLElement>(tr, ".td-amount");
+        amountCell.textContent = formatUSDC(row.amount);
+        if (isDeposit) {
+            amountCell.classList.add("amount-deposit");
+        } else if (isWithdraw) {
+            amountCell.classList.add("amount-withdraw");
+        }
+        
+        $2<HTMLElement>(tr, ".td-status").textContent = row.status;
+        
+        // 添加 txHash 显示
+        const txHashCell = $2<HTMLElement>(tr, ".td-txhash");
+        if (row.txHash) {
+            const shortHash = `${row.txHash.slice(0, 6)}...${row.txHash.slice(-4)}`;
+            txHashCell.innerHTML = `<span class="tx-hash-link" title="Click to view on block explorer\n${row.txHash}">${shortHash}</span>`;
+            
+            // 只有 txHash 单元格可点击
+            const linkSpan = txHashCell.querySelector(".tx-hash-link") as HTMLElement;
+            if (linkSpan) {
+                linkSpan.style.cursor = "pointer";
+                linkSpan.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    openTxInExplorer(row.txHash!);
+                });
+            }
+        } else {
+            txHashCell.textContent = "—";
+            txHashCell.style.color = "#d1d5db";
+        }
+
         tbody.appendChild(tr);
     });
 }
@@ -902,7 +989,7 @@ function switchHistoryTab(tab: "earnings" | "spending" | "recharge") {
 async function loadAndRenderTransferHistory(): Promise<void> {
     try {
         const currentXId = getCurrentXId();
-        
+
         // 显示 Loading 状态
         const tbody = document.querySelector<HTMLTableSectionElement>("#recharge-history-tbody");
         if (tbody) {
@@ -911,28 +998,28 @@ async function loadAndRenderTransferHistory(): Promise<void> {
             $2<HTMLElement>(loadingTr, ".td-empty").textContent = "Loading transfer history...";
             tbody.appendChild(loadingTr);
         }
-        
+
         // 从服务器拉取数据
         const ledgerRows = await fetchAdEscrowLedger(currentXId, 50, 0);
-        
+
         // 映射到 UI 模型
         const mappedRows: HistoryRow[] = ledgerRows.map((row: any) => {
             // 格式化时间
-            const time = row.created_at 
+            const time = row.created_at
                 ? new Date(row.created_at).toLocaleString()
                 : new Date().toLocaleString();
-            
+
             // 根据 direction（后端返回字段为 op）映射操作名
             const op = row.op || row.direction || "UNKNOWN";
-            const adNameOrMethod = op === "DEPOSIT" 
-                ? "Wallet → Ads" 
-                : op === "WITHDRAW" 
-                ? "Ads → Wallet" 
-                : op;
-            
+            const adNameOrMethod = op === "DEPOSIT"
+                ? "Wallet → Ads"
+                : op === "WITHDRAW"
+                    ? "Ads → Wallet"
+                    : op;
+
             // 金额转换
             const amount = atomicToUsdcNumber(row.amount_atomic || "0");
-            
+
             // 状态处理
             let status = row.status || "UNKNOWN";
             if (status === "FAILED" && row.error_reason) {
@@ -940,7 +1027,7 @@ async function loadAndRenderTransferHistory(): Promise<void> {
                 const errorMsg = String(row.error_reason).slice(0, 30);
                 status = `Failed: ${errorMsg}`;
             }
-            
+
             return {
                 time,
                 adNameOrMethod,
@@ -949,15 +1036,15 @@ async function loadAndRenderTransferHistory(): Promise<void> {
                 txHash: row.tx_hash || null
             };
         });
-        
+
         // 更新全局缓存
         historyRecharge = mappedRows;
-        
+
         // 渲染表格
         renderHistoryTable("recharge", mappedRows);
     } catch (err: any) {
         console.error("[loadAndRenderTransferHistory Error]", err);
-        
+
         // 错误时显示错误提示
         const tbody = document.querySelector<HTMLTableSectionElement>("#recharge-history-tbody");
         if (tbody) {

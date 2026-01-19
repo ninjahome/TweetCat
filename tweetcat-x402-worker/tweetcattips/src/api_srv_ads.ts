@@ -433,41 +433,66 @@ export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
  */
 export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 	try {
+		console.log("[apiWithdrawFromAdsEscrowAccount] 开始处理提现请求");
+		
 		// ✅ 使用新的解析函数
 		const { aXId, amountAtomic } = await parseEscrowRequestParams(c);
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 参数验证成功: aXId=${aXId}, amountAtomic=${amountAtomic}`);
 
 		// 从 kol_binding 表查询用户的绑定钱包地址（原路返回）
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 查询用户绑定的钱包地址...`);
 		const kolBinding = await getKolBindingByXId(c.env.DB, aXId);
+		console.log(`[apiWithdrawFromAdsEscrowAccount] kolBinding 结果:`, kolBinding);
+		
 		if (!kolBinding || !kolBinding.wallet_address) {
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：未找到钱包地址`);
 			return jsonError(c, 400, "INVALID_REQUEST", "User wallet address not found. Please bind your wallet first.");
 		}
 
 		const toAddress = kolBinding.wallet_address;
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 目标钱包: ${toAddress}`);
 
 		// 使用确定性的幂等性密钥来防止重复提现
 		// 格式：aXId_yearMonth (e.g., "user_123_202601") - 每月最多提现一次
 		const now = new Date();
 		const yearMonth = now.getFullYear().toString() + String(now.getMonth() + 1).padStart(2, '0');
 		const idempotencyKey = `${aXId}_${yearMonth}`; // "user_123_202601"
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 幂等性密钥: ${idempotencyKey}`);
 
 		// 检查该用户是否已经在本月提现过
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 检查本月是否已提现过...`);
 		const existingLedger = await getEscrowLedgerByRequestId(c.env.DB, aXId, 'WITHDRAW', idempotencyKey);
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 重复提现检查结果:`, existingLedger);
+		
 		if (existingLedger) {
 			if (existingLedger.status === 'SETTLED' && existingLedger.tx_hash) {
+				console.log(`[apiWithdrawFromAdsEscrowAccount] 本月已提现过`);
+				
+				// 计算下个月第一天
+				const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+				const nextAvailableDate = nextMonth.toISOString().split('T')[0]; // YYYY-MM-DD
+				
 				return c.json({
-					success: true,
-					txHash: existingLedger.tx_hash,
-					message: "Already withdrawn this month"
+					success: false,  // 本次请求未执行新操作
+					alreadyWithdrawn: true,  // 标识已提现过
+					reason: "MONTHLY_LIMIT_REACHED",
+					message: "You have already withdrawn this month. Each account can only withdraw once per month.",
+					previousTxHash: existingLedger.tx_hash,  // 历史交易哈希
+					withdrawnAt: existingLedger.created_at,  // 提现时间
+					nextAvailableDate  // 下次可提现日期
 				});
 			} else if (existingLedger.status === 'PENDING') {
+				console.log(`[apiWithdrawFromAdsEscrowAccount] 前次提现仍在进行中`);
 				return jsonError(c, 400, "PENDING", "Withdrawal is still pending from previous attempt");
 			} else if (existingLedger.status === 'FAILED') {
+				console.log(`[apiWithdrawFromAdsEscrowAccount] 前次提现失败: ${existingLedger.error_reason}`);
 				return jsonError(c, 400, "FAILED", existingLedger.error_reason || "Previous withdrawal failed, please try later");
 			}
 		}
 
 		// 原子性地锁定资金：插入账本记录并扣除余额
 		const ledgerId = crypto.randomUUID();
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 插入账本记录: ledgerId=${ledgerId}`);
 		const ledgerInserted = await insertWithdrawLedger(
 			c.env.DB,
 			ledgerId,
@@ -476,14 +501,20 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 			toAddress as `0x${string}`,
 			idempotencyKey
 		);
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 账本插入结果: ${ledgerInserted}`);
 
 		if (!ledgerInserted) {
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：账本记录插入失败`);
 			return jsonError(c, 400, "INVALID_REQUEST", "Withdrawal already processing. Please check again later.");
 		}
 
 		// 扣除余额
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 扣减余额...`);
 		const debited = await debitEscrowBalance(c.env.DB, aXId, amountAtomic);
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 扣减结果: ${debited}`);
+		
 		if (!debited) {
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：余额不足或扣减失败`);
 			// 标记账本记录为失败
 			await failWithdrawLedger(c.env.DB, ledgerId, "Insufficient available balance");
 			return jsonError(c, 400, "INSUFFICIENT_BALANCE", `Required ${amountAtomic}, insufficient available balance`);
@@ -492,22 +523,30 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 		// 执行 x402 支付：从库账户转账到用户的绑定钱包
 		try {
 			const resourceUrl = `ads://withdraw/${aXId}`;
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 开始调用 internalTreasurySettle...`);
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 参数: toAddress=${toAddress}, amountAtomic=${amountAtomic}, resourceUrl=${resourceUrl}`);
+			
 			const settleResult = await internalTreasurySettle(
 				c,
 				toAddress as `0x${string}`,
 				amountAtomic,
 				resourceUrl
 			);
+			
+			console.log(`[apiWithdrawFromAdsEscrowAccount] internalTreasurySettle 返回:`, settleResult);
 
 			if (!settleResult.success) {
+				console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：支付失败，原因: ${settleResult.errorReason}`);
 				throw new Error(settleResult.errorReason || "Settlement failed");
 			}
 
 			// 更新账本记录为已结算
 			const txHash = settleResult.transaction;
 			const payer = settleResult.payer?.toLowerCase();
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 更新账本为已结算: txHash=${txHash}, payer=${payer}`);
 			await settleWithdrawLedger(c.env.DB, ledgerId, txHash, payer || "");
 
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 提现成功完成`);
 			return c.json({
 				success: true,
 				txHash,
@@ -517,6 +556,13 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 		} catch (err: any) {
 			// 支付失败：标记账本为失败并退款
 			const errorMsg = err?.message || "Payout failed";
+			console.error(`[apiWithdrawFromAdsEscrowAccount] internalTreasurySettle 异常:`, {
+				message: err?.message,
+				stack: err?.stack,
+				code: err?.code,
+				name: err?.name
+			});
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 标记账本为失败并退款...`);
 			await failWithdrawLedger(c.env.DB, ledgerId, errorMsg);
 			await refundEscrowBalance(c.env.DB, aXId, amountAtomic);
 
@@ -524,10 +570,17 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 		}
 	} catch (err: any) {
 		// ✅ 处理自定义的 EscrowRequestError
+		console.error("[apiWithdrawFromAdsEscrowAccount] 外层异常:", {
+			name: err?.name,
+			message: err?.message,
+			stack: err?.stack,
+			code: err?.code,
+			isEscrowRequestError: err instanceof EscrowRequestError
+		});
+		
 		if (err instanceof EscrowRequestError) {
 			return jsonError(c, err.statusCode as ContentfulStatusCode, err.code, err.detail);
 		}
-		console.error("[apiWithdrawFromAdsEscrowAccount Error]", err);
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
 	}
 }

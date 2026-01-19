@@ -1111,6 +1111,124 @@ body {
     border-bottom: 1px solid #f3f4f6;
 }
 
+/* ==================== Transfer Direction Styles (Financial App Style) ==================== */
+/* 转入（存款）样式 - 使用绿色系 */
+.history-row--deposit {
+    background: linear-gradient(to right, rgba(16, 185, 129, 0.02), transparent);
+    border-left: 3px solid #10b981;
+}
+
+.history-row--deposit:hover {
+    background: linear-gradient(to right, rgba(16, 185, 129, 0.05), transparent);
+}
+
+.direction-deposit {
+    font-weight: 900;
+    color: #059669;
+    position: relative;
+    padding-left: 24px;
+}
+
+.direction-deposit::before {
+    content: "↓";
+    position: absolute;
+    left: 6px;
+    font-size: 16px;
+    font-weight: 900;
+    color: #10b981;
+}
+
+.amount-deposit {
+    font-weight: 900;
+    color: #059669;
+}
+
+.amount-deposit::before {
+    content: "+";
+    margin-right: 2px;
+    color: #10b981;
+}
+
+/* 转出（提款）样式 - 使用橙红色系 */
+.history-row--withdraw {
+    background: linear-gradient(to right, rgba(239, 68, 68, 0.02), transparent);
+    border-left: 3px solid #ef4444;
+}
+
+.history-row--withdraw:hover {
+    background: linear-gradient(to right, rgba(239, 68, 68, 0.05), transparent);
+}
+
+.direction-withdraw {
+    font-weight: 900;
+    color: #dc2626;
+    position: relative;
+    padding-left: 24px;
+}
+
+.direction-withdraw::before {
+    content: "↑";
+    position: absolute;
+    left: 6px;
+    font-size: 16px;
+    font-weight: 900;
+    color: #ef4444;
+}
+
+.amount-withdraw {
+    font-weight: 900;
+    color: #dc2626;
+}
+
+.amount-withdraw::before {
+    content: "−";
+    margin-right: 2px;
+    color: #ef4444;
+}
+
+/* Transaction Hash 链接样式 - 让用户一眼就知道可点击 */
+.tx-hash-link {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #667eea;
+    font-weight: 800;
+    padding: 6px 10px;
+    background: rgba(102, 126, 234, 0.12);
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    cursor: pointer;
+    text-decoration: none;
+    user-select: none;
+}
+
+/* 添加链接图标指示 */
+.tx-hash-link::after {
+    content: "🔗";
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.tx-hash-link:hover {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: rgba(102, 126, 234, 0.4);
+    color: #5568d3;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.25);
+}
+
+.tx-hash-link:hover::after {
+    opacity: 1;
+}
+
+.tx-hash-link:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(102, 126, 234, 0.2);
+}
+
 /* ==================== Responsive Design ==================== */
 @media (max-width: 1200px) {
     .advertise-layout {
@@ -1154,4 +1272,146 @@ body {
     justify-content: center;
     align-items: center;
     letter-spacing: 0.2px;
+}
+
+/* ===== 月度限制警告（提现时显示） ===== */
+.monthly-limit-warning {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #f59e0b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.monthly-limit-warning .warning-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.monthly-limit-warning .warning-text {
+    font-size: 12px;
+    font-weight: 800;
+    color: #92400e;
+    letter-spacing: 0.2px;
+}
+
+.monthly-limit-warning.hidden {
+    display: none;
+}
+
+/* ===== 月度限制详情区域 ===== */
+.monthly-limit-details {
+    margin-top: 14px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    animation: slideDown 0.3s ease-out;
+}
+
+.monthly-limit-details.hidden {
+    display: none;
+}
+
+.limit-details-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 900;
+    color: #991b1b;
+}
+
+.limit-details-header .limit-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.limit-details-body {
+    margin-bottom: 12px;
+}
+
+.limit-details-body p {
+    font-size: 13px;
+    color: #7f1d1d;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.limit-details-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 12px;
+}
+
+.limit-details-row .detail-label {
+    font-weight: 700;
+    color: #991b1b;
+}
+
+.limit-details-row .detail-value {
+    font-weight: 900;
+    color: #7f1d1d;
+    font-family: 'Courier New', monospace;
+}
+
+.btn-view-previous-tx {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid #f87171;
+    background: white;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-view-previous-tx:hover {
+    background: #fee2e2;
+    border-color: #ef4444;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(239, 68, 68, 0.2);
+}
+
+.btn-view-previous-tx.hidden {
+    display: none;
+}
+
+.btn-view-previous-tx .btn-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* ===== 动画 ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
