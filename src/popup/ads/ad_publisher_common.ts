@@ -1,0 +1,217 @@
+import {$Id, showNotification} from "../common";
+import {ChainNameBaseMain, walletInfo, X402_FACILITATORS} from "../../common/x402_obj";
+import {getChainId} from "../../wallet/wallet_setting";
+import {queryCdpWalletInfo} from "../../wallet/cdp_wallet";
+
+export type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
+
+export interface AdAccountInfo {
+    balanceAtomic: string;
+    frozenAtomic: string; // frozen
+}
+
+export interface AdRecord {
+    ad_id: string;
+    a_x_id: string;
+    category: string;
+    name: string;
+    title: string;
+    description: string;
+    detail_url: string;
+    unit_price_atomic: string;
+    quota_total: number;
+    quota_used: number;
+    status: string;
+    start_at?: string | null;
+    end_at?: string | null;
+    created_at: string;
+    rules_json?: string | null;
+    updated_at?: string | null;
+}
+
+export interface SpendRecord {
+    id: string;
+    time: string;
+    adName: string;
+    event: string;
+    amount: number;
+    fee: number;
+    status: "Success" | "Pending" | "Failed";
+}
+
+export interface HistoryRow {
+    time: string;
+    adNameOrMethod: string;
+    amount: number;
+    status: string;
+    txHash?: string | null;
+}
+
+// ========= 共享状态（原来那些 let 全搬到这里） =========
+export const publisherState = {
+    adAccountInfo: {balanceAtomic: "0", frozenAtomic: "0"} as AdAccountInfo,
+    myAds: [] as AdRecord[],
+    spendRecords: [] as SpendRecord[],
+    historyRecharge: [] as HistoryRow[],
+    walletInfoCache: null as walletInfo | null,
+};
+
+// ========= Wallet / Header =========
+
+/**
+ * 初始化钱包信息并更新 UI
+ * @throws 如果用户未登录
+ */
+export async function initWalletInfo(): Promise<void> {
+    const chainId = await getChainId();
+    publisherState.walletInfoCache = await queryCdpWalletInfo(chainId);
+
+    if (!publisherState.walletInfoCache.hasCreated) {
+        throw new Error("Please sign in and create wallet first");
+    }
+    if (!publisherState.walletInfoCache.xId) {
+        throw new Error("X account not connected. Please sign in with X");
+    }
+
+    updateHeaderInfo();
+    updateTwitterAvatar();
+}
+
+/**
+ * 更新头部的网络和地址显示
+ */
+export function updateHeaderInfo(): void {
+    const w = publisherState.walletInfoCache;
+    if (!w) return;
+
+    const networkEl = $Id("header-network");
+    const accountEl = $Id("header-account");
+    const balanceEl = $Id("balance-value");
+
+    if (networkEl) {
+        const cfg = X402_FACILITATORS[w.chainId];
+        networkEl.textContent = cfg.network || ChainNameBaseMain;
+    }
+
+    if (accountEl && w.address) {
+        const addr = w.address;
+        accountEl.textContent = `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+        accountEl.title = addr;
+        accountEl.style.cursor = "pointer";
+        accountEl.addEventListener("click", async () => {
+            await navigator.clipboard.writeText(addr);
+            showNotification("Copy Success", "success");
+        });
+    }
+
+    if (balanceEl) {
+        balanceEl.textContent = w.usdcVal;
+    }
+}
+
+/**
+ * 更新推特头像
+ */
+export function updateTwitterAvatar(): void {
+    const w = publisherState.walletInfoCache;
+    if (!w?.username) return;
+
+    const avatarImg = document.querySelector<HTMLImageElement>("#twitter-avatar");
+    const userNameEl = document.querySelector<HTMLElement>("#twitter-user-name");
+
+    if (avatarImg) {
+        avatarImg.src = `https://unavatar.io/twitter/${w.username}`;
+        avatarImg.onerror = () => {
+            avatarImg.src =
+                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23e5e7eb'/%3E%3Ctext x='50' y='65' text-anchor='middle' fill='%239ca3af' font-size='40' font-family='sans-serif'%3E👤%3C/text%3E%3C/svg%3E";
+        };
+    }
+
+    if (userNameEl) {
+        userNameEl.textContent = w.username;
+    }
+}
+
+/**
+ * 获取当前用户的 X ID
+ */
+export function getCurrentXId(): string {
+    const w = publisherState.walletInfoCache;
+    if (!w?.xId) throw new Error("X ID not available");
+    return w.xId;
+}
+
+export function isZeroAtomic(v: string | null | undefined): boolean {
+    try {
+        return BigInt((v ?? "0").toString()) === 0n;
+    } catch {
+        return true;
+    }
+}
+
+export function openTxInExplorer(txHash: string): void {
+    const networkLabel = ($Id("header-network")?.textContent || "").toLowerCase();
+    const isSepolia = networkLabel.includes("sepolia");
+    const baseUrl = isSepolia ? "https://sepolia.basescan.org/tx/" : "https://basescan.org/tx/";
+    window.open(`${baseUrl}${txHash}`, "_blank");
+}
+
+// ========= API helpers =========
+
+export async function fetchAdsBalance(aXId: string) {
+    const chainId = await getChainId();
+    const url = X402_FACILITATORS[chainId].endpoint + "/ads/balance";
+    const response = await fetch(`${url}?a_x_id=${encodeURIComponent(aXId)}`);
+    if (!response.ok) throw new Error(await response.text());
+    return await response.json();
+}
+
+export async function fetchMyAds(aXId: string): Promise<AdRecord[]> {
+    const chainId = await getChainId();
+    const url = X402_FACILITATORS[chainId].endpoint + "/ads/my_ads";
+    const response = await fetch(`${url}?a_x_id=${encodeURIComponent(aXId)}`);
+    if (!response.ok) throw new Error(await response.text());
+    return (await response.json()) as AdRecord[];
+}
+
+export async function fetchAdEscrowLedger(aXId: string, limit: number = 50, offset: number = 0): Promise<any[]> {
+    const chainId = await getChainId();
+    const endpoint = X402_FACILITATORS[chainId].endpoint + "/ads/publisher/ledger";
+    const url = `${endpoint}?a_x_id=${encodeURIComponent(aXId)}&limit=${limit}&offset=${offset}`;
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+    if (!data.success || !Array.isArray(data.rows)) {
+        throw new Error(data.error || "Invalid response format");
+    }
+    return data.rows;
+}
+
+export async function createAd(payload: Record<string, any>): Promise<{ ok: boolean; data?: any; error?: any }> {
+    const chainId = await getChainId();
+    const url = X402_FACILITATORS[chainId].endpoint + "/ads/create";
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return {ok: false, error: data};
+    return {ok: true, data};
+}
+
+export function parseUsdcNumber(v: string): number {
+    const cleaned = (v ?? "").replace(/[^0-9.]/g, "");
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : 0;
+}
+
+export function normalizeWalletUsdcDisplay(v: string): string {
+    const s = (v ?? "").trim();
+    if (!s) return "0.00 USDC";
+    return s.toUpperCase().includes("USDC") ? s : `${s} USDC`;
+}

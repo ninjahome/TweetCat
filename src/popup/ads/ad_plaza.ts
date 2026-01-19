@@ -7,8 +7,8 @@ import {
     x402WorkerGet,
     atomicToUsdcNumber,
     getCurrentUserInfo
-} from "./common";
-import {logAdP} from "../common/debug_flags";
+} from "../common";
+import {logAdP} from "../../common/debug_flags";
 
 type AdCategory = "follow" | "visit" | "register" | "share";
 
