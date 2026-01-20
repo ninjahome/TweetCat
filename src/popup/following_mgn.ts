@@ -1591,7 +1591,7 @@ async function handleExportSnapshotToIpfs(
             return;
         }
 
-        showNotification(e.message ?? "上传失败", "error");
+        showNotification(e.message ?? t("upload_failed"), "error");
     } finally {
         hideLoading();
     }

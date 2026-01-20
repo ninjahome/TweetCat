@@ -126,11 +126,11 @@ function copyCid() {
 }
 
 async function requestAndRenderSnapshot() {
-    setStatus('请求后台 Snapshot…');
+    setStatus(t('ipfs_local_requesting_snapshot'));
     try {
         const rsp = await sendMsgToService({}, MsgType.SW_ACTION_GET_SNAPSHOT);
         if (!rsp || !rsp.success || !rsp.data) {
-            const msg = (rsp && (rsp.error || rsp.data)) ?? '无法从后台获取快照';
+            const msg = (rsp && (rsp.error || rsp.data)) ?? t('ipfs_local_backend_snapshot');
             setStatus(msg);
             renderJson(null);
             return;
@@ -141,7 +141,7 @@ async function requestAndRenderSnapshot() {
         setStatus(`${t("ipfs_local_snapshot_time")}${snapshot.createdAt}`);
     } catch (err) {
         console.error('request snapshot error', err);
-        setStatus('请求后台快照失败：' + (err as Error).message);
+        setStatus(t('ipfs_local_request_failed') + (err as Error).message);
         renderJson(null);
     }
 }
@@ -152,7 +152,7 @@ function renderJson(snapshot: SnapshotV1 | null) {
     const cidLink = document.getElementById('tc-cid-link') as HTMLAnchorElement | null;
     if (!pre) return;
     if (!snapshot) {
-        pre.textContent = '（无可用快照）';
+        pre.textContent = t('ipfs_local_no_snap');
         results?.classList.add('hidden');
         if (cidLink) {
             cidLink.textContent = '';
@@ -178,7 +178,7 @@ async function handleUploadClick() {
         // 1) 读取当前展示的 snapshot（从 pre）
         const pre = document.getElementById('tc-json') as HTMLElement | null;
         if (!pre || !pre.textContent) {
-            showStatus('没有可用快照可上传');
+            showStatus(t('ipfs_local_no_snap'));
             return;
         }
         const snapshotText = pre.textContent;
@@ -187,13 +187,13 @@ async function handleUploadClick() {
         // 2) 以 FormData 上传到本地 Kubo API （当前 tab 的 origin）
         const apiBase = deriveApiFromLocation();
         if (!apiBase) {
-            showStatus('无法推断本地 IPFS API 地址');
+            showStatus(t('ipfs_local_api_base_unknown'));
             return;
         }
-        setStatus('正在上传测试数据到 IPFS...');
+        setStatus(t('ipfs_local_uploading_test_data'));
         const {createdAt, ...snapshotCore} = snapshotJson as any;
         const cid = await uploadJsonToLocalKubo(snapshotCore, apiBase);
-        setStatus('上传成功！CID: ' + cid);
+        setStatus(t('ipfs_local_upload_success_cid', cid));
         await navigator.clipboard?.writeText(cid).catch(() => {
         });
         showUploadResult(cid);
@@ -249,12 +249,12 @@ async function uploadJsonToLocalKubo(obj: any, apiBase: string): Promise<string>
     const resp = await fetch(url, {method: 'POST', body: form});
     const text = await resp.text();
     if (!resp.ok) {
-        throw new Error(`Kubo 上传失败: HTTP ${resp.status} ${text}`);
+        throw new Error(t('ipfs_local_kubo_upload_failed_http', [String(resp.status), text]));
     }
     const lines = text.trim().split(/\r?\n/).filter(Boolean);
     const parsed = JSON.parse(lines.pop()!);
     const cid = parsed.Hash || parsed.IpfsHash;
-    if (!cid) throw new Error('未在返回值找到 CID');
+    if (!cid) throw new Error(t('ipfs_local_kubo_missing_cid'));
     return cid;
 }
 

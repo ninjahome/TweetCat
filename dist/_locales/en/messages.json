@@ -381,7 +381,7 @@
   "ipfs_photo_loading": {
     "message": "Uploading IPFS snapshot..."
   },
-  "Uplod_failed": {
+  "Upload_failed": {
     "message": "Upload failed:"
   },
   "ipfs_wallet_skipped": {
@@ -401,6 +401,37 @@
   },
   "ipfs_local_copied_failed": {
     "message": "Copy failed. Please copy manually."
+  },
+  "ipfs_local_backend_snapshot": {
+    "message": "Unable to retrieve snapshot from the backend."
+  },
+  "ipfs_local_request_failed": {
+    "message": "Failed to request background snapshot:"
+  },
+  "ipfs_local_no_snap": {
+    "message": "No snapshots available."
+  },
+  "ipfs_local_requesting_snapshot": {
+    "message": "Requesting snapshot from background…"
+  },
+  "ipfs_local_api_base_unknown": {
+    "message": "Unable to infer local IPFS API base."
+  },
+  "ipfs_local_uploading": {
+    "message": "Uploading to IPFS..."
+  },
+  "ipfs_local_upload_success_cid": {
+    "message": "Upload success! CID: $1"
+  },
+  "ipfs_local_kubo_upload_failed_http": {
+    "message": "Kubo upload failed: HTTP $1 $2"
+  },
+  "ipfs_local_uploading_test_data": {
+    "message": "Uploading test data to IPFS..."
+  },
+
+  "ipfs_local_kubo_missing_cid": {
+    "message": "CID not found in response"
   },
   "use_office_ipfs_node": {
     "message": "Use TweetCat Node"

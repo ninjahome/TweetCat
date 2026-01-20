@@ -381,7 +381,7 @@
   "ipfs_photo_loading": {
     "message": "正在上传 IPFS 快照…"
   },
-  "Uplod_failed": {
+  "Upload_failed": {
     "message": "上传失败:"
   },
   "ipfs_wallet_skipped": {
@@ -401,6 +401,36 @@
   },
   "ipfs_local_copied_failed": {
     "message": "复制失败，请手动复制"
+  },
+  "ipfs_local_backend_snapshot": {
+    "message": "无法从后台获取快照"
+  },
+  "ipfs_local_request_failed": {
+    "message": "请求后台快照失败:"
+  },
+  "ipfs_local_no_snap": {
+    "message": "无可用快照"
+  },
+  "ipfs_local_requesting_snapshot": {
+    "message": "请求后台 Snapshot…"
+  },
+  "ipfs_local_api_base_unknown": {
+    "message": "无法推断本地 IPFS API 地址"
+  },
+  "ipfs_local_uploading": {
+    "message": "正在上传到 IPFS..."
+  },
+  "ipfs_local_upload_success_cid": {
+    "message": "上传成功！CID: $1"
+  },
+  "ipfs_local_kubo_upload_failed_http": {
+    "message": "Kubo 上传失败: HTTP $1 $2"
+  },
+  "ipfs_local_uploading_test_data": {
+    "message": "正在上传测试数据到 IPFS..."
+  },
+  "ipfs_local_kubo_missing_cid": {
+    "message": "未在返回值找到 CID"
   },
   "use_office_ipfs_node": {
     "message": "使用官方 ipfs 节点"
