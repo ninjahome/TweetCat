@@ -1415,3 +1415,89 @@ body {
         transform: translateY(0);
     }
 }
+
+/* ==================== Ad Detail Modal Styles ==================== */
+.ad-detail-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.detail-section h3 {
+    font-size: 15px;
+    font-weight: 900;
+    color: #111827;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-item.full-width {
+    grid-column: span 2;
+    margin-bottom: 16px;
+}
+
+.detail-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    word-break: break-word;
+}
+
+.detail-text {
+    font-size: 14px;
+    color: #374151;
+    line-height: 1.5;
+    background: #f9fafb;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.detail-link {
+    font-size: 14px;
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.detail-link:hover {
+    text-decoration: underline;
+}
+
+.detail-image-preview {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    margin-top: 8px;
+}
+
+.detail-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}

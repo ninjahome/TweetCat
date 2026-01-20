@@ -472,6 +472,92 @@
     </div>
 </div>
 
+<!-- Ad Detail Modal -->
+<div id="ad-detail-modal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h2 class="modal-title">Ad Details</h2>
+            <button id="close-ad-detail" class="btn-close">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="ad-detail-content">
+                <!-- Read-only Overview -->
+                <div class="detail-section">
+                    <h3>Overview</h3>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Name</span>
+                            <span id="detail-name" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Status</span>
+                            <span id="detail-status" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Category</span>
+                            <span id="detail-category" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Created At</span>
+                            <span id="detail-created" class="detail-value">-</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Title</span>
+                        <span id="detail-title" class="detail-value">-</span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Description</span>
+                        <p id="detail-description" class="detail-text">-</p>
+                    </div>
+
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Reward</span>
+                            <span id="detail-reward" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Total Tasks</span>
+                            <span id="detail-quota" class="detail-value">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration</span>
+                            <span id="detail-duration" class="detail-value">-</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-item full-width">
+                        <span class="detail-label">Landing Page</span>
+                        <a id="detail-url" href="#" target="_blank" class="detail-link">-</a>
+                    </div>
+
+                    <div class="detail-item full-width" id="detail-image-container" style="display: none;">
+                        <span class="detail-label">Ad Image</span>
+                        <img id="detail-image" src="" alt="Ad Image" class="detail-image-preview" style="max-width: 100%; height: auto; border-radius: 8px; margin-top: 8px; border: 1px solid #e5e7eb;">
+                    </div>
+                </div>
+
+                <!-- Editable Settings -->
+                <div class="detail-section">
+                    <h3>Developer Settings</h3>
+                    <div class="form-group">
+                        <label for="detail-callback-url">Callback URL</label>
+                        <input type="url" id="detail-callback-url" class="form-input" placeholder="https://your-server.com/callback">
+                    </div>
+                    <div class="form-group">
+                        <label for="detail-custom-data">Custom Data (JSON)</label>
+                        <textarea id="detail-custom-data" class="form-textarea" rows="3" placeholder='{"key": "value"}'></textarea>
+                    </div>
+                    <div class="detail-actions">
+                        <button id="btn-update-ad-settings" class="btn-primary">Update Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- ==================== Hidden Templates (for TS clone) ==================== -->
 <template id="tpl-my-ad-row">
     <tr class="my-ad-row" data-ad-id="">
