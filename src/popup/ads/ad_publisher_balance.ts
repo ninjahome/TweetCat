@@ -1,7 +1,7 @@
-import {$Id, atomicToUsdcNumber, formatUSDC, openTxInExplorer, showNotification, x402WorkerFetch} from "../common";
+import {$Id, atomicToUsdcNumber, formatUSDC, openTxInExplorer, showNotification} from "../common";
 import {normalizeWalletUsdcDisplay, parseUsdcNumber, publisherState, updateHeaderInfo} from "./ad_publisher_common";
 import {refreshAdsData} from "./ad_publisher_dashboard";
-import {postToX402SrvByPri, queryCdpWalletInfo} from "../../wallet/cdp_wallet";
+import {postToX402SrvByPri, queryCdpWalletInfo, x402WorkerFetch} from "../../wallet/cdp_wallet";
 import {getChainId} from "../../wallet/wallet_setting";
 
 type TransferDirection = "wallet_to_ads" | "ads_to_wallet";

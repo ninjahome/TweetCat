@@ -163,27 +163,6 @@ export async function showPopupWindow(url: string, width: number = 450, height: 
 export const FIXED_ETH_TRANSFER_GAS_ETH = 0.000002; // ETH转账所需Gas费
 export const FIXED_MINI_USDC_TRANSFER = 0.00001; // USDC转账所需Gas费
 
-export async function x402WorkerFetch(path: string, body: any): Promise<any> {
-    const chainID = await getChainId()
-    const url = X402_FACILITATORS[chainID].endpoint + path
-
-    logX402("------>>> url:", url)
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`x402worker fetch failed: ${response.status} - ${errorData}`);
-    }
-
-    return await response.json();
-}
-
 export async function x402WorkerGet(path: string, params?: Record<string, string>): Promise<any> {
     const chainID = await getChainId()
     let url = X402_FACILITATORS[chainID].endpoint + path

@@ -126,6 +126,29 @@ export async function parseEscrowRequestParams(c: ExtCtx): Promise<ParsedEscrowR
 	};
 }
 
+/**
+ * 验证 custom_data 格式
+ * @param customData - 待验证的数据
+ * @returns 错误信息字符串，如果验证通过则返回 null
+ */
+function validateCustomData(customData: any): string | null {
+	if (!customData) return null;
+
+	try {
+		if (typeof customData === "string") {
+			JSON.parse(customData);
+		} else if (typeof customData !== "object") {
+			return "Invalid custom_data format";
+		}
+		if (JSON.stringify(customData).length > 8192) {
+			return "custom_data exceeds maximum size (8KB)";
+		}
+	} catch (e) {
+		return "Invalid custom_data: must be valid JSON";
+	}
+	return null;
+}
+
 // ========= API Endpoints =========
 
 export async function apiAdsBalance(c: ExtCtx) {
@@ -184,20 +207,10 @@ export async function apiAdsCreate(c: ExtCtx) {
 			return jsonError(c, 400, "INVALID_REQUEST", "Invalid category. Must be: follow, visit, register, or share");
 		}
 
-		// Validate custom_data if provided
-		if (customData) {
-			try {
-				if (typeof customData === "string") {
-					JSON.parse(customData);
-				} else if (typeof customData !== "object") {
-					return jsonError(c, 400, "INVALID_REQUEST", "Invalid custom_data format");
-				}
-				if (JSON.stringify(customData).length > 8192) {
-					return jsonError(c, 400, "INVALID_REQUEST", "custom_data exceeds maximum size (8KB)");
-				}
-			} catch (e) {
-				return jsonError(c, 400, "INVALID_REQUEST", "Invalid custom_data: must be valid JSON");
-			}
+		// Validate custom_data
+		const customDataError = validateCustomData(customData);
+		if (customDataError) {
+			return jsonError(c, 400, "INVALID_REQUEST", customDataError);
 		}
 
 		const requiredAtomic = (BigInt(unitPriceAtomic) * BigInt(quotaTotal)).toString();
@@ -254,20 +267,10 @@ export async function apiAdsUpdate(c: ExtCtx) {
 		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
 		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 
-		// Validate custom_data if provided
-		if (customData) {
-			try {
-				if (typeof customData === "string") {
-					JSON.parse(customData);
-				} else if (typeof customData !== "object") {
-					return jsonError(c, 400, "INVALID_REQUEST", "Invalid custom_data format");
-				}
-				if (JSON.stringify(customData).length > 8192) {
-					return jsonError(c, 400, "INVALID_REQUEST", "custom_data exceeds maximum size (8KB)");
-				}
-			} catch (e) {
-				return jsonError(c, 400, "INVALID_REQUEST", "Invalid custom_data: must be valid JSON");
-			}
+		// Validate custom_data
+		const customDataError = validateCustomData(customData);
+		if (customDataError) {
+			return jsonError(c, 400, "INVALID_REQUEST", customDataError);
 		}
 
 		// Validate callback_url if provided

@@ -2,8 +2,8 @@ import {getCurrentUser, signInWithOAuth, type OAuth2ProviderType, getAccessToken
 import {initCDP} from "../common/x402_obj";
 import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {x402WorkerFetch} from "./common";
 import {initI18n, t} from "../common/i18n";
+import {x402WorkerFetch} from "../wallet/cdp_wallet";
 
 type UIState = 'loading' | 'success' | 'error' | 'idle';
 function translateAuto() {

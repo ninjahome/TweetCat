@@ -1,33 +1,32 @@
 import {base, baseSepolia} from 'viem/chains'
 import {
-    createPublicClient,
     Address,
-    parseEther,
-    parseUnits,
-    http,
+    bytesToHex,
+    createPublicClient,
+    encodeFunctionData,
     formatEther,
     formatUnits,
-    isAddress,
     getAddress,
-    encodeFunctionData,
-    bytesToHex, padHex, toHex, isHex,
+    http,
+    isAddress,
+    isHex,
+    padHex,
+    parseEther,
+    parseUnits,
+    toHex,
 } from 'viem'
-import {
-    ChainIDBaseMain,
-    ChainIDBaseSepolia,
-    initCDP,
-    walletInfo,
-    X402_FACILITATORS
-} from "../common/x402_obj";
+import {ChainIDBaseMain, ChainIDBaseSepolia, initCDP, walletInfo, X402_FACILITATORS} from "../common/x402_obj";
 import {getChainId} from "./wallet_setting";
 import {
     EndUserEvmAccount,
     EndUserEvmSmartAccount,
-    EvmAddress, exportEvmAccount,
+    EvmAddress,
+    exportEvmAccount,
     getCurrentUser,
     isSignedIn,
     sendEvmTransaction,
-    sendUserOperation, signEvmTypedData
+    sendUserOperation,
+    signEvmTypedData
 } from "@coinbase/cdp-core";
 import {ClientEvmSigner} from "@x402/evm";
 import {x402Client} from "@x402/core/client";
@@ -520,6 +519,27 @@ export async function postToX402SrvByPri(path: string, body: any) {
         const text = await response.text();
         logX402("------>>>x402 error:", text);
         throw new Error(`${t('post_payment_failure')} (${response.status}): ${text}`)
+    }
+
+    return await response.json();
+}
+
+export async function x402WorkerFetch(path: string, body: any): Promise<any> {
+    const chainID = await getChainId()
+    const url = X402_FACILITATORS[chainID].endpoint + path
+
+    logX402("------>>> url:", url)
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`x402worker fetch failed: ${response.status} - ${errorData}`);
     }
 
     return await response.json();

@@ -1,6 +1,6 @@
 import browser from "webextension-polyfill";
-import {getWalletAddress, queryCdpUserID, queryCdpWalletInfo} from "../wallet/cdp_wallet";
-import {showLoading, hideLoading, showNotification, x402WorkerFetch} from "./common";
+import {getWalletAddress, queryCdpUserID, queryCdpWalletInfo, x402WorkerFetch} from "../wallet/cdp_wallet";
+import {showLoading, hideLoading, showNotification} from "./common";
 import {getChainId} from "../wallet/wallet_setting";
 import {initI18n, t} from "../common/i18n";
 

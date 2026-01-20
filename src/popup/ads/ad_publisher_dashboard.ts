@@ -6,7 +6,9 @@ import {
     formatUSDC,
     multiplyAtomic,
     showNotification,
-    usdcToAtomic
+    usdcToAtomic,
+    showLoading,
+    hideLoading
 } from "../common";
 import {logAdP} from "../../common/debug_flags";
 import {
@@ -213,6 +215,7 @@ function openAdDetailModal(ad: AdRecord) {
             }
 
             try {
+                showLoading("Updating ad settings...");
                 const payload = {
                     ad_id: ad.ad_id,
                     a_x_id: getCurrentXId(),
@@ -233,6 +236,8 @@ function openAdDetailModal(ad: AdRecord) {
                 }
             } catch (err: any) {
                 showNotification(err.message, "error");
+            } finally {
+                hideLoading();
             }
         });
     }
