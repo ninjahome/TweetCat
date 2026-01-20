@@ -9,7 +9,14 @@ import {
     usdcToAtomic
 } from "../common";
 import {logAdP} from "../../common/debug_flags";
-import {fetchAdEscrowLedger, fetchAdsBalance, fetchMyAds, openTxInExplorer, publisherState} from "./ad_publisher_common";
+import {
+    fetchAdEscrowLedger,
+    fetchAdsBalance,
+    fetchMyAds,
+    openTxInExplorer,
+    publisherState,
+    updateAd
+} from "./ad_publisher_common";
 import type {AdRecord, AdStatus, HistoryRow} from "./ad_publisher_common";
 import {getCurrentXId} from "./ad_publisher_common";
 
@@ -205,11 +212,28 @@ function openAdDetailModal(ad: AdRecord) {
                 }
             }
 
-            // TODO: Call backend API to update ad
-            // await updateAd(ad.ad_id, { callback_url: newCallback, custom_data: newCustomData });
-            
-            console.log("Update requested:", { adId: ad.ad_id, newCallback, newCustomData });
-            showNotification("Update feature coming soon (Backend API pending)", "info");
+            try {
+                const payload = {
+                    ad_id: ad.ad_id,
+                    a_x_id: getCurrentXId(),
+                    callback_url: newCallback,
+                    custom_data: newCustomData,
+                };
+
+                const result = await updateAd(payload);
+
+                if (result.ok) {
+                    showNotification("Ad settings updated successfully!", "success");
+                    // Optionally, refresh data
+                    await refreshAdsData();
+                    modal.classList.remove("active");
+                } else {
+                    const errorMsg = result.error?.detail || "Failed to update ad";
+                    showNotification(errorMsg, "error");
+                }
+            } catch (err: any) {
+                showNotification(err.message, "error");
+            }
         });
     }
 

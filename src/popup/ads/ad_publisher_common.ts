@@ -212,6 +212,21 @@ export async function createAd(payload: Record<string, any>): Promise<{ ok: bool
     return {ok: true, data};
 }
 
+export async function updateAd(payload: Record<string, any>): Promise<{ ok: boolean; data?: any; error?: any }> {
+    const chainId = await getChainId();
+    const url = X402_FACILITATORS[chainId].endpoint + "/ads/update";
+
+    const response = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return {ok: false, error: data};
+    return {ok: true, data};
+}
+
 export function parseUsdcNumber(v: string): number {
     const cleaned = (v ?? "").replace(/[^0-9.]/g, "");
     const n = Number(cleaned);

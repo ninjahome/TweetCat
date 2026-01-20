@@ -115,9 +115,9 @@ export function toSqliteDate(date: Date): string {
 export function formatDeadlineText(durationDays?: number, createdAt?: string | null): string {
 	if (durationDays === undefined || durationDays === null) return "Ends: -";
 	if (durationDays === 0) return "Ends: Never";
-	
+
 	if (!createdAt) return "Ends: -";
-	
+
 	try {
 		const created = new Date(createdAt);
 		const endDate = new Date(created.getTime() + durationDays * 24 * 60 * 60 * 1000);
@@ -232,6 +232,36 @@ export async function createAd(db: D1Database, payload: AdCreatePayload): Promis
 }
 
 /**
+ * 更新广告设置（仅限 callback_url 和 custom_data）
+ * @param db - D1 数据库实例
+ * @param adId - 广告 ID
+ * @param aXId - 广告主 X ID (用于权限验证)
+ * @param callbackUrl - 回调 URL (可选)
+ * @param customData - 自定义数据 (可选)
+ * @returns 更新是否成功
+ */
+export async function updateAdSettings(
+	db: D1Database,
+	adId: string,
+	aXId: string,
+	callbackUrl: string | null,
+	customData: string | null
+): Promise<boolean> {
+	const updateSql = `
+		UPDATE ad_campaigns
+		SET callback_url = ?,
+			custom_data = ?,
+			updated_at = datetime('now')
+		WHERE ad_id = ? AND a_x_id = ?
+	`;
+	const result = await db.prepare(updateSql)
+		.bind(callbackUrl, customData, adId, aXId)
+		.run();
+
+	return result.success && (result.meta.changes ?? 0) > 0;
+}
+
+/**
  * 获取用户的所有广告
  * @param db - D1 数据库实例
  * @param aXId - 广告主 X ID
@@ -258,7 +288,7 @@ export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 		WHERE status = 'ACTIVE'
 		  AND quota_used < quota_total
 		  AND (
-		      duration_days = 0 
+		      duration_days = 0
 		      OR datetime(created_at, '+' || duration_days || ' days') > datetime('now')
 		  )
 		ORDER BY created_at DESC
@@ -625,7 +655,7 @@ export async function listAdEscrowLedger(
 	const safeOffset = Math.max(offset, 0);
 
 	const sql = `
-		SELECT 
+		SELECT
 			ledger_id, a_x_id, direction as op, asset_symbol, amount_atomic,
 			payer_address as payer, receiver_address as to_address,
 			tx_hash, request_id, status, error_reason,
