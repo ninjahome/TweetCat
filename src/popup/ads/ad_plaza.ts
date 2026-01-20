@@ -3,12 +3,11 @@ import {
     cloneTemplate,
     formatUSDC,
     showNotification,
-    x402WorkerGet,
     atomicToUsdcNumber,
     getCurrentUserInfo
 } from "../common";
 import {logAdP} from "../../common/debug_flags";
-import {x402WorkerFetch} from "../../wallet/cdp_wallet";
+import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
 
 type AdCategory = "follow" | "visit" | "register" | "share";
 

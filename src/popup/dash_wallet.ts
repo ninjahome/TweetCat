@@ -1,7 +1,7 @@
 import {
     $Id, $input, FIXED_ETH_TRANSFER_GAS_ETH,
     FIXED_MINI_USDC_TRANSFER, hideLoading,
-    openTxInExplorer, showAlert, showLoading, showNotification, showPopupWindow, x402WorkerGet
+    openTxInExplorer, showAlert, showLoading, showNotification, showPopupWindow
 } from "./common";
 import {t} from "../common/i18n";
 import {ethers} from "ethers";
@@ -20,7 +20,7 @@ import {
 import {
     getWalletAddress, queryCdpUserID,
     queryCdpWalletInfo,
-    transferETHEoa, transferUSDCByX402
+    transferETHEoa, transferUSDCByX402, x402WorkerGet
 } from "../wallet/cdp_wallet";
 import {getChainId} from "../wallet/wallet_setting";
 

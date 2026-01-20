@@ -544,3 +544,28 @@ export async function x402WorkerFetch(path: string, body: any): Promise<any> {
 
     return await response.json();
 }
+
+export async function x402WorkerGet(path: string, params?: Record<string, string>): Promise<any> {
+    const chainID = await getChainId()
+    let url = X402_FACILITATORS[chainID].endpoint + path
+
+    if (params) {
+        const searchParams = new URLSearchParams(params);
+        url += "?" + searchParams.toString();
+    }
+
+    logX402("------>>> GET url:", url)
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json",
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`x402worker GET failed: ${response.status} - ${errorData}`);
+    }
+
+    return await response.json();
+}

@@ -1,5 +1,5 @@
-import {queryCdpUserID, x402WorkerFetch} from "../wallet/cdp_wallet";
-import {showLoading, hideLoading, showNotification, x402WorkerGet, openTxInExplorer} from "./common";
+import {queryCdpUserID, x402WorkerFetch, x402WorkerGet} from "../wallet/cdp_wallet";
+import {showLoading, hideLoading, showNotification, openTxInExplorer} from "./common";
 import {initI18n, t} from "../common/i18n";
 
 interface Reward {

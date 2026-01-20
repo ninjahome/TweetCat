@@ -2,7 +2,6 @@ import {t} from "../common/i18n";
 import browser from "webextension-polyfill";
 import {getChainId} from "../wallet/wallet_setting";
 import {initCDP, X402_FACILITATORS} from "../common/x402_obj";
-import {logX402} from "../common/debug_flags";
 import {getCurrentUser} from "@coinbase/cdp-core";
 import {getEOA} from "../wallet/cdp_wallet";
 
@@ -162,31 +161,6 @@ export async function showPopupWindow(url: string, width: number = 450, height: 
 
 export const FIXED_ETH_TRANSFER_GAS_ETH = 0.000002; // ETH转账所需Gas费
 export const FIXED_MINI_USDC_TRANSFER = 0.00001; // USDC转账所需Gas费
-
-export async function x402WorkerGet(path: string, params?: Record<string, string>): Promise<any> {
-    const chainID = await getChainId()
-    let url = X402_FACILITATORS[chainID].endpoint + path
-
-    if (params) {
-        const searchParams = new URLSearchParams(params);
-        url += "?" + searchParams.toString();
-    }
-
-    logX402("------>>> GET url:", url)
-    const response = await fetch(url, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
-    });
-
-    if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`x402worker GET failed: ${response.status} - ${errorData}`);
-    }
-
-    return await response.json();
-}
 
 /**
  * 将原子单位数值转换为 USDC 数字
