@@ -1,7 +1,7 @@
 import {$Id, showNotification} from "../common";
 import {ChainNameBaseMain, walletInfo, X402_FACILITATORS} from "../../common/x402_obj";
 import {getChainId} from "../../wallet/wallet_setting";
-import {queryCdpWalletInfo} from "../../wallet/cdp_wallet";
+import {queryCdpWalletInfo, x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
 
 export type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
 
@@ -165,66 +165,16 @@ export function openTxInExplorer(txHash: string): void {
 }
 
 // ========= API helpers =========
-
-export async function fetchAdsBalance(aXId: string) {
-    const chainId = await getChainId();
-    const url = X402_FACILITATORS[chainId].endpoint + "/ads/balance";
-    const response = await fetch(`${url}?a_x_id=${encodeURIComponent(aXId)}`);
-    if (!response.ok) throw new Error(await response.text());
-    return await response.json();
-}
-
-export async function fetchMyAds(aXId: string): Promise<AdRecord[]> {
-    const chainId = await getChainId();
-    const url = X402_FACILITATORS[chainId].endpoint + "/ads/my_ads";
-    const response = await fetch(`${url}?a_x_id=${encodeURIComponent(aXId)}`);
-    if (!response.ok) throw new Error(await response.text());
-    return (await response.json()) as AdRecord[];
-}
-
 export async function fetchAdEscrowLedger(aXId: string, limit: number = 50, offset: number = 0): Promise<any[]> {
-    const chainId = await getChainId();
-    const endpoint = X402_FACILITATORS[chainId].endpoint + "/ads/publisher/ledger";
-    const url = `${endpoint}?a_x_id=${encodeURIComponent(aXId)}&limit=${limit}&offset=${offset}`;
-
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const data = await response.json();
+    const data = await x402WorkerGet("/ads/publisher/ledger", {
+        a_x_id: aXId,
+        limit: limit.toString(),
+        offset: offset.toString()
+    });
     if (!data.success || !Array.isArray(data.rows)) {
         throw new Error(data.error || "Invalid response format");
     }
     return data.rows;
-}
-
-export async function createAd(payload: Record<string, any>): Promise<{ ok: boolean; data?: any; error?: any }> {
-    const chainId = await getChainId();
-    const url = X402_FACILITATORS[chainId].endpoint + "/ads/create";
-
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(payload),
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) return {ok: false, error: data};
-    return {ok: true, data};
-}
-
-export async function updateAd(payload: Record<string, any>): Promise<{ ok: boolean; data?: any; error?: any }> {
-    const chainId = await getChainId();
-    const url = X402_FACILITATORS[chainId].endpoint + "/ads/update";
-
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(payload),
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) return {ok: false, error: data};
-    return {ok: true, data};
 }
 
 export function parseUsdcNumber(v: string): number {

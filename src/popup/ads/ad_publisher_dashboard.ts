@@ -13,21 +13,19 @@ import {
 import {logAdP} from "../../common/debug_flags";
 import {
     fetchAdEscrowLedger,
-    fetchAdsBalance,
-    fetchMyAds,
     openTxInExplorer,
-    publisherState,
-    updateAd
+    publisherState
 } from "./ad_publisher_common";
 import type {AdRecord, AdStatus, HistoryRow} from "./ad_publisher_common";
 import {getCurrentXId} from "./ad_publisher_common";
+import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
 
 // ========= 数据刷新 =========
 export async function refreshAdsData() {
     const currentXId = getCurrentXId();
     const [balance, ads] = await Promise.all([
-        fetchAdsBalance(currentXId),
-        fetchMyAds(currentXId),
+        x402WorkerGet("/ads/balance", {a_x_id: currentXId}),
+        (await x402WorkerGet("/ads/my_ads", {a_x_id: currentXId})) as AdRecord[],
     ]);
 
     publisherState.adAccountInfo = {
@@ -223,7 +221,7 @@ function openAdDetailModal(ad: AdRecord) {
                     custom_data: newCustomData,
                 };
 
-                const result = await updateAd(payload);
+                const result = await  x402WorkerFetch("/ads/update", payload);
 
                 if (result.ok) {
                     showNotification("Ad settings updated successfully!", "success");

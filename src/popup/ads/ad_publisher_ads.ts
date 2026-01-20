@@ -1,6 +1,5 @@
 import {
-    createAd,
-    fetchAdsBalance, getCurrentXUserName,
+    getCurrentXUserName,
     isZeroAtomic
 } from "./ad_publisher_common";
 import {getCurrentXId} from "./ad_publisher_common";
@@ -12,6 +11,7 @@ import {
 import {publisherState} from "./ad_publisher_common";
 import {refreshAdsData} from "./ad_publisher_dashboard";
 import {openRechargeModal} from "./ad_publisher_balance";
+import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
 
 // ========= 发布广告向导（Wizard） =========
 let wizardCurrentStep = 1;
@@ -96,7 +96,7 @@ async function handlePublishClick(): Promise<void> {
         }
 
         const xId = getCurrentXId();
-        const balance = await fetchAdsBalance(xId);
+        const balance = await x402WorkerGet("/ads/balance", {a_x_id: xId});
 
         publisherState.adAccountInfo = {
             balanceAtomic: balance?.balance_atomic ?? "0",
@@ -182,7 +182,7 @@ async function submitWizard() {
         duration_days: durationDays,
     };
 
-    const result = await createAd(payload);
+    const result = await x402WorkerFetch("/ads/create", payload);
     if (!result.ok) {
         if (result.error?.error === "INSUFFICIENT_BALANCE") {
             showNotification(`Insufficient balance. ${result.error?.detail || ""}`.trim(), "error");
