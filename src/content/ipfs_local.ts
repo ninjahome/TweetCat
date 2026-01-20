@@ -48,7 +48,7 @@ function parseWalletFromHash(): string | null {
 
 async function updateManifestAfterLocalUpload(snapshotCid: string) {
     if (!walletFromHash) {
-        showStatus('未获取到钱包地址，已跳过 Manifest 更新');
+        showStatus(t('ipfs_wallet_skipped'));
         return;
     }
     try {
@@ -56,11 +56,11 @@ async function updateManifestAfterLocalUpload(snapshotCid: string) {
         for (const old of oldSnapshotCids) {
             await unpinFromLocalKubo(old);
         }
-        showStatus('已更新同步清单（Manifest）');
+        showStatus(t('ipfs_updated_manifest'));
         console.log("----->>>", manifest, cid)
     } catch (e) {
         console.warn('appendManifestItem failed:', e);
-        showStatus('上传成功，但本地清单写入失败（不影响使用）');
+        showStatus(t('ipfs_local_failed'));
     }
 }
 
@@ -71,7 +71,7 @@ async function unpinFromLocalKubo(cid: string): Promise<void> {
     const url = `${apiBase}/api/v0/pin/rm?arg=${encodeURIComponent(cid)}&recursive=true`;
     const resp = await fetch(url, {method: 'POST'});
     if (!resp.ok) {
-        console.warn('本地 Kubo 取消 pin 失败:', cid, resp.status);
+        console.warn(t('ipfs_local_failed_pin'), cid, resp.status);
     }
 }
 
@@ -120,8 +120,8 @@ function copyCid() {
     const link = document.getElementById('tc-cid-link') as HTMLAnchorElement | null;
     if (link?.dataset.cid) {
         navigator.clipboard?.writeText(link.dataset.cid)
-            .then(() => showStatus('CID 已复制到剪贴板'))
-            .catch(() => showStatus('复制失败，请手动复制'));
+            .then(() => showStatus(t('ipfs_local_copied_CID')))
+            .catch(() => showStatus(t('ipfs_local_copied_failed')));
     }
 }
 
@@ -205,7 +205,7 @@ async function handleUploadClick() {
 
     } catch (err) {
         console.error('upload error', err);
-        showStatus('上传失败：' + ((err as Error).message || String(err)));
+        showStatus(t('ipfs_photo_loading') + ((err as Error).message || String(err)));
     }
 }
 

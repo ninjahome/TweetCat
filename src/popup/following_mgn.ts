@@ -1543,7 +1543,7 @@ async function handleExportSnapshotToIpfs(
             password = await promptPasswordOnce();
         }
 
-        showLoading("正在上传 IPFS 快照…");
+        showLoading(t('ipfs_photo_loading'));
 
         const cats = categories
             .filter(c => typeof c.id === "number")

@@ -378,6 +378,30 @@
   "ipfs_password_msg": {
     "message": "Used for decrypting Pinata/Lighthouse/custom KEY"
   },
+  "ipfs_photo_loading": {
+    "message": "Uploading IPFS snapshot..."
+  },
+  "Uplod_failed": {
+    "message": "Upload failed:"
+  },
+  "ipfs_wallet_skipped": {
+    "message": "Wallet address not obtained, Manifest update skipped."
+  },
+  "ipfs_updated_manifest": {
+    "message": "The manifest has been updated."
+  },
+  "ipfs_local_failed": {
+    "message": "Upload successful, but local manifest file failed to write (this does not affect functionality)."
+  },
+  "ipfs_local_failed_pin": {
+    "message": "Local Kubo failed to unpin:"
+  },
+  "ipfs_local_copied_CID": {
+    "message": "CID has been copied to the clipboard."
+  },
+  "ipfs_local_copied_failed": {
+    "message": "Copy failed. Please copy manually."
+  },
   "use_office_ipfs_node": {
     "message": "Use TweetCat Node"
   },
@@ -1329,5 +1353,4 @@
   "cdp_auth_redirecting_to_x_login": {
     "message": "Redirecting to X (Twitter) login..."
   }
-
 }

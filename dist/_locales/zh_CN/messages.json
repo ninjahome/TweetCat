@@ -378,6 +378,30 @@
   "ipfs_password_msg": {
     "message": "请输入解密口令"
   },
+  "ipfs_photo_loading": {
+    "message": "正在上传 IPFS 快照…"
+  },
+  "Uplod_failed": {
+    "message": "上传失败:"
+  },
+  "ipfs_wallet_skipped": {
+    "message": "未获取到钱包地址，已跳过 Manifest 更新"
+  },
+  "ipfs_updated_manifest": {
+    "message": "已更新同步清单（Manifest）"
+  },
+  "ipfs_local_failed": {
+    "message": "上传成功，但本地清单写入失败（不影响使用）"
+  },
+  "ipfs_local_failed_pin": {
+    "message": "本地 Kubo 取消 pin 失败:"
+  },
+  "ipfs_local_copied_CID": {
+    "message": "CID 已复制到剪贴板"
+  },
+  "ipfs_local_copied_failed": {
+    "message": "复制失败，请手动复制"
+  },
   "use_office_ipfs_node": {
     "message": "使用官方 ipfs 节点"
   },
