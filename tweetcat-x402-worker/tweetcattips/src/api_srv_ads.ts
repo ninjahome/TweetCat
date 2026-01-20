@@ -594,7 +594,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 
 			if (!settleResult.success) {
 				console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：支付失败，原因: ${settleResult.errorReason}`);
-				throw new Error(settleResult.errorReason || "Settlement failed");
+				return jsonError(c, 500, "WITHDRAW_FAILED", settleResult.errorReason || "Settlement failed");
 			}
 
 			// 更新账本记录为已结算
