@@ -1,7 +1,7 @@
 import {$Id, showNotification} from "../common";
 import {ChainNameBaseMain, walletInfo, X402_FACILITATORS} from "../../common/x402_obj";
 import {getChainId} from "../../wallet/wallet_setting";
-import {queryCdpWalletInfo, x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
+import {queryCdpWalletInfo, x402WorkerGet} from "../../wallet/cdp_wallet";
 
 export type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
 
