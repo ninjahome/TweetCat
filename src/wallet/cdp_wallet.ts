@@ -454,8 +454,7 @@ function buildEip712DomainTypes(domain: any): Eip712Field[] {
     return fields.length ? fields : [{name: "chainId", type: "uint256"}];
 }
 
-
-export async function initX402ClientWithPrivateKey(): Promise<typeof fetch> {
+async function getPrivateKeyFromEOA(): Promise<`0x${string}`> {
     // 1. 获取 EOA
     const eoa = await getEOA();
 
@@ -470,21 +469,19 @@ export async function initX402ClientWithPrivateKey(): Promise<typeof fetch> {
     if (!rawKey.startsWith('0x')) {
         rawKey = `0x${rawKey}`;
     }
+    return rawKey as `0x${string}`;
+}
 
-    const chainId = await getChainId();
-
-    // 4. 创建账户
+export async function initX402ClientWithPrivateKey(): Promise<typeof fetch> {
+    let rawKey = await getPrivateKeyFromEOA();
     const account = privateKeyToAccount(rawKey as `0x${string}`);
     rawKey = "0x0000000000000000000000000000000000000000000000000000000000000000";
-    exportResult.privateKey = null;
-    console.debug("Sensitive cleanup done.", rawKey);
-    // 5. 初始化 x402 客户端
     const client = new x402Client();
+    const chainId = await getChainId();
     registerExactEvmScheme(client, {
         signer: account,
         networks: [`eip155:${chainId}`],
     });
-
     return wrapFetchWithPayment(fetch, client);
 }
 
