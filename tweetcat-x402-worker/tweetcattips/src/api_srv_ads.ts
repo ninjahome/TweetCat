@@ -13,6 +13,7 @@ import {
 	getAccountBalanceAtomic,
 	reserveAdBudget,
 	createAd,
+	updateAdSettings,
 	getMyAds,
 	getActiveAdsList,
 	getAdById,
@@ -242,6 +243,61 @@ export async function apiAdsCreate(c: ExtCtx) {
 	}
 }
 
+export async function apiAdsUpdate(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		const adId = body?.ad_id;
+		const aXId = body?.a_x_id;
+		const callbackUrl = body?.callback_url;
+		const customData = body?.custom_data;
+
+		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
+		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		// Validate custom_data if provided
+		if (customData) {
+			try {
+				if (typeof customData === "string") {
+					JSON.parse(customData);
+				} else if (typeof customData !== "object") {
+					return jsonError(c, 400, "INVALID_REQUEST", "Invalid custom_data format");
+				}
+				if (JSON.stringify(customData).length > 8192) {
+					return jsonError(c, 400, "INVALID_REQUEST", "custom_data exceeds maximum size (8KB)");
+				}
+			} catch (e) {
+				return jsonError(c, 400, "INVALID_REQUEST", "Invalid custom_data: must be valid JSON");
+			}
+		}
+
+		// Validate callback_url if provided
+		if (callbackUrl && typeof callbackUrl !== "string") {
+			return jsonError(c, 400, "INVALID_REQUEST", "Invalid callback_url format");
+		}
+
+		const updated = await updateAdSettings(
+			c.env.DB,
+			adId,
+			aXId,
+			callbackUrl || null,
+			typeof customData === 'string' ? customData : (customData ? JSON.stringify(customData) : null)
+		);
+
+		if (!updated) {
+			// Check if ad exists to give better error
+			const ad = await getAdById(c.env.DB, adId);
+			if (!ad) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+			if (ad.a_x_id !== aXId) return jsonError(c, 403, "FORBIDDEN", "You do not own this ad");
+
+			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad");
+		}
+
+		return c.json({ok: true, ad_id: adId});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
 export async function apiAdsMyAds(c: ExtCtx) {
 	try {
 		const aXId = c.req.query("a_x_id");
@@ -432,7 +488,7 @@ export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
 export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 	try {
 		console.log("[apiWithdrawFromAdsEscrowAccount] 开始处理提现请求");
-		
+
 		// ✅ 使用新的解析函数
 		const { aXId, amountAtomic } = await parseEscrowRequestParams(c);
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 参数验证成功: aXId=${aXId}, amountAtomic=${amountAtomic}`);
@@ -441,7 +497,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 查询用户绑定的钱包地址...`);
 		const kolBinding = await getKolBindingByXId(c.env.DB, aXId);
 		console.log(`[apiWithdrawFromAdsEscrowAccount] kolBinding 结果:`, kolBinding);
-		
+
 		if (!kolBinding || !kolBinding.wallet_address) {
 			console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：未找到钱包地址`);
 			return jsonError(c, 400, "INVALID_REQUEST", "User wallet address not found. Please bind your wallet first.");
@@ -461,15 +517,15 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 检查本月是否已提现过...`);
 		const existingLedger = await getEscrowLedgerByRequestId(c.env.DB, aXId, 'WITHDRAW', idempotencyKey);
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 重复提现检查结果:`, existingLedger);
-		
+
 		if (existingLedger) {
 			if (existingLedger.status === 'SETTLED' && existingLedger.tx_hash) {
 				console.log(`[apiWithdrawFromAdsEscrowAccount] 本月已提现过`);
-				
+
 				// 计算下个月第一天
 				const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 				const nextAvailableDate = nextMonth.toISOString().split('T')[0]; // YYYY-MM-DD
-				
+
 				return c.json({
 					success: false,  // 本次请求未执行新操作
 					alreadyWithdrawn: true,  // 标识已提现过
@@ -510,7 +566,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 扣减余额...`);
 		const debited = await debitEscrowBalance(c.env.DB, aXId, amountAtomic);
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 扣减结果: ${debited}`);
-		
+
 		if (!debited) {
 			console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：余额不足或扣减失败`);
 			// 标记账本记录为失败
@@ -523,14 +579,14 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 			const resourceUrl = `ads://withdraw/${aXId}`;
 			console.log(`[apiWithdrawFromAdsEscrowAccount] 开始调用 internalTreasurySettle...`);
 			console.log(`[apiWithdrawFromAdsEscrowAccount] 参数: toAddress=${toAddress}, amountAtomic=${amountAtomic}, resourceUrl=${resourceUrl}`);
-			
+
 			const settleResult = await internalTreasurySettle(
 				c,
 				toAddress as `0x${string}`,
 				amountAtomic,
 				resourceUrl
 			);
-			
+
 			console.log(`[apiWithdrawFromAdsEscrowAccount] internalTreasurySettle 返回:`, settleResult);
 
 			if (!settleResult.success) {
@@ -575,7 +631,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 			code: err?.code,
 			isEscrowRequestError: err instanceof EscrowRequestError
 		});
-		
+
 		if (err instanceof EscrowRequestError) {
 			return jsonError(c, err.statusCode as ContentfulStatusCode, err.code, err.detail);
 		}
@@ -618,6 +674,7 @@ export async function apiAdsPublisherLedger(c: ExtCtx) {
 export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
 	app.get("/ads/balance", apiAdsBalance);
 	app.post("/ads/create", apiAdsCreate);
+	app.post("/ads/update", apiAdsUpdate);
 	app.get("/ads/my_ads", apiAdsMyAds);
 	app.get("/ads/list", apiAdsList);
 	app.post("/ads/claim", apiAdsClaim);

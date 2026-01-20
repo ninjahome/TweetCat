@@ -9,7 +9,14 @@ import {
     usdcToAtomic
 } from "../common";
 import {logAdP} from "../../common/debug_flags";
-import {fetchAdEscrowLedger, fetchAdsBalance, fetchMyAds, openTxInExplorer, publisherState} from "./ad_publisher_common";
+import {
+    fetchAdEscrowLedger,
+    fetchAdsBalance,
+    fetchMyAds,
+    openTxInExplorer,
+    publisherState,
+    updateAd
+} from "./ad_publisher_common";
 import type {AdRecord, AdStatus, HistoryRow} from "./ad_publisher_common";
 import {getCurrentXId} from "./ad_publisher_common";
 
@@ -113,27 +120,131 @@ export function renderMyAdsTable() {
         return;
     }
 
-    publisherState.myAds.map(buildMyAdRow).forEach((ad) => {
+    publisherState.myAds.forEach((ad) => {
+        const rowData = buildMyAdRow(ad);
         const tr = cloneTemplate("tpl-my-ad-row") as HTMLTableRowElement;
-        tr.dataset.adId = ad.id;
+        tr.dataset.adId = rowData.id;
 
-        $2<HTMLElement>(tr, ".td-name").textContent = ad.name;
-        $2<HTMLElement>(tr, ".td-status").textContent = ad.status;
-        $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(ad.rewardPerTask);
-        $2<HTMLElement>(tr, ".td-completed").textContent = ad.completed.toString();
-        $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(ad.spent);
-        $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(ad.remainingBudget);
+        $2<HTMLElement>(tr, ".td-name").textContent = rowData.name;
+        $2<HTMLElement>(tr, ".td-status").textContent = rowData.status;
+        $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(rowData.rewardPerTask);
+        $2<HTMLElement>(tr, ".td-completed").textContent = rowData.completed.toString();
+        $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(rowData.spent);
+        $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(rowData.remainingBudget);
 
         const btnView = $2<HTMLButtonElement>(tr, ".btn-view");
         const btnToggle = $2<HTMLButtonElement>(tr, ".btn-toggle");
 
-        btnView.addEventListener("click", () => showNotification(`View ad: ${ad.name}`));
+        btnView.addEventListener("click", () => openAdDetailModal(ad));
 
         btnToggle.textContent = "N/A";
         btnToggle.disabled = true;
 
         tbody.appendChild(tr);
     });
+}
+
+// ========= Ad Detail Modal =========
+function openAdDetailModal(ad: AdRecord) {
+    const modal = $Id("ad-detail-modal");
+    if (!modal) return;
+
+    // Populate Read-only fields
+    const setText = (id: string, text: string) => {
+        const el = $Id(id);
+        if (el) el.textContent = text;
+    };
+
+    setText("detail-name", ad.name);
+    setText("detail-status", mapStatus(ad.status));
+    setText("detail-category", ad.category);
+    setText("detail-created", ad.created_at ? new Date(ad.created_at).toLocaleString() : "-");
+    setText("detail-title", ad.title);
+    setText("detail-description", ad.description);
+    
+    const rewardUSDC = atomicToUsdcNumber(ad.unit_price_atomic);
+    setText("detail-reward", formatUSDC(rewardUSDC));
+    setText("detail-quota", ad.quota_total.toString());
+    setText("detail-duration", ad.duration_days > 0 ? `${ad.duration_days} days` : "Unlimited");
+
+    const linkEl = $Id("detail-url") as HTMLAnchorElement | null;
+    if (linkEl) {
+        linkEl.href = ad.detail_url;
+        linkEl.textContent = ad.detail_url;
+    }
+
+    const imgContainer = $Id("detail-image-container");
+    const imgEl = $Id("detail-image") as HTMLImageElement | null;
+    if (imgContainer && imgEl) {
+        if (ad.image_url) {
+            imgEl.src = ad.image_url;
+            imgContainer.style.display = "block";
+        } else {
+            imgContainer.style.display = "none";
+        }
+    }
+
+    // Populate Editable fields
+    const callbackInput = $Id("detail-callback-url") as HTMLInputElement | null;
+    if (callbackInput) callbackInput.value = ad.callback_url || "";
+
+    const customDataInput = $Id("detail-custom-data") as HTMLTextAreaElement | null;
+    if (customDataInput) customDataInput.value = ad.custom_data || "";
+
+    // Bind Update Button
+    const btnUpdate = $Id("btn-update-ad-settings");
+    if (btnUpdate) {
+        // Remove old listeners to prevent duplicates (cloning button is safer but simple replacement works here)
+        const newBtn = btnUpdate.cloneNode(true);
+        btnUpdate.parentNode?.replaceChild(newBtn, btnUpdate);
+        
+        newBtn.addEventListener("click", async () => {
+            const newCallback = callbackInput?.value.trim() || null;
+            const newCustomData = customDataInput?.value.trim() || null;
+
+            // Validate JSON
+            if (newCustomData) {
+                try {
+                    JSON.parse(newCustomData);
+                } catch (e) {
+                    showNotification("Invalid JSON format in Custom Data", "error");
+                    return;
+                }
+            }
+
+            try {
+                const payload = {
+                    ad_id: ad.ad_id,
+                    a_x_id: getCurrentXId(),
+                    callback_url: newCallback,
+                    custom_data: newCustomData,
+                };
+
+                const result = await updateAd(payload);
+
+                if (result.ok) {
+                    showNotification("Ad settings updated successfully!", "success");
+                    // Optionally, refresh data
+                    await refreshAdsData();
+                    modal.classList.remove("active");
+                } else {
+                    const errorMsg = result.error?.detail || "Failed to update ad";
+                    showNotification(errorMsg, "error");
+                }
+            } catch (err: any) {
+                showNotification(err.message, "error");
+            }
+        });
+    }
+
+    // Show Modal
+    modal.classList.add("active");
+
+    // Bind Close Button
+    const btnClose = $Id("close-ad-detail");
+    if (btnClose) {
+        btnClose.onclick = () => modal.classList.remove("active");
+    }
 }
 
 // ========= Recent Spending =========
