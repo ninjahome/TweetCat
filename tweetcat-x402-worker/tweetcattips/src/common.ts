@@ -36,7 +36,6 @@ export const signedOperationPaths: string[] = [
     API_PATH_ADS_CREATE,
     API_PATH_ADS_UPDATE,
     API_PATH_ADS_CLAIM,
-    API_PATH_ADS_PUBLISHER_RECHARGE,
     API_PATH_ADS_PUBLISHER_WITHDRAW
 ];
 

@@ -525,7 +525,6 @@ const signedOperationPaths: string[] = [
     "/ads/create",
     "/ads/update",
     "/ads/claim",
-    "/ads/publisher/recharge",
     "/ads/publisher/withdraw"
 ];
 
