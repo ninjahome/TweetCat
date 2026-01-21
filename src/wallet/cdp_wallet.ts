@@ -521,17 +521,49 @@ export async function postToX402SrvByPri(path: string, body: any) {
     return await response.json();
 }
 
-export async function x402WorkerFetch(path: string, body: any): Promise<any> {
-    const chainID = await getChainId()
-    const url = X402_FACILITATORS[chainID].endpoint + path
+const signedOperationPaths: string[] = [
+    "/ads/create",
+    "/ads/update",
+    "/ads/claim",
+    "/ads/publisher/recharge",
+    "/ads/publisher/withdraw"
+];
 
-    logX402("------>>> url:", url)
+export async function x402WorkerFetch(path: string, body: any): Promise<any> {
+    const chainID = await getChainId();
+    const url = X402_FACILITATORS[chainID].endpoint + path;
+    let requestBody = body;
+
+    if (signedOperationPaths.includes(path)) {
+        const userId = await queryCdpUserID();
+        if (!userId) {
+            throw new Error("User not signed in");
+        }
+
+        const privateKey = await getPrivateKeyFromEOA();
+        const account = privateKeyToAccount(privateKey);
+        
+        // Add userId and timestamp to the body before signing
+        const bodyWithUserId = {
+            ...body,
+            userId: userId,
+            x402TimeStamp: Date.now()
+        };
+        
+        const signature = await account.signMessage({message: JSON.stringify(bodyWithUserId)});
+        requestBody = {
+            ...bodyWithUserId,
+            signature: signature,
+        };
+    }
+
+    logX402("------>>> url:", url);
     const response = await fetch(url, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -541,6 +573,7 @@ export async function x402WorkerFetch(path: string, body: any): Promise<any> {
 
     return await response.json();
 }
+
 
 export async function x402WorkerGet(path: string, params?: Record<string, string>): Promise<any> {
     const chainID = await getChainId()

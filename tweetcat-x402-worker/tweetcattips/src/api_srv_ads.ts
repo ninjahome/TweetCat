@@ -1,6 +1,24 @@
 import {Hono} from "hono";
 import {ContentfulStatusCode} from "hono/utils/http-status";
-import {ExtCtx, ExtendedEnv, jsonError, requireStringField, parsePositiveInt, parsePositiveAtomic, usdcToAtomicSafe} from "./common";
+import {
+	ExtCtx,
+	ExtendedEnv,
+	jsonError,
+	requireStringField,
+	parsePositiveInt,
+	parsePositiveAtomic,
+	usdcToAtomicSafe,
+	API_PATH_ADS_BALANCE,
+	API_PATH_ADS_CREATE,
+	API_PATH_ADS_UPDATE,
+	API_PATH_ADS_MY_ADS,
+	API_PATH_ADS_LIST,
+	API_PATH_ADS_CLAIM,
+	API_PATH_ADS_MY_CLAIMS,
+	API_PATH_ADS_PUBLISHER_RECHARGE,
+	API_PATH_ADS_PUBLISHER_WITHDRAW,
+	API_PATH_ADS_PUBLISHER_LEDGER
+} from "./common";
 import {
 	AdCategory,
 	CATEGORY_DURATION,
@@ -675,14 +693,14 @@ export async function apiAdsPublisherLedger(c: ExtCtx) {
  * 注册广告相关路由
  */
 export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
-	app.get("/ads/balance", apiAdsBalance);
-	app.post("/ads/create", apiAdsCreate);
-	app.post("/ads/update", apiAdsUpdate);
-	app.get("/ads/my_ads", apiAdsMyAds);
-	app.get("/ads/list", apiAdsList);
-	app.post("/ads/claim", apiAdsClaim);
-	app.get("/ads/my_claims", apiAdsMyClaims);
-	app.post("/ads/publisher/recharge", apiRechargeToAdEscrowAccount);
-	app.post("/ads/publisher/withdraw", apiWithdrawFromAdsEscrowAccount);
-	app.get("/ads/publisher/ledger", apiAdsPublisherLedger);
+	app.get(API_PATH_ADS_BALANCE, apiAdsBalance);
+	app.post(API_PATH_ADS_CREATE, apiAdsCreate);
+	app.post(API_PATH_ADS_UPDATE, apiAdsUpdate);
+	app.get(API_PATH_ADS_MY_ADS, apiAdsMyAds);
+	app.get(API_PATH_ADS_LIST, apiAdsList);
+	app.post(API_PATH_ADS_CLAIM, apiAdsClaim);
+	app.get(API_PATH_ADS_MY_CLAIMS, apiAdsMyClaims);
+	app.post(API_PATH_ADS_PUBLISHER_RECHARGE, apiRechargeToAdEscrowAccount);
+	app.post(API_PATH_ADS_PUBLISHER_WITHDRAW, apiWithdrawFromAdsEscrowAccount);
+	app.get(API_PATH_ADS_PUBLISHER_LEDGER, apiAdsPublisherLedger);
 }
