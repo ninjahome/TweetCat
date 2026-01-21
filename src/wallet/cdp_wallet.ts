@@ -475,7 +475,6 @@ async function getPrivateKeyFromEOA(): Promise<`0x${string}`> {
 export async function initX402ClientWithPrivateKey(): Promise<typeof fetch> {
     let rawKey = await getPrivateKeyFromEOA();
     const account = privateKeyToAccount(rawKey as `0x${string}`);
-    rawKey = "0x0000000000000000000000000000000000000000000000000000000000000000";
     const client = new x402Client();
     const chainId = await getChainId();
     registerExactEvmScheme(client, {
