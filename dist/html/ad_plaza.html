@@ -13,7 +13,7 @@
 <header class="plaza-header">
     <div class="plaza-header-left">
         <div class="plaza-logo">
-            <span class="logo-icon">🏪</span>
+            <div class="logo-icon"></div>
             <span class="logo-text">Ad Plaza</span>
         </div>
     </div>
@@ -28,40 +28,55 @@
     <div class="earn-layout">
         <aside class="earn-left">
             <section class="withdraw-card">
-                <div class="withdraw-card-header">
-                    <div>
+                <span class="withdraw-status">Updated today</span>
+                <div class="withdraw-card-top">
+                    <div class="withdraw-card-header">
                         <div class="card-label">Withdrawable</div>
-                        <div class="card-value" id="withdrawable-amount">0.00 USDC</div>
+                        <div class="card-value" id="withdrawable-amount">
+                            <span class="card-value-amount">0.00</span>
+                            <span>USDC</span>
+                        </div>
                     </div>
-                    <span class="withdraw-status">Updated today</span>
-                </div>
-                <div class="withdraw-actions">
-                    <button id="btn-withdraw" class="btn-primary">Withdraw</button>
-                    <button id="btn-earn-activity" class="btn-secondary">Activity</button>
+                    <div class="withdraw-actions">
+                        <button id="btn-withdraw" class="btn-primary">Withdraw</button>
+                        <button id="btn-earn-activity" class="btn-secondary">Activity</button>
+                    </div>
+
                 </div>
                 <div class="earn-summary">
                     <div class="summary-item">
-                        <span class="summary-label">Total Earned</span>
-                        <span class="summary-value" id="total-earned">0.00 USDC</span>
+                        <span class="summary-label">Total Earned<br>(USDC)</span>
+                        <span class="summary-value" id="total-earned">0.00</span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Today Earned</span>
-                        <span class="summary-value" id="today-earned">0.00 USDC</span>
+                        <span class="summary-label">Today Earned<br>(USDC)</span>
+                        <span class="summary-value" id="today-earned">0.00 </span>
                     </div>
                     <div class="summary-item">
-                        <span class="summary-label">Pending</span>
-                        <span class="summary-value" id="pending-earned">0.00 USDC</span>
+                        <span class="summary-label">Pending<br>(USDC)</span>
+                        <span class="summary-value" id="pending-earned">0.00</span>
                     </div>
                 </div>
             </section>
 
-            <div class="filters-sidebar">
-                <h3 class="filter-title">Filters</h3>
 
+            <div class="filters-sidebar">
+                <div class="filters-sidebar-title">
+                    <h3 class="filter-title">Filters</h3>
+                    <button id="btn-clear-filters" class="btn-clear-filters" type="button" disabled>
+                        Clear filters
+                    </button>
+                </div>
                 <!-- Search + Clear (Filters tools) -->
                 <div class="filter-tools">
                     <div class="filter-search" role="search">
-                        <span class="filter-search-icon">🔎</span>
+                       <span class="filter-search-icon" aria-hidden="true">
+                           <svg viewBox="0 0 24 24" class="filter-search-icon-svg">
+                               <g>
+                                   <path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"></path>
+                               </g>
+                           </svg>
+                       </span>
                         <input
                                 id="ad-search"
                                 class="filter-search-input"
@@ -74,10 +89,6 @@
                                 aria-label="Clear search">✕
                         </button>
                     </div>
-
-                    <button id="btn-clear-filters" class="btn-clear-filters" type="button" disabled>
-                        Clear filters
-                    </button>
                 </div>
 
                 <div class="filter-group">

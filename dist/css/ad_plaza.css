@@ -1,6 +1,17 @@
 /* Ad Plaza Earn CSS Styles */
 
 /* ==================== Global Styles ==================== */
+:root {
+    --tc-primary: #1d9bf0;
+    --tc-primary-weak: rgba(29, 155, 240, 0.12);
+    --tc-text: #0f1419;
+    --tc-muted: #536471;
+    --tc-border: #d0d7de;
+    --tc-border-subtle: #e5e5e5;
+    --tc-surface: #ffffff;
+    --tc-bg: #f7f9f9;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -9,16 +20,20 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #f5f5f5;
-    color: #333;
+    background: #fff;
+    color: var(--tc-text);
     line-height: 1.6;
 }
 
+button {
+    white-space: nowrap;
+    word-break: keep-all;
+}
 /* ==================== Top Header ==================== */
 .plaza-header {
     background: white;
     border-bottom: 1px solid #e5e7eb;
-    padding: 16px 32px;
+    padding: 16px 150px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -51,9 +66,9 @@ body {
 }
 
 .btn-open-advertise {
-    padding: 10px 18px;
+    padding: 12px 18px;
     border: none;
-    border-radius: 10px;
+    border-radius: 999px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -66,66 +81,82 @@ body {
     transform: translateY(-1px);
 }
 
-/* ==================== Plaza Views ==================== */
-.plaza-view {
-    padding: 32px;
-    max-width: 1400px;
-    margin: 0 auto;
-}
-
 /* ==================== Earn Layout ==================== */
 .earn-layout {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 24px;
-    align-items: start;
+    padding: 0 140px;
+    display: flex;
+    min-height: 100vh; /* ✅ 替换 height: 100vh; */
 }
 
 .earn-left {
+    position: sticky;
+    width: 362px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 16px;
+    border-right: 1px solid var(--tc-border-subtle);
+    padding: 16px;
 }
 
 .earn-right {
+    flex: 1;
     min-width: 0;
+    padding: 16px;
 }
 
 .withdraw-card {
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
+    background: linear-gradient(135deg,
+    #1d9bf0 0%,
+    #1d9bf0 35%,
+    rgba(3, 203, 173, 1) 100%
+    );
+    border-radius: 16px;
+
+}
+.withdraw-card-top {
+    padding: 32px 16px 16px 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
 }
-
 .withdraw-card-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
     gap: 12px;
 }
 
 .withdraw-status {
+    position: absolute;
+    top: 16px;
+    right: 14px;
     font-size: 12px;
-    color: #6b7280;
-    background: #f3f4f6;
-    padding: 4px 10px;
-    border-radius: 999px;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 8px;
+    border-radius: 0 16px 0 6px;
     height: fit-content;
 }
 
 .card-label {
     font-size: 14px;
-    color: #6b7280;
-    margin-bottom: 6px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 14px;
 }
 
 .card-value {
-    font-size: 28px;
+    font-size: 14px;
+    font-weight: 400;
+    color: #fff;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+}
+.card-value-amount{
+    font-size: 32px;
     font-weight: 700;
-    color: #1d9bf0;
+    color: #fff;
+    line-height: 32px;
 }
 
 .withdraw-actions {
@@ -136,23 +167,45 @@ body {
 
 .earn-summary {
     display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 10px;
-    background: #f9fafb;
-    border-radius: 10px;
-    padding: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 0 0 16px 16px;
+    padding: 16px;
 }
 
 .summary-item {
     display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    color: #4b5563;
+    flex-direction: column;
+    justify-content: center;
 }
-
+.summary-label{
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.9);
+}
 .summary-value {
     font-weight: 600;
-    color: #111827;
+    font-size: 18px;
+    color: #fff;
 }
+/* earn-summary：3项之间竖向分割线 */
+.earn-summary .summary-item {
+    position: relative;
+}
+
+/* 中间两条线（第2、3项左侧画线） */
+.earn-summary .summary-item + .summary-item::before {
+    content: "";
+    position: absolute;
+    left: -14px;              /* 线在 gap 中间：gap=10px 时用 -5px */
+    top: 8px;
+    bottom: 8px;
+    width: 1px;
+    background: var(--tc-border-subtle, rgba(255, 255, 255, 0.6));
+}
+
 
 /* ==================== Filters Sidebar ==================== */
 
@@ -173,11 +226,23 @@ body {
     border-radius: 10px;
     background: #fff;
 }
-
 .filter-search-icon {
-    font-size: 14px;
-    opacity: 0.75;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: #536471;     /* Twitter-like muted */
     user-select: none;
+    opacity: 1;
+}
+
+.filter-search-icon-svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    fill: currentColor; /* 由 .filter-search-icon 的 color 控制 */
 }
 
 .filter-search-input {
@@ -229,15 +294,14 @@ body {
 
 /* 聚焦：最关键，让人一眼知道正在输入 */
 .filter-search:focus-within {
-    border-color: #667eea;
+    border-color: #1d9bf0;
 }
 
 .btn-clear-filters {
-    width: 100%;
-    padding: 10px 12px;
+    padding: 12px 16px;
     border: 1px solid #e5e7eb;
     background: #fff;
-    border-radius: 10px;
+    border-radius: 999px;
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
@@ -253,15 +317,19 @@ body {
 }
 
 .filters-sidebar {
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
+    background: transparent;
+    padding: 16px;
+    border-radius: 16px;
 }
-
+.filters-sidebar-title{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
 .filter-title {
     font-size: 18px;
     font-weight: 600;
-    margin-bottom: 20px;
     color: #374151;
 }
 
@@ -295,7 +363,37 @@ body {
 }
 
 .filter-checkbox input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 2px solid #e1e8ed; /* 未选中边框 */
+    background-color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
     cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* 选中状态：填充主题色 */
+.filter-checkbox input[type="checkbox"]:checked {
+    background-color: #1d9bf0; /* 你的主题蓝 */
+    border-color: #1d9bf0;
+}
+
+/* 选中时的对号 */
+.filter-checkbox input[type="checkbox"]::after {
+    content: "";
+    width: 4px;
+    height: 8px;
+    border: 2px solid #fff;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
 }
 
 .filter-select {
@@ -351,7 +449,7 @@ body {
     flex-direction: column;
     cursor: pointer;
     position: relative;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #e5e7eb;
 }
 
 .ad-card::after {
@@ -383,7 +481,7 @@ body {
 .ad-card-image {
     width: 100%;
     height: 180px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1d9bf0 0%, #06CBAD 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -486,12 +584,12 @@ body {
 .reward-value {
     font-size: 20px;
     font-weight: 700;
-    color: #10b981;
+    color: rgb(6, 203, 173);
 }
 
 .btn-start-task {
     padding: 10px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1d9bf0 0%, #06CBAD 100%);
     color: white;
     border: none;
     border-radius: 8px;
@@ -517,7 +615,7 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1d9bf0 0%, #06CBAD 100%);
     color: white;
 }
 
@@ -675,4 +773,31 @@ body {
     .ad-cards-grid {
         grid-template-columns: 1fr;
     }
+}
+@media (max-width: 960px) {
+    .earn-layout {
+        flex-direction: column;
+    }
+
+    .earn-left {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #e5e5e5;
+    }
+
+    .earn-right {
+        padding: 12px;
+    }
+}
+
+.money,
+.amount,
+.usdc,
+.card-value,
+.reward-value,
+.summary-value,
+.activity-reward {
+    font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
 }
