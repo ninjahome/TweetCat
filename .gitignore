@@ -62,3 +62,5 @@ bin-release/
 /.env.example
 /tweetcat-x402-worker/tweetcattips/package-lock.json
 /.env
+tweetcat-x402-worker/tweetcattips/a.sql
+tweetcat-x402-worker/tweetcattips/wrangler_cmd
