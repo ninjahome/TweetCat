@@ -234,3 +234,37 @@ CREATE INDEX IF NOT EXISTS idx_ad_escrow_ledger_axid_created_at
 
 CREATE INDEX IF NOT EXISTS idx_ad_escrow_ledger_direction_created_at
 	ON ad_escrow_ledger(direction, created_at);
+
+
+
+-- 删除旧表
+DROP TABLE ad_campaigns;
+
+-- 创建新表结构
+CREATE TABLE ad_campaigns (
+							  ad_id TEXT PRIMARY KEY,
+							  a_x_id TEXT NOT NULL,
+							  category TEXT NOT NULL,
+							  name TEXT NOT NULL,
+							  title TEXT NOT NULL,
+							  description TEXT NOT NULL,
+							  detail_url TEXT NOT NULL,
+							  image_url TEXT,
+							  callback_url TEXT,
+							  custom_data TEXT,
+							  unit_price_atomic TEXT NOT NULL,
+							  quota_total INTEGER NOT NULL,
+							  quota_used INTEGER DEFAULT 0,
+							  status TEXT DEFAULT 'ACTIVE',
+							  duration_days INTEGER DEFAULT 0,
+							  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+							  updated_at TIMESTAMP
+);
+
+-- 如果需要保留旧数据，可以从备份表恢复（可选）
+-- INSERT INTO ad_campaigns SELECT ... FROM ad_campaigns_backup;
+
+-- 创建索引
+CREATE INDEX idx_ad_campaigns_a_x_id ON ad_campaigns(a_x_id);
+CREATE INDEX idx_ad_campaigns_status ON ad_campaigns(status);
+CREATE INDEX idx_ad_campaigns_created_at ON ad_campaigns(created_at);

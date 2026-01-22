@@ -36,9 +36,6 @@ import {
 	getActiveAdsList,
 	getAdById,
 	incrementAdQuota,
-	getExistingClaim,
-	createClaim,
-	getMyClaimsList,
 	ensureEscrowAccount,
 	getEscrowLedgerByRequestId,
 	getEscrowLedgerByTxHash,
@@ -50,8 +47,11 @@ import {
 	failWithdrawLedger,
 	refundEscrowBalance,
 	listAdEscrowLedger,
+	createDetailedClaim,
+	getDetailedClaim,
+	getPerformerHistory,
 	type AdCreatePayload,
-	type ClaimCreatePayload,
+	type CreateDetailedClaimParams,
 } from "./database_ad";
 import {internalTreasurySettle, PaymentRequiredError, x402Workflow} from "./api_srv_x402";
 import {getKolBindingByXId} from "./database_402";
@@ -369,11 +369,11 @@ export async function apiAdsClaim(c: ExtCtx) {
 		const body = await c.req.json().catch(() => ({}));
 		const adId = body?.ad_id;
 		const bXId = body?.b_x_id;
-		const bWallet = body?.b_wallet;
+		const signature = body?.signature;
 
 		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
 		if (!requireStringField(bXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
-		if (!requireStringField(bWallet)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_wallet");
+		if (!requireStringField(signature)) return jsonError(c, 400, "INVALID_REQUEST", "Missing signature");
 
 		// Get ad info
 		const adRow = await getAdById(c.env.DB, adId);
@@ -385,8 +385,8 @@ export async function apiAdsClaim(c: ExtCtx) {
 			return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full");
 		}
 
-		// Check if already claimed
-		const existingClaim = await getExistingClaim(c.env.DB, adId, bXId);
+		// Check if already claimed (using new table)
+		const existingClaim = await getDetailedClaim(c.env.DB, adId, bXId);
 		if (existingClaim) return c.json(existingClaim);
 
 		// Increment quota
@@ -397,19 +397,15 @@ export async function apiAdsClaim(c: ExtCtx) {
 
 		// Create claim record
 		const claimId = crypto.randomUUID();
-		const expiresAt = toSqliteDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
-		const claimPayload: ClaimCreatePayload = {
+		const claimParams: CreateDetailedClaimParams = {
 			claimId,
 			adId: adRow.ad_id,
-			aXId: adRow.a_x_id,
 			bXId,
-			bWallet,
-			unitPriceAtomic: adRow.unit_price_atomic,
-			expiresAt,
+			signature
 		};
 
-		const claimCreated = await createClaim(c.env.DB, claimPayload);
+		const claimCreated = await createDetailedClaim(c.env.DB, claimParams);
 		if (!claimCreated) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to create claim");
 		}
@@ -417,12 +413,10 @@ export async function apiAdsClaim(c: ExtCtx) {
 		return c.json({
 			claim_id: claimId,
 			ad_id: adRow.ad_id,
-			a_x_id: adRow.a_x_id,
 			b_x_id: bXId,
-			b_wallet: bWallet,
 			status: "CLAIMED",
-			unit_price_atomic: adRow.unit_price_atomic,
-			expires_at: expiresAt,
+			signature: signature,
+			created_at: toSqliteDate(new Date())
 		});
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
@@ -434,7 +428,7 @@ export async function apiAdsMyClaims(c: ExtCtx) {
 		const bXId = c.req.query("b_x_id");
 		if (!bXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
 
-		const claims = await getMyClaimsList(c.env.DB, bXId);
+		const claims = await getPerformerHistory(c.env.DB, bXId);
 		return c.json(claims);
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");

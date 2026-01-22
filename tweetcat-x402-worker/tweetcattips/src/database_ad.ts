@@ -49,19 +49,6 @@ export interface AdRow {
 	updated_at?: string | null;
 }
 
-export interface ClaimRow {
-	claim_id: string;
-	ad_id: string;
-	a_x_id: string;
-	b_x_id: string;
-	b_wallet: string;
-	status: string;
-	unit_price_atomic: string;
-	created_at?: string | null;
-	ad_title?: string;
-	expires_at?: string | null;
-}
-
 export interface AdCreatePayload {
 	adId: string;
 	aXId: string;
@@ -76,16 +63,6 @@ export interface AdCreatePayload {
 	unitPriceAtomic: string;
 	quotaTotal: number;
 	durationDays: number;
-}
-
-export interface ClaimCreatePayload {
-	claimId: string;
-	adId: string;
-	aXId: string;
-	bXId: string;
-	bWallet: string;
-	unitPriceAtomic: string;
-	expiresAt: string;
 }
 
 export interface AdEscrowLedgerRow {
@@ -104,6 +81,32 @@ export interface AdEscrowLedgerRow {
 	error_reason?: string | null;
 	created_at?: string;
 	updated_at?: string;
+}
+
+// New types for ad_reward_claims
+export type ClaimStatus =
+	'CLAIMED'           // 用户已点击领取，初始状态
+	| 'PENDING_CONFIRM'   // 等待验证（如 Oracle 验证关注/转发）
+	| 'CONFIRMED'         // 验证通过，等待打款
+	| 'REJECTED'          // 验证失败或被拒绝
+	| 'SETTLED_TIMEOUT';  // 超时未处理，自动结算或关闭
+
+export interface AdRewardClaimRecord {
+	claim_id: string;
+	ad_id: string;
+	b_x_id: string;
+	status: ClaimStatus;
+	signature: string;
+	created_at: string;
+	updated_at: string;
+	ad_title?: string;
+}
+
+export interface CreateDetailedClaimParams {
+	claimId: string;
+	adId: string;
+	bXId: string;
+	signature: string;
 }
 
 // ========= 辅助函数 =========
@@ -333,77 +336,100 @@ export async function incrementAdQuota(db: D1Database, adId: string): Promise<bo
 	return updateResult.success && (updateResult.meta.changes ?? 0) > 0;
 }
 
-// ========= 领取记录操作 =========
+// ========= 新的领取记录操作 (ad_reward_claims) =========
 
 /**
- * 检查用户是否已经领取过某个广告
- * @param db - D1 数据库实例
- * @param adId - 广告 ID
- * @param bXId - 用户 X ID
- * @returns 现有的领取记录或 null
+ * 创建新的详细领取记录 (带签名)
  */
-export async function getExistingClaim(db: D1Database, adId: string, bXId: string): Promise<ClaimRow | null> {
-	const existingClaim = await db.prepare(
-		`SELECT claim_id, ad_id, a_x_id, b_x_id, b_wallet, status, unit_price_atomic,
-		        created_at, expires_at
-		 FROM claims
-		 WHERE ad_id = ? AND b_x_id = ?
-		   AND status IN ('CLAIMED', 'PENDING_CONFIRM')
-		 ORDER BY created_at DESC
-		 LIMIT 1`
-	).bind(adId, bXId).first<ClaimRow>();
+export async function createDetailedClaim(db: D1Database, params: CreateDetailedClaimParams): Promise<boolean> {
+	const sql = `
+		INSERT INTO ad_reward_claims (
+			claim_id, ad_id, b_x_id, status, signature
+		) VALUES (?, ?, ?, 'CLAIMED', ?)
+	`;
 
-	return existingClaim ?? null;
+	try {
+		const result = await db.prepare(sql).bind(
+			params.claimId,
+			params.adId,
+			params.bXId,
+			params.signature
+		).run();
+
+		return result.success;
+	} catch (e) {
+		console.error("Failed to create detailed claim:", e);
+		return false;
+	}
 }
 
 /**
- * 创建新的领取记录
- * @param db - D1 数据库实例
- * @param payload - 领取记录创建数据
- * @returns 创建是否成功
+ * 检查是否已领取 (查询新表)
  */
-export async function createClaim(db: D1Database, payload: ClaimCreatePayload): Promise<boolean> {
-	const insertSql = `
-		INSERT INTO claims (
-			claim_id, ad_id, a_x_id, b_x_id, b_wallet, status, unit_price_atomic, expires_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`;
-	const result = await db.prepare(insertSql)
-		.bind(
-			payload.claimId,
-			payload.adId,
-			payload.aXId,
-			payload.bXId,
-			payload.bWallet,
-			"CLAIMED",
-			payload.unitPriceAtomic,
-			payload.expiresAt
-		)
-		.run();
+export async function getDetailedClaim(db: D1Database, adId: string, bXId: string): Promise<AdRewardClaimRecord | null> {
+	return await db.prepare(
+		"SELECT * FROM ad_reward_claims WHERE ad_id = ? AND b_x_id = ?"
+	).bind(adId, bXId).first<AdRewardClaimRecord>();
+}
+
+/**
+ * 更新状态
+ */
+export async function updateClaimStatus(
+	db: D1Database,
+	claimId: string,
+	newStatus: ClaimStatus
+): Promise<boolean> {
+	const result = await db.prepare(
+		"UPDATE ad_reward_claims SET status = ?, updated_at = datetime('now') WHERE claim_id = ?"
+	).bind(newStatus, claimId).run();
 
 	return result.success;
 }
 
 /**
- * 获取用户的所有领取记录
- * @param db - D1 数据库实例
- * @param bXId - 用户 X ID
- * @returns 领取记录列表
+ * 广告主查询消费流水
  */
-export async function getMyClaimsList(db: D1Database, bXId: string): Promise<ClaimRow[]> {
+export async function getAdvertiserHistory(
+	db: D1Database,
+	aXId: string,
+	limit: number = 20,
+	offset: number = 0
+): Promise<AdRewardClaimRecord[]> {
+	// 需要联表查询 ad_campaigns 来获取 a_x_id
 	const sql = `
-		SELECT c.claim_id, c.ad_id, c.a_x_id, c.b_x_id, c.b_wallet, c.status,
-		       c.created_at, c.expires_at, c.unit_price_atomic,
-		       a.title AS ad_title
-		FROM claims c
-		LEFT JOIN ad_campaigns a ON c.ad_id = a.ad_id
-		WHERE c.b_x_id = ?
+		SELECT c.*, a.title as ad_title
+		FROM ad_reward_claims c
+		JOIN ad_campaigns a ON c.ad_id = a.ad_id
+		WHERE a.a_x_id = ?
 		ORDER BY c.created_at DESC
-		LIMIT 50
+		LIMIT ? OFFSET ?
 	`;
-	const result = await db.prepare(sql).bind(bXId).all<ClaimRow>();
-	return result.results ?? [];
+	const { results } = await db.prepare(sql).bind(aXId, limit, offset).all<AdRewardClaimRecord>();
+	return results ?? [];
 }
+
+/**
+ * 领取人查询收入流水
+ */
+export async function getPerformerHistory(
+	db: D1Database,
+	bXId: string,
+	limit: number = 20,
+	offset: number = 0
+): Promise<AdRewardClaimRecord[]> {
+	const sql = `
+        SELECT c.*, a.title as ad_title
+        FROM ad_reward_claims c
+        LEFT JOIN ad_campaigns a ON c.ad_id = a.ad_id
+        WHERE c.b_x_id = ?
+        ORDER BY c.created_at DESC
+        LIMIT ? OFFSET ?
+    `;
+	const { results } = await db.prepare(sql).bind(bXId, limit, offset).all<AdRewardClaimRecord>();
+	return results ?? [];
+}
+
 
 // ========= 广告托管账户和账本操作 =========
 
