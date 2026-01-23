@@ -2,6 +2,8 @@
 import browser from "webextension-polyfill";
 import {generateMnemonic, saveFromMnemonic} from "../wallet/wallet_api";
 import {hideLoading, showLoading} from "./common";
+import { t } from "../common/i18n";
+
 
 type Mode = "create" | "import" | null;
 
@@ -45,7 +47,7 @@ async function onLoad() {
         const el = qs<HTMLTextAreaElement>("#mnemonic-generated");
         hiddenFlag = !hiddenFlag;
         el.style.filter = hiddenFlag ? "blur(6px)" : "none";
-        qs("#btn-toggle-mnemonic").textContent = hiddenFlag ? "显示" : "隐藏";
+        qs("#btn-toggle-mnemonic").textContent = hiddenFlag ? t("wallet_new_show") : t("wallet_new_hide");
     });
 
     // 步进
@@ -62,17 +64,17 @@ async function onLoad() {
         s.textContent = "";
         s.classList.remove("error");
         if (!input) {
-            s.textContent = "请完整输入助记词";
+            s.textContent = t('wallet_new_mnemonic_incomplete');
             s.classList.add("error");
             return;
         }
         if (input !== generated.trim().replace(/\s+/g, " ")) {
-            s.textContent = "两次助记词不一致";
+            s.textContent = t('wallet_new_mnemonic_mismatch');
             s.classList.add("error");
             return;
         }
         if (!backed) {
-            s.textContent = "请勾选已线下安全备份";
+            s.textContent = t('wallet_new_backup_checkbox_required');
             s.classList.add("error");
             return;
         }
@@ -90,7 +92,7 @@ async function onLoad() {
         s.textContent = "";
         s.classList.remove("error");
         if (!m) {
-            s.textContent = "请输入助记词";
+            s.textContent = t('wallet_new_mnemonic_placeholder');
             s.classList.add("error");
             return;
         }
@@ -121,7 +123,7 @@ async function regenerate() {
         generated = await generateMnemonic(12);
         out.value = generated;
     } catch (e: any) {
-        s.textContent = e?.message || "生成失败";
+        s.textContent = e?.message || t('wallet_new_generate_failed');
         s.classList.add("error");
     }
 }
@@ -133,12 +135,12 @@ async function saveWalletFlow() {
     s.textContent = "";
     s.classList.remove("error");
     if (p1.length < 8) {
-        s.textContent = "口令至少 8 位";
+        s.textContent = t('wallet_new_password_too_short');
         s.classList.add("error");
         return;
     }
     if (p1 !== p2) {
-        s.textContent = "两次口令不一致";
+        s.textContent = t('wallet_new_password_mismatch');
         s.classList.add("error");
         return;
     }
@@ -150,7 +152,7 @@ async function saveWalletFlow() {
         hide("#step-password");
         show("#step-success");
     } catch (e: any) {
-        s.textContent = e?.message || "保存失败";
+        s.textContent = e?.message || t('wallet_new_save_failed');
         s.classList.add("error");
     } finally {
         hideLoading();

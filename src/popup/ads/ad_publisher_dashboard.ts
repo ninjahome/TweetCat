@@ -10,22 +10,22 @@ import {
     showLoading,
     hideLoading
 } from "../common";
-import {logAdP} from "../../common/debug_flags";
+import { logAdP } from "../../common/debug_flags";
 import {
     fetchAdEscrowLedger,
     openTxInExplorer,
     publisherState
 } from "./ad_publisher_common";
-import type {AdRecord, AdStatus, HistoryRow} from "./ad_publisher_common";
-import {getCurrentXId} from "./ad_publisher_common";
-import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
+import type { AdRecord, AdStatus, HistoryRow } from "./ad_publisher_common";
+import { getCurrentXId } from "./ad_publisher_common";
+import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 
 // ========= 数据刷新 =========
 export async function refreshAdsData() {
     const currentXId = getCurrentXId();
     const [balance, ads] = await Promise.all([
-        x402WorkerGet("/ads/balance", {a_x_id: currentXId}),
-        (await x402WorkerGet("/ads/my_ads", {a_x_id: currentXId})) as AdRecord[],
+        x402WorkerGet("/ads/balance", { a_x_id: currentXId }),
+        (await x402WorkerGet("/ads/my_ads", { a_x_id: currentXId })) as AdRecord[],
     ]);
 
     publisherState.adAccountInfo = {
@@ -82,11 +82,15 @@ interface MyAdRow {
     completed: number;
     spent: number;
     remainingBudget: number;
+    totalQuota: number;
+    endDate: string;
 }
 
-function mapStatus(status: string): AdStatus {
+function mapStatus(status: 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EXPIRED' | 'COMPLETED'): AdStatus {
     if (status === "ACTIVE") return "Active";
-    if (status === "PAUSED") return "Paused";
+    if (status === "PAUSED_MANUAL") return "Paused";
+    if (status === "PAUSED_NO_BUDGET") return "Paused (No Budget)";
+    // EXPIRED 和 COMPLETED 都显示为 "Ended"
     return "Ended";
 }
 
@@ -106,6 +110,8 @@ function buildMyAdRow(ad: AdRecord): MyAdRow {
         completed,
         spent: atomicToUsdcNumber(spentAtomic),
         remainingBudget: atomicToUsdcNumber(remainingAtomic),
+        totalQuota: quotaTotal,
+        endDate: ad.end_date,
     };
 }
 
@@ -126,7 +132,20 @@ export function renderMyAdsTable() {
         tr.dataset.adId = rowData.id;
 
         $2<HTMLElement>(tr, ".td-name").textContent = rowData.name;
-        $2<HTMLElement>(tr, ".td-status").textContent = rowData.status;
+
+        // 根据状态显示不同颜色
+        const statusEl = $2<HTMLElement>(tr, ".td-status");
+        statusEl.textContent = rowData.status;
+        if (ad.status === "ACTIVE") {
+            statusEl.style.color = "#10b981"; // 绿色
+        } else if (ad.status === "PAUSED_NO_BUDGET") {
+            statusEl.style.color = "#ef4444"; // 红色
+        } else if (ad.status === "PAUSED_MANUAL") {
+            statusEl.style.color = "#f59e0b"; // 黄色
+        } else {
+            statusEl.style.color = "#6b7280"; // 灰色
+        }
+
         $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(rowData.rewardPerTask);
         $2<HTMLElement>(tr, ".td-completed").textContent = rowData.completed.toString();
         $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(rowData.spent);
@@ -137,14 +156,133 @@ export function renderMyAdsTable() {
 
         btnView.addEventListener("click", () => openAdDetailModal(ad));
 
-        btnToggle.textContent = "N/A";
-        btnToggle.disabled = true;
+        // 根据广告状态动态渲染操作按钮
+        if (ad.status === "ACTIVE") {
+            btnToggle.textContent = "暂停";
+            btnToggle.disabled = false;
+            btnToggle.onclick = () => handleToggleAdStatus(ad.ad_id, "pause");
+        } else if (ad.status === "PAUSED_MANUAL") {
+            btnToggle.textContent = "启用";
+            btnToggle.disabled = false;
+            btnToggle.onclick = () => handleToggleAdStatus(ad.ad_id, "resume");
+        } else if (ad.status === "PAUSED_NO_BUDGET") {
+            btnToggle.textContent = "充值";
+            btnToggle.disabled = false;
+            btnToggle.onclick = () => handleTopUpAdBudget(ad.ad_id);
+        } else {
+            // EXPIRED 或 COMPLETED
+            btnToggle.textContent = "N/A";
+            btnToggle.disabled = true;
+        }
 
         tbody.appendChild(tr);
     });
 }
 
 // ========= Ad Detail Modal =========
+// 处理广告状态切换（启用/暂停）
+async function handleToggleAdStatus(adId: string, action: "pause" | "resume") {
+    try {
+        showLoading();
+        const currentXId = getCurrentXId();
+        const response = await x402WorkerFetch("/ads/toggle_status", {
+            method: "POST",
+            body: JSON.stringify({
+                ad_id: adId,
+                a_x_id: currentXId,
+                action: action
+            })
+        });
+
+        if (response.ok) {
+            showNotification(action === "pause" ? "广告已暂停" : "广告已启用", "success");
+            await refreshAdsData();
+        } else {
+            const error = await response.json();
+            showNotification(error.detail || "操作失败", "error");
+        }
+    } catch (err: any) {
+        showNotification(err?.message || "操作失败", "error");
+    } finally {
+        hideLoading();
+    }
+}
+
+// 处理广告充值 - 打开弹窗
+function handleTopUpAdBudget(adId: string) {
+    const modal = $Id("top-up-budget-modal");
+    if (!modal) return;
+
+    // Reset Input
+    const input = $Id("top-up-amount") as HTMLInputElement;
+    if (input) input.value = "";
+
+    // Show Balance
+    const balanceEl = $Id("top-up-available-balance");
+    if (balanceEl) {
+        balanceEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.adAccountInfo.balanceAtomic));
+    }
+
+    // Bind Confirm Action
+    const btnConfirm = $Id("btn-confirm-top-up");
+    if (btnConfirm) {
+        // Remove old listeners by cloning
+        const newBtn = btnConfirm.cloneNode(true);
+        btnConfirm.parentNode?.replaceChild(newBtn, btnConfirm);
+
+        newBtn.addEventListener("click", () => handleTopUpSubmit(adId));
+    }
+
+    // Bind Cancel Action
+    const btnCancel = $Id("btn-cancel-top-up");
+    const btnClose = $Id("close-top-up-modal");
+    const closeAction = () => modal.classList.remove("active");
+
+    if (btnCancel) btnCancel.onclick = closeAction;
+    if (btnClose) btnClose.onclick = closeAction;
+
+    modal.classList.add("active");
+}
+
+// 处理充值提交
+async function handleTopUpSubmit(adId: string) {
+    try {
+        const amountInput = $Id("top-up-amount") as HTMLInputElement;
+        const amountStr = amountInput?.value;
+        if (!amountStr) return;
+
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount) || amount <= 0) {
+            showNotification("请输入有效的金额", "error");
+            return;
+        }
+
+        const modal = $Id("top-up-budget-modal");
+
+        showLoading();
+        const currentXId = getCurrentXId();
+        const amountAtomic = usdcToAtomic(amountStr);
+
+        await x402WorkerFetch("/ads/top_up_budget", {
+            method: "POST",
+            body: JSON.stringify({
+                ad_id: adId,
+                a_x_id: currentXId,
+                amount_atomic: amountAtomic
+            })
+        });
+
+        showNotification("充值成功，广告已启用", "success");
+        if (modal) modal.classList.remove("active");
+
+        await refreshAdsData();
+    } catch (err: any) {
+        showNotification(err?.message || "充值失败", "error");
+    } finally {
+        hideLoading();
+    }
+}
+
 function openAdDetailModal(ad: AdRecord) {
     const modal = $Id("ad-detail-modal");
     if (!modal) return;
@@ -156,16 +294,36 @@ function openAdDetailModal(ad: AdRecord) {
     };
 
     setText("detail-name", ad.name);
-    setText("detail-status", mapStatus(ad.status));
+
+    // 更新状态显示，并添加颜色编码
+    const statusEl = $Id("detail-status");
+    if (statusEl) {
+        statusEl.textContent = mapStatus(ad.status);
+        if (ad.status === "ACTIVE") {
+            statusEl.style.color = "#10b981"; // 绿色
+        } else if (ad.status === "PAUSED_NO_BUDGET") {
+            statusEl.style.color = "#ef4444"; // 红色
+        } else if (ad.status === "PAUSED_MANUAL") {
+            statusEl.style.color = "#f59e0b"; // 黄色
+        } else {
+            statusEl.style.color = "#6b7280"; // 灰色
+        }
+    }
+
     setText("detail-category", ad.category);
     setText("detail-created", ad.created_at ? new Date(ad.created_at).toLocaleString() : "-");
     setText("detail-title", ad.title);
     setText("detail-description", ad.description);
-    
+
     const rewardUSDC = atomicToUsdcNumber(ad.unit_price_atomic);
     setText("detail-reward", formatUSDC(rewardUSDC));
     setText("detail-quota", ad.quota_total.toString());
-    setText("detail-duration", ad.duration_days > 0 ? `${ad.duration_days} days` : "Unlimited");
+
+    // Update to use end_date
+    const endDateEl = $Id("detail-end-date");
+    if (endDateEl) {
+        endDateEl.textContent = ad.end_date ? new Date(ad.end_date).toLocaleString() : "-";
+    }
 
     const linkEl = $Id("detail-url") as HTMLAnchorElement | null;
     if (linkEl) {
@@ -197,7 +355,7 @@ function openAdDetailModal(ad: AdRecord) {
         // Remove old listeners to prevent duplicates (cloning button is safer but simple replacement works here)
         const newBtn = btnUpdate.cloneNode(true);
         btnUpdate.parentNode?.replaceChild(newBtn, btnUpdate);
-        
+
         newBtn.addEventListener("click", async () => {
             const newCallback = callbackInput?.value.trim() || null;
             const newCustomData = customDataInput?.value.trim() || null;
@@ -221,7 +379,7 @@ function openAdDetailModal(ad: AdRecord) {
                     custom_data: newCustomData,
                 };
 
-                const result = await  x402WorkerFetch("/ads/update", payload);
+                const result = await x402WorkerFetch("/ads/update", payload);
 
                 if (result.ok) {
                     showNotification("Ad settings updated successfully!", "success");
@@ -238,6 +396,43 @@ function openAdDetailModal(ad: AdRecord) {
                 hideLoading();
             }
         });
+    }
+
+    // 在模态框底部添加状态操作按钮
+    const modalActions = $Id("ad-detail-modal-actions");
+    if (modalActions) {
+        // 清空现有按钮
+        modalActions.replaceChildren();
+
+        // 根据广告状态动态生成按钮
+        if (ad.status === "ACTIVE") {
+            const btnPause = document.createElement("button");
+            btnPause.className = "btn btn-warning";
+            btnPause.textContent = "暂停广告";
+            btnPause.onclick = async () => {
+                modal.classList.remove("active");
+                await handleToggleAdStatus(ad.ad_id, "pause");
+            };
+            modalActions.appendChild(btnPause);
+        } else if (ad.status === "PAUSED_MANUAL") {
+            const btnResume = document.createElement("button");
+            btnResume.className = "btn btn-primary";
+            btnResume.textContent = "启用广告";
+            btnResume.onclick = async () => {
+                modal.classList.remove("active");
+                await handleToggleAdStatus(ad.ad_id, "resume");
+            };
+            modalActions.appendChild(btnResume);
+        } else if (ad.status === "PAUSED_NO_BUDGET") {
+            const btnTopUp = document.createElement("button");
+            btnTopUp.className = "btn btn-success";
+            btnTopUp.textContent = "充值并启用";
+            btnTopUp.onclick = async () => {
+                modal.classList.remove("active");
+                await handleTopUpAdBudget(ad.ad_id);
+            };
+            modalActions.appendChild(btnTopUp);
+        }
     }
 
     // Show Modal
@@ -459,7 +654,7 @@ async function loadAndRenderTransferHistory(): Promise<void> {
             status = `Failed: ${errorMsg}`;
         }
 
-        return {time, adNameOrMethod, amount, status, txHash: row.tx_hash || null};
+        return { time, adNameOrMethod, amount, status, txHash: row.tx_hash || null };
     });
 
     publisherState.historyRecharge = mappedRows;

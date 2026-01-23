@@ -3,7 +3,7 @@ import {ChainNameBaseMain, walletInfo, X402_FACILITATORS} from "../../common/x40
 import {getChainId} from "../../wallet/wallet_setting";
 import {queryCdpWalletInfo, x402WorkerGet} from "../../wallet/cdp_wallet";
 
-export type AdStatus = "Active" | "Paused" | "Ended" | "Balance Low";
+export type AdStatus = "Active" | "Paused" | "Paused (No Budget)" | "Ended";
 
 export interface AdAccountInfo {
     balanceAtomic: string;
@@ -24,8 +24,8 @@ export interface AdRecord {
     unit_price_atomic: string;
     quota_total: number;
     quota_used: number;
-    status: string;
-    duration_days: number;
+    status: 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EXPIRED' | 'COMPLETED';
+    end_date: string; // Changed from duration_days
     created_at: string;
     updated_at?: string | null;
 }

@@ -4,6 +4,8 @@ import type {D1Database} from "@cloudflare/workers-types";
 
 export type AdCategory = "follow" | "visit" | "register" | "share";
 
+export type AdCampaignStatus = 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EXPIRED' | 'COMPLETED';
+
 export interface AdAccountInfo {
 	balanceAtomic: string;
 }
@@ -43,23 +45,10 @@ export interface AdRow {
 	unit_price_atomic: string;
 	quota_total: number;
 	quota_used: number;
-	status: string;
-	duration_days: number;
+	status: AdCampaignStatus;
+	end_date: string; // Changed from duration_days
 	created_at?: string | null;
 	updated_at?: string | null;
-}
-
-export interface ClaimRow {
-	claim_id: string;
-	ad_id: string;
-	a_x_id: string;
-	b_x_id: string;
-	b_wallet: string;
-	status: string;
-	unit_price_atomic: string;
-	created_at?: string | null;
-	ad_title?: string;
-	expires_at?: string | null;
 }
 
 export interface AdCreatePayload {
@@ -75,17 +64,7 @@ export interface AdCreatePayload {
 	customData?: string | null;
 	unitPriceAtomic: string;
 	quotaTotal: number;
-	durationDays: number;
-}
-
-export interface ClaimCreatePayload {
-	claimId: string;
-	adId: string;
-	aXId: string;
-	bXId: string;
-	bWallet: string;
-	unitPriceAtomic: string;
-	expiresAt: string;
+	endDate: string; // Changed from durationDays
 }
 
 export interface AdEscrowLedgerRow {
@@ -106,21 +85,49 @@ export interface AdEscrowLedgerRow {
 	updated_at?: string;
 }
 
+// New types for ad_reward_claims
+export type ClaimStatus =
+	'CLAIMED'           // 用户已点击领取，初始状态
+	| 'PENDING_CONFIRM'   // 等待验证（如 Oracle 验证关注/转发）
+	| 'CONFIRMED'         // 验证通过，等待打款
+	| 'REJECTED'          // 验证失败或被拒绝
+	| 'SETTLED_TIMEOUT';  // 超时未处理，自动结算或关闭
+
+export interface AdRewardClaimRecord {
+	claim_id: string;
+	ad_id: string;
+	b_x_id: string;
+	status: ClaimStatus;
+	signature: string;
+	created_at: string;
+	updated_at: string;
+	ad_title?: string;
+}
+
+export interface CreateDetailedClaimParams {
+	claimId: string;
+	adId: string;
+	bXId: string;
+	signature: string;
+}
+
 // ========= 辅助函数 =========
 
 export function toSqliteDate(date: Date): string {
 	return date.toISOString().replace("T", " ").replace("Z", "");
 }
 
-export function formatDeadlineText(durationDays?: number, createdAt?: string | null): string {
-	if (durationDays === undefined || durationDays === null) return "Ends: -";
-	if (durationDays === 0) return "Ends: Never";
-
-	if (!createdAt) return "Ends: -";
+export function formatDeadlineText(endDateStr?: string | null): string {
+	if (!endDateStr) return "Ends: -";
 
 	try {
-		const created = new Date(createdAt);
-		const endDate = new Date(created.getTime() + durationDays * 24 * 60 * 60 * 1000);
+		const endDate = new Date(endDateStr);
+		const now = new Date();
+
+		if (endDate < now) {
+			return "Ended";
+		}
+
 		const dateText = endDate.toISOString().slice(0, 10);
 		return `Ends: ${dateText}`;
 	} catch {
@@ -207,7 +214,7 @@ export async function createAd(db: D1Database, payload: AdCreatePayload): Promis
 	const insertSql = `
 		INSERT INTO ad_campaigns (
 			ad_id, a_x_id, category, name, title, description, detail_url, image_url,
-			callback_url, custom_data, unit_price_atomic, quota_total, duration_days, updated_at
+			callback_url, custom_data, unit_price_atomic, quota_total, end_date, updated_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
 	`;
 	const result = await db.prepare(insertSql)
@@ -224,7 +231,7 @@ export async function createAd(db: D1Database, payload: AdCreatePayload): Promis
 			payload.customData ?? null,
 			payload.unitPriceAtomic,
 			payload.quotaTotal,
-			payload.durationDays
+			payload.endDate
 		)
 		.run();
 
@@ -262,6 +269,31 @@ export async function updateAdSettings(
 }
 
 /**
+ * 更新广告状态
+ * @param db - D1 数据库实例
+ * @param adId - 广告 ID
+ * @param newStatus - 新的广告状态
+ * @returns 更新是否成功
+ */
+export async function updateAdStatus(
+	db: D1Database,
+	adId: string,
+	newStatus: AdCampaignStatus
+): Promise<boolean> {
+	const updateSql = `
+		UPDATE ad_campaigns
+		SET status = ?,
+			updated_at = datetime('now')
+		WHERE ad_id = ?
+	`;
+	const result = await db.prepare(updateSql)
+		.bind(newStatus, adId)
+		.run();
+
+	return result.success && (result.meta.changes ?? 0) > 0;
+}
+
+/**
  * 获取用户的所有广告
  * @param db - D1 数据库实例
  * @param aXId - 广告主 X ID
@@ -282,16 +314,20 @@ export async function getMyAds(db: D1Database, aXId: string): Promise<AdRow[]> {
  */
 export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 	const sql = `
-		SELECT ad_id, title, a_x_id, description, category, unit_price_atomic,
-		       quota_used, quota_total, duration_days, created_at, detail_url
-		FROM ad_campaigns
-		WHERE status = 'ACTIVE'
-		  AND quota_used < quota_total
-		  AND (
-		      duration_days = 0
-		      OR datetime(created_at, '+' || duration_days || ' days') > datetime('now')
-		  )
-		ORDER BY created_at DESC
+		SELECT
+			c.ad_id, c.title, c.a_x_id, c.description, c.category, c.unit_price_atomic,
+			c.quota_used, c.quota_total, c.end_date, c.created_at, c.detail_url
+		FROM
+			ad_campaigns c
+		JOIN
+			ad_escrow_accounts e ON c.a_x_id = e.a_x_id
+		WHERE
+			c.status = 'ACTIVE'
+			AND c.end_date > datetime('now')
+			AND c.quota_used < c.quota_total
+			AND CAST(e.frozen_atomic AS INTEGER) >= CAST(c.unit_price_atomic AS INTEGER)
+		ORDER BY
+			c.created_at DESC
 		LIMIT 100
 	`;
 	const result = await db.prepare(sql).all<AdRow>();
@@ -308,7 +344,7 @@ export async function getAdById(db: D1Database, adId: string): Promise<AdRow | n
 	const adRow = await db.prepare(
 		`SELECT ad_id, a_x_id, unit_price_atomic, status, quota_used, quota_total,
 		        category, name, title, description, detail_url, callback_url, custom_data,
-		        duration_days, created_at, updated_at
+		        end_date, created_at, updated_at
 		 FROM ad_campaigns
 		 WHERE ad_id = ?`
 	).bind(adId).first<AdRow>();
@@ -333,77 +369,100 @@ export async function incrementAdQuota(db: D1Database, adId: string): Promise<bo
 	return updateResult.success && (updateResult.meta.changes ?? 0) > 0;
 }
 
-// ========= 领取记录操作 =========
+// ========= 新的领取记录操作 (ad_reward_claims) =========
 
 /**
- * 检查用户是否已经领取过某个广告
- * @param db - D1 数据库实例
- * @param adId - 广告 ID
- * @param bXId - 用户 X ID
- * @returns 现有的领取记录或 null
+ * 创建新的详细领取记录 (带签名)
  */
-export async function getExistingClaim(db: D1Database, adId: string, bXId: string): Promise<ClaimRow | null> {
-	const existingClaim = await db.prepare(
-		`SELECT claim_id, ad_id, a_x_id, b_x_id, b_wallet, status, unit_price_atomic,
-		        created_at, expires_at
-		 FROM claims
-		 WHERE ad_id = ? AND b_x_id = ?
-		   AND status IN ('CLAIMED', 'PENDING_CONFIRM')
-		 ORDER BY created_at DESC
-		 LIMIT 1`
-	).bind(adId, bXId).first<ClaimRow>();
+export async function createDetailedClaim(db: D1Database, params: CreateDetailedClaimParams): Promise<boolean> {
+	const sql = `
+		INSERT INTO ad_reward_claims (
+			claim_id, ad_id, b_x_id, status, signature
+		) VALUES (?, ?, ?, 'CLAIMED', ?)
+	`;
 
-	return existingClaim ?? null;
+	try {
+		const result = await db.prepare(sql).bind(
+			params.claimId,
+			params.adId,
+			params.bXId,
+			params.signature
+		).run();
+
+		return result.success;
+	} catch (e) {
+		console.error("Failed to create detailed claim:", e);
+		return false;
+	}
 }
 
 /**
- * 创建新的领取记录
- * @param db - D1 数据库实例
- * @param payload - 领取记录创建数据
- * @returns 创建是否成功
+ * 检查是否已领取 (查询新表)
  */
-export async function createClaim(db: D1Database, payload: ClaimCreatePayload): Promise<boolean> {
-	const insertSql = `
-		INSERT INTO claims (
-			claim_id, ad_id, a_x_id, b_x_id, b_wallet, status, unit_price_atomic, expires_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`;
-	const result = await db.prepare(insertSql)
-		.bind(
-			payload.claimId,
-			payload.adId,
-			payload.aXId,
-			payload.bXId,
-			payload.bWallet,
-			"CLAIMED",
-			payload.unitPriceAtomic,
-			payload.expiresAt
-		)
-		.run();
+export async function getDetailedClaim(db: D1Database, adId: string, bXId: string): Promise<AdRewardClaimRecord | null> {
+	return await db.prepare(
+		"SELECT * FROM ad_reward_claims WHERE ad_id = ? AND b_x_id = ?"
+	).bind(adId, bXId).first<AdRewardClaimRecord>();
+}
+
+/**
+ * 更新状态
+ */
+export async function updateClaimStatus(
+	db: D1Database,
+	claimId: string,
+	newStatus: ClaimStatus
+): Promise<boolean> {
+	const result = await db.prepare(
+		"UPDATE ad_reward_claims SET status = ?, updated_at = datetime('now') WHERE claim_id = ?"
+	).bind(newStatus, claimId).run();
 
 	return result.success;
 }
 
 /**
- * 获取用户的所有领取记录
- * @param db - D1 数据库实例
- * @param bXId - 用户 X ID
- * @returns 领取记录列表
+ * 广告主查询消费流水
  */
-export async function getMyClaimsList(db: D1Database, bXId: string): Promise<ClaimRow[]> {
+export async function getAdvertiserHistory(
+	db: D1Database,
+	aXId: string,
+	limit: number = 20,
+	offset: number = 0
+): Promise<AdRewardClaimRecord[]> {
+	// 需要联表查询 ad_campaigns 来获取 a_x_id
 	const sql = `
-		SELECT c.claim_id, c.ad_id, c.a_x_id, c.b_x_id, c.b_wallet, c.status,
-		       c.created_at, c.expires_at, c.unit_price_atomic,
-		       a.title AS ad_title
-		FROM claims c
-		LEFT JOIN ad_campaigns a ON c.ad_id = a.ad_id
-		WHERE c.b_x_id = ?
+		SELECT c.*, a.title as ad_title
+		FROM ad_reward_claims c
+		JOIN ad_campaigns a ON c.ad_id = a.ad_id
+		WHERE a.a_x_id = ?
 		ORDER BY c.created_at DESC
-		LIMIT 50
+		LIMIT ? OFFSET ?
 	`;
-	const result = await db.prepare(sql).bind(bXId).all<ClaimRow>();
-	return result.results ?? [];
+	const { results } = await db.prepare(sql).bind(aXId, limit, offset).all<AdRewardClaimRecord>();
+	return results ?? [];
 }
+
+/**
+ * 领取人查询收入流水
+ */
+export async function getPerformerHistory(
+	db: D1Database,
+	bXId: string,
+	limit: number = 20,
+	offset: number = 0
+): Promise<AdRewardClaimRecord[]> {
+	const sql = `
+        SELECT c.*, a.title as ad_title
+        FROM ad_reward_claims c
+        LEFT JOIN ad_campaigns a ON c.ad_id = a.ad_id
+        WHERE c.b_x_id = ?
+        ORDER BY c.created_at DESC
+        LIMIT ? OFFSET ?
+    `;
+	const { results } = await db.prepare(sql).bind(bXId, limit, offset).all<AdRewardClaimRecord>();
+	return results ?? [];
+}
+
 
 // ========= 广告托管账户和账本操作 =========
 

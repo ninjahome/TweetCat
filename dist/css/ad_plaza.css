@@ -223,7 +223,7 @@ button {
     gap: 8px;
     padding: 10px 12px;
     border: 1px solid #e5e7eb;
-    border-radius: 10px;
+    border-radius: 999px;
     background: #fff;
 }
 .filter-search-icon {
@@ -442,7 +442,7 @@ button {
 
 .ad-card {
     background: white;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
     transition: all 0.3s;
     display: flex;
@@ -543,23 +543,23 @@ button {
 .tag {
     padding: 4px 10px;
     border-radius: 12px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
 }
 
 .tag-new {
-    background: #dbeafe;
-    color: #1e40af;
+    background: rgba(29, 155, 241, 0.2);
+    color: #1D9BF1;
 }
 
 .tag-easy {
-    background: #d1fae5;
-    color: #065f46;
+    background: rgba(3, 203, 173, 0.2);
+    color: #03CBAD;
 }
 
 .tag-high {
-    background: #fef3c7;
-    color: #92400e;
+    background: rgba(255, 70, 108, 0.2);
+    color: #FF466C;
 }
 
 .ad-card-footer {
@@ -592,7 +592,7 @@ button {
     background: linear-gradient(135deg, #1d9bf0 0%, #06CBAD 100%);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 999px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
@@ -607,7 +607,7 @@ button {
 .btn-primary, .btn-secondary {
     padding: 10px 20px;
     border: none;
-    border-radius: 8px;
+    border-radius: 999px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;

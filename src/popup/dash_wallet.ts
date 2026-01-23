@@ -448,7 +448,7 @@ async function initRewards(): Promise<void> {
             rewardsArea.style.display = "none";
         }
     } catch (error) {
-        console.error("获取奖励信息失败:", error);
+        console.error(t("fetch_reward_info_failed"), error);
         // 发生错误时，隐藏奖励区域
         rewardsArea.style.display = "none";
     }
@@ -476,7 +476,7 @@ async function initAdPlaza(): Promise<void> {
             adPlazaContainer.style.display = "none";
         }
     } catch (error) {
-        console.error("初始化 Ad Plaza 失败:", error);
+        console.error(t('init_ad_plaza_failed'), error);
         // 发生错误时，隐藏 Ad Plaza 容器
         adPlazaContainer.style.display = "none";
     }

@@ -1383,5 +1383,44 @@
   },
   "cdp_auth_redirecting_to_x_login": {
     "message": "Redirecting to X (Twitter) login..."
+  },
+  "fetch_reward_info_failed": {
+    "message": "Failed to fetch reward info: $1"
+  },
+  "init_ad_plaza_failed": {
+    "message": "Failed to initialize Ad Plaza: $1"
+  },
+  "wallet_new_show": {
+    "message": "Show"
+  },
+  "wallet_new_hide": {
+    "message": "Hide"
+  },
+  "wallet_new_mnemonic_incomplete": {
+    "message": "Please enter the full mnemonic."
+  },
+  "wallet_new_mnemonic_mismatch": {
+    "message": "Mnemonics do not match."
+  },
+  "wallet_new_backup_checkbox_required": {
+    "message": "Please confirm you have backed it up offline."
+  },
+  "wallet_new_mnemonic_placeholder": {
+    "message": "Enter mnemonic"
+  },
+  "wallet_new_generate_failed": {
+    "message": "Failed to generate."
+  },
+  "wallet_new_save_failed": {
+    "message": "Failed to save."
+  },
+  "wallet_new_password_too_short": {
+    "message": "Password must be at least 8 characters."
+  },
+  "wallet_new_password_mismatch": {
+    "message": "Passwords do not match."
+  },
+  "wallet_new_loading_creating": {
+    "message": "Creating..."
   }
 }

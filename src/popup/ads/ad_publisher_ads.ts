@@ -6,7 +6,7 @@ import {getCurrentXId} from "./ad_publisher_common";
 import {updateBudgetSummaryAndBalance} from "./ad_publisher_dashboard";
 import {
     $Id,
-    showNotification, usdcToAtomic
+    showNotification, usdcToAtomic, showLoading, hideLoading
 } from "../common";
 import {publisherState} from "./ad_publisher_common";
 import {refreshAdsData} from "./ad_publisher_dashboard";
@@ -16,6 +16,29 @@ import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
 // ========= 发布广告向导（Wizard） =========
 let wizardCurrentStep = 1;
 const wizardMaxStep = 4;
+
+function resetWizardForm() {
+    // Step 1
+    (document.querySelector<HTMLInputElement>("#ad-name") as HTMLInputElement).value = "";
+    (document.querySelector<HTMLSelectElement>("#ad-category") as HTMLSelectElement).value = "";
+
+    // Step 2
+    (document.querySelector<HTMLInputElement>("#ad-title") as HTMLInputElement).value = "";
+    (document.querySelector<HTMLTextAreaElement>("#ad-description") as HTMLTextAreaElement).value = "";
+    (document.querySelector<HTMLInputElement>("#ad-image") as HTMLInputElement).value = "";
+    (document.querySelector<HTMLInputElement>("#ad-url") as HTMLInputElement).value = "";
+
+    // Step 3
+    (document.querySelector<HTMLInputElement>("#reward-amount") as HTMLInputElement).value = "";
+    (document.querySelector<HTMLInputElement>("#task-limit") as HTMLInputElement).value = "";
+    (document.querySelector<HTMLInputElement>("#end-date") as HTMLInputElement).value = "";
+    (document.querySelector<HTMLInputElement>("#callback-url") as HTMLInputElement).value = "";
+    (document.querySelector<HTMLTextAreaElement>("#custom-data") as HTMLTextAreaElement).value = "";
+
+    // Reset any dynamic styles
+    const adUrlInput = document.querySelector<HTMLInputElement>("#ad-url");
+    if (adUrlInput) adUrlInput.style.backgroundColor = "";
+}
 
 function openWizard() {
     wizardCurrentStep = 1;
@@ -72,6 +95,59 @@ function goWizardNext() {
         }
     }
     
+    // Step 2 validation: ad-title, ad-description, ad-url must be filled
+    if (wizardCurrentStep === 2) {
+        const adTitleInput = document.querySelector<HTMLInputElement>("#ad-title");
+        const adDescriptionInput = document.querySelector<HTMLTextAreaElement>("#ad-description");
+        const adUrlInput = document.querySelector<HTMLInputElement>("#ad-url");
+
+        const title = adTitleInput?.value?.trim() || "";
+        const description = adDescriptionInput?.value?.trim() || "";
+        const detailUrl = adUrlInput?.value?.trim() || "";
+
+        if (!title) {
+            showNotification("Ad Title is required.", "error");
+            return;
+        }
+        if (!description) {
+            showNotification("Description is required.", "error");
+            return;
+        }
+        if (!detailUrl) {
+            showNotification("Landing Page URL is required.", "error");
+            return;
+        }
+    }
+
+    // Step 3 validation: reward-amount, task-limit, and end-date
+    if (wizardCurrentStep === 3) {
+        const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
+        const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
+        const endDateInput = document.querySelector<HTMLInputElement>("#end-date");
+
+        const reward = Number(rewardInput?.value || "0");
+        const taskLimit = Number(taskLimitInput?.value || "0");
+        const endDate = endDateInput?.value || "";
+
+        if (reward <= 0) {
+            showNotification("Reward per Task must be greater than 0.", "error");
+            return;
+        }
+        if (taskLimit <= 0) {
+            showNotification("Total Task Limit must be greater than 0.", "error");
+            return;
+        }
+        if (!endDate) {
+            showNotification("Please select an end date for the campaign.", "error");
+            return;
+        }
+        const endDateObj = new Date(endDate);
+        if (isNaN(endDateObj.getTime()) || endDateObj <= new Date()) {
+            showNotification("End date must be in the future.", "error");
+            return;
+        }
+    }
+
     if (wizardCurrentStep < wizardMaxStep) {
         wizardCurrentStep++;
         updateWizardUI();
@@ -116,85 +192,104 @@ async function handlePublishClick(): Promise<void> {
 }
 
 async function submitWizard() {
-    const currentXId = getCurrentXId();
+    const submitBtn = $Id("btn-wizard-submit") as HTMLButtonElement | null;
+    if (submitBtn) submitBtn.disabled = true;
+    showLoading("Publishing ad...");
 
-    const nameInput = document.querySelector<HTMLInputElement>("#ad-name");
-    const adCategoryInput = document.querySelector<HTMLSelectElement>("#ad-category");
-    const adTitleInput = document.querySelector<HTMLInputElement>("#ad-title");
-    const adDescriptionInput = document.querySelector<HTMLTextAreaElement>("#ad-description");
-    const adImageInput = document.querySelector<HTMLInputElement>("#ad-image");
-    const adUrlInput = document.querySelector<HTMLInputElement>("#ad-url");
-    const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
-    const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
-    const durationDaysInput = document.querySelector<HTMLInputElement>("#duration-days");
-    const callbackUrlInput = document.querySelector<HTMLInputElement>("#callback-url");
-    const customDataInput = document.querySelector<HTMLTextAreaElement>("#custom-data");
+    try {
+        const currentXId = getCurrentXId();
 
-    const name = nameInput?.value?.trim() || "";
-    const category = adCategoryInput?.value?.trim() || "";
-    const title = adTitleInput?.value?.trim() || "";
-    const description = adDescriptionInput?.value?.trim() || "";
-    const imageUrl = adImageInput?.value?.trim() || null;
-    const detailUrl = adUrlInput?.value?.trim() || "";
-    const callbackUrl = callbackUrlInput?.value?.trim() || null;
-    let customData: string | null = null;
+        const nameInput = document.querySelector<HTMLInputElement>("#ad-name");
+        const adCategoryInput = document.querySelector<HTMLSelectElement>("#ad-category");
+        const adTitleInput = document.querySelector<HTMLInputElement>("#ad-title");
+        const adDescriptionInput = document.querySelector<HTMLTextAreaElement>("#ad-description");
+        const adImageInput = document.querySelector<HTMLInputElement>("#ad-image");
+        const adUrlInput = document.querySelector<HTMLInputElement>("#ad-url");
+        const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
+        const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
+        const endDateInput = document.querySelector<HTMLInputElement>("#end-date");
+        const callbackUrlInput = document.querySelector<HTMLInputElement>("#callback-url");
+        const customDataInput = document.querySelector<HTMLTextAreaElement>("#custom-data");
 
-    const reward = rewardInput?.value || "";
-    const quotaTotal = Number(taskLimitInput?.value || "0");
-    const unitPriceAtomic = usdcToAtomic(reward);
-    const durationDays = Number(durationDaysInput?.value || "0");
+        const name = nameInput?.value?.trim() || "";
+        const category = adCategoryInput?.value?.trim() || "";
+        const title = adTitleInput?.value?.trim() || "";
+        const description = adDescriptionInput?.value?.trim() || "";
+        const imageUrl = adImageInput?.value?.trim() || null;
+        const detailUrl = adUrlInput?.value?.trim() || "";
+        const callbackUrl = callbackUrlInput?.value?.trim() || null;
+        let customData: string | null = null;
 
-    if (!name || !category || !title || !description || !detailUrl || !unitPriceAtomic || quotaTotal <= 0) {
-        showNotification("Please complete required fields.", "error");
-        return;
-    }
+        const reward = rewardInput?.value || "";
+        const quotaTotal = Number(taskLimitInput?.value || "0");
+        const unitPriceAtomic = usdcToAtomic(reward);
+        const endDate = endDateInput?.value || "";
 
-    const validCategories = ["follow", "visit", "register", "share"];
-    if (!validCategories.includes(category)) {
-        showNotification("Invalid category selected.", "error");
-        return;
-    }
-
-    // Validate and parse custom_data JSON if provided
-    const customDataRaw = customDataInput?.value?.trim() || "";
-    if (customDataRaw) {
-        try {
-            const parsed = JSON.parse(customDataRaw);
-            customData = JSON.stringify(parsed);
-        } catch {
-            showNotification("Invalid custom data JSON format.", "error");
+        if (!name || !category || !title || !description || !detailUrl || !unitPriceAtomic || quotaTotal <= 0 || !endDate) {
+            showNotification("Please complete all required fields.", "error");
             return;
         }
-    }
 
-    const payload = {
-        a_x_id: currentXId,
-        category,
-        name,
-        title,
-        description,
-        detail_url: detailUrl,
-        image_url: imageUrl,
-        callback_url: callbackUrl,
-        custom_data: customData,
-        unit_price_atomic: unitPriceAtomic,
-        quota_total: quotaTotal,
-        duration_days: durationDays,
-    };
-
-    const result = await x402WorkerFetch("/ads/create", payload);
-    if (!result.ok) {
-        if (result.error?.error === "INSUFFICIENT_BALANCE") {
-            showNotification(`Insufficient balance. ${result.error?.detail || ""}`.trim(), "error");
+        // Validate end date
+        const endDateObj = new Date(endDate);
+        if (isNaN(endDateObj.getTime()) || endDateObj <= new Date()) {
+            showNotification("End date must be in the future.", "error");
             return;
         }
-        showNotification("Failed to create ad.", "error");
-        return;
-    }
 
-    showNotification("Ad created successfully", "success");
-    closeWizard();
-    await refreshAdsData();
+        const validCategories = ["follow", "visit", "register", "share"];
+        if (!validCategories.includes(category)) {
+            showNotification("Invalid category selected.", "error");
+            return;
+        }
+
+        // Validate and parse custom_data JSON if provided
+        const customDataRaw = customDataInput?.value?.trim() || "";
+        if (customDataRaw) {
+            try {
+                const parsed = JSON.parse(customDataRaw);
+                customData = JSON.stringify(parsed);
+            } catch {
+                showNotification("Invalid custom data JSON format.", "error");
+                return;
+            }
+        }
+
+        const payload = {
+            a_x_id: currentXId,
+            category,
+            name,
+            title,
+            description,
+            detail_url: detailUrl,
+            image_url: imageUrl,
+            callback_url: callbackUrl,
+            custom_data: customData,
+            unit_price_atomic: unitPriceAtomic,
+            quota_total: quotaTotal,
+            end_date: endDateObj.toISOString(), // Send as ISO string
+        };
+
+        const result = await x402WorkerFetch("/ads/create", payload);
+        if (!result.ok) {
+            if (result.error?.error === "INSUFFICIENT_BALANCE") {
+                showNotification(`Insufficient balance. ${result.error?.detail || ""}`.trim(), "error");
+                return;
+            }
+            showNotification("Failed to create ad.", "error");
+            return;
+        }
+
+        showNotification("Ad created successfully", "success");
+        closeWizard();
+        await refreshAdsData();
+        resetWizardForm(); // Reset form after successful submission
+    } catch (e: any) {
+        showNotification(e?.message || "Failed to create ad.", "error");
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        hideLoading();
+    }
 }
 
 export function initWizardEvents() {
@@ -236,5 +331,3 @@ export function initWizardEvents() {
         });
     }
 }
-
-
