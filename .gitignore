@@ -64,3 +64,4 @@ bin-release/
 /.env
 tweetcat-x402-worker/tweetcattips/a.sql
 tweetcat-x402-worker/tweetcattips/wrangler_cmd
+local_app/TweetCatAppMac/.DS_Store
