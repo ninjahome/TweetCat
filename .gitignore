@@ -62,3 +62,12 @@ bin-release/
 /.env.example
 /tweetcat-x402-worker/tweetcattips/package-lock.json
 /.env
+.DS_Store
+local_app/lib_prepare/tweetcat_ydl/input.mp4
+local_app/lib_prepare/tweetcat_ydl/input.vtt
+local_app/lib_prepare/tweetcat_ydl/Input2.vtt
+local_app/lib_prepare/tweetcat_ydl/load_pk.py
+local_app/lib_prepare/tweetcat_ydl/output.txt
+local_app/lib_prepare/tweetcat_ydl/output.vtt
+local_app/lib_prepare/tweetcat_ydl/prepare.sh
+local_app/lib_prepare/tweetcat_ydl/translate.py
