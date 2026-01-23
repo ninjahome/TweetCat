@@ -287,13 +287,20 @@ export async function getMyAds(db: D1Database, aXId: string): Promise<AdRow[]> {
  */
 export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 	const sql = `
-		SELECT ad_id, title, a_x_id, description, category, unit_price_atomic,
-		       quota_used, quota_total, end_date, created_at, detail_url
-		FROM ad_campaigns
-		WHERE status = 'ACTIVE'
-		  AND quota_used < quota_total
-		  AND end_date > datetime('now')
-		ORDER BY created_at DESC
+		SELECT
+			c.ad_id, c.title, c.a_x_id, c.description, c.category, c.unit_price_atomic,
+			c.quota_used, c.quota_total, c.end_date, c.created_at, c.detail_url
+		FROM
+			ad_campaigns c
+		JOIN
+			ad_escrow_accounts e ON c.a_x_id = e.a_x_id
+		WHERE
+			c.status = 'ACTIVE'
+			AND c.end_date > datetime('now')
+			AND c.quota_used < c.quota_total
+			AND CAST(e.frozen_atomic AS INTEGER) >= CAST(c.unit_price_atomic AS INTEGER)
+		ORDER BY
+			c.created_at DESC
 		LIMIT 100
 	`;
 	const result = await db.prepare(sql).all<AdRow>();

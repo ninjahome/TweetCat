@@ -1,6 +1,6 @@
 {
   "name": "tweetcattips",
-  "version": "3.6.37",
+  "version": "3.6.38",
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -19,7 +19,7 @@
     "@cloudflare/workers-types": "^4.20251217.0",
     "typescript": "^5.5.2",
     "vitest": "~3.2.0",
-    "wrangler": "^4.55.0"
+    "wrangler": "4.59.1"
   },
   "dependencies": {
     "@coinbase/cdp-core": "^0.0.74",
