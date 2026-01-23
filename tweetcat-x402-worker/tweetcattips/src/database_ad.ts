@@ -44,7 +44,7 @@ export interface AdRow {
 	quota_total: number;
 	quota_used: number;
 	status: string;
-	duration_days: number;
+	end_date: string; // Changed from duration_days
 	created_at?: string | null;
 	updated_at?: string | null;
 }
@@ -62,7 +62,7 @@ export interface AdCreatePayload {
 	customData?: string | null;
 	unitPriceAtomic: string;
 	quotaTotal: number;
-	durationDays: number;
+	endDate: string; // Changed from durationDays
 }
 
 export interface AdEscrowLedgerRow {
@@ -115,15 +115,17 @@ export function toSqliteDate(date: Date): string {
 	return date.toISOString().replace("T", " ").replace("Z", "");
 }
 
-export function formatDeadlineText(durationDays?: number, createdAt?: string | null): string {
-	if (durationDays === undefined || durationDays === null) return "Ends: -";
-	if (durationDays === 0) return "Ends: Never";
-
-	if (!createdAt) return "Ends: -";
+export function formatDeadlineText(endDateStr?: string | null): string {
+	if (!endDateStr) return "Ends: -";
 
 	try {
-		const created = new Date(createdAt);
-		const endDate = new Date(created.getTime() + durationDays * 24 * 60 * 60 * 1000);
+		const endDate = new Date(endDateStr);
+		const now = new Date();
+
+		if (endDate < now) {
+			return "Ended";
+		}
+
 		const dateText = endDate.toISOString().slice(0, 10);
 		return `Ends: ${dateText}`;
 	} catch {
@@ -210,7 +212,7 @@ export async function createAd(db: D1Database, payload: AdCreatePayload): Promis
 	const insertSql = `
 		INSERT INTO ad_campaigns (
 			ad_id, a_x_id, category, name, title, description, detail_url, image_url,
-			callback_url, custom_data, unit_price_atomic, quota_total, duration_days, updated_at
+			callback_url, custom_data, unit_price_atomic, quota_total, end_date, updated_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
 	`;
 	const result = await db.prepare(insertSql)
@@ -227,7 +229,7 @@ export async function createAd(db: D1Database, payload: AdCreatePayload): Promis
 			payload.customData ?? null,
 			payload.unitPriceAtomic,
 			payload.quotaTotal,
-			payload.durationDays
+			payload.endDate
 		)
 		.run();
 
@@ -286,14 +288,11 @@ export async function getMyAds(db: D1Database, aXId: string): Promise<AdRow[]> {
 export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 	const sql = `
 		SELECT ad_id, title, a_x_id, description, category, unit_price_atomic,
-		       quota_used, quota_total, duration_days, created_at, detail_url
+		       quota_used, quota_total, end_date, created_at, detail_url
 		FROM ad_campaigns
 		WHERE status = 'ACTIVE'
 		  AND quota_used < quota_total
-		  AND (
-		      duration_days = 0
-		      OR datetime(created_at, '+' || duration_days || ' days') > datetime('now')
-		  )
+		  AND end_date > datetime('now')
 		ORDER BY created_at DESC
 		LIMIT 100
 	`;
@@ -311,7 +310,7 @@ export async function getAdById(db: D1Database, adId: string): Promise<AdRow | n
 	const adRow = await db.prepare(
 		`SELECT ad_id, a_x_id, unit_price_atomic, status, quota_used, quota_total,
 		        category, name, title, description, detail_url, callback_url, custom_data,
-		        duration_days, created_at, updated_at
+		        end_date, created_at, updated_at
 		 FROM ad_campaigns
 		 WHERE ad_id = ?`
 	).bind(adId).first<AdRow>();

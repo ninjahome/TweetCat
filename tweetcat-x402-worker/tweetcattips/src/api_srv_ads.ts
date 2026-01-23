@@ -208,7 +208,7 @@ export async function apiAdsCreate(c: ExtCtx) {
 		const customData = body?.custom_data || null;
 		const unitPriceAtomic = parsePositiveAtomic(body?.unit_price_atomic);
 		const quotaTotal = parsePositiveInt(body?.quota_total);
-		const durationDays = parsePositiveInt(body?.duration_days) ?? 0;
+		const endDateStr = body?.end_date; // Changed from durationDays
 
 		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 		if (!requireStringField(category)) return jsonError(c, 400, "INVALID_REQUEST", "Missing category");
@@ -218,6 +218,13 @@ export async function apiAdsCreate(c: ExtCtx) {
 		if (!requireStringField(detailUrl)) return jsonError(c, 400, "INVALID_REQUEST", "Missing detail_url");
 		if (!unitPriceAtomic) return jsonError(c, 400, "INVALID_REQUEST", "Invalid unit_price_atomic");
 		if (!quotaTotal) return jsonError(c, 400, "INVALID_REQUEST", "Invalid quota_total");
+		if (!requireStringField(endDateStr)) return jsonError(c, 400, "INVALID_REQUEST", "Missing end_date");
+
+		// Validate end date
+		const endDate = new Date(endDateStr);
+		if (isNaN(endDate.getTime()) || endDate <= new Date()) {
+			return jsonError(c, 400, "INVALID_REQUEST", "End date must be in the future.");
+		}
 
 		// Validate category
 		const validCategories: AdCategory[] = ["follow", "visit", "register", "share"];
@@ -260,7 +267,7 @@ export async function apiAdsCreate(c: ExtCtx) {
 			customData: typeof customData === 'string' ? customData : (customData ? JSON.stringify(customData) : null),
 			unitPriceAtomic,
 			quotaTotal,
-			durationDays,
+			endDate: endDate.toISOString(),
 		};
 
 		const created = await createAd(c.env.DB, payload);
@@ -349,7 +356,7 @@ export async function apiAdsList(c: ExtCtx) {
 				durationMinutes: CATEGORY_DURATION[category] ?? 3,
 				completed: row.quota_used,
 				totalQuota: row.quota_total,
-				deadlineText: formatDeadlineText(row.duration_days, row.created_at),
+				deadlineText: formatDeadlineText(row.end_date), // Updated to use end_date
 				tags: CATEGORY_TAGS[category] ?? [],
 				rewardRange: getRewardRange(rewardUSDC),
 				popularityScore: computePopularityScore(row.quota_used, row.quota_total),

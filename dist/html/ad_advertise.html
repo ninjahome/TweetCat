@@ -287,9 +287,9 @@
                     <input type="number" id="task-limit" class="form-input" min="1" placeholder="500" required>
                 </div>
                 <div class="form-group">
-                    <label for="duration-days">Campaign Duration (days)</label>
-                    <input type="number" id="duration-days" class="form-input" min="0" placeholder="0" value="0">
-                    <small class="form-hint">Set to 0 for unlimited duration. Campaign starts immediately upon publishing.</small>
+                    <label for="end-date">Campaign End Date</label>
+                    <input type="datetime-local" id="end-date" class="form-input" required>
+                    <small class="form-hint">The campaign will automatically stop after this date.</small>
                 </div>
                 <div class="form-group">
                     <label for="callback-url">Callback URL (optional)</label>
@@ -522,8 +522,8 @@
                             <span id="detail-quota" class="detail-value">-</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Duration</span>
-                            <span id="detail-duration" class="detail-value">-</span>
+                            <span class="detail-label">End Date</span>
+                            <span id="detail-end-date" class="detail-value">-</span>
                         </div>
                     </div>
 

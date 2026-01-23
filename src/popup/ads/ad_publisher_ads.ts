@@ -72,6 +72,59 @@ function goWizardNext() {
         }
     }
     
+    // Step 2 validation: ad-title, ad-description, ad-url must be filled
+    if (wizardCurrentStep === 2) {
+        const adTitleInput = document.querySelector<HTMLInputElement>("#ad-title");
+        const adDescriptionInput = document.querySelector<HTMLTextAreaElement>("#ad-description");
+        const adUrlInput = document.querySelector<HTMLInputElement>("#ad-url");
+
+        const title = adTitleInput?.value?.trim() || "";
+        const description = adDescriptionInput?.value?.trim() || "";
+        const detailUrl = adUrlInput?.value?.trim() || "";
+
+        if (!title) {
+            showNotification("Ad Title is required.", "error");
+            return;
+        }
+        if (!description) {
+            showNotification("Description is required.", "error");
+            return;
+        }
+        if (!detailUrl) {
+            showNotification("Landing Page URL is required.", "error");
+            return;
+        }
+    }
+
+    // Step 3 validation: reward-amount, task-limit, and end-date
+    if (wizardCurrentStep === 3) {
+        const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
+        const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
+        const endDateInput = document.querySelector<HTMLInputElement>("#end-date");
+
+        const reward = Number(rewardInput?.value || "0");
+        const taskLimit = Number(taskLimitInput?.value || "0");
+        const endDate = endDateInput?.value || "";
+
+        if (reward <= 0) {
+            showNotification("Reward per Task must be greater than 0.", "error");
+            return;
+        }
+        if (taskLimit <= 0) {
+            showNotification("Total Task Limit must be greater than 0.", "error");
+            return;
+        }
+        if (!endDate) {
+            showNotification("Please select an end date for the campaign.", "error");
+            return;
+        }
+        const endDateObj = new Date(endDate);
+        if (isNaN(endDateObj.getTime()) || endDateObj <= new Date()) {
+            showNotification("End date must be in the future.", "error");
+            return;
+        }
+    }
+
     if (wizardCurrentStep < wizardMaxStep) {
         wizardCurrentStep++;
         updateWizardUI();
@@ -126,7 +179,7 @@ async function submitWizard() {
     const adUrlInput = document.querySelector<HTMLInputElement>("#ad-url");
     const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
     const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
-    const durationDaysInput = document.querySelector<HTMLInputElement>("#duration-days");
+    const endDateInput = document.querySelector<HTMLInputElement>("#end-date");
     const callbackUrlInput = document.querySelector<HTMLInputElement>("#callback-url");
     const customDataInput = document.querySelector<HTMLTextAreaElement>("#custom-data");
 
@@ -142,10 +195,17 @@ async function submitWizard() {
     const reward = rewardInput?.value || "";
     const quotaTotal = Number(taskLimitInput?.value || "0");
     const unitPriceAtomic = usdcToAtomic(reward);
-    const durationDays = Number(durationDaysInput?.value || "0");
+    const endDate = endDateInput?.value || "";
 
-    if (!name || !category || !title || !description || !detailUrl || !unitPriceAtomic || quotaTotal <= 0) {
-        showNotification("Please complete required fields.", "error");
+    if (!name || !category || !title || !description || !detailUrl || !unitPriceAtomic || quotaTotal <= 0 || !endDate) {
+        showNotification("Please complete all required fields.", "error");
+        return;
+    }
+
+    // Validate end date
+    const endDateObj = new Date(endDate);
+    if (isNaN(endDateObj.getTime()) || endDateObj <= new Date()) {
+        showNotification("End date must be in the future.", "error");
         return;
     }
 
@@ -179,7 +239,7 @@ async function submitWizard() {
         custom_data: customData,
         unit_price_atomic: unitPriceAtomic,
         quota_total: quotaTotal,
-        duration_days: durationDays,
+        end_date: endDateObj.toISOString(), // Send as ISO string
     };
 
     const result = await x402WorkerFetch("/ads/create", payload);
@@ -236,5 +296,3 @@ export function initWizardEvents() {
         });
     }
 }
-
-

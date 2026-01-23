@@ -25,7 +25,7 @@ export interface AdRecord {
     quota_total: number;
     quota_used: number;
     status: string;
-    duration_days: number;
+    end_date: string; // Changed from duration_days
     created_at: string;
     updated_at?: string | null;
 }

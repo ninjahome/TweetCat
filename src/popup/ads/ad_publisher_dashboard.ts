@@ -165,7 +165,12 @@ function openAdDetailModal(ad: AdRecord) {
     const rewardUSDC = atomicToUsdcNumber(ad.unit_price_atomic);
     setText("detail-reward", formatUSDC(rewardUSDC));
     setText("detail-quota", ad.quota_total.toString());
-    setText("detail-duration", ad.duration_days > 0 ? `${ad.duration_days} days` : "Unlimited");
+    
+    // Update to use end_date
+    const endDateEl = $Id("detail-end-date");
+    if (endDateEl) {
+        endDateEl.textContent = ad.end_date ? new Date(ad.end_date).toLocaleString() : "-";
+    }
 
     const linkEl = $Id("detail-url") as HTMLAnchorElement | null;
     if (linkEl) {

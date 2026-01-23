@@ -236,9 +236,8 @@ CREATE INDEX IF NOT EXISTS idx_ad_escrow_ledger_direction_created_at
 	ON ad_escrow_ledger(direction, created_at);
 
 
-
--- 删除旧表
-DROP TABLE ad_campaigns;
+-- 删除旧表 (警告：这将清空所有现有广告数据)
+DROP TABLE IF EXISTS ad_campaigns;
 
 -- 创建新表结构
 CREATE TABLE ad_campaigns (
@@ -255,16 +254,41 @@ CREATE TABLE ad_campaigns (
 							  unit_price_atomic TEXT NOT NULL,
 							  quota_total INTEGER NOT NULL,
 							  quota_used INTEGER DEFAULT 0,
-							  status TEXT DEFAULT 'ACTIVE',
-							  duration_days INTEGER DEFAULT 0,
-							  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-							  updated_at TIMESTAMP
-);
 
--- 如果需要保留旧数据，可以从备份表恢复（可选）
--- INSERT INTO ad_campaigns SELECT ... FROM ad_campaigns_backup;
+	-- 状态: DRAFT, ACTIVE, PAUSED_NO_BUDGET, PAUSED_MANUAL, EXPIRED, COMPLETED
+							  status TEXT DEFAULT 'ACTIVE',
+
+	-- 截止日期 (绝对时间)，必须存在
+							  end_date DATETIME NOT NULL,
+
+							  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+							  updated_at DATETIME
+);
 
 -- 创建索引
 CREATE INDEX idx_ad_campaigns_a_x_id ON ad_campaigns(a_x_id);
 CREATE INDEX idx_ad_campaigns_status ON ad_campaigns(status);
+CREATE INDEX idx_ad_campaigns_end_date ON ad_campaigns(end_date); -- 新增索引，方便查询过期广告
 CREATE INDEX idx_ad_campaigns_created_at ON ad_campaigns(created_at);
+
+CREATE TABLE ad_reward_claims (
+								  claim_id TEXT PRIMARY KEY,          -- 唯一流水号 (UUID)
+								  ad_id TEXT NOT NULL,                -- 关联的广告 ID (通过此 ID 可查到广告主 a_x_id 和单价)
+								  b_x_id TEXT NOT NULL,               -- 领取人(执行者) X ID
+
+	-- 状态流转: CLAIMED -> PENDING_CONFIRM -> CONFIRMED -> REJECTED -> SETTLED_TIMEOUT
+								  status TEXT NOT NULL CHECK (status IN ('CLAIMED', 'PENDING_CONFIRM', 'CONFIRMED', 'REJECTED', 'SETTLED_TIMEOUT')),
+
+								  signature TEXT NOT NULL,            -- 执行者对该行为的签名数据 (存证)
+
+								  created_at DATETIME DEFAULT CURRENT_TIMESTAMP, -- 创建时间 (用于存档/热数据区分)
+								  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, -- 状态变更时间
+
+	-- 核心约束：一个用户对一个广告只能有一条记录
+								  UNIQUE(ad_id, b_x_id)
+);
+
+-- 索引设计
+CREATE INDEX idx_claims_b_x_id ON ad_reward_claims(b_x_id); -- 方便领取人查收入
+CREATE INDEX idx_claims_ad_id ON ad_reward_claims(ad_id);   -- 方便广告主查某个广告的支出情况
+CREATE INDEX idx_claims_created_at ON ad_reward_claims(created_at); -- 方便按时间清理数据
