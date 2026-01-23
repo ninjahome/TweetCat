@@ -4,6 +4,8 @@ import type {D1Database} from "@cloudflare/workers-types";
 
 export type AdCategory = "follow" | "visit" | "register" | "share";
 
+export type AdCampaignStatus = 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EXPIRED' | 'COMPLETED';
+
 export interface AdAccountInfo {
 	balanceAtomic: string;
 }
@@ -43,7 +45,7 @@ export interface AdRow {
 	unit_price_atomic: string;
 	quota_total: number;
 	quota_used: number;
-	status: string;
+	status: AdCampaignStatus;
 	end_date: string; // Changed from duration_days
 	created_at?: string | null;
 	updated_at?: string | null;
@@ -261,6 +263,31 @@ export async function updateAdSettings(
 	`;
 	const result = await db.prepare(updateSql)
 		.bind(callbackUrl, customData, adId, aXId)
+		.run();
+
+	return result.success && (result.meta.changes ?? 0) > 0;
+}
+
+/**
+ * 更新广告状态
+ * @param db - D1 数据库实例
+ * @param adId - 广告 ID
+ * @param newStatus - 新的广告状态
+ * @returns 更新是否成功
+ */
+export async function updateAdStatus(
+	db: D1Database,
+	adId: string,
+	newStatus: AdCampaignStatus
+): Promise<boolean> {
+	const updateSql = `
+		UPDATE ad_campaigns
+		SET status = ?,
+			updated_at = datetime('now')
+		WHERE ad_id = ?
+	`;
+	const result = await db.prepare(updateSql)
+		.bind(newStatus, adId)
 		.run();
 
 	return result.success && (result.meta.changes ?? 0) > 0;

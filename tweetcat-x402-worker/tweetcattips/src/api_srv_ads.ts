@@ -17,7 +17,9 @@ import {
 	API_PATH_ADS_MY_CLAIMS,
 	API_PATH_ADS_PUBLISHER_RECHARGE,
 	API_PATH_ADS_PUBLISHER_WITHDRAW,
-	API_PATH_ADS_PUBLISHER_LEDGER
+	API_PATH_ADS_PUBLISHER_LEDGER,
+	API_PATH_ADS_TOGGLE_STATUS,
+	API_PATH_ADS_TOP_UP_BUDGET
 } from "./common";
 import {
 	AdCategory,
@@ -32,6 +34,7 @@ import {
 	reserveAdBudget,
 	createAd,
 	updateAdSettings,
+	updateAdStatus,
 	getMyAds,
 	getActiveAdsList,
 	getAdById,
@@ -52,6 +55,7 @@ import {
 	getPerformerHistory,
 	type AdCreatePayload,
 	type CreateDetailedClaimParams,
+	type AdCampaignStatus,
 } from "./database_ad";
 import {internalTreasurySettle, PaymentRequiredError, x402Workflow} from "./api_srv_x402";
 import {getKolBindingByXId} from "./database_402";
@@ -691,6 +695,108 @@ export async function apiAdsPublisherLedger(c: ExtCtx) {
 }
 
 /**
+ * 切换广告状态（启用/暂停）
+ */
+export async function apiAdsToggleStatus(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		const adId = body?.ad_id;
+		const aXId = body?.a_x_id;
+		const action = body?.action; // "pause" or "resume"
+
+		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
+		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+		if (!requireStringField(action)) return jsonError(c, 400, "INVALID_REQUEST", "Missing action");
+
+		// 验证 action 参数
+		if (action !== "pause" && action !== "resume") {
+			return jsonError(c, 400, "INVALID_REQUEST", "Action must be 'pause' or 'resume'");
+		}
+
+		// 获取广告信息
+		const ad = await getAdById(c.env.DB, adId);
+		if (!ad) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+		if (ad.a_x_id !== aXId) return jsonError(c, 403, "FORBIDDEN", "You do not own this ad");
+
+		// 根据 action 更新状态
+		let newStatus: AdCampaignStatus;
+		if (action === "pause") {
+			// 从 ACTIVE 切换到 PAUSED_MANUAL
+			if (ad.status !== "ACTIVE") {
+				return jsonError(c, 400, "INVALID_STATE", "Only active ads can be paused");
+			}
+			newStatus = "PAUSED_MANUAL";
+		} else {
+			// 从 PAUSED_MANUAL 切换到 ACTIVE
+			if (ad.status !== "PAUSED_MANUAL") {
+				return jsonError(c, 400, "INVALID_STATE", "Only manually paused ads can be resumed");
+			}
+			newStatus = "ACTIVE";
+		}
+
+		// 更新状态
+		const updated = await updateAdStatus(c.env.DB, adId, newStatus);
+		if (!updated) {
+			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status");
+		}
+
+		return c.json({ ok: true, ad_id: adId, new_status: newStatus });
+	} catch (err: any) {
+		console.error("[apiAdsToggleStatus Error]", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 为广告充值预算
+ */
+export async function apiAdsTopUpBudget(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		const adId = body?.ad_id;
+		const aXId = body?.a_x_id;
+		const amountAtomic = parsePositiveAtomic(body?.amount_atomic);
+
+		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
+		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+		if (!amountAtomic) return jsonError(c, 400, "INVALID_REQUEST", "Invalid amount_atomic");
+
+		// 获取广告信息
+		const ad = await getAdById(c.env.DB, adId);
+		if (!ad) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+		if (ad.a_x_id !== aXId) return jsonError(c, 403, "FORBIDDEN", "You do not own this ad");
+
+		// 只有 PAUSED_NO_BUDGET 状态的广告才能充值
+		if (ad.status !== "PAUSED_NO_BUDGET") {
+			return jsonError(c, 400, "INVALID_STATE", "Only ads paused due to insufficient budget can be topped up");
+		}
+
+		// 预留预算（从 available 移动到 frozen）
+		const reserved = await reserveAdBudget(c.env.DB, aXId, amountAtomic);
+		if (!reserved) {
+			const accountInfo = await getAccountBalanceAtomic(c.env.DB, aXId);
+			return jsonError(
+				c,
+				400,
+				"INSUFFICIENT_BALANCE",
+				`Required ${amountAtomic}, available ${accountInfo.balanceAtomic}.`
+			);
+		}
+
+		// 更新广告状态为 ACTIVE
+		const updated = await updateAdStatus(c.env.DB, adId, "ACTIVE");
+		if (!updated) {
+			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status after top-up");
+		}
+
+		return c.json({ ok: true, ad_id: adId, topped_up_atomic: amountAtomic, new_status: "ACTIVE" });
+	} catch (err: any) {
+		console.error("[apiAdsTopUpBudget Error]", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
  * 注册广告相关路由
  */
 export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
@@ -704,4 +810,6 @@ export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
 	app.post(API_PATH_ADS_PUBLISHER_RECHARGE, apiRechargeToAdEscrowAccount);
 	app.post(API_PATH_ADS_PUBLISHER_WITHDRAW, apiWithdrawFromAdsEscrowAccount);
 	app.get(API_PATH_ADS_PUBLISHER_LEDGER, apiAdsPublisherLedger);
+	app.post(API_PATH_ADS_TOGGLE_STATUS, apiAdsToggleStatus);
+	app.post(API_PATH_ADS_TOP_UP_BUDGET, apiAdsTopUpBudget);
 }
