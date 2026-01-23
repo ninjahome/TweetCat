@@ -10,22 +10,22 @@ import {
     showLoading,
     hideLoading
 } from "../common";
-import {logAdP} from "../../common/debug_flags";
+import { logAdP } from "../../common/debug_flags";
 import {
     fetchAdEscrowLedger,
     openTxInExplorer,
     publisherState
 } from "./ad_publisher_common";
-import type {AdRecord, AdStatus, HistoryRow} from "./ad_publisher_common";
-import {getCurrentXId} from "./ad_publisher_common";
-import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
+import type { AdRecord, AdStatus, HistoryRow } from "./ad_publisher_common";
+import { getCurrentXId } from "./ad_publisher_common";
+import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 
 // ========= 数据刷新 =========
 export async function refreshAdsData() {
     const currentXId = getCurrentXId();
     const [balance, ads] = await Promise.all([
-        x402WorkerGet("/ads/balance", {a_x_id: currentXId}),
-        (await x402WorkerGet("/ads/my_ads", {a_x_id: currentXId})) as AdRecord[],
+        x402WorkerGet("/ads/balance", { a_x_id: currentXId }),
+        (await x402WorkerGet("/ads/my_ads", { a_x_id: currentXId })) as AdRecord[],
     ]);
 
     publisherState.adAccountInfo = {
@@ -132,7 +132,7 @@ export function renderMyAdsTable() {
         tr.dataset.adId = rowData.id;
 
         $2<HTMLElement>(tr, ".td-name").textContent = rowData.name;
-        
+
         // 根据状态显示不同颜色
         const statusEl = $2<HTMLElement>(tr, ".td-status");
         statusEl.textContent = rowData.status;
@@ -145,7 +145,7 @@ export function renderMyAdsTable() {
         } else {
             statusEl.style.color = "#6b7280"; // 灰色
         }
-        
+
         $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(rowData.rewardPerTask);
         $2<HTMLElement>(tr, ".td-completed").textContent = rowData.completed.toString();
         $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(rowData.spent);
@@ -208,10 +208,47 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume") {
     }
 }
 
-// 处理广告充值
-async function handleTopUpAdBudget(adId: string) {
+// 处理广告充值 - 打开弹窗
+function handleTopUpAdBudget(adId: string) {
+    const modal = $Id("top-up-budget-modal");
+    if (!modal) return;
+
+    // Reset Input
+    const input = $Id("top-up-amount") as HTMLInputElement;
+    if (input) input.value = "";
+
+    // Show Balance
+    const balanceEl = $Id("top-up-available-balance");
+    if (balanceEl) {
+        balanceEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.adAccountInfo.balanceAtomic));
+    }
+
+    // Bind Confirm Action
+    const btnConfirm = $Id("btn-confirm-top-up");
+    if (btnConfirm) {
+        // Remove old listeners by cloning
+        const newBtn = btnConfirm.cloneNode(true);
+        btnConfirm.parentNode?.replaceChild(newBtn, btnConfirm);
+
+        newBtn.addEventListener("click", () => handleTopUpSubmit(adId));
+    }
+
+    // Bind Cancel Action
+    const btnCancel = $Id("btn-cancel-top-up");
+    const btnClose = $Id("close-top-up-modal");
+    const closeAction = () => modal.classList.remove("active");
+
+    if (btnCancel) btnCancel.onclick = closeAction;
+    if (btnClose) btnClose.onclick = closeAction;
+
+    modal.classList.add("active");
+}
+
+// 处理充值提交
+async function handleTopUpSubmit(adId: string) {
     try {
-        const amountStr = prompt("请输入充值金额（USDC）:");
+        const amountInput = $Id("top-up-amount") as HTMLInputElement;
+        const amountStr = amountInput?.value;
         if (!amountStr) return;
 
         const amount = parseFloat(amountStr);
@@ -219,6 +256,8 @@ async function handleTopUpAdBudget(adId: string) {
             showNotification("请输入有效的金额", "error");
             return;
         }
+
+        const modal = $Id("top-up-budget-modal");
 
         showLoading();
         const currentXId = getCurrentXId();
@@ -232,7 +271,10 @@ async function handleTopUpAdBudget(adId: string) {
                 amount_atomic: amountAtomic
             })
         });
+
         showNotification("充值成功，广告已启用", "success");
+        if (modal) modal.classList.remove("active");
+
         await refreshAdsData();
     } catch (err: any) {
         showNotification(err?.message || "充值失败", "error");
@@ -252,7 +294,7 @@ function openAdDetailModal(ad: AdRecord) {
     };
 
     setText("detail-name", ad.name);
-    
+
     // 更新状态显示，并添加颜色编码
     const statusEl = $Id("detail-status");
     if (statusEl) {
@@ -267,16 +309,16 @@ function openAdDetailModal(ad: AdRecord) {
             statusEl.style.color = "#6b7280"; // 灰色
         }
     }
-    
+
     setText("detail-category", ad.category);
     setText("detail-created", ad.created_at ? new Date(ad.created_at).toLocaleString() : "-");
     setText("detail-title", ad.title);
     setText("detail-description", ad.description);
-    
+
     const rewardUSDC = atomicToUsdcNumber(ad.unit_price_atomic);
     setText("detail-reward", formatUSDC(rewardUSDC));
     setText("detail-quota", ad.quota_total.toString());
-    
+
     // Update to use end_date
     const endDateEl = $Id("detail-end-date");
     if (endDateEl) {
@@ -313,7 +355,7 @@ function openAdDetailModal(ad: AdRecord) {
         // Remove old listeners to prevent duplicates (cloning button is safer but simple replacement works here)
         const newBtn = btnUpdate.cloneNode(true);
         btnUpdate.parentNode?.replaceChild(newBtn, btnUpdate);
-        
+
         newBtn.addEventListener("click", async () => {
             const newCallback = callbackInput?.value.trim() || null;
             const newCustomData = customDataInput?.value.trim() || null;
@@ -337,7 +379,7 @@ function openAdDetailModal(ad: AdRecord) {
                     custom_data: newCustomData,
                 };
 
-                const result = await  x402WorkerFetch("/ads/update", payload);
+                const result = await x402WorkerFetch("/ads/update", payload);
 
                 if (result.ok) {
                     showNotification("Ad settings updated successfully!", "success");
@@ -612,7 +654,7 @@ async function loadAndRenderTransferHistory(): Promise<void> {
             status = `Failed: ${errorMsg}`;
         }
 
-        return {time, adNameOrMethod, amount, status, txHash: row.tx_hash || null};
+        return { time, adNameOrMethod, amount, status, txHash: row.tx_hash || null };
     });
 
     publisherState.historyRecharge = mappedRows;
