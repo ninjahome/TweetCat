@@ -1,6 +1,6 @@
 {
   "name": "tweetcattips",
-  "version": "3.6.38",
+  "version": "3.6.40",
   "private": true,
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -74,12 +74,13 @@
                                     <th>Completed</th>
                                     <th>Spent</th>
                                     <th>Remaining Budget</th>
+                                    <th>End Date</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="my-ads-tbody">
                                 <tr class="empty-row">
-                                    <td colspan="7">
+                                    <td colspan="8">
                                         <div class="empty-state-small">
                                             <p>No ads published yet. Click "Publish New Ad" to get started!</p>
                                         </div>
@@ -607,6 +608,7 @@
             <td class="td-completed"></td>
             <td class="td-spent"></td>
             <td class="td-remaining"></td>
+            <td class="td-end-date"></td>
             <td class="td-actions">
                 <button class="btn-secondary btn-view" type="button">View</button>
                 <button class="btn-secondary btn-toggle" type="button">Pause</button>
@@ -616,7 +618,7 @@
 
     <template id="tpl-empty-my-ads-row">
         <tr class="empty-row">
-            <td colspan="7">
+            <td colspan="8">
                 <div class="empty-state-small">
                     <p>No ads published yet. Click "Publish New Ad" to get started!</p>
                 </div>

@@ -151,6 +151,41 @@ export function renderMyAdsTable() {
         $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(rowData.spent);
         $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(rowData.remainingBudget);
 
+        // 添加截止日期显示
+        console.log("[End Date Debug] Starting for ad:", rowData.name);
+        const endDateEl = $2<HTMLElement>(tr, ".td-end-date");
+        console.log("[End Date Debug] endDateEl found:", !!endDateEl);
+        
+        const endDate = new Date(rowData.endDate);
+        const now = new Date();
+        console.log("[End Date Debug] Original endDate:", rowData.endDate, "Parsed:", endDate);
+        console.log("[End Date Debug] Current time:", now);
+        
+        // 设置时间为当天的开始（00:00:00），以便按天数比较
+        endDate.setHours(0, 0, 0, 0);
+        now.setHours(0, 0, 0, 0);
+        const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        console.log("[End Date Debug] Days until end:", daysUntilEnd);
+
+        // 格式化日期显示
+        endDateEl.textContent = new Date(rowData.endDate).toLocaleDateString();
+
+        // 根据剩余天数添加样式类
+        let cssClass = "";
+        if (daysUntilEnd < 0) {
+            cssClass = "end-date-expired";
+        } else if (daysUntilEnd <= 3) {
+            cssClass = "end-date-urgent";
+        } else if (daysUntilEnd <= 7) {
+            cssClass = "end-date-warning";
+        } else {
+            cssClass = "end-date-normal";
+        }
+        console.log("[End Date Debug] Applying CSS class:", cssClass);
+        endDateEl.className = cssClass;
+        console.log("[End Date Debug] Element classes after:", endDateEl.className);
+        console.log("[End Date Debug] Computed color:", window.getComputedStyle(endDateEl).color);
+
         const btnView = $2<HTMLButtonElement>(tr, ".btn-view");
         const btnToggle = $2<HTMLButtonElement>(tr, ".btn-toggle");
 

@@ -1531,3 +1531,24 @@ body {
     justify-content: flex-end;
     margin-top: 8px;
 }
+
+/* ==================== End Date Status Colors ==================== */
+.ads-table td.end-date-expired {
+    color: #6b7280 !important;
+    font-weight: 600;
+}
+
+.ads-table td.end-date-urgent {
+    color: #ef4444 !important;
+    font-weight: 700;
+}
+
+.ads-table td.end-date-warning {
+    color: #f59e0b !important;
+    font-weight: 700;
+}
+
+.ads-table td.end-date-normal {
+    color: #10b981 !important;
+    font-weight: 600;
+}
