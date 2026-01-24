@@ -1552,3 +1552,24 @@ body {
     color: #10b981 !important;
     font-weight: 600;
 }
+
+/* ==================== Status Colors ==================== */
+.status-active {
+    color: #10b981 !important;
+    font-weight: 700;
+}
+
+.status-error {
+    color: #ef4444 !important;
+    font-weight: 700;
+}
+
+.status-warning {
+    color: #f59e0b !important;
+    font-weight: 700;
+}
+
+.status-gray {
+    color: #6b7280 !important;
+    font-weight: 600;
+}

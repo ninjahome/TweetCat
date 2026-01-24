@@ -94,6 +94,20 @@ function mapStatus(status: 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EX
     return "Ended";
 }
 
+function setStatusColor(el: HTMLElement, status: string) {
+    el.style.color = ""; // Clear inline style if any
+    el.classList.remove("status-active", "status-error", "status-warning", "status-gray");
+    if (status === "ACTIVE") {
+        el.classList.add("status-active");
+    } else if (status === "PAUSED_NO_BUDGET") {
+        el.classList.add("status-error");
+    } else if (status === "PAUSED_MANUAL") {
+        el.classList.add("status-warning");
+    } else {
+        el.classList.add("status-gray");
+    }
+}
+
 function buildMyAdRow(ad: AdRecord): MyAdRow {
     const rewardPerTask = atomicToUsdcNumber(ad.unit_price_atomic);
     const completed = Number.isFinite(ad.quota_used) ? ad.quota_used : 0;
@@ -136,15 +150,7 @@ export function renderMyAdsTable() {
         // 根据状态显示不同颜色
         const statusEl = $2<HTMLElement>(tr, ".td-status");
         statusEl.textContent = rowData.status;
-        if (ad.status === "ACTIVE") {
-            statusEl.style.color = "#10b981"; // 绿色
-        } else if (ad.status === "PAUSED_NO_BUDGET") {
-            statusEl.style.color = "#ef4444"; // 红色
-        } else if (ad.status === "PAUSED_MANUAL") {
-            statusEl.style.color = "#f59e0b"; // 黄色
-        } else {
-            statusEl.style.color = "#6b7280"; // 灰色
-        }
+        setStatusColor(statusEl, ad.status);
 
         $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(rowData.rewardPerTask);
         $2<HTMLElement>(tr, ".td-completed").textContent = rowData.completed.toString();
@@ -152,39 +158,27 @@ export function renderMyAdsTable() {
         $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(rowData.remainingBudget);
 
         // 添加截止日期显示
-        console.log("[End Date Debug] Starting for ad:", rowData.name);
         const endDateEl = $2<HTMLElement>(tr, ".td-end-date");
-        console.log("[End Date Debug] endDateEl found:", !!endDateEl);
-        
         const endDate = new Date(rowData.endDate);
         const now = new Date();
-        console.log("[End Date Debug] Original endDate:", rowData.endDate, "Parsed:", endDate);
-        console.log("[End Date Debug] Current time:", now);
-        
         // 设置时间为当天的开始（00:00:00），以便按天数比较
         endDate.setHours(0, 0, 0, 0);
         now.setHours(0, 0, 0, 0);
         const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        console.log("[End Date Debug] Days until end:", daysUntilEnd);
 
         // 格式化日期显示
         endDateEl.textContent = new Date(rowData.endDate).toLocaleDateString();
 
         // 根据剩余天数添加样式类
-        let cssClass = "";
         if (daysUntilEnd < 0) {
-            cssClass = "end-date-expired";
+            endDateEl.className = "end-date-expired";
         } else if (daysUntilEnd <= 3) {
-            cssClass = "end-date-urgent";
+            endDateEl.className = "end-date-urgent";
         } else if (daysUntilEnd <= 7) {
-            cssClass = "end-date-warning";
+            endDateEl.className = "end-date-warning";
         } else {
-            cssClass = "end-date-normal";
+            endDateEl.className = "end-date-normal";
         }
-        console.log("[End Date Debug] Applying CSS class:", cssClass);
-        endDateEl.className = cssClass;
-        console.log("[End Date Debug] Element classes after:", endDateEl.className);
-        console.log("[End Date Debug] Computed color:", window.getComputedStyle(endDateEl).color);
 
         const btnView = $2<HTMLButtonElement>(tr, ".btn-view");
         const btnToggle = $2<HTMLButtonElement>(tr, ".btn-toggle");
@@ -221,12 +215,9 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume") {
         showLoading();
         const currentXId = getCurrentXId();
         const response = await x402WorkerFetch("/ads/toggle_status", {
-            method: "POST",
-            body: JSON.stringify({
-                ad_id: adId,
-                a_x_id: currentXId,
-                action: action
-            })
+            ad_id: adId,
+            a_x_id: currentXId,
+            action: action
         });
 
         if (response.ok) {
@@ -299,12 +290,9 @@ async function handleTopUpSubmit(adId: string) {
         const amountAtomic = usdcToAtomic(amountStr);
 
         await x402WorkerFetch("/ads/top_up_budget", {
-            method: "POST",
-            body: JSON.stringify({
-                ad_id: adId,
-                a_x_id: currentXId,
-                amount_atomic: amountAtomic
-            })
+            ad_id: adId,
+            a_x_id: currentXId,
+            amount_atomic: amountAtomic
         });
 
         showNotification("充值成功，广告已启用", "success");
@@ -334,15 +322,7 @@ function openAdDetailModal(ad: AdRecord) {
     const statusEl = $Id("detail-status");
     if (statusEl) {
         statusEl.textContent = mapStatus(ad.status);
-        if (ad.status === "ACTIVE") {
-            statusEl.style.color = "#10b981"; // 绿色
-        } else if (ad.status === "PAUSED_NO_BUDGET") {
-            statusEl.style.color = "#ef4444"; // 红色
-        } else if (ad.status === "PAUSED_MANUAL") {
-            statusEl.style.color = "#f59e0b"; // 黄色
-        } else {
-            statusEl.style.color = "#6b7280"; // 灰色
-        }
+        setStatusColor(statusEl, ad.status);
     }
 
     setText("detail-category", ad.category);
