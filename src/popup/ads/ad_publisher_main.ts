@@ -5,8 +5,6 @@ import {
     initNavEvents,
     initSpendTabs,
     refreshAdsData,
-    renderAdvertiseDashboard,
-    renderHeaderBalance,
     renderMyAdsTable,
     renderSpendTable,
     fetchDashboardInfo
@@ -16,9 +14,9 @@ import {logAdP} from "../../common/debug_flags";
 import {initRechargeModalEvents} from "./ad_publisher_balance";
 
 async function initAdvertise() {
-    // 初始空态渲染
-    renderHeaderBalance();
-    renderAdvertiseDashboard();
+    // 初始空态渲染 - 不再需要，因为将由新的dashboard API处理
+    // renderHeaderBalance();
+    // renderAdvertiseDashboard();
     renderMyAdsTable();
     renderSpendTable();
 
@@ -34,7 +32,7 @@ async function initAdvertise() {
         await initWalletInfo();
         logAdP("------>>> wallet info:", publisherState.walletInfoCache);
         
-        // 调用新的dashboard info API并将结果输出到日志
+        // 调用新的dashboard info API并将结果输出到日志，同时更新UI
         await fetchDashboardInfo();
         
         await refreshAdsData();

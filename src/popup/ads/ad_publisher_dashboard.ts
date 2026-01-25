@@ -29,18 +29,24 @@ export async function refreshAdsData() {
         x402WorkerGet("/ads/my_ads", {a_x_id: currentXId}),
     ]);
 
-    publisherState.adAccountInfo = {
-        balanceAtomic: balance?.balance_atomic ?? "0",
-        frozenAtomic: balance?.frozen_atomic ?? "0",
+    publisherState.dashboardInfo = {
+        balance_atomic: balance?.balance_atomic ?? "0",
+        frozen_atomic: balance?.frozen_atomic ?? "0",
+        active_campaigns_count: 0,
+        today_spend_atomic: "0",
+        week_spend_atomic: "0"
     };
 
     publisherState.myAds = Array.isArray(ads) ? (ads as AdRecord[]) : [];
     logAdP("------>>> balance:", balance, " my ads:", publisherState.myAds);
 
-    renderHeaderBalance();
-    renderAdvertiseDashboard();
+    // DEPRECATED: 旧的渲染函数调用已被移除，现在由新的dashboard API统一处理
+    // 旧的 renderHeaderBalance(); 调用
+    // 旧的 renderAdvertiseDashboard(); 调用
     renderMyAdsTable();
     updateBudgetSummaryAndBalance();
+    
+    // 注意：不再调用 fetchDashboardInfo()，该操作将独立进行
 }
 
 // 新增函数：获取dashboard信息
@@ -51,6 +57,32 @@ export async function fetchDashboardInfo() {
         const dashboardInfo = await x402WorkerGet("/ads/publisher/dashboard_info", {a_x_id: currentXId});
         console.log("Dashboard info:", dashboardInfo);
         logAdP("Dashboard info:", dashboardInfo);
+        
+        // 使用新的dashboard API结果更新UI元素
+        const availableEl = $Id("ad-account-balance-value");
+        if (availableEl) availableEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.balance_atomic));
+
+        const frozenEl = $Id("ad-account-frozen-value");
+        if (frozenEl) frozenEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.frozen_atomic));
+        
+        // 更新活跃广告数量
+        const activeCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-active .card-value");
+        if (activeCards.length > 0) {
+            activeCards[0].textContent = dashboardInfo.active_campaigns_count.toString();
+        }
+        
+        // 更新今日花费
+        const todayCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-spend[data-range='today'] .card-value");
+        if (todayCards.length > 0) {
+            todayCards[0].textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.today_spend_atomic));
+        }
+        
+        // 更新本周花费
+        const weekCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-spend[data-range='week'] .card-value");
+        if (weekCards.length > 0) {
+            weekCards[0].textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.week_spend_atomic));
+        }
+        
         return dashboardInfo;
     } catch (error) {
         console.error("Failed to fetch dashboard info:", error);
@@ -60,35 +92,10 @@ export async function fetchDashboardInfo() {
 }
 
 // ========= 顶部余额 & Advertise 仪表盘 =========
-export function renderHeaderBalance() {
-    const availableEl = $Id("ad-account-balance-value");
-    if (availableEl) availableEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.adAccountInfo.balanceAtomic));
+// DEPRECATED: 以下函数已被弃用，不再使用
+// 旧的 renderHeaderBalance 函数已被删除，现在由新的dashboard API统一处理
+// 旧的 renderAdvertiseDashboard 函数已被删除，现在由新的dashboard API统一处理
 
-    const frozenEl = $Id("ad-account-frozen-value");
-    if (frozenEl) frozenEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.adAccountInfo.frozenAtomic ?? "0"));
-}
-
-export function renderAdvertiseDashboard() {
-    const cards = Array.from(document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card"));
-
-    const card1Value = cards[0] ? $2<HTMLElement>(cards[0], ".card-value") : null;
-    if (card1Value) card1Value.textContent = formatUSDC(atomicToUsdcNumber(publisherState.adAccountInfo.balanceAtomic));
-
-    const activeCount = publisherState.myAds.filter((ad) => ad.status === "ACTIVE").length;
-    const card2Value = cards[1] ? $2<HTMLElement>(cards[1], ".card-value") : null;
-    if (card2Value) card2Value.textContent = activeCount.toString();
-
-    const todaySpend = publisherState.myAds.reduce((sum, ad) => {
-        const spent = atomicToUsdcNumber(multiplyAtomic(ad.unit_price_atomic, ad.quota_used));
-        return sum + spent;
-    }, 0);
-    const card3Value = cards[2] ? $2<HTMLElement>(cards[2], ".card-value") : null;
-    if (card3Value) card3Value.textContent = formatUSDC(todaySpend);
-
-    const weekSpend = todaySpend;
-    const card4Value = cards[3] ? $2<HTMLElement>(cards[3], ".card-value") : null;
-    if (card4Value) card4Value.textContent = formatUSDC(weekSpend);
-}
 
 // ========= My Ads 表格 =========
 interface MyAdRow {
@@ -261,9 +268,11 @@ function handleTopUpAdBudget(adId: string) {
     if (input) input.value = "";
 
     // Show Balance
+    // DEPRECATED: 获取余额的方式已更改，现在应通过新的dashboard API获取
     const balanceEl = $Id("top-up-available-balance");
     if (balanceEl) {
-        balanceEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.adAccountInfo.balanceAtomic));
+        // 余额值应通过新的dashboard API获取并更新
+        // 旧的赋值方式：balanceEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_info.balance_atomic));
     }
 
     // Bind Confirm Action
@@ -529,16 +538,16 @@ export function updateBudgetSummaryAndBalance() {
     if (summaryTotal) summaryTotal.textContent = formatUSDC(total);
 
     const currentBalance = $Id("current-balance");
-    if (currentBalance) currentBalance.textContent = formatUSDC(atomicToUsdcNumber(publisherState.adAccountInfo.balanceAtomic));
+    if (currentBalance) currentBalance.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
 
     const balanceStatus = $Id("balance-status");
     if (balanceStatus) {
         balanceStatus.className = "balance-status";
 
-        if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(publisherState.adAccountInfo.balanceAtomic) >= BigInt(requiredAtomic)) {
+        if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(publisherState.dashboardInfo.balance_atomic) >= BigInt(requiredAtomic)) {
             balanceStatus.classList.add("sufficient");
             balanceStatus.textContent = "Your balance is sufficient to publish this ad.";
-        } else if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(publisherState.adAccountInfo.balanceAtomic) < BigInt(requiredAtomic)) {
+        } else if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(publisherState.dashboardInfo.balance_atomic) < BigInt(requiredAtomic)) {
             balanceStatus.classList.add("insufficient");
             balanceStatus.textContent = "Insufficient balance. Please recharge before publishing.";
         } else {

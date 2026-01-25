@@ -97,10 +97,10 @@ function syncTransferModalUI() {
     if (walletBal) walletBal.textContent = normalizeWalletUsdcDisplay(publisherState.walletInfoCache?.usdcVal ?? "0.00");
 
     const adsAvail = $Id("transfer-ads-available");
-    if (adsAvail) adsAvail.textContent = formatUSDC(atomicToUsdcNumber(publisherState.adAccountInfo.balanceAtomic));
+    if (adsAvail) adsAvail.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
 
     const adsFrozen = $Id("transfer-ads-frozen");
-    if (adsFrozen) adsFrozen.textContent = formatUSDC(atomicToUsdcNumber(publisherState.adAccountInfo.frozenAtomic ?? "0"));
+    if (adsFrozen) adsFrozen.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.frozen_atomic ?? "0"));
 
     const amountInput = $Id("transfer-amount") as HTMLInputElement | null;
     if (amountInput) amountInput.value = "";
@@ -185,7 +185,7 @@ function prepareEscrowTransferParam(): any {
     if (!publisherState.walletInfoCache?.xId) throw new Error("Missing user xId. Please sign in again.");
 
     if (transferDirection === "ads_to_wallet") {
-        const maxAds = atomicToUsdcNumber(publisherState.adAccountInfo.balanceAtomic);
+        const maxAds = atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic);
         if (amount > maxAds + 1e-9) throw new Error("Amount exceeds Ads Available.");
     }
 
@@ -258,7 +258,7 @@ export function initRechargeModalEvents() {
         const max =
             transferDirection === "wallet_to_ads"
                 ? parseUsdcNumber(publisherState.walletInfoCache?.usdcVal ?? "0")
-                : atomicToUsdcNumber(publisherState.adAccountInfo.balanceAtomic);
+                : atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic);
 
         input.value = Math.max(0, max).toFixed(2);
     });

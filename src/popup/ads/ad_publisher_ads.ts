@@ -174,12 +174,15 @@ async function handlePublishClick(): Promise<void> {
         const xId = getCurrentXId();
         const balance = await x402WorkerGet("/ads/balance", {a_x_id: xId});
 
-        publisherState.adAccountInfo = {
-            balanceAtomic: balance?.balance_atomic ?? "0",
-            frozenAtomic: balance?.frozen_atomic ?? "0",
+        publisherState.dashboardInfo = {
+            balance_atomic: balance?.balance_atomic ?? "0",
+            frozen_atomic: balance?.frozen_atomic ?? "0",
+            active_campaigns_count: 0,
+            today_spend_atomic: "0",
+            week_spend_atomic: "0"
         };
 
-        if (isZeroAtomic(publisherState.adAccountInfo.balanceAtomic)) {
+        if (isZeroAtomic(publisherState.dashboardInfo.balance_atomic)) {
             showNotification("Balance is 0. Please recharge before publishing.", "error");
             openRechargeModal();
             return;

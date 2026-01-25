@@ -485,7 +485,11 @@ export async function ensureEscrowAccount(db: D1Database, aXId: string): Promise
  * 一次性获取活跃广告数、今日花费和本周花费
  */
 export async function getPublisherDashboardStats(db: D1Database, aXId: string) {
-	const sql = `
+	const balanceResult = await db.prepare(
+		"SELECT available_atomic as balance_atomic, frozen_atomic FROM ad_escrow_accounts WHERE a_x_id = ? AND asset_symbol = 'USDC'"
+	).bind(aXId).first<{balance_atomic: string, frozen_atomic: string}>();
+	
+	const statsSql = `
 		SELECT 
 			(SELECT COUNT(*) FROM ad_campaigns 
 			 WHERE a_x_id = ? 
@@ -504,16 +508,18 @@ export async function getPublisherDashboardStats(db: D1Database, aXId: string) {
 			   AND date(arc.created_at) >= date('now', '-7 days')) as week_spend_atomic
 	`;
 	
-	const result = await db.prepare(sql).bind(aXId, aXId, aXId).first<{
+	const statsResult = await db.prepare(statsSql).bind(aXId, aXId, aXId).first<{
 		active_campaigns_count: number;
 		today_spend_atomic: string;
 		week_spend_atomic: string;
 	}>();
 	
 	return {
-		active_campaigns_count: result?.active_campaigns_count ?? 0,
-		today_spend_atomic: result?.today_spend_atomic ?? "0",
-		week_spend_atomic: result?.week_spend_atomic ?? "0"
+		balance_atomic: balanceResult?.balance_atomic ?? "0",
+		frozen_atomic: balanceResult?.frozen_atomic ?? "0",
+		active_campaigns_count: statsResult?.active_campaigns_count ?? 0,
+		today_spend_atomic: statsResult?.today_spend_atomic ?? "0",
+		week_spend_atomic: statsResult?.week_spend_atomic ?? "0"
 	};
 }
 

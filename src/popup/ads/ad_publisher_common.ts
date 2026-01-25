@@ -50,9 +50,24 @@ export interface HistoryRow {
     txHash?: string | null;
 }
 
+// ========= Dashboard Info 相关类型定义 =========
+export interface DashboardInfo {
+    balance_atomic: string;
+    frozen_atomic: string;
+    active_campaigns_count: number;
+    today_spend_atomic: string;
+    week_spend_atomic: string;
+}
+
 // ========= 共享状态（原来那些 let 全搬到这里） =========
 export const publisherState = {
-    adAccountInfo: {balanceAtomic: "0", frozenAtomic: "0"} as AdAccountInfo,
+    dashboardInfo: {
+        balance_atomic: "0",
+        frozen_atomic: "0",
+        active_campaigns_count: 0,
+        today_spend_atomic: "0",
+        week_spend_atomic: "0"
+    } as DashboardInfo,
     myAds: [] as AdRecord[],
     spendRecords: [] as SpendRecord[],
     historyRecharge: [] as HistoryRow[],

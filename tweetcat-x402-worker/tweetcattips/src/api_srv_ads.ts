@@ -703,30 +703,15 @@ export async function apiAdsPublisherDashboardInfo(c: ExtCtx) {
 		const aXId = c.req.query("a_x_id");
 		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 
-		// 获取账户余额信息
-		const balanceInfo = await getAdAccountBalance(c.env.DB, aXId);
-
-		// 如果账户不存在，返回默认值
-		const accountInfo = balanceInfo || {
-			a_x_id: aXId,
-			asset_symbol: "USDC",
-			available_atomic: "0",
-			frozen_atomic: "0"
-		};
-
-		// 查询仪表盘统计数据（一次性获取所有统计信息）
+		// 查询仪表盘统计数据（一次性获取所有统计信息，包括余额和统计数据）
 		const stats = await getPublisherDashboardStats(c.env.DB, aXId);
 
 		return c.json({
-			balance_info: {
-				balance_atomic: accountInfo.available_atomic,
-				frozen_atomic: accountInfo.frozen_atomic
-			},
-			dashboard_stats: {
-				active_campaigns_count: stats.active_campaigns_count,
-				today_spend_atomic: stats.today_spend_atomic,
-				week_spend_atomic: stats.week_spend_atomic
-			}
+			balance_atomic: stats.balance_atomic,
+			frozen_atomic: stats.frozen_atomic,
+			active_campaigns_count: stats.active_campaigns_count,
+			today_spend_atomic: stats.today_spend_atomic,
+			week_spend_atomic: stats.week_spend_atomic
 		});
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
