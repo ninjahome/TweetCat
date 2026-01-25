@@ -5,6 +5,8 @@ import {queryCdpWalletInfo, x402WorkerGet} from "../../wallet/cdp_wallet";
 
 export type AdStatus = "Active" | "Paused" | "Paused (No Budget)" | "Ended";
 
+export type AdStatusBackend = 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EXPIRED' | 'COMPLETED';
+
 export interface AdAccountInfo {
     balanceAtomic: string;
     frozenAtomic: string; // frozen
@@ -24,7 +26,7 @@ export interface AdRecord {
     unit_price_atomic: string;
     quota_total: number;
     quota_used: number;
-    status: 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EXPIRED' | 'COMPLETED';
+    status: AdStatusBackend;
     end_date: string; // Changed from duration_days
     created_at: string;
     updated_at?: string | null;

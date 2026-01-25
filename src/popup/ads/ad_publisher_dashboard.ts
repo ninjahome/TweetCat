@@ -10,30 +10,31 @@ import {
     showLoading,
     hideLoading
 } from "../common";
-import { logAdP } from "../../common/debug_flags";
+import {logAdP} from "../../common/debug_flags";
 import {
     fetchAdEscrowLedger,
     openTxInExplorer,
     publisherState
 } from "./ad_publisher_common";
-import type { AdRecord, AdStatus, HistoryRow } from "./ad_publisher_common";
-import { getCurrentXId } from "./ad_publisher_common";
-import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
+import type {AdRecord, AdStatus, HistoryRow} from "./ad_publisher_common";
+import {getCurrentXId} from "./ad_publisher_common";
+import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
 
 // ========= 数据刷新 =========
 export async function refreshAdsData() {
     const currentXId = getCurrentXId();
+
     const [balance, ads] = await Promise.all([
-        x402WorkerGet("/ads/balance", { a_x_id: currentXId }),
-        (await x402WorkerGet("/ads/my_ads", { a_x_id: currentXId })) as AdRecord[],
+        x402WorkerGet("/ads/balance", {a_x_id: currentXId}),
+        x402WorkerGet("/ads/my_ads", {a_x_id: currentXId}),
     ]);
 
     publisherState.adAccountInfo = {
         balanceAtomic: balance?.balance_atomic ?? "0",
         frozenAtomic: balance?.frozen_atomic ?? "0",
     };
-    publisherState.myAds = Array.isArray(ads) ? ads : [];
 
+    publisherState.myAds = Array.isArray(ads) ? (ads as AdRecord[]) : [];
     logAdP("------>>> balance:", balance, " my ads:", publisherState.myAds);
 
     renderHeaderBalance();
@@ -444,7 +445,7 @@ function openAdDetailModal(ad: AdRecord) {
             btnTopUp.textContent = "充值并启用";
             btnTopUp.onclick = async () => {
                 modal.classList.remove("active");
-                await handleTopUpAdBudget(ad.ad_id);
+                handleTopUpAdBudget(ad.ad_id);
             };
             modalActions.appendChild(btnTopUp);
         }
@@ -669,7 +670,7 @@ async function loadAndRenderTransferHistory(): Promise<void> {
             status = `Failed: ${errorMsg}`;
         }
 
-        return { time, adNameOrMethod, amount, status, txHash: row.tx_hash || null };
+        return {time, adNameOrMethod, amount, status, txHash: row.tx_hash || null};
     });
 
     publisherState.historyRecharge = mappedRows;
