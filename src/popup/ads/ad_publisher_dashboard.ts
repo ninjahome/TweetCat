@@ -43,6 +43,22 @@ export async function refreshAdsData() {
     updateBudgetSummaryAndBalance();
 }
 
+// 新增函数：获取dashboard信息
+export async function fetchDashboardInfo() {
+    const currentXId = getCurrentXId();
+    
+    try {
+        const dashboardInfo = await x402WorkerGet("/ads/publisher/dashboard_info", {a_x_id: currentXId});
+        console.log("Dashboard info:", dashboardInfo);
+        logAdP("Dashboard info:", dashboardInfo);
+        return dashboardInfo;
+    } catch (error) {
+        console.error("Failed to fetch dashboard info:", error);
+        logAdP("Failed to fetch dashboard info:", error);
+        return null;
+    }
+}
+
 // ========= 顶部余额 & Advertise 仪表盘 =========
 export function renderHeaderBalance() {
     const availableEl = $Id("ad-account-balance-value");

@@ -33,6 +33,7 @@ export const API_PATH_ADS_PUBLISHER_WITHDRAW = "/ads/publisher/withdraw";
 export const API_PATH_ADS_PUBLISHER_LEDGER = "/ads/publisher/ledger";
 export const API_PATH_ADS_TOGGLE_STATUS = "/ads/toggle_status";
 export const API_PATH_ADS_TOP_UP_BUDGET = "/ads/top_up_budget";
+export const API_PATH_ADS_PUBLISHER_DASHBOARD_INFO = "/ads/publisher/dashboard_info";
 
 export const signedOperationPaths: string[] = [
     API_PATH_ADS_CREATE,

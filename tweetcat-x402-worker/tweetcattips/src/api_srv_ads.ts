@@ -19,7 +19,8 @@ import {
 	API_PATH_ADS_PUBLISHER_WITHDRAW,
 	API_PATH_ADS_PUBLISHER_LEDGER,
 	API_PATH_ADS_TOGGLE_STATUS,
-	API_PATH_ADS_TOP_UP_BUDGET
+	API_PATH_ADS_TOP_UP_BUDGET,
+	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO
 } from "./common";
 import {
 	AdCategory,
@@ -55,7 +56,7 @@ import {
 	getPerformerHistory,
 	type AdCreatePayload,
 	type CreateDetailedClaimParams,
-	type AdCampaignStatus,
+	type AdCampaignStatus, getPublisherDashboardStats,
 } from "./database_ad";
 import {internalTreasurySettle, PaymentRequiredError, x402Workflow} from "./api_srv_x402";
 import {getKolBindingByXId} from "./database_402";
@@ -453,7 +454,7 @@ export async function apiAdsMyClaims(c: ExtCtx) {
 export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
 	try {
 		// ✅ 使用新的解析函数
-		const { aXId, amountAtomic } = await parseEscrowRequestParams(c);
+		const {aXId, amountAtomic} = await parseEscrowRequestParams(c);
 
 		const payTo = (c.env.TREASURY_ADDRESS as `0x${string}`)
 		const settleResult = await x402Workflow(c, payTo, amountAtomic, "USDC Transfer To Ad Escrow Account");
@@ -493,7 +494,7 @@ export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
 			await creditEscrowBalance(c.env.DB, aXId, amountAtomic);
 		}
 
-		return c.json({ success: true, txHash});
+		return c.json({success: true, txHash});
 	} catch (err: any) {
 		// ✅ 处理自定义的 EscrowRequestError
 		if (err instanceof EscrowRequestError) {
@@ -516,7 +517,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 		console.log("[apiWithdrawFromAdsEscrowAccount] 开始处理提现请求");
 
 		// ✅ 使用新的解析函数
-		const { aXId, amountAtomic } = await parseEscrowRequestParams(c);
+		const {aXId, amountAtomic} = await parseEscrowRequestParams(c);
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 参数验证成功: aXId=${aXId}, amountAtomic=${amountAtomic}`);
 
 		// 从 kol_binding 表查询用户的绑定钱包地址（原路返回）
@@ -695,6 +696,63 @@ export async function apiAdsPublisherLedger(c: ExtCtx) {
 }
 
 /**
+ * 查询广告主的仪表盘信息
+ */
+export async function apiAdsPublisherDashboardInfo(c: ExtCtx) {
+	try {
+		const aXId = c.req.query("a_x_id");
+		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		// 获取账户余额信息
+		const balanceInfo = await getAdAccountBalance(c.env.DB, aXId);
+
+		// 如果账户不存在，返回默认值
+		const accountInfo = balanceInfo || {
+			a_x_id: aXId,
+			asset_symbol: "USDC",
+			available_atomic: "0",
+			frozen_atomic: "0"
+		};
+
+		// 查询仪表盘统计数据（一次性获取所有统计信息）
+		const stats = await getPublisherDashboardStats(c.env.DB, aXId);
+
+		return c.json({
+			balance_info: {
+				balance_atomic: accountInfo.available_atomic,
+				frozen_atomic: accountInfo.frozen_atomic
+			},
+			dashboard_stats: {
+				active_campaigns_count: stats.active_campaigns_count,
+				today_spend_atomic: stats.today_spend_atomic,
+				week_spend_atomic: stats.week_spend_atomic
+			}
+		});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 注册广告相关路由
+ */
+export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
+	app.get(API_PATH_ADS_BALANCE, apiAdsBalance);
+	app.post(API_PATH_ADS_CREATE, apiAdsCreate);
+	app.post(API_PATH_ADS_UPDATE, apiAdsUpdate);
+	app.get(API_PATH_ADS_MY_ADS, apiAdsMyAds);
+	app.get(API_PATH_ADS_LIST, apiAdsList);
+	app.post(API_PATH_ADS_CLAIM, apiAdsClaim);
+	app.get(API_PATH_ADS_MY_CLAIMS, apiAdsMyClaims);
+	app.post(API_PATH_ADS_PUBLISHER_RECHARGE, apiRechargeToAdEscrowAccount);
+	app.post(API_PATH_ADS_PUBLISHER_WITHDRAW, apiWithdrawFromAdsEscrowAccount);
+	app.get(API_PATH_ADS_PUBLISHER_LEDGER, apiAdsPublisherLedger);
+	app.get(API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, apiAdsPublisherDashboardInfo);
+	app.post(API_PATH_ADS_TOGGLE_STATUS, apiAdsToggleStatus);
+	app.post(API_PATH_ADS_TOP_UP_BUDGET, apiAdsTopUpBudget);
+}
+
+/**
  * 切换广告状态（启用/暂停）
  */
 export async function apiAdsToggleStatus(c: ExtCtx) {
@@ -740,7 +798,7 @@ export async function apiAdsToggleStatus(c: ExtCtx) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status");
 		}
 
-		return c.json({ ok: true, ad_id: adId, new_status: newStatus });
+		return c.json({ok: true, ad_id: adId, new_status: newStatus});
 	} catch (err: any) {
 		console.error("[apiAdsToggleStatus Error]", err);
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
@@ -789,27 +847,9 @@ export async function apiAdsTopUpBudget(c: ExtCtx) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status after top-up");
 		}
 
-		return c.json({ ok: true, ad_id: adId, topped_up_atomic: amountAtomic, new_status: "ACTIVE" });
+		return c.json({ok: true, ad_id: adId, topped_up_atomic: amountAtomic, new_status: "ACTIVE"});
 	} catch (err: any) {
 		console.error("[apiAdsTopUpBudget Error]", err);
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
 	}
-}
-
-/**
- * 注册广告相关路由
- */
-export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
-	app.get(API_PATH_ADS_BALANCE, apiAdsBalance);
-	app.post(API_PATH_ADS_CREATE, apiAdsCreate);
-	app.post(API_PATH_ADS_UPDATE, apiAdsUpdate);
-	app.get(API_PATH_ADS_MY_ADS, apiAdsMyAds);
-	app.get(API_PATH_ADS_LIST, apiAdsList);
-	app.post(API_PATH_ADS_CLAIM, apiAdsClaim);
-	app.get(API_PATH_ADS_MY_CLAIMS, apiAdsMyClaims);
-	app.post(API_PATH_ADS_PUBLISHER_RECHARGE, apiRechargeToAdEscrowAccount);
-	app.post(API_PATH_ADS_PUBLISHER_WITHDRAW, apiWithdrawFromAdsEscrowAccount);
-	app.get(API_PATH_ADS_PUBLISHER_LEDGER, apiAdsPublisherLedger);
-	app.post(API_PATH_ADS_TOGGLE_STATUS, apiAdsToggleStatus);
-	app.post(API_PATH_ADS_TOP_UP_BUDGET, apiAdsTopUpBudget);
 }

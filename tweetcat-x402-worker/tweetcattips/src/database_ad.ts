@@ -481,6 +481,43 @@ export async function ensureEscrowAccount(db: D1Database, aXId: string): Promise
 }
 
 /**
+ * 查询广告发布者的仪表盘统计数据
+ * 一次性获取活跃广告数、今日花费和本周花费
+ */
+export async function getPublisherDashboardStats(db: D1Database, aXId: string) {
+	const sql = `
+		SELECT 
+			(SELECT COUNT(*) FROM ad_campaigns 
+			 WHERE a_x_id = ? 
+			   AND status = 'ACTIVE'
+			   AND end_date > datetime('now')
+			   AND quota_used < quota_total) as active_campaigns_count,
+			(SELECT COALESCE(SUM(ac.unit_price_atomic), '0') FROM ad_reward_claims arc
+			 JOIN ad_campaigns ac ON arc.ad_id = ac.ad_id
+			 WHERE ac.a_x_id = ?
+			   AND arc.status IN ('CONFIRMED', 'SETTLED_TIMEOUT')
+			   AND date(arc.created_at) = date('now')) as today_spend_atomic,
+			(SELECT COALESCE(SUM(ac.unit_price_atomic), '0') FROM ad_reward_claims arc
+			 JOIN ad_campaigns ac ON arc.ad_id = ac.ad_id
+			 WHERE ac.a_x_id = ?
+			   AND arc.status IN ('CONFIRMED', 'SETTLED_TIMEOUT')
+			   AND date(arc.created_at) >= date('now', '-7 days')) as week_spend_atomic
+	`;
+	
+	const result = await db.prepare(sql).bind(aXId, aXId, aXId).first<{
+		active_campaigns_count: number;
+		today_spend_atomic: string;
+		week_spend_atomic: string;
+	}>();
+	
+	return {
+		active_campaigns_count: result?.active_campaigns_count ?? 0,
+		today_spend_atomic: result?.today_spend_atomic ?? "0",
+		week_spend_atomic: result?.week_spend_atomic ?? "0"
+	};
+}
+
+/**
  * 查询现有的托管账本记录（用于幂等性检查）
  * @param db - D1 数据库实例
  * @param aXId - 广告主 X ID

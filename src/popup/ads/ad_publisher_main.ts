@@ -8,7 +8,8 @@ import {
     renderAdvertiseDashboard,
     renderHeaderBalance,
     renderMyAdsTable,
-    renderSpendTable
+    renderSpendTable,
+    fetchDashboardInfo
 } from "./ad_publisher_dashboard";
 import {initWizardEvents} from "./ad_publisher_ads";
 import {logAdP} from "../../common/debug_flags";
@@ -32,6 +33,10 @@ async function initAdvertise() {
     try {
         await initWalletInfo();
         logAdP("------>>> wallet info:", publisherState.walletInfoCache);
+        
+        // 调用新的dashboard info API并将结果输出到日志
+        await fetchDashboardInfo();
+        
         await refreshAdsData();
     } catch (err: any) {
         console.error("Failed to initialize wallet info:", err);
