@@ -1,12 +1,9 @@
 import {$Id, atomicToUsdcNumber, formatUSDC, openTxInExplorer, showNotification} from "../common";
-import {normalizeWalletUsdcDisplay, parseUsdcNumber, publisherState, updateHeaderInfo} from "./ad_publisher_common";
-import {refreshAdsData} from "./ad_publisher_dashboard";
-import {postToX402SrvByPri, queryCdpWalletInfo, x402WorkerFetch} from "../../wallet/cdp_wallet";
-import {getChainId} from "../../wallet/wallet_setting";
+import {normalizeWalletUsdcDisplay, parseUsdcNumber, publisherState} from "./ad_publisher_common";
+import {postToX402SrvByPri, x402WorkerFetch} from "../../wallet/cdp_wallet";
 
 type TransferDirection = "wallet_to_ads" | "ads_to_wallet";
 let transferDirection: TransferDirection = "wallet_to_ads";
-let isTransferBusy = false;
 
 function setTransferInlineError(message: string | null): void {
     const inlineError = $Id("transfer-inline-error");
@@ -24,7 +21,6 @@ function setTransferInlineError(message: string | null): void {
 }
 
 function setTransferBusy(isBusy: boolean, label?: string): void {
-    isTransferBusy = isBusy;
 
     const overlay = $Id("loading-overlay");
     if (overlay) overlay.style.display = isBusy ? "flex" : "none";
@@ -111,18 +107,7 @@ export function openRechargeModal() {
     if (modal) modal.classList.add("active");
 
     syncTransferModalUI();
-    setTransferDirection("wallet_to_ads");
-    setTransferInlineError(null);
-
-    const limitDetails = $Id("monthly-limit-details");
-    if (limitDetails) {
-        limitDetails.classList.add("hidden");
-        const viewTxBtn = $Id("btn-view-previous-tx") as HTMLButtonElement | null;
-        if (viewTxBtn) {
-            viewTxBtn.classList.add("hidden");
-            viewTxBtn.onclick = null;
-        }
-    }
+    setTransferDirection("wallet_to_ads"); // 这个函数内部已经处理了错误状态清空和limitDetails隐藏
 }
 
 function closeRechargeModal() {
@@ -130,13 +115,8 @@ function closeRechargeModal() {
     if (modal) modal.classList.remove("active");
 }
 
-async function refreshWalletAndAdsUI(): Promise<void> {
-    const chainId = await getChainId();
-    publisherState.walletInfoCache = await queryCdpWalletInfo(chainId);
-    updateHeaderInfo();
-    await refreshAdsData();
-    syncTransferModalUI();
-}
+// DEPRECATED: 此函数已被废弃，钱包和广告数据的刷新现在通过统一的fetchDashboardInfo API处理
+// 旧的refreshWalletAndAdsUI函数实现已删除，参见ad_publisher_dashboard.ts中的fetchDashboardInfo函数
 
 function handleMonthlyWithdrawLimitIfNeeded(result: any) {
     if (!result || result.alreadyWithdrawn !== true) return;
@@ -226,7 +206,9 @@ async function handleAdsEscrowTransfer(): Promise<void> {
 
         closeRechargeModal();
         await openTxInExplorer(txHash);
-        refreshWalletAndAdsUI().then();
+        // DEPRECATED: 刷新逻辑已废弃，改为调用统一的仪表盘API
+        // 旧的refreshWalletAndAdsUI调用已被删除，参见ad_publisher_dashboard.ts中的fetchDashboardInfo函数
+        // refreshWalletAndAdsUI().then();
         showNotification("Transfer submitted successfully.", "success");
     } catch (e: any) {
         const msg = (e?.message || "Transfer failed").toString();

@@ -1,6 +1,5 @@
 import {
-    getCurrentXUserName,
-    isZeroAtomic
+    getCurrentXUserName
 } from "./ad_publisher_common";
 import {getCurrentXId} from "./ad_publisher_common";
 import {updateBudgetSummaryAndBalance} from "./ad_publisher_dashboard";
@@ -8,10 +7,8 @@ import {
     $Id,
     showNotification, usdcToAtomic, showLoading, hideLoading
 } from "../common";
-import {publisherState} from "./ad_publisher_common";
 import {refreshAdsData} from "./ad_publisher_dashboard";
-import {openRechargeModal} from "./ad_publisher_balance";
-import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
+import {x402WorkerFetch} from "../../wallet/cdp_wallet";
 
 // ========= 发布广告向导（Wizard） =========
 let wizardCurrentStep = 1;
@@ -39,14 +36,6 @@ function resetWizardForm() {
     const adUrlInput = document.querySelector<HTMLInputElement>("#ad-url");
     if (adUrlInput) adUrlInput.style.backgroundColor = "";
 }
-
-function openWizard() {
-    wizardCurrentStep = 1;
-    updateWizardUI();
-    const modal = $Id("publish-wizard-modal");
-    if (modal) modal.classList.add("active");
-}
-
 function closeWizard() {
     const modal = $Id("publish-wizard-modal");
     if (modal) modal.classList.remove("active");
@@ -164,35 +153,9 @@ function goWizardPrev() {
 /**
  * ✅ 点击 Publish 按钮：先检查 Ads 余额；为 0 => 提示充值并打开 recharge-modal
  */
-async function handlePublishClick(): Promise<void> {
-    try {
-        if (!publisherState.walletInfoCache?.xId) {
-            showNotification("Please sign in first.", "error");
-            return;
-        }
+// DEPRECATED: 此函数已被废弃，余额检查和仪表盘信息现在通过统一的fetchDashboardInfo API处理
+// 旧的handlePublishClick函数实现已删除，参见ad_publisher_dashboard.ts中的fetchDashboardInfo函数
 
-        const xId = getCurrentXId();
-        const balance = await x402WorkerGet("/ads/balance", {a_x_id: xId});
-
-        publisherState.dashboardInfo = {
-            balance_atomic: balance?.balance_atomic ?? "0",
-            frozen_atomic: balance?.frozen_atomic ?? "0",
-            active_campaigns_count: 0,
-            today_spend_atomic: "0",
-            week_spend_atomic: "0"
-        };
-
-        if (isZeroAtomic(publisherState.dashboardInfo.balance_atomic)) {
-            showNotification("Balance is 0. Please recharge before publishing.", "error");
-            openRechargeModal();
-            return;
-        }
-
-        openWizard();
-    } catch (e: any) {
-        showNotification(e?.message || "Failed to check balance.", "error");
-    }
-}
 
 async function submitWizard() {
     const submitBtn = $Id("btn-wizard-submit") as HTMLButtonElement | null;
@@ -296,9 +259,6 @@ async function submitWizard() {
 }
 
 export function initWizardEvents() {
-    const btnPublish = $Id("btn-publish-ad") as HTMLButtonElement | null;
-    if (btnPublish) btnPublish.addEventListener("click", () => void handlePublishClick());
-
     const closeWizardBtn = $Id("close-wizard") as HTMLButtonElement | null;
     if (closeWizardBtn) closeWizardBtn.addEventListener("click", closeWizard);
 
