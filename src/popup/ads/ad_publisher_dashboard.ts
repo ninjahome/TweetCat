@@ -23,33 +23,14 @@ import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
 // ========= 数据刷新 =========
 export async function refreshAdsData() {
     const currentXId = getCurrentXId();
-
-    const [balance, ads] = await Promise.all([
-        x402WorkerGet("/ads/balance", {a_x_id: currentXId}),
-        x402WorkerGet("/ads/my_ads", {a_x_id: currentXId}),
-    ]);
-
-    publisherState.dashboardInfo = {
-        balance_atomic: balance?.balance_atomic ?? "0",
-        frozen_atomic: balance?.frozen_atomic ?? "0",
-        active_campaigns_count: 0,
-        today_spend_atomic: "0",
-        week_spend_atomic: "0"
-    };
-
+    const ads = await x402WorkerGet("/ads/my_ads", {a_x_id: currentXId});
     publisherState.myAds = Array.isArray(ads) ? (ads as AdRecord[]) : [];
-    logAdP("------>>> balance:", balance, " my ads:", publisherState.myAds);
-
-    // DEPRECATED: 旧的渲染函数调用已被移除，现在由新的dashboard API统一处理
-    // 旧的 renderHeaderBalance(); 调用
-    // 旧的 renderAdvertiseDashboard(); 调用
+    logAdP("------>>> my ads:", publisherState.myAds);
     renderMyAdsTable();
-    updateBudgetSummaryAndBalance();
-    
-    // 注意：不再调用 fetchDashboardInfo()，该操作将独立进行
 }
 
 // 新增函数：获取dashboard信息
+// 加载仪表盘数据并更新状态
 export async function fetchDashboardInfo() {
     const currentXId = getCurrentXId();
     
@@ -58,36 +39,49 @@ export async function fetchDashboardInfo() {
         console.log("Dashboard info:", dashboardInfo);
         logAdP("Dashboard info:", dashboardInfo);
         
-        // 使用新的dashboard API结果更新UI元素
-        const availableEl = $Id("ad-account-balance-value");
-        if (availableEl) availableEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.balance_atomic));
+        // 更新 publisherState.dashboardInfo 以供其他组件使用
+        publisherState.dashboardInfo = {
+            balance_atomic: dashboardInfo.balance_atomic,
+            frozen_atomic: dashboardInfo.frozen_atomic,
+            active_campaigns_count: dashboardInfo.active_campaigns_count,
+            today_spend_atomic: dashboardInfo.today_spend_atomic,
+            week_spend_atomic: dashboardInfo.week_spend_atomic
+        };
 
-        const frozenEl = $Id("ad-account-frozen-value");
-        if (frozenEl) frozenEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.frozen_atomic));
-        
-        // 更新活跃广告数量
-        const activeCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-active .card-value");
-        if (activeCards.length > 0) {
-            activeCards[0].textContent = dashboardInfo.active_campaigns_count.toString();
-        }
-        
-        // 更新今日花费
-        const todayCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-spend[data-range='today'] .card-value");
-        if (todayCards.length > 0) {
-            todayCards[0].textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.today_spend_atomic));
-        }
-        
-        // 更新本周花费
-        const weekCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-spend[data-range='week'] .card-value");
-        if (weekCards.length > 0) {
-            weekCards[0].textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.week_spend_atomic));
-        }
-        
-        return dashboardInfo;
+        updateDashboardUI()
     } catch (error) {
         console.error("Failed to fetch dashboard info:", error);
         logAdP("Failed to fetch dashboard info:", error);
-        return null;
+    }
+}
+
+// 使用仪表盘数据更新UI元素
+export function updateDashboardUI() {
+    const dashboardInfo = publisherState.dashboardInfo;
+    
+    // 使用新的dashboard API结果更新UI元素
+    const availableEl = $Id("ad-account-balance-value");
+    if (availableEl) availableEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.balance_atomic));
+
+    const frozenEl = $Id("ad-account-frozen-value");
+    if (frozenEl) frozenEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.frozen_atomic));
+    
+    // 更新活跃广告数量
+    const activeCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-active .card-value");
+    if (activeCards.length > 0) {
+        activeCards[0].textContent = dashboardInfo.active_campaigns_count.toString();
+    }
+    
+    // 更新今日花费
+    const todayCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-spend[data-range='today'] .card-value");
+    if (todayCards.length > 0) {
+        todayCards[0].textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.today_spend_atomic));
+    }
+    
+    // 更新本周花费
+    const weekCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-spend[data-range='week'] .card-value");
+    if (weekCards.length > 0) {
+        weekCards[0].textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.week_spend_atomic));
     }
 }
 
@@ -271,8 +265,7 @@ function handleTopUpAdBudget(adId: string) {
     // DEPRECATED: 获取余额的方式已更改，现在应通过新的dashboard API获取
     const balanceEl = $Id("top-up-available-balance");
     if (balanceEl) {
-        // 余额值应通过新的dashboard API获取并更新
-        // 旧的赋值方式：balanceEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_info.balance_atomic));
+       balanceEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
     }
 
     // Bind Confirm Action

@@ -5,7 +5,6 @@ import {
     initNavEvents,
     initSpendTabs,
     refreshAdsData,
-    renderMyAdsTable,
     renderSpendTable,
     fetchDashboardInfo
 } from "./ad_publisher_dashboard";
@@ -14,10 +13,6 @@ import {logAdP} from "../../common/debug_flags";
 import {initRechargeModalEvents} from "./ad_publisher_balance";
 
 async function initAdvertise() {
-    // 初始空态渲染 - 不再需要，因为将由新的dashboard API处理
-    // renderHeaderBalance();
-    // renderAdvertiseDashboard();
-    renderMyAdsTable();
     renderSpendTable();
 
     // 绑定事件
