@@ -21,19 +21,20 @@ export const API_PATH_ONRAMP_CREATE_SESSION = "/onramp/create_session";
 export const API_PATH_ONRAMP_WEBHOOK = "/onramp/webhook";
 
 // Ads API Paths
-export const API_PATH_ADS_BALANCE = "/ads/balance";
-export const API_PATH_ADS_CREATE = "/ads/create";
-export const API_PATH_ADS_UPDATE = "/ads/update";
-export const API_PATH_ADS_MY_ADS = "/ads/my_ads";
-export const API_PATH_ADS_LIST = "/ads/list";
-export const API_PATH_ADS_CLAIM = "/ads/claim";
-export const API_PATH_ADS_MY_CLAIMS = "/ads/my_claims";
+export const API_PATH_ADS_BALANCE = "/ads/executor/balance";
+export const API_PATH_ADS_CREATE = "/ads/publisher/create";
+export const API_PATH_ADS_UPDATE = "/ads/publisher/update";
+export const API_PATH_ADS_MY_ADS = "/ads/publisher/my_ads";
+export const API_PATH_ADS_LIST = "/ads/executor/list";
+export const API_PATH_ADS_CLAIM = "/ads/executor/claim";
+export const API_PATH_ADS_MY_CLAIMS = "/ads/executor/my_claims";
 export const API_PATH_ADS_PUBLISHER_RECHARGE = "/ads/publisher/recharge";
 export const API_PATH_ADS_PUBLISHER_WITHDRAW = "/ads/publisher/withdraw";
 export const API_PATH_ADS_PUBLISHER_LEDGER = "/ads/publisher/ledger";
-export const API_PATH_ADS_TOGGLE_STATUS = "/ads/toggle_status";
-export const API_PATH_ADS_TOP_UP_BUDGET = "/ads/top_up_budget";
+export const API_PATH_ADS_TOGGLE_STATUS = "/ads/publisher/toggle_status";
+export const API_PATH_ADS_TOP_UP_BUDGET = "/ads/publisher/top_up_budget";
 export const API_PATH_ADS_PUBLISHER_DASHBOARD_INFO = "/ads/publisher/dashboard_info";
+export const API_PATH_ADS_PUBLISHER_SPEND_HISTORY = "/ads/publisher/spend_history";
 
 export const signedOperationPaths: string[] = [
     API_PATH_ADS_CREATE,

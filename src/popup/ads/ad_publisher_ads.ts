@@ -236,7 +236,7 @@ async function submitWizard() {
             end_date: endDateObj.toISOString(), // Send as ISO string
         };
 
-        const result = await x402WorkerFetch("/ads/create", payload);
+        const result = await x402WorkerFetch("/ads/publisher/create", payload);
         if (!result.ok) {
             if (result.error?.error === "INSUFFICIENT_BALANCE") {
                 showNotification(`Insufficient balance. ${result.error?.detail || ""}`.trim(), "error");

@@ -1,5 +1,5 @@
 import {showNotification} from "../common";
-import {initWalletInfo, publisherState} from "./ad_publisher_common";
+import {initWalletInfo} from "./ad_publisher_common";
 import {
     initHistoryModalEvents,
     initNavEvents,
@@ -9,13 +9,10 @@ import {
     fetchDashboardInfo
 } from "./ad_publisher_dashboard";
 import {initWizardEvents} from "./ad_publisher_ads";
-import {logAdP} from "../../common/debug_flags";
 import {initRechargeModalEvents} from "./ad_publisher_balance";
 
 async function initAdvertise() {
     renderSpendTable();
-
-    // 绑定事件
     initNavEvents();
     initSpendTabs();
     initWizardEvents();
@@ -25,11 +22,7 @@ async function initAdvertise() {
     // 钱包 + 数据
     try {
         await initWalletInfo();
-        logAdP("------>>> wallet info:", publisherState.walletInfoCache);
-        
-        // 调用新的dashboard info API并将结果输出到日志，同时更新UI
         await fetchDashboardInfo();
-        
         await refreshAdsData();
     } catch (err: any) {
         console.error("Failed to initialize wallet info:", err);

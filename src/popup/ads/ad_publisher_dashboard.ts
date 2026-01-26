@@ -1,29 +1,24 @@
 import {
-    $Id,
     $2,
+    $Id,
     atomicToUsdcNumber,
     cloneTemplate,
     formatUSDC,
+    hideLoading,
     multiplyAtomic,
-    showNotification,
-    usdcToAtomic,
     showLoading,
-    hideLoading
+    showNotification,
+    usdcToAtomic
 } from "../common";
 import {logAdP} from "../../common/debug_flags";
-import {
-    fetchAdEscrowLedger,
-    openTxInExplorer,
-    publisherState
-} from "./ad_publisher_common";
 import type {AdRecord, AdStatus, HistoryRow} from "./ad_publisher_common";
-import {getCurrentXId} from "./ad_publisher_common";
+import {fetchAdEscrowLedger, getCurrentXId, openTxInExplorer, publisherState} from "./ad_publisher_common";
 import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
 
 // ========= 数据刷新 =========
 export async function refreshAdsData() {
     const currentXId = getCurrentXId();
-    const ads = await x402WorkerGet("/ads/my_ads", {a_x_id: currentXId});
+    const ads = await x402WorkerGet("/ads/publisher/my_ads", {a_x_id: currentXId});
     publisherState.myAds = Array.isArray(ads) ? (ads as AdRecord[]) : [];
     logAdP("------>>> my ads:", publisherState.myAds);
     renderMyAdsTable();
@@ -48,7 +43,11 @@ export async function fetchDashboardInfo() {
             week_spend_atomic: dashboardInfo.week_spend_atomic
         };
 
+        // 同时获取消费历史记录
+        publisherState.spendRecords = await x402WorkerGet("/ads/publisher/spend_history", {a_x_id: currentXId});
+
         updateDashboardUI()
+        renderSpendTable(); // 更新消费表格
     } catch (error) {
         console.error("Failed to fetch dashboard info:", error);
         logAdP("Failed to fetch dashboard info:", error);
@@ -232,7 +231,7 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume") {
     try {
         showLoading();
         const currentXId = getCurrentXId();
-        const response = await x402WorkerFetch("/ads/toggle_status", {
+        const response = await x402WorkerFetch("/ads/publisher/toggle_status", {
             ad_id: adId,
             a_x_id: currentXId,
             action: action
@@ -308,7 +307,7 @@ async function handleTopUpSubmit(adId: string) {
         const currentXId = getCurrentXId();
         const amountAtomic = usdcToAtomic(amountStr);
 
-        await x402WorkerFetch("/ads/top_up_budget", {
+        await x402WorkerFetch("/ads/publisher/top_up_budget", {
             ad_id: adId,
             a_x_id: currentXId,
             amount_atomic: amountAtomic
@@ -413,7 +412,7 @@ function openAdDetailModal(ad: AdRecord) {
                     custom_data: newCustomData,
                 };
 
-                const result = await x402WorkerFetch("/ads/update", payload);
+                const result = await x402WorkerFetch("/ads/publisher/update", payload);
 
                 if (result.ok) {
                     showNotification("Ad settings updated successfully!", "success");

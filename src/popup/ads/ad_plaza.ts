@@ -81,7 +81,7 @@ function getRewardRange(rewardUSDC: number): "0.1-0.5" | "0.5-1" | "1+" {
 
 async function loadAds(): Promise<void> {
     try {
-        const response = await x402WorkerGet("/ads/list");
+        const response = await x402WorkerGet("/ads/executor/list");
         if (!Array.isArray(response)) {
             showNotification("Invalid ads payload", "error");
             return;
@@ -109,7 +109,7 @@ async function startTask(ad: EarnAd) {
 
         const {xId, walletAddress} = await getCurrentUserInfo();
 
-        const claim = await x402WorkerFetch("/ads/claim", {
+        const claim = await x402WorkerFetch("/ads/executor/claim", {
             ad_id: ad.id,
             b_x_id: xId,
             b_wallet: walletAddress,
@@ -130,7 +130,7 @@ async function startTask(ad: EarnAd) {
 
 async function loadClaims(): Promise<EarnClaim[]> {
     const {xId} = await getCurrentUserInfo();
-    const response = await x402WorkerGet("/ads/my_claims", {b_x_id: xId});
+    const response = await x402WorkerGet("/ads/executor/my_claims", {b_x_id: xId});
     return Array.isArray(response) ? (response as EarnClaim[]) : [];
 }
 
@@ -509,7 +509,7 @@ async function initAdPlaza() {
 
 document.addEventListener("DOMContentLoaded", () => {
     try {
-        initAdPlaza();
+        initAdPlaza().then();
     } catch (err) {
         console.error("Ad Plaza init error:", err);
     }

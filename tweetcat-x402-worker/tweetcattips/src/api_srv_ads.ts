@@ -20,7 +20,7 @@ import {
 	API_PATH_ADS_PUBLISHER_LEDGER,
 	API_PATH_ADS_TOGGLE_STATUS,
 	API_PATH_ADS_TOP_UP_BUDGET,
-	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO
+	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, API_PATH_ADS_PUBLISHER_SPEND_HISTORY
 } from "./common";
 import {
 	AdCategory,
@@ -56,7 +56,7 @@ import {
 	getPerformerHistory,
 	type AdCreatePayload,
 	type CreateDetailedClaimParams,
-	type AdCampaignStatus, getPublisherDashboardStats,
+	type AdCampaignStatus, getPublisherDashboardStats, getAdvertiserHistory,
 } from "./database_ad";
 import {internalTreasurySettle, PaymentRequiredError, x402Workflow} from "./api_srv_x402";
 import {getKolBindingByXId} from "./database_402";
@@ -719,6 +719,51 @@ export async function apiAdsPublisherDashboardInfo(c: ExtCtx) {
 }
 
 /**
+ * 查询广告主的消费历史记录
+ */
+export async function apiAdsPublisherSpendHistory(c: ExtCtx) {
+	try {
+		const aXId = c.req.query("a_x_id");
+		const limitStr = c.req.query("limit") || "20";
+		const offsetStr = c.req.query("offset") || "0";
+
+		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		const limit = Math.min(Math.max(parseInt(limitStr, 10) || 20, 1), 100); // 限制范围 1-100
+		const offset = Math.max(parseInt(offsetStr, 10) || 0, 0);
+
+		const records = await getAdvertiserHistory(c.env.DB, aXId, limit, offset);
+
+		// 首先获取相关的广告信息以获取单价
+		const spendRecords = [];
+		for (const record of records) {
+			// 查询对应广告的单价
+			const adStmt = c.env.DB.prepare(
+				"SELECT unit_price_atomic FROM ad_campaigns WHERE ad_id = ?"
+			).bind(record.ad_id);
+			const adRecord = await adStmt.first<{unit_price_atomic: string}>();
+
+			const amount = adRecord ? Number(BigInt(adRecord.unit_price_atomic) / 1000000n) : 0; // 将原子单位转换为USDC
+
+			spendRecords.push({
+				id: record.claim_id,
+				time: record.created_at,
+				adName: record.ad_title || `Ad ${record.ad_id.substring(0, 8)}`,
+				event: "Task Completion",
+				amount: amount,
+				fee: 0,
+				status: record.status
+			});
+		}
+
+		return c.json(spendRecords);
+	} catch (err: any) {
+		console.error("[apiAdsPublisherSpendHistory Error]", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
  * 注册广告相关路由
  */
 export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
@@ -733,6 +778,7 @@ export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
 	app.post(API_PATH_ADS_PUBLISHER_WITHDRAW, apiWithdrawFromAdsEscrowAccount);
 	app.get(API_PATH_ADS_PUBLISHER_LEDGER, apiAdsPublisherLedger);
 	app.get(API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, apiAdsPublisherDashboardInfo);
+	app.get(API_PATH_ADS_PUBLISHER_SPEND_HISTORY, apiAdsPublisherSpendHistory);
 	app.post(API_PATH_ADS_TOGGLE_STATUS, apiAdsToggleStatus);
 	app.post(API_PATH_ADS_TOP_UP_BUDGET, apiAdsTopUpBudget);
 }
