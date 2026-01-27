@@ -1,14 +1,15 @@
 import {
-    getCurrentXUserName
+    API_PATH_ADS_CREATE,
+    getCurrentXUserName,
+    getCurrentXId
 } from "./ad_publisher_common";
-import {getCurrentXId} from "./ad_publisher_common";
-import {updateBudgetSummaryAndBalance} from "./ad_publisher_dashboard";
+import { updateBudgetSummaryAndBalance } from "./ad_publisher_dashboard";
 import {
     $Id,
     showNotification, usdcToAtomic, showLoading, hideLoading
 } from "../common";
-import {refreshAdsData} from "./ad_publisher_dashboard";
-import {x402WorkerFetch} from "../../wallet/cdp_wallet";
+import { refreshAdsData } from "./ad_publisher_dashboard";
+import { x402WorkerFetch } from "../../wallet/cdp_wallet";
 
 // ========= 发布广告向导（Wizard） =========
 let wizardCurrentStep = 1;
@@ -77,13 +78,13 @@ function goWizardNext() {
     if (wizardCurrentStep === 1) {
         const adCategoryInput = document.querySelector<HTMLSelectElement>("#ad-category");
         const categoryValue = adCategoryInput?.value?.trim() || "";
-        
+
         if (!categoryValue) {
             showNotification("Please select a category before proceeding.", "error");
             return;
         }
     }
-    
+
     // Step 2 validation: ad-title, ad-description, ad-url must be filled
     if (wizardCurrentStep === 2) {
         const adTitleInput = document.querySelector<HTMLInputElement>("#ad-title");
@@ -236,7 +237,7 @@ async function submitWizard() {
             end_date: endDateObj.toISOString(), // Send as ISO string
         };
 
-        const result = await x402WorkerFetch("/ads/publisher/create", payload);
+        const result = await x402WorkerFetch(API_PATH_ADS_CREATE, payload);
         if (!result.ok) {
             if (result.error?.error === "INSUFFICIENT_BALANCE") {
                 showNotification(`Insufficient balance. ${result.error?.detail || ""}`.trim(), "error");

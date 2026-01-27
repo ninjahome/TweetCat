@@ -1,6 +1,18 @@
-import {$Id, atomicToUsdcNumber, formatUSDC, openTxInExplorer, showNotification} from "../common";
-import {normalizeWalletUsdcDisplay, parseUsdcNumber, publisherState} from "./ad_publisher_common";
-import {postToX402SrvByPri, x402WorkerFetch} from "../../wallet/cdp_wallet";
+import {
+    $Id,
+    atomicToUsdcNumber,
+    formatUSDC,
+    openTxInExplorer,
+    showNotification
+} from "../common";
+import {
+    API_PATH_ADS_PUBLISHER_RECHARGE,
+    API_PATH_ADS_PUBLISHER_WITHDRAW,
+    normalizeWalletUsdcDisplay,
+    parseUsdcNumber,
+    publisherState
+} from "./ad_publisher_common";
+import { postToX402SrvByPri, x402WorkerFetch } from "../../wallet/cdp_wallet";
 
 type TransferDirection = "wallet_to_ads" | "ads_to_wallet";
 let transferDirection: TransferDirection = "wallet_to_ads";
@@ -169,7 +181,7 @@ function prepareEscrowTransferParam(): any {
         if (amount > maxAds + 1e-9) throw new Error("Amount exceeds Ads Available.");
     }
 
-    return {a_x_id: publisherState.walletInfoCache.xId, amount: amount.toFixed(2)};
+    return { a_x_id: publisherState.walletInfoCache.xId, amount: amount.toFixed(2) };
 }
 
 async function handleAdsEscrowTransfer(): Promise<void> {
@@ -181,10 +193,10 @@ async function handleAdsEscrowTransfer(): Promise<void> {
 
         if (transferDirection === "wallet_to_ads") {
             setTransferBusy(true, "Processing deposit...");
-            result = await postToX402SrvByPri("/ads/publisher/recharge", payload);
+            result = await postToX402SrvByPri(API_PATH_ADS_PUBLISHER_RECHARGE, payload);
         } else {
             setTransferBusy(true, "Processing withdraw...");
-            result = await x402WorkerFetch("/ads/publisher/withdraw", payload);
+            result = await x402WorkerFetch(API_PATH_ADS_PUBLISHER_WITHDRAW, payload);
         }
 
         if (transferDirection === "ads_to_wallet" && result.alreadyWithdrawn === true) {
@@ -206,9 +218,6 @@ async function handleAdsEscrowTransfer(): Promise<void> {
 
         closeRechargeModal();
         await openTxInExplorer(txHash);
-        // DEPRECATED: 刷新逻辑已废弃，改为调用统一的仪表盘API
-        // 旧的refreshWalletAndAdsUI调用已被删除，参见ad_publisher_dashboard.ts中的fetchDashboardInfo函数
-        // refreshWalletAndAdsUI().then();
         showNotification("Transfer submitted successfully.", "success");
     } catch (e: any) {
         const msg = (e?.message || "Transfer failed").toString();

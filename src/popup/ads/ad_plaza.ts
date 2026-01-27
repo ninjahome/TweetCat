@@ -6,8 +6,13 @@ import {
     atomicToUsdcNumber,
     getCurrentUserInfo
 } from "../common";
-import {logAdP} from "../../common/debug_flags";
-import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
+import { logAdP } from "../../common/debug_flags";
+import {
+    API_PATH_ADS_CLAIM,
+    API_PATH_ADS_LIST,
+    API_PATH_ADS_MY_CLAIMS
+} from "./ad_publisher_common";
+import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 
 type AdCategory = "follow" | "visit" | "register" | "share";
 
@@ -81,7 +86,7 @@ function getRewardRange(rewardUSDC: number): "0.1-0.5" | "0.5-1" | "1+" {
 
 async function loadAds(): Promise<void> {
     try {
-        const response = await x402WorkerGet("/ads/executor/list");
+        const response = await x402WorkerGet(API_PATH_ADS_LIST);
         if (!Array.isArray(response)) {
             showNotification("Invalid ads payload", "error");
             return;
@@ -107,9 +112,9 @@ async function startTask(ad: EarnAd) {
 
     try {
 
-        const {xId, walletAddress} = await getCurrentUserInfo();
+        const { xId, walletAddress } = await getCurrentUserInfo();
 
-        const claim = await x402WorkerFetch("/ads/executor/claim", {
+        const claim = await x402WorkerFetch(API_PATH_ADS_CLAIM, {
             ad_id: ad.id,
             b_x_id: xId,
             b_wallet: walletAddress,
@@ -129,8 +134,8 @@ async function startTask(ad: EarnAd) {
 }
 
 async function loadClaims(): Promise<EarnClaim[]> {
-    const {xId} = await getCurrentUserInfo();
-    const response = await x402WorkerGet("/ads/executor/my_claims", {b_x_id: xId});
+    const { xId } = await getCurrentUserInfo();
+    const response = await x402WorkerGet(API_PATH_ADS_MY_CLAIMS, { b_x_id: xId });
     return Array.isArray(response) ? (response as EarnClaim[]) : [];
 }
 

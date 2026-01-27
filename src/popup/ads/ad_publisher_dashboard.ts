@@ -10,15 +10,26 @@ import {
     showNotification,
     usdcToAtomic
 } from "../common";
-import {logAdP} from "../../common/debug_flags";
-import type {AdRecord, AdStatus, HistoryRow} from "./ad_publisher_common";
-import {fetchAdEscrowLedger, getCurrentXId, openTxInExplorer, publisherState} from "./ad_publisher_common";
-import {x402WorkerFetch, x402WorkerGet} from "../../wallet/cdp_wallet";
+import { logAdP } from "../../common/debug_flags";
+import type { AdRecord, AdStatus, HistoryRow } from "./ad_publisher_common";
+import {
+    API_PATH_ADS_MY_ADS,
+    API_PATH_ADS_PUBLISHER_DASHBOARD_INFO,
+    API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
+    API_PATH_ADS_TOGGLE_STATUS,
+    API_PATH_ADS_TOP_UP_BUDGET,
+    API_PATH_ADS_UPDATE,
+    fetchAdEscrowLedger,
+    getCurrentXId,
+    openTxInExplorer,
+    publisherState
+} from "./ad_publisher_common";
+import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 
 // ========= 数据刷新 =========
 export async function refreshAdsData() {
     const currentXId = getCurrentXId();
-    const ads = await x402WorkerGet("/ads/publisher/my_ads", {a_x_id: currentXId});
+    const ads = await x402WorkerGet(API_PATH_ADS_MY_ADS, { a_x_id: currentXId });
     publisherState.myAds = Array.isArray(ads) ? (ads as AdRecord[]) : [];
     logAdP("------>>> my ads:", publisherState.myAds);
     renderMyAdsTable();
@@ -28,12 +39,12 @@ export async function refreshAdsData() {
 // 加载仪表盘数据并更新状态
 export async function fetchDashboardInfo() {
     const currentXId = getCurrentXId();
-    
+
     try {
-        const dashboardInfo = await x402WorkerGet("/ads/publisher/dashboard_info", {a_x_id: currentXId});
+        const dashboardInfo = await x402WorkerGet(API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, { a_x_id: currentXId });
         console.log("Dashboard info:", dashboardInfo);
         logAdP("Dashboard info:", dashboardInfo);
-        
+
         // 更新 publisherState.dashboardInfo 以供其他组件使用
         publisherState.dashboardInfo = {
             balance_atomic: dashboardInfo.balance_atomic,
@@ -43,40 +54,55 @@ export async function fetchDashboardInfo() {
             week_spend_atomic: dashboardInfo.week_spend_atomic
         };
 
-        // 同时获取消费历史记录
-        publisherState.spendRecords = await x402WorkerGet("/ads/publisher/spend_history", {a_x_id: currentXId});
-
         updateDashboardUI()
-        renderSpendTable(); // 更新消费表格
+
+        // 同时获取消费历史记录
+        await fetchSpendHistory();
     } catch (error) {
         console.error("Failed to fetch dashboard info:", error);
         logAdP("Failed to fetch dashboard info:", error);
     }
 }
 
+/**
+ * 获取广告消费记录并更新状态
+ */
+export async function fetchSpendHistory() {
+    const currentXId = getCurrentXId();
+    try {
+        // 获取消费历史记录
+        const records = await x402WorkerGet(API_PATH_ADS_PUBLISHER_SPEND_HISTORY, { a_x_id: currentXId });
+        publisherState.spendRecords = Array.isArray(records) ? records : [];
+        renderSpendTable(); // 更新消费表格
+    } catch (error) {
+        console.error("Failed to fetch spend history:", error);
+        logAdP("Failed to fetch spend history:", error);
+    }
+}
+
 // 使用仪表盘数据更新UI元素
 export function updateDashboardUI() {
     const dashboardInfo = publisherState.dashboardInfo;
-    
+
     // 使用新的dashboard API结果更新UI元素
     const availableEl = $Id("ad-account-balance-value");
     if (availableEl) availableEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.balance_atomic));
 
     const frozenEl = $Id("ad-account-frozen-value");
     if (frozenEl) frozenEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.frozen_atomic));
-    
+
     // 更新活跃广告数量
     const activeCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-active .card-value");
     if (activeCards.length > 0) {
         activeCards[0].textContent = dashboardInfo.active_campaigns_count.toString();
     }
-    
+
     // 更新今日花费
     const todayCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-spend[data-range='today'] .card-value");
     if (todayCards.length > 0) {
         todayCards[0].textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.today_spend_atomic));
     }
-    
+
     // 更新本周花费
     const weekCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-spend[data-range='week'] .card-value");
     if (weekCards.length > 0) {
@@ -231,7 +257,7 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume") {
     try {
         showLoading();
         const currentXId = getCurrentXId();
-        const response = await x402WorkerFetch("/ads/publisher/toggle_status", {
+        const response = await x402WorkerFetch(API_PATH_ADS_TOGGLE_STATUS, {
             ad_id: adId,
             a_x_id: currentXId,
             action: action
@@ -264,7 +290,7 @@ function handleTopUpAdBudget(adId: string) {
     // DEPRECATED: 获取余额的方式已更改，现在应通过新的dashboard API获取
     const balanceEl = $Id("top-up-available-balance");
     if (balanceEl) {
-       balanceEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
+        balanceEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
     }
 
     // Bind Confirm Action
@@ -307,7 +333,7 @@ async function handleTopUpSubmit(adId: string) {
         const currentXId = getCurrentXId();
         const amountAtomic = usdcToAtomic(amountStr);
 
-        await x402WorkerFetch("/ads/publisher/top_up_budget", {
+        await x402WorkerFetch(API_PATH_ADS_TOP_UP_BUDGET, {
             ad_id: adId,
             a_x_id: currentXId,
             amount_atomic: amountAtomic
@@ -412,7 +438,7 @@ function openAdDetailModal(ad: AdRecord) {
                     custom_data: newCustomData,
                 };
 
-                const result = await x402WorkerFetch("/ads/publisher/update", payload);
+                const result = await x402WorkerFetch(API_PATH_ADS_UPDATE, payload);
 
                 if (result.ok) {
                     showNotification("Ad settings updated successfully!", "success");
@@ -687,7 +713,7 @@ async function loadAndRenderTransferHistory(): Promise<void> {
             status = `Failed: ${errorMsg}`;
         }
 
-        return {time, adNameOrMethod, amount, status, txHash: row.tx_hash || null};
+        return { time, adNameOrMethod, amount, status, txHash: row.tx_hash || null };
     });
 
     publisherState.historyRecharge = mappedRows;

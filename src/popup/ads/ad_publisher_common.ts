@@ -1,7 +1,7 @@
-import {$Id, showNotification} from "../common";
-import {ChainNameBaseMain, walletInfo, X402_FACILITATORS} from "../../common/x402_obj";
-import {getChainId} from "../../wallet/wallet_setting";
-import {queryCdpWalletInfo, x402WorkerGet} from "../../wallet/cdp_wallet";
+import { $Id, showNotification } from "../common";
+import { ChainNameBaseMain, walletInfo, X402_FACILITATORS } from "../../common/x402_obj";
+import { getChainId } from "../../wallet/wallet_setting";
+import { queryCdpWalletInfo, x402WorkerGet } from "../../wallet/cdp_wallet";
 
 export type AdStatus = "Active" | "Paused" | "Paused (No Budget)" | "Ended";
 
@@ -49,6 +49,21 @@ export interface HistoryRow {
     status: string;
     txHash?: string | null;
 }
+
+// API Paths (Matching tweetcat-x402-worker common.ts)
+export const API_PATH_ADS_LIST = "/ads/executor/list";
+export const API_PATH_ADS_CLAIM = "/ads/executor/claim";
+export const API_PATH_ADS_MY_CLAIMS = "/ads/executor/my_claims";
+export const API_PATH_ADS_CREATE = "/ads/publisher/create";
+export const API_PATH_ADS_UPDATE = "/ads/publisher/update";
+export const API_PATH_ADS_MY_ADS = "/ads/publisher/my_ads";
+export const API_PATH_ADS_PUBLISHER_RECHARGE = "/ads/publisher/recharge";
+export const API_PATH_ADS_PUBLISHER_WITHDRAW = "/ads/publisher/withdraw";
+export const API_PATH_ADS_PUBLISHER_LEDGER = "/ads/publisher/ledger";
+export const API_PATH_ADS_TOGGLE_STATUS = "/ads/publisher/toggle_status";
+export const API_PATH_ADS_TOP_UP_BUDGET = "/ads/publisher/top_up_budget";
+export const API_PATH_ADS_PUBLISHER_DASHBOARD_INFO = "/ads/publisher/dashboard_info";
+export const API_PATH_ADS_PUBLISHER_SPEND_HISTORY = "/ads/publisher/spend_history";
 
 // ========= Dashboard Info 相关类型定义 =========
 export interface DashboardInfo {
@@ -183,7 +198,7 @@ export function openTxInExplorer(txHash: string): void {
 
 // ========= API helpers =========
 export async function fetchAdEscrowLedger(aXId: string, limit: number = 50, offset: number = 0): Promise<any[]> {
-    const data = await x402WorkerGet("/ads/publisher/ledger", {
+    const data = await x402WorkerGet(API_PATH_ADS_PUBLISHER_LEDGER, {
         a_x_id: aXId,
         limit: limit.toString(),
         offset: offset.toString()

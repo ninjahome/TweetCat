@@ -34,5 +34,5 @@
     "test": "vitest",
     "test:run": "vitest run"
   },
-  "version": "3.6.45"
+  "version": "3.6.46"
 }
