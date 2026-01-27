@@ -405,11 +405,21 @@ export async function apiAdsClaim(c: ExtCtx) {
 		// Get ad info
 		const adRow = await getAdById(c.env.DB, adId);
 		if (!adRow) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+
+		// 严格校验状态 (这里的 adRow.status 已经是 getAdById 逻辑计算后的结果)
+		if (adRow.status === "COMPLETED") {
+			return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full");
+		}
+		if (adRow.status === "EXPIRED") {
+			return jsonError(c, 400, "AD_EXPIRED", "Ad campaign has expired");
+		}
+		if (adRow.status === "PAUSED_MANUAL" || adRow.status === "PAUSED_NO_BUDGET") {
+			return jsonError(c, 400, "AD_PAUSED", "Ad is currently paused");
+		}
+
+		// 双重检查逻辑（以防万一）
 		if (adRow.status !== "ACTIVE") {
 			return jsonError(c, 400, "AD_NOT_ACTIVE", "Ad is not active");
-		}
-		if (adRow.quota_used >= adRow.quota_total) {
-			return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full");
 		}
 
 		// Check if already claimed (using new table)

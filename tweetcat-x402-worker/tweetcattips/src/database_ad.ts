@@ -148,6 +148,25 @@ export function computePopularityScore(completed: number, total: number): number
 	return Math.max(10, Math.min(100, Math.round(20 + ratio * 80)));
 }
 
+/**
+ * 动态计算广告的逻辑状态
+ */
+export function getEffectiveStatus(ad: AdRow): AdCampaignStatus {
+	// 1. 优先检查手动暂停状态
+	if (ad.status === 'PAUSED_MANUAL') return 'PAUSED_MANUAL';
+
+	// 2. 检查配额是否用完 (优先于过期，因为可能刚好最后一秒用完)
+	if (ad.quota_used >= ad.quota_total) return 'COMPLETED';
+
+	// 3. 检查时间是否过期
+	if (ad.end_date && new Date(ad.end_date) < new Date()) {
+		return 'EXPIRED';
+	}
+
+	// 4. 返回原始状态 (ACTIVE 或 PAUSED_NO_BUDGET)
+	return ad.status;
+}
+
 // ========= 广告账户操作 =========
 
 /**
@@ -310,7 +329,32 @@ export async function getMyAds(
 		"SELECT * FROM ad_campaigns WHERE a_x_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
 	).bind(aXId, safeLim, safeOffset);
 	const result = await stmt.all<AdRow>();
-	return result.results ?? [];
+	const ads = result.results ?? [];
+
+	// 注入动态状态逻辑
+	return ads.map(ad => ({
+		...ad,
+		status: getEffectiveStatus(ad)
+	}));
+}
+
+/**
+ * 根据 ID 获取单个广告
+ * @param db - D1 数据库实例
+ * @param adId - 广告 ID
+ * @returns 广告信息或 null
+ */
+export async function getAdById(db: D1Database, adId: string): Promise<AdRow | null> {
+	const stmt = db.prepare(
+		"SELECT * FROM ad_campaigns WHERE ad_id = ?"
+	).bind(adId);
+	const ad = await stmt.first<AdRow>();
+	if (!ad) return null;
+
+	return {
+		...ad,
+		status: getEffectiveStatus(ad)
+	};
 }
 
 /**
@@ -351,23 +395,6 @@ export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 	return result.results ?? [];
 }
 
-/**
- * 根据 ID 获取单个广告
- * @param db - D1 数据库实例
- * @param adId - 广告 ID
- * @returns 广告信息或 null
- */
-export async function getAdById(db: D1Database, adId: string): Promise<AdRow | null> {
-	const adRow = await db.prepare(
-		`SELECT ad_id, a_x_id, unit_price_atomic, status, quota_used, quota_total,
-		        category, name, title, description, detail_url, callback_url, custom_data,
-		        end_date, created_at, updated_at
-		 FROM ad_campaigns
-		 WHERE ad_id = ?`
-	).bind(adId).first<AdRow>();
-
-	return adRow ?? null;
-}
 
 /**
  * 增加广告的使用配额（领取任务时调用）
@@ -380,7 +407,10 @@ export async function incrementAdQuota(db: D1Database, adId: string): Promise<bo
 		`UPDATE ad_campaigns
 		 SET quota_used = quota_used + 1,
 		     updated_at = datetime('now')
-		 WHERE ad_id = ? AND status = 'ACTIVE' AND quota_used < quota_total`
+		 WHERE ad_id = ? 
+		   AND status = 'ACTIVE' 
+		   AND quota_used < quota_total
+		   AND end_date > datetime('now')`
 	).bind(adId).run();
 
 	return updateResult.success && (updateResult.meta.changes ?? 0) > 0;
