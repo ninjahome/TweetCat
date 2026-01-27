@@ -249,7 +249,7 @@ async function submitWizard() {
 
         showNotification("Ad created successfully", "success");
         closeWizard();
-        await refreshAdsData();
+        await refreshAdsData(1); // 跳转回第一页查看新广告
         resetWizardForm(); // Reset form after successful submission
     } catch (e: any) {
         showNotification(e?.message || "Failed to create ad.", "error");

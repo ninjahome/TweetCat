@@ -1,5 +1,5 @@
-import {Hono} from "hono";
-import {ContentfulStatusCode} from "hono/utils/http-status";
+import { Hono } from "hono";
+import { ContentfulStatusCode } from "hono/utils/http-status";
 import {
 	ExtCtx,
 	ExtendedEnv,
@@ -37,6 +37,7 @@ import {
 	updateAdSettings,
 	updateAdStatus,
 	getMyAds,
+	getMyAdsCount,
 	getActiveAdsList,
 	getAdById,
 	incrementAdQuota,
@@ -58,8 +59,8 @@ import {
 	type CreateDetailedClaimParams,
 	type AdCampaignStatus, getPublisherDashboardStats, getAdvertiserHistory,
 } from "./database_ad";
-import {internalTreasurySettle, PaymentRequiredError, x402Workflow} from "./api_srv_x402";
-import {getKolBindingByXId} from "./database_402";
+import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
+import { getKolBindingByXId } from "./database_402";
 
 // ========= Types =========
 
@@ -280,7 +281,7 @@ export async function apiAdsCreate(c: ExtCtx) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to create ad");
 		}
 
-		return c.json({ok: true, ad_id: adId, required_atomic: requiredAtomic});
+		return c.json({ ok: true, ad_id: adId, required_atomic: requiredAtomic });
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
 	}
@@ -325,7 +326,7 @@ export async function apiAdsUpdate(c: ExtCtx) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad");
 		}
 
-		return c.json({ok: true, ad_id: adId});
+		return c.json({ ok: true, ad_id: adId });
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
 	}
@@ -334,10 +335,24 @@ export async function apiAdsUpdate(c: ExtCtx) {
 export async function apiAdsMyAds(c: ExtCtx) {
 	try {
 		const aXId = c.req.query("a_x_id");
+		const limitStr = c.req.query("limit") || "20";
+		const offsetStr = c.req.query("offset") || "0";
+
 		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 
-		const ads = await getMyAds(c.env.DB, aXId);
-		return c.json(ads);
+		const limit = Math.min(Math.max(parseInt(limitStr, 10) || 20, 1), 100);
+		const offset = Math.max(parseInt(offsetStr, 10) || 0, 0);
+
+		const [ads, total] = await Promise.all([
+			getMyAds(c.env.DB, aXId, limit, offset),
+			getMyAdsCount(c.env.DB, aXId)
+		]);
+
+		return c.json({
+			success: true,
+			ads: ads,
+			total: total
+		});
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
 	}
@@ -454,7 +469,7 @@ export async function apiAdsMyClaims(c: ExtCtx) {
 export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
 	try {
 		// ✅ 使用新的解析函数
-		const {aXId, amountAtomic} = await parseEscrowRequestParams(c);
+		const { aXId, amountAtomic } = await parseEscrowRequestParams(c);
 
 		const payTo = (c.env.TREASURY_ADDRESS as `0x${string}`)
 		const settleResult = await x402Workflow(c, payTo, amountAtomic, "USDC Transfer To Ad Escrow Account");
@@ -494,13 +509,13 @@ export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
 			await creditEscrowBalance(c.env.DB, aXId, amountAtomic);
 		}
 
-		return c.json({success: true, txHash});
+		return c.json({ success: true, txHash });
 	} catch (err: any) {
 		// ✅ 处理自定义的 EscrowRequestError
 		if (err instanceof EscrowRequestError) {
 			return jsonError(c, err.statusCode as ContentfulStatusCode, err.code, err.detail);
 		}
-		if (err instanceof PaymentRequiredError) return c.json({error: "PAYMENT_REQUIRED"}, 402);
+		if (err instanceof PaymentRequiredError) return c.json({ error: "PAYMENT_REQUIRED" }, 402);
 		console.error("[apiRechargeToAdEscrowAccount Error]", err);
 
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
@@ -517,7 +532,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 		console.log("[apiWithdrawFromAdsEscrowAccount] 开始处理提现请求");
 
 		// ✅ 使用新的解析函数
-		const {aXId, amountAtomic} = await parseEscrowRequestParams(c);
+		const { aXId, amountAtomic } = await parseEscrowRequestParams(c);
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 参数验证成功: aXId=${aXId}, amountAtomic=${amountAtomic}`);
 
 		// 从 kol_binding 表查询用户的绑定钱包地址（原路返回）
@@ -741,7 +756,7 @@ export async function apiAdsPublisherSpendHistory(c: ExtCtx) {
 			const adStmt = c.env.DB.prepare(
 				"SELECT unit_price_atomic FROM ad_campaigns WHERE ad_id = ?"
 			).bind(record.ad_id);
-			const adRecord = await adStmt.first<{unit_price_atomic: string}>();
+			const adRecord = await adStmt.first<{ unit_price_atomic: string }>();
 
 			const amount = adRecord ? Number(BigInt(adRecord.unit_price_atomic) / 1000000n) : 0; // 将原子单位转换为USDC
 
@@ -829,7 +844,7 @@ export async function apiAdsToggleStatus(c: ExtCtx) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status");
 		}
 
-		return c.json({ok: true, ad_id: adId, new_status: newStatus});
+		return c.json({ ok: true, ad_id: adId, new_status: newStatus });
 	} catch (err: any) {
 		console.error("[apiAdsToggleStatus Error]", err);
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
@@ -878,7 +893,7 @@ export async function apiAdsTopUpBudget(c: ExtCtx) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status after top-up");
 		}
 
-		return c.json({ok: true, ad_id: adId, topped_up_atomic: amountAtomic, new_status: "ACTIVE"});
+		return c.json({ ok: true, ad_id: adId, topped_up_atomic: amountAtomic, new_status: "ACTIVE" });
 	} catch (err: any) {
 		console.error("[apiAdsTopUpBudget Error]", err);
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");

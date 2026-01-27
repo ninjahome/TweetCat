@@ -87,6 +87,12 @@ export const publisherState = {
     spendRecords: [] as SpendRecord[],
     historyRecharge: [] as HistoryRow[],
     walletInfoCache: null as walletInfo | null,
+    // 分页相关状态
+    adsPagination: {
+        currentPage: 1,
+        pageSize: 10,
+        totalCount: 0
+    }
 };
 
 // ========= Wallet / Header =========

@@ -1,4 +1,4 @@
-import type {D1Database} from "@cloudflare/workers-types";
+import type { D1Database } from "@cloudflare/workers-types";
 
 // ========= 类型定义 =========
 
@@ -196,7 +196,7 @@ export async function reserveAdBudget(db: D1Database, aXId: string, amountAtomic
 export async function getAccountBalanceAtomic(db: D1Database, aXId: string): Promise<AdAccountInfo> {
 	const balanceRow = await db.prepare(
 		"SELECT available_atomic FROM ad_escrow_accounts WHERE a_x_id = ? AND asset_symbol = 'USDC'"
-	).bind(aXId).first<{available_atomic: string}>();
+	).bind(aXId).first<{ available_atomic: string }>();
 	return {
 		balanceAtomic: balanceRow?.available_atomic ?? "0"
 	};
@@ -294,17 +294,33 @@ export async function updateAdStatus(
 }
 
 /**
- * 获取用户的所有广告
- * @param db - D1 数据库实例
- * @param aXId - 广告主 X ID
- * @returns 广告列表
+ * 获取用户的所有广告（支持分页）
  */
-export async function getMyAds(db: D1Database, aXId: string): Promise<AdRow[]> {
+export async function getMyAds(
+	db: D1Database,
+	aXId: string,
+	limit: number = 20,
+	offset: number = 0
+): Promise<AdRow[]> {
+	const safeLim = Math.min(Math.max(limit, 1), 200);
+	const safeOffset = Math.max(offset, 0);
+
 	const stmt = db.prepare(
-		"SELECT * FROM ad_campaigns WHERE a_x_id = ? ORDER BY created_at DESC LIMIT 200"
-	).bind(aXId);
+		"SELECT * FROM ad_campaigns WHERE a_x_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+	).bind(aXId, safeLim, safeOffset);
 	const result = await stmt.all<AdRow>();
 	return result.results ?? [];
+}
+
+/**
+ * 获取用户的广告总数
+ */
+export async function getMyAdsCount(db: D1Database, aXId: string): Promise<number> {
+	const stmt = db.prepare(
+		"SELECT COUNT(*) as total FROM ad_campaigns WHERE a_x_id = ?"
+	).bind(aXId);
+	const result = await stmt.first<{ total: number }>();
+	return result?.total ?? 0;
 }
 
 /**
@@ -487,8 +503,8 @@ export async function ensureEscrowAccount(db: D1Database, aXId: string): Promise
 export async function getPublisherDashboardStats(db: D1Database, aXId: string) {
 	const balanceResult = await db.prepare(
 		"SELECT available_atomic as balance_atomic, frozen_atomic FROM ad_escrow_accounts WHERE a_x_id = ? AND asset_symbol = 'USDC'"
-	).bind(aXId).first<{balance_atomic: string, frozen_atomic: string}>();
-	
+	).bind(aXId).first<{ balance_atomic: string, frozen_atomic: string }>();
+
 	const statsSql = `
 		SELECT 
 			(SELECT COUNT(*) FROM ad_campaigns 
@@ -507,13 +523,13 @@ export async function getPublisherDashboardStats(db: D1Database, aXId: string) {
 			   AND arc.status IN ('CONFIRMED', 'SETTLED_TIMEOUT')
 			   AND date(arc.created_at) >= date('now', '-7 days')) as week_spend_atomic
 	`;
-	
+
 	const statsResult = await db.prepare(statsSql).bind(aXId, aXId, aXId).first<{
 		active_campaigns_count: number;
 		today_spend_atomic: string;
 		week_spend_atomic: string;
 	}>();
-	
+
 	return {
 		balance_atomic: balanceResult?.balance_atomic ?? "0",
 		frozen_atomic: balanceResult?.frozen_atomic ?? "0",

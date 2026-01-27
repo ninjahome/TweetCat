@@ -27,12 +27,28 @@ import {
 import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 
 // ========= 数据刷新 =========
-export async function refreshAdsData() {
+export async function refreshAdsData(page: number = 1) {
     const currentXId = getCurrentXId();
-    const ads = await x402WorkerGet(API_PATH_ADS_MY_ADS, { a_x_id: currentXId });
-    publisherState.myAds = Array.isArray(ads) ? (ads as AdRecord[]) : [];
-    logAdP("------>>> my ads:", publisherState.myAds);
-    renderMyAdsTable();
+    const { pageSize } = publisherState.adsPagination;
+    const offset = (page - 1) * pageSize;
+
+    try {
+        const response = await x402WorkerGet(API_PATH_ADS_MY_ADS, {
+            a_x_id: currentXId,
+            limit: pageSize.toString(),
+            offset: offset.toString()
+        });
+
+        publisherState.myAds = response.ads || [];
+        publisherState.adsPagination.totalCount = response.total || 0;
+        publisherState.adsPagination.currentPage = page;
+
+        logAdP("------>>> my ads:", publisherState.myAds, "Total:", publisherState.adsPagination.totalCount);
+        renderMyAdsTable();
+        renderPaginationUI(); // 触发分页控件渲染
+    } catch (error) {
+        console.error("Failed to refresh ads data:", error);
+    }
 }
 
 // 新增函数：获取dashboard信息
@@ -72,7 +88,7 @@ export async function fetchSpendHistory() {
     try {
         // 获取消费历史记录
         const records = await x402WorkerGet(API_PATH_ADS_PUBLISHER_SPEND_HISTORY, { a_x_id: currentXId });
-        publisherState.spendRecords = Array.isArray(records) ? records : [];
+        publisherState.spendRecords = records || [];
         renderSpendTable(); // 更新消费表格
     } catch (error) {
         console.error("Failed to fetch spend history:", error);
@@ -151,6 +167,63 @@ function setStatusColor(el: HTMLElement, status: string) {
     }
 }
 
+/**
+ * 初始化分页组件事件
+ */
+export function initPaginationEvents() {
+    const btnPrev = $Id("btn-prev-page") as HTMLButtonElement | null;
+    const btnNext = $Id("btn-next-page") as HTMLButtonElement | null;
+
+    if (btnPrev) {
+        btnPrev.addEventListener("click", async () => {
+            const { currentPage } = publisherState.adsPagination;
+            if (currentPage > 1) {
+                await refreshAdsData(currentPage - 1);
+            }
+        });
+    }
+
+    if (btnNext) {
+        btnNext.addEventListener("click", async () => {
+            const { currentPage, totalCount, pageSize } = publisherState.adsPagination;
+            const maxPage = Math.ceil(totalCount / pageSize);
+            if (currentPage < maxPage) {
+                await refreshAdsData(currentPage + 1);
+            }
+        });
+    }
+}
+
+/**
+ * 渲染分页 UI 控件状态
+ */
+export function renderPaginationUI() {
+    const { currentPage, totalCount, pageSize } = publisherState.adsPagination;
+    const maxPage = Math.ceil(totalCount / pageSize) || 1;
+
+    const infoRange = $Id("pagination-current-range");
+    const infoTotal = $Id("pagination-total-count");
+    const pageInfo = $Id("pagination-page-info");
+    const btnPrev = $Id("btn-prev-page") as HTMLButtonElement | null;
+    const btnNext = $Id("btn-next-page") as HTMLButtonElement | null;
+
+    const start = (currentPage - 1) * pageSize + 1;
+    const end = Math.min(currentPage * pageSize, totalCount);
+
+    if (infoRange) infoRange.textContent = totalCount > 0 ? `${start}-${end}` : "0";
+    if (infoTotal) infoTotal.textContent = totalCount.toString();
+    if (pageInfo) pageInfo.textContent = `Page ${currentPage} / ${maxPage}`;
+
+    if (btnPrev) btnPrev.disabled = currentPage <= 1;
+    if (btnNext) btnNext.disabled = currentPage >= maxPage;
+
+    // 如果总数较少，隐藏分页面板（可选）
+    const paginationEl = $Id("ads-pagination");
+    if (paginationEl) {
+        paginationEl.style.display = totalCount > 0 ? "flex" : "none";
+    }
+}
+
 function buildMyAdRow(ad: AdRecord): MyAdRow {
     const rewardPerTask = atomicToUsdcNumber(ad.unit_price_atomic);
     const completed = Number.isFinite(ad.quota_used) ? ad.quota_used : 0;
@@ -172,6 +245,95 @@ function buildMyAdRow(ad: AdRecord): MyAdRow {
     };
 }
 
+/**
+ * 局部更新单行广告的 UI
+ * @param ad - 最新的广告数据
+ */
+export function updateAdRowUI(ad: AdRecord) {
+    const tr = document.querySelector<HTMLTableRowElement>(`#my-ads-tbody tr[data-ad-id="${ad.ad_id}"]`);
+    if (tr) {
+        syncAdRowData(tr, ad);
+    }
+}
+
+/**
+ * 渲染单行广告元素
+ */
+export function renderAdRow(ad: AdRecord): HTMLTableRowElement {
+    const tr = cloneTemplate("tpl-my-ad-row") as HTMLTableRowElement;
+    tr.dataset.adId = ad.ad_id;
+    syncAdRowData(tr, ad);
+    return tr;
+}
+
+/**
+ * 将数据同步到现有的行元素中
+ */
+function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
+    const rowData = buildMyAdRow(ad);
+
+    $2<HTMLElement>(tr, ".td-name").textContent = rowData.name;
+
+    // 根据状态显示不同颜色
+    const statusEl = $2<HTMLElement>(tr, ".td-status");
+    statusEl.textContent = rowData.status;
+    setStatusColor(statusEl, ad.status);
+
+    $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(rowData.rewardPerTask);
+    $2<HTMLElement>(tr, ".td-completed").textContent = rowData.completed.toString();
+    $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(rowData.spent);
+    $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(rowData.remainingBudget);
+
+    // 添加截止日期显示
+    const endDateEl = $2<HTMLElement>(tr, ".td-end-date");
+    const endDate = new Date(rowData.endDate);
+    const now = new Date();
+    // 设置时间为当天的开始（00:00:00），以便按天数比较
+    endDate.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0);
+    const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    // 格式化日期显示
+    endDateEl.textContent = new Date(rowData.endDate).toLocaleDateString();
+
+    // 根据剩余天数添加样式类
+    if (daysUntilEnd < 0) {
+        endDateEl.className = "td-end-date end-date-expired";
+    } else if (daysUntilEnd <= 3) {
+        endDateEl.className = "td-end-date end-date-urgent";
+    } else if (daysUntilEnd <= 7) {
+        endDateEl.className = "td-end-date end-date-warning";
+    } else {
+        endDateEl.className = "td-end-date end-date-normal";
+    }
+
+    const btnView = $2<HTMLButtonElement>(tr, ".btn-view");
+    const btnToggle = $2<HTMLButtonElement>(tr, ".btn-toggle");
+
+    // 重新绑定事件（如果是更新现有行，需要清理旧事件）
+    btnView.onclick = () => openAdDetailModal(ad);
+
+    // 根据广告状态动态渲染操作按钮
+    if (ad.status === "ACTIVE") {
+        btnToggle.textContent = "暂停";
+        btnToggle.disabled = false;
+        btnToggle.onclick = () => handleToggleAdStatus(ad.ad_id, "pause");
+    } else if (ad.status === "PAUSED_MANUAL") {
+        btnToggle.textContent = "启用";
+        btnToggle.disabled = false;
+        btnToggle.onclick = () => handleToggleAdStatus(ad.ad_id, "resume");
+    } else if (ad.status === "PAUSED_NO_BUDGET") {
+        btnToggle.textContent = "充值";
+        btnToggle.disabled = false;
+        btnToggle.onclick = () => handleTopUpAdBudget(ad.ad_id);
+    } else {
+        // EXPIRED 或 COMPLETED
+        btnToggle.textContent = "N/A";
+        btnToggle.disabled = true;
+        btnToggle.onclick = null;
+    }
+}
+
 export function renderMyAdsTable() {
     const tbody = document.querySelector<HTMLTableSectionElement>("#my-ads-tbody");
     if (!tbody) return;
@@ -184,69 +346,7 @@ export function renderMyAdsTable() {
     }
 
     publisherState.myAds.forEach((ad) => {
-        const rowData = buildMyAdRow(ad);
-        const tr = cloneTemplate("tpl-my-ad-row") as HTMLTableRowElement;
-        tr.dataset.adId = rowData.id;
-
-        $2<HTMLElement>(tr, ".td-name").textContent = rowData.name;
-
-        // 根据状态显示不同颜色
-        const statusEl = $2<HTMLElement>(tr, ".td-status");
-        statusEl.textContent = rowData.status;
-        setStatusColor(statusEl, ad.status);
-
-        $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(rowData.rewardPerTask);
-        $2<HTMLElement>(tr, ".td-completed").textContent = rowData.completed.toString();
-        $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(rowData.spent);
-        $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(rowData.remainingBudget);
-
-        // 添加截止日期显示
-        const endDateEl = $2<HTMLElement>(tr, ".td-end-date");
-        const endDate = new Date(rowData.endDate);
-        const now = new Date();
-        // 设置时间为当天的开始（00:00:00），以便按天数比较
-        endDate.setHours(0, 0, 0, 0);
-        now.setHours(0, 0, 0, 0);
-        const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-        // 格式化日期显示
-        endDateEl.textContent = new Date(rowData.endDate).toLocaleDateString();
-
-        // 根据剩余天数添加样式类
-        if (daysUntilEnd < 0) {
-            endDateEl.className = "end-date-expired";
-        } else if (daysUntilEnd <= 3) {
-            endDateEl.className = "end-date-urgent";
-        } else if (daysUntilEnd <= 7) {
-            endDateEl.className = "end-date-warning";
-        } else {
-            endDateEl.className = "end-date-normal";
-        }
-
-        const btnView = $2<HTMLButtonElement>(tr, ".btn-view");
-        const btnToggle = $2<HTMLButtonElement>(tr, ".btn-toggle");
-
-        btnView.addEventListener("click", () => openAdDetailModal(ad));
-
-        // 根据广告状态动态渲染操作按钮
-        if (ad.status === "ACTIVE") {
-            btnToggle.textContent = "暂停";
-            btnToggle.disabled = false;
-            btnToggle.onclick = () => handleToggleAdStatus(ad.ad_id, "pause");
-        } else if (ad.status === "PAUSED_MANUAL") {
-            btnToggle.textContent = "启用";
-            btnToggle.disabled = false;
-            btnToggle.onclick = () => handleToggleAdStatus(ad.ad_id, "resume");
-        } else if (ad.status === "PAUSED_NO_BUDGET") {
-            btnToggle.textContent = "充值";
-            btnToggle.disabled = false;
-            btnToggle.onclick = () => handleTopUpAdBudget(ad.ad_id);
-        } else {
-            // EXPIRED 或 COMPLETED
-            btnToggle.textContent = "N/A";
-            btnToggle.disabled = true;
-        }
-
+        const tr = renderAdRow(ad);
         tbody.appendChild(tr);
     });
 }
@@ -264,8 +364,18 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume") {
         });
 
         if (response.ok) {
+            const result = await response.json();
             showNotification(action === "pause" ? "广告已暂停" : "广告已启用", "success");
-            await refreshAdsData();
+
+            // 局部更新本地状态并更新 UI
+            const ad = publisherState.myAds.find(a => a.ad_id === adId);
+            if (ad) {
+                ad.status = result.new_status;
+                updateAdRowUI(ad);
+            } else {
+                // 如果在当前列表没找到（可能跨页了），则刷新一次
+                await refreshAdsData(publisherState.adsPagination.currentPage);
+            }
         } else {
             const error = await response.json();
             showNotification(error.detail || "操作失败", "error");
@@ -342,7 +452,10 @@ async function handleTopUpSubmit(adId: string) {
         showNotification("充值成功，广告已启用", "success");
         if (modal) modal.classList.remove("active");
 
-        await refreshAdsData();
+        // 局部更新：即使是充值，也涉及余额变化，所以通常需要刷新 dashboard
+        // 但对于单行，我们可以先假定它变成了 ACTIVE 并刷新当前页
+        await fetchDashboardInfo(); // 更新顶部余额
+        await refreshAdsData(publisherState.adsPagination.currentPage);
     } catch (err: any) {
         showNotification(err?.message || "充值失败", "error");
     } finally {
@@ -442,8 +555,13 @@ function openAdDetailModal(ad: AdRecord) {
 
                 if (result.ok) {
                     showNotification("Ad settings updated successfully!", "success");
-                    // Optionally, refresh data
-                    await refreshAdsData();
+                    // 局部更新本地状态并刷新行 UI (主要为了让 View 按钮拿到最新引用)
+                    const localAd = publisherState.myAds.find(a => a.ad_id === ad.ad_id);
+                    if (localAd) {
+                        localAd.callback_url = newCallback;
+                        localAd.custom_data = newCustomData;
+                        updateAdRowUI(localAd);
+                    }
                     modal.classList.remove("active");
                 } else {
                     const errorMsg = result.error?.detail || "Failed to update ad";
