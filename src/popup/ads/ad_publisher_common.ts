@@ -73,6 +73,13 @@ export interface DashboardInfo {
     today_spend_atomic: string;
     week_spend_atomic: string;
 }
+// 模块化的分页数据结构 (扁平化方案)
+export interface PaginatedModule<T> {
+    list: T[];
+    currentPage: number;
+    pageSize: number;
+    totalCount: number;
+}
 
 // ========= 共享状态（原来那些 let 全搬到这里） =========
 export const publisherState = {
@@ -83,21 +90,25 @@ export const publisherState = {
         today_spend_atomic: "0",
         week_spend_atomic: "0"
     } as DashboardInfo,
-    myAds: [] as AdRecord[],
-    spendRecords: [] as SpendRecord[],
+
+    // 我的广告模块
+    ads: {
+        list: [] as AdRecord[],
+        currentPage: 1,
+        pageSize: 10,
+        totalCount: 0
+    } as PaginatedModule<AdRecord>,
+
+    // 消费记录模块
+    spend: {
+        list: [] as SpendRecord[],
+        currentPage: 1,
+        pageSize: 10,
+        totalCount: 0
+    } as PaginatedModule<SpendRecord>,
+
     historyRecharge: [] as HistoryRow[],
     walletInfoCache: null as walletInfo | null,
-    // 分页相关状态
-    adsPagination: {
-        currentPage: 1,
-        pageSize: 10,
-        totalCount: 0
-    },
-    spendPagination: {
-        currentPage: 1,
-        pageSize: 10,
-        totalCount: 0
-    }
 };
 
 // ========= Wallet / Header =========

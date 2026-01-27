@@ -29,7 +29,7 @@ import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 // ========= 数据刷新 =========
 export async function refreshAdsData(page: number = 1) {
     const currentXId = getCurrentXId();
-    const { pageSize } = publisherState.adsPagination;
+    const { pageSize } = publisherState.ads;
     const offset = (page - 1) * pageSize;
 
     try {
@@ -39,11 +39,11 @@ export async function refreshAdsData(page: number = 1) {
             offset: offset.toString()
         });
 
-        publisherState.myAds = response.ads || [];
-        publisherState.adsPagination.totalCount = response.total || 0;
-        publisherState.adsPagination.currentPage = page;
+        publisherState.ads.list = response.ads || [];
+        publisherState.ads.totalCount = response.total || 0;
+        publisherState.ads.currentPage = page;
 
-        logAdP("------>>> my ads:", publisherState.myAds, "Total:", publisherState.adsPagination.totalCount);
+        logAdP("------>>> my ads:", publisherState.ads.list, "Total:", publisherState.ads.totalCount);
         renderMyAdsTable();
         renderPaginationUI(); // 触发分页控件渲染
     } catch (error) {
@@ -85,7 +85,7 @@ export async function fetchDashboardInfo() {
  */
 export async function fetchSpendHistory(page: number = 1) {
     const currentXId = getCurrentXId();
-    const { pageSize } = publisherState.spendPagination;
+    const { pageSize } = publisherState.spend;
     const offset = (page - 1) * pageSize;
 
     try {
@@ -97,9 +97,9 @@ export async function fetchSpendHistory(page: number = 1) {
         });
 
         if (response && response.success) {
-            publisherState.spendRecords = response.records || [];
-            publisherState.spendPagination.currentPage = page;
-            publisherState.spendPagination.totalCount = response.total || 0;
+            publisherState.spend.list = response.records || [];
+            publisherState.spend.currentPage = page;
+            publisherState.spend.totalCount = response.total || 0;
             renderSpendTable(); // 更新消费表格
             renderSpendPaginationUI();
         }
@@ -189,7 +189,7 @@ export function initPaginationEvents() {
 
     if (btnPrev) {
         btnPrev.addEventListener("click", async () => {
-            const { currentPage } = publisherState.adsPagination;
+            const { currentPage } = publisherState.ads;
             if (currentPage > 1) {
                 await refreshAdsData(currentPage - 1);
             }
@@ -198,7 +198,7 @@ export function initPaginationEvents() {
 
     if (btnNext) {
         btnNext.addEventListener("click", async () => {
-            const { currentPage, totalCount, pageSize } = publisherState.adsPagination;
+            const { currentPage, totalCount, pageSize } = publisherState.ads;
             const maxPage = Math.ceil(totalCount / pageSize);
             if (currentPage < maxPage) {
                 await refreshAdsData(currentPage + 1);
@@ -211,7 +211,7 @@ export function initPaginationEvents() {
  * 渲染分页 UI 控件状态
  */
 export function renderPaginationUI() {
-    const { currentPage, totalCount, pageSize } = publisherState.adsPagination;
+    const { currentPage, totalCount, pageSize } = publisherState.ads;
     const maxPage = Math.ceil(totalCount / pageSize) || 1;
 
     const infoRange = $Id("pagination-current-range");
@@ -241,7 +241,7 @@ export function renderPaginationUI() {
  * 渲染消费记录分页 UI
  */
 export function renderSpendPaginationUI() {
-    const { currentPage, pageSize, totalCount } = publisherState.spendPagination;
+    const { currentPage, pageSize, totalCount } = publisherState.spend;
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
     const container = $Id('spend-pagination-container');
@@ -269,15 +269,15 @@ export function initSpendPaginationEvents() {
 
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
-            if (publisherState.spendPagination.currentPage > 1) {
-                fetchSpendHistory(publisherState.spendPagination.currentPage - 1);
+            if (publisherState.spend.currentPage > 1) {
+                fetchSpendHistory(publisherState.spend.currentPage - 1);
             }
         });
     }
 
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
-            const { currentPage, pageSize, totalCount } = publisherState.spendPagination;
+            const { currentPage, pageSize, totalCount } = publisherState.spend;
             const totalPages = Math.ceil(totalCount / pageSize);
             if (currentPage < totalPages) {
                 fetchSpendHistory(currentPage + 1);
@@ -402,12 +402,12 @@ export function renderMyAdsTable() {
 
     tbody.replaceChildren();
 
-    if (publisherState.myAds.length === 0) {
+    if (publisherState.ads.list.length === 0) {
         tbody.appendChild(cloneTemplate("tpl-empty-my-ads-row") as any);
         return;
     }
 
-    publisherState.myAds.forEach((ad) => {
+    publisherState.ads.list.forEach((ad) => {
         const tr = renderAdRow(ad);
         tbody.appendChild(tr);
     });
@@ -430,13 +430,13 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume") {
             showNotification(action === "pause" ? "广告已暂停" : "广告已启用", "success");
 
             // 局部更新本地状态并更新 UI
-            const ad = publisherState.myAds.find(a => a.ad_id === adId);
+            const ad = publisherState.ads.list.find(a => a.ad_id === adId);
             if (ad) {
                 ad.status = result.new_status;
                 updateAdRowUI(ad);
             } else {
                 // 如果在当前列表没找到（可能跨页了），则刷新一次
-                await refreshAdsData(publisherState.adsPagination.currentPage);
+                await refreshAdsData(publisherState.ads.currentPage);
             }
         } else {
             const error = await response.json();
@@ -517,7 +517,7 @@ async function handleTopUpSubmit(adId: string) {
         // 局部更新：即使是充值，也涉及余额变化，所以通常需要刷新 dashboard
         // 但对于单行，我们可以先假定它变成了 ACTIVE 并刷新当前页
         await fetchDashboardInfo(); // 更新顶部余额
-        await refreshAdsData(publisherState.adsPagination.currentPage);
+        await refreshAdsData(publisherState.ads.currentPage);
     } catch (err: any) {
         showNotification(err?.message || "充值失败", "error");
     } finally {
@@ -618,7 +618,7 @@ function openAdDetailModal(ad: AdRecord) {
                 if (result.ok) {
                     showNotification("Ad settings updated successfully!", "success");
                     // 局部更新本地状态并刷新行 UI (主要为了让 View 按钮拿到最新引用)
-                    const localAd = publisherState.myAds.find(a => a.ad_id === ad.ad_id);
+                    const localAd = publisherState.ads.list.find(a => a.ad_id === ad.ad_id);
                     if (localAd) {
                         localAd.callback_url = newCallback;
                         localAd.custom_data = newCustomData;
@@ -691,12 +691,12 @@ export function renderSpendTable() {
 
     tbody.replaceChildren();
 
-    if (publisherState.spendRecords.length === 0) {
+    if (publisherState.spend.list.length === 0) {
         tbody.appendChild(cloneTemplate("tpl-empty-spend-row") as any);
         return;
     }
 
-    publisherState.spendRecords.forEach((r) => {
+    publisherState.spend.list.forEach((r) => {
         const tr = cloneTemplate("tpl-spend-row") as HTMLTableRowElement;
         tr.dataset.id = r.id;
 
