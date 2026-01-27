@@ -119,7 +119,7 @@ export function openRechargeModal() {
     if (modal) modal.classList.add("active");
 
     syncTransferModalUI();
-    setTransferDirection("wallet_to_ads"); // 这个函数内部已经处理了错误状态清空和limitDetails隐藏
+    setTransferDirection("wallet_to_ads");
 }
 
 function closeRechargeModal() {
@@ -127,8 +127,6 @@ function closeRechargeModal() {
     if (modal) modal.classList.remove("active");
 }
 
-// DEPRECATED: 此函数已被废弃，钱包和广告数据的刷新现在通过统一的fetchDashboardInfo API处理
-// 旧的refreshWalletAndAdsUI函数实现已删除，参见ad_publisher_dashboard.ts中的fetchDashboardInfo函数
 
 function handleMonthlyWithdrawLimitIfNeeded(result: any) {
     if (!result || result.alreadyWithdrawn !== true) return;

@@ -157,10 +157,6 @@ function goWizardPrev() {
 /**
  * ✅ 点击 Publish 按钮：先检查 Ads 余额；为 0 => 提示充值并打开 recharge-modal
  */
-// DEPRECATED: 此函数已被废弃，余额检查和仪表盘信息现在通过统一的fetchDashboardInfo API处理
-// 旧的handlePublishClick函数实现已删除，参见ad_publisher_dashboard.ts中的fetchDashboardInfo函数
-
-
 async function submitWizard() {
     const submitBtn = $Id("btn-wizard-submit") as HTMLButtonElement | null;
     if (submitBtn) submitBtn.disabled = true;
