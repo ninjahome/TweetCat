@@ -3,9 +3,7 @@ import { ChainNameBaseMain, walletInfo, X402_FACILITATORS } from "../../common/x
 import { getChainId } from "../../wallet/wallet_setting";
 import { queryCdpWalletInfo, x402WorkerGet } from "../../wallet/cdp_wallet";
 
-export type AdStatus = "Active" | "Paused" | "Paused (No Budget)" | "Ended";
-
-export type AdStatusBackend = 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EXPIRED' | 'COMPLETED';
+export type AdStatus = 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EXPIRED' | 'COMPLETED';
 
 export interface AdAccountInfo {
     balanceAtomic: string;
@@ -26,7 +24,7 @@ export interface AdRecord {
     unit_price_atomic: string;
     quota_total: number;
     quota_used: number;
-    status: AdStatusBackend;
+    status: AdStatus;
     end_date: string; // Changed from duration_days
     created_at: string;
     updated_at?: string | null;
@@ -73,12 +71,12 @@ export interface DashboardInfo {
     today_spend_atomic: string;
     week_spend_atomic: string;
 }
-// 模块化的分页数据结构 (扁平化方案)
 export interface PaginatedModule<T> {
     list: T[];
     currentPage: number;
     pageSize: number;
     totalCount: number;
+    isLoading?: boolean;
 }
 
 // ========= 共享状态（原来那些 let 全搬到这里） =========
@@ -96,7 +94,8 @@ export const publisherState = {
         list: [] as AdRecord[],
         currentPage: 1,
         pageSize: 10,
-        totalCount: 0
+        totalCount: 0,
+        isLoading: false
     } as PaginatedModule<AdRecord>,
 
     // 消费记录模块
@@ -104,7 +103,8 @@ export const publisherState = {
         list: [] as SpendRecord[],
         currentPage: 1,
         pageSize: 10,
-        totalCount: 0
+        totalCount: 0,
+        isLoading: false
     } as PaginatedModule<SpendRecord>,
 
     historyRecharge: [] as HistoryRow[],

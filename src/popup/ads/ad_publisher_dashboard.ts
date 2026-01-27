@@ -26,11 +26,24 @@ import {
 } from "./ad_publisher_common";
 import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 
+// 状态显示名称映射
+const AD_STATUS_LABELS: Record<string, string> = {
+    'ACTIVE': 'Active',
+    'PAUSED_MANUAL': 'Paused',
+    'PAUSED_NO_BUDGET': 'Paused (No Budget)',
+    'EXPIRED': 'Ended',
+    'COMPLETED': 'Ended'
+};
+
 // ========= 数据刷新 =========
 export async function refreshAdsData(page: number = 1) {
+    if (publisherState.ads.isLoading) return; // 简单的锁，防止重复点击导致的竞态
+
     const currentXId = getCurrentXId();
     const { pageSize } = publisherState.ads;
     const offset = (page - 1) * pageSize;
+
+    publisherState.ads.isLoading = true;
 
     try {
         const response = await x402WorkerGet(API_PATH_ADS_MY_ADS, {
@@ -48,6 +61,8 @@ export async function refreshAdsData(page: number = 1) {
         renderPaginationUI(); // 触发分页控件渲染
     } catch (error) {
         console.error("Failed to refresh ads data:", error);
+    } finally {
+        publisherState.ads.isLoading = false;
     }
 }
 
@@ -84,9 +99,13 @@ export async function fetchDashboardInfo() {
  * 获取广告消费记录并更新状态
  */
 export async function fetchSpendHistory(page: number = 1) {
+    if (publisherState.spend.isLoading) return;
+
     const currentXId = getCurrentXId();
     const { pageSize } = publisherState.spend;
     const offset = (page - 1) * pageSize;
+
+    publisherState.spend.isLoading = true;
 
     try {
         // 获取消费历史记录
@@ -106,6 +125,8 @@ export async function fetchSpendHistory(page: number = 1) {
     } catch (error) {
         console.error("Failed to fetch spend history:", error);
         logAdP("Failed to fetch spend history:", error);
+    } finally {
+        publisherState.spend.isLoading = false;
     }
 }
 
@@ -145,7 +166,6 @@ export function updateDashboardUI() {
 // 旧的 renderAdvertiseDashboard 函数已被删除，现在由新的dashboard API统一处理
 
 
-// ========= My Ads 表格 =========
 interface MyAdRow {
     id: string;
     name: string;
@@ -158,26 +178,25 @@ interface MyAdRow {
     endDate: string;
 }
 
-function mapStatus(status: 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EXPIRED' | 'COMPLETED'): AdStatus {
-    if (status === "ACTIVE") return "Active";
-    if (status === "PAUSED_MANUAL") return "Paused";
-    if (status === "PAUSED_NO_BUDGET") return "Paused (No Budget)";
-    // EXPIRED 和 COMPLETED 都显示为 "Ended"
-    return "Ended";
-}
+function buildMyAdRow(ad: AdRecord): MyAdRow {
+    const rewardPerTask = atomicToUsdcNumber(ad.unit_price_atomic);
+    const completed = Number.isFinite(ad.quota_used) ? ad.quota_used : 0;
+    const quotaTotal = Number.isFinite(ad.quota_total) ? ad.quota_total : 0;
 
-function setStatusColor(el: HTMLElement, status: string) {
-    el.style.color = ""; // Clear inline style if any
-    el.classList.remove("status-active", "status-error", "status-warning", "status-gray");
-    if (status === "ACTIVE") {
-        el.classList.add("status-active");
-    } else if (status === "PAUSED_NO_BUDGET") {
-        el.classList.add("status-error");
-    } else if (status === "PAUSED_MANUAL") {
-        el.classList.add("status-warning");
-    } else {
-        el.classList.add("status-gray");
-    }
+    const spentAtomic = multiplyAtomic(ad.unit_price_atomic, completed);
+    const remainingAtomic = multiplyAtomic(ad.unit_price_atomic, Math.max(quotaTotal - completed, 0));
+
+    return {
+        id: ad.ad_id,
+        name: ad.name,
+        status: ad.status,
+        rewardPerTask,
+        completed,
+        spent: atomicToUsdcNumber(spentAtomic),
+        remainingBudget: atomicToUsdcNumber(remainingAtomic),
+        totalQuota: quotaTotal,
+        endDate: ad.end_date,
+    };
 }
 
 /**
@@ -286,26 +305,6 @@ export function initSpendPaginationEvents() {
     }
 }
 
-function buildMyAdRow(ad: AdRecord): MyAdRow {
-    const rewardPerTask = atomicToUsdcNumber(ad.unit_price_atomic);
-    const completed = Number.isFinite(ad.quota_used) ? ad.quota_used : 0;
-    const quotaTotal = Number.isFinite(ad.quota_total) ? ad.quota_total : 0;
-
-    const spentAtomic = multiplyAtomic(ad.unit_price_atomic, completed);
-    const remainingAtomic = multiplyAtomic(ad.unit_price_atomic, Math.max(quotaTotal - completed, 0));
-
-    return {
-        id: ad.ad_id,
-        name: ad.name,
-        status: mapStatus(ad.status),
-        rewardPerTask,
-        completed,
-        spent: atomicToUsdcNumber(spentAtomic),
-        remainingBudget: atomicToUsdcNumber(remainingAtomic),
-        totalQuota: quotaTotal,
-        endDate: ad.end_date,
-    };
-}
 
 /**
  * 局部更新单行广告的 UI
@@ -334,12 +333,15 @@ export function renderAdRow(ad: AdRecord): HTMLTableRowElement {
 function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
     const rowData = buildMyAdRow(ad);
 
+    // 设置整行状态类名
+    const statusClass = `ad-row--${ad.status.toLowerCase().replace(/_/g, '-')}`;
+    tr.className = `my-ad-row ${statusClass}`;
+
     $2<HTMLElement>(tr, ".td-name").textContent = rowData.name;
 
-    // 根据状态显示不同颜色
+    // 显示状态文本
     const statusEl = $2<HTMLElement>(tr, ".td-status");
-    statusEl.textContent = rowData.status;
-    setStatusColor(statusEl, ad.status);
+    statusEl.textContent = AD_STATUS_LABELS[ad.status] || ad.status;
 
     $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(rowData.rewardPerTask);
     $2<HTMLElement>(tr, ".td-completed").textContent = rowData.completed.toString();
@@ -537,11 +539,11 @@ function openAdDetailModal(ad: AdRecord) {
 
     setText("detail-name", ad.name);
 
-    // 更新状态显示，并添加颜色编码
+    // 更新状态显示
     const statusEl = $Id("detail-status");
     if (statusEl) {
-        statusEl.textContent = mapStatus(ad.status);
-        setStatusColor(statusEl, ad.status);
+        statusEl.textContent = AD_STATUS_LABELS[ad.status] || ad.status;
+        statusEl.className = `detail-value status--${ad.status.toLowerCase().replace(/_/g, '-')}`;
     }
 
     setText("detail-category", ad.category);
