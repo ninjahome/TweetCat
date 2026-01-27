@@ -57,7 +57,7 @@ import {
 	getPerformerHistory,
 	type AdCreatePayload,
 	type CreateDetailedClaimParams,
-	type AdCampaignStatus, getPublisherDashboardStats, getAdvertiserHistory,
+	type AdCampaignStatus, getPublisherDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount,
 } from "./database_ad";
 import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
 import { getKolBindingByXId } from "./database_402";
@@ -739,28 +739,22 @@ export async function apiAdsPublisherDashboardInfo(c: ExtCtx) {
 export async function apiAdsPublisherSpendHistory(c: ExtCtx) {
 	try {
 		const aXId = c.req.query("a_x_id");
-		const limitStr = c.req.query("limit") || "20";
+		const limitStr = c.req.query("limit") || "10";
 		const offsetStr = c.req.query("offset") || "0";
 
 		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 
-		const limit = Math.min(Math.max(parseInt(limitStr, 10) || 20, 1), 100); // 限制范围 1-100
+		const limit = Math.min(Math.max(parseInt(limitStr, 10) || 10, 1), 100);
 		const offset = Math.max(parseInt(offsetStr, 10) || 0, 0);
 
-		const records = await getAdvertiserHistory(c.env.DB, aXId, limit, offset);
+		const [records, total] = await Promise.all([
+			getAdvertiserHistory(c.env.DB, aXId, limit, offset),
+			getAdvertiserHistoryCount(c.env.DB, aXId)
+		]);
 
-		// 首先获取相关的广告信息以获取单价
-		const spendRecords = [];
-		for (const record of records) {
-			// 查询对应广告的单价
-			const adStmt = c.env.DB.prepare(
-				"SELECT unit_price_atomic FROM ad_campaigns WHERE ad_id = ?"
-			).bind(record.ad_id);
-			const adRecord = await adStmt.first<{ unit_price_atomic: string }>();
-
-			const amount = adRecord ? Number(BigInt(adRecord.unit_price_atomic) / 1000000n) : 0; // 将原子单位转换为USDC
-
-			spendRecords.push({
+		const spendRecords = records.map(record => {
+			const amount = record.unit_price_atomic ? Number(BigInt(record.unit_price_atomic) / 1000000n) : 0;
+			return {
 				id: record.claim_id,
 				time: record.created_at,
 				adName: record.ad_title || `Ad ${record.ad_id.substring(0, 8)}`,
@@ -768,12 +762,16 @@ export async function apiAdsPublisherSpendHistory(c: ExtCtx) {
 				amount: amount,
 				fee: 0,
 				status: record.status
-			});
-		}
+			};
+		});
 
-		return c.json(spendRecords);
+		return c.json({
+			success: true,
+			records: spendRecords,
+			total: total
+		});
 	} catch (err: any) {
-		console.error("[apiAdsPublisherSpendHistory Error]", err);
+		console.error("fetch spend history error:", err);
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
 	}
 }

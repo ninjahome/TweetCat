@@ -83,13 +83,26 @@ export async function fetchDashboardInfo() {
 /**
  * 获取广告消费记录并更新状态
  */
-export async function fetchSpendHistory() {
+export async function fetchSpendHistory(page: number = 1) {
     const currentXId = getCurrentXId();
+    const { pageSize } = publisherState.spendPagination;
+    const offset = (page - 1) * pageSize;
+
     try {
         // 获取消费历史记录
-        const records = await x402WorkerGet(API_PATH_ADS_PUBLISHER_SPEND_HISTORY, { a_x_id: currentXId });
-        publisherState.spendRecords = records || [];
-        renderSpendTable(); // 更新消费表格
+        const response = await x402WorkerGet(API_PATH_ADS_PUBLISHER_SPEND_HISTORY, {
+            a_x_id: currentXId,
+            limit: pageSize.toString(),
+            offset: offset.toString()
+        });
+
+        if (response && response.success) {
+            publisherState.spendRecords = response.records || [];
+            publisherState.spendPagination.currentPage = page;
+            publisherState.spendPagination.totalCount = response.total || 0;
+            renderSpendTable(); // 更新消费表格
+            renderSpendPaginationUI();
+        }
     } catch (error) {
         console.error("Failed to fetch spend history:", error);
         logAdP("Failed to fetch spend history:", error);
@@ -221,6 +234,55 @@ export function renderPaginationUI() {
     const paginationEl = $Id("ads-pagination");
     if (paginationEl) {
         paginationEl.style.display = totalCount > 0 ? "flex" : "none";
+    }
+}
+
+/**
+ * 渲染消费记录分页 UI
+ */
+export function renderSpendPaginationUI() {
+    const { currentPage, pageSize, totalCount } = publisherState.spendPagination;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+    const container = $Id('spend-pagination-container');
+    const currPageEl = $Id('spend-current-page');
+    const totalPagesEl = $Id('spend-total-pages');
+    const totalCountEl = $Id('spend-total-count');
+    const prevBtn = $Id('btn-spend-prev') as HTMLButtonElement | null;
+    const nextBtn = $Id('btn-spend-next') as HTMLButtonElement | null;
+
+    if (container) container.style.display = totalCount > 0 ? 'flex' : 'none';
+    if (currPageEl) currPageEl.textContent = currentPage.toString();
+    if (totalPagesEl) totalPagesEl.textContent = totalPages.toString();
+    if (totalCountEl) totalCountEl.textContent = totalCount.toString();
+
+    if (prevBtn) prevBtn.disabled = currentPage <= 1;
+    if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+}
+
+/**
+ * 初始化消费记录分页事件
+ */
+export function initSpendPaginationEvents() {
+    const prevBtn = $Id('btn-spend-prev');
+    const nextBtn = $Id('btn-spend-next');
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (publisherState.spendPagination.currentPage > 1) {
+                fetchSpendHistory(publisherState.spendPagination.currentPage - 1);
+            }
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            const { currentPage, pageSize, totalCount } = publisherState.spendPagination;
+            const totalPages = Math.ceil(totalCount / pageSize);
+            if (currentPage < totalPages) {
+                fetchSpendHistory(currentPage + 1);
+            }
+        });
     }
 }
 

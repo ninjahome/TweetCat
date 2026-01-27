@@ -102,6 +102,7 @@ export interface AdRewardClaimRecord {
 	created_at: string;
 	updated_at: string;
 	ad_title?: string;
+	unit_price_atomic?: string;
 }
 
 export interface CreateDetailedClaimParams {
@@ -447,7 +448,7 @@ export async function getAdvertiserHistory(
 ): Promise<AdRewardClaimRecord[]> {
 	// 需要联表查询 ad_campaigns 来获取 a_x_id
 	const sql = `
-		SELECT c.*, a.title as ad_title
+		SELECT c.*, a.title as ad_title, a.unit_price_atomic
 		FROM ad_reward_claims c
 		JOIN ad_campaigns a ON c.ad_id = a.ad_id
 		WHERE a.a_x_id = ?
@@ -456,6 +457,20 @@ export async function getAdvertiserHistory(
 	`;
 	const { results } = await db.prepare(sql).bind(aXId, limit, offset).all<AdRewardClaimRecord>();
 	return results ?? [];
+}
+
+/**
+ * 获取广告主消费记录总数
+ */
+export async function getAdvertiserHistoryCount(db: D1Database, aXId: string): Promise<number> {
+	const sql = `
+		SELECT COUNT(*) as total
+		FROM ad_reward_claims c
+		JOIN ad_campaigns a ON c.ad_id = a.ad_id
+		WHERE a.a_x_id = ?
+	`;
+	const result = await db.prepare(sql).bind(aXId).first<{ total: number }>();
+	return result?.total ?? 0;
 }
 
 /**

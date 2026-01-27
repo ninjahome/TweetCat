@@ -5,6 +5,7 @@ import {
     initNavEvents,
     initSpendTabs,
     initPaginationEvents,
+    initSpendPaginationEvents,
     refreshAdsData,
     fetchDashboardInfo,
     fetchSpendHistory
@@ -19,6 +20,7 @@ async function initAdvertise() {
     initRechargeModalEvents();
     initHistoryModalEvents();
     initPaginationEvents();
+    initSpendPaginationEvents();
 
     // 钱包 + 数据
     try {

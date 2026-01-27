@@ -3,12 +3,15 @@ import {
     getCurrentXUserName,
     getCurrentXId
 } from "./ad_publisher_common";
-import { updateBudgetSummaryAndBalance } from "./ad_publisher_dashboard";
+import {
+    updateBudgetSummaryAndBalance,
+    refreshAdsData,
+    fetchDashboardInfo
+} from "./ad_publisher_dashboard";
 import {
     $Id,
     showNotification, usdcToAtomic, showLoading, hideLoading
 } from "../common";
-import { refreshAdsData } from "./ad_publisher_dashboard";
 import { x402WorkerFetch } from "../../wallet/cdp_wallet";
 
 // ========= 发布广告向导（Wizard） =========
@@ -249,6 +252,7 @@ async function submitWizard() {
 
         showNotification("Ad created successfully", "success");
         closeWizard();
+        await fetchDashboardInfo();
         await refreshAdsData(1); // 跳转回第一页查看新广告
         resetWizardForm(); // Reset form after successful submission
     } catch (e: any) {

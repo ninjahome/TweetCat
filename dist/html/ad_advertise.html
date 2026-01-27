@@ -93,7 +93,8 @@
                     <!-- Pagination -->
                     <div id="ads-pagination" class="pagination-container">
                         <div class="pagination-info">
-                            Showing <span id="pagination-current-range">-</span> of <span id="pagination-total-count">0</span>
+                            Showing <span id="pagination-current-range">-</span> of <span
+                                id="pagination-total-count">0</span>
                         </div>
                         <div class="pagination-actions">
                             <button id="btn-prev-page" class="btn-pagination" disabled>&lt; Previous</button>
@@ -109,13 +110,6 @@
                         <div class="section-header-left">
                             <h2 class="section-title">Recent Activity</h2>
                             <p class="section-subtitle">Latest spending records (preview).</p>
-                        </div>
-                        <div class="section-header-actions">
-                            <!-- reuse History as “View all” without changing existing id -->
-                            <button class="btn-secondary btn-view-all" type="button"
-                                onclick="document.getElementById('btn-history')?.click()">
-                                View all
-                            </button>
                         </div>
                     </div>
 
@@ -141,6 +135,29 @@
                                 </tr>
                             </tbody>
                         </table>
+
+                        <!-- Spending Pagination Controls -->
+                        <div class="table-pagination" id="spend-pagination-container"
+                            style="display: none; margin-top: 1rem;">
+                            <div class="pagination-info">
+                                Page <span id="spend-current-page">1</span> of <span id="spend-total-pages">1</span>
+                                (<span id="spend-total-count">0</span> records)
+                            </div>
+                            <div class="pagination-actions">
+                                <button class="btn-pagination" id="btn-spend-prev" disabled>
+                                    <svg viewBox="0 0 24 24" width="16" height="16">
+                                        <path fill="currentColor" d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                                    </svg>
+                                    Prev
+                                </button>
+                                <button class="btn-pagination" id="btn-spend-next" disabled>
+                                    Next
+                                    <svg viewBox="0 0 24 24" width="16" height="16">
+                                        <path fill="currentColor" d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </main>

@@ -39,7 +39,7 @@ export interface SpendRecord {
     event: string;
     amount: number;
     fee: number;
-    status: "Success" | "Pending" | "Failed";
+    status: string;
 }
 
 export interface HistoryRow {
@@ -89,6 +89,11 @@ export const publisherState = {
     walletInfoCache: null as walletInfo | null,
     // 分页相关状态
     adsPagination: {
+        currentPage: 1,
+        pageSize: 10,
+        totalCount: 0
+    },
+    spendPagination: {
         currentPage: 1,
         pageSize: 10,
         totalCount: 0
