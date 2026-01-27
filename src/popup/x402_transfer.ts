@@ -138,7 +138,20 @@ async function performTransfer(profile: UserProfile, amount: string): Promise<vo
         if (result.code === "RECIPIENT_NOT_FOUND") {
             throw new Error(t("register_account_error"));
         }
-        throw new Error(t('transfer_create_tx_failed') + safeStringify(result));
+
+        let errorMessage = '';
+        if (result.message) {
+            const translatedMsg = t(result.message);
+            if (translatedMsg !== result.message) {
+                errorMessage = translatedMsg;
+            }
+        }
+
+        if (!errorMessage) {
+            errorMessage = result.error || result.message;
+        }
+
+        throw new Error(errorMessage || t('transfer_create_tx_failed'));
     }
 
     logX402("------>>>transfer success:", result.txHash)
@@ -210,7 +223,35 @@ async function init() {
             updateUIState(true, "✅ 转账成功:" + hash);
             setTimeout(() => window.close(), 1_500);
         } catch (err: any) {
-            updateUIState(false, "", err.message || t("wallet_transfer_failed"));
+            let errorMessage = err.message || t("wallet_transfer_failed");
+
+            const jsonStart = errorMessage.indexOf('{');
+            if (jsonStart > -1) {
+                const jsonStr = errorMessage.substring(jsonStart);
+                try {
+                    const errJson = JSON.parse(jsonStr);
+                    let displayMessage = '';
+
+                    if (errJson.message) {
+                        const translatedMsg = t(errJson.message);
+                        if (translatedMsg !== errJson.message) {
+                            displayMessage = translatedMsg;
+                        }
+                    }
+
+                    if (!displayMessage) {
+                        displayMessage = errJson.error || errJson.message;
+                    }
+
+                    if (displayMessage) {
+                        errorMessage = displayMessage;
+                    }
+
+                } catch (e) {
+                    // ignore parsing error, use original errorMessage
+                }
+            }
+            updateUIState(false, "", errorMessage);
         }
     });
 
