@@ -57,7 +57,7 @@ import {
 	getPerformerHistory,
 	type AdCreatePayload,
 	type CreateDetailedClaimParams,
-	type AdCampaignStatus, getPublisherDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount,
+	type AdCampaignStatus, getPublisherDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount, addAdQuota,
 } from "./database_ad";
 import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
 import { getKolBindingByXId } from "./database_402";
@@ -878,9 +878,19 @@ export async function apiAdsTopUpBudget(c: ExtCtx) {
 		if (!ad) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
 		if (ad.a_x_id !== aXId) return jsonError(c, 403, "FORBIDDEN", "You do not own this ad");
 
-		// 只有 PAUSED_NO_BUDGET 状态的广告才能充值
-		if (ad.status !== "PAUSED_NO_BUDGET") {
-			return jsonError(c, 400, "INVALID_STATE", "Only ads paused due to insufficient budget can be topped up");
+		// 只有非终止状态的广告才能充值 (ACTIVE, PAUSED_MANUAL, PAUSED_NO_BUDGET)
+		if (ad.status === "EXPIRED" || ad.status === "COMPLETED") {
+			return jsonError(c, 400, "INVALID_STATE", "Cannot top up ended ads. Please create a new campaign.");
+		}
+
+		// 计算追加配额：amountAtomic / unit_price_atomic (必须是整数倍或向下取整)
+		const unitPrice = BigInt(ad.unit_price_atomic);
+		const amount = BigInt(amountAtomic);
+		if (unitPrice === 0n) return jsonError(c, 500, "INTERNAL_ERROR", "Ad unit price is zero");
+
+		const additionalQuota = Number(amount / unitPrice);
+		if (additionalQuota <= 0) {
+			return jsonError(c, 400, "INVALID_AMOUNT", `Amount is too small for at least one task. Unit price: ${ad.unit_price_atomic}`);
 		}
 
 		// 预留预算（从 available 移动到 frozen）
@@ -895,13 +905,29 @@ export async function apiAdsTopUpBudget(c: ExtCtx) {
 			);
 		}
 
-		// 更新广告状态为 ACTIVE
-		const updated = await updateAdStatus(c.env.DB, adId, "ACTIVE");
-		if (!updated) {
-			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status after top-up");
+		// 增加广告配额
+		const quotaUpdated = await addAdQuota(c.env.DB, adId, additionalQuota);
+		if (!quotaUpdated) {
+			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad quota");
 		}
 
-		return c.json({ ok: true, ad_id: adId, topped_up_atomic: amountAtomic, new_status: "ACTIVE" });
+		// 如果原状态是 PAUSED_NO_BUDGET，更新状态为 ACTIVE
+		let finalStatus = ad.status;
+		if (ad.status === "PAUSED_NO_BUDGET") {
+			const updated = await updateAdStatus(c.env.DB, adId, "ACTIVE");
+			if (!updated) {
+				return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status after top-up");
+			}
+			finalStatus = "ACTIVE";
+		}
+
+		return c.json({
+			ok: true,
+			ad_id: adId,
+			topped_up_atomic: amountAtomic,
+			additional_quota: additionalQuota,
+			new_status: finalStatus
+		});
 	} catch (err: any) {
 		console.error("[apiAdsTopUpBudget Error]", err);
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");

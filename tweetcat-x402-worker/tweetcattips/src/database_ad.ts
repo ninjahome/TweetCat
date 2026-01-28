@@ -314,6 +314,31 @@ export async function updateAdStatus(
 }
 
 /**
+ * 增加广告的总配额（用于追加预算）
+ * @param db - D1 数据库实例
+ * @param adId - 广告 ID
+ * @param additionalQuota - 要增加的配额数量
+ * @returns 操作是否成功
+ */
+export async function addAdQuota(
+	db: D1Database,
+	adId: string,
+	additionalQuota: number
+): Promise<boolean> {
+	const updateSql = `
+		UPDATE ad_campaigns
+		SET quota_total = quota_total + ?,
+			updated_at = datetime('now')
+		WHERE ad_id = ?
+	`;
+	const result = await db.prepare(updateSql)
+		.bind(additionalQuota, adId)
+		.run();
+
+	return result.success && (result.meta.changes ?? 0) > 0;
+}
+
+/**
  * 获取用户的所有广告（支持分页）
  */
 export async function getMyAds(

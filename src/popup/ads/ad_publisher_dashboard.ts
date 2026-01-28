@@ -513,7 +513,7 @@ async function handleTopUpSubmit(adId: string) {
             amount_atomic: amountAtomic
         });
 
-        showNotification("充值成功，广告已启用", "success");
+        showNotification("预算追加成功", "success");
         if (modal) modal.classList.remove("active");
 
         // 局部更新：即使是充值，也涉及余额变化，所以通常需要刷新 dashboard
@@ -673,6 +673,18 @@ function openAdDetailModal(ad: AdRecord) {
                 handleTopUpAdBudget(ad.ad_id);
             };
             modalActions.appendChild(btnTopUp);
+        }
+
+        // 统一：为 ACTIVE, PAUSED_MANUAL, PAUSED_NO_BUDGET 状态提供一个通用的“追加预算”按钮
+        if (ad.status === "ACTIVE" || ad.status === "PAUSED_MANUAL") {
+            const btnAddBudget = document.createElement("button");
+            btnAddBudget.className = "btn btn-success";
+            btnAddBudget.textContent = "追加预算";
+            btnAddBudget.onclick = () => {
+                modal.classList.remove("active");
+                handleTopUpAdBudget(ad.ad_id);
+            };
+            modalActions.appendChild(btnAddBudget);
         }
     }
 
