@@ -57,6 +57,11 @@
 
                         <!-- Publish CTA moved here (keeps same id for TS) -->
                         <div class="section-header-actions">
+                            <button id="btn-test-deploy" class="btn-publish-ad btn-publish-ad--sm" type="button"
+                                style="background-color: #6366f1; margin-right: 10px;">
+                                <span class="publish-icon">🧪</span>
+                                <span class="publish-text">Test Deploy (USDC Gas)</span>
+                            </button>
                             <button id="btn-publish-ad" class="btn-publish-ad btn-publish-ad--sm" type="button">
                                 <span class="publish-icon">➕</span>
                                 <span class="publish-text">Publish New Ad</span>
@@ -187,6 +192,10 @@
                                 Transfer</button>
                         </div>
 
+                        <div class="side-note"
+                            style="margin-top: 10px; color: #f59e0b; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2);">
+                            ⚠️ Note: Deploying requires a small amount of ETH for gas.
+                        </div>
 
                         <!-- 1: Active ads -->
                         <div class="dashboard-card dashboard-card-active">
@@ -478,6 +487,66 @@
                         <button id="btn-history" class="btn-history-inline">📋 View Transfer History</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deploy Confirmation Modal -->
+    <div id="deploy-confirm-modal" class="modal">
+        <div class="modal-dialog" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Confirm Campaign Launch</h2>
+                <button id="close-deploy-confirm" class="btn-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="deploy-confirm-content">
+                    <p class="deploy-intro">You are about to launch a new advertisement campaign. This involves two
+                        steps:</p>
+
+                    <div class="deploy-steps-list">
+                        <div class="deploy-step-item">
+                            <div class="step-icon">📜</div>
+                            <div class="step-details">
+                                <strong>1. Deploy Ad Insurance Vault</strong>
+                                <p>A smart contract will be created on-chain. This requires ETH gas.</p>
+                                <div class="gas-info-row">
+                                    <div class="info-item">
+                                        <span class="info-label">Estimated Gas:</span>
+                                        <span id="confirm-gas-est" class="info-value">... ETH</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">Your Balance:</span>
+                                        <span id="confirm-eth-balance" class="info-value">... ETH</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deploy-step-item">
+                            <div class="step-icon">💰</div>
+                            <div class="step-details">
+                                <strong>2. Fund Campaign Budget</strong>
+                                <p>The initial budget will be deposited into the vault. This is processed via x402
+                                    protocol (Gasless for you).</p>
+                                <div class="amount-highlight">
+                                    <span class="amount-label">Initial Deposit:</span>
+                                    <span id="confirm-deposit-amount" class="amount-value">0.01 USDC</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deploy-warning"
+                        style="display: flex; gap: 10px; padding: 12px; background: #fff9db; border-radius: 8px; font-size: 12px; color: #856404; border: 1px solid #ffe066;">
+                        <span class="warning-icon">ℹ️</span>
+                        <p>Your EOA wallet will remain the sole owner of the vault and its funds.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"
+                style="padding: 20px; display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid #e5e7eb;">
+                <button id="btn-deploy-cancel" class="btn-secondary">Cancel</button>
+                <button id="btn-deploy-confirm" class="btn-primary">Confirm & Deploy</button>
             </div>
         </div>
     </div>

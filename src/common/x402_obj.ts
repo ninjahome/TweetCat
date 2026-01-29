@@ -1,4 +1,4 @@
-import {initialize, signOut} from "@coinbase/cdp-core";
+import { initialize, signOut } from "@coinbase/cdp-core";
 
 export const ChainIDBaseSepolia = 84532 as const
 export const ChainIDBaseMain = 8453 as const
@@ -21,6 +21,8 @@ export interface X402FacilitatorConfig {
     settlementContract: string
     endpoint: string
     browser: string
+    paymasterRpc: string
+    adFactory: string
 }
 
 export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
@@ -32,6 +34,8 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
         settlementContract: "0x1BD5fF7e17ec7950cAA06BF2DeB0038C54d31Fc2",
         endpoint: "https://tweetcattips-dev.ribencong.workers.dev",
         browser: BASE_SEPOLIA_DEFAULT_RPC,
+        paymasterRpc: "https://api.developer.coinbase.com/rpc/v1/base-sepolia/qhDlFJwedElH91oevIr2d01Gq1AC15TJ",
+        adFactory: "0xB6cCD39C11a32E8efAeD28D2Fc1a78d65ef5Cb08",
     },
 
     // Base Mainnet
@@ -42,6 +46,8 @@ export const X402_FACILITATORS: Record<number, X402FacilitatorConfig> = {
         settlementContract: "0x1BD5fF7e17ec7950cAA06BF2DeB0038C54d31Fc2",
         endpoint: "https://tweetcattips.ribencong.workers.dev",
         browser: BASE_MAINNET_DEFAULT_RPC,
+        paymasterRpc: "https://api.developer.coinbase.com/rpc/v1/base/qhDlFJwedElH91oevIr2d01Gq1AC15TJ",
+        adFactory: "0x0000000000000000000000000000000000000000",
     },
 }
 
@@ -63,7 +69,7 @@ export async function initCDP() {
     await initialize({
         projectId: PROJECT_ID,
         ethereum: {
-            createOnLogin: "eoa",
+            createOnLogin: "smart",
         },
     });
 }

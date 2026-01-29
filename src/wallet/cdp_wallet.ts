@@ -1,4 +1,4 @@
-import {base, baseSepolia} from 'viem/chains'
+import { base, baseSepolia } from 'viem/chains'
 import {
     Address,
     bytesToHex,
@@ -15,8 +15,8 @@ import {
     parseUnits,
     toHex,
 } from 'viem'
-import {ChainIDBaseMain, ChainIDBaseSepolia, initCDP, walletInfo, X402_FACILITATORS} from "../common/x402_obj";
-import {getChainId} from "./wallet_setting";
+import { ChainIDBaseMain, ChainIDBaseSepolia, initCDP, walletInfo, X402_FACILITATORS } from "../common/x402_obj";
+import { getChainId } from "./wallet_setting";
 import {
     EndUserEvmAccount,
     EndUserEvmSmartAccount,
@@ -28,21 +28,22 @@ import {
     sendUserOperation,
     signEvmTypedData
 } from "@coinbase/cdp-core";
-import {ClientEvmSigner} from "@x402/evm";
-import {x402Client} from "@x402/core/client";
-import {registerExactEvmScheme} from "@x402/evm/exact/client";
-import {wrapFetchWithPayment} from "@x402/fetch";
-import {privateKeyToAccount} from "viem/accounts";
-import {logX402} from "../common/debug_flags";
-import {t} from "../common/i18n";
+import { ClientEvmSigner } from "@x402/evm";
+import { x402Client } from "@x402/core/client";
+import { registerExactEvmScheme } from "@x402/evm/exact/client";
+import { wrapFetchWithPayment } from "@x402/fetch";
+import { privateKeyToAccount } from "viem/accounts";
+import { logX402 } from "../common/debug_flags";
+import { t } from "../common/i18n";
+import { AdDeployer } from "../web3/AdDeployer";
 
 const ERC20_BALANCE_ABI = [
     {
         name: 'balanceOf',
         type: 'function',
         stateMutability: 'view',
-        inputs: [{name: 'account', type: 'address'}],
-        outputs: [{type: 'uint256'}],
+        inputs: [{ name: 'account', type: 'address' }],
+        outputs: [{ type: 'uint256' }],
     },
 ] as const
 
@@ -50,8 +51,8 @@ const USDC_ABI = [{
     name: "transfer",
     type: "function",
     stateMutability: "nonpayable",
-    inputs: [{name: "to", type: "address"}, {name: "amount", type: "uint256"}],
-    outputs: [{type: "bool"}],
+    inputs: [{ name: "to", type: "address" }, { name: "amount", type: "uint256" }],
+    outputs: [{ type: "bool" }],
 }] as const;
 
 // ============ 链配置工具函数 ============
@@ -62,7 +63,7 @@ function getChain(chainId: number) {
 }
 
 export function getPublicClient(chainId: number) {
-    return createPublicClient({chain: getChain(chainId), transport: http()});
+    return createPublicClient({ chain: getChain(chainId), transport: http() });
 }
 
 export function getCdpNetwork(chainId: number): "base" | "base-sepolia" {
@@ -89,7 +90,7 @@ export async function getEOA(): Promise<EndUserEvmAccount> {
     return eoa;
 }
 
-async function getSmart(): Promise<EndUserEvmSmartAccount> {
+export async function getSmart(): Promise<EndUserEvmSmartAccount> {
     await initCDP();
     if (!await isSignedIn()) throw new Error("Not signed in");
 
@@ -161,7 +162,7 @@ export async function queryWalletBalance(
 }
 
 export async function queryCdpWalletInfo(chainId: number | null = null): Promise<walletInfo> {
-    const failedWallet = {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null};
+    const failedWallet = { address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null };
     try {
         if (!chainId) chainId = await getChainId();
 
@@ -174,7 +175,7 @@ export async function queryCdpWalletInfo(chainId: number | null = null): Promise
             return failedWallet;
         }
 
-        const {eth, usdc} = await queryWalletBalance(eoa.address, chainId);
+        const { eth, usdc } = await queryWalletBalance(eoa.address, chainId);
         const xId = user?.authenticationMethods?.x?.sub || null;
         const username = user?.authenticationMethods?.x?.username
         console.log("----->>> query wallet infor for:", chainId, " wallet:", eoa, " x info:", user?.authenticationMethods?.x)
@@ -326,7 +327,7 @@ export async function transferUSDCByX402(
     if (!isAddress(toAddress)) {
         throw new Error(`Invalid recipient address: ${toAddress}`);
     }
-    const result = await postToX402SrvByPri("/usdc-transfer", {amount: amountUsdc, to: toAddress})
+    const result = await postToX402SrvByPri("/usdc-transfer", { amount: amountUsdc, to: toAddress })
     const txHash = result.txHash;
     logX402("-------x402>>>transfer result,", result)
     return txHash;
@@ -381,16 +382,16 @@ function normalizeTypedDataForCdp(args: {
     primaryType: string;
     message: Record<string, any>;
 }) {
-    const domain = {...args.domain};
+    const domain = { ...args.domain };
 
     if (domain.chainId) domain.chainId = Number(domain.chainId);
 
-    const types: Record<string, readonly Eip712Field[]> = {...(args.types || {})};
+    const types: Record<string, readonly Eip712Field[]> = { ...(args.types || {}) };
     if (!types.EIP712Domain) {
         types.EIP712Domain = buildEip712DomainTypes(domain);
     }
 
-    const message = {...args.message};
+    const message = { ...args.message };
     const fields = (types?.[args.primaryType] ?? []) as readonly Eip712Field[];
     const typeByName = new Map(fields.map((f) => [f.name, f.type] as const));
 
@@ -398,7 +399,7 @@ function normalizeTypedDataForCdp(args: {
         message[k] = normalizeEip712Value(v, typeByName.get(k));
     }
 
-    return {...args, domain, types, message};
+    return { ...args, domain, types, message };
 }
 
 function normalizeEip712Value(value: any, typeHint?: string): any {
@@ -408,12 +409,12 @@ function normalizeEip712Value(value: any, typeHint?: string): any {
 
     if (value instanceof Uint8Array) {
         const hex = bytesToHex(value);
-        return typeHint === 'bytes32' ? padHex(hex, {size: 32}) : hex;
+        return typeHint === 'bytes32' ? padHex(hex, { size: 32 }) : hex;
     }
 
     if (typeof value === 'number') {
         if (typeHint === 'bytes32') {
-            return padHex(toHex(BigInt(value)), {size: 32});
+            return padHex(toHex(BigInt(value)), { size: 32 });
         }
         return value;
     }
@@ -421,10 +422,10 @@ function normalizeEip712Value(value: any, typeHint?: string): any {
     if (typeof value === 'string') {
         if (typeHint === 'bytes32') {
             if (isHex(value)) {
-                return padHex(value, {size: 32});
+                return padHex(value, { size: 32 });
             }
             try {
-                return padHex(toHex(BigInt(value)), {size: 32});
+                return padHex(toHex(BigInt(value)), { size: 32 });
             } catch {
                 return value;
             }
@@ -445,16 +446,16 @@ function normalizeEip712Value(value: any, typeHint?: string): any {
 function buildEip712DomainTypes(domain: any): Eip712Field[] {
     const fields: Eip712Field[] = [];
 
-    if (domain?.name != null) fields.push({name: "name", type: "string"});
-    if (domain?.version != null) fields.push({name: "version", type: "string"});
-    if (domain?.chainId != null) fields.push({name: "chainId", type: "uint256"});
-    if (domain?.verifyingContract != null) fields.push({name: "verifyingContract", type: "address"});
-    if (domain?.salt != null) fields.push({name: "salt", type: "bytes32"});
+    if (domain?.name != null) fields.push({ name: "name", type: "string" });
+    if (domain?.version != null) fields.push({ name: "version", type: "string" });
+    if (domain?.chainId != null) fields.push({ name: "chainId", type: "uint256" });
+    if (domain?.verifyingContract != null) fields.push({ name: "verifyingContract", type: "address" });
+    if (domain?.salt != null) fields.push({ name: "salt", type: "bytes32" });
 
-    return fields.length ? fields : [{name: "chainId", type: "uint256"}];
+    return fields.length ? fields : [{ name: "chainId", type: "uint256" }];
 }
 
-async function getPrivateKeyFromEOA(): Promise<`0x${string}`> {
+export async function getPrivateKeyFromEOA(): Promise<`0x${string}`> {
     // 1. 获取 EOA
     const eoa = await getEOA();
 
@@ -540,15 +541,15 @@ export async function x402WorkerFetch(path: string, body: any): Promise<any> {
 
         const privateKey = await getPrivateKeyFromEOA();
         const account = privateKeyToAccount(privateKey);
-        
+
         // Add userId and timestamp to the body before signing
         const bodyWithUserId = {
             ...body,
             userId: userId,
             x402TimeStamp: Date.now()
         };
-        
-        const signature = await account.signMessage({message: JSON.stringify(bodyWithUserId)});
+
+        const signature = await account.signMessage({ message: JSON.stringify(bodyWithUserId) });
         requestBody = {
             ...bodyWithUserId,
             signature: signature,
@@ -596,4 +597,20 @@ export async function x402WorkerGet(path: string, params?: Record<string, string
     }
 
     return await response.json();
+}
+
+/**
+ * POC: 使用 USDC 支付 Gas 部署广告合约
+ */
+export async function deployAdVaultPOC(adId: string): Promise<string> {
+    const chainId = await getChainId();
+    const facilitator = X402_FACILITATORS[chainId];
+    const platformAddress = facilitator.settlementContract as `0x${string}`;
+
+    return await AdDeployer.deployAdVault(
+        chainId,
+        platformAddress,
+        adId,
+        10000n // 0.01 USDC 测试充值，用于验证 Batch 扣费和 Gas 扣费
+    );
 }

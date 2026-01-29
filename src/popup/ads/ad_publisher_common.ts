@@ -218,6 +218,13 @@ export function openTxInExplorer(txHash: string): void {
     window.open(`${baseUrl}${txHash}`, "_blank");
 }
 
+export function openAddrInExplorer(addr: string): void {
+    const networkLabel = ($Id("header-network")?.textContent || "").toLowerCase();
+    const isSepolia = networkLabel.includes("sepolia");
+    const baseUrl = isSepolia ? "https://sepolia.basescan.org/address/" : "https://basescan.org/address/";
+    window.open(`${baseUrl}${addr}`, "_blank");
+}
+
 // ========= API helpers =========
 export async function fetchAdEscrowLedger(aXId: string, limit: number = 50, offset: number = 0): Promise<any[]> {
     const data = await x402WorkerGet(API_PATH_ADS_PUBLISHER_LEDGER, {

@@ -8,11 +8,10 @@ import {
     refreshAdsData,
     fetchDashboardInfo
 } from "./ad_publisher_dashboard";
-import {
-    $Id,
-    showNotification, usdcToAtomic, showLoading, hideLoading
-} from "../common";
-import { x402WorkerFetch } from "../../wallet/cdp_wallet";
+import { showNotification, usdcToAtomic, showLoading, hideLoading, $Id } from "../common";
+import { x402WorkerFetch, deployAdVaultPOC, queryWalletBalance, getEOA } from "../../wallet/cdp_wallet";
+import { getChainId } from "../../wallet/wallet_setting";
+import { AdDeployer } from "../../web3/AdDeployer";
 
 // ========= 发布广告向导（Wizard） =========
 let wizardCurrentStep = 1;
@@ -259,6 +258,56 @@ async function submitWizard() {
     }
 }
 
+async function showDeployConfirmation(amountStr: string): Promise<boolean> {
+    const chainId = await getChainId();
+
+    // 1. 异步并行获取 Gas 估算和余额
+    const [gasEst, eoa] = await Promise.all([
+        AdDeployer.estimateDeployFee(chainId),
+        getEOA()
+    ]);
+    const balanceInfo = await queryWalletBalance(eoa.address, chainId);
+
+    return new Promise((resolve) => {
+        const modal = $Id("deploy-confirm-modal");
+        const amountDisplay = $Id("confirm-deposit-amount");
+        const gasDisplay = $Id("confirm-gas-est");
+        const balanceDisplay = $Id("confirm-eth-balance");
+        const btnConfirm = $Id("btn-deploy-confirm");
+        const btnCancel = $Id("btn-deploy-cancel");
+        const btnClose = $Id("close-deploy-confirm");
+
+        if (!modal || !amountDisplay || !gasDisplay || !balanceDisplay || !btnConfirm || !btnCancel || !btnClose) {
+            console.error("Deploy confirmation modal elements not found");
+            resolve(false);
+            return;
+        }
+
+        // 更新 UI 文本
+        amountDisplay.textContent = `${amountStr} USDC`;
+        gasDisplay.textContent = `~ ${gasEst} ETH`;
+        balanceDisplay.textContent = `${balanceInfo.eth} ETH`;
+
+        // 余额校验 (Gas 不足变红)
+        const isInsufficient = Number(balanceInfo.eth) < Number(gasEst);
+        balanceDisplay.classList.toggle("insufficient-gas", isInsufficient);
+
+        modal.classList.add("active");
+
+        const cleanup = (result: boolean) => {
+            modal.classList.remove("active");
+            btnConfirm.onclick = null;
+            btnCancel.onclick = null;
+            btnClose.onclick = null;
+            resolve(result);
+        };
+
+        btnConfirm.onclick = () => cleanup(true);
+        btnCancel.onclick = () => cleanup(false);
+        btnClose.onclick = () => cleanup(false);
+    });
+}
+
 export function initWizardEvents() {
     const closeWizardBtn = $Id("close-wizard") as HTMLButtonElement | null;
     if (closeWizardBtn) closeWizardBtn.addEventListener("click", closeWizard);
@@ -271,6 +320,33 @@ export function initWizardEvents() {
 
     const btnSubmit = $Id("btn-wizard-submit") as HTMLButtonElement | null;
     if (btnSubmit) btnSubmit.addEventListener("click", submitWizard);
+
+    const btnTestDeploy = $Id("btn-test-deploy") as HTMLButtonElement | null;
+    if (btnTestDeploy) {
+        btnTestDeploy.addEventListener("click", async () => {
+            try {
+                // 读取当前的预览预算 (如果没有设置则默认 0.01)
+                const budgetValEl = document.querySelector("#budget-value");
+                const budgetStr = budgetValEl?.textContent?.replace(" USDC", "").trim() || "0.01";
+
+                // 弹出正式的确认对话框
+                const confirmed = await showDeployConfirmation(budgetStr);
+
+                if (!confirmed) return;
+
+                showLoading("Testing USDC Gasless Deployment...");
+                const adId = `test-ad-${Date.now()}`;
+                const userOpHash = await deployAdVaultPOC(adId);
+                showNotification(`Deployment initiated! Hash: ${userOpHash.slice(0, 10)}...`, "success");
+                console.log("Test Deployment Tx Hash:", userOpHash);
+            } catch (err: any) {
+                console.error("Test Deployment failed:", err);
+                showNotification(err?.message || "Test Deployment failed", "error");
+            } finally {
+                hideLoading();
+            }
+        });
+    }
 
     const rewardAmount = document.querySelector<HTMLInputElement>("#reward-amount");
     if (rewardAmount) rewardAmount.addEventListener("input", updateBudgetSummaryAndBalance);
