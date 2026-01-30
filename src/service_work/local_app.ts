@@ -1,8 +1,8 @@
 // ====== 1) 配置：你的 Native Messaging Host 名称 ======
 import browser from "webextension-polyfill";
-import {sessionGet, sessionSet} from "../common/session_storage";
-import {VideoMeta} from "../object/video_meta";
-import {logYT} from "../common/debug_flags";
+import { sessionGet, sessionSet } from "../common/session_storage";
+import { VideoMeta } from "../object/video_meta";
+import { logYT } from "../common/debug_flags";
 
 const KS_YT_COOKIE_KEY = "__KS_YT_COOKIE__";
 const NATIVE_HOST = 'com.tweetcat.ata_miner';
@@ -38,9 +38,9 @@ async function sendToNative(payload: NativeRequest, timeoutMs = 15000): Promise<
 
     try {
         const resp = await browser.runtime.sendNativeMessage(NATIVE_HOST, payload) as NativeResponse;
-        return resp ?? {ok: false, message: 'empty native response'};
+        return resp ?? { ok: false, message: 'empty native response' };
     } catch (err: any) {
-        return {ok: false, message: String(err?.message || err)};
+        return { ok: false, message: String(err?.message || err) };
     } finally {
         clearTimeout(t);
     }
@@ -103,4 +103,57 @@ export async function sendCookiesToAtaMiner(cookieText: string): Promise<NativeR
         hash,
     };
     return await sendToNative(req);
+}
+
+// ====== 4) New Protocol for ATA Miner (cmd based) ======
+
+interface NativeCommandRequest {
+    cmd: string;
+    trace_id?: string;
+    payload?: Record<string, string>;
+}
+
+interface NativeCommandResponse {
+    ok: boolean;
+    error_code?: number;
+    trace_id?: string;
+    data?: Record<string, string>;
+    message?: string; // fallback
+}
+
+export async function sendNativeCommand(req: NativeCommandRequest, timeoutMs = 15000): Promise<NativeCommandResponse> {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+
+    try {
+        const resp = await browser.runtime.sendNativeMessage(NATIVE_HOST, req) as NativeCommandResponse;
+        return resp;
+    } catch (err: any) {
+        return {
+            ok: false,
+            error_code: 500,
+            message: String(err?.message || err)
+        };
+    } finally {
+        clearTimeout(t);
+    }
+}
+
+export async function sendFollowClaim(
+    traceId: string,
+    rawPayload: any,
+    headers: any,
+    cookies: any[]
+): Promise<NativeCommandResponse> {
+    const payloadMap: Record<string, string> = {
+        "task_payload": JSON.stringify(rawPayload),
+        "headers": JSON.stringify(headers),
+        "cookies": JSON.stringify(cookies)
+    };
+
+    return sendNativeCommand({
+        cmd: "follow_claim",
+        trace_id: traceId,
+        payload: payloadMap
+    });
 }
