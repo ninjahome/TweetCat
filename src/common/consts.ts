@@ -92,6 +92,8 @@ export enum MsgType {
     X402TipAction = "X402TipAction",
     X402EmbeddWalletSignIn = "X402EmbeddWalletSignIn",
     X402NotSignedIn = "X402NotSignedIn",
+
+    ProfileFollowClaim = "ProfileFollowClaim",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
@@ -151,5 +153,4 @@ export const defaultQueryKeyMap: Record<string, string> = {
     CreateGrokConversation: "vvC5uy7pWWHXS2aDi1FZeA",
     ConversationItem_DeleteConversationMutation: "TlKHSWVMVeaa-i7dqQqFQA",
 }
-
 

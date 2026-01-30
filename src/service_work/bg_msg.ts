@@ -39,6 +39,7 @@ import {
     msgUnlockWallet
 } from "./wallet_controller";
 import {x402TipPayload} from "../common/x402_obj";
+import {handleProfileFollowClaim} from "./profile_follow_claim";
 
 export async function checkIfXIsOpen(): Promise<boolean> {
     const tabs = await browser.tabs.query({
@@ -76,6 +77,10 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
     }
 
     switch (request.action) {
+
+        case MsgType.ProfileFollowClaim: {
+            return await handleProfileFollowClaim(request.data || {});
+        }
 
         case MsgType.FollowingBulkUnfollow: {
             return await sendMessageToX(MsgType.FollowingBulkUnfollow, request.data);

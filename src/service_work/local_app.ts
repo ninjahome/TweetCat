@@ -5,7 +5,7 @@ import {VideoMeta} from "../object/video_meta";
 import {logYT} from "../common/debug_flags";
 
 const KS_YT_COOKIE_KEY = "__KS_YT_COOKIE__";
-const NATIVE_HOST = 'com.dessage.tweetcatapp';
+const NATIVE_HOST = 'com.tweetcat.ata_miner';
 
 type NativeAction = 'start' | 'cookie' | 'check' | 'probe' | 'videoMeta';
 
@@ -93,4 +93,14 @@ export async function checkLocalApp(): Promise<boolean> {
         }
         return false;
     }
+}
+
+export async function sendCookiesToAtaMiner(cookieText: string): Promise<NativeResponse> {
+    const hash = await sha256Hex(cookieText);
+    const req: NativeRequest = {
+        action: "cookie",
+        cookies: cookieText,
+        hash,
+    };
+    return await sendToNative(req);
 }

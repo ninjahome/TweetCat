@@ -1803,6 +1803,33 @@ html[data-bg="lightsout"] {
 .transfer-btn:hover{
     background: linear-gradient(to right, #1a8cd8, #03B69B);
 }
+
+.follow-claim-on-profile {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 0.375rem;
+}
+
+.follow-claim-btn-on-profile {
+    background: linear-gradient(to right, #1d9bf0, #06CBAD) !important;
+    border-color: transparent !important;
+    border-radius: 9999px !important;
+    height: 36px;
+    padding: 0 12px;
+    min-width: 120px;
+}
+
+.follow-claim-btn-on-profile:hover {
+    background: linear-gradient(to right, #1a8cd8, #03B69B) !important;
+}
+
+.follow-claim-btn-title {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 36px;
+    white-space: nowrap;
+}
 .user-profile-score-details {
     position: absolute;
     display: flex;

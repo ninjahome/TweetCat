@@ -23,6 +23,7 @@ export async function appendFilterOnKolProfilePage(kolName: string) {
         const oldFilterBtn = profileToolBarDiv.querySelectorAll(".filter-btn-on-profile");
         oldFilterBtn.forEach(item => item.remove());
         await _appendFilterBtn(profileToolBarDiv, kolName);
+        await _appendFollowClaimBtn(profileToolBarDiv, kolName);
         observing = false;
     }, false);
 }
@@ -125,6 +126,43 @@ async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
 
         showPopupMenu(e, clone, categories, kol, setCategoryStatusOnProfileHome);
     }
+}
+
+async function _appendFollowClaimBtn(toolBar: HTMLElement, kolName: string) {
+    toolBar.querySelectorAll(".follow-claim-on-profile").forEach((item) => item.remove());
+    toolBar.querySelectorAll(".follow-claim-btn-on-profile").forEach((item) => item.remove());
+
+    const contentTemplate = await parseContentHtml("html/content.html");
+    const template = contentTemplate.content.getElementById("follow-claim-on-profile") as HTMLElement | null;
+    if (!template) return;
+
+    const clone = template.cloneNode(true) as HTMLElement;
+    clone.setAttribute("id", "");
+
+    const btn = clone.querySelector(".follow-claim-btn-on-profile") as HTMLButtonElement | null;
+    if (btn) {
+        btn.onclick = async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            await sendMsgToService(
+                {
+                    kolName,
+                    url: window.location.href,
+                    ua: navigator.userAgent,
+                    lang: navigator.language,
+                },
+                MsgType.ProfileFollowClaim
+            );
+        };
+    }
+
+    const placementTracking = toolBar.querySelector('div[data-testid="placementTracking"]');
+    if (placementTracking && placementTracking.parentElement === toolBar) {
+        toolBar.insertBefore(clone, placementTracking);
+        return;
+    }
+
+    toolBar.appendChild(clone);
 }
 
 async function _kolCompletion(kol: TweetKol) {
