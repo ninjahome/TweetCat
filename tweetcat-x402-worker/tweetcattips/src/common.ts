@@ -104,6 +104,10 @@ export function applyCors(app: Hono<ExtendedEnv>) {
 				"Content-Type",
 				"X-Device-Signature",
 				"X-Device-Timestamp",
+				"X-Device-Signature-Version",
+				"X-Device-IAT",
+				"X-Device-JTI",
+				"X-Body-SHA256",
 				"PAYMENT-SIGNATURE",
 				"Payment-Signature",
 				"PAYMENT",
@@ -342,4 +346,45 @@ export function parsePositiveAtomic(value: unknown): string | null {
 	} catch {
 		return null;
 	}
+}
+
+// ========= Crypto / Encoding helpers (DPoP-like) =========
+export function base64ToArrayBuffer(b64: string): ArrayBuffer {
+	const binary = atob(b64);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+	return bytes.buffer;
+}
+
+export function base64UrlToArrayBuffer(b64u: string): ArrayBuffer {
+	const padded = b64u.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((b64u.length + 3) % 4);
+	return base64ToArrayBuffer(padded);
+}
+
+export function decodeB64OrB64UrlToArrayBuffer(input: string): ArrayBuffer {
+	if (input.includes("-") || input.includes("_")) return base64UrlToArrayBuffer(input);
+	return base64ToArrayBuffer(input);
+}
+
+export function arrayBufferToBase64Url(ab: ArrayBuffer): string {
+	const bytes = new Uint8Array(ab);
+	let binary = "";
+	for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+	return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+export async function sha256Base64Url(bytes: Uint8Array): Promise<string> {
+	const digest = await crypto.subtle.digest("SHA-256", bytes);
+	return arrayBufferToBase64Url(digest);
+}
+
+export function canonicalHtu(rawUrl: string): string {
+	const u = new URL(rawUrl);
+	return `${u.origin}${u.pathname}`;
+}
+
+export async function spkiB64ToJktB64Url(spkiB64: string): Promise<string> {
+	const spkiBytes = new Uint8Array(base64ToArrayBuffer(spkiB64));
+	const digest = await crypto.subtle.digest("SHA-256", spkiBytes);
+	return arrayBufferToBase64Url(digest);
 }

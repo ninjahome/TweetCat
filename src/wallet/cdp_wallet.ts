@@ -36,7 +36,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { logX402 } from "../common/debug_flags";
 import { t } from "../common/i18n";
 import { AdDeployer } from "../web3/AdDeployer";
-import { signDeviceRequest } from "../common/device_key";
+import { signDeviceRequestV2 } from "../common/device_key";
 
 const ERC20_BALANCE_ABI = [
     {
@@ -541,23 +541,26 @@ export async function x402WorkerFetch(path: string, body: any): Promise<any> {
         };
 
         bodyText = JSON.stringify(requestBody);
-        const timestamp = Date.now().toString();
-
-        const { signatureB64 } = await signDeviceRequest({
+        const bodyBytes = new TextEncoder().encode(bodyText);
+        const { signatureB64u, iatSec, jti, bodySha256B64u } = await signDeviceRequestV2({
             method: "POST",
-            path,
-            timestamp,
-            bodyText,
+            url,
+            bodyBytes,
         });
 
-        headers["X-Device-Timestamp"] = timestamp;
-        headers["X-Device-Signature"] = signatureB64;
+        headers["X-Device-Signature-Version"] = "v2";
+        headers["X-Device-IAT"] = String(iatSec);
+        headers["X-Device-JTI"] = jti;
+        headers["X-Body-SHA256"] = bodySha256B64u;
+        headers["X-Device-Signature"] = signatureB64u;
 
-        logX402("[device-sign] path=", path,
+        logX402("[device-sign:v2] path=", path,
             " userId=", userId,
-            " ts=", timestamp,
+            " iat=", iatSec,
+            " jtiPrefix=", jti.slice(0, 10),
             " bodyLen=", bodyText.length,
-            " sigB64Prefix=", signatureB64.slice(0, 16));
+            " bodyShaPrefix=", bodySha256B64u.slice(0, 12),
+            " sigPrefix=", signatureB64u.slice(0, 16));
     } else {
         bodyText = JSON.stringify(requestBody);
     }

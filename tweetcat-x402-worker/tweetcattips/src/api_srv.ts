@@ -13,7 +13,11 @@ import {
 	API_PATH_ONRAMP_CREATE_SESSION,
 	API_PATH_ONRAMP_WEBHOOK,
 	signedOperationPaths,
-	jsonError
+	canonicalHtu,
+	decodeB64OrB64UrlToArrayBuffer,
+	jsonError,
+	sha256Base64Url,
+	spkiB64ToJktB64Url,
 } from "./common";
 import {apiHandleTip, apiTransferByTid, apiX402UsdcTransfer} from "./api_srv_x402";
 import {
@@ -24,15 +28,12 @@ import {
 } from "./api_srv_usr";
 import {registerAdsRoutes} from "./api_srv_ads";
 import {getKolBindingByUserId} from "./database_402";
+import {insertReplayGuardOrError} from "./database_replay_guard";
 
 const SIGNATURE_TIME_THRESHOLD = 5 * 60 * 1000; // 5 minutes
-
-function base64ToArrayBuffer(b64: string): ArrayBuffer {
-	const binary = atob(b64);
-	const bytes = new Uint8Array(binary.length);
-	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-	return bytes.buffer;
-}
+const REPLAY_TTL_SECONDS = 300;
+const IAT_PAST_WINDOW_SECONDS = 300;
+const IAT_FUTURE_SKEW_SECONDS = 60;
 
 export async function verifySignatureMiddleware(c: any, next: any) {
 	if (c.req.method !== 'POST') {
@@ -48,27 +49,25 @@ export async function verifySignatureMiddleware(c: any, next: any) {
 		c.req.header("X-Device-Signature") ||
 		c.req.header("x-device-signature") ||
 		c.req.header("X-DEVICE-SIGNATURE");
-	const timestampStr =
-		c.req.header("X-Device-Timestamp") ||
-		c.req.header("x-device-timestamp") ||
-		c.req.header("X-DEVICE-TIMESTAMP");
+	const sigVersion =
+		c.req.header("X-Device-Signature-Version") ||
+		c.req.header("x-device-signature-version") ||
+		c.req.header("X-DEVICE-SIGNATURE-VERSION") ||
+		"v1";
 
-	if (!signatureB64 || !timestampStr) {
-		console.warn("[device-sign] missing headers", {path: url.pathname, hasSig: !!signatureB64, hasTs: !!timestampStr});
-		return jsonError(c, 400, "MISSING_DEVICE_SIGNATURE", "Missing X-Device-Signature or X-Device-Timestamp");
-	}
-
-	const ts = Number(timestampStr);
-	if (!Number.isFinite(ts) || ts <= 0) {
-		console.warn("[device-sign] invalid timestamp", {path: url.pathname, timestampStr});
-		return jsonError(c, 400, "INVALID_TIMESTAMP", "Invalid X-Device-Timestamp");
+	if (!signatureB64) {
+		console.warn("[device-sign] missing signature header", {path: url.pathname});
+		return jsonError(c, 400, "MISSING_DEVICE_SIGNATURE", "Missing X-Device-Signature");
 	}
 
 	let bodyText = "";
+	let bodyBytes = new Uint8Array();
 	let body: any = {};
 	try {
 		const clone = c.req.raw.clone();
-		bodyText = await clone.text();
+		const ab = await clone.arrayBuffer();
+		bodyBytes = new Uint8Array(ab);
+		bodyText = new TextDecoder().decode(bodyBytes);
 		body = bodyText ? JSON.parse(bodyText) : {};
 	} catch (e) {
 		console.warn("[device-sign] invalid json body", {path: url.pathname});
@@ -81,12 +80,6 @@ export async function verifySignatureMiddleware(c: any, next: any) {
 		return jsonError(c, 400, "MISSING_USER_ID", "Missing userId");
 	}
 
-	const now = Date.now();
-	if (now - ts > SIGNATURE_TIME_THRESHOLD || now - ts < -60000) { // Allow 1 min future drift
-		console.warn("[device-sign] expired timestamp", {path: url.pathname, userId, ts, now});
-		return jsonError(c, 400, "INVALID_TIMESTAMP", "Request timestamp expired or invalid");
-	}
-
 	const kolBinding = await getKolBindingByUserId(c.env.DB, userId);
 	if (!kolBinding) {
 		console.warn("[device-sign] user not found", {path: url.pathname, userId});
@@ -97,13 +90,116 @@ export async function verifySignatureMiddleware(c: any, next: any) {
 		return jsonError(c, 400, "DEVICE_KEY_NOT_FOUND", "No linked device key found for this user");
 	}
 
+	if (sigVersion === "v2") {
+		const iatStr =
+			c.req.header("X-Device-IAT") ||
+			c.req.header("x-device-iat") ||
+			c.req.header("X-DEVICE-IAT");
+		const jti =
+			c.req.header("X-Device-JTI") ||
+			c.req.header("x-device-jti") ||
+			c.req.header("X-DEVICE-JTI");
+		const bodyShaHeader =
+			c.req.header("X-Body-SHA256") ||
+			c.req.header("x-body-sha256") ||
+			c.req.header("X-BODY-SHA256");
+
+		if (!iatStr || !jti || !bodyShaHeader) {
+			console.warn("[device-sign:v2] missing headers", {path: url.pathname, hasIat: !!iatStr, hasJti: !!jti, hasBodySha: !!bodyShaHeader});
+			return jsonError(c, 400, "MISSING_DEVICE_SIGNATURE_FIELDS", "Missing X-Device-IAT, X-Device-JTI, or X-Body-SHA256");
+		}
+
+		const iat = Number(iatStr);
+		if (!Number.isFinite(iat) || iat <= 0) {
+			console.warn("[device-sign:v2] invalid iat", {path: url.pathname, iatStr});
+			return jsonError(c, 400, "INVALID_IAT", "Invalid X-Device-IAT");
+		}
+
+		const nowSec = Math.floor(Date.now() / 1000);
+		if (iat < nowSec - IAT_PAST_WINDOW_SECONDS || iat > nowSec + IAT_FUTURE_SKEW_SECONDS) {
+			console.warn("[device-sign:v2] iat out of window", {path: url.pathname, userId, iat, nowSec});
+			return jsonError(c, 400, "INVALID_IAT", "IAT out of allowed window");
+		}
+
+		const computedBodySha = await sha256Base64Url(bodyBytes);
+		if (computedBodySha !== bodyShaHeader) {
+			console.warn("[device-sign:v2] body hash mismatch", {path: url.pathname, userId, computedPrefix: computedBodySha.slice(0, 12), headerPrefix: bodyShaHeader.slice(0, 12)});
+			return jsonError(c, 401, "BODY_HASH_MISMATCH", "Body hash mismatch");
+		}
+
+		const htu = canonicalHtu(c.req.url);
+		const signingInput = `${c.req.method.toUpperCase()}\n${htu}\n${iat}\n${jti}\n${bodyShaHeader}`;
+		const data = new TextEncoder().encode(signingInput);
+
+		const spkiBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(kolBinding.device_pubkey_spki));
+
+		try {
+			const publicKey = await crypto.subtle.importKey(
+				"spki",
+				spkiBytes,
+				{name: "ECDSA", namedCurve: "P-256"},
+				false,
+				["verify"]
+			);
+
+			const valid = await crypto.subtle.verify(
+				{name: "ECDSA", hash: "SHA-256"},
+				publicKey,
+				decodeB64OrB64UrlToArrayBuffer(signatureB64),
+				data
+			);
+
+			if (!valid) {
+				console.warn("[device-sign:v2] invalid signature", {path: url.pathname, userId, jtiPrefix: String(jti).slice(0, 10)});
+				return jsonError(c, 401, "INVALID_SIGNATURE", "Signature verification failed");
+			}
+
+			// Replay guard (only after signature + iat checks)
+			const expiresAt = nowSec + REPLAY_TTL_SECONDS;
+			const jkt = await spkiB64ToJktB64Url(kolBinding.device_pubkey_spki);
+			const replayRes = await insertReplayGuardOrError(c.env.DB, {jkt, jti, iat, expiresAt});
+			if (!replayRes.ok) return jsonError(c, replayRes.status, replayRes.code, replayRes.detail);
+
+		} catch (err) {
+			console.error("Signature verification error:", err);
+			return jsonError(c, 401, "INVALID_SIGNATURE", "Signature verification error");
+		}
+
+		console.log("device signature verified (v2) success!", kolBinding.cdp_user_id)
+		await next();
+		return;
+	}
+
+	// v1 fallback (legacy)
+	const timestampStr =
+		c.req.header("X-Device-Timestamp") ||
+		c.req.header("x-device-timestamp") ||
+		c.req.header("X-DEVICE-TIMESTAMP");
+
+	if (!timestampStr) {
+		console.warn("[device-sign:v1] missing timestamp header", {path: url.pathname});
+		return jsonError(c, 400, "MISSING_DEVICE_SIGNATURE", "Missing X-Device-Timestamp");
+	}
+
+	const ts = Number(timestampStr);
+	if (!Number.isFinite(ts) || ts <= 0) {
+		console.warn("[device-sign:v1] invalid timestamp", {path: url.pathname, timestampStr});
+		return jsonError(c, 400, "INVALID_TIMESTAMP", "Invalid X-Device-Timestamp");
+	}
+
+	const now = Date.now();
+	if (now - ts > SIGNATURE_TIME_THRESHOLD || now - ts < -60000) { // Allow 1 min future drift
+		console.warn("[device-sign:v1] expired timestamp", {path: url.pathname, userId, ts, now});
+		return jsonError(c, 400, "INVALID_TIMESTAMP", "Request timestamp expired or invalid");
+	}
+
 	const dataToSign = `${c.req.method.toUpperCase()}\n${url.pathname}\n${timestampStr}\n${bodyText}`;
 	const data = new TextEncoder().encode(dataToSign);
 
 	try {
 		const publicKey = await crypto.subtle.importKey(
 			"spki",
-			base64ToArrayBuffer(kolBinding.device_pubkey_spki),
+			decodeB64OrB64UrlToArrayBuffer(kolBinding.device_pubkey_spki),
 			{name: "ECDSA", namedCurve: "P-256"},
 			false,
 			["verify"]
@@ -112,12 +208,12 @@ export async function verifySignatureMiddleware(c: any, next: any) {
 		const valid = await crypto.subtle.verify(
 			{name: "ECDSA", hash: "SHA-256"},
 			publicKey,
-			base64ToArrayBuffer(signatureB64),
+			decodeB64OrB64UrlToArrayBuffer(signatureB64),
 			data
 		);
 
 		if (!valid) {
-			console.warn("[device-sign] invalid signature", {
+			console.warn("[device-sign:v1] invalid signature", {
 				path: url.pathname,
 				userId,
 				sigLen: signatureB64.length,
@@ -130,7 +226,7 @@ export async function verifySignatureMiddleware(c: any, next: any) {
 		return jsonError(c, 401, "INVALID_SIGNATURE", "Signature verification error");
 	}
 
-	console.log("device signature verified success!", kolBinding.cdp_user_id)
+	console.log("device signature verified (v1) success!", kolBinding.cdp_user_id)
 	await next();
 }
 

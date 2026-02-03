@@ -31,6 +31,16 @@ CREATE TABLE kol_binding (
 		, email TEXT DEFAULT '', username TEXT DEFAULT '', signin_time DATETIME, evm_account_created_at DATETIME,
 								 device_pubkey_spki TEXT, device_key_updated_at DATETIME)
 
+-- DPoP-like replay guard (jkt + jti) with manual TTL cleanup
+CREATE TABLE IF NOT EXISTS replay_guard (
+	jkt TEXT NOT NULL,
+	jti TEXT NOT NULL,
+	iat INTEGER NOT NULL,
+	expires_at INTEGER NOT NULL,
+	PRIMARY KEY (jkt, jti)
+);
+CREATE INDEX IF NOT EXISTS idx_replay_guard_expires ON replay_guard(expires_at);
+
 -- 先删除旧表（如果已存在）
 DROP TABLE IF EXISTS user_rewards;
 

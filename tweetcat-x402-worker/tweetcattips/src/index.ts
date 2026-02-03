@@ -8,6 +8,7 @@ import {
 	type NetConfig, app,
 } from "./common";
 import {registerSrv} from "./api_srv";
+import {deleteExpiredReplayGuards} from "./database_replay_guard";
 
 const MAINNET_CFG: NetConfig = {
 	NETWORK: "eip155:8453",
@@ -51,4 +52,10 @@ app.get("/health", (c) => c.json({ok: true, env: "mainnet"}));
 
 registerSrv(app)
 
-export default app;
+export default {
+	fetch: app.fetch,
+	async scheduled(_event: any, env: Env, _ctx: any) {
+		const nowSec = Math.floor(Date.now() / 1000);
+		await deleteExpiredReplayGuards(env.DB, nowSec);
+	},
+};

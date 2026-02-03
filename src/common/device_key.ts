@@ -59,11 +59,25 @@ function abToBase64(ab: ArrayBuffer): string {
     return btoa(binary);
 }
 
+function abToBase64Url(ab: ArrayBuffer): string {
+    return abToBase64(ab).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
 function base64ToAb(b64: string): ArrayBuffer {
     const binary = atob(b64);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
     return bytes.buffer;
+}
+
+function base64UrlToAb(b64u: string): ArrayBuffer {
+    const padded = b64u.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((b64u.length + 3) % 4);
+    return base64ToAb(padded);
+}
+
+function decodeB64OrB64UrlToAb(input: string): ArrayBuffer {
+    if (input.includes("-") || input.includes("_")) return base64UrlToAb(input);
+    return base64ToAb(input);
 }
 
 async function exportSpkiB64(publicKey: CryptoKey): Promise<string> {
@@ -132,6 +146,64 @@ export async function signDeviceRequest(params: {
     return {signatureB64: abToBase64(sig), dataToSign};
 }
 
+async function sha256Base64Url(bytes: Uint8Array): Promise<string> {
+    // Ensure we pass an ArrayBuffer (not ArrayBufferLike) for stricter TS libdefs.
+    const copy = new Uint8Array(bytes);
+    const digest = await crypto.subtle.digest("SHA-256", copy.buffer);
+    return abToBase64Url(digest);
+}
+
+function canonicalHtu(rawUrl: string): string {
+    const u = new URL(rawUrl);
+    return `${u.origin}${u.pathname}`;
+}
+
+function randomBase64Url(bytesLen: number): string {
+    const b = new Uint8Array(bytesLen);
+    crypto.getRandomValues(b);
+    return abToBase64Url(b.buffer);
+}
+
+export async function signDeviceRequestV2(params: {
+    method: string;
+    url: string;
+    bodyBytes: Uint8Array;
+    iatSec?: number;
+    jti?: string;
+}): Promise<{
+    signatureB64u: string;
+    iatSec: number;
+    jti: string;
+    bodySha256B64u: string;
+    htu: string;
+    signingInput: string;
+}> {
+    const rec = await ensureDeviceKey();
+
+    const iatSec = params.iatSec ?? Math.floor(Date.now() / 1000);
+    const jti = params.jti ?? randomBase64Url(12); // 96-bit
+    const htu = canonicalHtu(params.url);
+    const bodySha256B64u = await sha256Base64Url(params.bodyBytes);
+
+    const signingInput = `${params.method.toUpperCase()}\n${htu}\n${iatSec}\n${jti}\n${bodySha256B64u}`;
+    const data = new TextEncoder().encode(signingInput);
+
+    const sig = await crypto.subtle.sign(
+        {name: "ECDSA", hash: "SHA-256"},
+        rec.privateKey,
+        data
+    );
+
+    return {
+        signatureB64u: abToBase64Url(sig),
+        iatSec,
+        jti,
+        bodySha256B64u,
+        htu,
+        signingInput,
+    };
+}
+
 export async function verifyDeviceSignature(params: {
     publicKeySpkiB64: string;
     signatureB64: string;
@@ -153,8 +225,7 @@ export async function verifyDeviceSignature(params: {
     return await crypto.subtle.verify(
         {name: "ECDSA", hash: "SHA-256"},
         publicKey,
-        base64ToAb(params.signatureB64),
+        decodeB64OrB64UrlToAb(params.signatureB64),
         data
     );
 }
-
