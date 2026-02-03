@@ -102,6 +102,8 @@ export function applyCors(app: Hono<ExtendedEnv>) {
 			allowMethods: ["GET", "POST", "OPTIONS"],
 			allowHeaders: [
 				"Content-Type",
+				"X-Device-Signature",
+				"X-Device-Timestamp",
 				"PAYMENT-SIGNATURE",
 				"Payment-Signature",
 				"PAYMENT",

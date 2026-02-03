@@ -2,7 +2,7 @@ import { isSignedIn } from "@coinbase/cdp-core";
 import { initCDP, x402TipPayload } from "../common/x402_obj";
 import { logX402 } from "../common/debug_flags";
 import { t, initI18n } from "../common/i18n";
-import { postToX402SrvByPri } from "../wallet/cdp_wallet";
+import { postToX402Srv } from "../wallet/cdp_wallet";
 import { openTxInExplorer } from "./common";
 
 // DOM 元素
@@ -123,7 +123,7 @@ async function processTipPayment(payload: x402TipPayload) {
 
 
         updateStatus(t('requesting_payment'));
-        const result = await postToX402SrvByPri("/tip", {
+        const result = await postToX402Srv("/tip", {
             amount: payload.usdcVal,
             tweetId: payload.tweetId,
             xId: payload.authorId

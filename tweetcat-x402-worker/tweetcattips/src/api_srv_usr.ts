@@ -3,6 +3,7 @@ import {
 	createKolBinding,
 	getKolBindingByUserId,
 	updateUserSigninTime,
+	setDevicePubkeyForUserId,
 	ValidatedUserInfo,
 	queryValidRewards,
 	queryRewardHistory,
@@ -69,8 +70,12 @@ export async function apiValidateUser(c: ExtCtx) {
 
 	const body = await c.req.json().catch(() => ({}));
 	const accessToken = body?.accessToken;
+	const devicePubkeySpkiB64 = body?.device_pubkey;
 	if (!accessToken) {
 		return c.json({error: "Missing accessToken"}, 400);
+	}
+	if (!devicePubkeySpkiB64) {
+		return c.json({error: "Missing device_pubkey"}, 400);
 	}
 
 	const path = `/platform/v2/end-users/auth/validate-token`;
@@ -85,10 +90,11 @@ export async function apiValidateUser(c: ExtCtx) {
 		const existingUser = await getKolBindingByUserId(c.env.DB, userInfo.userId);
 		if (existingUser) {
 			await updateUserSigninTime(c.env.DB, userInfo.xSub);
+			await setDevicePubkeyForUserId(c.env.DB, userInfo.userId, devicePubkeySpkiB64);
 			return c.json({success: true, isNewUser: false});
 		}
 
-		await createKolBinding(c.env.DB, userInfo);
+		await createKolBinding(c.env.DB, userInfo, devicePubkeySpkiB64);
 
 		await foundUser(c, userInfo)
 

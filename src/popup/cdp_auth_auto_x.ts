@@ -4,6 +4,7 @@ import {sendMsgToService} from "../common/utils";
 import {MsgType} from "../common/consts";
 import {initI18n, t} from "../common/i18n";
 import {x402WorkerFetch} from "../wallet/cdp_wallet";
+import {getDevicePublicKeySpkiB64} from "../common/device_key";
 
 type UIState = 'loading' | 'success' | 'error' | 'idle';
 function translateAuto() {
@@ -57,7 +58,8 @@ class AuthManager {
         this.updateUI(t("cdp_auth_verifying_user_info"));
 
         try {
-            const resp = await x402WorkerFetch("/validate-token", {accessToken: accessToken})
+            const devicePubkey = await getDevicePublicKeySpkiB64();
+            const resp = await x402WorkerFetch("/validate-token", {accessToken: accessToken, device_pubkey: devicePubkey})
             console.log("------>>> validation result:", resp);
         } catch (err) {
             console.error(t("wallet_verify_failed"), err);

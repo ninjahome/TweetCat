@@ -44,6 +44,14 @@ function closeWizard() {
     if (modal) modal.classList.remove("active");
 }
 
+function openWizard() {
+    wizardCurrentStep = 1;
+    resetWizardForm();
+    updateWizardUI();
+    const modal = $Id("publish-wizard-modal");
+    if (modal) modal.classList.add("active");
+}
+
 function updateWizardUI() {
     const steps = document.querySelectorAll<HTMLElement>(".wizard-step");
     steps.forEach((stepEl) => {
@@ -235,6 +243,7 @@ async function submitWizard() {
             end_date: endDateObj.toISOString(), // Send as ISO string
         };
 
+        console.log("[ads][create] payload", payload);
         const result = await x402WorkerFetch(API_PATH_ADS_CREATE, payload);
         if (!result.ok) {
             if (result.error?.error === "INSUFFICIENT_BALANCE") {
@@ -251,6 +260,7 @@ async function submitWizard() {
         await refreshAdsData(1); // 跳转回第一页查看新广告
         resetWizardForm(); // Reset form after successful submission
     } catch (e: any) {
+        console.error("[ads][create] failed", e);
         showNotification(e?.message || "Failed to create ad.", "error");
     } finally {
         if (submitBtn) submitBtn.disabled = false;
@@ -311,6 +321,9 @@ async function showDeployConfirmation(amountStr: string): Promise<boolean> {
 export function initWizardEvents() {
     const closeWizardBtn = $Id("close-wizard") as HTMLButtonElement | null;
     if (closeWizardBtn) closeWizardBtn.addEventListener("click", closeWizard);
+
+    const btnPublish = $Id("btn-publish-ad") as HTMLButtonElement | null;
+    if (btnPublish) btnPublish.addEventListener("click", openWizard);
 
     const btnPrev = $Id("btn-wizard-prev") as HTMLButtonElement | null;
     if (btnPrev) btnPrev.addEventListener("click", goWizardPrev);

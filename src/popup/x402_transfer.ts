@@ -2,7 +2,7 @@ import {initCDP} from "../common/x402_obj";
 import {isSignedIn} from "@coinbase/cdp-core";
 import browser from "webextension-polyfill";
 import {openTxInExplorer, showPopupWindow} from "./common";
-import {postToX402SrvByPri} from "../wallet/cdp_wallet";
+import {postToX402Srv} from "../wallet/cdp_wallet";
 import {initI18n, t} from "../common/i18n";
 import {logX402} from "../common/debug_flags";
 
@@ -129,7 +129,7 @@ const updateUIState = (loading: boolean, status?: string, error?: string) => {
 // --- 核心业务：转账桩函数 ---
 async function performTransfer(profile: UserProfile, amount: string): Promise<void> {
     logX402(`[Transfer] To: ${profile.userId}, Amount: ${amount} USDC`);
-    const result = await postToX402SrvByPri("/user/transfer_by_twitter", {
+    const result = await postToX402Srv("/user/transfer_by_twitter", {
         amount: amount,
         xId: profile.userId
     })

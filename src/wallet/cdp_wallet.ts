@@ -36,6 +36,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { logX402 } from "../common/debug_flags";
 import { t } from "../common/i18n";
 import { AdDeployer } from "../web3/AdDeployer";
+import { signDeviceRequest } from "../common/device_key";
 
 const ERC20_BALANCE_ABI = [
     {
@@ -327,7 +328,7 @@ export async function transferUSDCByX402(
     if (!isAddress(toAddress)) {
         throw new Error(`Invalid recipient address: ${toAddress}`);
     }
-    const result = await postToX402SrvByPri("/usdc-transfer", { amount: amountUsdc, to: toAddress })
+    const result = await postToX402Srv("/usdc-transfer", { amount: amountUsdc, to: toAddress })
     const txHash = result.txHash;
     logX402("-------x402>>>transfer result,", result)
     return txHash;
@@ -455,17 +456,18 @@ function buildEip712DomainTypes(domain: any): Eip712Field[] {
     return fields.length ? fields : [{ name: "chainId", type: "uint256" }];
 }
 
+/**
+ * ⚠️ SECURITY WARNING
+ * This exports the EOA private key from Coinbase CDP Core SDK. Do NOT use for production API auth.
+ * Keep for temporary testing/debugging only.
+ */
 export async function getPrivateKeyFromEOA(): Promise<`0x${string}`> {
-    // 1. 获取 EOA
     const eoa = await getEOA();
 
-    // 2. 导出私钥
     const exportResult = await exportEvmAccount({
-        // 注意：根据 CDP Core SDK，参数名可能是 evmAccount 或 address，请以你当前版本为准
         evmAccount: eoa.address as `0x${string}`
     });
 
-    // 3. 核心修复：确保私钥格式正确
     let rawKey = exportResult.privateKey;
     if (!rawKey.startsWith('0x')) {
         rawKey = `0x${rawKey}`;
@@ -473,38 +475,29 @@ export async function getPrivateKeyFromEOA(): Promise<`0x${string}`> {
     return rawKey as `0x${string}`;
 }
 
+/**
+ * ⚠️ SECURITY WARNING
+ * Uses an exported EOA private key to initialize an x402 client. Do NOT use for production API auth.
+ * Keep for temporary testing/debugging only.
+ */
 export async function initX402ClientWithPrivateKey(): Promise<typeof fetch> {
-    let rawKey = await getPrivateKeyFromEOA();
+    const rawKey = await getPrivateKeyFromEOA();
     const account = privateKeyToAccount(rawKey as `0x${string}`);
     const client = new x402Client();
     const chainId = await getChainId();
     registerExactEvmScheme(client, {
-        signer: account,
+        signer: account as any,
         networks: [`eip155:${chainId}`],
     });
     return wrapFetchWithPayment(fetch, client);
 }
 
-export async function postToX402Srv(urlPath: string, body: any) {
-
-    const x402Fetch = await initX402Client()
-    return x402Fetch(urlPath, {
-        method: 'POST',
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-    });
-}
-
-
-export async function postToX402SrvByPri(path: string, body: any) {
+export async function postToX402Srv(path: string, body: any) {
     const chainId = await getChainId();
-    const end_point = X402_FACILITATORS[chainId].endpoint + path;
+    const endPoint = X402_FACILITATORS[chainId].endpoint + path;
 
-    logX402("------>>> using private key to sign x402:", end_point)
-    const x402Fetch = await initX402ClientWithPrivateKey()
-    const response = await x402Fetch(end_point, {
+    const x402Fetch = await initX402Client();
+    const response = await x402Fetch(endPoint, {
         method: 'POST',
         headers: {
             "Content-Type": "application/json"
@@ -522,9 +515,9 @@ export async function postToX402SrvByPri(path: string, body: any) {
 }
 
 const signedOperationPaths: string[] = [
-    "/ads/create",
-    "/ads/update",
-    "/ads/claim",
+    "/ads/publisher/create",
+    "/ads/publisher/update",
+    "/ads/executor/claim",
     "/ads/publisher/withdraw"
 ];
 
@@ -532,42 +525,63 @@ export async function x402WorkerFetch(path: string, body: any): Promise<any> {
     const chainID = await getChainId();
     const url = X402_FACILITATORS[chainID].endpoint + path;
     let requestBody = body;
+    let bodyText = "";
+
+    const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+    };
 
     if (signedOperationPaths.includes(path)) {
         const userId = await queryCdpUserID();
-        if (!userId) {
-            throw new Error("User not signed in");
-        }
+        if (!userId) throw new Error("User not signed in");
 
-        const privateKey = await getPrivateKeyFromEOA();
-        const account = privateKeyToAccount(privateKey);
-
-        // Add userId and timestamp to the body before signing
-        const bodyWithUserId = {
+        requestBody = {
             ...body,
             userId: userId,
-            x402TimeStamp: Date.now()
         };
 
-        const signature = await account.signMessage({ message: JSON.stringify(bodyWithUserId) });
-        requestBody = {
-            ...bodyWithUserId,
-            signature: signature,
-        };
+        bodyText = JSON.stringify(requestBody);
+        const timestamp = Date.now().toString();
+
+        const { signatureB64 } = await signDeviceRequest({
+            method: "POST",
+            path,
+            timestamp,
+            bodyText,
+        });
+
+        headers["X-Device-Timestamp"] = timestamp;
+        headers["X-Device-Signature"] = signatureB64;
+
+        logX402("[device-sign] path=", path,
+            " userId=", userId,
+            " ts=", timestamp,
+            " bodyLen=", bodyText.length,
+            " sigB64Prefix=", signatureB64.slice(0, 16));
+    } else {
+        bodyText = JSON.stringify(requestBody);
     }
 
     logX402("------>>> url:", url);
     const response = await fetch(url, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
+        headers,
+        body: bodyText,
     });
 
     if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`x402worker fetch failed: ${response.status} - ${errorData}`);
+        const errorText = await response.text();
+        logX402("[x402WorkerFetch] failed path=", path, " status=", response.status, " body=", errorText);
+        let detail = errorText;
+        try {
+            const parsed = JSON.parse(errorText);
+            const code = parsed?.code || parsed?.error?.code || parsed?.error;
+            const message = parsed?.message || parsed?.error?.message || parsed?.detail;
+            detail = [code, message].filter(Boolean).join(" | ") || errorText;
+        } catch {
+            // keep raw text
+        }
+        throw new Error(`x402WorkerFetch failed (${response.status}): ${detail}`);
     }
 
     return await response.json();
@@ -607,10 +621,17 @@ export async function deployAdVaultPOC(adId: string): Promise<string> {
     const facilitator = X402_FACILITATORS[chainId];
     const platformAddress = facilitator.settlementContract as `0x${string}`;
 
-    return await AdDeployer.deployAdVault(
+    const initialBudgetAtomic = 10000n; // 0.01 USDC 测试充值，用于验证 Batch 扣费和 Gas 扣费
+    const { deployHash, predictedAddress } = await AdDeployer.deployAdVault(
         chainId,
         platformAddress,
         adId,
-        10000n // 0.01 USDC 测试充值，用于验证 Batch 扣费和 Gas 扣费
     );
+
+    if (initialBudgetAtomic > 0n) {
+        const amountStr = (Number(initialBudgetAtomic) / 1_000_000).toString();
+        await transferUSDCByX402(chainId, predictedAddress, amountStr);
+    }
+
+    return deployHash;
 }

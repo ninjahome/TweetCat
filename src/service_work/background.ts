@@ -13,6 +13,7 @@ import {getBearerToken, updateBearerToken} from "../common/utils";
 import {createAlarm, updateAlarm} from "./bg_timer";
 import {resetApiBucketSetting} from "./api_bucket_state";
 import {ensureOffscreenWallet, relayWalletMsg} from "./bg_x402";
+import {ensureDeviceKey} from "../common/device_key";
 
 /****************************************************************************************
  ┌────────────┐
@@ -64,6 +65,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
     });
     initDefaultQueryKey().then();
     ensureOffscreenWallet().then();
+    ensureDeviceKey().then();
 });
 
 
@@ -101,6 +103,7 @@ browser.runtime.onStartup.addListener(() => {
         await checkAndInitDatabase();
         await createAlarm();
         await ensureOffscreenWallet();
+        await ensureDeviceKey();
     })();
 });
 

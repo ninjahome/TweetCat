@@ -24,11 +24,12 @@ CREATE INDEX IF NOT EXISTS idx_tip_escrow_xid_status ON tip_escrow(x_id, status)
 
 DROP TABLE IF EXISTS kol_binding;
 CREATE TABLE kol_binding (
-							 x_id TEXT PRIMARY KEY,
-							 cdp_user_id TEXT UNIQUE,
-							 wallet_address TEXT,
-							 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-	, email TEXT DEFAULT '', username TEXT DEFAULT '', signin_time DATETIME, evm_account_created_at DATETIME)
+								 x_id TEXT PRIMARY KEY,
+								 cdp_user_id TEXT UNIQUE,
+								 wallet_address TEXT,
+								 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		, email TEXT DEFAULT '', username TEXT DEFAULT '', signin_time DATETIME, evm_account_created_at DATETIME,
+								 device_pubkey_spki TEXT, device_key_updated_at DATETIME)
 
 -- 先删除旧表（如果已存在）
 DROP TABLE IF EXISTS user_rewards;

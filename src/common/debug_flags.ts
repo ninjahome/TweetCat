@@ -22,14 +22,14 @@ export const DBG = {
     TwitterVideoRender: false,
     TwitterActionRender: false,
     AdBlock: false,
-    InjectCapture:false,
-    Youtube:false,
-    AiTrendApi:false,
-    FollowMgn:false,
-    UserIfo:false,
-    X402:false,
-    Wallet:false,
-    AdPlaza:true,
+    InjectCapture: false,
+    Youtube: false,
+    AiTrendApi: false,
+    FollowMgn: false,
+    UserIfo: false,
+    X402: true,
+    Wallet: false,
+    AdPlaza: true,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */

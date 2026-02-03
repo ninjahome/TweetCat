@@ -1,5 +1,4 @@
 import {Hono} from "hono";
-import {verifyMessage} from 'viem';
 import {
 	ExtendedEnv,
 	API_PATH_TIP,
@@ -28,6 +27,13 @@ import {getKolBindingByUserId} from "./database_402";
 
 const SIGNATURE_TIME_THRESHOLD = 5 * 60 * 1000; // 5 minutes
 
+function base64ToArrayBuffer(b64: string): ArrayBuffer {
+	const binary = atob(b64);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+	return bytes.buffer;
+}
+
 export async function verifySignatureMiddleware(c: any, next: any) {
 	if (c.req.method !== 'POST') {
 		return await next();
@@ -38,42 +44,85 @@ export async function verifySignatureMiddleware(c: any, next: any) {
 		return await next();
 	}
 
-	let body;
+	const signatureB64 =
+		c.req.header("X-Device-Signature") ||
+		c.req.header("x-device-signature") ||
+		c.req.header("X-DEVICE-SIGNATURE");
+	const timestampStr =
+		c.req.header("X-Device-Timestamp") ||
+		c.req.header("x-device-timestamp") ||
+		c.req.header("X-DEVICE-TIMESTAMP");
+
+	if (!signatureB64 || !timestampStr) {
+		console.warn("[device-sign] missing headers", {path: url.pathname, hasSig: !!signatureB64, hasTs: !!timestampStr});
+		return jsonError(c, 400, "MISSING_DEVICE_SIGNATURE", "Missing X-Device-Signature or X-Device-Timestamp");
+	}
+
+	const ts = Number(timestampStr);
+	if (!Number.isFinite(ts) || ts <= 0) {
+		console.warn("[device-sign] invalid timestamp", {path: url.pathname, timestampStr});
+		return jsonError(c, 400, "INVALID_TIMESTAMP", "Invalid X-Device-Timestamp");
+	}
+
+	let bodyText = "";
+	let body: any = {};
 	try {
-		body = await c.req.json();
+		const clone = c.req.raw.clone();
+		bodyText = await clone.text();
+		body = bodyText ? JSON.parse(bodyText) : {};
 	} catch (e) {
+		console.warn("[device-sign] invalid json body", {path: url.pathname});
 		return jsonError(c, 400, "INVALID_JSON", "Invalid JSON body");
 	}
 
-	const {signature, x402TimeStamp, userId} = body;
-
-	if (!signature || !x402TimeStamp || !userId) {
-		return jsonError(c, 400, "MISSING_SIGNATURE_FIELDS", "Missing signature, x402TimeStamp, or userId");
+	const userId = body?.userId;
+	if (!userId) {
+		console.warn("[device-sign] missing userId", {path: url.pathname});
+		return jsonError(c, 400, "MISSING_USER_ID", "Missing userId");
 	}
 
 	const now = Date.now();
-	if (now - x402TimeStamp > SIGNATURE_TIME_THRESHOLD || now - x402TimeStamp < -60000) { // Allow 1 min future drift
+	if (now - ts > SIGNATURE_TIME_THRESHOLD || now - ts < -60000) { // Allow 1 min future drift
+		console.warn("[device-sign] expired timestamp", {path: url.pathname, userId, ts, now});
 		return jsonError(c, 400, "INVALID_TIMESTAMP", "Request timestamp expired or invalid");
 	}
 
 	const kolBinding = await getKolBindingByUserId(c.env.DB, userId);
-	if (!kolBinding || !kolBinding.wallet_address) {
-		return jsonError(c, 400, "WALLET_NOT_FOUND", "No linked wallet address found for this user");
+	if (!kolBinding) {
+		console.warn("[device-sign] user not found", {path: url.pathname, userId});
+		return jsonError(c, 400, "USER_NOT_FOUND", "No linked user found for this userId");
+	}
+	if (!kolBinding.device_pubkey_spki) {
+		console.warn("[device-sign] device key not found", {path: url.pathname, userId});
+		return jsonError(c, 400, "DEVICE_KEY_NOT_FOUND", "No linked device key found for this user");
 	}
 
-	// Reconstruct the message that was signed.
-	// We remove the signature from the body to get the original payload.
-	const {signature: sigToRemove, ...payload} = body;
-	const messageToVerify = JSON.stringify(payload);
+	const dataToSign = `${c.req.method.toUpperCase()}\n${url.pathname}\n${timestampStr}\n${bodyText}`;
+	const data = new TextEncoder().encode(dataToSign);
 
 	try {
-		const valid = await verifyMessage({
-			address: kolBinding.wallet_address as `0x${string}`,
-			message: messageToVerify,
-			signature: signature as `0x${string}`,
-		});
+		const publicKey = await crypto.subtle.importKey(
+			"spki",
+			base64ToArrayBuffer(kolBinding.device_pubkey_spki),
+			{name: "ECDSA", namedCurve: "P-256"},
+			false,
+			["verify"]
+		);
+
+		const valid = await crypto.subtle.verify(
+			{name: "ECDSA", hash: "SHA-256"},
+			publicKey,
+			base64ToArrayBuffer(signatureB64),
+			data
+		);
 
 		if (!valid) {
+			console.warn("[device-sign] invalid signature", {
+				path: url.pathname,
+				userId,
+				sigLen: signatureB64.length,
+				bodyLen: bodyText.length
+			});
 			return jsonError(c, 401, "INVALID_SIGNATURE", "Signature verification failed");
 		}
 	} catch (err) {
@@ -81,7 +130,7 @@ export async function verifySignatureMiddleware(c: any, next: any) {
 		return jsonError(c, 401, "INVALID_SIGNATURE", "Signature verification error");
 	}
 
-	console.log("signed message verified success!", kolBinding.wallet_address)
+	console.log("device signature verified success!", kolBinding.cdp_user_id)
 	await next();
 }
 

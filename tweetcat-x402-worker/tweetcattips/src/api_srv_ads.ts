@@ -396,7 +396,11 @@ export async function apiAdsClaim(c: ExtCtx) {
 		const body = await c.req.json().catch(() => ({}));
 		const adId = body?.ad_id;
 		const bXId = body?.b_x_id;
-		const signature = body?.signature;
+		const signature =
+			body?.signature ||
+			c.req.header("X-Device-Signature") ||
+			c.req.header("x-device-signature") ||
+			c.req.header("X-DEVICE-SIGNATURE");
 
 		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
 		if (!requireStringField(bXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");

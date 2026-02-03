@@ -81,6 +81,8 @@ export interface KolBindingRecord {
 	evm_account_created_at: string;    // EVM 账户创建时间
 	created_at: string;                // 记录创建时间
 	signin_time: string;               // 最后登录时间
+	device_pubkey_spki?: string | null; // Device Key 公钥 (SPKI, base64)
+	device_key_updated_at?: string | null; // Device Key 更新时间
 }
 
 export async function getKolBindingByUserId(
@@ -105,22 +107,24 @@ export async function updateUserSigninTime(
 
 export async function createKolBinding(
 	db: D1Database,
-	userInfo: ValidatedUserInfo
+	userInfo: ValidatedUserInfo,
+	devicePubkeySpkiB64: string | null = null
 ): Promise<void> {
 	// 1. 插入用户信息（增加 OR IGNORE 实现幂等，防止重复回调报错）
 	const insertUser = db.prepare(`
-		INSERT
-		OR IGNORE INTO kol_binding (
-      x_id, cdp_user_id, wallet_address, email, username, evm_account_created_at
-    ) VALUES (?, ?, ?, ?, ?, ?)
-	`).bind(
-		userInfo.xSub,
-		userInfo.userId,
-		userInfo.walletAddress,
-		userInfo.email,
-		userInfo.username,
-		userInfo.walletCreatedAt
-	);
+			INSERT
+			OR IGNORE INTO kol_binding (
+	      x_id, cdp_user_id, wallet_address, email, username, evm_account_created_at, device_pubkey_spki, device_key_updated_at
+	    ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		`).bind(
+			userInfo.xSub,
+			userInfo.userId,
+			userInfo.walletAddress,
+			userInfo.email,
+			userInfo.username,
+			userInfo.walletCreatedAt,
+			devicePubkeySpkiB64
+		);
 
 	// 2. 将 PENDING 状态的余额搬运到 user_rewards（使用 UPSERT 累加到 status=0 的余额行）
 	// 如果不存在 status=0 行则创建，存在则累加金额
@@ -154,6 +158,16 @@ export async function createKolBinding(
 
 	// D1.batch 保证了这三步在同一个事务内
 	await db.batch([insertUser, moveEscrowToRewards, markAsClaimed]);
+}
+
+export async function setDevicePubkeyForUserId(
+	db: D1Database,
+	userId: string,
+	devicePubkeySpkiB64: string
+): Promise<void> {
+	await db.prepare(
+		"UPDATE kol_binding SET device_pubkey_spki = ?, device_key_updated_at = CURRENT_TIMESTAMP WHERE cdp_user_id = ?"
+	).bind(devicePubkeySpkiB64, userId).run();
 }
 
 export interface UserReward {

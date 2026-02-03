@@ -12,7 +12,7 @@ import {
     parseUsdcNumber,
     publisherState
 } from "./ad_publisher_common";
-import { postToX402SrvByPri, x402WorkerFetch } from "../../wallet/cdp_wallet";
+import { postToX402Srv, x402WorkerFetch } from "../../wallet/cdp_wallet";
 
 type TransferDirection = "wallet_to_ads" | "ads_to_wallet";
 let transferDirection: TransferDirection = "wallet_to_ads";
@@ -191,7 +191,7 @@ async function handleAdsEscrowTransfer(): Promise<void> {
 
         if (transferDirection === "wallet_to_ads") {
             setTransferBusy(true, "Processing deposit...");
-            result = await postToX402SrvByPri(API_PATH_ADS_PUBLISHER_RECHARGE, payload);
+            result = await postToX402Srv(API_PATH_ADS_PUBLISHER_RECHARGE, payload);
         } else {
             setTransferBusy(true, "Processing withdraw...");
             result = await x402WorkerFetch(API_PATH_ADS_PUBLISHER_WITHDRAW, payload);
