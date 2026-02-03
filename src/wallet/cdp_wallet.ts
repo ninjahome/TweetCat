@@ -35,7 +35,6 @@ import { wrapFetchWithPayment } from "@x402/fetch";
 import { privateKeyToAccount } from "viem/accounts";
 import { logX402 } from "../common/debug_flags";
 import { t } from "../common/i18n";
-import { AdDeployer } from "../web3/AdDeployer";
 import { signDeviceRequestV2 } from "../common/device_key";
 
 const ERC20_BALANCE_ABI = [
@@ -614,27 +613,4 @@ export async function x402WorkerGet(path: string, params?: Record<string, string
     }
 
     return await response.json();
-}
-
-/**
- * POC: 使用 USDC 支付 Gas 部署广告合约
- */
-export async function deployAdVaultPOC(adId: string): Promise<string> {
-    const chainId = await getChainId();
-    const facilitator = X402_FACILITATORS[chainId];
-    const platformAddress = facilitator.settlementContract as `0x${string}`;
-
-    const initialBudgetAtomic = 10000n; // 0.01 USDC 测试充值，用于验证 Batch 扣费和 Gas 扣费
-    const { deployHash, predictedAddress } = await AdDeployer.deployAdVault(
-        chainId,
-        platformAddress,
-        adId,
-    );
-
-    if (initialBudgetAtomic > 0n) {
-        const amountStr = (Number(initialBudgetAtomic) / 1_000_000).toString();
-        await transferUSDCByX402(chainId, predictedAddress, amountStr);
-    }
-
-    return deployHash;
 }
