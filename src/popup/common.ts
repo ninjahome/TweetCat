@@ -1,9 +1,9 @@
-import {t} from "../common/i18n";
+import { t } from "../common/i18n";
 import browser from "webextension-polyfill";
-import {getChainId} from "../wallet/wallet_setting";
-import {initCDP, X402_FACILITATORS} from "../common/x402_obj";
-import {getCurrentUser} from "@coinbase/cdp-core";
-import {getEOA} from "../wallet/cdp_wallet";
+import { getChainId } from "../wallet/wallet_setting";
+import { initCDP, X402_FACILITATORS } from "../common/x402_obj";
+import { getCurrentUser } from "@coinbase/cdp-core";
+import { getEOA } from "../wallet/cdp_wallet";
 
 let notificationTimer: number | null = null;
 let notificationBar: HTMLDivElement | null = null;
@@ -245,11 +245,26 @@ export async function getCurrentUserInfo(): Promise<{ xId: string; walletAddress
 
 
 export async function openTxInExplorer(txHash: string, chainId?: number): Promise<void> {
-    if (!txHash) return;
-    if (!chainId) chainId = await getChainId();
+    try {
 
-    const browserBase = X402_FACILITATORS[chainId]?.browser;
-    if (!browserBase) return;
-    const url = `${browserBase}/tx/${txHash}`;
-    await browser.tabs.create({url});
+        if (!txHash) return;
+        const normalizedHash = txHash.trim();
+
+        let resolvedChainId = chainId;
+        if (!resolvedChainId) {
+            try {
+                resolvedChainId = await getChainId();
+            } catch {
+                // ignore: fallback to a generic explorer below
+            }
+        }
+
+        const browserBase = resolvedChainId ? X402_FACILITATORS[resolvedChainId]?.browser : undefined;
+        const url = browserBase
+            ? `${browserBase}/tx/${normalizedHash}`
+            : `https://blockscan.com/tx/${normalizedHash}`;
+        await browser.tabs.create({ url });
+    } catch (e) {
+        console.error("openTxInExplorer error:", e);
+    }
 }

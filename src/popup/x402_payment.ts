@@ -1,9 +1,9 @@
-import {isSignedIn} from "@coinbase/cdp-core";
-import {initCDP, x402TipPayload} from "../common/x402_obj";
-import {logX402} from "../common/debug_flags";
-import {t, initI18n} from "../common/i18n";
-import {postToX402SrvByPri} from "../wallet/cdp_wallet";
-import {openTxInExplorer} from "./common";
+import { isSignedIn } from "@coinbase/cdp-core";
+import { initCDP, x402TipPayload } from "../common/x402_obj";
+import { logX402 } from "../common/debug_flags";
+import { t, initI18n } from "../common/i18n";
+import { postToX402SrvByPri } from "../wallet/cdp_wallet";
+import { openTxInExplorer } from "./common";
 
 // DOM 元素
 let statusDiv: HTMLElement;
@@ -69,8 +69,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     btnClose.onclick = () => window.close();
     btnBrowser.onclick = async () => {
         if (!currentHashVal) return;
-        openTxInExplorer(currentHashVal).then()
-        window.close()
+        await openTxInExplorer(currentHashVal)
+        window.close();
     }
     btnBrowser.style.display = 'none';
 
@@ -136,7 +136,7 @@ async function processTipPayment(payload: x402TipPayload) {
         btnBrowser.style.display = 'block';
         setTimeout(() => {
             window.close();
-        }, 10000);
+        }, 10_000);
 
     } catch (error) {
         console.error('❌ Payment error:', error);
