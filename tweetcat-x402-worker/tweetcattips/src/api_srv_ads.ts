@@ -298,6 +298,14 @@ export async function apiAdsUpdate(c: ExtCtx) {
 		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
 		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
 
+		// 先检查广告存在性/归属/是否 ended（已决策：ended 不允许更新 callback/custom_data）
+		const ad = await getAdById(c.env.DB, adId);
+		if (!ad) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+		if (ad.a_x_id !== aXId) return jsonError(c, 403, "FORBIDDEN", "You do not own this ad");
+		if (ad.status === "EXPIRED" || ad.status === "COMPLETED") {
+			return jsonError(c, 400, "INVALID_STATE", "Cannot update ended ads.");
+		}
+
 		// Validate custom_data
 		const customDataError = validateCustomData(customData);
 		if (customDataError) {
@@ -318,11 +326,6 @@ export async function apiAdsUpdate(c: ExtCtx) {
 		);
 
 		if (!updated) {
-			// Check if ad exists to give better error
-			const ad = await getAdById(c.env.DB, adId);
-			if (!ad) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
-			if (ad.a_x_id !== aXId) return jsonError(c, 403, "FORBIDDEN", "You do not own this ad");
-
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad");
 		}
 

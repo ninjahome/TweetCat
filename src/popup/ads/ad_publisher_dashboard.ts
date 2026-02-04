@@ -585,58 +585,70 @@ function openAdDetailModal(ad: AdRecord) {
     const customDataInput = $Id("detail-custom-data") as HTMLTextAreaElement | null;
     if (customDataInput) customDataInput.value = ad.custom_data || "";
 
-    // Bind Update Button
+    const isEnded = ad.status === "EXPIRED" || ad.status === "COMPLETED";
+
+    // ended（已决策）：不允许更新 callback/custom_data
+    if (callbackInput) callbackInput.disabled = isEnded;
+    if (customDataInput) customDataInput.disabled = isEnded;
+
+    // Bind Update Button（ended 时禁用）
     const btnUpdate = $Id("btn-update-ad-settings");
     if (btnUpdate) {
         // Remove old listeners to prevent duplicates (cloning button is safer but simple replacement works here)
-        const newBtn = btnUpdate.cloneNode(true);
+        const newBtn = btnUpdate.cloneNode(true) as HTMLButtonElement;
         btnUpdate.parentNode?.replaceChild(newBtn, btnUpdate);
 
-        newBtn.addEventListener("click", async () => {
-            const newCallback = callbackInput?.value.trim() || null;
-            const newCustomData = customDataInput?.value.trim() || null;
+        newBtn.disabled = isEnded;
+        if (isEnded) {
+            newBtn.title = "Ended ads cannot be updated.";
+        } else {
+            newBtn.title = "";
+            newBtn.addEventListener("click", async () => {
+                const newCallback = callbackInput?.value.trim() || null;
+                const newCustomData = customDataInput?.value.trim() || null;
 
-            // Validate JSON
-            if (newCustomData) {
-                try {
-                    JSON.parse(newCustomData);
-                } catch (e) {
-                    showNotification("Invalid JSON format in Custom Data", "error");
-                    return;
-                }
-            }
-
-            try {
-                showLoading("Updating ad settings...");
-                const payload = {
-                    ad_id: ad.ad_id,
-                    a_x_id: getCurrentXId(),
-                    callback_url: newCallback,
-                    custom_data: newCustomData,
-                };
-
-                const result = await x402WorkerFetch(API_PATH_ADS_UPDATE, payload);
-
-                if (result.ok) {
-                    showNotification("Ad settings updated successfully!", "success");
-                    // 局部更新本地状态并刷新行 UI (主要为了让 View 按钮拿到最新引用)
-                    const localAd = publisherState.ads.list.find(a => a.ad_id === ad.ad_id);
-                    if (localAd) {
-                        localAd.callback_url = newCallback;
-                        localAd.custom_data = newCustomData;
-                        updateAdRowUI(localAd);
+                // Validate JSON
+                if (newCustomData) {
+                    try {
+                        JSON.parse(newCustomData);
+                    } catch (e) {
+                        showNotification("Invalid JSON format in Custom Data", "error");
+                        return;
                     }
-                    modal.classList.remove("active");
-                } else {
-                    const errorMsg = result.error?.detail || "Failed to update ad";
-                    showNotification(errorMsg, "error");
                 }
-            } catch (err: any) {
-                showNotification(err.message, "error");
-            } finally {
-                hideLoading();
-            }
-        });
+
+                try {
+                    showLoading("Updating ad settings...");
+                    const payload = {
+                        ad_id: ad.ad_id,
+                        a_x_id: getCurrentXId(),
+                        callback_url: newCallback,
+                        custom_data: newCustomData,
+                    };
+
+                    const result = await x402WorkerFetch(API_PATH_ADS_UPDATE, payload);
+
+                    if (result.ok) {
+                        showNotification("Ad settings updated successfully!", "success");
+                        // 局部更新本地状态并刷新行 UI (主要为了让 View 按钮拿到最新引用)
+                        const localAd = publisherState.ads.list.find(a => a.ad_id === ad.ad_id);
+                        if (localAd) {
+                            localAd.callback_url = newCallback;
+                            localAd.custom_data = newCustomData;
+                            updateAdRowUI(localAd);
+                        }
+                        modal.classList.remove("active");
+                    } else {
+                        const errorMsg = result.error?.detail || "Failed to update ad";
+                        showNotification(errorMsg, "error");
+                    }
+                } catch (err: any) {
+                    showNotification(err.message, "error");
+                } finally {
+                    hideLoading();
+                }
+            });
+        }
     }
 
     // 在模态框底部添加状态操作按钮

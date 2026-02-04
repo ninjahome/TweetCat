@@ -152,16 +152,16 @@ export function computePopularityScore(completed: number, total: number): number
  * 动态计算广告的逻辑状态
  */
 export function getEffectiveStatus(ad: AdRow): AdCampaignStatus {
-	// 1. 优先检查手动暂停状态
-	if (ad.status === 'PAUSED_MANUAL') return 'PAUSED_MANUAL';
-
-	// 2. 检查配额是否用完 (优先于过期，因为可能刚好最后一秒用完)
+	// 1. 检查配额是否用完 (优先于过期，因为可能刚好最后一秒用完)
 	if (ad.quota_used >= ad.quota_total) return 'COMPLETED';
 
-	// 3. 检查时间是否过期
+	// 2. 检查时间是否过期
 	if (ad.end_date && new Date(ad.end_date) < new Date()) {
 		return 'EXPIRED';
 	}
+
+	// 3. 手动暂停（仅在未 ended 时生效）
+	if (ad.status === 'PAUSED_MANUAL') return 'PAUSED_MANUAL';
 
 	// 4. 返回原始状态 (ACTIVE 或 PAUSED_NO_BUDGET)
 	return ad.status;
