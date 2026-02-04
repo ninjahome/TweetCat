@@ -2,6 +2,7 @@ import browser, {Runtime} from "webextension-polyfill";
 import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./twitter_observer";
 import {
     appendFilterOnKolProfilePage, appendScoreInfoToProfilePage,
+    updateFollowingSnapshotFromInject,
 } from "./twitter_ui";
 import {maxElmFindTryTimes, MsgType} from "../common/consts";
 import {addCustomStyles, observeSimple, parseContentHtml, parseTwitterPath} from "../common/utils";
@@ -272,6 +273,7 @@ window.addEventListener('message', (e) => {
                 const data = msg.data;
                 const usrProfile = new UserProfile(data.profile);
                 appendScoreInfoToProfilePage(usrProfile, data.screenName).then();
+                updateFollowingSnapshotFromInject(data.screenName, data.profile);
                 break;
             }
             default: {

@@ -1823,6 +1823,11 @@ html[data-bg="lightsout"] {
     background: linear-gradient(to right, #1a8cd8, #03B69B) !important;
 }
 
+.follow-claim-btn-on-profile:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
 .follow-claim-btn-title {
     color: #fff;
     font-size: 14px;

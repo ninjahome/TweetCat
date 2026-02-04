@@ -7,9 +7,51 @@ import {getUserIdByUsername} from "../x_api/twitter_api";
 import {logTPR} from "../common/debug_flags";
 import {calculateLevelBreakdown, LevelScoreBreakdown, UserProfile} from "../object/user_info";
 import {t} from "../common/i18n";
-import {showDialog} from "./common";
+import { ADS_FOLLOW_CLAIM_STATUS, ADS_FOLLOW_UI_MODE, AdsFollowClaimStatus, AdsFollowUiMode, showDialog } from "./common";
 
 let observing = false;
+let __lastProfileToolbar: HTMLElement | null = null;
+let __lastProfileUsername: string | null = null;
+
+type FollowingSnapshot = {
+    isFollowing: boolean | null;
+    capturedAt: number;
+};
+
+const __followingCache = new Map<string, FollowingSnapshot>();
+
+function isProfileHomePath(username: string): boolean {
+    try {
+        const parts = new URL(window.location.href).pathname.split("/").filter(Boolean);
+        return parts.length === 1 && parts[0].toLowerCase() === username.toLowerCase();
+    } catch {
+        return false;
+    }
+}
+
+function parseIsFollowingFromUserByScreenName(raw: any): boolean | null {
+    const u = raw?.data?.user?.result;
+    const v = u?.legacy?.following;
+    return typeof v === "boolean" ? v : null;
+}
+
+function formatRewardUsdc(x: number): string {
+    const v = Number(x);
+    if (!Number.isFinite(v)) return "0";
+    const rounded = Math.round(v * 1e6) / 1e6;
+    return String(rounded);
+}
+
+export function updateFollowingSnapshotFromInject(screenName: string, rawProfile: any) {
+    const key = String(screenName || "").toLowerCase();
+    if (!key) return;
+    const isFollowing = parseIsFollowingFromUserByScreenName(rawProfile);
+    __followingCache.set(key, { isFollowing, capturedAt: Date.now() });
+
+    if (__lastProfileToolbar && __lastProfileUsername && __lastProfileUsername.toLowerCase() === key) {
+        _appendAdsFollowOfferBtn(__lastProfileToolbar, __lastProfileUsername).then();
+    }
+}
 
 export async function appendFilterOnKolProfilePage(kolName: string) {
     if (observing) {
@@ -20,10 +62,12 @@ export async function appendFilterOnKolProfilePage(kolName: string) {
     observeForElement(document.body, 800, () => {
         return document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
     }, async (profileToolBarDiv) => {
+        __lastProfileToolbar = profileToolBarDiv;
+        __lastProfileUsername = kolName;
         const oldFilterBtn = profileToolBarDiv.querySelectorAll(".filter-btn-on-profile");
         oldFilterBtn.forEach(item => item.remove());
         await _appendFilterBtn(profileToolBarDiv, kolName);
-        await _appendFollowClaimBtn(profileToolBarDiv, kolName);
+        await _appendAdsFollowOfferBtn(profileToolBarDiv, kolName);
         observing = false;
     }, false);
 }
@@ -128,9 +172,23 @@ async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
     }
 }
 
-async function _appendFollowClaimBtn(toolBar: HTMLElement, kolName: string) {
+async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
     toolBar.querySelectorAll(".follow-claim-on-profile").forEach((item) => item.remove());
     toolBar.querySelectorAll(".follow-claim-btn-on-profile").forEach((item) => item.remove());
+
+    if (!isProfileHomePath(kolName)) return;
+
+    const q = await sendMsgToService({ profileUrl: window.location.href }, MsgType.AdsFollowOfferQuery);
+    if (!q?.success) return;
+
+    // backward/forward compatible: old handler returned offer directly; new returns {offer, claim_state}
+    const payload = q?.data;
+    const offer = (payload && typeof payload === "object" && "ad_id" in payload)
+        ? payload
+        : payload?.offer;
+    const claimState = payload?.claim_state ?? null;
+
+    if (!offer?.ad_id) return;
 
     const contentTemplate = await parseContentHtml("html/content.html");
     const template = contentTemplate.content.getElementById("follow-claim-on-profile") as HTMLElement | null;
@@ -140,20 +198,54 @@ async function _appendFollowClaimBtn(toolBar: HTMLElement, kolName: string) {
     clone.setAttribute("id", "");
 
     const btn = clone.querySelector(".follow-claim-btn-on-profile") as HTMLButtonElement | null;
+    const title = clone.querySelector(".follow-claim-btn-title") as HTMLElement | null;
+
+    const snap = __followingCache.get(kolName.toLowerCase());
+    const isFollowing = snap?.isFollowing ?? null;
+    const claimStatus = claimState?.status as AdsFollowClaimStatus | undefined;
+
+    const setUi = (mode: AdsFollowUiMode) => {
+        if (!btn) return;
+        btn.disabled = (mode !== ADS_FOLLOW_UI_MODE.Eligible);
+        btn.classList.toggle("tc-processing", mode === ADS_FOLLOW_UI_MODE.Processing);
+        const rewardText = formatRewardUsdc(Number(offer.reward_usdc || 0));
+
+        let text = `关注即领 ${rewardText} USDC`;
+        if (mode === ADS_FOLLOW_UI_MODE.Loading) text = "加载中...";
+        if (mode === ADS_FOLLOW_UI_MODE.AlreadyFollowing) text = "已关注";
+        if (mode === ADS_FOLLOW_UI_MODE.Processing) text = "处理中...";
+        if (mode === ADS_FOLLOW_UI_MODE.Claimed) text = "已领取，待验证";
+        if (title) title.textContent = text;
+    };
+
     if (btn) {
-        btn.onclick = async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            await sendMsgToService(
-                {
-                    kolName,
-                    url: window.location.href,
-                    ua: navigator.userAgent,
-                    lang: navigator.language,
-                },
-                MsgType.ProfileFollowClaim
-            );
-        };
+        if (claimStatus === ADS_FOLLOW_CLAIM_STATUS.ClaimedPendingProof) {
+            setUi(ADS_FOLLOW_UI_MODE.Claimed);
+        } else if (claimStatus === ADS_FOLLOW_CLAIM_STATUS.Processing) {
+            setUi(ADS_FOLLOW_UI_MODE.Processing);
+        } else if (isFollowing === true) {
+            setUi(ADS_FOLLOW_UI_MODE.AlreadyFollowing);
+        } else if (isFollowing === false) {
+            setUi(ADS_FOLLOW_UI_MODE.Eligible);
+            btn.onclick = async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setUi(ADS_FOLLOW_UI_MODE.Processing);
+                const resp = await sendMsgToService(
+                    { ad_id: offer.ad_id, profileUrl: window.location.href },
+                    MsgType.AdsFollowClaim,
+                );
+                if (!resp?.success) {
+                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
+                    showDialog(t('tips_title'), String(resp?.data || "Claim failed"));
+                    return;
+                }
+                setUi(ADS_FOLLOW_UI_MODE.Claimed);
+            };
+        } else {
+            // follow status unknown yet (waiting inject)
+            setUi(ADS_FOLLOW_UI_MODE.Loading);
+        }
     }
 
     const placementTracking = toolBar.querySelector('div[data-testid="placementTracking"]');

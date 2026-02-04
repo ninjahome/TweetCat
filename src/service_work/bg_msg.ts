@@ -40,7 +40,7 @@ import {
 } from "./wallet_controller";
 import { x402TipPayload } from "../common/x402_obj";
 import { handleProfileFollowClaim } from "./profile_follow_claim";
-import { getFollowOfferForProfile } from "./bg_ads_feed";
+import { claimAdsFollowOffer, queryAdsFollowOffer } from "./bg_ads_follow";
 
 export async function checkIfXIsOpen(): Promise<boolean> {
     const tabs = await browser.tabs.query({
@@ -58,6 +58,7 @@ const HIGH_RISK_ACTIONS = [
     MsgType.WalletSignMessage,
     MsgType.WalletTransferEth,
     MsgType.ProfileFollowClaim,
+    MsgType.AdsFollowClaim,
     MsgType.X402TipAction,
 ];
 
@@ -65,6 +66,7 @@ const X_PAGE_ALLOWED_ACTIONS = new Set([
     MsgType.X402TipAction,
     MsgType.TransferUSDCByTwitterId,
     MsgType.ProfileFollowClaim, // 你如果允许从页面按钮触发 claim，可以放；否则移除
+    MsgType.AdsFollowClaim,
 ]);
 
 function isInternalSource(sender: Runtime.MessageSender): boolean {
@@ -114,8 +116,15 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.AdsFollowOfferQuery: {
             const url = String(request?.data?.profileUrl || request?.data?.url || "");
-            const offer = await getFollowOfferForProfile(url);
-            return { success: true, data: offer };
+            const data = await queryAdsFollowOffer(url);
+            return { success: true, data };
+        }
+
+        case MsgType.AdsFollowClaim: {
+            const ad_id = String(request?.data?.ad_id || "");
+            const profileUrl = String(request?.data?.profileUrl || request?.data?.url || "");
+            const data = await claimAdsFollowOffer({ ad_id, profileUrl });
+            return { success: true, data };
         }
 
         case MsgType.FollowingBulkUnfollow: {

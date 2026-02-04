@@ -99,6 +99,7 @@ export enum MsgType {
     ProfileFollowClaim = "ProfileFollowClaim",
 
     AdsFollowOfferQuery = "AdsFollowOfferQuery",
+    AdsFollowClaim = "AdsFollowClaim",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";

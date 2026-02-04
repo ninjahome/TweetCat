@@ -4,7 +4,7 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 23;
+export const __currentDatabaseVersion = 24;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -17,6 +17,7 @@ export const __tableWalletSettings = '__table_wallet_settings__';
 export const __tableIpfsSettings = '__table_ipfs_settings__';
 export const __tableAdsFeedMeta = '__table_ads_feed_meta__';
 export const __tableAdsFollowOffers = '__table_ads_follow_offers__';
+export const __tableAdsFollowClaimState = '__table_ads_follow_claim_state__';
 
 export const idx_tweets_user_time = 'userId_timestamp_idx'
 export const idx_tweets_time_user = 'timestamp_userId_idx';
@@ -90,6 +91,7 @@ function initDatabase(): Promise<IDBDatabase> {
             initIpfsSettingsTable(request);
             initAdsFeedMetaTable(request);
             initAdsFollowOffersTable(request);
+            initAdsFollowClaimStateTable(request);
         };
     });
 }
@@ -258,6 +260,13 @@ function initAdsFollowOffersTable(request: IDBOpenDBRequest) {
     if (db.objectStoreNames.contains(__tableAdsFollowOffers)) return;
     db.createObjectStore(__tableAdsFollowOffers, { keyPath: 'profileUrl' });
     logDB("------>>>[Database]Created ads follow offers table successfully.");
+}
+
+function initAdsFollowClaimStateTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+    if (db.objectStoreNames.contains(__tableAdsFollowClaimState)) return;
+    db.createObjectStore(__tableAdsFollowClaimState, { keyPath: 'ad_id' });
+    logDB("------>>>[Database]Created ads follow claim state table successfully.");
 }
 
 

@@ -51,3 +51,20 @@ export function showToastMsg(msg: string, timeout: number = 3) {
         msgSpan.innerText = '';
     }, timeout * 1000);
 }
+
+export const ADS_FOLLOW_UI_MODE = {
+    Loading: "loading",
+    Eligible: "eligible",
+    AlreadyFollowing: "already_following",
+    Processing: "processing",
+    Claimed: "claimed",
+} as const;
+
+export type AdsFollowUiMode = typeof ADS_FOLLOW_UI_MODE[keyof typeof ADS_FOLLOW_UI_MODE];
+
+export const ADS_FOLLOW_CLAIM_STATUS = {
+    Processing: "processing",
+    ClaimedPendingProof: "claimed_pending_proof",
+} as const;
+
+export type AdsFollowClaimStatus = typeof ADS_FOLLOW_CLAIM_STATUS[keyof typeof ADS_FOLLOW_CLAIM_STATUS];
