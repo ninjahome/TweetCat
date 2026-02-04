@@ -4,7 +4,7 @@ import {logDB} from "./debug_flags";
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 22;
+export const __currentDatabaseVersion = 23;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -15,6 +15,8 @@ export const __tableFollowings = '__table_followings__';
 export const __tableWallets = '__table_wallets__';
 export const __tableWalletSettings = '__table_wallet_settings__';
 export const __tableIpfsSettings = '__table_ipfs_settings__';
+export const __tableAdsFeedMeta = '__table_ads_feed_meta__';
+export const __tableAdsFollowOffers = '__table_ads_follow_offers__';
 
 export const idx_tweets_user_time = 'userId_timestamp_idx'
 export const idx_tweets_time_user = 'timestamp_userId_idx';
@@ -86,6 +88,8 @@ function initDatabase(): Promise<IDBDatabase> {
             initWalletTable(request);
             initWalletSettingsTable(request);
             initIpfsSettingsTable(request);
+            initAdsFeedMetaTable(request);
+            initAdsFollowOffersTable(request);
         };
     });
 }
@@ -240,6 +244,20 @@ function initIpfsSettingsTable(request: IDBOpenDBRequest) {
     if (db.objectStoreNames.contains(__tableIpfsSettings)) return;
     db.createObjectStore(__tableIpfsSettings, { keyPath: 'id' });
     logDB("------>>>[Database]Created ipfs settings table successfully.");
+}
+
+function initAdsFeedMetaTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+    if (db.objectStoreNames.contains(__tableAdsFeedMeta)) return;
+    db.createObjectStore(__tableAdsFeedMeta, { keyPath: 'id' });
+    logDB("------>>>[Database]Created ads feed meta table successfully.");
+}
+
+function initAdsFollowOffersTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+    if (db.objectStoreNames.contains(__tableAdsFollowOffers)) return;
+    db.createObjectStore(__tableAdsFollowOffers, { keyPath: 'profileUrl' });
+    logDB("------>>>[Database]Created ads follow offers table successfully.");
 }
 
 
@@ -419,6 +437,17 @@ export function databaseUpdateOrAddItem(storeName: string, data: any): Promise<I
         request.onerror = event => {
             reject(`Error putting data to ${storeName}: ${(event.target as IDBRequest).error}`);
         };
+    });
+}
+
+export function databaseClear(storeName: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (!__databaseObj) return reject('Database is not initialized');
+        const transaction = __databaseObj.transaction([storeName], 'readwrite');
+        const objectStore = transaction.objectStore(storeName);
+        const request = objectStore.clear();
+        request.onsuccess = () => resolve();
+        request.onerror = event => reject(`Error clearing ${storeName}: ${(event.target as IDBRequest).error}`);
     });
 }
 

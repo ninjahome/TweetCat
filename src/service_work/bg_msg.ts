@@ -40,6 +40,7 @@ import {
 } from "./wallet_controller";
 import { x402TipPayload } from "../common/x402_obj";
 import { handleProfileFollowClaim } from "./profile_follow_claim";
+import { getFollowOfferForProfile } from "./bg_ads_feed";
 
 export async function checkIfXIsOpen(): Promise<boolean> {
     const tabs = await browser.tabs.query({
@@ -109,6 +110,12 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.ProfileFollowClaim: {
             return await handleProfileFollowClaim(request.data || {});
+        }
+
+        case MsgType.AdsFollowOfferQuery: {
+            const url = String(request?.data?.profileUrl || request?.data?.url || "");
+            const offer = await getFollowOfferForProfile(url);
+            return { success: true, data: offer };
         }
 
         case MsgType.FollowingBulkUnfollow: {

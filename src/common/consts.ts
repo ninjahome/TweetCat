@@ -17,6 +17,9 @@ export function choseColorByID(id: number, opacity: number = 1): string {
 }
 
 export const __DBK_AD_Block_Key = "__DBK_AD_Block_Key";
+export const __DBK_ADS_FEED_VERSION = "__DBK_ADS_FEED_VERSION";
+export const __DBK_ADS_FEED_NEXT_INVALIDATION_AT = "__DBK_ADS_FEED_NEXT_INVALIDATION_AT";
+export const __DBK_ADS_FOLLOW_OFFER_CACHE = "__DBK_ADS_FOLLOW_OFFER_CACHE";
 
 export enum MsgType {
     OpenCategoryManagement = 'OpenCategoryManagement',
@@ -94,6 +97,8 @@ export enum MsgType {
     X402NotSignedIn = "X402NotSignedIn",
 
     ProfileFollowClaim = "ProfileFollowClaim",
+
+    AdsFollowOfferQuery = "AdsFollowOfferQuery",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
@@ -153,4 +158,3 @@ export const defaultQueryKeyMap: Record<string, string> = {
     CreateGrokConversation: "vvC5uy7pWWHXS2aDi1FZeA",
     ConversationItem_DeleteConversationMutation: "TlKHSWVMVeaa-i7dqQqFQA",
 }
-

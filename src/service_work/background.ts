@@ -14,6 +14,7 @@ import {createAlarm, updateAlarm} from "./bg_timer";
 import {resetApiBucketSetting} from "./api_bucket_state";
 import {ensureOffscreenWallet, relayWalletMsg} from "./bg_x402";
 import {ensureDeviceKey} from "../common/device_key";
+import { pollAdsFeedIfNeeded } from "./bg_ads_feed";
 
 /****************************************************************************************
  ┌────────────┐
@@ -66,6 +67,7 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
     initDefaultQueryKey().then();
     ensureOffscreenWallet().then();
     ensureDeviceKey().then();
+    pollAdsFeedIfNeeded(true).then();
 });
 
 
@@ -104,6 +106,7 @@ browser.runtime.onStartup.addListener(() => {
         await createAlarm();
         await ensureOffscreenWallet();
         await ensureDeviceKey();
+        await pollAdsFeedIfNeeded(true);
     })();
 });
 

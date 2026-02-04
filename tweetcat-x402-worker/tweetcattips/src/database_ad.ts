@@ -44,6 +44,7 @@ export interface AdRow {
 	custom_data?: string | null;
 	unit_price_atomic: string;
 	quota_total: number;
+	quota_claimed?: number;
 	quota_used: number;
 	status: AdCampaignStatus;
 	end_date: string; // Changed from duration_days
@@ -112,6 +113,59 @@ export interface CreateDetailedClaimParams {
 	signature: string;
 }
 
+// ========= 广告广场 feed 元信息 =========
+
+export interface AdsFeedMeta {
+	version: number;
+	next_invalidation_at: string | null;
+}
+
+async function ensureAdsFeedMetaRow(db: D1Database): Promise<void> {
+	// 单行表（id=1），幂等初始化
+	await db.prepare(
+		`INSERT OR IGNORE INTO ads_feed_meta(id, version, updated_at)
+		 VALUES(1, 1, datetime('now'))`
+	).run();
+}
+
+export async function getAdsFeedVersion(db: D1Database): Promise<number> {
+	await ensureAdsFeedMetaRow(db);
+	const row = await db.prepare(
+		"SELECT version FROM ads_feed_meta WHERE id = 1"
+	).first<{ version: number }>();
+	return Number(row?.version ?? 1);
+}
+
+export async function bumpAdsFeedVersion(db: D1Database): Promise<number> {
+	await ensureAdsFeedMetaRow(db);
+	const res = await db.prepare(
+		`UPDATE ads_feed_meta
+		 SET version = version + 1,
+		     updated_at = datetime('now')
+		 WHERE id = 1`
+	).run();
+	if (!(res.success && (res.meta.changes ?? 0) > 0)) {
+		// 极端情况下兜底：重新插入并返回当前版本
+		await ensureAdsFeedMetaRow(db);
+	}
+	return await getAdsFeedVersion(db);
+}
+
+export async function getAdsNextInvalidationAt(db: D1Database): Promise<string | null> {
+	// 计算下一次“纯时间变化”可能导致 list 变化的时间点：当前可展示广告里最早的 end_date
+	const sql = `
+		SELECT MIN(c.end_date) as next_invalidation_at
+		FROM ad_campaigns c
+		JOIN ad_escrow_accounts e ON c.a_x_id = e.a_x_id
+		WHERE c.status = 'ACTIVE'
+		  AND c.end_date > datetime('now')
+		  AND COALESCE(c.quota_claimed, c.quota_used, 0) < c.quota_total
+		  AND CAST(e.frozen_atomic AS INTEGER) >= CAST(c.unit_price_atomic AS INTEGER)
+	`;
+	const row = await db.prepare(sql).first<{ next_invalidation_at: string | null }>();
+	return row?.next_invalidation_at ?? null;
+}
+
 // ========= 辅助函数 =========
 
 export function toSqliteDate(date: Date): string {
@@ -152,8 +206,13 @@ export function computePopularityScore(completed: number, total: number): number
  * 动态计算广告的逻辑状态
  */
 export function getEffectiveStatus(ad: AdRow): AdCampaignStatus {
+	const claimed = Number.isFinite(ad.quota_claimed as number) ? (ad.quota_claimed as number) : 0;
+	const used = Number.isFinite(ad.quota_used) ? ad.quota_used : 0;
+	const capped = Math.max(claimed, used);
+
 	// 1. 检查配额是否用完 (优先于过期，因为可能刚好最后一秒用完)
-	if (ad.quota_used >= ad.quota_total) return 'COMPLETED';
+	// 兼容旧数据：历史上 quota_used 代表“已领取”，新口径用 quota_claimed 代表“已领取”
+	if (capped >= ad.quota_total) return 'COMPLETED';
 
 	// 2. 检查时间是否过期
 	if (ad.end_date && new Date(ad.end_date) < new Date()) {
@@ -402,7 +461,7 @@ export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 	const sql = `
 		SELECT
 			c.ad_id, c.title, c.a_x_id, c.description, c.category, c.unit_price_atomic,
-			c.quota_used, c.quota_total, c.end_date, c.created_at, c.detail_url
+			c.quota_claimed, c.quota_used, c.quota_total, c.end_date, c.created_at, c.detail_url
 		FROM
 			ad_campaigns c
 		JOIN
@@ -410,7 +469,7 @@ export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 		WHERE
 			c.status = 'ACTIVE'
 			AND c.end_date > datetime('now')
-			AND c.quota_used < c.quota_total
+			AND COALESCE(c.quota_claimed, c.quota_used, 0) < c.quota_total
 			AND CAST(e.frozen_atomic AS INTEGER) >= CAST(c.unit_price_atomic AS INTEGER)
 		ORDER BY
 			c.created_at DESC
@@ -427,14 +486,14 @@ export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
  * @param adId - 广告 ID
  * @returns 操作是否成功
  */
-export async function incrementAdQuota(db: D1Database, adId: string): Promise<boolean> {
+export async function incrementAdClaimedQuota(db: D1Database, adId: string): Promise<boolean> {
 	const updateResult = await db.prepare(
 		`UPDATE ad_campaigns
-		 SET quota_used = quota_used + 1,
+		 SET quota_claimed = COALESCE(quota_claimed, 0) + 1,
 		     updated_at = datetime('now')
 		 WHERE ad_id = ? 
 		   AND status = 'ACTIVE' 
-		   AND quota_used < quota_total
+		   AND COALESCE(quota_claimed, 0) < quota_total
 		   AND end_date > datetime('now')`
 	).bind(adId).run();
 
@@ -581,7 +640,7 @@ export async function getPublisherDashboardStats(db: D1Database, aXId: string) {
 			 WHERE a_x_id = ? 
 			   AND status = 'ACTIVE'
 			   AND end_date > datetime('now')
-			   AND quota_used < quota_total) as active_campaigns_count,
+			   AND COALESCE(quota_claimed, quota_used, 0) < quota_total) as active_campaigns_count,
 			(SELECT COALESCE(SUM(ac.unit_price_atomic), '0') FROM ad_reward_claims arc
 			 JOIN ad_campaigns ac ON arc.ad_id = ac.ad_id
 			 WHERE ac.a_x_id = ?

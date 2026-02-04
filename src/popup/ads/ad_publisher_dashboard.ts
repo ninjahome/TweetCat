@@ -171,27 +171,31 @@ interface MyAdRow {
     name: string;
     status: AdStatus;
     rewardPerTask: number;
-    completed: number;
-    spent: number;
-    remainingBudget: number;
+    claimed: number;   // 已领取（占位）
+    settled: number;   // 已结算（目前通常为 0，后续验证/结算后增长）
+    spent: number;     // 已结算支出（与 settled 对应）
+    remainingBudget: number; // 剩余可领取预算（按 quota_total - claimed 估算）
     totalQuota: number;
     endDate: string;
 }
 
 function buildMyAdRow(ad: AdRecord): MyAdRow {
     const rewardPerTask = atomicToUsdcNumber(ad.unit_price_atomic);
-    const completed = Number.isFinite(ad.quota_used) ? ad.quota_used : 0;
+    const claimed = Number.isFinite(ad.quota_claimed as any) ? Number(ad.quota_claimed) : (Number.isFinite(ad.quota_used) ? ad.quota_used : 0);
+    const settled = Number.isFinite(ad.quota_used) ? ad.quota_used : 0;
     const quotaTotal = Number.isFinite(ad.quota_total) ? ad.quota_total : 0;
 
-    const spentAtomic = multiplyAtomic(ad.unit_price_atomic, completed);
-    const remainingAtomic = multiplyAtomic(ad.unit_price_atomic, Math.max(quotaTotal - completed, 0));
+    // 支出只按“已结算/已确认”口径计算；claimed 只是占位，不代表已发放
+    const spentAtomic = multiplyAtomic(ad.unit_price_atomic, settled);
+    const remainingAtomic = multiplyAtomic(ad.unit_price_atomic, Math.max(quotaTotal - claimed, 0));
 
     return {
         id: ad.ad_id,
         name: ad.name,
         status: ad.status,
         rewardPerTask,
-        completed,
+        claimed,
+        settled,
         spent: atomicToUsdcNumber(spentAtomic),
         remainingBudget: atomicToUsdcNumber(remainingAtomic),
         totalQuota: quotaTotal,
@@ -344,7 +348,9 @@ function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
     statusEl.textContent = AD_STATUS_LABELS[ad.status] || ad.status;
 
     $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(rowData.rewardPerTask);
-    $2<HTMLElement>(tr, ".td-completed").textContent = rowData.completed.toString();
+    // “Completed”列当前展示 claimed（占位/已领取），避免误把领取当成已结算消耗
+    $2<HTMLElement>(tr, ".td-completed").textContent = rowData.claimed.toString();
+    $2<HTMLElement>(tr, ".td-settled").textContent = rowData.settled.toString();
     $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(rowData.spent);
     $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(rowData.remainingBudget);
 

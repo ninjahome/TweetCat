@@ -26,6 +26,7 @@ export const API_PATH_ADS_CREATE = "/ads/publisher/create";
 export const API_PATH_ADS_UPDATE = "/ads/publisher/update";
 export const API_PATH_ADS_MY_ADS = "/ads/publisher/my_ads";
 export const API_PATH_ADS_LIST = "/ads/executor/list";
+export const API_PATH_ADS_VERSION = "/ads/executor/version";
 export const API_PATH_ADS_CLAIM = "/ads/executor/claim";
 export const API_PATH_ADS_MY_CLAIMS = "/ads/executor/my_claims";
 export const API_PATH_ADS_PUBLISHER_RECHARGE = "/ads/publisher/recharge";

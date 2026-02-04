@@ -13,6 +13,7 @@ import {
 	API_PATH_ADS_UPDATE,
 	API_PATH_ADS_MY_ADS,
 	API_PATH_ADS_LIST,
+	API_PATH_ADS_VERSION,
 	API_PATH_ADS_CLAIM,
 	API_PATH_ADS_MY_CLAIMS,
 	API_PATH_ADS_PUBLISHER_RECHARGE,
@@ -40,7 +41,7 @@ import {
 	getMyAdsCount,
 	getActiveAdsList,
 	getAdById,
-	incrementAdQuota,
+	incrementAdClaimedQuota,
 	ensureEscrowAccount,
 	getEscrowLedgerByRequestId,
 	getEscrowLedgerByTxHash,
@@ -58,6 +59,9 @@ import {
 	type AdCreatePayload,
 	type CreateDetailedClaimParams,
 	type AdCampaignStatus, getPublisherDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount, addAdQuota,
+	getAdsFeedVersion,
+	getAdsNextInvalidationAt,
+	bumpAdsFeedVersion,
 } from "./database_ad";
 import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
 import { getKolBindingByXId } from "./database_402";
@@ -281,6 +285,9 @@ export async function apiAdsCreate(c: ExtCtx) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to create ad");
 		}
 
+		// 广场可见集合变化：bump feed version
+		await bumpAdsFeedVersion(c.env.DB);
+
 		return c.json({ ok: true, ad_id: adId, required_atomic: requiredAtomic });
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
@@ -369,6 +376,7 @@ export async function apiAdsList(c: ExtCtx) {
 			const rewardUSDC = Number(row.unit_price_atomic || 0) / 1_000_000;
 			const createdAt = row.created_at ? Date.parse(row.created_at) : Date.now();
 			const category = (row.category as AdCategory) || "visit";
+			const completedCount = Number.isFinite(row.quota_claimed as any) ? Number(row.quota_claimed) : (row.quota_used ?? 0);
 			return {
 				id: row.ad_id,
 				title: row.title,
@@ -377,18 +385,39 @@ export async function apiAdsList(c: ExtCtx) {
 				category,
 				rewardUSDC,
 				durationMinutes: CATEGORY_DURATION[category] ?? 3,
-				completed: row.quota_used,
+				completed: completedCount,
 				totalQuota: row.quota_total,
 				deadlineText: formatDeadlineText(row.end_date), // Updated to use end_date
 				tags: CATEGORY_TAGS[category] ?? [],
 				rewardRange: getRewardRange(rewardUSDC),
-				popularityScore: computePopularityScore(row.quota_used, row.quota_total),
+				popularityScore: computePopularityScore(completedCount, row.quota_total),
 				createdAt: Number.isFinite(createdAt) ? createdAt : Date.now(),
 				detailUrl: row.detail_url,
 			};
 		});
 
 		return c.json(ads);
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 查询广告广场 feed 元信息（version + next_invalidation_at）
+ * 用于客户端减少全量 /ads/executor/list 拉取频率。
+ */
+export async function apiAdsExecutorVersion(c: ExtCtx) {
+	try {
+		const [version, nextInvalidationAt] = await Promise.all([
+			getAdsFeedVersion(c.env.DB),
+			getAdsNextInvalidationAt(c.env.DB),
+		]);
+		return c.json({
+			success: true,
+			version,
+			next_invalidation_at: nextInvalidationAt,
+			generated_at: new Date().toISOString(),
+		});
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
 	}
@@ -433,8 +462,8 @@ export async function apiAdsClaim(c: ExtCtx) {
 		const existingClaim = await getDetailedClaim(c.env.DB, adId, bXId);
 		if (existingClaim) return c.json(existingClaim);
 
-		// Increment quota
-		const quotaIncremented = await incrementAdQuota(c.env.DB, adId);
+		// Increment claimed quota (reserve one task slot)
+		const quotaIncremented = await incrementAdClaimedQuota(c.env.DB, adId);
 		if (!quotaIncremented) {
 			return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full or inactive");
 		}
@@ -451,8 +480,23 @@ export async function apiAdsClaim(c: ExtCtx) {
 
 		const claimCreated = await createDetailedClaim(c.env.DB, claimParams);
 		if (!claimCreated) {
+			// Best-effort rollback: if claim insert failed, try to undo quota_claimed + 1.
+			// (No strict transaction here; this reduces damage in non-duplicate failure scenarios.)
+			try {
+				await c.env.DB.prepare(
+					`UPDATE ad_campaigns
+					 SET quota_claimed = MAX(COALESCE(quota_claimed, 0) - 1, 0),
+					     updated_at = datetime('now')
+					 WHERE ad_id = ?`
+				).bind(adId).run();
+			} catch {
+				// ignore rollback errors
+			}
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to create claim");
 		}
+
+		// 广场可见集合变化：bump feed version（领取占位可能导致广告下线）
+		await bumpAdsFeedVersion(c.env.DB);
 
 		return c.json({
 			claim_id: claimId,
@@ -802,6 +846,7 @@ export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
 	app.post(API_PATH_ADS_UPDATE, apiAdsUpdate);
 	app.get(API_PATH_ADS_MY_ADS, apiAdsMyAds);
 	app.get(API_PATH_ADS_LIST, apiAdsList);
+	app.get(API_PATH_ADS_VERSION, apiAdsExecutorVersion);
 	app.post(API_PATH_ADS_CLAIM, apiAdsClaim);
 	app.get(API_PATH_ADS_MY_CLAIMS, apiAdsMyClaims);
 	app.post(API_PATH_ADS_PUBLISHER_RECHARGE, apiRechargeToAdEscrowAccount);
@@ -858,6 +903,9 @@ export async function apiAdsToggleStatus(c: ExtCtx) {
 		if (!updated) {
 			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status");
 		}
+
+		// 广场可见集合变化：bump feed version
+		await bumpAdsFeedVersion(c.env.DB);
 
 		return c.json({ ok: true, ad_id: adId, new_status: newStatus });
 	} catch (err: any) {
@@ -927,6 +975,9 @@ export async function apiAdsTopUpBudget(c: ExtCtx) {
 			}
 			finalStatus = "ACTIVE";
 		}
+
+		// 广场可见集合变化：bump feed version
+		await bumpAdsFeedVersion(c.env.DB);
 
 		return c.json({
 			ok: true,

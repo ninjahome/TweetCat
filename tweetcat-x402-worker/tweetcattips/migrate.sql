@@ -192,7 +192,7 @@ CREATE INDEX IF NOT EXISTS idx_ad_escrow_accounts_updated_at
 	ON ad_escrow_accounts(updated_at);
 
 
-CREATE TABLE IF NOT EXISTS ad_escrow_ledger (
+	CREATE TABLE IF NOT EXISTS ad_escrow_ledger (
 												id INTEGER PRIMARY KEY AUTOINCREMENT,
 
 	-- 业务唯一ID（服务端生成 UUID，方便对外引用）
@@ -237,37 +237,50 @@ CREATE TABLE IF NOT EXISTS ad_escrow_ledger (
 	UNIQUE (tx_hash),
 
 	-- 幂等：同一用户同一方向同一 request_id 只能出现一次
-	UNIQUE (a_x_id, direction, request_id)
-	);
+		UNIQUE (a_x_id, direction, request_id)
+		);
 
 CREATE INDEX IF NOT EXISTS idx_ad_escrow_ledger_axid_created_at
 	ON ad_escrow_ledger(a_x_id, created_at);
 
-CREATE INDEX IF NOT EXISTS idx_ad_escrow_ledger_direction_created_at
-	ON ad_escrow_ledger(direction, created_at);
+	CREATE INDEX IF NOT EXISTS idx_ad_escrow_ledger_direction_created_at
+		ON ad_escrow_ledger(direction, created_at);
+
+	-- 广告广场 feed 元信息（用于客户端缓存刷新）
+	CREATE TABLE IF NOT EXISTS ads_feed_meta (
+		id INTEGER PRIMARY KEY,
+		version INTEGER NOT NULL DEFAULT 1,
+		updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+		CHECK (id = 1)
+	);
+
+	-- 初始化单行（幂等）
+	INSERT OR IGNORE INTO ads_feed_meta(id, version) VALUES(1, 1);
 
 
--- 删除旧表 (警告：这将清空所有现有广告数据)
-DROP TABLE IF EXISTS ad_campaigns;
+	-- 删除旧表 (警告：这将清空所有现有广告数据)
+	DROP TABLE IF EXISTS ad_campaigns;
 
 -- 创建新表结构
-CREATE TABLE ad_campaigns (
-							  ad_id TEXT PRIMARY KEY,
-							  a_x_id TEXT NOT NULL,
-							  category TEXT NOT NULL,
-							  name TEXT NOT NULL,
-							  title TEXT NOT NULL,
-							  description TEXT NOT NULL,
-							  detail_url TEXT NOT NULL,
-							  image_url TEXT,
-							  callback_url TEXT,
-							  custom_data TEXT,
-							  unit_price_atomic TEXT NOT NULL,
-							  quota_total INTEGER NOT NULL,
-							  quota_used INTEGER DEFAULT 0,
+	CREATE TABLE ad_campaigns (
+								  ad_id TEXT PRIMARY KEY,
+								  a_x_id TEXT NOT NULL,
+								  category TEXT NOT NULL,
+								  name TEXT NOT NULL,
+								  title TEXT NOT NULL,
+								  description TEXT NOT NULL,
+								  detail_url TEXT NOT NULL,
+								  image_url TEXT,
+								  callback_url TEXT,
+								  custom_data TEXT,
+								  unit_price_atomic TEXT NOT NULL,
+								  quota_total INTEGER NOT NULL,
+								  -- 已领取配额（用于限制领取；不等于已验证/已发放）
+								  quota_claimed INTEGER DEFAULT 0,
+								  quota_used INTEGER DEFAULT 0,
 
-	-- 状态: DRAFT, ACTIVE, PAUSED_NO_BUDGET, PAUSED_MANUAL, EXPIRED, COMPLETED
-							  status TEXT DEFAULT 'ACTIVE',
+		-- 状态: DRAFT, ACTIVE, PAUSED_NO_BUDGET, PAUSED_MANUAL, EXPIRED, COMPLETED
+								  status TEXT DEFAULT 'ACTIVE',
 
 	-- 截止日期 (绝对时间)，必须存在
 							  end_date DATETIME NOT NULL,

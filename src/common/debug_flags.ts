@@ -30,6 +30,7 @@ export const DBG = {
     X402: true,
     Wallet: false,
     AdPlaza: true,
+    AdsFeed: true,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -68,3 +69,4 @@ export const logUI = makeLogger('UserIfo', 'UserIfo');
 export const logX402 = makeLogger('X402', 'X402');
 export const logW = makeLogger('Wallet', 'Wallet');
 export const logAdP = makeLogger('AdPlaza', 'AdPlaza');
+export const logAdsFeed = makeLogger('AdsFeed', 'AdsFeed');

@@ -23,6 +23,7 @@ export interface AdRecord {
     custom_data?: string | null;
     unit_price_atomic: string;
     quota_total: number;
+    quota_claimed?: number;
     quota_used: number;
     status: AdStatus;
     end_date: string; // Changed from duration_days
