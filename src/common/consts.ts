@@ -66,7 +66,9 @@ export enum MsgType {
     IJHomeLatestCaptured = 'IJHomeLatestCaptured',
     IJLocationChange = 'IJLocationChange',
     IJTweetDetailCaptured = 'IJTweetDetailCaptured',
+
     IJUserByScreenNameCaptured = "IJUserByScreenNameCaptured",
+    IJProfileSpotlightsCaptured = "IJProfileSpotlightsCaptured", // New message type
 
     TokenUsedByUser = 'TokenUsedByUser',
     TokenFreeze = 'TokenFreeze',
@@ -110,9 +112,7 @@ export const UserByScreenName = "UserByScreenName" // 根据 username 获取 use
 export const HomeLatestTimeline = "HomeLatestTimeline"// 首页的最新推文流
 export const HomeTimeline = "HomeTimeline"// 首页的最新推文流
 export const TweetDetail = "TweetDetail"         // 单条推文详情（用于评论）
-export const UsersByRestIds = "UsersByRestI   setTimeout(()=>{\n" +
-    "            sendMsgToService({},MsgType.X402NotSignedIn)\n" +
-    "        },200)ds"     // 根据一批 userId 查询用户信息
+
 export const SearchTimeline = "SearchTimeline" // 搜索结果（你可能以后用）
 export const CreateBookmark = "CreateBookmark"
 export const DeleteBookmark = "DeleteBookmark"
@@ -122,6 +122,8 @@ export const BlueVerifiedFollowers = "BlueVerifiedFollowers"
 export const Bookmarks = "Bookmarks"
 export const CreateGrokConversation = "CreateGrokConversation"
 export const ConversationItem_DeleteConversationMutation = "ConversationItem_DeleteConversationMutation"
+export const ProfileSpotlightsQuery = "ProfileSpotlightsQuery" // 个人高光/关系查询
+export const UsersByRestIds = "UsersByRestIds"
 export const SNAPSHOT_TYPE = 'following-snapshot';
 
 export const watchedOps = [
@@ -129,7 +131,7 @@ export const watchedOps = [
     UserTweets,
     HomeLatestTimeline,
     TweetDetail,
-    UsersByRestIds,
+
     SearchTimeline,
     CreateBookmark,
     DeleteBookmark,
@@ -140,6 +142,8 @@ export const watchedOps = [
     Bookmarks,
     CreateGrokConversation,
     ConversationItem_DeleteConversationMutation,
+    ProfileSpotlightsQuery,
+    UsersByRestIds,
 ];
 
 export const defaultQueryKeyMap: Record<string, string> = {
@@ -148,7 +152,7 @@ export const defaultQueryKeyMap: Record<string, string> = {
     HomeLatestTimeline: "SFxmNKWfN9ySJcXG_tjX8g",
     HomeTimeline: "DXmgQYmIft1oLP6vMkJixw",
     TweetDetail: "iFEr5AcP121Og4wx9Yqo3w",
-    UsersByRestIds: "1hjT2eXW1Zcw-2xk8EbvoA",
+
     SearchTimeline: "4fpceYZ6-YQCx_JSl_Cn_A",
     CreateBookmark: "aoDbu3RHznuiSkQ9aNM67Q",
     DeleteBookmark: "Wlmlj2-xzyS1GN3a6cj-mQ",
@@ -158,4 +162,5 @@ export const defaultQueryKeyMap: Record<string, string> = {
     Bookmarks: "pLtjrO4ubNh996M_Cubwsg",
     CreateGrokConversation: "vvC5uy7pWWHXS2aDi1FZeA",
     ConversationItem_DeleteConversationMutation: "TlKHSWVMVeaa-i7dqQqFQA",
+    ProfileSpotlightsQuery: "mzoqrVGwk-YTSGME1dRfXQ",
 }

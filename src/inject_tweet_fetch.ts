@@ -1,6 +1,6 @@
-import {HomeLatestTimeline, HomeTimeline, MsgType, TweetDetail, UserByScreenName, UserTweets} from "./common/consts";
-import {logIC} from "./common/debug_flags";
-import {postWindowMsg} from "./common/msg_obj";
+import { HomeLatestTimeline, HomeTimeline, MsgType, ProfileSpotlightsQuery, TweetDetail, UserByScreenName, UserTweets } from "./common/consts";
+import { logIC } from "./common/debug_flags";
+import { postWindowMsg } from "./common/msg_obj";
 
 declare global {
     interface Window {
@@ -34,6 +34,12 @@ function __tc_isTargetTimelineUrl__(input: any): string | null {
 
         if (url.includes("/" + UserByScreenName)) {
             return UserByScreenName;
+        }
+
+
+
+        if (url.includes("/" + ProfileSpotlightsQuery)) {
+            return ProfileSpotlightsQuery;
         }
 
         return null;
@@ -105,17 +111,36 @@ function __tc_installFetch__(): void {
             if (timeType === UserTweets) {
                 const vars = __tc_parseVarsFromUrl__(url);
                 logIC(`[F#${reqId}] tweets result=${result}  for kol:${vars.userId}`);
-                postWindowMsg(MsgType.IJUserTweetsCaptured, {tweets: result, kolID: vars.userId});
+                postWindowMsg(MsgType.IJUserTweetsCaptured, { tweets: result, kolID: vars.userId });
             } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
                 logIC(`[F#${reqId}] home latest result result=${result}`);
                 postWindowMsg(MsgType.IJHomeLatestCaptured, result);
             } else if (timeType === TweetDetail) {
                 postWindowMsg(MsgType.IJTweetDetailCaptured, result);
-            }else if (timeType === UserByScreenName) {
+            } else if (timeType === UserByScreenName) {
                 const vars = __tc_parseVarsFromUrl__(url);
                 const screenName = vars?.screen_name ?? vars?.screenName ?? "(unknown)";
                 logIC(`[F#${reqId}] userByScreenName result for @${screenName}`, result);
                 postWindowMsg(MsgType.IJUserByScreenNameCaptured, { profile: result, screenName });
+            } else if (timeType === ProfileSpotlightsQuery) {
+                const vars = __tc_parseVarsFromUrl__(url);
+                const screenName = vars?.screen_name ?? vars?.screenName ?? "(unknown)";
+                const isFollowing = result?.data?.user_result_by_screen_name?.result?.relationship_perspectives?.following;
+                logIC(`[F#${reqId}] ProfileSpotlightsQuery @${screenName} isFollowing=${isFollowing}`);
+
+                // Send 1: Update status immediately
+                if (typeof isFollowing === "boolean") {
+                    postWindowMsg(MsgType.IJUserByScreenNameCaptured, {
+                        profile: { isFollowing },
+                        screenName,
+                    });
+                }
+
+                // Send 2: Send full raw data for proof
+                postWindowMsg(MsgType.IJProfileSpotlightsCaptured, {
+                    data: result,
+                    screenName,
+                });
             }
 
             return response;
@@ -167,7 +192,8 @@ function __tc_installXHR__(): void {
                 && timeType !== UserTweets
                 && timeType !== HomeTimeline
                 && timeType !== TweetDetail
-                && timeType !== UserByScreenName)) {
+                && timeType !== UserByScreenName
+                && timeType !== ProfileSpotlightsQuery)) {
                 return (OriginalXHR.prototype.send as any).apply(this, args);
             }
 
@@ -213,6 +239,22 @@ function __tc_installXHR__(): void {
                         logIC(`[X#${reqId}] userByScreenName result for @${screenName}`, result);
                         postWindowMsg(MsgType.IJUserByScreenNameCaptured, {
                             profile: result,
+                            screenName,
+                        });
+                    } else if (timeType === ProfileSpotlightsQuery) {
+                        const isFollowing = result?.data?.user_result_by_screen_name?.result?.relationship_perspectives?.following;
+                        const screenName = this.__tc_screen_name__ ?? "(unknown)";
+                        logIC(`[X#${reqId}] ProfileSpotlightsQuery @${screenName} isFollowing=${isFollowing}`);
+
+                        if (typeof isFollowing === "boolean") {
+                            postWindowMsg(MsgType.IJUserByScreenNameCaptured, {
+                                profile: { isFollowing },
+                                screenName,
+                            });
+                        }
+
+                        postWindowMsg(MsgType.IJProfileSpotlightsCaptured, {
+                            data: result,
                             screenName,
                         });
                     }

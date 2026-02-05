@@ -1,12 +1,12 @@
-import {observeForElement, parseContentHtml, sendMsgToService} from "../common/utils";
-import {choseColorByID, MsgType} from "../common/consts";
-import {queryKolDetailByName, showPopupMenu} from "./twitter_observer";
-import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
-import {queryCategoriesFromBG, queryCategoryById} from "../object/category";
-import {getUserIdByUsername} from "../x_api/twitter_api";
-import {logTPR} from "../common/debug_flags";
-import {calculateLevelBreakdown, LevelScoreBreakdown, UserProfile} from "../object/user_info";
-import {t} from "../common/i18n";
+import { observeForElement, parseContentHtml, sendMsgToService } from "../common/utils";
+import { choseColorByID, MsgType } from "../common/consts";
+import { queryKolDetailByName, showPopupMenu } from "./twitter_observer";
+import { TweetKol, updateKolIdToSw } from "../object/tweet_kol";
+import { queryCategoriesFromBG, queryCategoryById } from "../object/category";
+import { getUserIdByUsername } from "../x_api/twitter_api";
+import { logTPR } from "../common/debug_flags";
+import { calculateLevelBreakdown, LevelScoreBreakdown, UserProfile } from "../object/user_info";
+import { t } from "../common/i18n";
 import { ADS_FOLLOW_CLAIM_STATUS, ADS_FOLLOW_UI_MODE, AdsFollowClaimStatus, AdsFollowUiMode, showDialog } from "./common";
 
 let observing = false;
@@ -31,7 +31,10 @@ function isProfileHomePath(username: string): boolean {
 
 function parseIsFollowingFromUserByScreenName(raw: any): boolean | null {
     const u = raw?.data?.user?.result;
+    // console.log("[debug-following] parsing raw:", raw);
+    // console.log("[debug-following] found user result:", u);
     const v = u?.legacy?.following;
+    // console.log("[debug-following] found following val:", v);
     return typeof v === "boolean" ? v : null;
 }
 
@@ -42,10 +45,19 @@ function formatRewardUsdc(x: number): string {
     return String(rounded);
 }
 
-export function updateFollowingSnapshotFromInject(screenName: string, rawProfile: any) {
+export function updateFollowingSnapshotFromInject(screenName: string, rawProfile: any | boolean) {
     const key = String(screenName || "").toLowerCase();
     if (!key) return;
-    const isFollowing = parseIsFollowingFromUserByScreenName(rawProfile);
+
+    let isFollowing: boolean | null = null;
+    if (typeof rawProfile === "boolean") {
+        isFollowing = rawProfile;
+    } else if (rawProfile && typeof rawProfile.isFollowing === "boolean") {
+        isFollowing = rawProfile.isFollowing;
+    } else {
+        isFollowing = parseIsFollowingFromUserByScreenName(rawProfile);
+    }
+
     __followingCache.set(key, { isFollowing, capturedAt: Date.now() });
 
     if (__lastProfileToolbar && __lastProfileUsername && __lastProfileUsername.toLowerCase() === key) {
@@ -98,9 +110,9 @@ export async function appendScoreInfoToProfilePage(usrProfile: UserProfile, user
             transferDiv = tpl.content.getElementById("user-transfer-usdc")?.cloneNode(true) as HTMLElement;
 
             const btn = transferDiv.querySelector(".transfer-btn") as HTMLButtonElement;
-            btn.onclick = async () =>{
-                if(!usrProfile.userId){
-                    showDialog(t('tips_title'),"无效的用户id")
+            btn.onclick = async () => {
+                if (!usrProfile.userId) {
+                    showDialog(t('tips_title'), "无效的用户id")
                     return
                 }
                 await sendMsgToService(usrProfile, MsgType.TransferUSDCByTwitterId)
@@ -172,6 +184,30 @@ async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
     }
 }
 
+function checkIsFollowingFromDom(username: string): boolean {
+    // 1. Check for specific unfollow button by testid suffix
+    // Twitter usually puts UserCell or Profile timeline elements with testid like "12345-unfollow"
+    const unfollowBtns = document.querySelectorAll('div[role="button"][data-testid$="-unfollow"]');
+    if (unfollowBtns.length > 0) return true;
+
+    // 2. Check for text content "Following" or "关注中" in prominent buttons
+    // This is less reliable but a good backup.
+    // We restrict search to the primary column or user profile header area if possible.
+    const primaryCol = document.querySelector('div[data-testid="primaryColumn"]');
+    if (!primaryCol) return false;
+
+    // Look for the main action button on profile
+    const userActions = primaryCol.querySelector('div[data-testid="userActions"]');
+    if (userActions) {
+        const text = userActions.textContent?.toLowerCase() || "";
+        if (text.includes("following") || text.includes("关注中") || text.includes("正在关注")) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
     toolBar.querySelectorAll(".follow-claim-on-profile").forEach((item) => item.remove());
     toolBar.querySelectorAll(".follow-claim-btn-on-profile").forEach((item) => item.remove());
@@ -201,7 +237,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
     const title = clone.querySelector(".follow-claim-btn-title") as HTMLElement | null;
 
     const snap = __followingCache.get(kolName.toLowerCase());
-    const isFollowing = snap?.isFollowing ?? null;
+    let isFollowing = snap?.isFollowing ?? null;
     const claimStatus = claimState?.status as AdsFollowClaimStatus | undefined;
 
     const setUi = (mode: AdsFollowUiMode) => {
@@ -219,6 +255,22 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
     };
 
     if (btn) {
+        // DOM fallback check
+        if (!isFollowing) {
+            const domFollowing = checkIsFollowingFromDom(kolName);
+            if (domFollowing) {
+                console.log("[TwitterUI] Fallback: detected following status from DOM");
+                isFollowing = true;
+                // Update cache to avoid re-checking DOM constantly
+                const key = kolName.toLowerCase();
+                const snap = __followingCache.get(key);
+                if (snap) {
+                    snap.isFollowing = true;
+                    __followingCache.set(key, snap);
+                }
+            }
+        }
+
         if (claimStatus === ADS_FOLLOW_CLAIM_STATUS.ClaimedPendingProof) {
             setUi(ADS_FOLLOW_UI_MODE.Claimed);
         } else if (claimStatus === ADS_FOLLOW_CLAIM_STATUS.Processing) {

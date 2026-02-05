@@ -43,11 +43,11 @@ export interface IGrowthMetrics {
 
 export interface IUserScoreData
     extends IUserCore,
-        IScaleMetrics,
-        IActivityMetrics,
-        ITrustMetrics,
-        IBrandMetrics,
-        IGrowthMetrics {
+    IScaleMetrics,
+    IActivityMetrics,
+    ITrustMetrics,
+    IBrandMetrics,
+    IGrowthMetrics {
 }
 
 /* ====================== 2. 主类 ====================== */
@@ -59,6 +59,7 @@ export class UserProfile implements IUserScoreData {
     internalId: string = '';
     createdAt: string = '';
     avatar: string = '';  // 新增字段
+    isFollowing: boolean = false;
 
     /* ---------- 规模 ---------- */
     followersCount: number = 0;
@@ -134,6 +135,9 @@ export class UserProfile implements IUserScoreData {
         this.accountAgeDays = this.calculateAgeInDays();
         this.avgTweetsPerDay = this.statusesCount / Math.max(this.accountAgeDays, 1);
 
+        // EXTRA
+        this.isFollowing = !!u.legacy?.following;
+
     }
 
     private calculateAgeInDays(): number {
@@ -146,17 +150,17 @@ export class UserProfile implements IUserScoreData {
 
     /* ====================== 辅助 ====================== */
     public toJSON(): IUserScoreData {
-        return {...this};
+        return { ...this };
     }
 }
 
 /* ====================== 评分常量（可调） ====================== */
 // 各分项权重 / Weights
 const W = {
-    scale: {followers: 30, ratio: 8, listed: 12},                 // =50
-    activity: {statuses: 8, favourites: 6, media: 6, creator: 5},    // =25
-    trust: {blue: 8, highlight: 8, affiliate: 9},                 // =25
-    brand: {banner: 3, pro: 4, hidden: 4, desc: 4},               // =15
+    scale: { followers: 30, ratio: 8, listed: 12 },                 // =50
+    activity: { statuses: 8, favourites: 6, media: 6, creator: 5 },    // =25
+    trust: { blue: 8, highlight: 8, affiliate: 9 },                 // =25
+    brand: { banner: 3, pro: 4, hidden: 4, desc: 4 },               // =15
     growth: 5,                                                       // =5
 } as const;
 
@@ -241,7 +245,7 @@ export function calculateLevelBreakdown(user: UserProfile): LevelScoreBreakdown 
     const totalRaw = scale + activity + trust + brand + growth; // 0..≈120
     const total = applyDifficulty(totalRaw);                    // 0..100
 
-    return {scale, activity, trust, brand, growth, total};
+    return { scale, activity, trust, brand, growth, total };
 }
 
 // 便捷封装：仅要总分时调用 / Shortcut

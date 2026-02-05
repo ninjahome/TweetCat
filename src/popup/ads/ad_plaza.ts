@@ -397,12 +397,7 @@ function renderEarnAds() {
 
         btn.addEventListener("click", (ev) => {
             ev.stopPropagation();
-            // 不改变你的 openDetail 逻辑，你可以决定要不要打开详情
-            // openDetail();
-
-            startTask(ad).catch((err) => {
-                console.error("Start task error:", err);
-            });
+            openDetail();
         });
 
 

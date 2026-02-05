@@ -1,28 +1,28 @@
-import browser, {Runtime} from "webextension-polyfill";
-import {changeAdsBlockStatus, hidePopupMenu, initObserver} from "./twitter_observer";
+import browser, { Runtime } from "webextension-polyfill";
+import { changeAdsBlockStatus, hidePopupMenu, initObserver } from "./twitter_observer";
 import {
     appendFilterOnKolProfilePage, appendScoreInfoToProfilePage,
     updateFollowingSnapshotFromInject,
 } from "./twitter_ui";
-import {maxElmFindTryTimes, MsgType} from "../common/consts";
-import {addCustomStyles, observeSimple, parseContentHtml, parseTwitterPath} from "../common/utils";
-import {TweetKol} from "../object/tweet_kol";
-import {setupTweetCatMenuAndTimeline} from "./tweetcat_timeline";
+import { maxElmFindTryTimes, MsgType } from "../common/consts";
+import { addCustomStyles, observeSimple, parseContentHtml, parseTwitterPath } from "../common/utils";
+import { TweetKol } from "../object/tweet_kol";
+import { setupTweetCatMenuAndTimeline } from "./tweetcat_timeline";
 import {
     processCapturedHomeLatest, processCapturedTweetDetail,
     processCapturedTweets,
     startToCheckKolId,
     startToFetchTweets
 } from "../timeline/tweet_fetcher";
-import {getTweetCatFlag, handleLocationChange, navigateToTweetCat} from "../timeline/route_helper";
-import {logTPR} from "../common/debug_flags";
-import {reloadCategoryContainer, setupFilterItemsOnWeb3Area} from "./tweetcat_web3_area";
-import {isTcMessage, TcMessage, tweetFetchParam} from "../common/msg_obj";
-import {queryProfileOfTwitterOwner} from "./tweet_user_info";
-import {initI18n} from "../common/i18n";
-import {performBulkUnfollow, syncFollowingsFromPage, syncOneFollowingsByScreenName} from "../object/following";
-import {addTipBtnForTweet} from "./content_x402";
-import {UserProfile} from "../object/user_info";
+import { getTweetCatFlag, handleLocationChange, navigateToTweetCat } from "../timeline/route_helper";
+import { logTPR } from "../common/debug_flags";
+import { reloadCategoryContainer, setupFilterItemsOnWeb3Area } from "./tweetcat_web3_area";
+import { isTcMessage, TcMessage, tweetFetchParam } from "../common/msg_obj";
+import { queryProfileOfTwitterOwner } from "./tweet_user_info";
+import { initI18n } from "../common/i18n";
+import { performBulkUnfollow, syncFollowingsFromPage, syncOneFollowingsByScreenName } from "../object/following";
+import { addTipBtnForTweet } from "./content_x402";
+import { UserProfile } from "../object/user_info";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
@@ -130,47 +130,47 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
                 addTipBtnForTweet(linkInfo.tweetId)
             }
             checkFilterStatusAfterUrlChanged();
-            sendResponse({success: true});
+            sendResponse({ success: true });
             break;
         }
         case MsgType.CategoryChanged: {
             logTPR("------>>> category changed.....")
             reloadCategoryContainer(request.data).then();
-            sendResponse({success: true});
+            sendResponse({ success: true });
             break;
         }
         case MsgType.AdsBlockChanged: {
             changeAdsBlockStatus(request.data as boolean);
-            sendResponse({success: true});
+            sendResponse({ success: true });
             break;
         }
 
         case MsgType.StartTweetsFetch: {
             startToFetchTweets(request.data as tweetFetchParam).then()
-            sendResponse({success: true});
+            sendResponse({ success: true });
             break;
         }
 
         case MsgType.StartKolIdCheck: {
             startToCheckKolId(request.data).then()
-            sendResponse({success: true});
+            sendResponse({ success: true });
             break;
         }
 
         case MsgType.FollowingSync: {
             syncFollowingsFromPage()
                 .then((followings) => {
-                    sendResponse({success: true, data: followings});
+                    sendResponse({ success: true, data: followings });
                 })
                 .catch((err: Error) => {
-                    sendResponse({success: false, data: err?.message ?? "Failed to sync followings."});
+                    sendResponse({ success: false, data: err?.message ?? "Failed to sync followings." });
                 });
             return true;
         }
 
         case MsgType.FollowingBulkUnfollow: {
             performBulkUnfollow(request.data)
-                .then((result) => sendResponse({success: true, data: result}))
+                .then((result) => sendResponse({ success: true, data: result }))
                 .catch((err) =>
                     sendResponse({
                         success: false,
@@ -182,7 +182,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
         case MsgType.FollowingFetchOne: {
             syncOneFollowingsByScreenName(request.data as string)
-                .then((result) => sendResponse({success: true, data: result}))
+                .then((result) => sendResponse({ success: true, data: result }))
                 .catch((err) =>
                     sendResponse({
                         success: false,
@@ -193,7 +193,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
         }
 
         default:
-            sendResponse({success: true});
+            sendResponse({ success: true });
     }
 
     return true;
@@ -271,9 +271,24 @@ window.addEventListener('message', (e) => {
             }
             case MsgType.IJUserByScreenNameCaptured: {
                 const data = msg.data;
-                const usrProfile = new UserProfile(data.profile);
-                appendScoreInfoToProfilePage(usrProfile, data.screenName).then();
-                updateFollowingSnapshotFromInject(data.screenName, data.profile);
+                // Check if it's a full profile or just lightweight status
+                if (data.profile && typeof data.profile.isFollowing === 'boolean' && !data.profile.data) {
+                    console.log("[Content] Lightweight following update for", data.screenName, data.profile.isFollowing);
+                    updateFollowingSnapshotFromInject(data.screenName, data.profile.isFollowing);
+                } else {
+                    try {
+                        const usrProfile = new UserProfile(data.profile);
+                        appendScoreInfoToProfilePage(usrProfile, data.screenName).then();
+                        updateFollowingSnapshotFromInject(data.screenName, usrProfile.isFollowing);
+                    } catch (e) {
+                        console.warn("Failed to parse user profile:", e);
+                    }
+                }
+                break;
+            }
+            case MsgType.IJProfileSpotlightsCaptured: {
+                console.log("[Content] ProfileSpotlightsCaptured full data:", msg.data);
+                // TODO: Store this data for proof generation if needed
                 break;
             }
             default: {
