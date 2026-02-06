@@ -122,7 +122,7 @@ module.exports = (env, argv) => {
             rewards: path.resolve(__dirname, './src/popup/rewards.ts'),
             fees: path.resolve(__dirname, './src/popup/fees.ts'),
             buy_usdc: path.resolve(__dirname, './src/popup/buy_usdc.ts'),
-            ad_plaza: path.resolve(__dirname, './src/popup/ads/ad_plaza.ts'),
+            ad_plaza: path.resolve(__dirname, './src/popup/ads/ad_executor_main.ts'),
             ad_advertise: path.resolve(__dirname, './src/popup/ads/ad_publisher_main.ts'),
         },
         target: 'web',

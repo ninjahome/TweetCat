@@ -801,3 +801,61 @@ button {
     font-variant-numeric: tabular-nums lining-nums;
     font-feature-settings: "tnum" 1, "lnum" 1;
 }
+/* ==================== Status Badges ==================== */
+.ad-card-claimed {
+    border-color: #10b981;
+    background-color: #f0fdf4;
+}
+
+.ad-card-claimed::after {
+    content: "Already claimed" !important;
+    background: #10b981 !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+.btn-start-task.claimed {
+    background: #10b981 !important;
+    cursor: default !important;
+    transform: none !important;
+}
+
+/* ==================== Plaza Tabs ==================== */
+.plaza-tabs {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--tc-border-subtle);
+    padding: 0 8px;
+}
+
+.plaza-tab {
+    background: none;
+    border: none;
+    padding: 12px 4px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--tc-muted);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+}
+
+.plaza-tab:hover {
+    color: var(--tc-text);
+}
+
+.plaza-tab.active {
+    color: var(--tc-primary);
+}
+
+.plaza-tab.active::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--tc-primary);
+    border-radius: 99px;
+}

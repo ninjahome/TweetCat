@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill";
 import { observeForElement, parseContentHtml, sendMsgToOffScreen, sendMsgToService } from "../common/utils";
 import { choseColorByID, MsgType } from "../common/consts";
 import { queryKolDetailByName, showPopupMenu } from "./twitter_observer";
@@ -405,11 +406,15 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
 
                 console.log(`[TwitterUI] SUCCESS: Claim flow finished.`, resp.data);
 
+                const openPlaza = () => {
+                    window.open(browser.runtime.getURL('html/ad_plaza.html'), '_blank');
+                };
+
                 if (resp.data?.already_claimed) {
                     console.log("[TwitterUI] Detected repeated claim, showing dialog.");
-                    showDialog(t('tips_title'), "您已成功重新关注！检测到该奖励之前已成功领取，无需重复申领。");
+                    showDialog(t('tips_title'), "您已成功重新关注！检测到该奖励之前已成功领取。您可以前往广告广场查看状态。", openPlaza);
                 } else {
-                    showDialog(t('tips_title'), "申领成功！奖励后续将发放至您的钱包。");
+                    showDialog(t('tips_title'), "申领成功！奖励后续将发放至您的钱包。您可以前往广告广场查看状态。", openPlaza);
                 }
 
                 setUi(ADS_FOLLOW_UI_MODE.Claimed);
