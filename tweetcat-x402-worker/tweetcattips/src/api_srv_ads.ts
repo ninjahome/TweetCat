@@ -460,7 +460,7 @@ export async function apiAdsClaim(c: ExtCtx) {
 
 		// Check if already claimed (using new table)
 		const existingClaim = await getDetailedClaim(c.env.DB, adId, bXId);
-		if (existingClaim) return c.json(existingClaim);
+		if (existingClaim) return c.json({ ...existingClaim, already_claimed: true });
 
 		// Increment claimed quota (reserve one task slot)
 		const quotaIncremented = await incrementAdClaimedQuota(c.env.DB, adId);
@@ -471,11 +471,16 @@ export async function apiAdsClaim(c: ExtCtx) {
 		// Create claim record
 		const claimId = crypto.randomUUID();
 
+		const proof = body?.proof;
+		const proofType = body?.proof_type;
+
 		const claimParams: CreateDetailedClaimParams = {
 			claimId,
 			adId: adRow.ad_id,
 			bXId,
-			signature
+			signature,
+			proof,
+			proof_type: proofType
 		};
 
 		const claimCreated = await createDetailedClaim(c.env.DB, claimParams);

@@ -1,5 +1,5 @@
-import {getBearerToken} from "../common/utils";
-import {localGet} from "../common/local_storage";
+import { getBearerToken } from "../common/utils";
+import { localGet } from "../common/local_storage";
 import {
     __DBK_query_id_map,
     BlueVerifiedFollowers,
@@ -11,6 +11,7 @@ import {
     Followers,
     Following,
     HomeTimeline,
+    ProfileSpotlightsQuery,
     UserByScreenName,
     UserTweets
 } from "../common/consts";
@@ -21,12 +22,22 @@ import {
     parseTimelineFromGraphQL,
     TweetResult
 } from "./tweet_entry";
-import {getTransactionIdFor} from "./txid";
-import {logATA} from "../common/debug_flags";
-import {buildFeatures, extractMissingFeature} from "./feature_manager";
-import {UserProfile} from "../object/user_info";
+import { getTransactionIdFor } from "./txid";
+import { logATA } from "../common/debug_flags";
+import { buildFeatures, extractMissingFeature } from "./feature_manager";
+import { UserProfile } from "../object/user_info";
 
 const BASE_URL = `https://x.com/i/api/graphql/`//${USER_TWEETS_QUERY_ID}/${UserTweets}
+
+let __external_csrf_token: string = "";
+
+/**
+ * 允许从 Service Worker 注入 ct0 (csrf-token)
+ */
+export function setExternalCsrfToken(token: string) {
+    __external_csrf_token = token;
+}
+
 async function getUrlWithQueryID(
     key: string
 ): Promise<{ url: string; path: string } | null> {
@@ -38,7 +49,7 @@ async function getUrlWithQueryID(
 
     const url = `${BASE_URL}${queryID}/${key}`;
     const path = new URL(url).pathname; // 例如: /i/api/graphql/<qid>/<key>
-    return {url, path};
+    return { url, path };
 }
 
 interface TweetRequestParams {
@@ -47,7 +58,7 @@ interface TweetRequestParams {
     cursor?: string; // 可选 cursor
 }
 
-async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): Promise<string> {
+async function buildTweetQueryURL({ userId, count, cursor }: TweetRequestParams): Promise<string> {
     const variablesObj: any = {
         userId,
         count,
@@ -76,8 +87,12 @@ async function buildTweetQueryURL({userId, count, cursor}: TweetRequestParams): 
 
 // 提取 csrf token
 function getCsrfToken(): string {
-    const cookieMatch = document.cookie.match(/ct0=([^;]+)/);
-    return cookieMatch ? cookieMatch[1] : "";
+    if (__external_csrf_token) return __external_csrf_token;
+    if (typeof document !== 'undefined') {
+        const cookieMatch = document.cookie.match(/ct0=([^;]+)/);
+        return cookieMatch ? cookieMatch[1] : "";
+    }
+    return "";
 }
 
 // 动态生成headers
@@ -113,11 +128,9 @@ export async function getUserByUsername(username: string): Promise<UserProfile |
 
     const features = await buildFeatures("user");
 
-    const fieldToggles = {
-        withAuxiliaryUserLabels: true,
-    };
+    const url = `${bp.url}?variables=${encodeURIComponent(JSON.stringify(variables))}&features=${encodeURIComponent(JSON.stringify(features))}`;
 
-    const url = `${bp.url}?variables=${encodeURIComponent(JSON.stringify(variables))}&features=${encodeURIComponent(JSON.stringify(features))}&fieldToggles=${encodeURIComponent(JSON.stringify(fieldToggles))}`;
+    console.log(`[TwitterAPI] Fetching profile for @${username} via UserByScreenName`, { variables });
 
     const headers = {
         'authorization': await getBearerToken(),
@@ -139,13 +152,60 @@ export async function getUserByUsername(username: string): Promise<UserProfile |
         return null;
     }
 
+    try {
+        const result = await response.json();
+        logATA("--------------->>>>>user profile raw data:", result)
+
+        if (result?.errors) {
+            console.warn("------>>> UserByScreenName returned GQL errors:", result.errors);
+        }
+
+        return new UserProfile(result);
+    } catch (e) {
+        console.error("------>>> Failed to parse UserProfile from API response:", e);
+        return null;
+    }
+}
+
+/**
+ * 获取推特博主的 Spotlight 信息（包含精准的 relationship_perspectives 关注状态）
+ */
+export async function fetchProfileSpotlights(username: string): Promise<any | null> {
+    const bp = await getUrlWithQueryID(ProfileSpotlightsQuery);
+    if (!bp) {
+        console.warn("------>>> failed to load base url for ProfileSpotlightsQuery");
+        return null;
+    }
+
+    const variables = {
+        screen_name: username,
+    };
+
+    const features = await buildFeatures("user");
+
+    const url = `${bp.url}?variables=${encodeURIComponent(JSON.stringify(variables))}&features=${encodeURIComponent(JSON.stringify(features))}`;
+
+    const headers = await generateHeaders();
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers,
+        credentials: 'include',
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ Failed to fetchProfileSpotlights for ${username}: ${response.status}\n${errorText}`);
+        return null;
+    }
+
     const result = await response.json();
-    logATA("--------------->>>>>user profile raw data:", result)
-    return new UserProfile(result);
+    logATA("--------------->>>>> ProfileSpotlightsQuery raw data:", result);
+    return result;
 }
 
 export async function fetchTweets(userId: string, maxCount: number = 20, cursor?: string): Promise<TweetResult> {
-    const url = await buildTweetQueryURL({userId, count: maxCount, cursor: cursor});
+    const url = await buildTweetQueryURL({ userId, count: maxCount, cursor: cursor });
     const headers = await generateHeaders();
     const response = await fetch(url, {
         method: 'GET',
@@ -193,7 +253,7 @@ export async function fetchFollowingPage(
     count = 50,
     cursor?: string
 ): Promise<FollowResult> {
-    const url = await buildFollowingURL({userId, count, cursor});
+    const url = await buildFollowingURL({ userId, count, cursor });
     const headers = await generateHeaders(); // 不需要 x-client-transaction-id / x-xp-forwarded-for
     const resp = await fetch(url, {
         method: "GET",
@@ -268,7 +328,7 @@ export async function _followApi(
         "x-twitter-client-language": "zh-cn",
     };
 
-    const res = await fetch(fullUrl, {method: "GET", credentials: "include", headers});
+    const res = await fetch(fullUrl, { method: "GET", credentials: "include", headers });
     if (!res.ok) {
         if (res.status === 400 || res.status === 403) {
             const text = await res.text().catch(() => "");
@@ -279,8 +339,8 @@ export async function _followApi(
     }
     const data = await res.json();
 
-    const {users, nextCursor} = parseFollowingFromGraphQL(data) as FollowResult;
-    return {users, nextCursor};
+    const { users, nextCursor } = parseFollowingFromGraphQL(data) as FollowResult;
+    return { users, nextCursor };
 }
 
 export async function bookmarkApi(
@@ -300,7 +360,7 @@ export async function bookmarkApi(
     headers["x-client-transaction-id"] = txid;
 
     const body = JSON.stringify({
-        variables: {tweet_id: tweetId},
+        variables: { tweet_id: tweetId },
     });
 
     const resp = await fetch(bp.url, {
@@ -441,7 +501,7 @@ export async function createGrokConversation(
     headers["x-client-transaction-id"] = txid;
 
     // 注意：queryId 已在 URL 中，不要放进 body
-    const body = JSON.stringify({variables});
+    const body = JSON.stringify({ variables });
 
     const resp = await fetch(bp.url, {
         method: "POST",
@@ -539,16 +599,16 @@ export async function addGrokResponse(
         headers["x-twitter-client-language"] || (navigator.language?.toLowerCase() || "en");
 
     const payload = {
-        responses: [{message, sender: 1, promptSource: "", fileAttachments: []}],
+        responses: [{ message, sender: 1, promptSource: "", fileAttachments: [] }],
         systemPromptName: "",
         grokModelOptionId: "grok-3-latest",
         modelMode: "MODEL_MODE_FAST",
         conversationId,
         returnSearchResults: true,
         returnCitations: true,
-        promptMetadata: {promptSource: "NATURAL", action: "INPUT"},
+        promptMetadata: { promptSource: "NATURAL", action: "INPUT" },
         imageGenerationCount: 4,
-        requestFeatures: {eagerTweets: true, serverHistory: true},
+        requestFeatures: { eagerTweets: true, serverHistory: true },
         enableSideBySide: true,
         toolOverrides: {},
         modelConfigOverride: {},
@@ -643,11 +703,11 @@ export async function addGrokResponse(
 
     if (reader) {
         while (true) {
-            const {value, done} = await reader.read();
+            const { value, done } = await reader.read();
             if (done) break;
             chunks++;
             bytes += value.byteLength;
-            buf += decoder.decode(value, {stream: true});
+            buf += decoder.decode(value, { stream: true });
 
             let idx: number;
             while ((idx = buf.indexOf("\n")) >= 0) {
@@ -665,10 +725,10 @@ export async function addGrokResponse(
         for (const line of all.split(/\r?\n/)) handleLine(line);
     }
 
-    logATA("stats:", {bytes, chunks, lines, parsed, tokenPieces, parseErrors});
+    logATA("stats:", { bytes, chunks, lines, parsed, tokenPieces, parseErrors });
     console.timeEnd?.(timeLabel);
 
-    return {text: finalText, meta};
+    return { text: finalText, meta };
 }
 
 
@@ -690,7 +750,7 @@ export async function deleteGrokConversation(conversationId: string): Promise<bo
 
     // 3) 只传 variables；不要把 queryId 放到 body 里
     const body = JSON.stringify({
-        variables: {conversationId},
+        variables: { conversationId },
     });
 
     // 4) 发请求

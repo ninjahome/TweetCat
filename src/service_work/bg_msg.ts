@@ -41,6 +41,7 @@ import {
 import { x402TipPayload } from "../common/x402_obj";
 import { handleProfileFollowClaim } from "./profile_follow_claim";
 import { claimAdsFollowOffer, queryAdsFollowOffer } from "./bg_ads_follow";
+import { verifyFollowAndClaim } from "./bg_ads_verifier";
 
 export async function checkIfXIsOpen(): Promise<boolean> {
     const tabs = await browser.tabs.query({
@@ -59,6 +60,7 @@ const HIGH_RISK_ACTIONS = [
     MsgType.WalletTransferEth,
     MsgType.ProfileFollowClaim,
     MsgType.AdsFollowClaim,
+    MsgType.AdsFollowVerifyAndClaim,
     MsgType.X402TipAction,
 ];
 
@@ -67,6 +69,7 @@ const X_PAGE_ALLOWED_ACTIONS = new Set([
     MsgType.TransferUSDCByTwitterId,
     MsgType.ProfileFollowClaim, // 你如果允许从页面按钮触发 claim，可以放；否则移除
     MsgType.AdsFollowClaim,
+    MsgType.AdsFollowVerifyAndClaim,
 ]);
 
 function isInternalSource(sender: Runtime.MessageSender): boolean {
@@ -125,6 +128,24 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             const profileUrl = String(request?.data?.profileUrl || request?.data?.url || "");
             const data = await claimAdsFollowOffer({ ad_id, profileUrl });
             return { success: true, data };
+        }
+
+        case MsgType.AdsFollowVerifyAndClaim: {
+            try {
+                const ad_id = String(request?.data?.ad_id || "");
+                const screen_name = String(request?.data?.screen_name || "");
+                const profileUrl = String(request?.data?.profileUrl || "");
+                const userId = request?.data?.userId;
+                const xId = request?.data?.xId;
+                const walletAddress = request?.data?.walletAddress;
+
+                console.log(`[bgMsg] Handling AdsFollowVerifyAndClaim:`, { ad_id, screen_name, hasUserId: !!userId });
+                const data = await verifyFollowAndClaim({ ad_id, screen_name, profileUrl, userId, xId, walletAddress });
+                return { success: true, data };
+            } catch (e: any) {
+                console.error(`[bgMsg] AdsFollowVerifyAndClaim FAILED:`, e);
+                return { success: false, data: e.message || String(e) };
+            }
         }
 
         case MsgType.FollowingBulkUnfollow: {

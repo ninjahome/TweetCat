@@ -2,6 +2,7 @@ import browser, { Runtime } from "webextension-polyfill";
 import { changeAdsBlockStatus, hidePopupMenu, initObserver } from "./twitter_observer";
 import {
     appendFilterOnKolProfilePage, appendScoreInfoToProfilePage,
+    notifyFollowResult,
     updateFollowingSnapshotFromInject,
 } from "./twitter_ui";
 import { maxElmFindTryTimes, MsgType } from "../common/consts";
@@ -287,8 +288,18 @@ window.addEventListener('message', (e) => {
                 break;
             }
             case MsgType.IJProfileSpotlightsCaptured: {
-                console.log("[Content] ProfileSpotlightsCaptured full data:", msg.data);
-                // TODO: Store this data for proof generation if needed
+                console.log(">>>>>>>>>> [INTERCEPTED: ProfileSpotlightsQuery] <<<<<<<<<<");
+                console.log("ScreenName:", msg.data.screenName);
+                console.log("Full Raw Data:", JSON.stringify(msg.data.data, null, 2));
+                console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+                break;
+            }
+            case MsgType.IJFollowActionCaptured: {
+                console.log(`[Content] Follow action result intercepted for @${msg.data.screenName}: success=${msg.data.success}`);
+                if (msg.data.success) {
+                    updateFollowingSnapshotFromInject(msg.data.screenName, true);
+                }
+                notifyFollowResult(msg.data.success);
                 break;
             }
             default: {

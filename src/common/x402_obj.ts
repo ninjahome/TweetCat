@@ -81,5 +81,6 @@ export interface walletInfo {
     usdcVal: string;
     chainId: number;
     xId: string | null;
+    userId: string | null;
     username?: string;
 }

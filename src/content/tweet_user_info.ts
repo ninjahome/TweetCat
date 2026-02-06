@@ -1,10 +1,11 @@
-import {observeSimple} from "../common/utils";
-import {getUserByUsername} from "../x_api/twitter_api";
-import {calculateLevelBreakdown, LevelScoreBreakdown} from "../object/user_info";
-import {logUI} from "../common/debug_flags";
-import {setOwnerScoreInWeb3Area} from "./tweetcat_web3_area";
+import { observeSimple } from "../common/utils";
+import { getUserByUsername } from "../x_api/twitter_api";
+import { calculateLevelBreakdown, LevelScoreBreakdown } from "../object/user_info";
+import { logUI } from "../common/debug_flags";
+import { setOwnerScoreInWeb3Area } from "./tweetcat_web3_area";
 
 export var scoreOfTwitterOwner: LevelScoreBreakdown = null;
+export var loggedInUserScreenName: string = "";
 
 export function queryProfileOfTwitterOwner() {
     observeSimple(
@@ -14,11 +15,15 @@ export function queryProfileOfTwitterOwner() {
             const userInfoArea = document.body.querySelector("button[data-testid='SideNav_AccountSwitcher_Button']") as HTMLElement
             if (!userInfoArea) return false;
             const [displayName = '', userName = ''] = userInfoArea.textContent.split('@');
+            loggedInUserScreenName = userName;
             logUI("------->>> displayName:", displayName, "userName:", userName);
             getUserByUsername(userName).then(data => {
+                if (!data) return;
                 scoreOfTwitterOwner = calculateLevelBreakdown(data);
                 logUI("------>>> user data:", data, " \n score:", scoreOfTwitterOwner);
                 setOwnerScoreInWeb3Area(scoreOfTwitterOwner);
+            }).catch(e => {
+                console.warn("------>>> failed to get user profile for owner:", e);
             });
             return true;
         }

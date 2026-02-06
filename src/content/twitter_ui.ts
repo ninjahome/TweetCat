@@ -1,4 +1,4 @@
-import { observeForElement, parseContentHtml, sendMsgToService } from "../common/utils";
+import { observeForElement, parseContentHtml, sendMsgToOffScreen, sendMsgToService } from "../common/utils";
 import { choseColorByID, MsgType } from "../common/consts";
 import { queryKolDetailByName, showPopupMenu } from "./twitter_observer";
 import { TweetKol, updateKolIdToSw } from "../object/tweet_kol";
@@ -7,7 +7,9 @@ import { getUserIdByUsername } from "../x_api/twitter_api";
 import { logTPR } from "../common/debug_flags";
 import { calculateLevelBreakdown, LevelScoreBreakdown, UserProfile } from "../object/user_info";
 import { t } from "../common/i18n";
-import { ADS_FOLLOW_CLAIM_STATUS, ADS_FOLLOW_UI_MODE, AdsFollowClaimStatus, AdsFollowUiMode, showDialog } from "./common";
+import { ADS_FOLLOW_CLAIM_STATUS, ADS_FOLLOW_UI_MODE, AdsFollowClaimStatus, AdsFollowUiMode, showDialog, showToastMsg } from "./common";
+
+import { loggedInUserScreenName } from "./tweet_user_info";
 
 let observing = false;
 let __lastProfileToolbar: HTMLElement | null = null;
@@ -17,6 +19,35 @@ type FollowingSnapshot = {
     isFollowing: boolean | null;
     capturedAt: number;
 };
+
+let __pendingFollowResolver: ((success: boolean) => void) | null = null;
+
+export function notifyFollowResult(success: boolean) {
+    if (__pendingFollowResolver) {
+        __pendingFollowResolver(success);
+        __pendingFollowResolver = null;
+    }
+}
+
+function findNativeFollowButton(): HTMLElement | null {
+    // 1. 限制在主列查找，排除侧边栏“推荐关注”的干扰
+    const container = document.querySelector('div[data-testid="primaryColumn"]') || document.body;
+
+    // 2. 查找以 "-follow" 结尾的 data-testid。
+    // 这涵盖了 "Follow" 和 "Follow back" 两种情况，且比 aria-label (locale相关) 更稳定。
+    // 排除 -unfollow 和 -pending，只找真正的关注按钮
+    const btn = container.querySelector('[data-testid$="-follow"]:not([data-testid$="-unfollow"]):not([data-testid$="-pending"])') as HTMLElement;
+
+    if (btn) {
+        // 3. 确认为按钮角色
+        const role = btn.getAttribute('role');
+        const tagName = btn.tagName.toLowerCase();
+        if (role === 'button' || tagName === 'button') {
+            return btn;
+        }
+    }
+    return null;
+}
 
 const __followingCache = new Map<string, FollowingSnapshot>();
 
@@ -30,11 +61,8 @@ function isProfileHomePath(username: string): boolean {
 }
 
 function parseIsFollowingFromUserByScreenName(raw: any): boolean | null {
-    const u = raw?.data?.user?.result;
-    // console.log("[debug-following] parsing raw:", raw);
-    // console.log("[debug-following] found user result:", u);
+    const u = raw?.data?.user?.result || raw?.data?.user_result_by_screen_name?.result;
     const v = u?.legacy?.following;
-    // console.log("[debug-following] found following val:", v);
     return typeof v === "boolean" ? v : null;
 }
 
@@ -212,6 +240,19 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
     toolBar.querySelectorAll(".follow-claim-on-profile").forEach((item) => item.remove());
     toolBar.querySelectorAll(".follow-claim-btn-on-profile").forEach((item) => item.remove());
 
+    if (loggedInUserScreenName && kolName.toLowerCase() === loggedInUserScreenName.toLowerCase()) {
+        return;
+    }
+
+    // Check if already following
+    if (checkIsFollowingFromDom(kolName)) {
+        return;
+    }
+    const earlySnap = __followingCache.get(kolName.toLowerCase());
+    if (earlySnap && earlySnap.isFollowing === true) {
+        return;
+    }
+
     if (!isProfileHomePath(kolName)) return;
 
     const q = await sendMsgToService({ profileUrl: window.location.href }, MsgType.AdsFollowOfferQuery);
@@ -282,17 +323,100 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
             btn.onclick = async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+
                 setUi(ADS_FOLLOW_UI_MODE.Processing);
-                const resp = await sendMsgToService(
-                    { ad_id: offer.ad_id, profileUrl: window.location.href },
-                    MsgType.AdsFollowClaim,
-                );
-                if (!resp?.success) {
+                if (title) title.textContent = "正在验证钱包状态...";
+
+                // 1. 优先检查钱包登录状态 (走 Offscreen 以获得准确 CDP 状态)
+                const walletInfo = await sendMsgToOffScreen({}, MsgType.WalletInfoQuery);
+                if (!walletInfo?.success || !walletInfo?.data?.address) {
                     setUi(ADS_FOLLOW_UI_MODE.Eligible);
-                    showDialog(t('tips_title'), String(resp?.data || "Claim failed"));
+                    showDialog(t('tips_title'), "请先在插件中登录钱包账号，再执行关注领奖。");
                     return;
                 }
+
+                console.log(`[TwitterUI] Wallet Identity: addr=${walletInfo.data.address}, xId=${walletInfo.data.xId}, userId=${walletInfo.data.userId}`);
+
+                const nativeBtn = findNativeFollowButton();
+                console.log("[TwitterUI] Native Follow button search result:", nativeBtn);
+                if (!nativeBtn) {
+                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
+                    showDialog(t('tips_title'), "未找到关注按钮，请确认是否已关注或页面加载完成。")
+                    return;
+                }
+
+                if (title) title.textContent = "正在同步关注状态...";
+
+                // Create a promise to wait for the interceptor to signal success
+                let timerId: any;
+                const followConfirmed = new Promise<boolean>((resolve) => {
+                    __pendingFollowResolver = (success: boolean) => {
+                        console.log("[TwitterUI] Received follow confirmation signal:", success);
+                        if (timerId) clearTimeout(timerId);
+                        resolve(success);
+                    };
+                    // Timeout safety: 15 seconds
+                    timerId = setTimeout(() => {
+                        console.warn("[TwitterUI] Follow confirmation TIMEOUT after 15s");
+                        resolve(false);
+                    }, 15000);
+                });
+
+                console.log("[TwitterUI] Triggering native follow button click...");
+                // Trigger native follow
+                nativeBtn.click();
+
+                const isSuccess = await followConfirmed;
+                console.log("[TwitterUI] Final follow result for orchestration:", isSuccess);
+
+                if (!isSuccess) {
+                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
+                    showDialog(t('tips_title'), "关注确认超时或失败，请重试。")
+                    return;
+                }
+
+                if (title) title.textContent = "关注成功，正在进行二次验证...";
+
+                console.log(`[TwitterUI] >>> Step 3: Sending AdsFollowVerifyAndClaim to SW`, {
+                    ad_id: offer.ad_id,
+                    screen_name: kolName
+                });
+
+                const resp = await sendMsgToService(
+                    {
+                        ad_id: offer.ad_id,
+                        screen_name: kolName,
+                        profileUrl: window.location.href,
+                        userId: walletInfo.data?.userId,
+                        xId: walletInfo.data?.xId,
+                        walletAddress: walletInfo.data?.address
+                    },
+                    MsgType.AdsFollowVerifyAndClaim,
+                );
+
+                console.log(`[TwitterUI] <<< Step 4: Received response from SW`, resp);
+
+                if (!resp?.success) {
+                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
+                    const errorMsg = typeof resp?.data === 'object' ? JSON.stringify(resp.data) : String(resp?.data || "未知错误");
+                    showDialog(t('tips_title'), `验证失败: ${errorMsg}`);
+                    return;
+                }
+
+                console.log(`[TwitterUI] SUCCESS: Claim flow finished.`, resp.data);
+
+                if (resp.data?.already_claimed) {
+                    console.log("[TwitterUI] Detected repeated claim, showing dialog.");
+                    showDialog(t('tips_title'), "您已成功重新关注！检测到该奖励之前已成功领取，无需重复申领。");
+                } else {
+                    showDialog(t('tips_title'), "申领成功！奖励后续将发放至您的钱包。");
+                }
+
                 setUi(ADS_FOLLOW_UI_MODE.Claimed);
+                /*
+                console.log("---------------- [DEBUG: AdsFollowClaim Material] ----------------");
+                ...
+                */
             };
         } else {
             // follow status unknown yet (waiting inject)

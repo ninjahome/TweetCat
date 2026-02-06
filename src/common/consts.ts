@@ -69,6 +69,7 @@ export enum MsgType {
 
     IJUserByScreenNameCaptured = "IJUserByScreenNameCaptured",
     IJProfileSpotlightsCaptured = "IJProfileSpotlightsCaptured", // New message type
+    IJFollowActionCaptured = "IJFollowActionCaptured", // 关注动作执行结果
 
     TokenUsedByUser = 'TokenUsedByUser',
     TokenFreeze = 'TokenFreeze',
@@ -102,6 +103,7 @@ export enum MsgType {
 
     AdsFollowOfferQuery = "AdsFollowOfferQuery",
     AdsFollowClaim = "AdsFollowClaim",
+    AdsFollowVerifyAndClaim = "AdsFollowVerifyAndClaim",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
@@ -123,7 +125,7 @@ export const Bookmarks = "Bookmarks"
 export const CreateGrokConversation = "CreateGrokConversation"
 export const ConversationItem_DeleteConversationMutation = "ConversationItem_DeleteConversationMutation"
 export const ProfileSpotlightsQuery = "ProfileSpotlightsQuery" // 个人高光/关系查询
-export const UsersByRestIds = "UsersByRestIds"
+export const CreateFriendship = "CreateFriendship" // 执行关注动作
 export const SNAPSHOT_TYPE = 'following-snapshot';
 
 export const watchedOps = [
@@ -143,7 +145,7 @@ export const watchedOps = [
     CreateGrokConversation,
     ConversationItem_DeleteConversationMutation,
     ProfileSpotlightsQuery,
-    UsersByRestIds,
+    CreateFriendship,
 ];
 
 export const defaultQueryKeyMap: Record<string, string> = {

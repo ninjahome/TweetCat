@@ -1,4 +1,4 @@
-import {ethers} from "ethers";
+import { ethers } from "ethers";
 import {
     __tableWallets,
     checkAndInitDatabase,
@@ -7,7 +7,7 @@ import {
     databaseUpdateOrAddItem,
 } from "../common/database";
 
-import {logW} from "../common/debug_flags";
+import { logW } from "../common/debug_flags";
 import {
     BASE_MAINNET_DEFAULT_RPC, BASE_MAINNET_USDC,
     BASE_SEPOLIA_DEFAULT_RPC, BASE_SEPOLIA_USDC, ChainIDBaseMain,
@@ -15,7 +15,7 @@ import {
     ChainNameBaseMain,
     walletInfo
 } from "../common/x402_obj";
-import {loadWalletSettings, WalletSettings} from "./wallet_setting";
+import { loadWalletSettings, WalletSettings } from "./wallet_setting";
 
 /** ====== 类型 ====== */
 export interface TCWallet {
@@ -116,7 +116,7 @@ export async function saveFromMnemonic(mnemonic: string, password: string): Prom
 
     const wallet = fromPhrase(phrase);
     const keystoreJson = await wallet.encrypt(password, {
-        kdf: "pbkdf2", pbkdf2: {c: 65536, dklen: 32, prf: "hmac-sha256"}
+        kdf: "pbkdf2", pbkdf2: { c: 65536, dklen: 32, prf: "hmac-sha256" }
     });
 
     const record: TCWallet = {
@@ -222,7 +222,7 @@ export async function getTokenBalance(
 }
 
 export async function transferEth(params: transEthParam): Promise<string> {
-    const {to, amountEther, password, gasLimitWei, settings} = params;
+    const { to, amountEther, password, gasLimitWei, settings } = params;
     if (!to) throw new Error("接收地址无效");
     if (!amountEther) throw new Error("请输入转账金额");
 
@@ -231,7 +231,7 @@ export async function transferEth(params: transEthParam): Promise<string> {
 
     return withDecryptedWallet(password, async (wallet) => {
         const connected = wallet.connect(provider);
-        const req: any = {to, value: parseEther(amountEther)};
+        const req: any = { to, value: parseEther(amountEther) };
         if (gasLimitWei) req.gasLimit = (ethers as any).BigNumber?.from?.(gasLimitWei) ?? gasLimitWei;
         const tx = await connected.sendTransaction(req);
         return tx.hash as string;
@@ -239,7 +239,7 @@ export async function transferEth(params: transEthParam): Promise<string> {
 }
 
 export async function transferErc20(params: transUsdcParam): Promise<string> {
-    const {tokenAddress, to, amount, decimals, password, gasLimitWei, settings} = params;
+    const { tokenAddress, to, amount, decimals, password, gasLimitWei, settings } = params;
     if (!tokenAddress) throw new Error("代币合约地址无效");
     if (!to) throw new Error("接收地址无效");
     if (!amount) throw new Error("请输入转账数量");
@@ -252,13 +252,13 @@ export async function transferErc20(params: transUsdcParam): Promise<string> {
         const abi = ["function transfer(address to, uint256 amount) returns (bool)"];
         const contract = new (ethers as any).Contract(tokenAddress, abi, connected);
         const value = parseUnits(amount, decimals);
-        const tx = await contract.transfer(to, value, gasLimitWei ? {gasLimit: gasLimitWei} : {});
+        const tx = await contract.transfer(to, value, gasLimitWei ? { gasLimit: gasLimitWei } : {});
         return tx.hash as string;
     });
 }
 
 export async function signMessage(params: { message: string; password: string }): Promise<string> {
-    const {message, password} = params;
+    const { message, password } = params;
     if (!message) throw new Error("消息不能为空");
     return withDecryptedWallet(password, async (wallet) => wallet.signMessage(message));
 }
@@ -266,7 +266,7 @@ export async function signMessage(params: { message: string; password: string })
 export async function signTypedData(params: {
     domain: any; types: any; value: any; password: string;
 }): Promise<string> {
-    const {domain, types, value, password} = params;
+    const { domain, types, value, password } = params;
     return withDecryptedWallet(password, async (wallet) => {
         const fn = (wallet as any)._signTypedData || (wallet as any).signTypedData;
         return fn.call(wallet, domain, types, value);
@@ -279,7 +279,7 @@ export async function verifySignature(params: {
     signature: string;
     expectedAddress?: string;
 }): Promise<boolean | string> {
-    const {message, typed, signature, expectedAddress} = params;
+    const { message, typed, signature, expectedAddress } = params;
     if (!signature) throw new Error("缺少签名");
 
     const recovered = message !== undefined
@@ -322,7 +322,7 @@ export async function queryBasicInfo(): Promise<walletInfo> {
     try {
         const wallet = await loadWallet();
         if (!wallet) {
-            return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null}
+            return { address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null, userId: null }
         }
 
         const address = wallet.address;
@@ -335,9 +335,9 @@ export async function queryBasicInfo(): Promise<walletInfo> {
             settings.network === ChainNameBaseMain
                 ? ChainIDBaseMain
                 : ChainIDBaseSepolia;
-        return {address: address, ethVal: eth, usdcVal: usdc, hasCreated: true, chainId, xId: null}
+        return { address: address, ethVal: eth, usdcVal: usdc, hasCreated: true, chainId, xId: null, userId: null }
     } catch (e) {
         console.warn("query basic info of wallet failed:", e)
-        return {address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null}
+        return { address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null, userId: null }
     }
 }

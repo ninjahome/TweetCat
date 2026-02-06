@@ -71,7 +71,12 @@ async function getWorkerEndpoint(): Promise<string> {
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-    const resp = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
+    const resp = await fetch(url, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        referrerPolicy: "no-referrer",
+        credentials: "omit"
+    });
     if (!resp.ok) {
         const text = await resp.text().catch(() => "");
         throw new Error(`GET ${url} failed: ${resp.status} ${text}`);

@@ -111,6 +111,8 @@ export interface CreateDetailedClaimParams {
 	adId: string;
 	bXId: string;
 	signature: string;
+	proof?: string;
+	proof_type?: string;
 }
 
 // ========= 广告广场 feed 元信息 =========
@@ -508,8 +510,8 @@ export async function incrementAdClaimedQuota(db: D1Database, adId: string): Pro
 export async function createDetailedClaim(db: D1Database, params: CreateDetailedClaimParams): Promise<boolean> {
 	const sql = `
 		INSERT INTO ad_reward_claims (
-			claim_id, ad_id, b_x_id, status, signature
-		) VALUES (?, ?, ?, 'CLAIMED', ?)
+			claim_id, ad_id, b_x_id, status, signature, proof, proof_type
+		) VALUES (?, ?, ?, 'CLAIMED', ?, ?, ?)
 	`;
 
 	try {
@@ -517,7 +519,9 @@ export async function createDetailedClaim(db: D1Database, params: CreateDetailed
 			params.claimId,
 			params.adId,
 			params.bXId,
-			params.signature
+			params.signature,
+			params.proof ?? null,
+			params.proof_type ?? null
 		).run();
 
 		return result.success;

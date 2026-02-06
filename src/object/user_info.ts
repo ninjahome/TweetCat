@@ -89,23 +89,51 @@ export class UserProfile implements IUserScoreData {
     /* ---------- 成长 ---------- */
     accountAgeDays: number = 0;
 
+    public isValid: boolean = false;
+
     /* ====================== 构造函数 ====================== */
     constructor(rawTwitterJson: any) {
-        this.fillFromApi(rawTwitterJson);
+        try {
+            this.fillFromApi(rawTwitterJson);
+            this.isValid = true;
+        } catch (e) {
+            this.isValid = false;
+            // Never throw here to avoid crashing the caller (interceptors on refresh)
+            console.log("[UserProfile_V3_REFRESH_FIX] Silently handled invalid payload.", {
+                dataKeys: Object.keys(rawTwitterJson?.data || rawTwitterJson || {})
+            });
+        }
     }
 
     /* ====================== 填充 API 数据 ====================== */
     private fillFromApi(data: any): void {
-        const u = data?.data?.user?.result;
-        if (!u) throw new Error('Invalid Twitter API payload', data);
+        const findDeepUser = (obj: any): any => {
+            if (!obj) return null;
+            if (obj.rest_id && (obj.core || obj.legacy)) return obj;
+            if (obj.result && (obj.result.core || obj.result.legacy)) return obj.result;
+
+            // Try common paths
+            const next = obj.data || obj.user ||
+                obj.user_result_by_screen_name ||
+                obj.result;
+            if (next && next !== obj) return findDeepUser(next);
+
+            return null;
+        };
+
+        const u = findDeepUser(data);
+
+        if (!u || u.__typename === 'UserUnavailable') {
+            throw new Error('No valid user object found in payload');
+        }
 
         // 1. 核心 + 头像
-        this.userName = u.core?.screen_name ?? '';
-        this.displayName = u.core?.name ?? '';
+        this.userName = u.core?.screen_name ?? u.legacy?.screen_name ?? '';
+        this.displayName = u.core?.name ?? u.legacy?.name ?? u.legacy?.display_name ?? '';
         this.userId = u.rest_id ?? '';
         this.internalId = u.id ?? '';
-        this.createdAt = u.core?.created_at ?? '';
-        this.avatar = u.avatar?.image_url ?? '';  // 正确读取头像
+        this.createdAt = u.core?.created_at ?? u.legacy?.created_at ?? '';
+        this.avatar = u.avatar?.image_url ?? u.legacy?.profile_image_url_https ?? '';
 
         // 2. 规模
         this.followersCount = u.legacy?.followers_count ?? 0;

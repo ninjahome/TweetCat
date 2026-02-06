@@ -162,7 +162,7 @@ export async function queryWalletBalance(
 }
 
 export async function queryCdpWalletInfo(chainId: number | null = null): Promise<walletInfo> {
-    const failedWallet = { address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null };
+    const failedWallet = { address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null, userId: null };
     try {
         if (!chainId) chainId = await getChainId();
 
@@ -177,6 +177,7 @@ export async function queryCdpWalletInfo(chainId: number | null = null): Promise
 
         const { eth, usdc } = await queryWalletBalance(eoa.address, chainId);
         const xId = user?.authenticationMethods?.x?.sub || null;
+        const userId = user?.userId || null;
         const username = user?.authenticationMethods?.x?.username
         console.log("----->>> query wallet infor for:", chainId, " wallet:", eoa, " x info:", user?.authenticationMethods?.x)
 
@@ -187,6 +188,7 @@ export async function queryCdpWalletInfo(chainId: number | null = null): Promise
             hasCreated: true,
             chainId,
             xId,
+            userId,
             username
         };
     } catch (error) {
@@ -513,14 +515,9 @@ export async function postToX402Srv(path: string, body: any) {
     return await response.json();
 }
 
-const signedOperationPaths: string[] = [
-    "/ads/publisher/create",
-    "/ads/publisher/update",
-    "/ads/executor/claim",
-    "/ads/publisher/withdraw"
-];
+import { signedOperationPaths } from "../common/api_paths";
 
-export async function x402WorkerFetch(path: string, body: any): Promise<any> {
+export async function x402WorkerFetch(path: string, body: any, userIdOverride?: string | null): Promise<any> {
     const chainID = await getChainId();
     const url = X402_FACILITATORS[chainID].endpoint + path;
     let requestBody = body;
@@ -531,8 +528,10 @@ export async function x402WorkerFetch(path: string, body: any): Promise<any> {
     };
 
     if (signedOperationPaths.includes(path)) {
-        const userId = await queryCdpUserID();
-        if (!userId) throw new Error("User not signed in");
+        const userId = userIdOverride || await queryCdpUserID();
+        if (!userId) throw new Error("User not signed in (missing userId)");
+
+        console.log(`[x402Fetch] Signing request for path: ${path}, userId: ${userId}`);
 
         requestBody = {
             ...body,
@@ -565,28 +564,39 @@ export async function x402WorkerFetch(path: string, body: any): Promise<any> {
     }
 
     logX402("------>>> url:", url);
-    const response = await fetch(url, {
-        method: "POST",
-        headers,
-        body: bodyText,
-    });
+    try {
+        console.log(`[x402Fetch] Request Headers:`, JSON.stringify(headers));
+        const response = await fetch(url, {
+            method: "POST",
+            headers,
+            body: bodyText,
+            referrerPolicy: "no-referrer",
+            credentials: "omit"
+        });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        logX402("[x402WorkerFetch] failed path=", path, " status=", response.status, " body=", errorText);
-        let detail = errorText;
-        try {
-            const parsed = JSON.parse(errorText);
-            const code = parsed?.code || parsed?.error?.code || parsed?.error;
-            const message = parsed?.message || parsed?.error?.message || parsed?.detail;
-            detail = [code, message].filter(Boolean).join(" | ") || errorText;
-        } catch {
-            // keep raw text
+        if (!response.ok) {
+            const errorText = await response.text();
+            logX402("[x402WorkerFetch] failed path=", path, " status=", response.status, " body=", errorText);
+            let detail = errorText;
+            try {
+                const parsed = JSON.parse(errorText);
+                const code = parsed?.code || parsed?.error?.code || parsed?.error;
+                const message = parsed?.message || parsed?.error?.message || parsed?.detail;
+                if (code || message) detail = `${code}: ${message}`;
+            } catch {
+                // keep raw text
+            }
+            throw new Error(`x402WorkerFetch failed (${response.status}): ${detail}`);
         }
-        throw new Error(`x402WorkerFetch failed (${response.status}): ${detail}`);
-    }
 
-    return await response.json();
+        return await response.json();
+    } catch (e: any) {
+        console.error(`[x402Fetch] CRITICAL ERROR for path ${path}:`, e);
+        if (e instanceof TypeError && e.message === "Failed to fetch") {
+            console.error(`[x402Fetch] This might be a CORS error, network block, or invalid header. Checked manifest?`);
+        }
+        throw e;
+    }
 }
 
 

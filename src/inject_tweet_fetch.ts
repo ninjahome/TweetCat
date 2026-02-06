@@ -1,4 +1,4 @@
-import { HomeLatestTimeline, HomeTimeline, MsgType, ProfileSpotlightsQuery, TweetDetail, UserByScreenName, UserTweets } from "./common/consts";
+import { CreateFriendship, HomeLatestTimeline, HomeTimeline, MsgType, ProfileSpotlightsQuery, TweetDetail, UserByScreenName, UserTweets } from "./common/consts";
 import { logIC } from "./common/debug_flags";
 import { postWindowMsg } from "./common/msg_obj";
 
@@ -40,6 +40,11 @@ function __tc_isTargetTimelineUrl__(input: any): string | null {
 
         if (url.includes("/" + ProfileSpotlightsQuery)) {
             return ProfileSpotlightsQuery;
+        }
+
+        // 兼容 GraphQL (CreateFriendship) 和 传统 REST (/friendships/create.json)
+        if (url.includes("/CreateFriendship") || url.includes("/friendships/create.json")) {
+            return CreateFriendship;
         }
 
         return null;
@@ -97,9 +102,10 @@ function __tc_installFetch__(): void {
         try {
             const url = __tc_url_of__(input);
             const isGraphql = __tc_isGraphqlUrl__(url);
+            const isLegacyFollow = url.includes("/i/api/1.1/friendships/");
             const timeType = __tc_isTargetTimelineUrl__(url);
 
-            if (!isGraphql || !timeType) return (originalFetch as any).call(this, input, init);
+            if ((!isGraphql && !isLegacyFollow) || !timeType) return (originalFetch as any).call(this, input, init);
 
             const reqId = ++__tc_req_seq__;
             let response: Response;
@@ -136,9 +142,27 @@ function __tc_installFetch__(): void {
                     });
                 }
 
-                // Send 2: Send full raw data for proof
                 postWindowMsg(MsgType.IJProfileSpotlightsCaptured, {
                     data: result,
+                    screenName,
+                });
+            } else if (timeType === CreateFriendship) {
+                // 兼容 GraphQL 和 Legacy 结构
+                const following = result?.data?.create_friendship?.legacy?.following ?? result?.following;
+                const screenName = result?.data?.create_friendship?.legacy?.screen_name ?? result?.screen_name ?? "(unknown)";
+                const idStr = result?.data?.create_friendship?.legacy?.id_str ?? result?.id_str;
+
+                // 诊断日志：打印所有 Key
+                console.log(`>>>> [DIAGNOSTIC: Follow API Keys] <<<<`, Object.keys(result || {}));
+                if (result?.data?.create_friendship) console.log(`>>>> [DIAGNOSTIC: GQL Data Keys] <<<<`, Object.keys(result.data.create_friendship));
+
+                // 鲁棒性判定：如果是 friendships/create 接口且返回了 id_str，说明操作已成功执行
+                const isSuccess = (following === true) || !!idStr;
+
+                logIC(`[F#${reqId}] Follow Action Captured: @${screenName}, following=${following}, hasId=${!!idStr} -> success=${isSuccess}`);
+
+                postWindowMsg(MsgType.IJFollowActionCaptured, {
+                    success: isSuccess,
                     screenName,
                 });
             }
@@ -188,12 +212,23 @@ function __tc_installXHR__(): void {
 
         send(...args: any[]): void {
             const timeType = __tc_isTargetTimelineUrl__(this.__tc_url__);
-            if (!timeType || (timeType !== HomeLatestTimeline
-                && timeType !== UserTweets
+            const isGraphql = __tc_isGraphqlUrl__(this.__tc_url__);
+            const isLegacyFollow = this.__tc_url__?.includes("/i/api/1.1/friendships/");
+
+            // If it's not a GraphQL request and not a legacy follow request, then skip.
+            // Also, if it's a legacy follow but not identified as CreateFriendship, skip.
+            if ((!isGraphql && !isLegacyFollow) || (isLegacyFollow && timeType !== CreateFriendship)) {
+                return (OriginalXHR.prototype.send as any).apply(this, args);
+            }
+
+            // If it's a GraphQL request, but not one of our target types, skip.
+            if (isGraphql && (timeType !== UserTweets
+                && timeType !== HomeLatestTimeline
                 && timeType !== HomeTimeline
                 && timeType !== TweetDetail
                 && timeType !== UserByScreenName
-                && timeType !== ProfileSpotlightsQuery)) {
+                && timeType !== ProfileSpotlightsQuery
+                && timeType !== CreateFriendship)) {
                 return (OriginalXHR.prototype.send as any).apply(this, args);
             }
 
@@ -255,6 +290,22 @@ function __tc_installXHR__(): void {
 
                         postWindowMsg(MsgType.IJProfileSpotlightsCaptured, {
                             data: result,
+                            screenName,
+                        });
+                    } else if (timeType === CreateFriendship) {
+                        const following = result?.data?.create_friendship?.legacy?.following ?? result?.following;
+                        const screenName = result?.data?.create_friendship?.legacy?.screen_name ?? result?.screen_name ?? "(unknown)";
+                        const idStr = result?.data?.create_friendship?.legacy?.id_str ?? result?.id_str;
+
+                        // 诊断日志
+                        console.log(`>>>> [DIAGNOSTIC: Follow API Keys (XHR)] <<<<`, Object.keys(result || {}));
+
+                        const isSuccess = (following === true) || !!idStr;
+
+                        logIC(`[X#${reqId}] Follow Action Captured: @${screenName}, following=${following}, hasId=${!!idStr} -> success=${isSuccess}`);
+
+                        postWindowMsg(MsgType.IJFollowActionCaptured, {
+                            success: isSuccess,
                             screenName,
                         });
                     }

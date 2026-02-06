@@ -15,7 +15,7 @@ export type AdsFollowClaimState = {
 };
 
 const CLAIM_TTL_MS = 24 * 60 * 60 * 1000;
-const API_PATH_ADS_CLAIM = "/ads/executor/claim";
+import { API_PATH_ADS_CLAIM } from "../common/api_paths";
 
 async function getExecutorIdentity(): Promise<{ xId: string; walletAddress: string }> {
     await initCDP();

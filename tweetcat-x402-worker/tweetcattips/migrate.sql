@@ -295,6 +295,9 @@ CREATE INDEX idx_ad_campaigns_status ON ad_campaigns(status);
 CREATE INDEX idx_ad_campaigns_end_date ON ad_campaigns(end_date); -- 新增索引，方便查询过期广告
 CREATE INDEX idx_ad_campaigns_created_at ON ad_campaigns(created_at);
 
+
+
+DROP TABLE IF EXISTS ad_reward_claims;
 CREATE TABLE ad_reward_claims (
 								  claim_id TEXT PRIMARY KEY,          -- 唯一流水号 (UUID)
 								  ad_id TEXT NOT NULL,                -- 关联的广告 ID (通过此 ID 可查到广告主 a_x_id 和单价)
@@ -304,6 +307,8 @@ CREATE TABLE ad_reward_claims (
 								  status TEXT NOT NULL CHECK (status IN ('CLAIMED', 'PENDING_CONFIRM', 'CONFIRMED', 'REJECTED', 'SETTLED_TIMEOUT')),
 
 								  signature TEXT NOT NULL,            -- 执行者对该行为的签名数据 (存证)
+								  proof TEXT,                         -- 证明材料原文
+								  proof_type TEXT,                    -- 证明材料类型
 
 								  created_at DATETIME DEFAULT CURRENT_TIMESTAMP, -- 创建时间 (用于存档/热数据区分)
 								  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, -- 状态变更时间
