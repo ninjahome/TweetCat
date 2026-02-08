@@ -1,6 +1,6 @@
 # TweetCat Ads — Follow-to-Earn（关注即领 X USDC）v1
 
-Last updated: 2026-02-05
+Last updated: 2026-02-08
 
 本文档是 **Follow 激励广告 v1** 的“唯一工作说明 + AI 交接 Runbook”。目标是让任何 AI/开发者在不阅读聊天记录的情况下，也能从本文档理解上下文、掌握当前实现进度，并按步骤继续把 v1 做成可上线的闭环。
 
@@ -352,6 +352,12 @@ v1 策略：
 - IndexedDB 表：`src/common/database.ts`
 - Content button：`src/content/twitter_ui.ts`、`src/content/main_entrance.ts`
 
+### 9.3 Cron Jobs (后台定时任务)
+
+- Settle (结算): `tweetcat-x402-worker/tweetcattips/src/cron_ads_settle.ts`
+- Expire (过期): `tweetcat-x402-worker/tweetcattips/src/cron_ads_expire.ts`
+- Refund (退款): `tweetcat-x402-worker/tweetcattips/src/cron_ads_refund.ts`
+
 ---
 
 ## 10. 广告广场（Ad Plaza）架构优化计划
@@ -564,3 +570,62 @@ Last updated: 2026-02-06
 | Phase 0 | - | `ad_executor_common.ts`, `ad_executor_plaza.ts`, `twitter_ui.ts`, `ad_plaza.html`, `ad_plaza.css` |
 | Phase 1 | `api_srv_ads.ts`, `database_ad.ts`, `common.ts` | `ad_executor_plaza.ts`, `ad_publisher_common.ts` |
 | Phase 2 | - | `ad_executor_plaza.ts`, `ad_plaza.html`, `ad_plaza.css` |
+
+---
+
+## 11. Milestone A & B 技术实现详情 (Technical Implementation Log)
+
+*Added: 2026-02-08*
+
+本节记录了为了达成 Milestone A (闭环结算) 和 Milestone B (资金退回) 所做的关键技术架构变更。
+
+### 11.1 核心架构变更：原子化 Claim + 延迟结算
+
+为了简化客户端逻辑并提高安全性，我们放弃了原本的 "先 Claim 后 Submit Proof" 的两步走模式，改为 **Atomic Claim**。
+
+1.  **Atomic API**: `POST /ads/executor/claim`
+    - 同时接收 `ad_id` + `b_x_id` + `proof_data` (可选)。
+    - 如果携带证据，直接落库 `ad_claim_evidence` 并将 claim 状态置为 `PENDING_CONFIRM`。
+2.  **Delayed Settlement (延迟结算)**:
+    - 即使证据提交成功，也不会立即结算。
+    - 系统设置了冷却期 (Env: `SETTLEMENT_DELAY_HOURS`)。
+      - **Production**: 24 小时
+      - **Development**: 1 小时
+    - 只有超过冷却期的 `PENDING_CONFIRM` 任务才会被 Cron Job 扫描并结算。
+
+### 11.2 后端自动化任务 (Cron Jobs)
+
+实现了三个核心 Cron Job，已注册到 Worker `scheduled` 事件 (Dev: 5min/run, Prod: 1h/run)：
+
+| Job | 文件 | 职责 |
+|-----|-----|-----|
+| **cronSettleAds** | `cron_ads_settle.ts` | 扫描 `PENDING_CONFIRM` 且 > 冷却期的任务 -> 扣冻结款 -> 发钱 -> `CONFIRMED` |
+| **cronExpireAds** | `cron_ads_expire.ts` | 扫描 `end_date` 到期或配额已满的广告 -> `EXPIRED` / `COMPLETED` |
+| **cronRefundAds** | `cron_ads_refund.ts` | 扫描 `EXPIRED/COMPLETED` 且无 Pending 任务的广告 -> 退回剩余 Frozen 资金 -> `REFUNDED` |
+
+### 11.3 数据库 Schema 变更
+
+执行了 `a.sql` 和 `patch_milestone_b.sql`：
+
+1.  **拆分 Claims 表**：
+    - `ad_reward_claims`：只存核心状态、金额、钱包地址。删除了 `proof/signature` 等大字段。
+    - `ad_claim_evidence` (New)：专门存储证明材料 (JSON)，通过 `claim_id` 关联。
+2.  **资金状态**：
+    - `ad_campaigns` 新增 `budget_settlement_status` 字段 (Default: `NONE`)，用于标记广告结束后的资金退回状态 (`SETTLED` 等)。
+
+### 11.4 环境差异化配置
+
+通过 `wrangler.jsonc` 实现环境隔离：
+
+- **Cron 频率**: Dev (*/5 * * * *), Prod (0 * * * *)
+- **结算延迟**: Dev (1 hour), Prod (24 hours)
+
+---
+
+## 12. 下一步：Milestone C (广告主报表对齐)
+
+随着后端闭环的完成，下一步重点回归广告主体验：
+
+1.  确保 **Dashboard** 的 `Spend` 数据与后端 `settled` 数据一致。
+2.  优化 **My Ads** 列表的列展示 (`Claimed` vs `Settled` vs `Spent`)。
+3.  展示 **Refund** 状态，让广告主知道剩钱退回来了。
