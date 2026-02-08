@@ -612,6 +612,111 @@ export async function getPerformerHistory(
 	return results ?? [];
 }
 
+/**
+ * 执行者任务列表（含广告详情）
+ * 用于 My Tasks 页签，返回任务 + 关联广告信息
+ */
+export interface TaskWithAdInfo {
+	claim_id: string;
+	ad_id: string;
+	status: ClaimStatus;
+	created_at: string;
+	ad: {
+		title: string;
+		brand: string;
+		category: string;
+		rewardUSDC: number;
+		detailUrl: string;
+		durationMinutes: number;
+		deadlineText: string;
+	};
+}
+
+export async function getPerformerTasksWithAdInfo(
+	db: D1Database,
+	bXId: string,
+	status: string,
+	limit: number,
+	offset: number
+): Promise<TaskWithAdInfo[]> {
+	let statusFilter = "";
+	if (status !== "all") {
+		const statusMap: Record<string, string[]> = {
+			pending: ["CLAIMED", "PENDING_CONFIRM"],
+			confirmed: ["CONFIRMED"],
+			rejected: ["REJECTED"]
+		};
+		const statuses = statusMap[status] || [];
+		if (statuses.length > 0) {
+			statusFilter = `AND c.status IN (${statuses.map(s => `'${s}'`).join(",")})`;
+		}
+	}
+
+	const sql = `
+		SELECT 
+			c.claim_id,
+			c.ad_id,
+			c.status,
+			c.created_at,
+			a.title,
+			a.category,
+			a.unit_price_atomic,
+			a.detail_url,
+			a.a_x_id,
+			a.end_date
+		FROM ad_reward_claims c
+		JOIN ad_campaigns a ON c.ad_id = a.ad_id
+		WHERE c.b_x_id = ? ${statusFilter}
+		ORDER BY c.created_at DESC
+		LIMIT ? OFFSET ?
+	`;
+
+	const { results } = await db.prepare(sql).bind(bXId, limit, offset).all<any>();
+	return (results ?? []).map(row => ({
+		claim_id: row.claim_id,
+		ad_id: row.ad_id,
+		status: row.status as ClaimStatus,
+		created_at: row.created_at,
+		ad: {
+			title: row.title || "Unknown Ad",
+			brand: `@${row.a_x_id || "unknown"}`,
+			category: row.category || "follow",
+			rewardUSDC: Number(row.unit_price_atomic || 0) / 1_000_000,
+			detailUrl: row.detail_url || "",
+			durationMinutes: CATEGORY_DURATION[row.category as AdCategory] ?? 3,
+			deadlineText: formatDeadlineText(row.end_date)
+		}
+	}));
+}
+
+export async function getPerformerTasksCount(
+	db: D1Database,
+	bXId: string,
+	status: string
+): Promise<number> {
+	let statusFilter = "";
+	if (status !== "all") {
+		const statusMap: Record<string, string[]> = {
+			pending: ["CLAIMED", "PENDING_CONFIRM"],
+			confirmed: ["CONFIRMED"],
+			rejected: ["REJECTED"]
+		};
+		const statuses = statusMap[status] || [];
+		if (statuses.length > 0) {
+			statusFilter = `AND c.status IN (${statuses.map(s => `'${s}'`).join(",")})`;
+		}
+	}
+
+	const sql = `
+		SELECT COUNT(*) as total
+		FROM ad_reward_claims c
+		WHERE c.b_x_id = ? ${statusFilter}
+	`;
+
+	const row = await db.prepare(sql).bind(bXId).first<{ total: number }>();
+	return row?.total ?? 0;
+}
+
 
 // ========= 广告托管账户和账本操作 =========
 

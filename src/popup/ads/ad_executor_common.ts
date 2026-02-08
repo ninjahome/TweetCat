@@ -2,7 +2,8 @@ import { atomicToUsdcNumber, formatUSDC } from "../common";
 import {
     API_PATH_ADS_LIST,
     API_PATH_ADS_CLAIM,
-    API_PATH_ADS_MY_CLAIMS
+    API_PATH_ADS_MY_CLAIMS,
+    API_PATH_ADS_MY_TASKS
 } from "./ad_publisher_common";
 
 export type AdCategory = "follow" | "visit" | "register" | "share";
@@ -35,9 +36,29 @@ export interface EarnClaim {
     ad_title?: string;
 }
 
+export interface TaskWithAdInfo {
+    claim_id: string;
+    ad_id: string;
+    status: string;
+    created_at: string;
+    ad: {
+        title: string;
+        brand: string;
+        category: string;
+        rewardUSDC: number;
+        detailUrl: string;
+        durationMinutes: number;
+        deadlineText: string;
+    };
+}
+
 export const executorState = {
     earnAds: [] as EarnAd[],
     myClaims: [] as EarnClaim[],
+    myTasks: [] as TaskWithAdInfo[],
+    myTasksTotal: 0,
+    myTasksPage: 0,
+    myTasksLoading: false,
     currentTab: 'explore' as 'explore' | 'my-tasks',
     withdrawableUSDC: 0,
     totalEarnedUSDC: 0,

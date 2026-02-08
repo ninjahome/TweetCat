@@ -382,3 +382,196 @@ v1 策略建议（可落地且可测）：
 - IndexedDB 表：`src/common/database.ts`
 - Content button：`src/content/twitter_ui.ts`、`src/content/main_entrance.ts`
 
+---
+
+## 10. 广告广场（Ad Plaza）架构优化计划
+
+Last updated: 2026-02-06
+
+本节是关于"广告广场"（Executor 视角）的 UI/API 架构升级计划。目标是让执行者能更清晰地管理自己的任务进度，同时为平台规模化做好技术准备。
+
+### 10.0 背景与问题
+
+**当前实现的问题：**
+
+| 问题 | 描述 |
+|-----|-----|
+| 全量加载 | `/ads/executor/list` 返回所有活跃广告，前端内存过滤"已领取"。广告数量大时性能差。 |
+| My Tasks 依赖交叉过滤 | "我的任务"页签需要先加载全部广告 + 全部 Claims，再在前端做交集/差集。 |
+| 分页缺失 | 无论是广告列表还是 My Tasks，都没有真正的分页支持。 |
+| Activity 弹窗与 My Tasks 重复 | 两者数据源相似但 UI 割裂，用户困惑"该看哪个"。 |
+
+**商业驱动：**
+
+- **用户留存核心**："我的任务"是用户最常访问的功能，直接影响平台信任度。
+- **规模化准备**：广告数量将从 50 增长到 5000+，必须提前做好架构。
+- **未来功能基础**：任务提醒、进度追踪、奖励到账通知都依赖结构化的"我的任务"数据。
+
+---
+
+### 10.1 Phase 0：前端过滤（已完成）
+
+**状态**：✅ 已实现
+
+**实现内容**：
+
+1. 广场页面增加 `Explore Ads` / `My Tasks` 双页签切换。
+2. `Explore Ads`：过滤掉已领取的广告，只展示用户还没做过的。
+3. `My Tasks`：只展示用户已领取（占位）的广告，按钮显示当前状态（CLAIMED / CONFIRMED 等）。
+4. 用户 Claim 成功后弹窗引导跳转广场查看状态。
+
+**代码变更**：
+
+- `src/popup/ads/ad_executor_common.ts`：增加 `currentTab` 状态。
+- `src/popup/ads/ad_executor_plaza.ts`：`filterAndSortAds` 根据 `currentTab` 分流；增加 Tab 切换事件。
+- `src/content/twitter_ui.ts`：Claim 成功后 `showDialog` 带 callback 跳转广场。
+- `dist/html/ad_plaza.html`：增加 `.plaza-tabs` HTML 结构。
+- `dist/css/ad_plaza.css`：增加 Tab 样式 + 已领取卡片绿色高亮。
+
+**局限性**：
+
+- 依赖前端内存过滤，不适合大规模广告。
+- My Tasks 无法独立分页。
+
+---
+
+### 10.2 Phase 1：后端新增 `/ads/executor/my_tasks` API
+
+**状态**：📋 待实现
+
+**目标**：为 `My Tasks` 页签提供专属、轻量、可分页的数据源。
+
+#### 10.2.1 API 设计
+
+**路径**：`GET /ads/executor/my_tasks`
+
+**请求参数**：
+
+| 参数 | 类型 | 必填 | 说明 |
+|-----|------|-----|-----|
+| `b_x_id` | string | ✅ | 执行者 X ID |
+| `status` | string | ❌ | 可选筛选：`all` / `pending` / `confirmed` / `rejected`，默认 `all` |
+| `limit` | number | ❌ | 分页大小，默认 20，最大 100 |
+| `offset` | number | ❌ | 分页偏移，默认 0 |
+
+**响应结构**：
+
+```json
+{
+  "success": true,
+  "tasks": [
+    {
+      "claim_id": "uuid",
+      "ad_id": "uuid",
+      "status": "CLAIMED",
+      "created_at": "2026-02-06T12:00:00Z",
+      "expires_at": "2026-02-07T12:00:00Z",
+      "ad": {
+        "title": "Follow @example",
+        "brand": "@example",
+        "category": "follow",
+        "rewardUSDC": 0.5,
+        "detailUrl": "https://x.com/example"
+      }
+    }
+  ],
+  "total": 42,
+  "hasMore": true
+}
+```
+
+#### 10.2.2 后端实现
+
+**文件**：`tweetcat-x402-worker/tweetcattips/src/api_srv_ads.ts`
+
+**新增函数**：`apiAdsMyTasks`
+
+**文件**：`tweetcat-x402-worker/tweetcattips/src/database_ad.ts`
+
+**新增函数**：`getPerformerTasksWithAdInfo`, `getPerformerTasksCount`
+
+#### 10.2.3 前端集成
+
+**文件**：`src/popup/ads/ad_executor_plaza.ts`
+
+**变更**：
+
+1. `My Tasks` 页签切换时，改为调用 `/ads/executor/my_tasks` 而非前端过滤。
+2. 增加加载状态（Loading / Error / Empty）。
+3. `Explore Ads` 继续使用原有 `/ads/executor/list`。
+
+**文件**：`src/popup/ads/ad_publisher_common.ts`
+
+**新增常量**：`API_PATH_ADS_MY_TASKS`
+
+#### 10.2.4 验收标准
+
+- [ ] `My Tasks` 页签能独立加载数据，无需等待全量广告列表。
+- [ ] 列表正确显示任务状态（CLAIMED / CONFIRMED / REJECTED）。
+- [ ] 空状态和加载状态 UI 正常。
+
+---
+
+### 10.3 Phase 2：分页与筛选
+
+**状态**：📋 待实现（Phase 1 完成后）
+
+**目标**：为大规模数据提供分页控件和状态筛选。
+
+#### 10.3.1 前端 UI
+
+1. 页签下方增加状态筛选下拉框：`All` / `Pending` / `Confirmed` / `Rejected`。
+2. 列表底部增加分页控件："上一页 / 下一页 / 第 N 页"。
+3. 空状态优化：
+   - `Explore Ads` 空：显示"暂无可领取的广告"。
+   - `My Tasks` 空：显示"您还没有参与任何任务，快去广场看看吧！"
+
+#### 10.3.2 验收标准
+
+- [ ] 状态筛选能正确过滤任务列表。
+- [ ] 分页控件与后端 `limit/offset` 联动正常。
+- [ ] 切换筛选/页码时有 Loading 状态。
+
+---
+
+### 10.4 Phase 3：用户运营扩展
+
+**状态**：📋 未来规划
+
+**目标**：基于 My Tasks 数据源，扩展用户运营能力。
+
+#### 10.4.1 任务进度追踪
+
+- 在任务卡片上显示：任务创建时间 / 预计验证时间 / 已验证时间。
+- 增加"任务详情页"（可选）。
+
+#### 10.4.2 推送通知
+
+- 任务状态变更时推送浏览器通知。
+- 奖励到账时推送通知（需要后端 webhook 或轮询）。
+
+#### 10.4.3 活动激励
+
+- 基于 My Tasks 数据实现"本周完成 5 个任务送 Bonus"等运营活动。
+- 在广场首页增加活动 Banner。
+
+---
+
+### 10.5 实施时间线
+
+| 阶段 | 预估工时 | 依赖 |
+|-----|---------|-----|
+| Phase 0 | ✅ 已完成 | - |
+| Phase 1 | 4h（后端 2h + 前端 2h） | Phase 0 |
+| Phase 2 | 3h（前端 UI + 联调） | Phase 1 |
+| Phase 3 | 未定 | Phase 2 + 产品需求确认 |
+
+---
+
+### 10.6 代码变更清单
+
+| 阶段 | 后端文件 | 前端文件 |
+|-----|---------|---------|
+| Phase 0 | - | `ad_executor_common.ts`, `ad_executor_plaza.ts`, `twitter_ui.ts`, `ad_plaza.html`, `ad_plaza.css` |
+| Phase 1 | `api_srv_ads.ts`, `database_ad.ts`, `common.ts` | `ad_executor_plaza.ts`, `ad_publisher_common.ts` |
+| Phase 2 | - | `ad_executor_plaza.ts`, `ad_plaza.html`, `ad_plaza.css` |

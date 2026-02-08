@@ -21,7 +21,8 @@ import {
 	API_PATH_ADS_PUBLISHER_LEDGER,
 	API_PATH_ADS_TOGGLE_STATUS,
 	API_PATH_ADS_TOP_UP_BUDGET,
-	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, API_PATH_ADS_PUBLISHER_SPEND_HISTORY
+	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
+	API_PATH_ADS_MY_TASKS
 } from "./common";
 import {
 	AdCategory,
@@ -62,6 +63,8 @@ import {
 	getAdsFeedVersion,
 	getAdsNextInvalidationAt,
 	bumpAdsFeedVersion,
+	getPerformerTasksWithAdInfo,
+	getPerformerTasksCount,
 } from "./database_ad";
 import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
 import { getKolBindingByXId } from "./database_402";
@@ -529,6 +532,38 @@ export async function apiAdsMyClaims(c: ExtCtx) {
 }
 
 /**
+ * 执行者任务列表（含广告详情）
+ * 用于 My Tasks 页签，返回任务 + 关联广告信息，支持分页和状态筛选
+ */
+export async function apiAdsMyTasks(c: ExtCtx) {
+	try {
+		const bXId = c.req.query("b_x_id");
+		const status = c.req.query("status") || "all";
+		const limitStr = c.req.query("limit") || "20";
+		const offsetStr = c.req.query("offset") || "0";
+
+		if (!bXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
+
+		const limit = Math.min(Math.max(parseInt(limitStr, 10) || 20, 1), 100);
+		const offset = Math.max(parseInt(offsetStr, 10) || 0, 0);
+
+		const [tasks, total] = await Promise.all([
+			getPerformerTasksWithAdInfo(c.env.DB, bXId, status, limit, offset),
+			getPerformerTasksCount(c.env.DB, bXId, status)
+		]);
+
+		return c.json({
+			success: true,
+			tasks,
+			total,
+			hasMore: offset + tasks.length < total
+		});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
  * 充值到广告托管账户
  * 用户通过 x402 支付将 USDC 转账到平台库账户
  */
@@ -854,6 +889,7 @@ export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
 	app.get(API_PATH_ADS_VERSION, apiAdsExecutorVersion);
 	app.post(API_PATH_ADS_CLAIM, apiAdsClaim);
 	app.get(API_PATH_ADS_MY_CLAIMS, apiAdsMyClaims);
+	app.get(API_PATH_ADS_MY_TASKS, apiAdsMyTasks);
 	app.post(API_PATH_ADS_PUBLISHER_RECHARGE, apiRechargeToAdEscrowAccount);
 	app.post(API_PATH_ADS_PUBLISHER_WITHDRAW, apiWithdrawFromAdsEscrowAccount);
 	app.get(API_PATH_ADS_PUBLISHER_LEDGER, apiAdsPublisherLedger);

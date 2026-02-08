@@ -1,7 +1,7 @@
 import { $2, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification } from "../common";
 import { logAdP } from "../../common/debug_flags";
 import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
-import { API_PATH_ADS_CLAIM, API_PATH_ADS_LIST } from "./ad_publisher_common";
+import { API_PATH_ADS_CLAIM, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS } from "./ad_publisher_common";
 import {
     AdCategory,
     CATEGORY_DURATION,
@@ -9,7 +9,8 @@ import {
     EarnAd,
     executorState,
     categoryIcon,
-    getRewardRange
+    getRewardRange,
+    TaskWithAdInfo
 } from "./ad_executor_common";
 import { loadEarnSummary } from "./ad_executor_summary";
 
@@ -34,6 +35,42 @@ export async function loadAds(): Promise<void> {
         console.error("Failed to load ads list:", err);
         executorState.earnAds = [];
         showNotification("Failed to load ads.", "error");
+    }
+}
+
+const MY_TASKS_PAGE_SIZE = 20;
+
+export async function loadMyTasks(page: number = 0): Promise<void> {
+    if (executorState.myTasksLoading) return;
+    executorState.myTasksLoading = true;
+
+    try {
+        const { xId } = await getCurrentUserInfo();
+        const offset = page * MY_TASKS_PAGE_SIZE;
+
+        const response = await x402WorkerGet(API_PATH_ADS_MY_TASKS, {
+            b_x_id: xId,
+            limit: String(MY_TASKS_PAGE_SIZE),
+            offset: String(offset),
+            status: "all"
+        });
+
+        if (!response?.success) {
+            showNotification("Failed to load tasks", "error");
+            return;
+        }
+
+        executorState.myTasks = response.tasks as TaskWithAdInfo[];
+        executorState.myTasksTotal = response.total || 0;
+        executorState.myTasksPage = page;
+
+        logAdP("[MyTasks] Loaded:", executorState.myTasks.length, "of", executorState.myTasksTotal);
+    } catch (err) {
+        console.error("Failed to load my tasks:", err);
+        executorState.myTasks = [];
+        showNotification("Failed to load your tasks.", "error");
+    } finally {
+        executorState.myTasksLoading = false;
     }
 }
 
@@ -72,9 +109,77 @@ export function renderEarnAds() {
 
     if (!emptyState) return;
 
+    // Branch based on current tab
+    if (executorState.currentTab === 'my-tasks') {
+        renderMyTasksView(grid, emptyState);
+    } else {
+        renderExploreView(grid, emptyState);
+    }
+}
+
+function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
+    const tasks = executorState.myTasks;
+
+    if (tasks.length === 0) {
+        emptyState.style.display = "block";
+        const emptyTitle = emptyState.querySelector("h3");
+        const emptyText = emptyState.querySelector("p");
+        if (emptyTitle) emptyTitle.textContent = "No tasks yet";
+        if (emptyText) emptyText.textContent = "Explore ads and start earning rewards!";
+        return;
+    }
+    emptyState.style.display = "none";
+
+    tasks.forEach((task) => {
+        const card = cloneTemplate("tpl-ad-card");
+        card.dataset.adId = task.ad_id;
+        card.classList.add("ad-card-claimed");
+
+        const iconEl = $2<HTMLElement>(card, ".ad-card-icon");
+        iconEl.textContent = categoryIcon[task.ad.category as AdCategory] || "📢";
+
+        $2<HTMLElement>(card, ".ad-card-title").textContent = task.ad.title;
+        $2<HTMLElement>(card, ".ad-card-brand").textContent = task.ad.brand;
+        $2<HTMLElement>(card, ".ad-card-description").textContent = `Status: ${task.status}`;
+
+        $2<HTMLElement>(card, ".meta-time").textContent = `⏱️ ${task.ad.durationMinutes} min`;
+        $2<HTMLElement>(card, ".meta-quota").textContent = `📅 ${new Date(task.created_at).toLocaleDateString()}`;
+        $2<HTMLElement>(card, ".meta-deadline").textContent = `📅 ${task.ad.deadlineText}`;
+
+        $2<HTMLElement>(card, ".reward-value").textContent = formatUSDC(task.ad.rewardUSDC);
+
+        // Tags
+        const tagsContainer = $2<HTMLElement>(card, ".ad-card-tags");
+        const tagTpl = $2<HTMLElement>(tagsContainer, ".tpl-tag");
+        tagTpl.remove();
+        const statusTag = tagTpl.cloneNode(true) as HTMLElement;
+        statusTag.className = "tag";
+        if (task.status === "CONFIRMED") statusTag.classList.add("tag-easy");
+        else if (task.status === "REJECTED") statusTag.classList.add("tag-high");
+        else statusTag.classList.add("tag-new");
+        statusTag.textContent = task.status;
+        tagsContainer.appendChild(statusTag);
+
+        const openDetail = () => window.open(task.ad.detailUrl, "_blank");
+
+        const btn = $2<HTMLButtonElement>(card, ".btn-start-task");
+        btn.textContent = task.status;
+        btn.classList.add("claimed");
+        btn.disabled = true;
+
+        card.addEventListener("click", openDetail);
+        grid.appendChild(card);
+    });
+}
+
+function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
     const ads = filterAndSortAds();
     if (ads.length === 0) {
         emptyState.style.display = "block";
+        const emptyTitle = emptyState.querySelector("h3");
+        const emptyText = emptyState.querySelector("p");
+        if (emptyTitle) emptyTitle.textContent = "No ads available";
+        if (emptyText) emptyText.textContent = "Check back later for new earning opportunities!";
         return;
     }
     emptyState.style.display = "none";
@@ -147,14 +252,10 @@ function filterAndSortAds(): EarnAd[] {
     const sortBy = getSortOption();
     const qstr = getSearchQuery();
 
-    let baseAds = executorState.earnAds;
-    if (executorState.currentTab === 'explore') {
-        // 只看还没领过的
-        baseAds = baseAds.filter(ad => !executorState.myClaims.some(c => c.ad_id === ad.id));
-    } else {
-        // 只看已经领过（占坑）的
-        baseAds = baseAds.filter(ad => executorState.myClaims.some(c => c.ad_id === ad.id));
-    }
+    // For Explore tab: filter out already claimed ads
+    let baseAds = executorState.earnAds.filter(ad =>
+        !executorState.myClaims.some(c => c.ad_id === ad.id)
+    );
 
     let result = baseAds.filter((ad) =>
         categories.includes(ad.category) &&
@@ -277,12 +378,18 @@ export function initPlazaFiltersEvents() {
     // Tab Switcher
     const tabs = document.querySelectorAll<HTMLElement>(".plaza-tab");
     tabs.forEach(tab => {
-        tab.addEventListener("click", () => {
-            const nextTab = tab.dataset.tab as any;
+        tab.addEventListener("click", async () => {
+            const nextTab = tab.dataset.tab as 'explore' | 'my-tasks';
             if (executorState.currentTab === nextTab) return;
 
             executorState.currentTab = nextTab;
             tabs.forEach(t => t.classList.toggle("active", t === tab));
+
+            // Load My Tasks data from backend when switching to that tab
+            if (nextTab === 'my-tasks') {
+                await loadMyTasks(0);
+            }
+
             renderEarnAds();
         });
     });

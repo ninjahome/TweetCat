@@ -1,9 +1,9 @@
-import {Context, Hono} from "hono";
-import {cors} from "hono/cors";
-import {generateJwt, generateWalletJwt} from "@coinbase/cdp-sdk/auth";
-import type {x402ResourceServer} from "@x402/core/server";
-import {ContentfulStatusCode} from "hono/utils/http-status";
-import {CdpClient, EvmServerAccount} from "@coinbase/cdp-sdk";
+import { Context, Hono } from "hono";
+import { cors } from "hono/cors";
+import { generateJwt, generateWalletJwt } from "@coinbase/cdp-sdk/auth";
+import type { x402ResourceServer } from "@x402/core/server";
+import { ContentfulStatusCode } from "hono/utils/http-status";
+import { CdpClient, EvmServerAccount } from "@coinbase/cdp-sdk";
 
 export const CURRENCY_SYMBOL_USDC = 'USDC'
 
@@ -29,6 +29,7 @@ export const API_PATH_ADS_LIST = "/ads/executor/list";
 export const API_PATH_ADS_VERSION = "/ads/executor/version";
 export const API_PATH_ADS_CLAIM = "/ads/executor/claim";
 export const API_PATH_ADS_MY_CLAIMS = "/ads/executor/my_claims";
+export const API_PATH_ADS_MY_TASKS = "/ads/executor/my_tasks";
 export const API_PATH_ADS_PUBLISHER_RECHARGE = "/ads/publisher/recharge";
 export const API_PATH_ADS_PUBLISHER_WITHDRAW = "/ads/publisher/withdraw";
 export const API_PATH_ADS_PUBLISHER_LEDGER = "/ads/publisher/ledger";
@@ -38,10 +39,10 @@ export const API_PATH_ADS_PUBLISHER_DASHBOARD_INFO = "/ads/publisher/dashboard_i
 export const API_PATH_ADS_PUBLISHER_SPEND_HISTORY = "/ads/publisher/spend_history";
 
 export const signedOperationPaths: string[] = [
-    API_PATH_ADS_CREATE,
-    API_PATH_ADS_UPDATE,
-    API_PATH_ADS_CLAIM,
-    API_PATH_ADS_PUBLISHER_WITHDRAW
+	API_PATH_ADS_CREATE,
+	API_PATH_ADS_UPDATE,
+	API_PATH_ADS_CLAIM,
+	API_PATH_ADS_PUBLISHER_WITHDRAW
 ];
 
 export interface Env {
@@ -185,7 +186,7 @@ export async function createCdpJwtAuthHeader(params: {
 		requestHost: params.requestHost,
 		requestPath: params.requestPath,
 	});
-	return {Authorization: `Bearer ${token}`};
+	return { Authorization: `Bearer ${token}` };
 }
 
 export async function getX402AuthHeader(params: {
@@ -250,7 +251,7 @@ export interface cdpFetchResult {
 export async function cdpFetch(c: ExtCtx, path: string, method: string, body?: any, requireWalletAuth: boolean = false,): Promise<cdpFetchResult> {
 	const url = `https://api.cdp.coinbase.com${path}`;
 	const headers = await getCdpAuthHeader(c.env, method, path, body ?? {}, requireWalletAuth);
-	const init: RequestInit = {method, headers: {...headers, "Content-Type": "application/json"}};
+	const init: RequestInit = { method, headers: { ...headers, "Content-Type": "application/json" } };
 	if (body && method !== "GET") init.body = JSON.stringify(body);
 
 	const res = await fetch(url, init);
@@ -261,7 +262,7 @@ export async function cdpFetch(c: ExtCtx, path: string, method: string, body?: a
 	} catch {
 		data = raw;
 	}
-	return {ok: res.ok, status: res.status as ContentfulStatusCode, data, raw};
+	return { ok: res.ok, status: res.status as ContentfulStatusCode, data, raw };
 }
 
 let treasuryAccountP: Promise<EvmServerAccount> | null = null;
@@ -308,7 +309,7 @@ export function toFiat2dp(amount: any): string {
  * @param detail - 错误详情
  */
 export function jsonError(c: ExtCtx, status: ContentfulStatusCode, code: string, detail: string) {
-	return c.json({error: code, detail}, status);
+	return c.json({ error: code, detail }, status);
 }
 
 /**
