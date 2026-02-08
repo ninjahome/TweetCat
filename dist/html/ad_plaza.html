@@ -1,155 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ad Plaza - Earn - TweetCat</title>
-    <link rel="stylesheet" href="../css/common_utils.css"/>
-    <link rel="stylesheet" href="../css/ad_plaza.css"/>
+    <link rel="stylesheet" href="../css/common_utils.css" />
+    <link rel="stylesheet" href="../css/ad_plaza.css" />
     <script src="../js/ad_plaza.js"></script>
 </head>
+
 <body>
-<!-- Top Navigation -->
-<header class="plaza-header">
-    <div class="plaza-header-left">
-        <div class="plaza-logo">
-            <div class="logo-icon"></div>
-            <span class="logo-text">Ad Plaza</span>
+    <!-- Top Navigation -->
+    <header class="plaza-header">
+        <div class="plaza-header-left">
+            <div class="plaza-logo">
+                <div class="logo-icon"></div>
+                <span class="logo-text">Ad Plaza</span>
+            </div>
         </div>
-    </div>
 
-    <div class="plaza-header-right">
-        <button id="btn-open-advertise" class="btn-open-advertise">Publish Ad / Advertise</button>
-    </div>
-</header>
+        <div class="plaza-header-right">
+            <button id="btn-open-advertise" class="btn-open-advertise">Publish Ad / Advertise</button>
+        </div>
+    </header>
 
-<!-- Earn Mode View -->
-<div id="view-earn" class="plaza-view active">
-    <div class="earn-layout">
-        <aside class="earn-left">
-            <section class="withdraw-card">
-                <span class="withdraw-status">Updated today</span>
-                <div class="withdraw-card-top">
-                    <div class="withdraw-card-header">
-                        <div class="card-label">Withdrawable</div>
-                        <div class="card-value" id="withdrawable-amount">
-                            <span class="card-value-amount">0.00</span>
-                            <span>USDC</span>
+    <!-- Earn Mode View -->
+    <div id="view-earn" class="plaza-view active">
+        <div class="earn-layout">
+            <aside class="earn-left">
+                <section class="withdraw-card">
+                    <span class="withdraw-status">Updated today</span>
+                    <div class="withdraw-card-top">
+                        <div class="withdraw-card-header">
+                            <div class="card-label">Withdrawable</div>
+                            <div class="card-value" id="withdrawable-amount">
+                                <span class="card-value-amount">0.00</span>
+                                <span>USDC</span>
+                            </div>
+                        </div>
+                        <div class="withdraw-actions">
+                            <button id="btn-withdraw" class="btn-primary">Withdraw</button>
+                            <button id="btn-earn-activity" class="btn-secondary">Activity</button>
+                        </div>
+
+                    </div>
+                    <div class="earn-summary">
+                        <div class="summary-item">
+                            <span class="summary-label">Total Earned<br>(USDC)</span>
+                            <span class="summary-value" id="total-earned">0.00</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Today Earned<br>(USDC)</span>
+                            <span class="summary-value" id="today-earned">0.00 </span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Pending<br>(USDC)</span>
+                            <span class="summary-value" id="pending-earned">0.00</span>
                         </div>
                     </div>
-                    <div class="withdraw-actions">
-                        <button id="btn-withdraw" class="btn-primary">Withdraw</button>
-                        <button id="btn-earn-activity" class="btn-secondary">Activity</button>
-                    </div>
-
-                </div>
-                <div class="earn-summary">
-                    <div class="summary-item">
-                        <span class="summary-label">Total Earned<br>(USDC)</span>
-                        <span class="summary-value" id="total-earned">0.00</span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Today Earned<br>(USDC)</span>
-                        <span class="summary-value" id="today-earned">0.00 </span>
-                    </div>
-                    <div class="summary-item">
-                        <span class="summary-label">Pending<br>(USDC)</span>
-                        <span class="summary-value" id="pending-earned">0.00</span>
-                    </div>
-                </div>
-            </section>
+                </section>
 
 
-            <div class="filters-sidebar">
-                <div class="filters-sidebar-title">
-                    <h3 class="filter-title">Filters</h3>
-                    <button id="btn-clear-filters" class="btn-clear-filters" type="button" disabled>
-                        Clear filters
-                    </button>
-                </div>
-                <!-- Search + Clear (Filters tools) -->
-                <div class="filter-tools">
-                    <div class="filter-search" role="search">
-                       <span class="filter-search-icon" aria-hidden="true">
-                           <svg viewBox="0 0 24 24" class="filter-search-icon-svg">
-                               <g>
-                                   <path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"></path>
-                               </g>
-                           </svg>
-                       </span>
-                        <input
-                                id="ad-search"
-                                class="filter-search-input"
-                                type="search"
-                                placeholder="Search ads..."
-                                autocomplete="off"
-                                spellcheck="false"
-                        />
-                        <button id="btn-clear-search" class="filter-search-clear" type="button"
-                                aria-label="Clear search">✕
+                <div class="filters-sidebar">
+                    <div class="filters-sidebar-title">
+                        <h3 class="filter-title">Filters</h3>
+                        <button id="btn-clear-filters" class="btn-clear-filters" type="button" disabled>
+                            Clear filters
                         </button>
                     </div>
+                    <!-- Search + Clear (Filters tools) -->
+                    <div class="filter-tools">
+                        <div class="filter-search" role="search">
+                            <span class="filter-search-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" class="filter-search-icon-svg">
+                                    <g>
+                                        <path
+                                            d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z">
+                                        </path>
+                                    </g>
+                                </svg>
+                            </span>
+                            <input id="ad-search" class="filter-search-input" type="search" placeholder="Search ads..."
+                                autocomplete="off" spellcheck="false" />
+                            <button id="btn-clear-search" class="filter-search-clear" type="button"
+                                aria-label="Clear search">✕
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <h4 class="filter-group-title">Category</h4>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="category" value="follow" checked>
+                            <span>Follow</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="category" value="visit" checked>
+                            <span>Visit</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="category" value="register" checked>
+                            <span>Register</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="category" value="share" checked>
+                            <span>Share</span>
+                        </label>
+                    </div>
+
+                    <div class="filter-group">
+                        <h4 class="filter-group-title">Reward Range</h4>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reward" value="0.1-0.5" checked>
+                            <span>0.1 - 0.5 USDC</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reward" value="0.5-1" checked>
+                            <span>0.5 - 1.0 USDC</span>
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" name="reward" value="1+" checked>
+                            <span>1.0+ USDC</span>
+                        </label>
+                    </div>
+
+                    <div class="filter-group">
+                        <h4 class="filter-group-title">Sort By</h4>
+                        <select id="sort-select" class="filter-select">
+                            <option value="reward-high">Highest Reward</option>
+                            <option value="newest">Newest</option>
+                            <option value="time-short">Shortest Time</option>
+                            <option value="popular">Most Popular</option>
+                        </select>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="earn-right">
+                <div class="plaza-tabs">
+                    <button class="plaza-tab active" data-tab="explore">Explore Ads</button>
+                    <button class="plaza-tab" data-tab="my-tasks">My Tasks</button>
                 </div>
 
-                <div class="filter-group">
-                    <h4 class="filter-group-title">Category</h4>
-                    <label class="filter-checkbox">
-                        <input type="checkbox" name="category" value="follow" checked>
-                        <span>Follow</span>
-                    </label>
-                    <label class="filter-checkbox">
-                        <input type="checkbox" name="category" value="visit" checked>
-                        <span>Visit</span>
-                    </label>
-                    <label class="filter-checkbox">
-                        <input type="checkbox" name="category" value="register" checked>
-                        <span>Register</span>
-                    </label>
-                    <label class="filter-checkbox">
-                        <input type="checkbox" name="category" value="share" checked>
-                        <span>Share</span>
-                    </label>
-                </div>
-
-                <div class="filter-group">
-                    <h4 class="filter-group-title">Reward Range</h4>
-                    <label class="filter-checkbox">
-                        <input type="checkbox" name="reward" value="0.1-0.5" checked>
-                        <span>0.1 - 0.5 USDC</span>
-                    </label>
-                    <label class="filter-checkbox">
-                        <input type="checkbox" name="reward" value="0.5-1" checked>
-                        <span>0.5 - 1.0 USDC</span>
-                    </label>
-                    <label class="filter-checkbox">
-                        <input type="checkbox" name="reward" value="1+" checked>
-                        <span>1.0+ USDC</span>
-                    </label>
-                </div>
-
-                <div class="filter-group">
-                    <h4 class="filter-group-title">Sort By</h4>
-                    <select id="sort-select" class="filter-select">
-                        <option value="reward-high">Highest Reward</option>
-                        <option value="newest">Newest</option>
-                        <option value="time-short">Shortest Time</option>
-                        <option value="popular">Most Popular</option>
+                <!-- My Tasks Controls (Status Filter) -->
+                <div id="my-tasks-controls" class="my-tasks-controls" style="display: none;">
+                    <label for="task-status-filter">Status:</label>
+                    <select id="task-status-filter" class="filter-select-small">
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="rejected">Rejected</option>
                     </select>
                 </div>
-            </div>
-        </aside>
 
-        <main class="earn-right">
-            <div class="plaza-tabs">
-                <button class="plaza-tab active" data-tab="explore">Explore Ads</button>
-                <button class="plaza-tab" data-tab="my-tasks">My Tasks</button>
-            </div>
+                <div class="ad-cards-grid">
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <h3>No Ads Available</h3>
+                        <p>Check back later for new earning opportunities!</p>
+                    </div>
+                </div>
 
-            <div class="ad-cards-grid">
-                <div class="empty-state">
-                    <div class="empty-icon">📭</div>
-                    <h3>No Ads Available</h3>
-                    <p>Check back later for new earning opportunities!</p>
+                <!-- Pagination Controls -->
+                <div id="pagination-controls" class="pagination-controls" style="display: none;">
+                    <button id="btn-prev-page" class="btn-secondary" disabled>Previous</button>
+                    <span id="page-indicator">Page 1</span>
+                    <button id="btn-next-page" class="btn-secondary" disabled>Next</button>
                 </div>
 
                 <!-- Example Ad Card (will be dynamically generated) -->
@@ -183,72 +200,79 @@
                     </div>
                 </div>
                 -->
-            </div>
+        </div>
         </main>
     </div>
-</div>
+    </div>
 
 
-<!-- ==================== Hidden Templates (for TS clone) ==================== -->
-<template id="tpl-ad-card">
-    <div class="ad-card" data-ad-id="">
-        <div class="ad-card-image">
-            <span class="ad-card-icon" aria-hidden="true">📢</span>
+    <!-- ==================== Hidden Templates (for TS clone) ==================== -->
+    <template id="tpl-ad-card">
+        <div class="ad-card" data-ad-id="">
+            <div class="ad-card-image">
+                <span class="ad-card-icon" aria-hidden="true">📢</span>
+            </div>
+
+            <div class="ad-card-content">
+                <div class="ad-card-header">
+                    <h3 class="ad-card-title"></h3>
+                    <div class="ad-card-brand"></div>
+                </div>
+
+                <p class="ad-card-description"></p>
+
+                <div class="ad-card-meta">
+                    <span class="meta-item meta-time"></span>
+                    <span class="meta-item meta-quota"></span>
+                    <span class="meta-item meta-deadline"></span>
+                </div>
+
+                <div class="ad-card-tags">
+                    <span class="tag tpl-tag">Tag</span>
+                </div>
+            </div>
+
+            <div class="ad-card-footer">
+                <div class="ad-card-reward">
+                    <span class="reward-label">Earn:</span>
+                    <span class="reward-value"></span>
+                </div>
+                <button class="btn-start-task">Start Task</button>
+            </div>
         </div>
+    </template>
 
-        <div class="ad-card-content">
-            <div class="ad-card-header">
-                <h3 class="ad-card-title"></h3>
-                <div class="ad-card-brand"></div>
+    <template id="tpl-activity-item">
+        <div class="activity-item">
+            <div class="activity-info">
+                <div class="activity-title"></div>
+                <div class="activity-meta"></div>
             </div>
-
-            <p class="ad-card-description"></p>
-
-            <div class="ad-card-meta">
-                <span class="meta-item meta-time"></span>
-                <span class="meta-item meta-quota"></span>
-                <span class="meta-item meta-deadline"></span>
-            </div>
-
-            <div class="ad-card-tags">
-                <span class="tag tpl-tag">Tag</span>
+            <div class="activity-side">
+                <span class="activity-status"></span>
+                <span class="activity-reward"></span>
             </div>
         </div>
+    </template>
 
-        <div class="ad-card-footer">
-            <div class="ad-card-reward">
-                <span class="reward-label">Earn:</span>
-                <span class="reward-value"></span>
+    <div id="earn-activity-modal" class="earn-modal">
+        <div class="earn-modal-content">
+            <div class="earn-modal-header">
+                <h3>Activity</h3>
+                <button class="btn-close" type="button" aria-label="Close">✕</button>
             </div>
-            <button class="btn-start-task">Start Task</button>
+            <div id="earn-activity-list" class="earn-activity-list"></div>
         </div>
     </div>
-</template>
 
-<template id="tpl-activity-item">
-    <div class="activity-item">
-        <div class="activity-info">
-            <div class="activity-title"></div>
-            <div class="activity-meta"></div>
-        </div>
-        <div class="activity-side">
-            <span class="activity-status"></span>
-            <span class="activity-reward"></span>
+
+    <div id="notification" class="notification hidden" role="alert"></div>
+    <div id="loading-overlay">
+        <div id="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-message">Processing...</div>
         </div>
     </div>
-</template>
-
-<div id="earn-activity-modal" class="earn-modal">
-    <div class="earn-modal-content">
-        <div class="earn-modal-header">
-            <h3>Activity</h3>
-            <button class="btn-close" type="button" aria-label="Close">✕</button>
-        </div>
-        <div id="earn-activity-list" class="earn-activity-list"></div>
-    </div>
-</div>
-
-
-<div id="notification" class="notification hidden" role="alert"></div>
 </body>
+
 </html>

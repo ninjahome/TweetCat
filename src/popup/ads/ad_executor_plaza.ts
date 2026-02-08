@@ -1,4 +1,4 @@
-import { $2, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification } from "../common";
+import { $2, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification, showLoading, hideLoading } from "../common";
 import { logAdP } from "../../common/debug_flags";
 import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 import { API_PATH_ADS_CLAIM, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS } from "./ad_publisher_common";
@@ -52,7 +52,7 @@ export async function loadMyTasks(page: number = 0): Promise<void> {
             b_x_id: xId,
             limit: String(MY_TASKS_PAGE_SIZE),
             offset: String(offset),
-            status: "all"
+            status: executorState.myTasksStatus
         });
 
         if (!response?.success) {
@@ -170,6 +170,25 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
         card.addEventListener("click", openDetail);
         grid.appendChild(card);
     });
+
+    updatePaginationUI();
+}
+
+function updatePaginationUI() {
+    const prevBtn = document.getElementById("btn-prev-page") as HTMLButtonElement;
+    const nextBtn = document.getElementById("btn-next-page") as HTMLButtonElement;
+    const indicator = document.getElementById("page-indicator");
+
+    if (!prevBtn || !nextBtn || !indicator) return;
+
+    const currentPage = executorState.myTasksPage;
+    const total = executorState.myTasksTotal;
+    const totalPages = Math.ceil(total / MY_TASKS_PAGE_SIZE);
+
+    indicator.textContent = `Page ${currentPage + 1} of ${totalPages || 1}`;
+
+    prevBtn.disabled = currentPage <= 0;
+    nextBtn.disabled = (currentPage + 1) * MY_TASKS_PAGE_SIZE >= total;
 }
 
 function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
@@ -377,6 +396,27 @@ export function initPlazaFiltersEvents() {
 
     // Tab Switcher
     const tabs = document.querySelectorAll<HTMLElement>(".plaza-tab");
+    const myTasksControls = document.getElementById("my-tasks-controls");
+    const paginationControls = document.getElementById("pagination-controls");
+    const exploreFilters = document.querySelector(".filters-sidebar"); // Assuming sidebar is for filters
+
+    const toggleControls = (tab: 'explore' | 'my-tasks') => {
+        if (myTasksControls) myTasksControls.style.display = tab === 'my-tasks' ? 'flex' : 'none';
+        if (paginationControls) paginationControls.style.display = tab === 'my-tasks' ? 'flex' : 'none';
+
+        // Disable explore filters when in my-tasks
+        if (exploreFilters) {
+            exploreFilters.querySelectorAll("input, select").forEach((el: any) => {
+                el.disabled = tab === 'my-tasks';
+            });
+            if (tab === 'my-tasks') exploreFilters.classList.add("disabled");
+            else exploreFilters.classList.remove("disabled");
+        }
+    };
+
+    // Initial state
+    toggleControls(executorState.currentTab);
+
     tabs.forEach(tab => {
         tab.addEventListener("click", async () => {
             const nextTab = tab.dataset.tab as 'explore' | 'my-tasks';
@@ -384,15 +424,69 @@ export function initPlazaFiltersEvents() {
 
             executorState.currentTab = nextTab;
             tabs.forEach(t => t.classList.toggle("active", t === tab));
+            toggleControls(nextTab);
 
             // Load My Tasks data from backend when switching to that tab
             if (nextTab === 'my-tasks') {
-                await loadMyTasks(0);
+                showLoading("Loading tasks...");
+                try {
+                    await loadMyTasks(0);
+                    renderEarnAds();
+                } finally {
+                    hideLoading();
+                }
+            } else {
+                renderEarnAds();
             }
-
-            renderEarnAds();
         });
     });
+
+    // My Tasks Controls
+    const statusFilter = document.getElementById("task-status-filter") as HTMLSelectElement;
+    if (statusFilter) {
+        statusFilter.addEventListener("change", async () => {
+            executorState.myTasksStatus = statusFilter.value as any;
+            executorState.myTasksPage = 0; // Reset to page 0
+            showLoading("Filtering...");
+            try {
+                await loadMyTasks(0);
+                renderEarnAds();
+            } finally {
+                hideLoading();
+            }
+        });
+    }
+
+    const prevBtn = document.getElementById("btn-prev-page");
+    const nextBtn = document.getElementById("btn-next-page");
+
+    if (prevBtn) {
+        prevBtn.addEventListener("click", async () => {
+            if (executorState.myTasksPage > 0) {
+                showLoading("Loading...");
+                try {
+                    await loadMyTasks(executorState.myTasksPage - 1);
+                    renderEarnAds();
+                } finally {
+                    hideLoading();
+                }
+            }
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener("click", async () => {
+            if ((executorState.myTasksPage + 1) * MY_TASKS_PAGE_SIZE < executorState.myTasksTotal) {
+                showLoading("Loading...");
+                try {
+                    await loadMyTasks(executorState.myTasksPage + 1);
+                    renderEarnAds();
+                } finally {
+                    hideLoading();
+                }
+            }
+        });
+    }
 
     document.querySelector<HTMLButtonElement>("#btn-clear-search")?.addEventListener("click", () => {
         if (searchInput) searchInput.value = "";

@@ -59,6 +59,7 @@ export const executorState = {
     myTasksTotal: 0,
     myTasksPage: 0,
     myTasksLoading: false,
+    myTasksStatus: 'all' as 'all' | 'pending' | 'confirmed' | 'rejected',
     currentTab: 'explore' as 'explore' | 'my-tasks',
     withdrawableUSDC: 0,
     totalEarnedUSDC: 0,
