@@ -90,29 +90,39 @@ export interface AdEscrowLedgerRow {
 export type ClaimStatus =
 	'CLAIMED'           // 用户已点击领取，初始状态
 	| 'PENDING_CONFIRM'   // 等待验证（如 Oracle 验证关注/转发）
-	| 'CONFIRMED'         // 验证通过，等待打款
-	| 'REJECTED'          // 验证失败或被拒绝
-	| 'SETTLED_TIMEOUT';  // 超时未处理，自动结算或关闭
+	| 'CONFIRMED'         // 验证通过，已结算
+	| 'REJECTED';         // 验证失败或被拒绝
 
 export interface AdRewardClaimRecord {
 	claim_id: string;
 	ad_id: string;
 	b_x_id: string;
+	b_wallet: string;
 	status: ClaimStatus;
-	signature: string;
+	unit_price_atomic: string;
 	created_at: string;
 	updated_at: string;
-	ad_title?: string;
-	unit_price_atomic?: string;
+	verified_at?: string | null;
+	verification_notes?: string | null;
 }
 
 export interface CreateDetailedClaimParams {
 	claimId: string;
 	adId: string;
 	bXId: string;
-	signature: string;
-	proof?: string;
-	proof_type?: string;
+	bWallet: string;
+	unitPriceAtomic: string;
+}
+
+export interface ClaimEvidenceParams {
+	evidenceId: string;
+	claimId: string;
+	adId: string;
+	bXId: string;
+	category: string;
+	proofType: string;
+	proofData: string; // JSON string
+	observedData?: string; // JSON string
 }
 
 // ========= 广告广场 feed 元信息 =========
@@ -505,13 +515,13 @@ export async function incrementAdClaimedQuota(db: D1Database, adId: string): Pro
 // ========= 新的领取记录操作 (ad_reward_claims) =========
 
 /**
- * 创建新的详细领取记录 (带签名)
+ * 创建新的详细领取记录 (仅占位，状态默认为 CLAIMED)
  */
 export async function createDetailedClaim(db: D1Database, params: CreateDetailedClaimParams): Promise<boolean> {
 	const sql = `
 		INSERT INTO ad_reward_claims (
-			claim_id, ad_id, b_x_id, status, signature, proof, proof_type
-		) VALUES (?, ?, ?, 'CLAIMED', ?, ?, ?)
+			claim_id, ad_id, b_x_id, b_wallet, status, unit_price_atomic
+		) VALUES (?, ?, ?, ?, 'CLAIMED', ?)
 	`;
 
 	try {
@@ -519,9 +529,8 @@ export async function createDetailedClaim(db: D1Database, params: CreateDetailed
 			params.claimId,
 			params.adId,
 			params.bXId,
-			params.signature,
-			params.proof ?? null,
-			params.proof_type ?? null
+			params.bWallet,
+			params.unitPriceAtomic
 		).run();
 
 		return result.success;
@@ -529,6 +538,43 @@ export async function createDetailedClaim(db: D1Database, params: CreateDetailed
 		console.error("Failed to create detailed claim:", e);
 		return false;
 	}
+}
+
+/**
+ * 插入证据记录
+ */
+export async function insertClaimEvidence(db: D1Database, params: ClaimEvidenceParams): Promise<boolean> {
+	const sql = `
+		INSERT INTO ad_claim_evidence (
+			evidence_id, claim_id, ad_id, b_x_id, category, proof_type, proof_data, observed_data
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`;
+
+	try {
+		const result = await db.prepare(sql).bind(
+			params.evidenceId,
+			params.claimId,
+			params.adId,
+			params.bXId,
+			params.category,
+			params.proofType,
+			params.proofData,
+			params.observedData ?? null
+		).run();
+		return result.success;
+	} catch (e) {
+		console.error("Failed to insert claim evidence:", e);
+		return false;
+	}
+}
+
+/**
+ * 获取单个 Claim
+ */
+export async function getClaimById(db: D1Database, claimId: string): Promise<AdRewardClaimRecord | null> {
+	return await db.prepare(
+		"SELECT * FROM ad_reward_claims WHERE claim_id = ?"
+	).bind(claimId).first<AdRewardClaimRecord>();
 }
 
 /**
@@ -1027,4 +1073,188 @@ export async function listAdEscrowLedger(
 		.all<AdEscrowLedgerRow>();
 
 	return result.results ?? [];
+}
+
+/**
+ * 结算广告奖励 (原子操作)
+ * 1. 扣减广告主冻结余额 (WHERE frozen >= reward)
+ * 2. 增加执行者可用余额 (UPSERT)
+ * 3. 更新 Claim 状态为 CONFIRMED
+ */
+export async function settleAdReward(
+	db: D1Database,
+	params: {
+		claimId: string;
+		// adId: string; // db operation doesn't need adId directly, only aXId
+		aXId: string; // 广告主
+		bXId: string; // 执行者
+		rewardAtomic: string;
+	}
+): Promise<boolean> {
+	const { claimId, aXId, bXId, rewardAtomic } = params;
+
+	// 1. 扣减广告主冻结余额 (注意：这里用的是 frozen_atomic，因为发布广告时已预留)
+	const deductFrozenSql = `
+		UPDATE ad_escrow_accounts
+		SET frozen_atomic = CAST(frozen_atomic AS INTEGER) - ?,
+		    updated_at = datetime('now')
+		WHERE a_x_id = ? AND asset_symbol = 'USDC'
+		  AND CAST(frozen_atomic AS INTEGER) >= ?
+	`;
+
+	// 2. 增加执行者可用余额 (如果账户不存在则创建)
+	const creditPerformerSql = `
+		INSERT INTO ad_escrow_accounts (a_x_id, asset_symbol, available_atomic, frozen_atomic, created_at, updated_at)
+		VALUES (?, 'USDC', ?, 0, datetime('now'), datetime('now'))
+		ON CONFLICT(a_x_id, asset_symbol) DO UPDATE SET
+			available_atomic = CAST(available_atomic AS INTEGER) + ?,
+			updated_at = datetime('now')
+	`;
+
+	// 3. 更新 Claim 状态
+	const updateClaimSql = `
+		UPDATE ad_reward_claims
+		SET status = 'CONFIRMED', verified_at = datetime('now'), updated_at = datetime('now')
+		WHERE claim_id = ? AND status IN ('CLAIMED', 'PENDING_CONFIRM')
+	`;
+
+	try {
+		const batch = await db.batch([
+			db.prepare(deductFrozenSql).bind(rewardAtomic, aXId, rewardAtomic),
+			db.prepare(creditPerformerSql).bind(bXId, rewardAtomic, rewardAtomic),
+			db.prepare(updateClaimSql).bind(claimId)
+		]);
+
+		if (!batch || batch.length < 3) return false;
+
+		// 检查扣费是否有影响行数（如果余额不足，changes=0）
+		// batch[0] 是扣费结果
+		if ((batch[0].meta.changes ?? 0) === 0) {
+			console.error(`Settle failed: Insufficient frozen balance for advertiser ${aXId}`);
+			return false;
+		}
+
+		return true;
+	} catch (e) {
+		console.error("Failed to settle ad reward:", e);
+		return false;
+	}
+}
+
+/**
+ * 获取待结算的 Claim 列表 (超过指定小时数且状态为 PENDING_CONFIRM)
+ */
+export async function getPendingSettlementClaims(
+	db: D1Database,
+	delayHours: number = 24,
+	limit: number = 50
+): Promise<{
+	claim_id: string;
+	ad_id: string;
+	a_x_id: string;
+	b_x_id: string;
+	unit_price_atomic: string;
+}[]> {
+	const sql = `
+		SELECT c.claim_id, c.ad_id, a.a_x_id, c.b_x_id, c.unit_price_atomic
+		FROM ad_reward_claims c
+		JOIN ad_campaigns a ON c.ad_id = a.ad_id
+		WHERE c.status = 'PENDING_CONFIRM'
+		  AND c.updated_at <= datetime('now', '-' || ? || ' hours')
+		LIMIT ?
+	`;
+
+	const { results } = await db.prepare(sql).bind(delayHours, limit).all<{
+		claim_id: string;
+		ad_id: string;
+		a_x_id: string;
+		b_x_id: string;
+		unit_price_atomic: string;
+	}>();
+
+	return results ?? [];
+}
+
+/**
+ * 获取可以进行预算退回的已结束广告列表
+ * 条件：状态为 EXPIRED/COMPLETED 且 budget_settlement_status 为 NONE
+ */
+export async function getAdsForRefund(
+	db: D1Database,
+	limit: number = 20
+): Promise<AdRow[]> {
+	const sql = `
+		SELECT * FROM ad_campaigns
+		WHERE status IN ('EXPIRED', 'COMPLETED')
+		  AND budget_settlement_status = 'NONE'
+		LIMIT ?
+	`;
+	const { results } = await db.prepare(sql).bind(limit).all<AdRow>();
+	return results ?? [];
+}
+
+/**
+ * 检查广告是否还有待处理的 Claim
+ */
+export async function hasPendingClaimsForAd(
+	db: D1Database,
+	adId: string
+): Promise<boolean> {
+	const sql = `
+		SELECT COUNT(*) as total FROM ad_reward_claims
+		WHERE ad_id = ? AND status IN ('CLAIMED', 'PENDING_CONFIRM')
+	`;
+	const res = await db.prepare(sql).bind(adId).first<{ total: number }>();
+	return (res?.total ?? 0) > 0;
+}
+
+/**
+ * 执行预算退回 (将 frozen 退回 available)
+ */
+export async function refundAdBudget(
+	db: D1Database,
+	adId: string,
+	aXId: string
+): Promise<boolean> {
+	const getAdSql = "SELECT unit_price_atomic, quota_total, quota_used FROM ad_campaigns WHERE ad_id = ?";
+	const ad = await db.prepare(getAdSql).bind(adId).first<AdRow>();
+	if (!ad) return false;
+
+	const unitPrice = BigInt(ad.unit_price_atomic);
+	const remainingQuota = BigInt(ad.quota_total) - BigInt(ad.quota_used);
+	const refundAmount = remainingQuota * unitPrice;
+
+	if (refundAmount <= 0n) {
+		await db.prepare("UPDATE ad_campaigns SET budget_settlement_status = 'SETTLED', updated_at = datetime('now') WHERE ad_id = ?").bind(adId).run();
+		return true;
+	}
+
+	const refundAmountStr = refundAmount.toString();
+
+	const refundSql = `
+		UPDATE ad_escrow_accounts
+		SET available_atomic = CAST(available_atomic AS INTEGER) + ?,
+		    frozen_atomic = CAST(frozen_atomic AS INTEGER) - ?,
+		    updated_at = datetime('now')
+		WHERE a_x_id = ? AND asset_symbol = 'USDC'
+		  AND CAST(frozen_atomic AS INTEGER) >= ?
+	`;
+
+	const updateAdStatusSql = `
+		UPDATE ad_campaigns
+		SET budget_settlement_status = 'SETTLED', updated_at = datetime('now')
+		WHERE ad_id = ?
+	`;
+
+	try {
+		const batch = await db.batch([
+			db.prepare(refundSql).bind(refundAmountStr, refundAmountStr, aXId, refundAmountStr),
+			db.prepare(updateAdStatusSql).bind(adId)
+		]);
+
+		return (batch && batch[0].meta.changes > 0);
+	} catch (e) {
+		console.error(`Failed to refund budget for ad ${adId}:`, e);
+		return false;
+	}
 }

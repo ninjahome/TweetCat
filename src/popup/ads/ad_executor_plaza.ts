@@ -138,9 +138,17 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
         const iconEl = $2<HTMLElement>(card, ".ad-card-icon");
         iconEl.textContent = categoryIcon[task.ad.category as AdCategory] || "📢";
 
+        const statusMap: Record<string, string> = {
+            "CLAIMED": "Claimed - To Do",
+            "PENDING_CONFIRM": "Pending Verification",
+            "CONFIRMED": "Settled & Paid",
+            "REJECTED": "Rejected"
+        };
+        const friendlyStatus = statusMap[task.status] || task.status;
+
         $2<HTMLElement>(card, ".ad-card-title").textContent = task.ad.title;
         $2<HTMLElement>(card, ".ad-card-brand").textContent = task.ad.brand;
-        $2<HTMLElement>(card, ".ad-card-description").textContent = `Status: ${task.status}`;
+        $2<HTMLElement>(card, ".ad-card-description").textContent = `Status: ${friendlyStatus}`;
 
         $2<HTMLElement>(card, ".meta-time").textContent = `⏱️ ${task.ad.durationMinutes} min`;
         $2<HTMLElement>(card, ".meta-quota").textContent = `📅 ${new Date(task.created_at).toLocaleDateString()}`;
@@ -156,14 +164,15 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
         statusTag.className = "tag";
         if (task.status === "CONFIRMED") statusTag.classList.add("tag-easy");
         else if (task.status === "REJECTED") statusTag.classList.add("tag-high");
+        else if (task.status === "PENDING_CONFIRM") statusTag.classList.add("tag-new");
         else statusTag.classList.add("tag-new");
-        statusTag.textContent = task.status;
+        statusTag.textContent = friendlyStatus;
         tagsContainer.appendChild(statusTag);
 
         const openDetail = () => window.open(task.ad.detailUrl, "_blank");
 
         const btn = $2<HTMLButtonElement>(card, ".btn-start-task");
-        btn.textContent = task.status;
+        btn.textContent = friendlyStatus;
         btn.classList.add("claimed");
         btn.disabled = true;
 

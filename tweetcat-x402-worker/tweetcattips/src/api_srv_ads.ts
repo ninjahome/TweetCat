@@ -22,7 +22,8 @@ import {
 	API_PATH_ADS_TOGGLE_STATUS,
 	API_PATH_ADS_TOP_UP_BUDGET,
 	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
-	API_PATH_ADS_MY_TASKS
+	API_PATH_ADS_MY_TASKS,
+	API_PATH_ADS_SUBMIT_PROOF
 } from "./common";
 import {
 	AdCategory,
@@ -65,6 +66,11 @@ import {
 	bumpAdsFeedVersion,
 	getPerformerTasksWithAdInfo,
 	getPerformerTasksCount,
+	getClaimById,
+	insertClaimEvidence,
+	updateClaimStatus,
+	settleAdReward,
+	type ClaimEvidenceParams
 } from "./database_ad";
 import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
 import { getKolBindingByXId } from "./database_402";
@@ -431,91 +437,102 @@ export async function apiAdsClaim(c: ExtCtx) {
 		const body = await c.req.json().catch(() => ({}));
 		const adId = body?.ad_id;
 		const bXId = body?.b_x_id;
-		const signature =
-			body?.signature ||
-			c.req.header("X-Device-Signature") ||
-			c.req.header("x-device-signature") ||
-			c.req.header("X-DEVICE-SIGNATURE");
+		const bWallet = body?.b_wallet;
+
+		// Proof data (optional, if provided we try to settle immediately)
+		const proofData = body?.proof_data;
+		const proofType = body?.proof_type;
+		const category = body?.category;
 
 		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
 		if (!requireStringField(bXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
-		if (!requireStringField(signature)) return jsonError(c, 400, "INVALID_REQUEST", "Missing signature");
+		if (!requireStringField(bWallet)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_wallet");
 
 		// Get ad info
 		const adRow = await getAdById(c.env.DB, adId);
 		if (!adRow) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
 
-		// 严格校验状态 (这里的 adRow.status 已经是 getAdById 逻辑计算后的结果)
-		if (adRow.status === "COMPLETED") {
-			return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full");
-		}
-		if (adRow.status === "EXPIRED") {
-			return jsonError(c, 400, "AD_EXPIRED", "Ad campaign has expired");
-		}
-		if (adRow.status === "PAUSED_MANUAL" || adRow.status === "PAUSED_NO_BUDGET") {
-			return jsonError(c, 400, "AD_PAUSED", "Ad is currently paused");
-		}
+		// Check if already claimed
+		let claim = await getDetailedClaim(c.env.DB, adId, bXId);
+		let claimId = claim?.claim_id;
 
-		// 双重检查逻辑（以防万一）
-		if (adRow.status !== "ACTIVE") {
-			return jsonError(c, 400, "AD_NOT_ACTIVE", "Ad is not active");
-		}
+		// If NOT claimed yet, establish the claim (Reserve Quota)
+		if (!claim) {
+			// Status Checks for New Claims
+			if (adRow.status === "COMPLETED") return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full");
+			if (adRow.status === "EXPIRED") return jsonError(c, 400, "AD_EXPIRED", "Ad campaign has expired");
+			if (adRow.status !== "ACTIVE") return jsonError(c, 400, "AD_NOT_ACTIVE", "Ad is not active");
 
-		// Check if already claimed (using new table)
-		const existingClaim = await getDetailedClaim(c.env.DB, adId, bXId);
-		if (existingClaim) return c.json({ ...existingClaim, already_claimed: true });
-
-		// Increment claimed quota (reserve one task slot)
-		const quotaIncremented = await incrementAdClaimedQuota(c.env.DB, adId);
-		if (!quotaIncremented) {
-			return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full or inactive");
-		}
-
-		// Create claim record
-		const claimId = crypto.randomUUID();
-
-		const proof = body?.proof;
-		const proofType = body?.proof_type;
-
-		const claimParams: CreateDetailedClaimParams = {
-			claimId,
-			adId: adRow.ad_id,
-			bXId,
-			signature,
-			proof,
-			proof_type: proofType
-		};
-
-		const claimCreated = await createDetailedClaim(c.env.DB, claimParams);
-		if (!claimCreated) {
-			// Best-effort rollback: if claim insert failed, try to undo quota_claimed + 1.
-			// (No strict transaction here; this reduces damage in non-duplicate failure scenarios.)
-			try {
-				await c.env.DB.prepare(
-					`UPDATE ad_campaigns
-					 SET quota_claimed = MAX(COALESCE(quota_claimed, 0) - 1, 0),
-					     updated_at = datetime('now')
-					 WHERE ad_id = ?`
-				).bind(adId).run();
-			} catch {
-				// ignore rollback errors
+			// Increment claimed quota
+			const quotaIncremented = await incrementAdClaimedQuota(c.env.DB, adId);
+			if (!quotaIncremented) {
+				return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full or inactive");
 			}
-			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to create claim");
+
+			// Create db record
+			claimId = crypto.randomUUID();
+			const claimParams: CreateDetailedClaimParams = {
+				claimId,
+				adId: adRow.ad_id,
+				bXId,
+				bWallet,
+				unitPriceAtomic: adRow.unit_price_atomic
+			};
+
+			const claimCreated = await createDetailedClaim(c.env.DB, claimParams);
+			if (!claimCreated) {
+				// Rollback quota (best effort)
+				try {
+					await c.env.DB.prepare(
+						`UPDATE ad_campaigns SET quota_claimed = MAX(COALESCE(quota_claimed, 0) - 1, 0), updated_at = datetime('now') WHERE ad_id = ?`
+					).bind(adId).run();
+				} catch (rbErr) { console.error("Rollback failed:", rbErr); }
+				return jsonError(c, 500, "DB_ERROR", "Failed to create claim record");
+			}
+
+			// Use a temporary object for flow continuity
+			claim = { ...claimParams, status: 'CLAIMED', created_at: '', updated_at: '' } as any;
 		}
 
-		// 广场可见集合变化：bump feed version（领取占位可能导致广告下线）
-		await bumpAdsFeedVersion(c.env.DB);
+		// At this point, we have a valid claim (either existing or new).
+		// If proof is provided, we try to Submit Evidence & Settle.
+		let finalStatus = claim!.status;
+
+		if (proofData && (finalStatus === 'CLAIMED' || finalStatus === 'REJECTED')) {
+			const evidenceId = crypto.randomUUID();
+			const evidenceParams: ClaimEvidenceParams = {
+				evidenceId,
+				claimId: claimId!,
+				adId: adRow.ad_id,
+				bXId,
+				category: category || 'unknown',
+				proofType: proofType || 'unknown',
+				proofData: typeof proofData === 'object' ? JSON.stringify(proofData) : String(proofData)
+			};
+
+			const evidenceInserted = await insertClaimEvidence(c.env.DB, evidenceParams);
+			if (evidenceInserted) {
+				// 延迟结算策略：只保存证据，状态改为 PENDING_CONFIRM
+				// 真正的结算 (CONFIRMED + 转账) 由 Cron job 在 24 小时后执行
+				await updateClaimStatus(c.env.DB, claimId!, 'PENDING_CONFIRM');
+				finalStatus = 'PENDING_CONFIRM';
+
+				// 广场可见集合变化：bump feed version
+				await bumpAdsFeedVersion(c.env.DB);
+			}
+		}
 
 		return c.json({
+			success: true,
 			claim_id: claimId,
-			ad_id: adRow.ad_id,
-			b_x_id: bXId,
-			status: "CLAIMED",
-			signature: signature,
-			created_at: toSqliteDate(new Date())
+			status: finalStatus,
+			ad_title: adRow.title,
+			unit_price_atomic: adRow.unit_price_atomic,
+			settled: false // 延迟结算
 		});
+
 	} catch (err: any) {
-		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+		return jsonError(c, 500, "INTERNAL_ERROR", "Internal Server Error");
 	}
 }
 

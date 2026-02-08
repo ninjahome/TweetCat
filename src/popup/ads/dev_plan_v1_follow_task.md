@@ -264,64 +264,34 @@ Follow v1 必须坚持三件事：
 
 ## 7. 下一步工作规划（按里程碑拆解，避免歧义）
 
-### Milestone A（优先）：把 follow v1 的“证据->确认->结算”打通
+### Milestone A（已完成）：把 follow v1 的“证据->确认->结算”打通
 
 目标：从 “claim 占位” 推进到 “confirmed 后真实消耗 + 可对账”。
 
-#### A1) 新增证据表（D1）
+#### A1) 新增证据表（D1） ✅
 
-新增表建议：`ad_claim_evidence`（命名可调整，但要满足幂等与可审计）
+新增表：`ad_claim_evidence`，用于存储执行者提交的证明材料（Profile Spotlight JSON 等）。
 
-最小字段（v1）：
-
-- 业务标识：`evidence_id`（uuid）、`claim_id`、`ad_id`、`b_x_id`、`a_x_id`
-- 证据类型：`category`（follow）、`proof_type`（graphql_user_by_screen_name）
-- canonical 摘要：`htu`、`request_body_sha256`（可选）、`response_body_sha256`
-- observed_fields（JSON）：至少包含 `target_screen_name`、`target_rest_id`、`following=true`、`observed_at`
-- 防重放：`iat_sec`、`jti`
-- 设备绑定：`device_jkt`、`device_signature`
-- created_at
-
-幂等约束：
-- `UNIQUE(claim_id)`（一 claim 最多一条有效 evidence）
-- 或 `UNIQUE(device_jkt, jti)`（配合 replay guard）
-
-验收标准：
-- 同一 claim 多次 submit 只会有一次成功（其余返回已有 evidence 或拒绝）
-
-#### A2) 新增 API：`POST /ads/executor/submit_proof`
+#### A2) 原子化 API：`POST /ads/executor/claim` ✅
 
 输入：
-- claim_id + ad_id + observed_fields + hashes + iat/jti + device_signature 等
+- `ad_id` + `b_x_id` + `b_wallet`
+- 可选证据：`proof_data` + `proof_type` + `category`
 
-服务端逻辑（v1）：
-- 验签 + iat 时间窗 + jti 去重
-- evidence 入库
-- claim 状态：`CLAIMED -> PENDING_CONFIRM`
+逻辑：
+- 如果仅有基本信息：执行 **Claim**（占位/预约配额）。
+- 如果携带证据：执行 **Submit Proof**（存证）并设置状态为 `PENDING_CONFIRM`。
 
-验收标准：
-- evidence 成功写入 D1；claim 状态可查询并变为 `PENDING_CONFIRM`
+#### A3) 验证与延迟结算（Cron Job） ✅
 
-#### A3) 服务器验证与确认（v1 先做弱验证）
-
-v1 策略建议（可落地且可测）：
-- 弱验证：只验证 evidence 的签名/幂等/claim 归属，先进入 `CONFIRMED`（或进入队列异步确认）
-- 强验证/抽查：作为后续增强，不阻塞 v1 闭环
+v1 策略：
+- **延迟结算**：为了安全，提交证据后进入 24 小时冷却期（测试环境 1 小时）。
+- **Cron 自动处理**：每 5 分钟扫描一次满足条件的 PENDING 记录。
+- **原子结算**：`frozen_atomic` 扣减 -> `available_atomic` 增加 -> `status=CONFIRMED`。
 
 验收标准：
-- claim 能推进到 `CONFIRMED`（即使是“弱确认”）
-
-#### A4) CONFIRMED 后结算（真实消耗 + 记账）
-
-必须原子化（同一事务/幂等）：
-- `frozen_atomic -= unit_price_atomic`
-- 记录 spend ledger（广告主报表口径）
-- `quota_used += 1`（或 `settled_count`，看你最终口径）
-- 执行者入账/打款（v1 可先写“平台内余额”占位，链上打款后续）
-- 可选 callback：对广告主 `callback_url` POST（带 `custom_data`）
-
-验收标准：
-- 广告主侧 `Settled/Spent` 有真实数据；且与冻结扣减一致可对账
+- 执行者完成关注后，状态变为 `Pending Verification`。
+- 冷却期过后，余额自动增加，状态变为 `Settled & Paid`。
 
 ### Milestone B：ended + refund（你关心的到期分叉）
 
@@ -437,7 +407,7 @@ Last updated: 2026-02-06
 
 ### 10.2 Phase 1：后端新增 `/ads/executor/my_tasks` API
 
-**状态**：📋 待实现
+**状态**：✅ 已完成
 
 **目标**：为 `My Tasks` 页签提供专属、轻量、可分页的数据源。
 
@@ -514,7 +484,7 @@ Last updated: 2026-02-06
 
 ### 10.3 Phase 2：分页与筛选
 
-**状态**：📋 待实现（Phase 1 完成后）
+**状态**：✅ 已完成
 
 **目标**：为大规模数据提供分页控件和状态筛选。
 
@@ -562,9 +532,28 @@ Last updated: 2026-02-06
 | 阶段 | 预估工时 | 依赖 |
 |-----|---------|-----|
 | Phase 0 | ✅ 已完成 | - |
-| Phase 1 | 4h（后端 2h + 前端 2h） | Phase 0 |
-| Phase 2 | 3h（前端 UI + 联调） | Phase 1 |
+| Phase 1 | ✅ 已完成 | Phase 0 |
+| Phase 2 | ✅ 已完成 | Phase 1 |
 | Phase 3 | 未定 | Phase 2 + 产品需求确认 |
+
+---
+
+随着 **Milestone A（延迟结算闭环）** 的全部完成，整个广告流程从投放、展示、领取到自动结算已经打通。
+
+接下来，我们将进入 **Milestone B（已完成）**，解决“到期退款”与“预算管理”的问题：
+
+**Milestone B (Ended + Refund) ✅**
+
+1.  **B1) 自动结算/到期任务**：✅
+    *   定期扫描过期广告，将状态标记为 `EXPIRED`。
+2.  **B2) 预算退回 (Refund)**：✅
+    *   对于已结束且不再有 Pending 任务的广告，将剩余 `frozen_atomic` 退回给广告主的 `available_atomic`。
+3.  **B3) 状态细化**：✅
+    *   引入 `budget_settlement_status`，区分“待退款 / 已退款”。
+
+接下来，我们将进入 **Milestone C**，完善广告主的账单展示。
+
+请参考 **Section 7** 获取详细的技术实现方案。
 
 ---
 

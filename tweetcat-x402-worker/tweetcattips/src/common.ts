@@ -30,6 +30,7 @@ export const API_PATH_ADS_VERSION = "/ads/executor/version";
 export const API_PATH_ADS_CLAIM = "/ads/executor/claim";
 export const API_PATH_ADS_MY_CLAIMS = "/ads/executor/my_claims";
 export const API_PATH_ADS_MY_TASKS = "/ads/executor/my_tasks";
+export const API_PATH_ADS_SUBMIT_PROOF = "/ads/executor/submit_proof";
 export const API_PATH_ADS_PUBLISHER_RECHARGE = "/ads/publisher/recharge";
 export const API_PATH_ADS_PUBLISHER_WITHDRAW = "/ads/publisher/withdraw";
 export const API_PATH_ADS_PUBLISHER_LEDGER = "/ads/publisher/ledger";
@@ -56,6 +57,7 @@ export interface Env {
 	CDP_TREASURY_ACCOUNT_POLICY_ID?: string;
 	TREASURY_ADDRESS: string;
 	TREASURY_PRIVATE_KEY: string;
+	SETTLEMENT_DELAY_HOURS: number;
 }
 
 export type ExtendedEnv = {

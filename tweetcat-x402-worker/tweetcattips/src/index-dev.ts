@@ -1,12 +1,12 @@
-import {HTTPFacilitatorClient, x402ResourceServer} from "@x402/core/server";
-import {ExactEvmScheme} from "@x402/evm/exact/server";
+import { HTTPFacilitatorClient, x402ResourceServer } from "@x402/core/server";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
 
 import {
 	type Env,
 	type NetConfig, app,
 } from "./common";
-import {registerSrv} from "./api_srv";
-import {deleteExpiredReplayGuards} from "./database_replay_guard";
+import { registerSrv } from "./api_srv";
+import { deleteExpiredReplayGuards } from "./database_replay_guard";
 
 const TESTNET_CFG: NetConfig = {
 	NETWORK: "eip155:84532",
@@ -35,14 +35,23 @@ app.use("*", async (c, next) => {
 	await next();
 });
 
-app.get("/health", (c) => c.json({ok: true, env: "testnet"}));
+app.get("/health", (c) => c.json({ ok: true, env: "testnet" }));
 
 registerSrv(app)
+
+import { cronSettleAds } from "./cron_ads_settle";
+import { cronExpireAds } from "./cron_ads_expire";
+import { cronRefundAds } from "./cron_ads_refund";
 
 export default {
 	fetch: app.fetch,
 	async scheduled(_event: any, env: Env, _ctx: any) {
 		const nowSec = Math.floor(Date.now() / 1000);
-		await deleteExpiredReplayGuards(env.DB, nowSec);
+		await Promise.all([
+			deleteExpiredReplayGuards(env.DB, nowSec),
+			cronSettleAds(env),
+			cronExpireAds(env),
+			cronRefundAds(env)
+		]);
 	},
 };

@@ -1,6 +1,6 @@
 import { fetchProfileSpotlights, setExternalCsrfToken } from "../x_api/twitter_api";
 import { x402WorkerFetch } from "../wallet/cdp_wallet";
-import { API_PATH_ADS_CLAIM } from "../common/api_paths";
+import { API_PATH_ADS_CLAIM, API_PATH_ADS_SUBMIT_PROOF } from "../common/api_paths";
 import browser from "webextension-polyfill";
 
 /**
@@ -66,18 +66,20 @@ export async function verifyFollowAndClaim(params: {
         }
         console.log(`[AdsVerifier] Step 4: Identity validated. userId: ${userId}, xId: ${xId}, wallet: ${walletAddress}`);
 
-        // 5. 提交申领
-        console.log(`[AdsVerifier] Step 5: Submitting claim to backend via x402WorkerFetch...`);
-        // 注意：x402WorkerFetch 会处理签名逻辑
+        // 5. 提交申领 (原子化一步：占位 + 交卷)
+        console.log(`[AdsVerifier] Step 5: Submitting claim & proof to backend...`);
+
         const resp = await x402WorkerFetch(API_PATH_ADS_CLAIM, {
             ad_id,
             b_x_id: xId,
             b_wallet: walletAddress || "",
-            proof: JSON.stringify(spotlightData),
-            proof_type: "twitter_profile_spotlight"
+            // 携带证据
+            proof_data: JSON.stringify(spotlightData),
+            proof_type: "twitter_profile_spotlight",
+            category: "follow"
         }, userId);
 
-        console.log(`[AdsVerifier] [LOG_END] Claim SUCCESS:`, resp);
+        console.log(`[AdsVerifier] [LOG_END] Claim & Proof SUCCESS:`, resp);
         return resp;
     } catch (err: any) {
         console.error(`[AdsVerifier] [LOG_ERROR] flow interrupted:`, err);
