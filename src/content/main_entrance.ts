@@ -9,7 +9,8 @@ import { maxElmFindTryTimes, MsgType } from "../common/consts";
 import { addCustomStyles, observeSimple, parseContentHtml, parseTwitterPath } from "../common/utils";
 import { TweetKol } from "../object/tweet_kol";
 import { setupTweetCatMenuAndTimeline } from "./tweetcat_timeline";
-import { showToastMsg } from "./common";
+import { showToastMsg, showDialog } from "./common";
+import { t } from "../common/i18n";
 import {
     processCapturedHomeLatest, processCapturedTweetDetail,
     processCapturedTweets,
@@ -25,6 +26,7 @@ import { initI18n } from "../common/i18n";
 import { performBulkUnfollow, syncFollowingsFromPage, syncOneFollowingsByScreenName } from "../object/following";
 import { addTipBtnForTweet } from "./content_x402";
 import { UserProfile } from "../object/user_info";
+import { saveCurrentUserBlueVStatus } from "../object/blue_v";
 
 document.addEventListener('DOMContentLoaded', onDocumentLoaded);
 
@@ -299,14 +301,17 @@ window.addEventListener('message', (e) => {
                         appendScoreInfoToProfilePage(usrProfile, data.screenName).then();
                         updateFollowingSnapshotFromInject(data.screenName, usrProfile.isFollowing);
 
-                        // If we are in explicit verification mode, show feedback to user
+                        // 每次看到 Profile 都由背景脚本静默保存蓝V状态到 DB
+                        // (通过已经在上面执行的 sendMessage(msg) 实现)
+
+                        // 如果是显式验证模式，展示对话框反馈
                         if (isVerifyMode) {
                             if (usrProfile.isBlueVerified) {
-                                showToastMsg("✅ Verification Success! You are eligible for tasks. Return to the plugin to continue.", 5000);
+                                showDialog(t('tips_title'), "✅ Verification Success! You are eligible for tasks. Return to the plugin to continue.");
                             } else {
-                                showToastMsg("❌ Verification Failed: You are not a Blue Verified user. Tasks cannot be started.", 5000);
+                                showDialog(t('tips_title'), "❌ Verification Failed: You are not a Blue Verified user. Tasks cannot be started.");
                             }
-                            isVerifyMode = false; // Reset to avoid double prompt
+                            isVerifyMode = false; // 重置模式
                         }
                     } catch (e) {
                         console.warn("Failed to parse user profile:", e);
@@ -319,6 +324,12 @@ window.addEventListener('message', (e) => {
                 console.log("ScreenName:", msg.data.screenName);
                 console.log("Full Raw Data:", JSON.stringify(msg.data.data, null, 2));
                 console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+
+                // Forward to Background for Blue V status check
+                try {
+                    browser.runtime.sendMessage(msg).catch(() => { });
+                } catch (e) { /* ignore */ }
+
                 break;
             }
             case MsgType.IJFollowActionCaptured: {

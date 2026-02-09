@@ -1,15 +1,13 @@
 /**
  * 当前登录用户的蓝V状态管理
  * 
- * 数据来源：UserByScreenName GraphQL 响应中的 is_blue_verified 字段
- * 存储位置：browser.storage.local
- * 
- * MVP 阶段：信任前端检查，后端不做强校验
+ * 使用 IndexedDB (__tableUserBlueVStatus) 作为唯一数据源。
+ * 注意：由于 IndexedDB 在 Content Script 和 Extension Origin 之间不共享，
+ * Web 页面（Content Script）必须通过 sendMessage 将数据发送给 Background 进行存储，
+ * 而 Popup 和 Background 则可以直接访问同一个 IndexedDB。
  */
 
-import { localGet, localSet } from "../common/local_storage";
-
-const STORAGE_KEY_CURRENT_USER_BLUE_V = "current_user_blue_v";
+import { __tableUserBlueVStatus, checkAndInitDatabase, databaseGet, databaseUpdateOrAddItem } from "../common/database";
 
 export interface CurrentUserBlueVInfo {
     userId: string;         // X User ID
@@ -19,39 +17,47 @@ export interface CurrentUserBlueVInfo {
 }
 
 /**
- * 保存当前用户的蓝V状态（由 inject 捕获 UserByScreenName 后调用）
+ * 保存用户的蓝V状态
+ * 通常在 Background 中调用以确保存入扩展源的 IndexedDB
  */
 export async function saveCurrentUserBlueVStatus(info: CurrentUserBlueVInfo): Promise<void> {
-    await localSet(STORAGE_KEY_CURRENT_USER_BLUE_V, info);
-    console.log("[BlueV] saved:", info);
+    if (!info.userId) return;
+    await checkAndInitDatabase();
+    await databaseUpdateOrAddItem(__tableUserBlueVStatus, info);
+    console.log(`[BlueV] Saved to DB for ${info.userId}:`, info.isBlueVerified);
 }
 
 /**
- * 获取当前用户的蓝V状态
- * @returns 蓝V信息，如果未缓存则返回 null
+ * 获取指定用户的蓝V状态
+ * 此函数在 Popup 或 Background 中调用时，读取的是同一个 IndexedDB
  */
-export async function getCurrentUserBlueVStatus(): Promise<CurrentUserBlueVInfo | null> {
-    const info = await localGet(STORAGE_KEY_CURRENT_USER_BLUE_V);
-    if (!info) return null;
-    return info as CurrentUserBlueVInfo;
+export async function getCurrentUserBlueVStatus(userId?: string): Promise<CurrentUserBlueVInfo | null> {
+    if (!userId) return null;
+    await checkAndInitDatabase();
+    const info = await databaseGet(__tableUserBlueVStatus, userId);
+    return info as CurrentUserBlueVInfo || null;
 }
 
 /**
  * 检查当前用户是否是蓝V
- * @returns true = 蓝V, false = 非蓝V, null = 状态未知（未缓存）
  */
-export async function isCurrentUserBlueVerified(): Promise<boolean | null> {
-    const info = await getCurrentUserBlueVStatus();
+export async function isCurrentUserBlueVerified(userId: string): Promise<boolean | null> {
+    const info = await getCurrentUserBlueVStatus(userId);
     if (!info) return null;
     return info.isBlueVerified;
 }
 
 /**
- * 从 UserByScreenName GraphQL 响应中提取蓝V状态
+ * 从 GraphQL 响应中提取蓝V状态
  */
 export function parseBlueVFromUserByScreenName(raw: any): { userId: string; screenName: string; isBlueVerified: boolean } | null {
     try {
-        const u = raw?.data?.user?.result || raw?.data?.user_result_by_screen_name?.result;
+        // 兼容不同的 GraphQL 接口返回结构
+        const u = raw?.data?.user?.result ||
+            raw?.data?.user_result_by_screen_name?.result ||
+            raw?.data?.user_by_screen_name?.result ||
+            raw?.data?.create_friendship?.legacy;
+
         if (!u) return null;
 
         const userId = u.rest_id || u.id || "";

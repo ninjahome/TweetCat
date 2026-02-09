@@ -1,6 +1,6 @@
 import { initCDP } from "../common/x402_obj";
 import { getCurrentUser } from "@coinbase/cdp-core";
-import { saveCurrentUserBlueVStatus } from "../object/blue_v";
+import { saveCurrentUserBlueVStatus, parseBlueVFromUserByScreenName } from "../object/blue_v";
 
 /**
  * 处理捕获到的 UserByScreenName 数据
@@ -8,37 +8,28 @@ import { saveCurrentUserBlueVStatus } from "../object/blue_v";
  */
 export async function handleUserByScreenNameCaptured(data: any) {
     try {
-        const profile = data?.profile;
-        if (!profile || typeof profile !== 'object') return;
+        const profileRaw = data?.profile || data?.data;
+        if (!profileRaw) return;
 
-        // profile 已经是 user result 对象 (rest_id, legacy, etc)
-        const userId = profile.rest_id || profile.id;
-        const isBlueVerified = !!profile.is_blue_verified;
-        const screenName = profile.legacy?.screen_name || data.screenName;
-
-        if (!userId) return;
-
-        // 获取当前 CDP 登录用户
-        // 注意：Background SW 中可能无法完整初始化 CDP 如果涉及 DOM 操作，
-        // 但根据 bg_ads_follow.ts 的先例，似乎是可以读取 storage 中的 auth 状态的。
-        await initCDP();
-        const user = await getCurrentUser();
-        const currentXId = user?.authenticationMethods?.x?.sub;
-
-        if (!currentXId) return;
-
-        // 比较 ID
-        if (currentXId === userId) {
-            await saveCurrentUserBlueVStatus({
-                userId,
-                screenName,
-                isBlueVerified,
-                capturedAt: Date.now()
-            });
-            console.log(`[BlueV] Captured & Updated status for current user @${screenName}: ${isBlueVerified}`);
+        const parsed = parseBlueVFromUserByScreenName(profileRaw);
+        if (!parsed) {
+            // console.log("[BlueV] Parse failed for raw data:", JSON.stringify(profileRaw).substring(0, 200));
+            return;
         }
+
+        const { userId, screenName, isBlueVerified } = parsed;
+
+        // 保存状态。saveCurrentUserBlueVStatus 内部会处理 storage.local 和 DB
+        await saveCurrentUserBlueVStatus({
+            userId,
+            screenName,
+            isBlueVerified,
+            capturedAt: Date.now()
+        });
+
+        console.log(`[BlueV] [Background] Updated status for @${screenName}: ${isBlueVerified}`);
     } catch (e) {
-        // 静默失败，不要打扰主流程
-        // console.warn("[BlueV] Background check failed:", e);
+        // 静默失败
+        console.error("[BlueV] Background process error:", e);
     }
 }

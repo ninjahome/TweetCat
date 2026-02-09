@@ -5,7 +5,8 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.6);
-    display: none; /* 默认隐藏 */
+    display: none;
+    /* 默认隐藏 */
     z-index: 9999;
     justify-content: center;
     align-items: center;
@@ -31,6 +32,7 @@
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }
@@ -101,7 +103,7 @@
     box-sizing: border-box;
     outline: none;
     transition: border-color 0.15s ease, background-color 0.15s ease,
-    box-shadow 0.15s ease;
+        box-shadow 0.15s ease;
 }
 
 .modal-actions {
@@ -148,14 +150,16 @@
 
 
 /* 全屏遮罩 */
-#custom-alert {
+#custom-alert,
+#confirm-popup {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    display: none; /* 默认隐藏 */
+    display: none;
+    /* 默认隐藏 */
     z-index: 9999;
 }
 
@@ -191,7 +195,8 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%); /* 偏移自身宽高的一半，实现真正居中 */
+    transform: translate(-50%, -50%);
+    /* 偏移自身宽高的一半，实现真正居中 */
 }
 
 #confirm-popup .button-row {

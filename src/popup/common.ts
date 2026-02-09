@@ -115,24 +115,36 @@ export function showAlert(title: string, message: string) {
 
 export function showConfirm(msg: string): Promise<boolean> {
     return new Promise((resolve) => {
-        const container = document.getElementById("confirm-popup")!;
+        const container = document.getElementById("confirm-popup");
+        if (!container) {
+            console.error("confirm-popup element not found");
+            resolve(false);
+            return;
+        }
+
         container.style.display = 'block';
 
-        (container.querySelector(".confirm-message") as HTMLElement).innerText = msg;
-
+        const msgEl = container.querySelector(".confirm-message") as HTMLElement;
         const cancelBtn = container.querySelector(".btn-cancel") as HTMLElement;
-        cancelBtn.innerText = t("cancel");
-        cancelBtn.onclick = () => {
-            container.style.display = 'none';
-            resolve(false);
-        };
-
         const okBtn = container.querySelector(".btn-ok") as HTMLElement;
-        okBtn.innerText = t("confirm");
-        okBtn.onclick = () => {
-            container.style.display = 'none';
-            resolve(true);
-        };
+
+        if (msgEl) msgEl.innerText = msg;
+
+        if (cancelBtn) {
+            cancelBtn.innerText = t("cancel");
+            cancelBtn.onclick = () => {
+                container.style.display = 'none';
+                resolve(false);
+            };
+        }
+
+        if (okBtn) {
+            okBtn.innerText = t("confirm");
+            okBtn.onclick = () => {
+                container.style.display = 'none';
+                resolve(true);
+            };
+        }
     });
 }
 

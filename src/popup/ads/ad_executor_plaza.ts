@@ -1,4 +1,4 @@
-import { $2, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification, showConfirm, showLoading, hideLoading } from "../common";
+import { $2, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification, showConfirm, showAlert, showLoading, hideLoading } from "../common";
 import { logAdP } from "../../common/debug_flags";
 import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 import { API_PATH_ADS_CLAIM, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS } from "./ad_publisher_common";
@@ -121,19 +121,27 @@ export async function startTask(ad: EarnAd) {
         const { xId, walletAddress } = await getCurrentUserInfo();
 
         // [MVP] 蓝V 前置检查
-        const blueVStatus = await getCurrentUserBlueVStatus();
+        const blueVStatus = await getCurrentUserBlueVStatus(xId);
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        const now = Date.now();
 
-        // 如果本地有状态且非蓝V，则阻止
-        if (blueVStatus && blueVStatus.userId === xId && !blueVStatus.isBlueVerified) {
-            showNotification("Only Blue Verified (Title) users can participate in this campaign.", "error");
-            return;
-        }
+        // 检查状态是否存在且是否在 7 天内 (Fresh)
+        const isFresh = blueVStatus && (now - blueVStatus.capturedAt < SEVEN_DAYS_MS);
 
-        // 如果本地没有状态（可能是第一次安装插件或未访问过 Profile），提示用户先访问 Profile
-        if (!blueVStatus || blueVStatus.userId !== xId) {
-            const confirmed = await showConfirm(
-                "Verification required: We need to check your Blue Verified status by briefly visiting your X profile. Proceed?"
-            );
+        if (isFresh) {
+            // 如果是最近 7 天内验证过的，直接根据结果通过或拦截
+            if (!blueVStatus.isBlueVerified) {
+                showAlert("Verification Failed", "Only Blue Verified users can participate in this campaign. Please ensure your account has the Blue Checkmark.");
+                return;
+            }
+            // 如果是蓝V，则继续执行任务（跳过下面的跳转逻辑）
+        } else {
+            // 状态缺失 或 超过 7 天没有更新 -> 提示跳转到 Profile 更新
+            const msg = !blueVStatus || blueVStatus.userId !== xId
+                ? "Verification Required: To participate in this campaign, we need to verify your Blue Verified status. We can do this by briefly visiting your X profile page. Proceed?"
+                : "Status Expired: Your Blue Verified status hasn't been updated for over a week. Please visit your profile to refresh your status. Proceed?";
+
+            const confirmed = await showConfirm(msg);
 
             if (confirmed) {
                 // 携带参数 tc_verify=1 以便 content script 识别这是一次显式的验证任务

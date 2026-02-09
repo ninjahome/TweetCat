@@ -118,7 +118,8 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             return await handleProfileFollowClaim(request.data || {});
         }
 
-        case MsgType.IJUserByScreenNameCaptured: {
+        case MsgType.IJUserByScreenNameCaptured:
+        case MsgType.IJProfileSpotlightsCaptured: {
             // 后台静默处理蓝V更新
             await handleUserByScreenNameCaptured(request.data);
             return { success: true };

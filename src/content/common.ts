@@ -30,14 +30,17 @@ export function showDialog(title: string, content: string, callback?: DialogCall
     dialogConfirm.addEventListener('click', async () => {
         dialog.style.setProperty('display', 'none', 'important');
         await callback?.()
-    }, {once: true});
+    }, { once: true });
 
 }
 
 
 export function showToastMsg(msg: string, timeout: number = 3) {
     let root = document.getElementById('tweet-toast') as HTMLElement;
+    if (!root) return;
     const msgSpan = root.querySelector(".tweet-toast__msg") as HTMLSpanElement;
+    if (!msgSpan) return;
+
     if (root.style.display === 'flex') {
         msgSpan.innerText = msg;
         return;
@@ -46,10 +49,13 @@ export function showToastMsg(msg: string, timeout: number = 3) {
     root.style.display = 'flex';
     msgSpan.innerText = msg;
 
+    // Support both seconds and milliseconds. If > 100, assume ms.
+    const delay = timeout > 100 ? timeout : timeout * 1000;
+
     setTimeout(() => {
         root.style.display = 'none';
         msgSpan.innerText = '';
-    }, timeout * 1000);
+    }, delay);
 }
 
 export const ADS_FOLLOW_UI_MODE = {
