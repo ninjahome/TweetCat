@@ -9,6 +9,7 @@ import { maxElmFindTryTimes, MsgType } from "../common/consts";
 import { addCustomStyles, observeSimple, parseContentHtml, parseTwitterPath } from "../common/utils";
 import { TweetKol } from "../object/tweet_kol";
 import { setupTweetCatMenuAndTimeline } from "./tweetcat_timeline";
+import { showToastMsg } from "./common";
 import {
     processCapturedHomeLatest, processCapturedTweetDetail,
     processCapturedTweets,
@@ -73,8 +74,18 @@ function installThemeObserverOnce(): void {
 }
 
 
+let isVerifyMode = false;
+
 async function onDocumentLoaded() {
     initI18n();
+
+    // Check for verification mode in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("tc_verify") === "1") {
+        isVerifyMode = true;
+        console.log("[TweetCat] Verification mode active");
+    }
+
     addCustomStyles('css/content.css');
     addCustomStyles('css/tweet_render.css');
     addCustomStyles('css/x402.css');
@@ -287,6 +298,16 @@ window.addEventListener('message', (e) => {
                         const usrProfile = new UserProfile(data.profile);
                         appendScoreInfoToProfilePage(usrProfile, data.screenName).then();
                         updateFollowingSnapshotFromInject(data.screenName, usrProfile.isFollowing);
+
+                        // If we are in explicit verification mode, show feedback to user
+                        if (isVerifyMode) {
+                            if (usrProfile.isBlueVerified) {
+                                showToastMsg("✅ Verification Success! You are eligible for tasks. Return to the plugin to continue.", 5000);
+                            } else {
+                                showToastMsg("❌ Verification Failed: You are not a Blue Verified user. Tasks cannot be started.", 5000);
+                            }
+                            isVerifyMode = false; // Reset to avoid double prompt
+                        }
                     } catch (e) {
                         console.warn("Failed to parse user profile:", e);
                     }

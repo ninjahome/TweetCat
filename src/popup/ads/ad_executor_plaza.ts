@@ -1,4 +1,4 @@
-import { $2, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification, showLoading, hideLoading } from "../common";
+import { $2, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification, showConfirm, showLoading, hideLoading } from "../common";
 import { logAdP } from "../../common/debug_flags";
 import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 import { API_PATH_ADS_CLAIM, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS } from "./ad_publisher_common";
@@ -122,6 +122,7 @@ export async function startTask(ad: EarnAd) {
 
         // [MVP] 蓝V 前置检查
         const blueVStatus = await getCurrentUserBlueVStatus();
+
         // 如果本地有状态且非蓝V，则阻止
         if (blueVStatus && blueVStatus.userId === xId && !blueVStatus.isBlueVerified) {
             showNotification("Only Blue Verified (Title) users can participate in this campaign.", "error");
@@ -130,9 +131,14 @@ export async function startTask(ad: EarnAd) {
 
         // 如果本地没有状态（可能是第一次安装插件或未访问过 Profile），提示用户先访问 Profile
         if (!blueVStatus || blueVStatus.userId !== xId) {
-            showNotification("Verification status unknown. Please visit your X profile page first to refresh status.", "info");
-            // 可选：跳转到 Profile 页
-            // browser.tabs.create({ url: "https://x.com/me" });
+            const confirmed = await showConfirm(
+                "Verification required: We need to check your Blue Verified status by briefly visiting your X profile. Proceed?"
+            );
+
+            if (confirmed) {
+                // 携带参数 tc_verify=1 以便 content script 识别这是一次显式的验证任务
+                window.open(`https://x.com/i/user/${xId}?tc_verify=1`, "_blank");
+            }
             return;
         }
 
