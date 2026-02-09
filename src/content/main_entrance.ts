@@ -272,6 +272,12 @@ window.addEventListener('message', (e) => {
             }
             case MsgType.IJUserByScreenNameCaptured: {
                 const data = msg.data;
+
+                // Forward to Background for Blue V status check
+                try {
+                    browser.runtime.sendMessage(msg).catch(() => { });
+                } catch (e) { /* ignore */ }
+
                 // Check if it's a full profile or just lightweight status
                 if (data.profile && typeof data.profile.isFollowing === 'boolean' && !data.profile.data) {
                     console.log("[Content] Lightweight following update for", data.screenName, data.profile.isFollowing);

@@ -217,24 +217,25 @@ export async function apiAdsCreate(c: ExtCtx) {
 	try {
 		const body = await c.req.json().catch(() => ({}));
 		const aXId = body?.a_x_id;
-		const category = body?.category;
 		const name = body?.name;
-		const title = body?.title;
-		const description = body?.description;
-		const detailUrl = body?.detail_url;
+		const unitPriceAtomic = parsePositiveAtomic(body?.unit_price_atomic);
+		const quotaTotal = parsePositiveInt(body?.quota_total);
+		const endDateStr = body?.end_date;
+
+		// MVP: 只支持 follow 类型，category 固定
+		const category: AdCategory = "follow";
+
+		// 可选字段（前端可传，也可使用默认值）
+		const title = body?.title || name || "Follow Campaign";
+		const description = body?.description || `Follow to earn USDC rewards.`;
+		const detailUrl = body?.detail_url || `https://x.com/${aXId}`; // 默认指向广告主 Profile
 		const imageUrl = body?.image_url || null;
 		const callbackUrl = body?.callback_url || null;
 		const customData = body?.custom_data || null;
-		const unitPriceAtomic = parsePositiveAtomic(body?.unit_price_atomic);
-		const quotaTotal = parsePositiveInt(body?.quota_total);
-		const endDateStr = body?.end_date; // Changed from durationDays
 
+		// 必填字段校验
 		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
-		if (!requireStringField(category)) return jsonError(c, 400, "INVALID_REQUEST", "Missing category");
 		if (!requireStringField(name)) return jsonError(c, 400, "INVALID_REQUEST", "Missing name");
-		if (!requireStringField(title)) return jsonError(c, 400, "INVALID_REQUEST", "Missing title");
-		if (!requireStringField(description)) return jsonError(c, 400, "INVALID_REQUEST", "Missing description");
-		if (!requireStringField(detailUrl)) return jsonError(c, 400, "INVALID_REQUEST", "Missing detail_url");
 		if (!unitPriceAtomic) return jsonError(c, 400, "INVALID_REQUEST", "Invalid unit_price_atomic");
 		if (!quotaTotal) return jsonError(c, 400, "INVALID_REQUEST", "Invalid quota_total");
 		if (!requireStringField(endDateStr)) return jsonError(c, 400, "INVALID_REQUEST", "Missing end_date");
@@ -245,13 +246,7 @@ export async function apiAdsCreate(c: ExtCtx) {
 			return jsonError(c, 400, "INVALID_REQUEST", "End date must be in the future.");
 		}
 
-		// Validate category
-		const validCategories: AdCategory[] = ["follow", "visit", "register", "share"];
-		if (!validCategories.includes(category as AdCategory)) {
-			return jsonError(c, 400, "INVALID_REQUEST", "Invalid category. Must be: follow, visit, register, or share");
-		}
-
-		// Validate custom_data
+		// Validate custom_data (if provided)
 		const customDataError = validateCustomData(customData);
 		if (customDataError) {
 			return jsonError(c, 400, "INVALID_REQUEST", customDataError);
@@ -875,7 +870,7 @@ export async function apiAdsPublisherSpendHistory(c: ExtCtx) {
 			return {
 				id: record.claim_id,
 				time: record.created_at,
-				adName: record.ad_title || `Ad ${record.ad_id.substring(0, 8)}`,
+				adName: `Ad ${record.ad_id.substring(0, 8)}`,
 				event: "Task Completion",
 				amount: amount,
 				fee: 0,

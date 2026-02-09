@@ -552,39 +552,19 @@ function openAdDetailModal(ad: AdRecord) {
         statusEl.className = `detail-value status--${ad.status.toLowerCase().replace(/_/g, '-')}`;
     }
 
-    setText("detail-category", ad.category);
     setText("detail-created", ad.created_at ? new Date(ad.created_at).toLocaleString() : "-");
-    setText("detail-title", ad.title);
-    setText("detail-description", ad.description);
 
     const rewardUSDC = atomicToUsdcNumber(ad.unit_price_atomic);
     setText("detail-reward", formatUSDC(rewardUSDC));
     setText("detail-quota", ad.quota_total.toString());
 
-    // Update to use end_date
+    // End date
     const endDateEl = $Id("detail-end-date");
     if (endDateEl) {
         endDateEl.textContent = ad.end_date ? new Date(ad.end_date).toLocaleString() : "-";
     }
 
-    const linkEl = $Id("detail-url") as HTMLAnchorElement | null;
-    if (linkEl) {
-        linkEl.href = ad.detail_url;
-        linkEl.textContent = ad.detail_url;
-    }
-
-    const imgContainer = $Id("detail-image-container");
-    const imgEl = $Id("detail-image") as HTMLImageElement | null;
-    if (imgContainer && imgEl) {
-        if (ad.image_url) {
-            imgEl.src = ad.image_url;
-            imgContainer.style.display = "block";
-        } else {
-            imgContainer.style.display = "none";
-        }
-    }
-
-    // Populate Editable fields
+    // Populate Editable fields (Developer Settings)
     const callbackInput = $Id("detail-callback-url") as HTMLInputElement | null;
     if (callbackInput) callbackInput.value = ad.callback_url || "";
 

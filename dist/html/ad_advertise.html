@@ -66,28 +66,30 @@
 
                     <div class="ads-table-container">
                         <table class="ads-table">
-	                            <thead>
-	                                <tr>
-	                                    <th>Ad Name</th>
-	                                    <th>Status</th>
-	                                    <th>Reward per Task</th>
-	                                    <th title="Claimed task slots (reservation). Settlement happens after verification.">Claimed</th>
-	                                    <th title="Settled tasks (verified + paid).">Settled</th>
-	                                    <th>Spent</th>
-	                                    <th>Remaining Budget</th>
-	                                    <th>End Date</th>
-	                                    <th>Actions</th>
-	                                </tr>
-	                            </thead>
-	                            <tbody id="my-ads-tbody">
-	                                <tr class="empty-row">
-	                                    <td colspan="9">
-	                                        <div class="empty-state-small">
-	                                            <p>No ads published yet. Click "Publish New Ad" to get started!</p>
-	                                        </div>
-	                                    </td>
-	                                </tr>
-	                            </tbody>
+                            <thead>
+                                <tr>
+                                    <th>Ad Name</th>
+                                    <th>Status</th>
+                                    <th>Reward per Task</th>
+                                    <th
+                                        title="Claimed task slots (reservation). Settlement happens after verification.">
+                                        Claimed</th>
+                                    <th title="Settled tasks (verified + paid).">Settled</th>
+                                    <th>Spent</th>
+                                    <th>Remaining Budget</th>
+                                    <th>End Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="my-ads-tbody">
+                                <tr class="empty-row">
+                                    <td colspan="9">
+                                        <div class="empty-state-small">
+                                            <p>No ads published yet. Click "Publish New Ad" to get started!</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
 
@@ -236,143 +238,85 @@
         </div>
     </div>
 
-    <!-- Publish Ad Wizard Modal -->
+    <!-- Publish Ad Modal (Simplified MVP - Follow Only) -->
     <div id="publish-wizard-modal" class="modal">
         <div class="modal-dialog modal-wizard">
             <div class="modal-header">
-                <h2 class="modal-title">Publish New Ad</h2>
+                <h2 class="modal-title">Publish Follow Campaign</h2>
                 <button id="close-wizard" class="btn-close">✕</button>
             </div>
 
-            <!-- Wizard Steps Indicator -->
-            <div class="wizard-steps">
-                <div class="wizard-step active" data-step="1">
-                    <div class="step-number">1</div>
-                    <div class="step-label">Basic Info</div>
-                </div>
-                <div class="wizard-step" data-step="2">
-                    <div class="step-number">2</div>
-                    <div class="step-label">Creative</div>
-                </div>
-                <div class="wizard-step" data-step="3">
-                    <div class="step-number">3</div>
-                    <div class="step-label">Task & Reward</div>
-                </div>
-                <div class="wizard-step" data-step="4">
-                    <div class="step-number">4</div>
-                    <div class="step-label">Budget</div>
-                </div>
-            </div>
-
             <div class="modal-body">
-                <!-- Step 1: Basic Info -->
-                <div class="wizard-content active" data-step="1">
-                    <h3>Basic Information</h3>
-                    <div class="form-group">
-                        <label for="ad-name">Ad Name (for your reference)</label>
-                        <input type="text" id="ad-name" class="form-input" placeholder="e.g., Twitter Follow Campaign"
-                            required>
-                    </div>
-                    <div class="form-group">
-                        <label for="ad-category">Category</label>
-                        <select id="ad-category" class="form-select" required>
-                            <option value="">Select category...</option>
-                            <option value="follow">Follow</option>
-                            <option value="visit">Visit</option>
-                            <option value="register">Register</option>
-                            <option value="share">Share</option>
-                        </select>
-                    </div>
-                </div>
+                <div class="publish-form-simple">
+                    <p class="form-intro">Create a campaign to get Blue Verified users to follow you. You set the reward
+                        per follower and the maximum number of followers.</p>
 
-                <!-- Step 2: Creative -->
-                <div class="wizard-content" data-step="2">
-                    <h3>Creative Materials</h3>
                     <div class="form-group">
-                        <label for="ad-title">Ad Title</label>
-                        <input type="text" id="ad-title" class="form-input" placeholder="e.g., Follow us on Twitter!"
+                        <label for="ad-name">Campaign Name</label>
+                        <input type="text" id="ad-name" class="form-input" placeholder="e.g., My Follow Campaign"
                             required>
+                        <small class="form-hint">For your reference only</small>
                     </div>
-                    <div class="form-group">
-                        <label for="ad-description">Description</label>
-                        <textarea id="ad-description" class="form-textarea" rows="3"
-                            placeholder="Describe what users need to do..." required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="ad-image">Ad Image URL (optional)</label>
-                        <input type="url" id="ad-image" class="form-input" placeholder="https://example.com/image.jpg">
-                        <small class="form-hint">Enter the URL of your ad image (300x300px recommended)</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="ad-url">Landing Page URL</label>
-                        <input type="url" id="ad-url" class="form-input" placeholder="https://..." required>
-                    </div>
-                </div>
 
-                <!-- Step 3: Task & Reward -->
-                <div class="wizard-content" data-step="3">
-                    <h3>Task Settings & Reward</h3>
-                    <div class="form-group">
-                        <label for="reward-amount">Reward per Task (USDC)</label>
-                        <input type="number" id="reward-amount" class="form-input" min="0.01" step="0.01"
-                            placeholder="0.50" required>
+                    <div class="form-row">
+                        <div class="form-group form-group--half">
+                            <label for="reward-amount">Reward per Follow (USDC)</label>
+                            <input type="number" id="reward-amount" class="form-input" min="0.01" step="0.01"
+                                placeholder="0.50" required>
+                        </div>
+                        <div class="form-group form-group--half">
+                            <label for="task-limit">Max Followers</label>
+                            <input type="number" id="task-limit" class="form-input" min="1" required>
+                            <small class="form-hint" id="quota-hint">e.g. 500 followers ($10 budget)</small>
+                        </div>
                     </div>
+
                     <div class="form-group">
-                        <label for="task-limit">Total Task Limit</label>
-                        <input type="number" id="task-limit" class="form-input" min="1" placeholder="500" required>
+                        <label for="target-url">Target Twitter Profile URL</label>
+                        <input type="url" id="target-url" class="form-input" placeholder="https://x.com/YourBrand"
+                            required>
+                        <small class="form-hint">The X profile you want users to follow (e.g.
+                            https://x.com/TweetCatOrg)</small>
                     </div>
+
                     <div class="form-group">
                         <label for="end-date">Campaign End Date</label>
-                        <input type="datetime-local" id="end-date" class="form-input" required>
-                        <small class="form-hint">The campaign will automatically stop after this date.</small>
+                        <input type="date" id="end-date" class="form-input" required>
+                        <small class="form-hint">Campaign will stop accepting new followers after this date</small>
                     </div>
-                    <div class="form-group">
-                        <label for="callback-url">Callback URL (optional)</label>
-                        <input type="url" id="callback-url" class="form-input"
-                            placeholder="https://your-server.com/callback">
-                        <small class="form-hint">We'll send task completion notifications to this URL</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="custom-data">Custom Data (optional)</label>
-                        <textarea id="custom-data" class="form-textarea" rows="3"
-                            placeholder='Optional: {"campaign_id": "xyz", "source": "twitter"}'></textarea>
-                        <small class="form-hint">Custom JSON data to include in API callbacks. Will be returned with
-                            each notification.</small>
-                    </div>
-                </div>
 
-                <!-- Step 4: Budget -->
-                <div class="wizard-content" data-step="4">
-                    <h3>Budget & Confirmation</h3>
                     <div class="budget-summary">
                         <div class="summary-row">
-                            <span class="summary-label">Reward per Task:</span>
+                            <span class="summary-label">Reward per Follow:</span>
                             <span class="summary-value" id="summary-reward">0.00 USDC</span>
                         </div>
                         <div class="summary-row">
-                            <span class="summary-label">Total Tasks:</span>
+                            <span class="summary-label">Max Followers:</span>
                             <span class="summary-value" id="summary-tasks">0</span>
                         </div>
-
                         <div class="summary-row total">
                             <span class="summary-label">Total Budget:</span>
                             <span class="summary-value" id="summary-total">0.00 USDC</span>
                         </div>
                     </div>
+
                     <div class="balance-check">
                         <div class="balance-check-row">
-                            <span>Current Balance:</span>
+                            <span>Your Balance:</span>
                             <span id="current-balance">0.00 USDC</span>
                         </div>
                         <div class="balance-status" id="balance-status"></div>
+                    </div>
+
+                    <div class="eligibility-note">
+                        <span class="note-icon">ℹ️</span>
+                        <span class="note-text">Only Blue Verified (✓) users can participate in your campaign</span>
                     </div>
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button id="btn-wizard-prev" class="btn-secondary" style="display: none;">Previous</button>
-                <button id="btn-wizard-next" class="btn-primary">Next</button>
-                <button id="btn-wizard-submit" class="btn-primary" style="display: none;">Publish Ad</button>
+                <button id="btn-wizard-submit" class="btn-primary btn-publish-main">Pay & Publish</button>
             </div>
         </div>
     </div>
@@ -396,7 +340,8 @@
                                 →
                                 Ads
                             </button>
-                            <button id="transfer-dir-ads-to-wallet" class="transfer-dir-btn" type="button">Ads → Wallet
+                            <button id="transfer-dir-ads-to-wallet" class="transfer-dir-btn" type="button">Ads →
+                                Wallet
                             </button>
                         </div>
 
@@ -543,17 +488,17 @@
     <div id="ad-detail-modal" class="modal">
         <div class="modal-dialog">
             <div class="modal-header">
-                <h2 class="modal-title">Ad Details</h2>
+                <h2 class="modal-title">Campaign Details</h2>
                 <button id="close-ad-detail" class="btn-close">✕</button>
             </div>
             <div class="modal-body">
                 <div class="ad-detail-content">
-                    <!-- Read-only Overview -->
+                    <!-- Simplified Overview for Follow-only MVP -->
                     <div class="detail-section">
                         <h3>Overview</h3>
                         <div class="detail-grid">
                             <div class="detail-item">
-                                <span class="detail-label">Name</span>
+                                <span class="detail-label">Campaign Name</span>
                                 <span id="detail-name" class="detail-value">-</span>
                             </div>
                             <div class="detail-item">
@@ -561,66 +506,44 @@
                                 <span id="detail-status" class="detail-value">-</span>
                             </div>
                             <div class="detail-item">
-                                <span class="detail-label">Category</span>
-                                <span id="detail-category" class="detail-value">-</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Created At</span>
-                                <span id="detail-created" class="detail-value">-</span>
-                            </div>
-                        </div>
-
-                        <div class="detail-item full-width">
-                            <span class="detail-label">Title</span>
-                            <span id="detail-title" class="detail-value">-</span>
-                        </div>
-                        <div class="detail-item full-width">
-                            <span class="detail-label">Description</span>
-                            <p id="detail-description" class="detail-text">-</p>
-                        </div>
-
-                        <div class="detail-grid">
-                            <div class="detail-item">
-                                <span class="detail-label">Reward</span>
+                                <span class="detail-label">Reward per Follow</span>
                                 <span id="detail-reward" class="detail-value">-</span>
                             </div>
                             <div class="detail-item">
-                                <span class="detail-label">Total Tasks</span>
+                                <span class="detail-label">Max Followers</span>
                                 <span id="detail-quota" class="detail-value">-</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">End Date</span>
                                 <span id="detail-end-date" class="detail-value">-</span>
                             </div>
-                        </div>
-
-                        <div class="detail-item full-width">
-                            <span class="detail-label">Landing Page</span>
-                            <a id="detail-url" href="#" target="_blank" class="detail-link">-</a>
-                        </div>
-
-                        <div class="detail-item full-width" id="detail-image-container" style="display: none;">
-                            <span class="detail-label">Ad Image</span>
-                            <img id="detail-image" src="" alt="Ad Image" class="detail-image-preview"
-                                style="max-width: 100%; height: auto; border-radius: 8px; margin-top: 8px; border: 1px solid #e5e7eb;">
+                            <div class="detail-item">
+                                <span class="detail-label">Created At</span>
+                                <span id="detail-created" class="detail-value">-</span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Editable Settings -->
-                    <div class="detail-section">
-                        <h3>Developer Settings</h3>
-                        <div class="form-group">
-                            <label for="detail-callback-url">Callback URL</label>
-                            <input type="url" id="detail-callback-url" class="form-input"
-                                placeholder="https://your-server.com/callback">
-                        </div>
-                        <div class="form-group">
-                            <label for="detail-custom-data">Custom Data (JSON)</label>
-                            <textarea id="detail-custom-data" class="form-textarea" rows="3"
-                                placeholder='{"key": "value"}'></textarea>
-                        </div>
-                        <div class="detail-actions">
-                            <button id="btn-update-ad-settings" class="btn-primary">Update Settings</button>
+                    <!-- Developer Settings (kept for advanced users) -->
+                    <div class="detail-section detail-section--collapsed" id="detail-developer-section">
+                        <h3 class="detail-section-header" id="toggle-developer-settings">
+                            <span>Developer Settings</span>
+                            <span class="toggle-icon">▼</span>
+                        </h3>
+                        <div class="detail-section-content" id="developer-settings-content" style="display: none;">
+                            <div class="form-group">
+                                <label for="detail-callback-url">Callback URL</label>
+                                <input type="url" id="detail-callback-url" class="form-input"
+                                    placeholder="https://your-server.com/callback">
+                            </div>
+                            <div class="form-group">
+                                <label for="detail-custom-data">Custom Data (JSON)</label>
+                                <textarea id="detail-custom-data" class="form-textarea" rows="3"
+                                    placeholder='{"key": "value"}'></textarea>
+                            </div>
+                            <div class="detail-actions">
+                                <button id="btn-update-ad-settings" class="btn-primary">Update Settings</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -629,32 +552,32 @@
     </div>
 
     <!-- ==================== Hidden Templates (for TS clone) ==================== -->
-	    <template id="tpl-my-ad-row">
-	        <tr class="my-ad-row" data-ad-id="">
-	            <td class="td-name"></td>
-	            <td class="td-status"></td>
-	            <td class="td-reward"></td>
-	            <td class="td-completed"></td>
-	            <td class="td-settled"></td>
-	            <td class="td-spent"></td>
-	            <td class="td-remaining"></td>
-	            <td class="td-end-date"></td>
-	            <td class="td-actions">
-	                <button class="btn-secondary btn-view" type="button">View</button>
-	                <button class="btn-secondary btn-toggle" type="button">Pause</button>
-	            </td>
-	        </tr>
-	    </template>
+    <template id="tpl-my-ad-row">
+        <tr class="my-ad-row" data-ad-id="">
+            <td class="td-name"></td>
+            <td class="td-status"></td>
+            <td class="td-reward"></td>
+            <td class="td-completed"></td>
+            <td class="td-settled"></td>
+            <td class="td-spent"></td>
+            <td class="td-remaining"></td>
+            <td class="td-end-date"></td>
+            <td class="td-actions">
+                <button class="btn-secondary btn-view" type="button">View</button>
+                <button class="btn-secondary btn-toggle" type="button">Pause</button>
+            </td>
+        </tr>
+    </template>
 
-	    <template id="tpl-empty-my-ads-row">
-	        <tr class="empty-row">
-	            <td colspan="9">
-	                <div class="empty-state-small">
-	                    <p>No ads published yet. Click "Publish New Ad" to get started!</p>
-	                </div>
-	            </td>
-	        </tr>
-	    </template>
+    <template id="tpl-empty-my-ads-row">
+        <tr class="empty-row">
+            <td colspan="9">
+                <div class="empty-state-small">
+                    <p>No ads published yet. Click "Publish New Ad" to get started!</p>
+                </div>
+            </td>
+        </tr>
+    </template>
 
     <template id="tpl-spend-row">
         <tr class="spend-row" data-id="">

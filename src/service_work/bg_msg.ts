@@ -42,6 +42,7 @@ import { x402TipPayload } from "../common/x402_obj";
 import { handleProfileFollowClaim } from "./profile_follow_claim";
 import { claimAdsFollowOffer, queryAdsFollowOffer } from "./bg_ads_follow";
 import { verifyFollowAndClaim } from "./bg_ads_verifier";
+import { handleUserByScreenNameCaptured } from "./bg_blue_v";
 
 export async function checkIfXIsOpen(): Promise<boolean> {
     const tabs = await browser.tabs.query({
@@ -115,6 +116,12 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.ProfileFollowClaim: {
             return await handleProfileFollowClaim(request.data || {});
+        }
+
+        case MsgType.IJUserByScreenNameCaptured: {
+            // 后台静默处理蓝V更新
+            await handleUserByScreenNameCaptured(request.data);
+            return { success: true };
         }
 
         case MsgType.AdsFollowOfferQuery: {

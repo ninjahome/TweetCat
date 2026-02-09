@@ -74,12 +74,67 @@ export async function loadMyTasks(page: number = 0): Promise<void> {
     }
 }
 
+import { getCurrentUserBlueVStatus } from "../../object/blue_v";
+
+// ... existing imports ...
+
+export async function updateBlueVDisplay() {
+    const el = document.getElementById("blue-v-display");
+    if (!el) return;
+
+    try {
+        const { xId } = await getCurrentUserInfo();
+        if (!xId) {
+            el.textContent = "Not Linked";
+            return;
+        }
+
+        const status = await getCurrentUserBlueVStatus();
+        if (status && status.userId === xId) {
+            if (status.isBlueVerified) {
+                el.textContent = "Verified";
+                el.classList.add("status-verified");
+                el.style.color = "#1d9bf0";
+                el.style.fontWeight = "600";
+            } else {
+                el.textContent = "Not Verified";
+                el.classList.add("status-unverified");
+                el.style.color = "#e0245e";
+            }
+        } else {
+            el.textContent = "Unknown";
+            el.title = "Visit your X profile to update status";
+            el.style.cursor = "help";
+            el.style.color = "#888";
+        }
+    } catch (e) {
+        console.warn("Failed to update Blue V display:", e);
+        el.textContent = "Error";
+    }
+}
+
 export async function startTask(ad: EarnAd) {
     if (executorState.taskRunState[ad.id] === "running") return;
     executorState.taskRunState[ad.id] = "running";
 
     try {
         const { xId, walletAddress } = await getCurrentUserInfo();
+
+        // [MVP] 蓝V 前置检查
+        const blueVStatus = await getCurrentUserBlueVStatus();
+        // 如果本地有状态且非蓝V，则阻止
+        if (blueVStatus && blueVStatus.userId === xId && !blueVStatus.isBlueVerified) {
+            showNotification("Only Blue Verified (Title) users can participate in this campaign.", "error");
+            return;
+        }
+
+        // 如果本地没有状态（可能是第一次安装插件或未访问过 Profile），提示用户先访问 Profile
+        if (!blueVStatus || blueVStatus.userId !== xId) {
+            showNotification("Verification status unknown. Please visit your X profile page first to refresh status.", "info");
+            // 可选：跳转到 Profile 页
+            // browser.tabs.create({ url: "https://x.com/me" });
+            return;
+        }
 
         const claim = await x402WorkerFetch(API_PATH_ADS_CLAIM, {
             ad_id: ad.id,
@@ -91,6 +146,11 @@ export async function startTask(ad: EarnAd) {
         await loadAds();
         await loadEarnSummary();
         renderEarnAds();
+
+        // 成功领取后，打开落地页
+        if (ad.detailUrl) {
+            window.open(ad.detailUrl, "_blank");
+        }
     } catch (err) {
         console.error("Failed to claim ad:", err);
         showNotification((err as Error).message || "Failed to claim ad.", "error");
@@ -243,39 +303,61 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
             tagsContainer.appendChild(tag);
         });
 
-        const openDetail = () => window.open(ad.detailUrl, "_blank");
+        // Unified click handler
+        const handleAdClick = async () => {
+            // Check if user has already claimed this ad
+            const myClaim = executorState.myClaims.find(c => c.ad_id === ad.id);
+            const isClaimed = !!myClaim;
 
-        // Check if user has already claimed this ad
+            if (isClaimed) {
+                window.open(ad.detailUrl, "_blank");
+            } else {
+                // Not claimed yet, try to start task (which includes Blue V check)
+                await startTask(ad);
+                // Note: startTask will handle opening URL if claim succeeds?
+                // Currently startTask sends claim request. After claim success, we should open URL.
+                // But startTask logic (line 110) just updates UI. It doesn't open URL.
+                // We should modify startTask to open URL upon success, OR return success boolean.
+            }
+        };
+
+        const btn = $2<HTMLButtonElement>(card, ".btn-start-task");
+        btn.disabled = executorState.taskRunState[ad.id] === "running" || ad.completed >= ad.totalQuota;
+
+        // Remove old logic for btn.disabled based on isClaimed, because we want users to be able to click "Claimed" to re-open link?
+        // But UI says: if isClaimed, button text is "Claimed" and disabled?
+        // Wait, line 273: btn.disabled = isClaimed || ...
+        // If button is disabled, user can't click it. But card is clickable.
+
         const myClaim = executorState.myClaims.find(c => c.ad_id === ad.id);
         const isClaimed = !!myClaim;
-
-        // button
-        const btn = $2<HTMLButtonElement>(card, ".btn-start-task");
-        btn.disabled = isClaimed || executorState.taskRunState[ad.id] === "running" || ad.completed >= ad.totalQuota;
 
         if (isClaimed) {
             btn.textContent = myClaim?.status || "Claimed";
             btn.classList.add("claimed");
             card.classList.add("ad-card-claimed");
+            // If claimed, maybe we allow clicking to see details?
+            // Current logic disabled button if claimed.
+            btn.disabled = false; // Allow clicking to open link
         } else {
             btn.textContent = ad.completed >= ad.totalQuota
                 ? "Completed"
                 : (executorState.taskRunState[ad.id] === "running" ? "Running..." : "Start Task");
+            btn.disabled = executorState.taskRunState[ad.id] === "running" || ad.completed >= ad.totalQuota;
         }
 
         btn.addEventListener("click", (ev) => {
             ev.stopPropagation();
-            if (isClaimed) return;
-            openDetail();
+            handleAdClick();
         });
 
-        card.addEventListener("click", openDetail);
+        card.addEventListener("click", handleAdClick);
         grid.appendChild(card);
     });
 }
 
 function filterAndSortAds(): EarnAd[] {
-    const categories = getSelectedCategories();
+    // const categories = getSelectedCategories(); // MVP Removed
     const rewardRanges = getSelectedRewardRanges();
     const sortBy = getSortOption();
     const qstr = getSearchQuery();
@@ -286,7 +368,8 @@ function filterAndSortAds(): EarnAd[] {
     );
 
     let result = baseAds.filter((ad) =>
-        categories.includes(ad.category) &&
+        // categories.includes(ad.category) && // MVP: Only follow ads exists
+        ad.category === "follow" && // Enforce follow only just in case
         rewardRanges.includes(ad.rewardRange) &&
         matchAdSearch(ad, qstr)
     );
@@ -310,12 +393,7 @@ function filterAndSortAds(): EarnAd[] {
     return result;
 }
 
-function getSelectedCategories(): AdCategory[] {
-    const checked = Array.from(
-        document.querySelectorAll<HTMLInputElement>('input[name="category"]:checked')
-    );
-    return checked.map((input) => input.value as AdCategory);
-}
+// function getSelectedCategories() removed
 
 function getSelectedRewardRanges(): Array<"0.1-0.5" | "0.5-1" | "1+"> {
     const checked = Array.from(
@@ -349,14 +427,15 @@ function isDefaultFilters(): boolean {
     const qstr = getSearchQuery();
     if (qstr) return false;
 
-    const catInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="category"]'));
+    // MVP: Category ignore
+    // const catInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="category"]'));
     const rewardInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="reward"]'));
 
-    const allCatChecked = catInputs.length > 0 && catInputs.every(i => i.checked);
+    // const allCatChecked = catInputs.length > 0 && catInputs.every(i => i.checked);
     const allRewardChecked = rewardInputs.length > 0 && rewardInputs.every(i => i.checked);
 
     const sort = getSortOption();
-    return allCatChecked && allRewardChecked && sort === DEFAULT_SORT;
+    return allRewardChecked && sort === DEFAULT_SORT;
 }
 
 export function updateFilterToolsUI(): void {
@@ -376,7 +455,7 @@ function resetAllFilters(): void {
     const searchInput = document.querySelector<HTMLInputElement>("#ad-search");
     if (searchInput) searchInput.value = "";
 
-    document.querySelectorAll<HTMLInputElement>('input[name="category"]').forEach(i => i.checked = true);
+    // MVP Removed category input reset
     document.querySelectorAll<HTMLInputElement>('input[name="reward"]').forEach(i => i.checked = true);
 
     const sort = document.querySelector<HTMLSelectElement>("#sort-select");

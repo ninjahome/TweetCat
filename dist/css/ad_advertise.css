@@ -957,6 +957,67 @@ body {
     color: #9ca3af;
 }
 
+/* ==================== Simplified Publish Form (MVP) ==================== */
+.publish-form-simple {
+    max-width: 480px;
+    margin: 0 auto;
+}
+
+.form-intro {
+    font-size: 14px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f0fdfa 0%, #f0f9ff 100%);
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+}
+
+.form-group--half {
+    flex: 1;
+}
+
+.eligibility-note {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    margin-top: 16px;
+}
+
+.eligibility-note .note-icon {
+    font-size: 18px;
+}
+
+.eligibility-note .note-text {
+    font-size: 13px;
+    color: #92400e;
+    font-weight: 600;
+}
+
+.btn-publish-main {
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 16px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);
+}
+
+.btn-publish-main:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.35);
+}
+
 /* ==================== Budget Summary ==================== */
 .budget-summary {
     background: #f9fafb;

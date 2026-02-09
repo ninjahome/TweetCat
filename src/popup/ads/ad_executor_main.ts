@@ -2,7 +2,8 @@ import {
     initPlazaFiltersEvents,
     loadAds,
     renderEarnAds,
-    updateFilterToolsUI
+    updateFilterToolsUI,
+    updateBlueVDisplay
 } from "./ad_executor_plaza";
 import {
     initSummaryActions,
@@ -13,7 +14,8 @@ async function initAdPlaza() {
     // 并行获取初始数据
     await Promise.all([
         loadAds(),
-        loadEarnSummary()
+        loadEarnSummary(),
+        updateBlueVDisplay()
     ]);
 
     renderEarnAds();
