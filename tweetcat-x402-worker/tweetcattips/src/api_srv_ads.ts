@@ -470,6 +470,18 @@ export async function apiAdsExecutorVersion(c: ExtCtx) {
 	}
 }
 
+// TODO: Replace with real user IDs for testing
+const BLUE_V_BYPASS_WHITELIST = [
+	"1899045104146644992",
+	"1735224873365225472",
+	"1236539014406012928",
+	"1554341020246061059",
+	"1740205143621238785",
+	"1514598908273463303",
+	"1716169276855988224",
+	"1236539014406012928"
+];
+
 export async function apiAdsClaim(c: ExtCtx) {
 	try {
 		const body = await c.req.json().catch(() => ({}));
@@ -489,27 +501,31 @@ export async function apiAdsClaim(c: ExtCtx) {
 		if (!requireStringField(bXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
 		if (!requireStringField(bWallet)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_wallet");
 
-		// [ENFORCE] Blue V proof is MANDATORY
-		if (!blueVProof) {
-			return jsonError(c, 401, "BLUE_V_REQUIRED", "Blue Verified status proof is required to claim rewards");
-		}
-
-		const isBlueVValid = await verifyBlueVProof(blueVProof);
-		if (!isBlueVValid) {
-			return jsonError(c, 401, "INVALID_BLUE_V_PROOF", "Blue Verified status verification failed");
-		}
-
-		// Verify identity in proof matches request
-		try {
-			const proofObj = typeof blueVProof === 'string' ? JSON.parse(blueVProof) : blueVProof;
-			if (proofObj.userId !== bXId) {
-				return jsonError(c, 401, "USER_MISMATCH", "Blue V proof does not match the claiming user");
+		// [ENFORCE] Blue V proof is MANDATORY (unless whitelisted)
+		if (!BLUE_V_BYPASS_WHITELIST.includes(bXId)) {
+			if (!blueVProof) {
+				return jsonError(c, 401, "BLUE_V_REQUIRED", "Blue Verified status proof is required to claim rewards");
 			}
-			if (!proofObj.isBlueVerified) {
-				return jsonError(c, 401, "NOT_BLUE_VERIFIED", "Your account must be Blue Verified to participate");
+
+			const isBlueVValid = await verifyBlueVProof(blueVProof);
+			if (!isBlueVValid) {
+				return jsonError(c, 401, "INVALID_BLUE_V_PROOF", "Blue Verified status verification failed");
 			}
-		} catch (e) {
-			return jsonError(c, 400, "INVALID_PROOF_JSON", "Malformed Blue V proof");
+
+			// Verify identity in proof matches request
+			try {
+				const proofObj = typeof blueVProof === 'string' ? JSON.parse(blueVProof) : blueVProof;
+				if (proofObj.userId !== bXId) {
+					return jsonError(c, 401, "USER_MISMATCH", "Blue V proof does not match the claiming user");
+				}
+				if (!proofObj.isBlueVerified) {
+					return jsonError(c, 401, "NOT_BLUE_VERIFIED", "Your account must be Blue Verified to participate");
+				}
+			} catch (e) {
+				return jsonError(c, 400, "INVALID_PROOF_JSON", "Malformed Blue V proof");
+			}
+		} else {
+			console.warn(`[apiAdsClaim] WAIVER: Bypassing Blue V check for whitelist user: ${bXId}`);
 		}
 
 		// [ENFORCE] Activity proof is also REQUIRED to finish claim

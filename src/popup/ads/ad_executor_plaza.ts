@@ -128,13 +128,27 @@ export async function startTask(ad: EarnAd) {
         // 检查状态是否存在且是否在 7 天内 (Fresh)
         const isFresh = blueVStatus && (now - blueVStatus.capturedAt < SEVEN_DAYS_MS);
 
-        if (isFresh) {
+        // [TEST] Whitelist for bypassing Blue V check (must match backend)
+        const BYPASS_WHITELIST = [
+            "1899045104146644992",
+            "1735224873365225472",
+            "1236539014406012928",
+            "1554341020246061059",
+            "1740205143621238785",
+            "1514598908273463303"
+        ];
+        const isWhitelisted = BYPASS_WHITELIST.includes(xId);
+
+        if (isWhitelisted) {
+            // Whitelisted users skip all Blue V checks and redirections
+        } else if (isFresh) {
             // 如果是最近 7 天内验证过的，直接根据结果通过或拦截
             if (!blueVStatus.isBlueVerified) {
                 showAlert("Verification Failed", "Only Blue Verified users can participate in this campaign. Please ensure your account has the Blue Checkmark.");
+                executorState.taskRunState[ad.id] = "idle";
+                renderEarnAds();
                 return;
             }
-            // 如果是蓝V，则继续执行任务（跳过下面的跳转逻辑）
         } else {
             // 状态缺失 或 超过 7 天没有更新 -> 提示跳转到 Profile 更新
             const msg = !blueVStatus || blueVStatus.userId !== xId
@@ -147,7 +161,7 @@ export async function startTask(ad: EarnAd) {
                 // 携带参数 tc_verify=1 以便 content script 识别这是一次显式的验证任务
                 window.open(`https://x.com/i/user/${xId}?tc_verify=1`, "_blank");
             }
-            executorState.taskRunState[ad.id] = "idle"; // Reset state if user cancels or is redirected
+            executorState.taskRunState[ad.id] = "idle";
             renderEarnAds();
             return;
         }
