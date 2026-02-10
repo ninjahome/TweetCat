@@ -147,28 +147,24 @@ export async function startTask(ad: EarnAd) {
                 // 携带参数 tc_verify=1 以便 content script 识别这是一次显式的验证任务
                 window.open(`https://x.com/i/user/${xId}?tc_verify=1`, "_blank");
             }
+            executorState.taskRunState[ad.id] = "idle"; // Reset state if user cancels or is redirected
+            renderEarnAds();
             return;
         }
 
-        const claim = await x402WorkerFetch(API_PATH_ADS_CLAIM, {
-            ad_id: ad.id,
-            b_x_id: xId,
-            b_wallet: walletAddress,
-        });
-
-        showNotification(`Claim created: ${claim.claim_id}`, "success");
-        await loadAds();
-        await loadEarnSummary();
-        renderEarnAds();
-
-        // 成功领取后，打开落地页
+        // 成功通过蓝V检查后，仅打开落地页 (广告主的 Profile 页面)
+        // 实际的领奖 (Claim) 将在 Content Script 里的特殊按钮点击后由 Background 完成
         if (ad.detailUrl) {
             window.open(ad.detailUrl, "_blank");
+        } else {
+            showAlert("Error", "Missing landing page URL for this ad.");
         }
-    } catch (err) {
-        console.error("Failed to claim ad:", err);
-        showNotification((err as Error).message || "Failed to claim ad.", "error");
-    } finally {
+
+        executorState.taskRunState[ad.id] = "idle";
+        renderEarnAds();
+    } catch (e: any) {
+        console.error("Start task failed:", e);
+        showNotification(e.message || "Start task failed", "error");
         executorState.taskRunState[ad.id] = "idle";
         renderEarnAds();
     }

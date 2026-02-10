@@ -23,7 +23,8 @@ import {
 	API_PATH_ADS_TOP_UP_BUDGET,
 	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
 	API_PATH_ADS_MY_TASKS,
-	API_PATH_ADS_SUBMIT_PROOF
+	API_PATH_ADS_SUBMIT_PROOF,
+	decodeB64OrB64UrlToArrayBuffer
 } from "./common";
 import {
 	AdCategory,
@@ -100,6 +101,48 @@ export class EscrowRequestError extends Error {
 	) {
 		super(detail);
 		this.name = "EscrowRequestError";
+	}
+}
+
+/**
+ * 校验蓝V设备签名证据
+ */
+async function verifyBlueVProof(proofInput: any): Promise<boolean> {
+	try {
+		const proof = typeof proofInput === 'string' ? JSON.parse(proofInput) : proofInput;
+		if (!proof.userId || !proof.screenName || typeof proof.isBlueVerified !== 'boolean' || !proof.capturedAt || !proof.signature || !proof.devicePubKey) {
+			return false;
+		}
+
+		// Reconstruct dataToSign (MUST match frontend EXACTLY)
+		const dataToSign = JSON.stringify({
+			userId: proof.userId,
+			screenName: proof.screenName,
+			isBlueVerified: proof.isBlueVerified,
+			capturedAt: proof.capturedAt
+		});
+
+		const data = new TextEncoder().encode(dataToSign);
+		const spkiBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(proof.devicePubKey));
+		const sigBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(proof.signature));
+
+		const publicKey = await crypto.subtle.importKey(
+			"spki",
+			spkiBytes,
+			{ name: "ECDSA", namedCurve: "P-256" },
+			false,
+			["verify"]
+		);
+
+		return await crypto.subtle.verify(
+			{ name: "ECDSA", hash: "SHA-256" },
+			publicKey,
+			sigBytes,
+			data
+		);
+	} catch (e) {
+		console.error("[verifyBlueVProof] Error:", e);
+		return false;
 	}
 }
 
@@ -434,14 +477,45 @@ export async function apiAdsClaim(c: ExtCtx) {
 		const bXId = body?.b_x_id;
 		const bWallet = body?.b_wallet;
 
-		// Proof data (optional, if provided we try to settle immediately)
+		// Proof data (Evidence from Content Script)
 		const proofData = body?.proof_data;
 		const proofType = body?.proof_type;
 		const category = body?.category;
 
+		// Signed Blue V proof (Evidence from Device Storage)
+		const blueVProof = body?.blue_v_proof;
+
 		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
 		if (!requireStringField(bXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
 		if (!requireStringField(bWallet)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_wallet");
+
+		// [ENFORCE] Blue V proof is MANDATORY
+		if (!blueVProof) {
+			return jsonError(c, 401, "BLUE_V_REQUIRED", "Blue Verified status proof is required to claim rewards");
+		}
+
+		const isBlueVValid = await verifyBlueVProof(blueVProof);
+		if (!isBlueVValid) {
+			return jsonError(c, 401, "INVALID_BLUE_V_PROOF", "Blue Verified status verification failed");
+		}
+
+		// Verify identity in proof matches request
+		try {
+			const proofObj = typeof blueVProof === 'string' ? JSON.parse(blueVProof) : blueVProof;
+			if (proofObj.userId !== bXId) {
+				return jsonError(c, 401, "USER_MISMATCH", "Blue V proof does not match the claiming user");
+			}
+			if (!proofObj.isBlueVerified) {
+				return jsonError(c, 401, "NOT_BLUE_VERIFIED", "Your account must be Blue Verified to participate");
+			}
+		} catch (e) {
+			return jsonError(c, 400, "INVALID_PROOF_JSON", "Malformed Blue V proof");
+		}
+
+		// [ENFORCE] Activity proof is also REQUIRED to finish claim
+		if (!proofData) {
+			return jsonError(c, 400, "EVIDENCE_REQUIRED", "Activity proof (follow evidence) is required to claim rewards");
+		}
 
 		// Get ad info
 		const adRow = await getAdById(c.env.DB, adId);
@@ -490,19 +564,20 @@ export async function apiAdsClaim(c: ExtCtx) {
 		}
 
 		// At this point, we have a valid claim (either existing or new).
-		// If proof is provided, we try to Submit Evidence & Settle.
+		// Submit Evidence & Settle.
 		let finalStatus = claim!.status;
 
-		if (proofData && (finalStatus === 'CLAIMED' || finalStatus === 'REJECTED')) {
+		if (finalStatus === 'CLAIMED' || finalStatus === 'REJECTED') {
 			const evidenceId = crypto.randomUUID();
 			const evidenceParams: ClaimEvidenceParams = {
 				evidenceId,
 				claimId: claimId!,
 				adId: adRow.ad_id,
 				bXId,
-				category: category || 'unknown',
+				category: category || 'follow',
 				proofType: proofType || 'unknown',
-				proofData: typeof proofData === 'object' ? JSON.stringify(proofData) : String(proofData)
+				proofData: typeof proofData === 'object' ? JSON.stringify(proofData) : String(proofData),
+				observedData: typeof blueVProof === 'object' ? JSON.stringify(blueVProof) : String(blueVProof)
 			};
 
 			const evidenceInserted = await insertClaimEvidence(c.env.DB, evidenceParams);
@@ -527,6 +602,7 @@ export async function apiAdsClaim(c: ExtCtx) {
 		});
 
 	} catch (err: any) {
+		console.error("[apiAdsClaim] Internal error:", err);
 		return jsonError(c, 500, "INTERNAL_ERROR", "Internal Server Error");
 	}
 }

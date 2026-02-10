@@ -31,7 +31,7 @@ async function openDeviceKeyDb(): Promise<IDBDatabase> {
         request.onupgradeneeded = () => {
             const db = request.result;
             if (!db.objectStoreNames.contains(DEVICE_KEY_STORE)) {
-                db.createObjectStore(DEVICE_KEY_STORE, {keyPath: "id"});
+                db.createObjectStore(DEVICE_KEY_STORE, { keyPath: "id" });
             }
         };
     });
@@ -87,7 +87,7 @@ async function exportSpkiB64(publicKey: CryptoKey): Promise<string> {
 
 async function generateAndStoreNewDeviceKey(): Promise<DeviceKeyRecord> {
     const keyPair = (await crypto.subtle.generateKey(
-        {name: "ECDSA", namedCurve: "P-256"},
+        { name: "ECDSA", namedCurve: "P-256" },
         false,
         ["sign", "verify"]
     )) as CryptoKeyPair;
@@ -131,19 +131,39 @@ export async function signDeviceRequest(params: {
     path: string;
     timestamp: string;
     bodyText: string;
-}): Promise<{signatureB64: string; dataToSign: string}> {
+}): Promise<{ signatureB64: string; dataToSign: string }> {
     const rec = await ensureDeviceKey();
 
     const dataToSign = `${params.method.toUpperCase()}\n${params.path}\n${params.timestamp}\n${params.bodyText}`;
     const data = new TextEncoder().encode(dataToSign);
 
     const sig = await crypto.subtle.sign(
-        {name: "ECDSA", hash: "SHA-256"},
+        { name: "ECDSA", hash: "SHA-256" },
         rec.privateKey,
         data
     );
 
-    return {signatureB64: abToBase64(sig), dataToSign};
+    return { signatureB64: abToBase64(sig), dataToSign };
+}
+
+/**
+ * 通用的设备数据签名函数
+ * 使用设备私钥对任意字符串进行 ECDSA 签名
+ */
+export async function signDeviceData(text: string): Promise<{ signatureB64: string; publicKeyB64: string }> {
+    const rec = await ensureDeviceKey();
+    const data = new TextEncoder().encode(text);
+
+    const sig = await crypto.subtle.sign(
+        { name: "ECDSA", hash: "SHA-256" },
+        rec.privateKey,
+        data
+    );
+
+    return {
+        signatureB64: abToBase64(sig),
+        publicKeyB64: rec.publicKeySpkiB64
+    };
 }
 
 async function sha256Base64Url(bytes: Uint8Array): Promise<string> {
@@ -189,7 +209,7 @@ export async function signDeviceRequestV2(params: {
     const data = new TextEncoder().encode(signingInput);
 
     const sig = await crypto.subtle.sign(
-        {name: "ECDSA", hash: "SHA-256"},
+        { name: "ECDSA", hash: "SHA-256" },
         rec.privateKey,
         data
     );
@@ -215,7 +235,7 @@ export async function verifyDeviceSignature(params: {
     const publicKey = await crypto.subtle.importKey(
         "spki",
         base64ToAb(params.publicKeySpkiB64),
-        {name: "ECDSA", namedCurve: "P-256"},
+        { name: "ECDSA", namedCurve: "P-256" },
         false,
         ["verify"]
     );
@@ -223,7 +243,7 @@ export async function verifyDeviceSignature(params: {
     const dataToSign = `${params.method.toUpperCase()}\n${params.path}\n${params.timestamp}\n${params.bodyText}`;
     const data = new TextEncoder().encode(dataToSign);
     return await crypto.subtle.verify(
-        {name: "ECDSA", hash: "SHA-256"},
+        { name: "ECDSA", hash: "SHA-256" },
         publicKey,
         decodeB64OrB64UrlToAb(params.signatureB64),
         data

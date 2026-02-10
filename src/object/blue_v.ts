@@ -8,23 +8,44 @@
  */
 
 import { __tableUserBlueVStatus, checkAndInitDatabase, databaseGet, databaseUpdateOrAddItem } from "../common/database";
+import { signDeviceData } from "../common/device_key";
 
 export interface CurrentUserBlueVInfo {
     userId: string;         // X User ID
     screenName: string;     // X Username (不含 @)
     isBlueVerified: boolean;
     capturedAt: number;     // 捕获时间戳
+    signature?: string;     // 设备私钥对上述字段的签名
+    devicePubKey?: string;  // 用于验证签名的设备公钥
 }
 
 /**
  * 保存用户的蓝V状态
- * 通常在 Background 中调用以确保存入扩展源的 IndexedDB
+ * 使用设备私钥对关键字段进行签名，防止本地篡改
  */
 export async function saveCurrentUserBlueVStatus(info: CurrentUserBlueVInfo): Promise<void> {
     if (!info.userId) return;
+
+    // 准备待签名数据 (固定顺序以确保一致性)
+    const dataToSign = JSON.stringify({
+        userId: info.userId,
+        screenName: info.screenName,
+        isBlueVerified: info.isBlueVerified,
+        capturedAt: info.capturedAt
+    });
+
+    try {
+        const { signatureB64, publicKeyB64 } = await signDeviceData(dataToSign);
+        info.signature = signatureB64;
+        info.devicePubKey = publicKeyB64;
+    } catch (e) {
+        console.warn("[BlueV] Failed to sign device data:", e);
+        // 如果签名失败，在此安全增强模式下，我们依然保存但可能在提交时被拒
+    }
+
     await checkAndInitDatabase();
     await databaseUpdateOrAddItem(__tableUserBlueVStatus, info);
-    console.log(`[BlueV] Saved to DB for ${info.userId}:`, info.isBlueVerified);
+    console.log(`[BlueV] Signed & Saved to DB for ${info.userId}:`, info.isBlueVerified);
 }
 
 /**

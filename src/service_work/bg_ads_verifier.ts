@@ -17,11 +17,14 @@ async function syncTwitterCredentials(): Promise<boolean> {
     }
 }
 
+import { getCurrentUserBlueVStatus } from "../object/blue_v";
+
 /**
  * 核心校验与申领逻辑：
  * 1. 验证用户确实关注了目标 KOL
- * 2. 准备原始证明材料 (JSON)
- * 3. 使用设备私钥签名并提交给服务器 (通过 x402WorkerFetch)
+ * 2. 获取本地签名的蓝V证据 (防篡改)
+ * 3. 准备原始证明材料 (JSON)
+ * 4. 提交给服务器进行原子化申领
  */
 export async function verifyFollowAndClaim(params: {
     ad_id: string;
@@ -59,23 +62,31 @@ export async function verifyFollowAndClaim(params: {
             throw new Error(`关注验证失败：推特接口返回您尚未关注 @${screen_name}`);
         }
 
-        // 4. 身份确认 (确保必要的 ID 齐全)
+        // 4. 身份确认与证据获取 (蓝V签名证据)
         if (!userId || !xId) {
             console.error(`[AdsVerifier] Step 4 FAILED: Missing identity info. userId=${!!userId}, xId=${!!xId}`);
             throw new Error("身份信息不完整，请尝试重新登录钱包。");
         }
-        console.log(`[AdsVerifier] Step 4: Identity validated. userId: ${userId}, xId: ${xId}, wallet: ${walletAddress}`);
+
+        console.log(`[AdsVerifier] Step 4: Identity validated. Querying BlueV proof for xId: ${xId}`);
+        const blueVProof = await getCurrentUserBlueVStatus(xId);
+        if (!blueVProof || !blueVProof.isBlueVerified || !blueVProof.signature) {
+            console.warn(`[AdsVerifier] Step 4 Warning: No signed BlueV proof found for ${xId}`);
+            // 如果强制要求，这里可以 throw。目前先尝试提交。
+        }
 
         // 5. 提交申领 (原子化一步：占位 + 交卷)
-        console.log(`[AdsVerifier] Step 5: Submitting claim & proof to backend...`);
+        console.log(`[AdsVerifier] Step 5: Submitting claim & mixed proofs to backend...`);
 
         const resp = await x402WorkerFetch(API_PATH_ADS_CLAIM, {
             ad_id,
             b_x_id: xId,
             b_wallet: walletAddress || "",
-            // 携带证据
+            // 证据1: 关注关系证明
             proof_data: JSON.stringify(spotlightData),
             proof_type: "twitter_profile_spotlight",
+            // 证据2: 蓝V身份证明（带签名）
+            blue_v_proof: blueVProof ? JSON.stringify(blueVProof) : null,
             category: "follow"
         }, userId);
 
