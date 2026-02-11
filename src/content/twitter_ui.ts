@@ -238,8 +238,9 @@ function checkIsFollowingFromDom(username: string): boolean {
 }
 
 async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
-    toolBar.querySelectorAll(".follow-claim-on-profile").forEach((item) => item.remove());
-    toolBar.querySelectorAll(".follow-claim-btn-on-profile").forEach((item) => item.remove());
+    if (toolBar.querySelector(".follow-claim-on-profile")) {
+        return;
+    }
 
     if (loggedInUserScreenName && kolName.toLowerCase() === loggedInUserScreenName.toLowerCase()) {
         return;
