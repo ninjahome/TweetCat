@@ -23,6 +23,7 @@ import {
 	API_PATH_ADS_TOP_UP_BUDGET,
 	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
 	API_PATH_ADS_MY_TASKS,
+	API_PATH_ADS_EXECUTOR_DASHBOARD_INFO,
 	API_PATH_ADS_SUBMIT_PROOF,
 	decodeB64OrB64UrlToArrayBuffer
 } from "./common";
@@ -61,7 +62,7 @@ import {
 	getPerformerHistory,
 	type AdCreatePayload,
 	type CreateDetailedClaimParams,
-	type AdCampaignStatus, getPublisherDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount, addAdQuota,
+	type AdCampaignStatus, getPublisherDashboardStats, getPerformerDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount, addAdQuota,
 	getAdsFeedVersion,
 	getAdsNextInvalidationAt,
 	bumpAdsFeedVersion,
@@ -659,6 +660,25 @@ export async function apiAdsMyClaims(c: ExtCtx) {
 }
 
 /**
+ * 查询执行者的仪表盘信息
+ */
+export async function apiAdsExecutorDashboardInfo(c: ExtCtx) {
+	try {
+		const bXId = c.req.query("b_x_id");
+		if (!bXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
+
+		const stats = await getPerformerDashboardStats(c.env.DB, bXId);
+
+		return c.json({
+			success: true,
+			data: stats
+		});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
  * 执行者任务列表（含广告详情）
  * 用于 My Tasks 页签，返回任务 + 关联广告信息，支持分页和状态筛选
  */
@@ -954,7 +974,8 @@ export async function apiAdsPublisherDashboardInfo(c: ExtCtx) {
 			frozen_atomic: stats.frozen_atomic,
 			active_campaigns_count: stats.active_campaigns_count,
 			today_spend_atomic: stats.today_spend_atomic,
-			week_spend_atomic: stats.week_spend_atomic
+			week_spend_atomic: stats.week_spend_atomic,
+			last_withdraw_at: stats.last_withdraw_at
 		});
 	} catch (err: any) {
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
@@ -1017,6 +1038,7 @@ export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
 	app.post(API_PATH_ADS_CLAIM, apiAdsClaim);
 	app.get(API_PATH_ADS_MY_CLAIMS, apiAdsMyClaims);
 	app.get(API_PATH_ADS_MY_TASKS, apiAdsMyTasks);
+	app.get(API_PATH_ADS_EXECUTOR_DASHBOARD_INFO, apiAdsExecutorDashboardInfo);
 	app.post(API_PATH_ADS_PUBLISHER_RECHARGE, apiRechargeToAdEscrowAccount);
 	app.post(API_PATH_ADS_PUBLISHER_WITHDRAW, apiWithdrawFromAdsEscrowAccount);
 	app.get(API_PATH_ADS_PUBLISHER_LEDGER, apiAdsPublisherLedger);

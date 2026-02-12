@@ -659,6 +659,27 @@ export async function getPerformerHistory(
 }
 
 /**
+ * 获取执行者的仪表盘统计数据
+ */
+export async function getPerformerDashboardStats(db: D1Database, bXId: string) {
+	const sql = `
+		SELECT 
+			COALESCE(SUM(CASE WHEN status = 'CONFIRMED' THEN CAST(unit_price_atomic AS INTEGER) ELSE 0 END), 0) as withdrawable_atomic,
+			COALESCE(SUM(CASE WHEN status IN ('CLAIMED', 'PENDING_CONFIRM') THEN CAST(unit_price_atomic AS INTEGER) ELSE 0 END), 0) as pending_atomic,
+			COALESCE(SUM(CASE WHEN created_at >= date('now', 'start of day') AND status IN ('CLAIMED', 'PENDING_CONFIRM', 'CONFIRMED') THEN CAST(unit_price_atomic AS INTEGER) ELSE 0 END), 0) as today_earned_atomic,
+			COALESCE(SUM(CASE WHEN status IN ('CLAIMED', 'PENDING_CONFIRM', 'CONFIRMED') THEN CAST(unit_price_atomic AS INTEGER) ELSE 0 END), 0) as total_earned_atomic
+		FROM ad_reward_claims
+		WHERE b_x_id = ?
+	`;
+	return await db.prepare(sql).bind(bXId).first<{
+		withdrawable_atomic: number;
+		pending_atomic: number;
+		today_earned_atomic: number;
+		total_earned_atomic: number;
+	}>();
+}
+
+/**
  * 执行者任务列表（含广告详情）
  * 用于 My Tasks 页签，返回任务 + 关联广告信息
  */
@@ -805,13 +826,18 @@ export async function getPublisherDashboardStats(db: D1Database, aXId: string) {
 			 JOIN ad_campaigns ac ON arc.ad_id = ac.ad_id
 			 WHERE ac.a_x_id = ?
 			   AND arc.status IN ('CONFIRMED', 'SETTLED_TIMEOUT')
-			   AND date(arc.created_at) >= date('now', '-7 days')) as week_spend_atomic
+			   AND date(arc.created_at) >= date('now', '-7 days')) as week_spend_atomic,
+			(SELECT MAX(created_at) FROM ad_escrow_ledger 
+			 WHERE a_x_id = ? 
+			   AND op = 'WITHDRAW' 
+			   AND status = 'SETTLED') as last_withdraw_at
 	`;
 
-	const statsResult = await db.prepare(statsSql).bind(aXId, aXId, aXId).first<{
+	const statsResult = await db.prepare(statsSql).bind(aXId, aXId, aXId, aXId).first<{
 		active_campaigns_count: number;
 		today_spend_atomic: string;
 		week_spend_atomic: string;
+		last_withdraw_at: string | null;
 	}>();
 
 	return {
@@ -819,7 +845,8 @@ export async function getPublisherDashboardStats(db: D1Database, aXId: string) {
 		frozen_atomic: balanceResult?.frozen_atomic ?? "0",
 		active_campaigns_count: statsResult?.active_campaigns_count ?? 0,
 		today_spend_atomic: statsResult?.today_spend_atomic ?? "0",
-		week_spend_atomic: statsResult?.week_spend_atomic ?? "0"
+		week_spend_atomic: statsResult?.week_spend_atomic ?? "0",
+		last_withdraw_at: statsResult?.last_withdraw_at ?? null
 	};
 }
 

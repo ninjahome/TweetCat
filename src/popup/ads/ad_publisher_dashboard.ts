@@ -83,7 +83,8 @@ export async function fetchDashboardInfo() {
             frozen_atomic: dashboardInfo.frozen_atomic,
             active_campaigns_count: dashboardInfo.active_campaigns_count,
             today_spend_atomic: dashboardInfo.today_spend_atomic,
-            week_spend_atomic: dashboardInfo.week_spend_atomic
+            week_spend_atomic: dashboardInfo.week_spend_atomic,
+            last_withdraw_at: dashboardInfo.last_withdraw_at
         };
 
         updateDashboardUI()

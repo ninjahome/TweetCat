@@ -1,14 +1,14 @@
 import {
-    $Id, $input, FIXED_ETH_TRANSFER_GAS_ETH,
+    $Id, $input, atomicToUsdcNumber, FIXED_ETH_TRANSFER_GAS_ETH,
     FIXED_MINI_USDC_TRANSFER, hideLoading,
     openTxInExplorer, showAlert, showLoading, showNotification, showPopupWindow
 } from "./common";
-import {t} from "../common/i18n";
-import {ethers} from "ethers";
-import {showView} from "../common/utils";
-import {dashRouter} from "./dashboard";
+import { t } from "../common/i18n";
+import { ethers } from "ethers";
+import { showView } from "../common/utils";
+import { dashRouter } from "./dashboard";
 import browser from "webextension-polyfill";
-import {currentSettings, getReadableNetworkName} from "./dash_setting";
+import { currentSettings, getReadableNetworkName } from "./dash_setting";
 import {
     ChainIDBaseMain,
     ChainIDBaseSepolia,
@@ -22,28 +22,29 @@ import {
     queryCdpWalletInfo,
     transferETHEoa, transferUSDCByX402, x402WorkerGet
 } from "../wallet/cdp_wallet";
-import {getChainId} from "../wallet/wallet_setting";
+import { getChainId } from "../wallet/wallet_setting";
+import { API_PATH_ADS_EXECUTOR_DASHBOARD_INFO } from "./ads/ad_publisher_common";
 
 function parseTransVal(toInput: HTMLInputElement, amountInput: HTMLInputElement) {
     const to = toInput.value.trim();
     const amount = amountInput.value.trim();
 
     if (!to) {
-        return {err: t("wallet_error_to_required")};
+        return { err: t("wallet_error_to_required") };
     }
     if (!ethers.utils.isAddress(to)) {
-        return {err: t("wallet_error_invalid_to_address")};
+        return { err: t("wallet_error_invalid_to_address") };
     }
 
     if (!amount) {
-        return {err: t("wallet_error_amount_required")};
+        return { err: t("wallet_error_amount_required") };
     }
 
     const n = Number(amount);
     if (!Number.isFinite(n) || n <= 0) {
-        return {err: t("wallet_error_amount_required")};
+        return { err: t("wallet_error_amount_required") };
     }
-    return {to, amount}
+    return { to, amount }
 }
 
 function openTransferDialog(typ: "eth" | "usdc", wi: walletInfo): Promise<TransferValues | null> {
@@ -73,12 +74,12 @@ function openTransferDialog(typ: "eth" | "usdc", wi: walletInfo): Promise<Transf
         form.onsubmit = (ev: Event) => {
             ev.preventDefault();
             errorEl.textContent = "";
-            const {to, amount, err} = parseTransVal(toInput, amountInput)
+            const { to, amount, err } = parseTransVal(toInput, amountInput)
             if (err) {
                 errorEl.textContent = err;
                 return
             }
-            handleClose({to, amount})
+            handleClose({ to, amount })
         };
 
         $Id('transfer-to-label').textContent = t('wallet_transfer_to_label');
@@ -88,7 +89,7 @@ function openTransferDialog(typ: "eth" | "usdc", wi: walletInfo): Promise<Transf
         $Id('transfer-amount-label').textContent = t('wallet_transfer_amount_label');
         const amountInput = $input("#transfer-amount");
         const val = isEth ? wi.ethVal + "  ETH" : wi.usdcVal + " USDC"
-        $Id("transfer-balance").textContent = `${t("wallet_current_balance") || ""}：${val}`;
+        $Id("transfer-balance").textContent = `${t("wallet_current_balance") || ""}：${val} `;
         $Id("tc-field__suffix").textContent = isEth ? "ETH" : "USDC"
 
         const maxBtn = $Id("transfer-fill-max") as HTMLButtonElement;
@@ -133,7 +134,7 @@ async function __handleTransfer(typ: "eth" | "usdc", action: (chain: number, rec
             return;
         }
         showLoading(t("wallet_sending_transaction") || "");
-        const {to, amount} = formValues;
+        const { to, amount } = formValues;
         const chainID = await getChainId()
         const hash = await action(chainID, to, amount)
         openTxInExplorer(hash, chainID).then()
@@ -188,7 +189,7 @@ async function showBalanceOnBrowser(): Promise<void> {
     }
     const chainID = await getChainId()
     const url = X402_FACILITATORS[chainID].browser + "/address/" + addr
-    await browser.tabs.create({url})
+    await browser.tabs.create({ url })
 }
 
 function setupWalletActionButtons(): void {
@@ -417,7 +418,7 @@ async function initRewards(): Promise<void> {
         });
 
         if (response.success && response.data) {
-            const {rewards} = response.data;
+            const { rewards } = response.data;
             const rewardsCount = rewardsArea.querySelector(".rewards-count") as HTMLElement;
             const rewardsAmount = rewardsArea.querySelector(".rewards-amount") as HTMLElement;
 
@@ -440,7 +441,7 @@ async function initRewards(): Promise<void> {
             rewardsArea.onclick = async () => {
                 const status = rewards.length > 0 ? 0 : -1;
                 await browser.tabs.create({
-                    url: browser.runtime.getURL(`html/rewards.html?status=${status}`)
+                    url: browser.runtime.getURL(`html / rewards.html ? status = ${status} `)
                 });
             };
         } else {
@@ -472,6 +473,23 @@ async function initAdPlaza(): Promise<void> {
 
         if (address) {
             adPlazaContainer.style.display = "flex";
+
+            // 获取执行者仪表盘统计
+            const xId = await queryCdpUserID();
+            if (xId) {
+                const response = await x402WorkerGet(API_PATH_ADS_EXECUTOR_DASHBOARD_INFO, { b_x_id: xId });
+                if (response.success && response.data) {
+                    const stats = response.data;
+
+                    const withdrawableVal = adPlazaContainer.querySelector(".ad-plaza-withdrawable-value");
+                    const todayEarnedVal = adPlazaContainer.querySelector(".ad-plaza-earnings-today .ad-plaza-earnings-value");
+                    const totalEarnedVal = adPlazaContainer.querySelector(".ad-plaza-earnings-total .ad-plaza-earnings-value");
+
+                    if (withdrawableVal) withdrawableVal.textContent = atomicToUsdcNumber(stats.withdrawable_atomic).toFixed(2);
+                    if (todayEarnedVal) todayEarnedVal.textContent = atomicToUsdcNumber(stats.today_earned_atomic).toFixed(2);
+                    if (totalEarnedVal) totalEarnedVal.textContent = atomicToUsdcNumber(stats.total_earned_atomic).toFixed(2);
+                }
+            }
         } else {
             adPlazaContainer.style.display = "none";
         }

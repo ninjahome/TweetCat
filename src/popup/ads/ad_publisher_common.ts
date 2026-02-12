@@ -64,6 +64,7 @@ export const API_PATH_ADS_TOGGLE_STATUS = "/ads/publisher/toggle_status";
 export const API_PATH_ADS_TOP_UP_BUDGET = "/ads/publisher/top_up_budget";
 export const API_PATH_ADS_PUBLISHER_DASHBOARD_INFO = "/ads/publisher/dashboard_info";
 export const API_PATH_ADS_PUBLISHER_SPEND_HISTORY = "/ads/publisher/spend_history";
+export const API_PATH_ADS_EXECUTOR_DASHBOARD_INFO = "/ads/executor/dashboard_info";
 
 // ========= Dashboard Info 相关类型定义 =========
 export interface DashboardInfo {
@@ -72,6 +73,7 @@ export interface DashboardInfo {
     active_campaigns_count: number;
     today_spend_atomic: string;
     week_spend_atomic: string;
+    last_withdraw_at?: string | null;
 }
 export interface PaginatedModule<T> {
     list: T[];
@@ -88,7 +90,8 @@ export const publisherState = {
         frozen_atomic: "0",
         active_campaigns_count: 0,
         today_spend_atomic: "0",
-        week_spend_atomic: "0"
+        week_spend_atomic: "0",
+        last_withdraw_at: null
     } as DashboardInfo,
 
     // 我的广告模块

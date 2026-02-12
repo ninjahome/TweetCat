@@ -1,6 +1,6 @@
 import { $2, atomicToUsdcNumber, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification } from "../common";
 import { x402WorkerGet, x402WorkerFetch } from "../../wallet/cdp_wallet";
-import { API_PATH_ADS_MY_CLAIMS, API_PATH_ADS_PUBLISHER_WITHDRAW } from "./ad_publisher_common";
+import { API_PATH_ADS_MY_CLAIMS, API_PATH_ADS_PUBLISHER_WITHDRAW, API_PATH_ADS_EXECUTOR_DASHBOARD_INFO } from "./ad_publisher_common";
 import { EarnClaim, executorState, formatClaimTime } from "./ad_executor_common";
 
 export async function loadClaims(): Promise<EarnClaim[]> {
@@ -11,38 +11,24 @@ export async function loadClaims(): Promise<EarnClaim[]> {
 
 export async function loadEarnSummary(): Promise<void> {
     try {
-        const claims = await loadClaims();
+        const { xId } = await getCurrentUserInfo();
+
+        // 1. 并行加载统计数据和流水记录
+        const [statsResp, claims] = await Promise.all([
+            x402WorkerGet(API_PATH_ADS_EXECUTOR_DASHBOARD_INFO, { b_x_id: xId }),
+            loadClaims()
+        ]);
+
+        // 2. 更新状态
         executorState.myClaims = claims;
 
-        // 重置统计
-        executorState.totalEarnedUSDC = 0;
-        executorState.pendingUSDC = 0;
-        executorState.withdrawableUSDC = 0;
-        executorState.todayEarnedUSDC = 0;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayTimestamp = today.getTime();
-
-        claims.forEach(claim => {
-            const amount = atomicToUsdcNumber(claim.unit_price_atomic);
-
-            if (claim.status === "CLAIMED" || claim.status === "PENDING_CONFIRM") {
-                executorState.pendingUSDC += amount;
-                executorState.totalEarnedUSDC += amount;
-            } else if (claim.status === "CONFIRMED") {
-                executorState.withdrawableUSDC += amount;
-                executorState.totalEarnedUSDC += amount;
-            }
-
-            // 计算今日收益
-            if (claim.created_at) {
-                const claimDate = new Date(claim.created_at);
-                if (claimDate.getTime() >= todayTimestamp) {
-                    executorState.todayEarnedUSDC += amount;
-                }
-            }
-        });
+        if (statsResp.success && statsResp.data) {
+            const stats = statsResp.data;
+            executorState.withdrawableUSDC = atomicToUsdcNumber(stats.withdrawable_atomic);
+            executorState.pendingUSDC = atomicToUsdcNumber(stats.pending_atomic);
+            executorState.todayEarnedUSDC = atomicToUsdcNumber(stats.today_earned_atomic);
+            executorState.totalEarnedUSDC = atomicToUsdcNumber(stats.total_earned_atomic);
+        }
 
         renderEarnSummary();
     } catch (err) {

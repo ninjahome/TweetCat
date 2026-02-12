@@ -90,6 +90,41 @@ function setTransferDirection(dir: TransferDirection) {
     const limitDetails = $Id("monthly-limit-details");
     if (limitDetails) {
         limitDetails.classList.add("hidden");
+
+        // 完备性补充：如果切换到提现模式，主动检查本月是否已提现
+        if (dir === "ads_to_wallet" && publisherState.dashboardInfo.last_withdraw_at) {
+            const lastWithdraw = new Date(publisherState.dashboardInfo.last_withdraw_at);
+            const now = new Date();
+
+            // 检查是否在同一个月
+            if (lastWithdraw.getFullYear() === now.getFullYear() && lastWithdraw.getMonth() === now.getMonth()) {
+                limitDetails.classList.remove("hidden");
+
+                // 设置详情信息
+                const prevDateEl = $Id("previous-withdraw-date");
+                if (prevDateEl) prevDateEl.textContent = lastWithdraw.toLocaleString();
+
+                // 计算下月 1 号
+                const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+                const nextDateEl = $Id("next-available-date");
+                if (nextDateEl) nextDateEl.textContent = nextMonth.toLocaleDateString();
+
+                // 禁用提交按钮（可选，但更完备）
+                const submitBtn = $Id("btn-transfer-submit") as HTMLButtonElement | null;
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.title = "Monthly withdrawal limit reached";
+                }
+            }
+        } else {
+            // 恢复提交按钮状态
+            const submitBtn = $Id("btn-transfer-submit") as HTMLButtonElement | null;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.title = "";
+            }
+        }
+
         const viewTxBtn = $Id("btn-view-previous-tx") as HTMLButtonElement | null;
         if (viewTxBtn) {
             viewTxBtn.classList.add("hidden");
