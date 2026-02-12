@@ -541,6 +541,18 @@ export async function apiAdsClaim(c: ExtCtx) {
 		let claim = await getDetailedClaim(c.env.DB, adId, bXId);
 		let claimId = claim?.claim_id;
 
+		if (claim && (claim.status === 'CONFIRMED' || claim.status === 'PENDING_CONFIRM')) {
+			return c.json({
+				success: true,
+				already_claimed: true,
+				claim_id: claim.claim_id,
+				status: claim.status,
+				ad_title: adRow.title,
+				unit_price_atomic: adRow.unit_price_atomic,
+				settled: claim.status === 'CONFIRMED'
+			});
+		}
+
 		// If NOT claimed yet, establish the claim (Reserve Quota)
 		if (!claim) {
 			// Status Checks for New Claims
@@ -1018,8 +1030,8 @@ export async function apiAdsToggleStatus(c: ExtCtx) {
 		if (!requireStringField(action)) return jsonError(c, 400, "INVALID_REQUEST", "Missing action");
 
 		// 验证 action 参数
-		if (action !== "pause" && action !== "resume") {
-			return jsonError(c, 400, "INVALID_REQUEST", "Action must be 'pause' or 'resume'");
+		if (action !== "pause" && action !== "resume" && action !== "stop") {
+			return jsonError(c, 400, "INVALID_REQUEST", "Action must be 'pause', 'resume' or 'stop'");
 		}
 
 		// 获取广告信息
@@ -1035,12 +1047,19 @@ export async function apiAdsToggleStatus(c: ExtCtx) {
 				return jsonError(c, 400, "INVALID_STATE", "Only active ads can be paused");
 			}
 			newStatus = "PAUSED_MANUAL";
-		} else {
+		} else if (action === "resume") {
 			// 从 PAUSED_MANUAL 切换到 ACTIVE
 			if (ad.status !== "PAUSED_MANUAL") {
 				return jsonError(c, 400, "INVALID_STATE", "Only manually paused ads can be resumed");
 			}
 			newStatus = "ACTIVE";
+		} else {
+			// STOP: 提前终止广告 (ACTIVE/PAUSED -> COMPLETED)
+			// 一旦 COMPLETED，cronRefundAds 将根据 pending claim 情况自动处理退款
+			if (ad.status !== "ACTIVE" && ad.status !== "PAUSED_MANUAL") {
+				return jsonError(c, 400, "INVALID_STATE", "Only active or paused ads can be stopped");
+			}
+			newStatus = "COMPLETED";
 		}
 
 		// 更新状态

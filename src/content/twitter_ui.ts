@@ -408,7 +408,8 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
                 console.log(`[TwitterUI] SUCCESS: Claim flow finished.`, resp.data);
 
                 const openPlaza = () => {
-                    window.open(browser.runtime.getURL('html/ad_plaza.html'), '_blank');
+                    const url = browser.runtime.getURL('html/ad_plaza.html');
+                    sendMsgToService(url, MsgType.OpenOrFocusUrl);
                 };
 
                 if (resp.data?.already_claimed) {

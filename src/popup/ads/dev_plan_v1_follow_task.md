@@ -622,10 +622,44 @@ Last updated: 2026-02-06
 
 ---
 
-## 12. 下一步：Milestone C (广告主报表对齐)
 
-随着后端闭环的完成，下一步重点回归广告主体验：
+---
 
-1.  确保 **Dashboard** 的 `Spend` 数据与后端 `settled` 数据一致。
-2.  优化 **My Ads** 列表的列展示 (`Claimed` vs `Settled` vs `Spent`)。
-3.  展示 **Refund** 状态，让广告主知道剩钱退回来了。
+## 13. 当前进度更新 (2026-02-12)
+
+### 13.1 已完成工作 (Completed)
+
+#### 后端逻辑 (Server-side)
+1.  **Atomic Claim API**: `POST /ads/executor/claim` 已实现。支持同时接收广告 ID、执行者信息及证据数据。
+    -   数据流：请求 -> 校验蓝 V/白名单 -> 创建 `PENDING_CONFIRM` claim 记录 -> 存入 `ad_claim_evidence` -> 返回成功。
+2.  **Cron Jobs 框架**:
+    -   `cronSettleAds`: 定时扫描超过冷却期（Dev: 1h, Prod: 24h）的 `PENDING_CONFIRM` 任务。
+    -   状态流转：`PENDING_CONFIRM` -> 扣减广告主 `frozen_atomic` -> 增加执行者 `available_atomic` -> `CONFIRMED`。
+3.  **资金结算底层**:
+    -   `settleAdReward` 函数实现了原子性的资金划转（通过数据库事务）。
+    -   `apiWithdrawFromAdsEscrowAccount` 提现接口已就绪，支持幂等性检查。
+
+#### 流程验证 (Verification)
+-   已跑通 "关注 -> Claim -> 数据库落库 -> 返回 Pending" 的完整 Happy Path。
+-   解决了 404/401/400 等一系列环境和权限错误。
+
+### 13.2 遗留工作 (Remaining / TODO)
+
+#### 安全性 (Critical for Production)
+1.  **服务端证据校验 (Server-side Proof Validation)**:
+    -   **现状**: `apiAdsClaim` 和 `cronSettleAds` 目前仅做非空检查，未校验 `proof_data` JSON 内容（如 `following: true`）。
+    -   **计划**: 在 `cronSettleAds` 结算前增加一步 `validateProof(evidence)`，解析 JSON 并验证逻辑。
+2.  **反欺诈/争议 (Dispute)**:
+    -   **现状**: 24 小时冷却期内无人工或自动介入机制。
+    -   **计划**: 开发管理后台或自动规则，标记异常 claim 为 `REJECTED` 以阻断结算。
+
+#### 用户体验 (User Experience)
+1.  **用户提现入口**:
+    -   **现状**: 后端有提现接口，但需确认前端 "My Wallet" 或 "My Tasks" 页面是否已对接余额查询和提现按钮。
+2.  **任务状态同步**:
+    -   **现状**: 用户需知道任务已从 `PENDING` 变为 `CONFIRMED` 并获得奖励。需确认 `My Tasks` 列表接口是否准确反映此状态变化。
+
+### 13.3 后续优化 (Future Optimization)
+
+1.  **Performance**: 随着 claiming 数据量增长，`cronSettleAds` 的扫描查询需增加索引优化。
+2.  **Notification**: 引入 WebSocket 或轮询机制，在结算完成时通知用户（"您的 1.0 USDC 已到账"）。

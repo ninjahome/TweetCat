@@ -1,6 +1,6 @@
 import { $2, atomicToUsdcNumber, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification } from "../common";
-import { x402WorkerGet } from "../../wallet/cdp_wallet";
-import { API_PATH_ADS_MY_CLAIMS } from "./ad_publisher_common";
+import { x402WorkerGet, x402WorkerFetch } from "../../wallet/cdp_wallet";
+import { API_PATH_ADS_MY_CLAIMS, API_PATH_ADS_PUBLISHER_WITHDRAW } from "./ad_publisher_common";
 import { EarnClaim, executorState, formatClaimTime } from "./ad_executor_common";
 
 export async function loadClaims(): Promise<EarnClaim[]> {
@@ -89,17 +89,69 @@ export function toggleActivityModal(open: boolean) {
 }
 
 export function initSummaryActions() {
-    document.querySelector<HTMLButtonElement>("#btn-withdraw")?.addEventListener("click", () => {
+    document.querySelector<HTMLButtonElement>("#btn-withdraw")?.addEventListener("click", async () => {
         if (executorState.withdrawableUSDC <= 0) {
             showNotification("Nothing to withdraw.");
             return;
         }
 
-        const amount = executorState.withdrawableUSDC;
-        executorState.withdrawableUSDC = 0;
+        const btn = document.querySelector<HTMLButtonElement>("#btn-withdraw");
+        if (btn) btn.disabled = true;
 
-        renderEarnSummary();
-        showNotification(`Withdraw submitted: ${formatUSDC(amount)}`);
+        try {
+            const { xId } = await getCurrentUserInfo();
+            // Convert current USDC balance back to atomic units (USDC has 6 decimals)
+            // Or better, we should store atomic balance in state.
+            // But since loadEarnSummary calculates from claims (which are strings of atomic),
+            // let's re-calculate precise atomic amount or just use what we have.
+            // Actually, `withdrawableUSDC` is a number, converting back might have precision issues?
+            // Let's re-sum from claims to be safe.
+
+            let totalAtomic = 0n;
+            executorState.myClaims.forEach(c => {
+                if (c.status === "CONFIRMED") {
+                    totalAtomic += BigInt(c.unit_price_atomic);
+                }
+            });
+
+            if (totalAtomic <= 0n) {
+                showNotification("Nothing to withdraw (atomic check).");
+                return;
+            }
+
+            const amountAtomic = totalAtomic.toString();
+            const amountUSDC = executorState.withdrawableUSDC;
+
+            showNotification("Withdrawing...", "info");
+
+            // Call Backend
+            const resp = await x402WorkerFetch(API_PATH_ADS_PUBLISHER_WITHDRAW, {
+                a_x_id: xId, // Executor withdraws from their own escrow balance
+                amount_atomic: amountAtomic
+            });
+
+            if (resp && (resp.success || resp.txHash)) {
+                // Success
+                executorState.withdrawableUSDC = 0;
+                renderEarnSummary();
+
+                const txLink = resp.txHash ? ` Tx: ${resp.txHash.slice(0, 6)}...` : "";
+                showNotification(`Withdraw success! ${formatUSDC(amountUSDC)}${txLink}`, "success");
+
+                // Reload claims/summary to ensure state consistency
+                setTimeout(() => loadEarnSummary(), 2000);
+            } else {
+                // Failed
+                const msg = resp?.error || resp?.message || "Withdraw failed";
+                showNotification(msg, "error");
+            }
+
+        } catch (e: any) {
+            console.error("Withdraw failed:", e);
+            showNotification(e.message || "Withdraw error", "error");
+        } finally {
+            if (btn) btn.disabled = false;
+        }
     });
 
     document.querySelector<HTMLButtonElement>("#btn-earn-activity")?.addEventListener("click", () => {

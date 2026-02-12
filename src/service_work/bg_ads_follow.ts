@@ -110,6 +110,9 @@ export async function claimAdsFollowOffer(params: { ad_id: string; profileUrl?: 
         return { success: true, resp, claim_state: await getClaimState(ad_id) };
     } catch (e) {
         await clearClaimState(ad_id);
+        // Force refresh feed on failure (e.g. quota full, ad expired)
+        // This ensures the stale ad is removed from local cache
+        await pollAdsFeedIfNeeded(true);
         throw e;
     }
 }

@@ -422,8 +422,8 @@ export function renderMyAdsTable() {
 }
 
 // ========= Ad Detail Modal =========
-// 处理广告状态切换（启用/暂停）
-async function handleToggleAdStatus(adId: string, action: "pause" | "resume") {
+// 处理广告状态切换（启用/暂停/停止）
+async function handleToggleAdStatus(adId: string, action: "pause" | "resume" | "stop") {
     try {
         showLoading();
         const currentXId = getCurrentXId();
@@ -435,7 +435,11 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume") {
 
         if (response.ok) {
             const result = await response.json();
-            showNotification(action === "pause" ? "广告已暂停" : "广告已启用", "success");
+            let msg = "操作成功";
+            if (action === "pause") msg = "广告已暂停";
+            if (action === "resume") msg = "广告已启用";
+            if (action === "stop") msg = "广告已结束，剩余预算即将退回";
+            showNotification(msg, "success");
 
             // 局部更新本地状态并更新 UI
             const ad = publisherState.ads.list.find(a => a.ad_id === adId);
@@ -643,7 +647,7 @@ function openAdDetailModal(ad: AdRecord) {
         // 清空现有按钮
         modalActions.replaceChildren();
 
-        // 根据广告状态动态生成按钮
+        // 1. Pause/Resume/TopUp Buttons
         if (ad.status === "ACTIVE") {
             const btnPause = document.createElement("button");
             btnPause.className = "btn btn-warning";
@@ -673,7 +677,7 @@ function openAdDetailModal(ad: AdRecord) {
             modalActions.appendChild(btnTopUp);
         }
 
-        // 统一：为 ACTIVE, PAUSED_MANUAL, PAUSED_NO_BUDGET 状态提供一个通用的“追加预算”按钮
+        // 2. Add Budget Button (for Active/Paused)
         if (ad.status === "ACTIVE" || ad.status === "PAUSED_MANUAL") {
             const btnAddBudget = document.createElement("button");
             btnAddBudget.className = "btn btn-success";
@@ -683,6 +687,23 @@ function openAdDetailModal(ad: AdRecord) {
                 handleTopUpAdBudget(ad.ad_id);
             };
             modalActions.appendChild(btnAddBudget);
+        }
+
+        // 3. Stop Button (End Campaign) - 仅允许 Active/PausedManual
+        // 将其作为危险操作放在最后
+        if (ad.status === "ACTIVE" || ad.status === "PAUSED_MANUAL") {
+            const btnStop = document.createElement("button");
+            btnStop.className = "btn btn-danger"; // Ensure you have danger style or use inline style
+            btnStop.style.backgroundColor = "var(--color-danger, #dc3545)";
+            btnStop.style.color = "white";
+            btnStop.textContent = "结束投放";
+            btnStop.onclick = async () => {
+                if (!confirm("确定要结束此广告吗？\n\n结束后的广告无法恢复，未使用的预算将自动退回到您的账户余额。")) return;
+
+                modal.classList.remove("active");
+                await handleToggleAdStatus(ad.ad_id, "stop");
+            };
+            modalActions.appendChild(btnStop);
         }
     }
 

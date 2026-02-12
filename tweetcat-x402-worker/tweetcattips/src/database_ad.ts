@@ -1085,13 +1085,13 @@ export async function settleAdReward(
 	db: D1Database,
 	params: {
 		claimId: string;
-		// adId: string; // db operation doesn't need adId directly, only aXId
+		adId: string;
 		aXId: string; // 广告主
 		bXId: string; // 执行者
 		rewardAtomic: string;
 	}
 ): Promise<boolean> {
-	const { claimId, aXId, bXId, rewardAtomic } = params;
+	const { claimId, adId, aXId, bXId, rewardAtomic } = params;
 
 	// 1. 扣减广告主冻结余额 (注意：这里用的是 frozen_atomic，因为发布广告时已预留)
 	const deductFrozenSql = `
@@ -1118,14 +1118,23 @@ export async function settleAdReward(
 		WHERE claim_id = ? AND status IN ('CLAIMED', 'PENDING_CONFIRM')
 	`;
 
+	// 4. 更新广告使用的配额 quota_used
+	// 这一步至关重要，用于后续计算退回预算时的剩余额度
+	const updateAdQuotaSql = `
+		UPDATE ad_campaigns
+		SET quota_used = COALESCE(quota_used, 0) + 1, updated_at = datetime('now')
+		WHERE ad_id = ?
+	`;
+
 	try {
 		const batch = await db.batch([
 			db.prepare(deductFrozenSql).bind(rewardAtomic, aXId, rewardAtomic),
 			db.prepare(creditPerformerSql).bind(bXId, rewardAtomic, rewardAtomic),
-			db.prepare(updateClaimSql).bind(claimId)
+			db.prepare(updateClaimSql).bind(claimId),
+			db.prepare(updateAdQuotaSql).bind(adId)
 		]);
 
-		if (!batch || batch.length < 3) return false;
+		if (!batch || batch.length < 4) return false;
 
 		// 检查扣费是否有影响行数（如果余额不足，changes=0）
 		// batch[0] 是扣费结果
@@ -1142,6 +1151,24 @@ export async function settleAdReward(
 }
 
 /**
+ * 拒绝广告奖励 (更新状态为 REJECTED)
+ */
+export async function rejectAdReward(db: D1Database, claimId: string, reason: string): Promise<boolean> {
+	const sql = `
+		UPDATE ad_reward_claims
+		SET status = 'REJECTED', updated_at = datetime('now')
+		WHERE claim_id = ? AND status IN ('CLAIMED', 'PENDING_CONFIRM')
+	`;
+	const result = await db.prepare(sql).bind(claimId).run();
+
+	// 如果是 REJECTED，理论上应该退回 quota_claimed (或者不退回，视业务逻辑而定)
+	// 目前 v1 简单处理：拒绝就不发钱，但 quota_claimed 已经占用了。
+	// 如果需要退回 quota，可以在这里加。但考虑到防刷，可能不退 quota 反而更能遏制恶意刷单。
+
+	return result.success ?? false;
+}
+
+/**
  * 获取待结算的 Claim 列表 (超过指定小时数且状态为 PENDING_CONFIRM)
  */
 export async function getPendingSettlementClaims(
@@ -1154,11 +1181,16 @@ export async function getPendingSettlementClaims(
 	a_x_id: string;
 	b_x_id: string;
 	unit_price_atomic: string;
+	proof_data: string | null;
+	proof_type: string | null;
+	category: string | null;
 }[]> {
 	const sql = `
-		SELECT c.claim_id, c.ad_id, a.a_x_id, c.b_x_id, c.unit_price_atomic
+		SELECT c.claim_id, c.ad_id, a.a_x_id, c.b_x_id, c.unit_price_atomic,
+			   e.proof_data, e.proof_type, e.category
 		FROM ad_reward_claims c
 		JOIN ad_campaigns a ON c.ad_id = a.ad_id
+		LEFT JOIN ad_claim_evidence e ON c.claim_id = e.claim_id
 		WHERE c.status = 'PENDING_CONFIRM'
 		  AND c.updated_at <= datetime('now', '-' || ? || ' hours')
 		LIMIT ?
@@ -1170,6 +1202,9 @@ export async function getPendingSettlementClaims(
 		a_x_id: string;
 		b_x_id: string;
 		unit_price_atomic: string;
+		proof_data: string | null;
+		proof_type: string | null;
+		category: string | null;
 	}>();
 
 	return results ?? [];
