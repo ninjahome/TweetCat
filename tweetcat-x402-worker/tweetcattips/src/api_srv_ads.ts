@@ -169,6 +169,7 @@ export async function parseEscrowRequestParams(c: ExtCtx): Promise<ParsedEscrowR
 	const body = await c.req.json().catch(() => ({}));
 	const aXId = body?.a_x_id;
 	const amountStr = body?.amount;
+	const amountAtomicBody = body?.amount_atomic;
 
 	// 验证 a_x_id
 	if (!requireStringField(aXId)) {
@@ -179,23 +180,33 @@ export async function parseEscrowRequestParams(c: ExtCtx): Promise<ParsedEscrowR
 		);
 	}
 
-	// 验证 amount
-	if (!requireStringField(amountStr)) {
-		throw new EscrowRequestError(
-			"INVALID_REQUEST",
-			"Missing amount",
-			400
-		);
-	}
-
-	// 将十进制金额转换为原子单位
+	// 将十进制金额或原子单位转换为原子单位
 	let amountAtomic: string;
-	try {
-		amountAtomic = usdcToAtomicSafe(amountStr);
-	} catch (e) {
+
+	if (requireStringField(amountAtomicBody)) {
+		// 如果直接提供了原子单位，验证其是否为纯数字
+		if (!/^\d+$/.test(amountAtomicBody)) {
+			throw new EscrowRequestError(
+				"INVALID_REQUEST",
+				"Invalid amount_atomic format",
+				400
+			);
+		}
+		amountAtomic = amountAtomicBody;
+	} else if (requireStringField(amountStr)) {
+		try {
+			amountAtomic = usdcToAtomicSafe(amountStr);
+		} catch (e) {
+			throw new EscrowRequestError(
+				"INVALID_REQUEST",
+				"Invalid amount format",
+				400
+			);
+		}
+	} else {
 		throw new EscrowRequestError(
 			"INVALID_REQUEST",
-			"Invalid amount format",
+			"Missing amount or amount_atomic",
 			400
 		);
 	}
