@@ -429,7 +429,6 @@
   "ipfs_local_uploading_test_data": {
     "message": "Uploading test data to IPFS..."
   },
-
   "ipfs_local_kubo_missing_cid": {
     "message": "CID not found in response"
   },
@@ -1358,10 +1357,10 @@
     "message": "Error: failed to load user info. Please reopen this page."
   },
   "cdp_auth_action_close": {
-    "message":"Close"
+    "message": "Close"
   },
   "cdp_auth_action_retry": {
-    "message":"Retry"
+    "message": "Retry"
   },
   "cdp_auth_page_title": {
     "message": "Connect Coinbase Wallet "
@@ -1422,5 +1421,11 @@
   },
   "wallet_new_loading_creating": {
     "message": "Creating..."
+  },
+  "wallet_network_change_confirm": {
+    "message": "Switching networks will sign out of your current Coinbase account to re-confirm the binding. Are you sure you want to switch?"
+  },
+  "wallet_network_changed_relogin": {
+    "message": "Network switched. Please sign in to your Coinbase account again."
   }
 }

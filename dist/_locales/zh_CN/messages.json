@@ -1279,7 +1279,7 @@
     "message": "打开快照失败"
   },
   "ipfs_sync_no_local_followings": {
-  "message": "需要先从推特同步账户。是否需要现在同步？"
+    "message": "需要先从推特同步账户。是否需要现在同步？"
   },
   "label_detail_gross": {
     "message": "总金额"
@@ -1357,13 +1357,13 @@
     "message": "错误：无法加载用户信息，请重新打开。"
   },
   "cdp_auth_action_close": {
-    "message":"关闭窗口"
+    "message": "关闭窗口"
   },
   "cdp_auth_action_retry": {
-    "message":"重试"
+    "message": "重试"
   },
   "cdp_auth_status_init": {
-    "message":"初始化中..."
+    "message": "初始化中..."
   },
   "cdp_auth_page_title": {
     "message": "Coinbase 钱包连接 "
@@ -1424,5 +1424,11 @@
   },
   "wallet_new_loading_creating": {
     "message": "创建中..."
+  },
+  "wallet_network_change_confirm": {
+    "message": "切换网络将退出当前 Coinbase 账号以重新确认绑定关系，确定要切换吗？"
+  },
+  "wallet_network_changed_relogin": {
+    "message": "网络已切换，请重新登录 Coinbase 账号"
   }
 }

@@ -8,6 +8,7 @@ import {
     multiplyAtomic,
     showLoading,
     showNotification,
+    showConfirm,
     usdcToAtomic
 } from "../common";
 import { logAdP } from "../../common/debug_flags";
@@ -698,7 +699,8 @@ function openAdDetailModal(ad: AdRecord) {
             btnStop.style.color = "white";
             btnStop.textContent = "结束投放";
             btnStop.onclick = async () => {
-                if (!confirm("确定要结束此广告吗？\n\n结束后的广告无法恢复，未使用的预算将自动退回到您的账户余额。")) return;
+                const confirmed = await showConfirm("确定要结束此广告吗？\n\n结束后的广告无法恢复，未使用的预算将自动退回到您的账户余额。");
+                if (!confirmed) return;
 
                 modal.classList.remove("active");
                 await handleToggleAdStatus(ad.ad_id, "stop");

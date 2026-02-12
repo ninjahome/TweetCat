@@ -1,12 +1,12 @@
-import {$Id, showNotification} from "./common";
-import {t} from "../common/i18n";
+import { $Id, showNotification, showConfirm } from "./common";
+import { t } from "../common/i18n";
 
-import {defaultWalletSettings, loadWalletSettings, saveWalletSettings, WalletSettings} from "../wallet/wallet_setting";
-import {ChainNameBaseMain, ChainNetwork} from "../common/x402_obj";
-import {refreshBalances} from "./dash_wallet";
+import { defaultWalletSettings, loadWalletSettings, saveWalletSettings, WalletSettings } from "../wallet/wallet_setting";
+import { ChainNameBaseMain, ChainNetwork, doSignOut } from "../common/x402_obj";
+import { refreshBalances } from "./dash_wallet";
 
 
-export let currentSettings: WalletSettings = {...defaultWalletSettings};
+export let currentSettings: WalletSettings = { ...defaultWalletSettings };
 
 export function getReadableNetworkName(): string {
     if (currentSettings.network === ChainNameBaseMain) {
@@ -16,11 +16,15 @@ export function getReadableNetworkName(): string {
 }
 
 export async function handleResetSettings(): Promise<void> {
-    currentSettings = {...defaultWalletSettings};
+    const confirmed = await showConfirm(t("wallet_network_change_confirm") || "切换网络将退出当前 Coinbase 账号以重新确认绑定关系，确定要重置吗？");
+    if (!confirmed) return;
+
+    currentSettings = { ...defaultWalletSettings };
     ($Id("wallet-network-select") as HTMLSelectElement).value = currentSettings.network;
     await saveWalletSettings(currentSettings);
-    showNotification(t('wallet_node_settings_reset'));
-    await refreshBalances();
+    await doSignOut();
+    showNotification(t('wallet_network_changed_relogin') || "网络已切换，请重新登录 Coinbase 账号");
+    location.reload();
 }
 
 function toggleSettingsPanel(): void {
@@ -43,10 +47,17 @@ export async function initSettingsPanel(): Promise<void> {
     if (networkSelect) {
         networkSelect.value = currentSettings.network
         networkSelect.onchange = async () => {
-            currentSettings = {network: networkSelect.value as ChainNetwork, useDefaultRpc: true};
+            const confirmed = await showConfirm(t("wallet_network_change_confirm") || "切换网络将退出当前 Coinbase 账号以重新确认绑定关系，确定要切换吗？");
+            if (!confirmed) {
+                networkSelect.value = currentSettings.network;
+                return;
+            }
+
+            currentSettings = { network: networkSelect.value as ChainNetwork, useDefaultRpc: true };
             await saveWalletSettings(currentSettings);
-            showNotification(t("save_success"));
-            await refreshBalances(false);
+            await doSignOut();
+            showNotification(t("wallet_network_changed_relogin") || "网络已切换，请重新登录 Coinbase 账号");
+            location.reload();
         }
     }
 
