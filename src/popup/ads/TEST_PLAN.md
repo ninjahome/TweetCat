@@ -11,8 +11,8 @@
 1. [系统架构概览](#1-系统架构概览)
 2. [设计缺陷与代码缺陷分析](#2-设计缺陷与代码缺陷分析)
 3. [测试计划总览](#3-测试计划总览)
-4. [模块一：广告主发布广告](#4-模块一广告主发布广告)
-5. [模块二：广告主资金管理（充值 / 提现）](#5-模块二广告主资金管理充值--提现)
+4. [模块一：广告主资金管理（充值 / 提现）](#4-模块一广告主资金管理充值--提现)
+5. [模块二：广告主发布广告](#5-模块二广告主发布广告)
 6. [模块三：广告生命周期管理（暂停 / 启用 / 结束 / 充值预算）](#6-模块三广告生命周期管理暂停--启用--结束--充值预算)
 7. [模块四：用户执行广告（关注任务流程）](#7-模块四用户执行广告关注任务流程)
 8. [模块五：任务结算与奖励（Cron 定时任务）](#8-模块五任务结算与奖励cron-定时任务)
@@ -61,8 +61,8 @@
 
 | 优先级 | 模块 | 用例数 | 预估工时 |
 |--------|------|--------|----------|
-| P0 | 广告主发布广告 | 12 | 2h |
 | P0 | 资金管理（充值/提现） | 15 | 3h |
+| P0 | 广告主发布广告 | 12 | 2h |
 | P0 | 用户执行广告任务 | 18 | 4h |
 | P0 | 任务结算 (Cron) | 10 | 2h |
 | P0 | 安全性验证 | 12 | 3h |
@@ -77,35 +77,7 @@
 
 ---
 
-## 4. 模块一：广告主发布广告
-
-### 涉及代码
-| 层级 | 文件 |
-|------|------|
-| 前端 | `ad_publisher_ads.ts` → `submitPublishForm()` |
-| 后端 | `api_srv_ads.ts` → `apiAdsCreate()` |
-| 数据库 | `database_ad.ts` → `reserveAdBudget()`, `createAd()` |
-
-### 测试用例
-
-| # | 测试场景 | 预期结果 | 优先级 |
-|---|---------|---------|--------|
-| P-01 | 🤖 正常发布：填写所有必填字段，余额充足 | 广告创建成功，余额从 available 移至 frozen，feed version 递增 | P0 |
-| P-02 | 👋 缺少广告名称 | 前端拦截："Please enter a campaign name." | P0 |
-| P-03 | 👋 奖励金额为 0 或负数 | 前端拦截："Reward per follow must be greater than 0." | P0 |
-| P-04 | 👋 奖励金额非数字（如 "abc"） | 前端拦截：parseFloat 返回 NaN → 提示错误 | P1 |
-| P-05 | 👋 截止日期为过去时间 | 前端和后端均拦截："End date must be in the future." | P0 |
-| P-06 | 👋 未选择截止日期 | 前端拦截 | P1 |
-| P-07 | 🤖 余额不足 | 后端返回 `INSUFFICIENT_BALANCE`，前端显示具体差额 | P0 |
-| P-08 | 👋 目标 URL 为空 | 前端拦截："Please enter a target Twitter profile URL." | P1 |
-| P-09 | 🤖 极大配额（如 1,000,000）× 高单价（如 10 USDC） | 验证 BigInt 计算是否溢出，余额校验是否正确 | P1 |
-| P-10 | 👋 发布后刷新页面查看广告列表 | 新广告应出现在 "My Ads" 表格中，状态为 ACTIVE | P0 |
-| P-11 | 👋 连续快速点击提交按钮 | 按钮应在第一次点击后 disable，防止重复提交 | P1 |
-| P-12 | 👋 发布完成后预算摘要更新 | dashboard 的 frozen、active campaigns 数量正确更新 | P1 |
-
----
-
-## 5. 模块二：广告主资金管理（充值 / 提现）
+## 4. 模块一：广告主资金管理（充值 / 提现）
 
 ### 涉及代码
 | 层级 | 文件 |
@@ -119,11 +91,11 @@
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
 | B-01 | 🤖 **充值**：正常金额从钱包转入 Ads 账户 | x402 支付成功 → 账本记录(DEPOSIT/SETTLED) → available_atomic 增加 | P0 |
-| B-02 | 👋 充值金额超过钱包余额 | 前端拦截："Amount exceeds Wallet Balance."（✅ **已修复 M-4**） | P0 |
+| B-02 | 👋 充值金额超过钱包余额 | 前端拦截："Amount exceeds Wallet Balance." | P0 |
 | B-03 | 👋 充值金额为 0 | 前端拦截："Please enter a valid amount." | P1 |
 | B-04 | 👋 充值金额为负数 | 前端拦截 | P1 |
 | B-05 | 🤖 同一 txHash 的充值请求重复到达 | 幂等保护：`ON CONFLICT(tx_hash) DO NOTHING`，余额只增加一次 | P0 |
-| B-06 | 🤖 **提现**：正常金额从 Ads 账户提现到绑定钱包 | 扣减 available → 链上转账 → 账本 SETTLED → txHash 返回 | P0 |
+| B-06 | 🤖 **提现**：正常金额 from Ads 账户提现到绑定钱包 | 扣减 available → 链上转账 → 账本 SETTLED → txHash 返回 | P0 |
 | B-07 | 🤖 提现金额超过可用余额 | 返回 `INSUFFICIENT_BALANCE` | P0 |
 | B-08 | 🤖 **月度提现限制**：本月已提现一次，再次提现 | 返回 `alreadyWithdrawn: true`，显示上次 txHash 和下次可用日期 | P0 |
 | B-09 | 🤖 上月提现过，本月首次提现 | 正常执行（幂等 key 变了：`{xId}_{YYYYMM}`） | P0 |
@@ -133,6 +105,34 @@
 | B-13 | 👋 切换方向后校验状态更新 | 月度限制警告只在 `ads_to_wallet` 方向显示 | P1 |
 | B-14 | 🤖 未绑定钱包地址的用户尝试提现 | 后端返回 "User wallet address not found" | P1 |
 | B-15 | 🤖 并发充值请求（同一用户同时发起两笔） | 两笔均应正确处理（不同 txHash），余额累加 | P2 |
+
+---
+
+## 5. 模块二：广告主发布广告
+
+### 涉及代码
+| 层级 | 文件 |
+|------|------|
+| 前端 | `ad_publisher_ads.ts` → `submitPublishForm()` |
+| 后端 | `api_srv_ads.ts` → `apiAdsCreate()` |
+| 数据库 | `database_ad.ts` → `reserveAdBudget()`, `createAd()` |
+
+### 测试用例
+
+| # | 测试场景 | 预期结果 | 优先级 |
+|---|---------|---------|--------|
+| P-01 | 🤖 正常发布：填写所有必填字段，余额充足 | 广告创建成功，余额 from available 移至 frozen，feed version 递增 | P0 |
+| P-02 | 👋 缺少广告名称 | 前端拦截："Please enter a campaign name." | P0 |
+| P-03 | 👋 奖励金额为 0 或负数 | 前端拦截："Reward per follow must be greater than 0." | P0 |
+| P-04 | 👋 奖励金额非数字（如 "abc"） | 前端拦截：parseFloat 返回 NaN → 提示错误 | P1 |
+| P-05 | 👋 截止日期为过去时间 | 前端和后端均拦截："End date must be in the future." | P0 |
+| P-06 | 👋 未选择截止日期 | 前端拦截 | P1 |
+| P-07 | 🤖 余额不足 | 后端返回 `INSUFFICIENT_BALANCE`，前端显示具体差额（已修复展示单位问题） | P0 |
+| P-08 | 👋 目标 URL 为空 | 前端拦截："Please enter a target Twitter profile URL." | P1 |
+| P-09 | 🤖 极大配额（如 1,000,000）× 高单价（如 10 USDC） | 验证 BigInt 计算是否溢出，余额校验是否正确 | P1 |
+| P-10 | 👋 发布后刷新页面查看广告列表 | 新广告应出现在 "My Ads" 表格中，状态为 ACTIVE | P0 |
+| P-11 | 👋 连续快速点击提交按钮 | 按钮应在第一次点击后 disable，防止重复提交 | P1 |
+| P-12 | 👋 发布完成后预算摘要更新 | dashboard 的 frozen、active campaigns 数量正确更新 | P1 |
 
 ---
 

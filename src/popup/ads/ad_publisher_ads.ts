@@ -8,7 +8,7 @@ import {
     refreshAdsData,
     fetchDashboardInfo
 } from "./ad_publisher_dashboard";
-import { showNotification, usdcToAtomic, showLoading, hideLoading, $Id } from "../common";
+import { showNotification, usdcToAtomic, atomicToUsdcNumber, formatUSDC, showLoading, hideLoading, $Id } from "../common";
 import { x402WorkerFetch } from "../../wallet/cdp_wallet";
 
 
@@ -131,7 +131,15 @@ async function submitPublishForm() {
 
         if (!result.ok) {
             if (result.error?.error === "INSUFFICIENT_BALANCE") {
-                showNotification(`Insufficient balance. ${result.error?.detail || ""}`.trim(), "error");
+                let detail = result.error?.detail || "";
+                // Reformat atomic string "Required 1000000, available 0" to USDC
+                const match = detail.match(/Required (\d+), available (\d+)/);
+                if (match) {
+                    const req = formatUSDC(atomicToUsdcNumber(match[1]));
+                    const avail = formatUSDC(atomicToUsdcNumber(match[2]));
+                    detail = `Required ${req}, available ${avail}.`;
+                }
+                showNotification(`Insufficient balance. ${detail}`.trim(), "error");
                 return;
             }
             showNotification(result.error?.detail || "Failed to create campaign.", "error");
