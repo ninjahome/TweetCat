@@ -8,10 +8,12 @@ import {
 import {
     API_PATH_ADS_PUBLISHER_RECHARGE,
     API_PATH_ADS_PUBLISHER_WITHDRAW,
+    initWalletInfo,
     normalizeWalletUsdcDisplay,
     parseUsdcNumber,
     publisherState
 } from "./ad_publisher_common";
+import { fetchDashboardInfo, loadAndRenderTransferHistory } from "./ad_publisher_dashboard";
 import { postToX402Srv, x402WorkerFetch } from "../../wallet/cdp_wallet";
 
 type TransferDirection = "wallet_to_ads" | "ads_to_wallet";
@@ -253,8 +255,16 @@ async function handleAdsEscrowTransfer(): Promise<void> {
         const txHash = String(result.txHash);
 
         closeRechargeModal();
-        await openTxInExplorer(txHash);
         showNotification("Transfer submitted successfully.", "success");
+
+        // Refresh all balances and history
+        await Promise.all([
+            initWalletInfo(),
+            fetchDashboardInfo(),
+            loadAndRenderTransferHistory().catch(() => { }) // non-critical if modal not open
+        ]);
+
+        await openTxInExplorer(txHash);
     } catch (e: any) {
         const msg = (e?.message || "Transfer failed").toString();
         setTransferInlineError(msg);

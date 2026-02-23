@@ -895,7 +895,7 @@ function switchHistoryTab(tab: "earnings" | "spending" | "recharge") {
     if (tab === "recharge") renderHistoryTable("recharge", publisherState.historyRecharge);
 }
 
-async function loadAndRenderTransferHistory(): Promise<void> {
+export async function loadAndRenderTransferHistory(): Promise<void> {
     const currentXId = getCurrentXId();
 
     const tbody = document.querySelector<HTMLTableSectionElement>("#recharge-history-tbody");

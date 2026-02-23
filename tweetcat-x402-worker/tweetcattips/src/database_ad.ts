@@ -865,7 +865,7 @@ export async function getPublisherDashboardStats(db: D1Database, aXId: string) {
 			   AND date(arc.created_at) >= date('now', '-7 days')) as week_spend_atomic,
 			(SELECT MAX(created_at) FROM ad_escrow_ledger 
 			 WHERE a_x_id = ? 
-			   AND op = 'WITHDRAW' 
+			   AND direction = 'WITHDRAW' 
 			   AND status = 'SETTLED') as last_withdraw_at
 	`;
 
