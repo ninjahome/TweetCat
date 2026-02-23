@@ -76,13 +76,7 @@
 
 
 
-#### L-2: 多处 `showNotification` 使用中文和英文混杂
 
-**文件**: 多个文件
-
-**建议**: 统一国际化，使用 `t()` 函数。
-
----
 
 #### L-3: `ad_executor_common.ts` 中 `taskRunState` 使用内存对象，页面刷新后丢失
 

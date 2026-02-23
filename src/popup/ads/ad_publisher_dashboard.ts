@@ -436,7 +436,7 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume" | "
             action: action
         });
 
-        let msg = "操作成功";
+        let msg = "Success";
         if (action === "pause") msg = "Ad paused";
         if (action === "resume") msg = "Ad resumed";
         if (action === "stop") msg = "Ad ended. Remaining budget will be refunded soon.";
