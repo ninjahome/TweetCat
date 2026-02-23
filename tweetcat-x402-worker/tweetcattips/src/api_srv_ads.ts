@@ -107,12 +107,30 @@ export class EscrowRequestError extends Error {
 
 /**
  * 校验蓝V设备签名证据
+ * @param proofInput - 蓝V证据 (含签名和设备公钥)
+ * @param registeredPubKeyB64 - 服务器存储的可信设备公钥 (来自 kol_binding.device_pubkey_spki)
+ *                              如果提供，则用此公钥验证签名，而非 proof 中自带的公钥
  */
-async function verifyBlueVProof(proofInput: any): Promise<boolean> {
+async function verifyBlueVProof(proofInput: any, registeredPubKeyB64: string | null): Promise<boolean> {
 	try {
 		const proof = typeof proofInput === 'string' ? JSON.parse(proofInput) : proofInput;
 		if (!proof.userId || !proof.screenName || typeof proof.isBlueVerified !== 'boolean' || !proof.capturedAt || !proof.signature || !proof.devicePubKey) {
 			return false;
+		}
+
+		// Determine which public key to use for verification
+		let pubKeyB64ToUse: string;
+		if (registeredPubKeyB64) {
+			// Use the server-registered trusted key
+			if (registeredPubKeyB64 !== proof.devicePubKey) {
+				console.warn(`[verifyBlueVProof] Device key MISMATCH for user ${proof.userId}: registered key differs from proof key`);
+				// Still use the registered key — the proof must be signed with the registered device
+			}
+			pubKeyB64ToUse = registeredPubKeyB64;
+		} else {
+			// No registered key: fall back to proof's self-provided key (backwards compat)
+			console.warn(`[verifyBlueVProof] No registered device key for user ${proof.userId}. Falling back to proof-provided key (less secure).`);
+			pubKeyB64ToUse = proof.devicePubKey;
 		}
 
 		// Reconstruct dataToSign (MUST match frontend EXACTLY)
@@ -124,7 +142,7 @@ async function verifyBlueVProof(proofInput: any): Promise<boolean> {
 		});
 
 		const data = new TextEncoder().encode(dataToSign);
-		const spkiBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(proof.devicePubKey));
+		const spkiBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(pubKeyB64ToUse));
 		const sigBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(proof.signature));
 
 		const publicKey = await crypto.subtle.importKey(
@@ -519,7 +537,11 @@ export async function apiAdsClaim(c: ExtCtx) {
 				return jsonError(c, 401, "BLUE_V_REQUIRED", "Blue Verified status proof is required to claim rewards");
 			}
 
-			const isBlueVValid = await verifyBlueVProof(blueVProof);
+			// Look up the registered device public key for this user
+			const kolBinding = await getKolBindingByXId(c.env.DB, bXId);
+			const registeredDeviceKey = kolBinding?.device_pubkey_spki ?? null;
+
+			const isBlueVValid = await verifyBlueVProof(blueVProof, registeredDeviceKey);
 			if (!isBlueVValid) {
 				return jsonError(c, 401, "INVALID_BLUE_V_PROOF", "Blue Verified status verification failed");
 			}
@@ -548,6 +570,11 @@ export async function apiAdsClaim(c: ExtCtx) {
 		// Get ad info
 		const adRow = await getAdById(c.env.DB, adId);
 		if (!adRow) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+
+		// Prevent advertiser from claiming their own ad
+		if (adRow.a_x_id === bXId) {
+			return jsonError(c, 403, "SELF_CLAIM_FORBIDDEN", "You cannot claim your own ad");
+		}
 
 		// Check if already claimed
 		let claim = await getDetailedClaim(c.env.DB, adId, bXId);

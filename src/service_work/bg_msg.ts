@@ -132,10 +132,11 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.AdsFollowClaim: {
-            const ad_id = String(request?.data?.ad_id || "");
-            const profileUrl = String(request?.data?.profileUrl || request?.data?.url || "");
-            const data = await claimAdsFollowOffer({ ad_id, profileUrl });
-            return { success: true, data };
+            console.warn("[bgMsg] AdsFollowClaim is deprecated. Use AdsFollowVerifyAndClaim instead.");
+            return {
+                success: false,
+                data: "This claim method is no longer supported. Please use the Follow & Verify flow."
+            };
         }
 
         case MsgType.AdsFollowVerifyAndClaim: {

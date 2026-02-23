@@ -62,6 +62,7 @@ export const executorState = {
     myTasksStatus: 'all' as 'all' | 'pending' | 'confirmed' | 'rejected',
     currentTab: 'explore' as 'explore' | 'my-tasks',
     withdrawableUSDC: 0,
+    withdrawableAtomic: "0" as string,  // Server-side available_atomic (precise, for withdraw)
     totalEarnedUSDC: 0,
     todayEarnedUSDC: 0,
     pendingUSDC: 0,

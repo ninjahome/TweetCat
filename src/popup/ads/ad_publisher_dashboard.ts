@@ -429,32 +429,27 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume" | "
     try {
         showLoading();
         const currentXId = getCurrentXId();
-        const response = await x402WorkerFetch(API_PATH_ADS_TOGGLE_STATUS, {
+        // x402WorkerFetch returns parsed JSON directly; throws on HTTP error
+        const result = await x402WorkerFetch(API_PATH_ADS_TOGGLE_STATUS, {
             ad_id: adId,
             a_x_id: currentXId,
             action: action
         });
 
-        if (response.ok) {
-            const result = await response.json();
-            let msg = "操作成功";
-            if (action === "pause") msg = "广告已暂停";
-            if (action === "resume") msg = "广告已启用";
-            if (action === "stop") msg = "广告已结束，剩余预算即将退回";
-            showNotification(msg, "success");
+        let msg = "操作成功";
+        if (action === "pause") msg = "广告已暂停";
+        if (action === "resume") msg = "广告已启用";
+        if (action === "stop") msg = "广告已结束，剩余预算即将退回";
+        showNotification(msg, "success");
 
-            // 局部更新本地状态并更新 UI
-            const ad = publisherState.ads.list.find(a => a.ad_id === adId);
-            if (ad) {
-                ad.status = result.new_status;
-                updateAdRowUI(ad);
-            } else {
-                // 如果在当前列表没找到（可能跨页了），则刷新一次
-                await refreshAdsData(publisherState.ads.currentPage);
-            }
+        // 局部更新本地状态并更新 UI
+        const ad = publisherState.ads.list.find(a => a.ad_id === adId);
+        if (ad) {
+            ad.status = result.new_status;
+            updateAdRowUI(ad);
         } else {
-            const error = await response.json();
-            showNotification(error.detail || "操作失败", "error");
+            // 如果在当前列表没找到（可能跨页了），则刷新一次
+            await refreshAdsData(publisherState.ads.currentPage);
         }
     } catch (err: any) {
         showNotification(err?.message || "操作失败", "error");

@@ -62,7 +62,9 @@ export async function queryAdsFollowOffer(profileUrl: string): Promise<{
     const claim_state = await getClaimState(offer.ad_id);
     return { offer, claim_state };
 }
-
+/**
+ * @deprecated This claim path is missing evidence submission. Use `verifyFollowAndClaim` in `bg_ads_verifier.ts` instead.
+ */
 export async function claimAdsFollowOffer(params: { ad_id: string; profileUrl?: string }): Promise<any> {
     const ad_id = String(params?.ad_id || "");
     if (!ad_id) throw new Error("missing ad_id");

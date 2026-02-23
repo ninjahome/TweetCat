@@ -660,23 +660,40 @@ export async function getPerformerHistory(
 
 /**
  * 获取执行者的仪表盘统计数据
+ * withdrawable_atomic 来自 ad_escrow_accounts.available_atomic (真实账户余额)
+ * 其他统计来自 ad_reward_claims 汇总
  */
 export async function getPerformerDashboardStats(db: D1Database, bXId: string) {
-	const sql = `
+	// 1. 获取真实账户余额 (由 settleAdReward UPSERT 创建)
+	const accountSql = `
+		SELECT COALESCE(available_atomic, '0') as available_atomic
+		FROM ad_escrow_accounts
+		WHERE a_x_id = ? AND asset_symbol = 'USDC'
+	`;
+	const account = await db.prepare(accountSql).bind(bXId).first<{ available_atomic: string }>();
+	const withdrawableAtomic = account?.available_atomic ?? "0";
+
+	// 2. 获取 claims 统计
+	const claimsSql = `
 		SELECT 
-			COALESCE(SUM(CASE WHEN status = 'CONFIRMED' THEN CAST(unit_price_atomic AS INTEGER) ELSE 0 END), 0) as withdrawable_atomic,
 			COALESCE(SUM(CASE WHEN status IN ('CLAIMED', 'PENDING_CONFIRM') THEN CAST(unit_price_atomic AS INTEGER) ELSE 0 END), 0) as pending_atomic,
 			COALESCE(SUM(CASE WHEN created_at >= date('now', 'start of day') AND status IN ('CLAIMED', 'PENDING_CONFIRM', 'CONFIRMED') THEN CAST(unit_price_atomic AS INTEGER) ELSE 0 END), 0) as today_earned_atomic,
 			COALESCE(SUM(CASE WHEN status IN ('CLAIMED', 'PENDING_CONFIRM', 'CONFIRMED') THEN CAST(unit_price_atomic AS INTEGER) ELSE 0 END), 0) as total_earned_atomic
 		FROM ad_reward_claims
 		WHERE b_x_id = ?
 	`;
-	return await db.prepare(sql).bind(bXId).first<{
-		withdrawable_atomic: number;
+	const claimsStats = await db.prepare(claimsSql).bind(bXId).first<{
 		pending_atomic: number;
 		today_earned_atomic: number;
 		total_earned_atomic: number;
 	}>();
+
+	return {
+		withdrawable_atomic: withdrawableAtomic,
+		pending_atomic: claimsStats?.pending_atomic ?? 0,
+		today_earned_atomic: claimsStats?.today_earned_atomic ?? 0,
+		total_earned_atomic: claimsStats?.total_earned_atomic ?? 0,
+	};
 }
 
 /**
@@ -1178,21 +1195,46 @@ export async function settleAdReward(
 }
 
 /**
- * 拒绝广告奖励 (更新状态为 REJECTED)
+ * 拒绝广告奖励 (更新状态为 REJECTED，并释放 quota_claimed)
+ * 使用 batch 保证原子性：同时更新 claim 状态 + 退回广告配额
  */
 export async function rejectAdReward(db: D1Database, claimId: string, reason: string): Promise<boolean> {
-	const sql = `
+	// 先获取 claim 的 ad_id，以便退还 quota
+	const claim = await getClaimById(db, claimId);
+	if (!claim) {
+		console.warn(`[rejectAdReward] Claim not found: ${claimId}`);
+		return false;
+	}
+
+	const updateClaimSql = `
 		UPDATE ad_reward_claims
-		SET status = 'REJECTED', updated_at = datetime('now')
+		SET status = 'REJECTED', verification_notes = ?, updated_at = datetime('now')
 		WHERE claim_id = ? AND status IN ('CLAIMED', 'PENDING_CONFIRM')
 	`;
-	const result = await db.prepare(sql).bind(claimId).run();
 
-	// 如果是 REJECTED，理论上应该退回 quota_claimed (或者不退回，视业务逻辑而定)
-	// 目前 v1 简单处理：拒绝就不发钱，但 quota_claimed 已经占用了。
-	// 如果需要退回 quota，可以在这里加。但考虑到防刷，可能不退 quota 反而更能遏制恶意刷单。
+	// 释放被占用的 quota_claimed（防止配额被无效 claim 永久消耗）
+	const releaseQuotaSql = `
+		UPDATE ad_campaigns
+		SET quota_claimed = MAX(COALESCE(quota_claimed, 0) - 1, 0),
+		    updated_at = datetime('now')
+		WHERE ad_id = ?
+	`;
 
-	return result.success ?? false;
+	try {
+		const batch = await db.batch([
+			db.prepare(updateClaimSql).bind(reason, claimId),
+			db.prepare(releaseQuotaSql).bind(claim.ad_id)
+		]);
+
+		const claimUpdated = batch && batch.length >= 2 && (batch[0].meta.changes ?? 0) > 0;
+		if (claimUpdated) {
+			console.log(`[rejectAdReward] Rejected claim ${claimId} and released quota for ad ${claim.ad_id}`);
+		}
+		return claimUpdated;
+	} catch (e) {
+		console.error(`[rejectAdReward] Failed to reject claim ${claimId}:`, e);
+		return false;
+	}
 }
 
 /**

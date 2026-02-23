@@ -24,6 +24,7 @@ export async function loadEarnSummary(): Promise<void> {
 
         if (statsResp.success && statsResp.data) {
             const stats = statsResp.data;
+            executorState.withdrawableAtomic = String(stats.withdrawable_atomic || "0");
             executorState.withdrawableUSDC = atomicToUsdcNumber(stats.withdrawable_atomic);
             executorState.pendingUSDC = atomicToUsdcNumber(stats.pending_atomic);
             executorState.todayEarnedUSDC = atomicToUsdcNumber(stats.today_earned_atomic);
@@ -86,33 +87,23 @@ export function initSummaryActions() {
 
         try {
             const { xId } = await getCurrentUserInfo();
-            // Convert current USDC balance back to atomic units (USDC has 6 decimals)
-            // Or better, we should store atomic balance in state.
-            // But since loadEarnSummary calculates from claims (which are strings of atomic),
-            // let's re-calculate precise atomic amount or just use what we have.
-            // Actually, `withdrawableUSDC` is a number, converting back might have precision issues?
-            // Let's re-sum from claims to be safe.
 
-            let totalAtomic = 0n;
-            executorState.myClaims.forEach(c => {
-                if (c.status === "CONFIRMED") {
-                    totalAtomic += BigInt(c.unit_price_atomic);
-                }
-            });
-
-            if (totalAtomic <= 0n) {
+            // Use the server-side available_atomic (from ad_escrow_accounts) as the real withdrawable amount
+            // This is more accurate than recalculating from local claims which could be stale
+            const amountAtomic = executorState.withdrawableAtomic || "0";
+            if (!amountAtomic || BigInt(amountAtomic) <= 0n) {
                 showNotification("Nothing to withdraw (atomic check).");
                 return;
             }
 
-            const amountAtomic = totalAtomic.toString();
             const amountUSDC = executorState.withdrawableUSDC;
 
             showNotification("Withdrawing...", "info");
 
-            // Call Backend
+            // Call Backend (Executor uses the same escrow withdraw API — their x_id
+            // exists as a_x_id in ad_escrow_accounts, created by settleAdReward UPSERT)
             const resp = await x402WorkerFetch(API_PATH_ADS_PUBLISHER_WITHDRAW, {
-                a_x_id: xId, // Executor withdraws from their own escrow balance
+                a_x_id: xId,
                 amount_atomic: amountAtomic
             });
 
