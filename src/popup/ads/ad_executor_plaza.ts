@@ -18,7 +18,8 @@ const DEFAULT_SORT = "reward-high";
 
 export async function loadAds(): Promise<void> {
     try {
-        const response = await x402WorkerGet(API_PATH_ADS_LIST);
+        const { xId } = await getCurrentUserInfo();
+        const response = await x402WorkerGet(API_PATH_ADS_LIST, { b_x_id: xId });
         if (!Array.isArray(response)) {
             showNotification("Invalid ads payload", "error");
             return;
@@ -366,7 +367,7 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
         } else {
             btn.textContent = ad.completed >= ad.totalQuota
                 ? "Completed"
-                : (executorState.taskRunState[ad.id] === "running" ? "Running..." : "Start Task");
+                : (executorState.taskRunState[ad.id] === "running" ? "Running..." : "Go to Follow");
             btn.disabled = executorState.taskRunState[ad.id] === "running" || ad.completed >= ad.totalQuota;
         }
 
@@ -387,9 +388,7 @@ function filterAndSortAds(): EarnAd[] {
     const qstr = getSearchQuery();
 
     // For Explore tab: filter out already claimed ads
-    let baseAds = executorState.earnAds.filter(ad =>
-        !executorState.myClaims.some(c => c.ad_id === ad.id)
-    );
+    let baseAds = executorState.earnAds.filter(ad => !ad.isClaimed);
 
     let result = baseAds.filter((ad) =>
         // categories.includes(ad.category) && // MVP: Only follow ads exists

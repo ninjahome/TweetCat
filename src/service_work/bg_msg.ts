@@ -39,8 +39,7 @@ import {
     msgUnlockWallet
 } from "./wallet_controller";
 import { x402TipPayload } from "../common/x402_obj";
-import { handleProfileFollowClaim } from "./profile_follow_claim";
-import { claimAdsFollowOffer, queryAdsFollowOffer } from "./bg_ads_follow";
+import { queryAdsFollowOffer } from "./bg_ads_follow";
 import { verifyFollowAndClaim } from "./bg_ads_verifier";
 import { handleUserByScreenNameCaptured } from "./bg_blue_v";
 
@@ -115,7 +114,7 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
     switch (request.action) {
 
         case MsgType.ProfileFollowClaim: {
-            return await handleProfileFollowClaim(request.data || {});
+            return { success: false, data: "Deprecated" };
         }
 
         case MsgType.IJUserByScreenNameCaptured:
@@ -132,10 +131,9 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.AdsFollowClaim: {
-            console.warn("[bgMsg] AdsFollowClaim is deprecated. Use AdsFollowVerifyAndClaim instead.");
             return {
                 success: false,
-                data: "This claim method is no longer supported. Please use the Follow & Verify flow."
+                data: "This claim method is no longer supported."
             };
         }
 

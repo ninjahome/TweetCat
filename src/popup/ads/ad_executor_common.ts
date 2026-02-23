@@ -24,6 +24,7 @@ export interface EarnAd {
     popularityScore: number;
     createdAt: number;
     detailUrl: string;
+    isClaimed?: boolean;
 }
 
 export interface EarnClaim {

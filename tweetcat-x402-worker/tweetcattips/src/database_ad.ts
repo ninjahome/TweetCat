@@ -467,17 +467,20 @@ export async function getMyAdsCount(db: D1Database, aXId: string): Promise<numbe
 /**
  * 获取所有活跃广告列表（用于用户浏览）
  * @param db - D1 数据库实例
- * @returns 活跃广告列表
+ * @param bXId - 可选的执行者 X ID，用于标记是否已领取
+ * @returns 活跃广告列表 (带 is_claimed 标记)
  */
-export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
+export async function getActiveAdsList(db: D1Database, bXId?: string): Promise<(AdRow & { is_claimed?: boolean })[]> {
 	const sql = `
 		SELECT
 			c.ad_id, c.title, c.a_x_id, c.description, c.category, c.unit_price_atomic,
 			c.quota_claimed, c.quota_used, c.quota_total, c.end_date, c.created_at, c.detail_url
+			${bXId ? ", (CASE WHEN cl.claim_id IS NOT NULL THEN 1 ELSE 0 END) as is_claimed" : ""}
 		FROM
 			ad_campaigns c
 		JOIN
 			ad_escrow_accounts e ON c.a_x_id = e.a_x_id
+		${bXId ? "LEFT JOIN ad_reward_claims cl ON c.ad_id = cl.ad_id AND cl.b_x_id = ?" : ""}
 		WHERE
 			c.status = 'ACTIVE'
 			AND c.end_date > datetime('now')
@@ -487,8 +490,14 @@ export async function getActiveAdsList(db: D1Database): Promise<AdRow[]> {
 			c.created_at DESC
 		LIMIT 100
 	`;
-	const result = await db.prepare(sql).all<AdRow>();
-	return result.results ?? [];
+
+	const stmt = db.prepare(sql);
+	const result = await (bXId ? stmt.bind(bXId) : stmt).all<AdRow & { is_claimed?: number }>();
+
+	return (result.results ?? []).map(row => ({
+		...row,
+		is_claimed: row.is_claimed === 1
+	}));
 }
 
 
@@ -1248,6 +1257,7 @@ export async function getPendingSettlementClaims(
 	claim_id: string;
 	ad_id: string;
 	a_x_id: string;
+	detail_url: string;
 	b_x_id: string;
 	unit_price_atomic: string;
 	proof_data: string | null;
@@ -1255,7 +1265,7 @@ export async function getPendingSettlementClaims(
 	category: string | null;
 }[]> {
 	const sql = `
-		SELECT c.claim_id, c.ad_id, a.a_x_id, c.b_x_id, c.unit_price_atomic,
+		SELECT c.claim_id, c.ad_id, a.a_x_id, a.detail_url, c.b_x_id, c.unit_price_atomic,
 			   e.proof_data, e.proof_type, e.category
 		FROM ad_reward_claims c
 		JOIN ad_campaigns a ON c.ad_id = a.ad_id
@@ -1269,6 +1279,7 @@ export async function getPendingSettlementClaims(
 		claim_id: string;
 		ad_id: string;
 		a_x_id: string;
+		detail_url: string;
 		b_x_id: string;
 		unit_price_atomic: string;
 		proof_data: string | null;
@@ -1320,12 +1331,20 @@ export async function refundAdBudget(
 	adId: string,
 	aXId: string
 ): Promise<boolean> {
+	// 1. 检查是否仍有待处理的领取申请 (PENDING_CONFIRM / CLAIMED)
+	// 如果仍由于待处理申请，则暂缓退款，等待 Cron 结算或拒绝后再处理
+	if (await hasPendingClaimsForAd(db, adId)) {
+		console.log(`[refundAdBudget] Ad ${adId} has pending claims, skipping refund for now.`);
+		return false;
+	}
+
 	const getAdSql = "SELECT unit_price_atomic, quota_total, quota_used FROM ad_campaigns WHERE ad_id = ?";
 	const ad = await db.prepare(getAdSql).bind(adId).first<AdRow>();
 	if (!ad) return false;
 
-	const unitPrice = BigInt(ad.unit_price_atomic);
-	const remainingQuota = BigInt(ad.quota_total) - BigInt(ad.quota_used);
+	const unitPrice = BigInt(ad.unit_price_atomic || "0");
+	// 此时已确定没有 pending claims，所以 quota_total - quota_used 既是真正的剩余额度
+	const remainingQuota = BigInt(ad.quota_total || 0) - BigInt(ad.quota_used || 0);
 	const refundAmount = remainingQuota * unitPrice;
 
 	if (refundAmount <= 0n) {

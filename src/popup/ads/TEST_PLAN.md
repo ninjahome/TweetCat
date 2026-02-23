@@ -56,152 +56,25 @@
 
 ---
 
-## 2. 设计缺陷与代码缺陷分析
+## 2. 设计缺陷与遗留问题分析
 
-### 🔴 严重设计缺陷 (Critical)
+> **注意**: 已修复的严重缺陷验证已整合到各功能模块测试用例中（标记有 ✅ 的项目）。本节仅保留仍需关注的遗留逻辑问题。
 
-#### C-1: [✅ 已修复] `bg_ads_follow.ts` 中的 `claimAdsFollowOffer` 不传递蓝V证据和关注证据
+### 🟡 中等缺陷与改进建议 (Medium)
 
-**修复方案**: 已将 `claimAdsFollowOffer` 标记为 `@deprecated`。对于旧的 `MsgType.AdsFollowClaim` 消息，在 `bg_msg.ts` 中做了硬拒绝并返回错误提示，强制客户端统一使用自带验证和证据收集能力的 `verifyFollowAndClaim` 流程。
 
-**验证测试**: 
-- 旧路径调用 AdsFollowClaim → 返回清晰的废弃信息，阻断提交流程。
-- 新路径 AdsFollowVerifyAndClaim → 正常提交包含 `proof_data`、`blue_v_proof` 的数据，并进入等待确认状态。
 
----
 
-#### C-2: [✅ 已修复] 广告主提现 (`ad_executor_summary.ts`) 使用了错误的 API 和计算逻辑
 
-**修复方案**: 不再根据本地 claims (SUM CONFIRMED) 计算可提现金额。后端已修改 `getPerformerDashboardStats`，使其直接查 `ad_escrow_accounts` 中由 settlement 更新的真实 `available_atomic`。前端调用提现接口时，直接取服务器返回的实际值。
 
-**验证测试**: 
-- Executor 产生 CONFIRMED 收益后提现 → 操作成功，调用链上转账。
-- 提现成功后再次操作 → 提现按钮被禁用，或者因为剩余 atomic 余额不足以提现而由服务端正确拒绝并提示。
 
----
 
-#### C-3: [✅ 已修复] `quota_claimed` 被拒绝后不退回，导致配额永久占用
 
-**修复方案**: 修改了 `database_ad.ts` 中的 `rejectAdReward` 函数，使用 `db.batch` 事务：一是将 claim 状态变更为 REJECTED 并记录原因；二是同时从 `ad_campaigns` 中释放占用配额 `quota_claimed -= 1`。
 
-**验证测试**: 
-- `quota_total=5`，且已有 5 个 PENDING_CONFIRM，此时新用户无法 claim。
-- Cron或管理员 reject 掉其中 2 笔。
-- 新用户重新进入并点击 claim → 应正常创建申请并占用刚才释放出来的两个额度之一，广告状态恢复可领取。
-
----
-
-#### C-4: 退款计算使用 `quota_total - quota_used`，但 `quota_claimed` 可能大于 `quota_used`
-
-**文件**: `tweetcat-x402-worker/tweetcattips/src/database_ad.ts:1285-1287`
-
-```typescript
-const remainingQuota = BigInt(ad.quota_total) - BigInt(ad.quota_used);
-const refundAmount = remainingQuota * unitPrice;
-```
-
-**问题**: `quota_used` 只在 `settleAdReward` (CONFIRMED) 时递增。但被冻结的金额是按 `quota_total` 计算的，而 `quota_claimed` 中包含了 `PENDING_CONFIRM` 和 `REJECTED` 的 claim。退款计算应该排除**已确认**的部分，而不是**已使用**的部分。但如果有 pending claims 还在等待结算，这个退款就可能多退。
-
-**影响**: 可能导致退款金额大于实际冻结金额，造成 `frozen_atomic` 变成负数。  
-**建议**: `refundAdBudget` 中已有 `WHERE frozen_atomic >= refundAmount` 保护，但应确保 `hasPendingClaimsForAd` 检查在退款前总是正确执行。
-
----
-
-### 🟡 中等缺陷 (Medium)
-
-#### M-1: 蓝V白名单硬编码且前后端不一致
-
-**文件**: 
-- `src/popup/ads/ad_executor_plaza.ts:132-138` (前端白名单)
-- `tweetcat-x402-worker/tweetcattips/src/api_srv_ads.ts:486-495` (后端白名单)
-
-**问题**: 
-1. 两个白名单内容不完全一致（后端多了 `1716169276855988224`, `1236539014406012928`）。
-2. 硬编码的用户 ID 不应出现在生产代码中。
-
-**建议**: 白名单应统一从配置/环境变量读取，或在正式发布前移除。
-
----
-
-#### M-2: [✅ 已修复] `handleToggleAdStatus` 函数中错误地使用 `response.json()` 两次
-
-**修复方案**: 已移除 `response.ok` 判断和 `.json()` 调用，直接接收 `x402WorkerFetch` 已经解析好的对象，并在发生网络或业务异常时触发 try-catch 获取 Error 对待。
-
-**验证测试**: 
-- 从 Dashboard 中点击 "暂停" 广告 → 操作顺畅没有报错提示，表格数据动态变更为 PAUSED_MANUAL。
-- 将暂停的广告 "启用" → 界面弹出成功提示，列表更新为 ACTIVE。
-
----
-
-#### M-3: `startTask` 函数已不再发送 claim 请求，但 UI 行为不明确
-
-**文件**: `src/popup/ads/ad_executor_plaza.ts:116-185`
-
-**问题**: `startTask` 函数只做蓝V检查和打开落地页，真正的 claim 流程在 content script 的 `_appendAdsFollowOfferBtn` 中完成。但在 explore tab 中点击卡片/按钮会调用 `startTask`，用户通过 popup 发起的 claim 流程实际上不会发送 claim 请求到服务器。
-
-**影响**: 用户可能困惑为什么点击"Start Task"后没有收到奖励。  
-**建议**: 明确 UI 流程：popup 中只负责引导用户到 KOL 主页，claim 只在 content script 中触发。按钮文案应改为"前往关注"而非"Start Task"。
-
----
-
-#### M-4: `ad_publisher_balance.ts` 充值前未限制金额上限
-
-**文件**: `src/popup/ads/ad_publisher_balance.ts:206-217`
-
-```typescript
-if (transferDirection === "ads_to_wallet") {
-    const maxAds = atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic);
-    if (amount > maxAds + 1e-9) throw new Error("Amount exceeds Ads Available.");
-}
-// ❌ wallet_to_ads 方向缺少余额检查
-```
-
-**问题**: `wallet_to_ads` 方向没有前端余额检查。虽然服务器端会通过 x402 支付流程做验证，但前端应做预校验。  
-**建议**: 增加 `wallet_to_ads` 方向的钱包余额预校验。
-
----
-
-#### M-5: Cron 结算任务中 proof 验证过于简单
-
-**文件**: `tweetcat-x402-worker/tweetcattips/src/cron_ads_settle.ts:34-55`
-
-**问题**: 
-1. 只检查了 `following === true` 这一个布尔值，没有验证 proof_data 中的用户身份是否与 claim 中的 `b_x_id` 匹配。
-2. 没有二次确认关注状态的能力（proof_data 是 claim 时的快照，用户可能在结算前取消关注）。
-3. 未验证 proof_data 的时效性（用户是否在广告有效期内关注的）。
-
-**建议**: 
-- 在 proof 中增加被关注 KOL 的 screen_name 或 user_id，与广告的 detail_url 交叉验证。
-- 考虑引入二次抽样验证机制。
-
----
-
-#### M-6: `getPerformerDashboardStats` 中 `withdrawable_atomic` 包含了所有 CONFIRMED claims
-
-**文件**: `tweetcat-x402-worker/tweetcattips/src/database_ad.ts:667`
-
-**问题**: `withdrawable_atomic` 是所有 CONFIRMED 的 claim 的总和，没有减去已经提现过的金额。用户提现后，如果 claim 记录没被修改，`withdrawable_atomic` 仍然包含已提现部分。
-
-**影响**: 用户看到的可提现金额可能大于实际可提现金额。  
-**建议**: 应该从 `ad_escrow_accounts` 的 `available_atomic` 读取真实可提现余额。
-
----
 
 ### 🟢 轻微缺陷 (Low)
 
-#### L-1: 前端 `myClaims` 在 explore tab 中用于过滤已 claim 的广告，但数据可能不完整
 
-**文件**: `src/popup/ads/ad_executor_plaza.ts:390-392`
-
-```typescript
-let baseAds = executorState.earnAds.filter(ad =>
-    !executorState.myClaims.some(c => c.ad_id === ad.id)
-);
-```
-
-**问题**: `myClaims` 通过 `loadClaims()` 从 `/ads/executor/my_claims` 获取，但该 API 可能不返回分页数据，导致遗漏。
-
----
 
 #### L-2: 多处 `showNotification` 使用中文和英文混杂
 
@@ -292,7 +165,7 @@ statusFilter = `AND c.status IN (${statuses.map(s => `'${s}'`).join(",")})`;
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
 | B-01 | 🤖 **充值**：正常金额从钱包转入 Ads 账户 | x402 支付成功 → 账本记录(DEPOSIT/SETTLED) → available_atomic 增加 | P0 |
-| B-02 | 🤖 充值金额超过钱包余额 | x402 支付失败，Ads 账户余额不变 | P0 |
+| B-02 | 👋 充值金额超过钱包余额 | 前端拦截："Amount exceeds Wallet Balance."（✅ **已修复 M-4**） | P0 |
 | B-03 | 👋 充值金额为 0 | 前端拦截："Please enter a valid amount." | P1 |
 | B-04 | 👋 充值金额为负数 | 前端拦截 | P1 |
 | B-05 | 🤖 同一 txHash 的充值请求重复到达 | 幂等保护：`ON CONFLICT(tx_hash) DO NOTHING`，余额只增加一次 | P0 |
@@ -322,8 +195,8 @@ statusFilter = `AND c.status IN (${statuses.map(s => `'${s}'`).join(",")})`;
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| LC-01 | 🤖 ACTIVE → 暂停 (pause) | 状态变为 `PAUSED_MANUAL`，广告从广场消失，feed version 递增 | P0 |
-| LC-02 | 🤖 PAUSED_MANUAL → 启用 (resume) | 状态变为 `ACTIVE`，广告重新出现在广场 | P0 |
+| LC-01 | 👋 ACTIVE → 暂停 (pause) | 状态变为 `PAUSED_MANUAL`，无网络报错提示（✅ **验证 M-2**） | P0 |
+| LC-02 | 👋 PAUSED_MANUAL → 启用 (resume) | 状态变为 `ACTIVE`，界面更新正常（✅ **验证 M-2**） | P0 |
 | LC-03 | 🤖 对非 ACTIVE 广告执行 pause | 返回 `INVALID_STATE` | P1 |
 | LC-04 | 🤖 对非 PAUSED_MANUAL 广告执行 resume | 返回 `INVALID_STATE` | P1 |
 | LC-05 | 🤖 ACTIVE → 结束 (stop) | 状态变为 `COMPLETED`，按钮变为 N/A | P0 |
@@ -395,10 +268,10 @@ statusFilter = `AND c.status IN (${statuses.map(s => `'${s}'`).join(",")})`;
 | CR-05 | 🤖 PENDING_CONFIRM 超过 24h，proof_data JSON 格式错误 | Claim 状态 → REJECTED（Malformed proof JSON） | P1 |
 | CR-06 | 🤖 广告主冻结余额不足（异常情况） | settleAdReward 返回 false，claim 保留 PENDING 状态 | P0 |
 | CR-07 | 🤖 批量结算：50 条 claims 同时处理 | 每条独立处理，一条失败不影响其他 | P1 |
-| CR-08 | 🤖 **退款流程**：EXPIRED 广告，quota_total=100, quota_used=30 | 退回 70 * unit_price 到 available，budget_settlement_status=SETTLED | P0 |
-| CR-09 | 🤖 退款流程：有 PENDING_CONFIRM claims | 跳过退款，等待 claims 结算完成 | P0 |
+| CR-08 | 🤖 **退款流程**：EXPIRED 广告，quota_total=100, quota_used=30 | 无 pending 时退回 70 * unit_price（✅ **验证 C-4**） | P0 |
+| CR-09 | 🤖 退款流程：有 PENDING_CONFIRM claims | 跳过退款，等待直至 settled/rejected（✅ **验证 C-4**） | P0 |
 | CR-10 | 🤖 退款流程：冻结余额不足以退回计算金额 | 退款失败，不更新 budget_settlement_status | P1 |
-
+| CR-11 | 🤖 **交叉校验**：Proof 里的账号与 Ad Target 不匹配 | 识别到 @screen_name 错误 → REJECTED（✅ **修复 M-5**） | P0 |
 ---
 
 ## 9. 模块六：用户领取 / 提现奖励
@@ -413,9 +286,9 @@ statusFilter = `AND c.status IN (${statuses.map(s => `'${s}'`).join(",")})`;
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| EW-01 | 🤖 可提现金额 > 0，点击提现 | 链上转账成功，withdrawableUSDC 归零，txHash 显示 | P0 |
+| EW-01 | 🤖 可提现金额 > 0，点击提现 | 链上转账成功，withdrawableUSDC 归零，txHash 显示（✅ **验证 C-2**） | P0 |
 | EW-02 | 👋 可提现金额 = 0 | 提示 "Nothing to withdraw." | P0 |
-| EW-03 | 👋 提现金额不一致（前端计算 vs 服务器余额） | 以服务器实际 available_atomic 为准 | P0 |
+| EW-03 | 👋 提现金额不一致（前端计算 vs 服务器余额） | 以服务器实际 `available_atomic` 为准，防止超扣（✅ **验证 C-2**） | P0 |
 | EW-04 | 🤖 提现过程中链上转账失败 | 余额退回，提示错误信息 | P0 |
 | EW-05 | 🤖 月度提现限制（如果适用于 Executor） | 同模块二 B-08 | P1 |
 | EW-06 | 👋 提现后 2 秒自动刷新 summary | withdrawableUSDC 已更新，totalEarnedUSDC 不变 | P1 |

@@ -212,6 +212,9 @@ function prepareEscrowTransferParam(): any {
     if (transferDirection === "ads_to_wallet") {
         const maxAds = atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic);
         if (amount > maxAds + 1e-9) throw new Error("Amount exceeds Ads Available.");
+    } else if (transferDirection === "wallet_to_ads") {
+        const walletUsdc = parseUsdcNumber(publisherState.walletInfoCache?.usdcVal || "0");
+        if (amount > walletUsdc + 1e-9) throw new Error("Amount exceeds Wallet Balance.");
     }
 
     return { a_x_id: publisherState.walletInfoCache.xId, amount: amount.toFixed(2) };

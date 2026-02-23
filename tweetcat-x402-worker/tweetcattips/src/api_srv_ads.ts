@@ -447,7 +447,8 @@ export async function apiAdsMyAds(c: ExtCtx) {
 
 export async function apiAdsList(c: ExtCtx) {
 	try {
-		const rows = await getActiveAdsList(c.env.DB);
+		const bXId = c.req.query("b_x_id");
+		const rows = await getActiveAdsList(c.env.DB, bXId || undefined);
 
 		const ads = rows.map((row) => {
 			const rewardUSDC = Number(row.unit_price_atomic || 0) / 1_000_000;
@@ -464,12 +465,13 @@ export async function apiAdsList(c: ExtCtx) {
 				durationMinutes: CATEGORY_DURATION[category] ?? 3,
 				completed: completedCount,
 				totalQuota: row.quota_total,
-				deadlineText: formatDeadlineText(row.end_date), // Updated to use end_date
+				deadlineText: formatDeadlineText(row.end_date),
 				tags: CATEGORY_TAGS[category] ?? [],
 				rewardRange: getRewardRange(rewardUSDC),
 				popularityScore: computePopularityScore(completedCount, row.quota_total),
 				createdAt: Number.isFinite(createdAt) ? createdAt : Date.now(),
 				detailUrl: row.detail_url,
+				isClaimed: row.is_claimed || false, // Server provides truth
 			};
 		});
 
@@ -507,9 +509,7 @@ const BLUE_V_BYPASS_WHITELIST = [
 	"1236539014406012928",
 	"1554341020246061059",
 	"1740205143621238785",
-	"1514598908273463303",
-	"1716169276855988224",
-	"1236539014406012928"
+	"1514598908273463303"
 ];
 
 export async function apiAdsClaim(c: ExtCtx) {

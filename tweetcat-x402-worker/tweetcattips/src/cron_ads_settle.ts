@@ -34,14 +34,36 @@ export async function cronSettleAds(env: Env) {
             if (claim.proof_type === 'twitter_profile_spotlight' && claim.proof_data) {
                 try {
                     const proofJson = JSON.parse(claim.proof_data);
-                    // Deep check: extract 'following' status
-                    // path: data.user_result_by_screen_name.result.relationship_perspectives.following
-                    const following = proofJson?.data?.user_result_by_screen_name?.result?.relationship_perspectives?.following;
+                    const relationship = proofJson?.data?.user_result_by_screen_name?.result;
 
-                    if (following === true) {
-                        isValid = true;
+                    if (!relationship) {
+                        rejectionReason = "Invalid spotlight data: user result not found";
                     } else {
-                        rejectionReason = "Twitter API indicates not following";
+                        // 1. 提取正在被关注的 KOL 账号名 (from proof)
+                        const proofScreenName = String(relationship.legacy?.screen_name || "").toLowerCase();
+
+                        // 2. 提取广告主要求的 KOL 账号名 (from ad detail_url)
+                        // detail_url 格式一般为 https://x.com/username 或 https://twitter.com/username
+                        let targetScreenName = "";
+                        try {
+                            const url = new URL(claim.detail_url);
+                            targetScreenName = url.pathname.split('/').filter(Boolean)[0].toLowerCase();
+                        } catch (ue) {
+                            console.error(`[Cron] Invalid detail_url format: ${claim.detail_url}`);
+                        }
+
+                        // 3. 交叉校验：Proof 中的 ID 必须匹配广告投放的 Target
+                        if (!targetScreenName || proofScreenName !== targetScreenName) {
+                            rejectionReason = `Target mismatch. Ad expects @${targetScreenName}, but proof is for @${proofScreenName}`;
+                        } else {
+                            // 4. 最终检查关注状态
+                            const following = relationship.relationship_perspectives?.following;
+                            if (following === true) {
+                                isValid = true;
+                            } else {
+                                rejectionReason = "Twitter API indicates not following";
+                            }
+                        }
                     }
                 } catch (e) {
                     rejectionReason = "Malformed proof JSON";
@@ -49,13 +71,11 @@ export async function cronSettleAds(env: Env) {
             } else if (!claim.proof_data) {
                 rejectionReason = "Missing proof data";
             } else {
-                // 对于未知类型，暂时放行 (或者根据业务需求也是 reject)
-                // 这里为了安全，未知类型先 reject
                 rejectionReason = `Unsupported proof type: ${claim.proof_type}`;
             }
 
             if (!isValid) {
-                console.warn(`[Cron] Rejecting claim ${claim.claim_id}: ${rejectionReason}`);
+                console.warn(`[Cron] Rejecting claim ${claim.claim_id} for Ad ${claim.ad_id}: ${rejectionReason}`);
                 await rejectAdReward(env.DB, claim.claim_id, rejectionReason);
                 failCount++;
                 continue;

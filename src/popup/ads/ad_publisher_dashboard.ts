@@ -437,9 +437,9 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume" | "
         });
 
         let msg = "操作成功";
-        if (action === "pause") msg = "广告已暂停";
-        if (action === "resume") msg = "广告已启用";
-        if (action === "stop") msg = "广告已结束，剩余预算即将退回";
+        if (action === "pause") msg = "Ad paused";
+        if (action === "resume") msg = "Ad resumed";
+        if (action === "stop") msg = "Ad ended. Remaining budget will be refunded soon.";
         showNotification(msg, "success");
 
         // 局部更新本地状态并更新 UI
@@ -452,7 +452,7 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume" | "
             await refreshAdsData(publisherState.ads.currentPage);
         }
     } catch (err: any) {
-        showNotification(err?.message || "操作失败", "error");
+        showNotification(err?.message || "Operation failed", "error");
     } finally {
         hideLoading();
     }
@@ -504,7 +504,7 @@ async function handleTopUpSubmit(adId: string) {
 
         const amount = parseFloat(amountStr);
         if (isNaN(amount) || amount <= 0) {
-            showNotification("请输入有效的金额", "error");
+            showNotification("Please enter a valid amount", "error");
             return;
         }
 
@@ -520,7 +520,7 @@ async function handleTopUpSubmit(adId: string) {
             amount_atomic: amountAtomic
         });
 
-        showNotification("预算追加成功", "success");
+        showNotification("Budget topped up successfully", "success");
         if (modal) modal.classList.remove("active");
 
         // 局部更新：即使是充值，也涉及余额变化，所以通常需要刷新 dashboard
@@ -528,7 +528,7 @@ async function handleTopUpSubmit(adId: string) {
         await fetchDashboardInfo(); // 更新顶部余额
         await refreshAdsData(publisherState.ads.currentPage);
     } catch (err: any) {
-        showNotification(err?.message || "充值失败", "error");
+        showNotification(err?.message || "Recharge failed", "error");
     } finally {
         hideLoading();
     }
