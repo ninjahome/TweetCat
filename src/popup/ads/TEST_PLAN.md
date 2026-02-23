@@ -55,47 +55,7 @@
 | **服务器 (Worker)** | 接收Claim → 验证蓝V签名 → 验证关注证据 → 原子占位 → 延迟结算(Cron 24h) → 扣冻结/增余额 → 广告到期/满额退款 |
 
 ---
-
-## 2. 设计缺陷与遗留问题分析
-
-> **注意**: 已修复的严重缺陷验证已整合到各功能模块测试用例中（标记有 ✅ 的项目）。本节仅保留仍需关注的遗留逻辑问题。
-
-### 🟡 中等缺陷与改进建议 (Medium)
-
-
-
-
-
-
-
-
-
-
-
-### 🟢 轻微缺陷 (Low)
-
-
-
-
-
-#### L-3: `ad_executor_common.ts` 中 `taskRunState` 使用内存对象，页面刷新后丢失
-
-**问题**: popup 关闭再打开时，所有 `taskRunState` 重置为空，不影响功能但可能导致重复点击。
-
----
-
-#### L-4: `getPerformerTasksCount` 和 `getPerformerTasksWithAdInfo` 中的 SQL 注入风险
-
-**文件**: `tweetcat-x402-worker/tweetcattips/src/database_ad.ts:718`
-
-```typescript
-statusFilter = `AND c.status IN (${statuses.map(s => `'${s}'`).join(",")})`;
-```
-
-**问题**: 虽然 `statusMap` 限制了可选值，但 SQL 字符串拼接不是最佳实践。  
-**建议**: 使用参数化查询。
-
----
+ 
 
 ## 3. 测试计划总览
 

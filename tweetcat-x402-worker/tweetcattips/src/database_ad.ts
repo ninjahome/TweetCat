@@ -732,7 +732,9 @@ export async function getPerformerTasksWithAdInfo(
 	limit: number,
 	offset: number
 ): Promise<TaskWithAdInfo[]> {
+	const params: any[] = [bXId];
 	let statusFilter = "";
+
 	if (status !== "all") {
 		const statusMap: Record<string, string[]> = {
 			pending: ["CLAIMED", "PENDING_CONFIRM"],
@@ -741,9 +743,13 @@ export async function getPerformerTasksWithAdInfo(
 		};
 		const statuses = statusMap[status] || [];
 		if (statuses.length > 0) {
-			statusFilter = `AND c.status IN (${statuses.map(s => `'${s}'`).join(",")})`;
+			const placeholders = statuses.map(() => "?").join(",");
+			statusFilter = `AND c.status IN (${placeholders})`;
+			params.push(...statuses);
 		}
 	}
+
+	params.push(limit, offset);
 
 	const sql = `
 		SELECT 
@@ -764,7 +770,7 @@ export async function getPerformerTasksWithAdInfo(
 		LIMIT ? OFFSET ?
 	`;
 
-	const { results } = await db.prepare(sql).bind(bXId, limit, offset).all<any>();
+	const { results } = await db.prepare(sql).bind(...params).all<any>();
 	return (results ?? []).map(row => ({
 		claim_id: row.claim_id,
 		ad_id: row.ad_id,
@@ -787,7 +793,9 @@ export async function getPerformerTasksCount(
 	bXId: string,
 	status: string
 ): Promise<number> {
+	const params: any[] = [bXId];
 	let statusFilter = "";
+
 	if (status !== "all") {
 		const statusMap: Record<string, string[]> = {
 			pending: ["CLAIMED", "PENDING_CONFIRM"],
@@ -796,7 +804,9 @@ export async function getPerformerTasksCount(
 		};
 		const statuses = statusMap[status] || [];
 		if (statuses.length > 0) {
-			statusFilter = `AND c.status IN (${statuses.map(s => `'${s}'`).join(",")})`;
+			const placeholders = statuses.map(() => "?").join(",");
+			statusFilter = `AND c.status IN (${placeholders})`;
+			params.push(...statuses);
 		}
 	}
 
@@ -806,7 +816,7 @@ export async function getPerformerTasksCount(
 		WHERE c.b_x_id = ? ${statusFilter}
 	`;
 
-	const row = await db.prepare(sql).bind(bXId).first<{ total: number }>();
+	const row = await db.prepare(sql).bind(...params).first<{ total: number }>();
 	return row?.total ?? 0;
 }
 

@@ -103,3 +103,15 @@ export function formatClaimTime(value?: string): string {
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleString();
 }
+import browser from "webextension-polyfill";
+
+export async function saveTaskRunState() {
+    await browser.storage.local.set({ adTaskRunState: executorState.taskRunState });
+}
+
+export async function loadTaskRunState() {
+    const data = await browser.storage.local.get("adTaskRunState");
+    if (data.adTaskRunState) {
+        executorState.taskRunState = data.adTaskRunState;
+    }
+}

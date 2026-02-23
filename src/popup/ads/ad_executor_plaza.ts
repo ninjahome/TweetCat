@@ -10,7 +10,9 @@ import {
     executorState,
     categoryIcon,
     getRewardRange,
-    TaskWithAdInfo
+    TaskWithAdInfo,
+    loadTaskRunState,
+    saveTaskRunState
 } from "./ad_executor_common";
 import { loadEarnSummary } from "./ad_executor_summary";
 
@@ -117,6 +119,7 @@ export async function updateBlueVDisplay() {
 export async function startTask(ad: EarnAd) {
     if (executorState.taskRunState[ad.id] === "running") return;
     executorState.taskRunState[ad.id] = "running";
+    await saveTaskRunState();
 
     try {
         const { xId, walletAddress } = await getCurrentUserInfo();
@@ -176,11 +179,13 @@ export async function startTask(ad: EarnAd) {
         }
 
         executorState.taskRunState[ad.id] = "idle";
+        await saveTaskRunState();
         renderEarnAds();
     } catch (e: any) {
         console.error("Start task failed:", e);
         showNotification(e.message || "Start task failed", "error");
         executorState.taskRunState[ad.id] = "idle";
+        await saveTaskRunState();
         renderEarnAds();
     }
 }

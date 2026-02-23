@@ -9,13 +9,15 @@ import {
     initSummaryActions,
     loadEarnSummary
 } from "./ad_executor_summary";
+import { loadTaskRunState } from "./ad_executor_common";
 
 async function initAdPlaza() {
     // 并行获取初始数据
     await Promise.all([
         loadAds(),
         loadEarnSummary(),
-        updateBlueVDisplay()
+        updateBlueVDisplay(),
+        loadTaskRunState()
     ]);
 
     renderEarnAds();
