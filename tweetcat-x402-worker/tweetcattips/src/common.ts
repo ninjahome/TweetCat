@@ -22,6 +22,7 @@ export const API_PATH_ONRAMP_WEBHOOK = "/onramp/webhook";
 
 // Ads API Paths
 export const API_PATH_ADS_EXECUTOR_DASHBOARD_INFO = "/ads/executor/dashboard_info";
+export const API_PATH_ADS_EXECUTOR_WITHDRAW = "/ads/executor/withdraw";
 export const API_PATH_ADS_BALANCE = "/ads/executor/balance";
 export const API_PATH_ADS_CREATE = "/ads/publisher/create";
 export const API_PATH_ADS_UPDATE = "/ads/publisher/update";
@@ -44,7 +45,8 @@ export const signedOperationPaths: string[] = [
 	API_PATH_ADS_CREATE,
 	API_PATH_ADS_UPDATE,
 	API_PATH_ADS_CLAIM,
-	API_PATH_ADS_PUBLISHER_WITHDRAW
+	API_PATH_ADS_PUBLISHER_WITHDRAW,
+	API_PATH_ADS_EXECUTOR_WITHDRAW
 ];
 
 export interface Env {

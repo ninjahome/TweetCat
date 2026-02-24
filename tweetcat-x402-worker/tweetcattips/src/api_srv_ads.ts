@@ -24,6 +24,7 @@ import {
 	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
 	API_PATH_ADS_MY_TASKS,
 	API_PATH_ADS_EXECUTOR_DASHBOARD_INFO,
+	API_PATH_ADS_EXECUTOR_WITHDRAW,
 	API_PATH_ADS_SUBMIT_PROOF,
 	decodeB64OrB64UrlToArrayBuffer
 } from "./common";
@@ -70,9 +71,15 @@ import {
 	getPerformerTasksCount,
 	getClaimById,
 	insertClaimEvidence,
-	updateClaimStatus,
 	settleAdReward,
-	type ClaimEvidenceParams
+	type ClaimEvidenceParams,
+	getPerformerLedgerByRequestId,
+	insertPerformerWithdrawLedger,
+	debitPerformerBalance,
+	settlePerformerWithdrawLedger,
+	failPerformerWithdrawLedger,
+	refundPerformerBalance,
+	updateClaimStatus
 } from "./database_ad";
 import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
 import { getKolBindingByXId } from "./database_402";
@@ -232,6 +239,45 @@ export async function parseEscrowRequestParams(c: ExtCtx): Promise<ParsedEscrowR
 
 	return {
 		aXId,
+		amountAtomic
+	};
+}
+
+/**
+ * 从请求体解析托管账户操作的参数（a_x_id 或 b_x_id 和 amount）
+ * 这是一个更通用的版本，用于处理广告主和执行者的请求。
+ *
+ * @param c - Hono 请求上下文
+ * @returns ParsedEscrowRequest 包含 aXId (或 bXId) 和 amountAtomic，或 Hono Response (错误)
+ */
+async function parseEscrowRequest(c: ExtCtx): Promise<ParsedEscrowRequest | Response> {
+	const body = await c.req.json().catch(() => ({}));
+	const xId = body?.a_x_id || body?.b_x_id; // 兼容 a_x_id 和 b_x_id
+	const amountStr = body?.amount;
+	const amountAtomicBody = body?.amount_atomic;
+
+	if (!requireStringField(xId)) {
+		return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id or b_x_id");
+	}
+
+	let amountAtomic: string;
+	if (requireStringField(amountAtomicBody)) {
+		if (!/^\d+$/.test(amountAtomicBody)) {
+			return jsonError(c, 400, "INVALID_REQUEST", "Invalid amount_atomic format");
+		}
+		amountAtomic = amountAtomicBody;
+	} else if (requireStringField(amountStr)) {
+		try {
+			amountAtomic = usdcToAtomicSafe(amountStr);
+		} catch (e) {
+			return jsonError(c, 400, "INVALID_REQUEST", "Invalid amount format");
+		}
+	} else {
+		return jsonError(c, 400, "INVALID_REQUEST", "Missing amount or amount_atomic");
+	}
+
+	return {
+		aXId: xId, // 统一使用 aXId 字段表示用户 ID
 		amountAtomic
 	};
 }
@@ -743,11 +789,12 @@ export async function apiAdsMyTasks(c: ExtCtx) {
  */
 export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
 	try {
-		// ✅ 使用新的解析函数
-		const { aXId, amountAtomic } = await parseEscrowRequestParams(c);
+		const parsed = await parseEscrowRequest(c);
+		if (parsed instanceof Response) return parsed;
+		const { aXId, amountAtomic: amountAtomicStr } = parsed;
 
 		const payTo = (c.env.TREASURY_ADDRESS as `0x${string}`)
-		const settleResult = await x402Workflow(c, payTo, amountAtomic, "USDC Transfer To Ad Escrow Account");
+		const settleResult = await x402Workflow(c, payTo, amountAtomicStr, "USDC Transfer To Ad Escrow Account");
 
 		const txHash = settleResult.transaction;
 		const payer = settleResult.payer?.toLowerCase();
@@ -760,7 +807,7 @@ export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
 				txHash,
 				payer,
 				a_x_id: aXId,
-				amount_atomic: amountAtomic,
+				amount_atomic: amountAtomicStr,
 				alreadyProcessed: true
 			});
 		}
@@ -773,7 +820,7 @@ export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
 			c.env.DB,
 			ledgerId,
 			aXId,
-			amountAtomic,
+			amountAtomicStr,
 			txHash,
 			payer || "",
 			c.env.TREASURY_ADDRESS
@@ -781,7 +828,7 @@ export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
 
 		// Only credit if ledger was actually inserted
 		if (ledgerInserted) {
-			await creditEscrowBalance(c.env.DB, aXId, amountAtomic);
+			await creditEscrowBalance(c.env.DB, aXId, amountAtomicStr);
 		}
 
 		return c.json({ success: true, txHash });
@@ -806,9 +853,10 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 	try {
 		console.log("[apiWithdrawFromAdsEscrowAccount] 开始处理提现请求");
 
-		// ✅ 使用新的解析函数
-		const { aXId, amountAtomic } = await parseEscrowRequestParams(c);
-		console.log(`[apiWithdrawFromAdsEscrowAccount] 参数验证成功: aXId=${aXId}, amountAtomic=${amountAtomic}`);
+		const parsed = await parseEscrowRequest(c);
+		if (parsed instanceof Response) return parsed;
+		const { aXId, amountAtomic: amountAtomicStr } = parsed;
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 参数验证成功: aXId=${aXId}, amountAtomic=${amountAtomicStr}`);
 
 		// 从 kol_binding 表查询用户的绑定钱包地址（原路返回）
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 查询用户绑定的钱包地址...`);
@@ -868,7 +916,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 			c.env.DB,
 			ledgerId,
 			aXId,
-			amountAtomic,
+			amountAtomicStr,
 			toAddress as `0x${string}`,
 			idempotencyKey
 		);
@@ -881,39 +929,39 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 
 		// 扣除余额
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 扣减余额...`);
-		const debited = await debitEscrowBalance(c.env.DB, aXId, amountAtomic);
+		const debited = await debitEscrowBalance(c.env.DB, aXId, amountAtomicStr);
 		console.log(`[apiWithdrawFromAdsEscrowAccount] 扣减结果: ${debited}`);
 
 		if (!debited) {
 			console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：余额不足或扣减失败`);
 			// 标记账本记录为失败
 			await failWithdrawLedger(c.env.DB, ledgerId, "Insufficient available balance");
-			return jsonError(c, 400, "INSUFFICIENT_BALANCE", `Required ${amountAtomic}, insufficient available balance`);
+			return jsonError(c, 400, "INSUFFICIENT_BALANCE", `Required ${amountAtomicStr}, insufficient available balance`);
 		}
 
 		// 执行 x402 支付：从库账户转账到用户的绑定钱包
+		let txHash = "";
+		let payer = "";
 		try {
 			const resourceUrl = `ads://withdraw/${aXId}`;
 			console.log(`[apiWithdrawFromAdsEscrowAccount] 开始调用 internalTreasurySettle...`);
-			console.log(`[apiWithdrawFromAdsEscrowAccount] 参数: toAddress=${toAddress}, amountAtomic=${amountAtomic}, resourceUrl=${resourceUrl}`);
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 参数: toAddress=${toAddress}, amountAtomic=${amountAtomicStr}, resourceUrl=${resourceUrl}`);
 
-			const settleResult = await internalTreasurySettle(
+			const settleRes = await internalTreasurySettle(
 				c,
 				toAddress as `0x${string}`,
-				amountAtomic,
+				amountAtomicStr,
 				resourceUrl
 			);
 
-			console.log(`[apiWithdrawFromAdsEscrowAccount] internalTreasurySettle 返回:`, settleResult);
-
-			if (!settleResult.success) {
-				console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：支付失败，原因: ${settleResult.errorReason}`);
-				return jsonError(c, 500, "WITHDRAW_FAILED", settleResult.errorReason || "Settlement failed");
+			if (!settleRes || !settleRes.transaction) {
+				throw new Error("Treasury payout failed or returned no transaction hash");
 			}
 
+			txHash = settleRes.transaction;
+			payer = settleRes.payer || c.env.TREASURY_ADDRESS;
+
 			// 更新账本记录为已结算
-			const txHash = settleResult.transaction;
-			const payer = settleResult.payer?.toLowerCase();
 			console.log(`[apiWithdrawFromAdsEscrowAccount] 更新账本为已结算: txHash=${txHash}, payer=${payer}`);
 			await settleWithdrawLedger(c.env.DB, ledgerId, txHash, payer || "");
 
@@ -922,7 +970,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 				success: true,
 				txHash,
 				to_address: toAddress,
-				amount_atomic: amountAtomic,
+				amount_atomic: amountAtomicStr,
 				debug_msg: "Withdrawal processed successfully via Treasury payout"
 			});
 		} catch (err: any) {
@@ -936,7 +984,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 			});
 			console.log(`[apiWithdrawFromAdsEscrowAccount] 标记账本为失败并退款...`);
 			await failWithdrawLedger(c.env.DB, ledgerId, errorMsg);
-			await refundEscrowBalance(c.env.DB, aXId, amountAtomic);
+			await refundEscrowBalance(c.env.DB, aXId, amountAtomicStr);
 
 			return jsonError(c, 500, "WITHDRAW_FAILED", errorMsg);
 		}
@@ -954,6 +1002,107 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 			return jsonError(c, err.statusCode as ContentfulStatusCode, err.code, err.detail);
 		}
 		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 广告执行者提现（从 ad_performer_accounts 提现）
+ * 设计：每周允许提现一次，金额独立于广告主。
+ */
+export async function apiAdsExecutorWithdraw(c: ExtCtx) {
+	try {
+		const parsed = await parseEscrowRequest(c);
+		if (parsed instanceof Response) return parsed;
+		const { aXId: bXId, amountAtomic: amountAtomicStr } = parsed; // Reuse parseEscrowRequest, aXId is actually b_x_id here
+
+		const db = c.env.DB;
+
+		// 1. 查找接收者的链上地址
+		const kolBinding = await getKolBindingByXId(db, bXId);
+		const toAddress = kolBinding?.wallet_address;
+		if (!toAddress) {
+			return jsonError(c, 400, "WALLET_NOT_BOUND", "Executor wallet address not found");
+		}
+
+		// 2. 幂等性控制 & 每周限制 (每周一次)
+		const now = new Date();
+		const year = now.getUTCFullYear();
+		// Compute strict ISO week number
+		const jsDay = now.getUTCDay();
+		const dayNum = jsDay === 0 ? 7 : jsDay;
+		const firstThursday = new Date(Date.UTC(now.getUTCFullYear(), 0, 4));
+		const weekNum = Math.ceil((((now.getTime() - firstThursday.getTime()) / 86400000) + firstThursday.getUTCDay() + 1) / 7);
+
+		const requestId = `executor_withdraw_${bXId}_${year}_W${weekNum}`;
+
+		const existingLedger = await getPerformerLedgerByRequestId(db, bXId, requestId);
+		if (existingLedger) {
+			if (existingLedger.status === 'SETTLED' || existingLedger.status === 'PENDING') {
+				// We don't want to show an error, but rather return a friendly status object like Publisher withdraw
+				return c.json({
+					success: false,
+					alreadyWithdrawn: true,
+					limitType: "Weekly",
+					txHash: existingLedger.tx_hash,
+					status: existingLedger.status,
+					message: "You have already reached the weekly withdrawal limit. Please try again next week."
+				});
+			}
+		}
+
+		// 3. 开始提现处理（预扣款）
+		const ledgerId = crypto.randomUUID();
+		const deductSuccess = await debitPerformerBalance(db, bXId, amountAtomicStr);
+
+		if (!deductSuccess) {
+			return jsonError(c, 400, "INSUFFICIENT_BALANCE", "Insufficient earned balance for withdrawal");
+		}
+
+		// 插入提现流水记录
+		await insertPerformerWithdrawLedger(db, ledgerId, bXId, amountAtomicStr, toAddress, requestId);
+
+		// 4. 发起国库付款
+		let txHash = "";
+		let payer = "";
+		try {
+			console.log(`[apiAdsExecutorWithdraw] Initiating executor payout to ${toAddress}, amount=${amountAtomicStr}`);
+			const resourceUrl = `ads://executor-withdraw/${bXId}`;
+			const settleRes = await internalTreasurySettle(
+				c,
+				toAddress as `0x${string}`,
+				amountAtomicStr,
+				resourceUrl
+			);
+
+			if (!settleRes || !settleRes.transaction) {
+				throw new Error("Treasury payout failed or returned no transaction hash");
+			}
+
+			txHash = settleRes.transaction;
+			payer = settleRes.payer || c.env.TREASURY_ADDRESS;
+
+			// 5. 更新为已结算
+			await settlePerformerWithdrawLedger(db, ledgerId, txHash);
+
+			return c.json({
+				success: true,
+				txHash,
+				to_address: toAddress,
+				amount_atomic: amountAtomicStr,
+				debug_msg: "Executor withdrawal processed successfully"
+			});
+		} catch (err: any) {
+			// 支付失败：标记账本为失败并退款
+			console.error(`[apiAdsExecutorWithdraw] 提现失败:`, err);
+			await failPerformerWithdrawLedger(db, ledgerId, err.message || "Treasury payout failed");
+			await refundPerformerBalance(db, bXId, amountAtomicStr);
+
+			return jsonError(c, 500, "TREASURY_PAYOUT_FAILED", err.message || "Failed to process withdrawal from treasury");
+		}
+
+	} catch (err: any) {
+		console.error("[apiAdsExecutorWithdraw] 提现异常:", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", "An unexpected error occurred during executor withdrawal");
 	}
 }
 
@@ -1067,6 +1216,7 @@ export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
 	app.get(API_PATH_ADS_MY_CLAIMS, apiAdsMyClaims);
 	app.get(API_PATH_ADS_MY_TASKS, apiAdsMyTasks);
 	app.get(API_PATH_ADS_EXECUTOR_DASHBOARD_INFO, apiAdsExecutorDashboardInfo);
+	app.post(API_PATH_ADS_EXECUTOR_WITHDRAW, apiAdsExecutorWithdraw);
 	app.post(API_PATH_ADS_PUBLISHER_RECHARGE, apiRechargeToAdEscrowAccount);
 	app.post(API_PATH_ADS_PUBLISHER_WITHDRAW, apiWithdrawFromAdsEscrowAccount);
 	app.get(API_PATH_ADS_PUBLISHER_LEDGER, apiAdsPublisherLedger);

@@ -1,7 +1,7 @@
 import {
     $Id, $input, atomicToUsdcNumber, FIXED_ETH_TRANSFER_GAS_ETH,
     FIXED_MINI_USDC_TRANSFER, hideLoading,
-    openTxInExplorer, showAlert, showLoading, showNotification, showPopupWindow
+    openTxInExplorer, showAlert, showLoading, showNotification, showPopupWindow, getCurrentUserInfo
 } from "./common";
 import { t } from "../common/i18n";
 import { ethers } from "ethers";
@@ -475,9 +475,9 @@ async function initAdPlaza(): Promise<void> {
             adPlazaContainer.style.display = "flex";
 
             // 获取执行者仪表盘统计
-            const xId = await queryCdpUserID();
-            if (xId) {
-                const response = await x402WorkerGet(API_PATH_ADS_EXECUTOR_DASHBOARD_INFO, { b_x_id: xId });
+            const userInfo = await getCurrentUserInfo();
+            if (userInfo && userInfo.xId) {
+                const response = await x402WorkerGet(API_PATH_ADS_EXECUTOR_DASHBOARD_INFO, { b_x_id: userInfo.xId });
                 if (response.success && response.data) {
                     const stats = response.data;
 

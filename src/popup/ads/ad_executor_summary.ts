@@ -1,6 +1,6 @@
 import { $2, atomicToUsdcNumber, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification } from "../common";
 import { x402WorkerGet, x402WorkerFetch } from "../../wallet/cdp_wallet";
-import { API_PATH_ADS_MY_CLAIMS, API_PATH_ADS_PUBLISHER_WITHDRAW, API_PATH_ADS_EXECUTOR_DASHBOARD_INFO } from "./ad_publisher_common";
+import { API_PATH_ADS_MY_CLAIMS, API_PATH_ADS_EXECUTOR_WITHDRAW, API_PATH_ADS_EXECUTOR_DASHBOARD_INFO } from "./ad_publisher_common";
 import { EarnClaim, executorState, formatClaimTime } from "./ad_executor_common";
 
 export async function loadClaims(): Promise<EarnClaim[]> {
@@ -100,10 +100,9 @@ export function initSummaryActions() {
 
             showNotification("Withdrawing...", "info");
 
-            // Call Backend (Executor uses the same escrow withdraw API — their x_id
-            // exists as a_x_id in ad_escrow_accounts, created by settleAdReward UPSERT)
-            const resp = await x402WorkerFetch(API_PATH_ADS_PUBLISHER_WITHDRAW, {
-                a_x_id: xId,
+            // Call Backend (Executor uses their specific withdraw API)
+            const resp = await x402WorkerFetch(API_PATH_ADS_EXECUTOR_WITHDRAW, {
+                b_x_id: xId,
                 amount_atomic: amountAtomic
             });
 

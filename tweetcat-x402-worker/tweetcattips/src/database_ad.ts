@@ -676,8 +676,8 @@ export async function getPerformerDashboardStats(db: D1Database, bXId: string) {
 	// 1. 获取真实账户余额 (由 settleAdReward UPSERT 创建)
 	const accountSql = `
 		SELECT COALESCE(available_atomic, '0') as available_atomic
-		FROM ad_escrow_accounts
-		WHERE a_x_id = ? AND asset_symbol = 'USDC'
+		FROM ad_performer_accounts
+		WHERE b_x_id = ? AND asset_symbol = 'USDC'
 	`;
 	const account = await db.prepare(accountSql).bind(bXId).first<{ available_atomic: string }>();
 	const withdrawableAtomic = account?.available_atomic ?? "0";
@@ -1101,6 +1101,102 @@ export async function refundEscrowBalance(
 	return result.success ?? false;
 }
 
+// ------------------------------------------------------------------------------------------------
+// 执行者 (Performer) 自有资金池操作
+// ------------------------------------------------------------------------------------------------
+
+export async function getPerformerLedgerByRequestId(
+	db: D1Database,
+	bXId: string,
+	requestId: string
+): Promise<AdEscrowLedgerRow | null> {
+	const sql = `
+		SELECT * FROM ad_performer_ledger
+		WHERE b_x_id = ? AND request_id = ?
+		LIMIT 1
+	`;
+	return await db.prepare(sql).bind(bXId, requestId).first<AdEscrowLedgerRow>();
+}
+
+export async function insertPerformerWithdrawLedger(
+	db: D1Database,
+	ledgerId: string,
+	bXId: string,
+	amountAtomic: string,
+	receiverAddress: string,
+	requestId: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		INSERT INTO ad_performer_ledger(
+			ledger_id, b_x_id, asset_symbol, amount_atomic,
+			receiver_address, status, request_id, created_at, updated_at
+		)
+		VALUES(?, ?, 'USDC', ?, ?, 'PENDING', ?, datetime('now'), datetime('now'))
+	`).bind(ledgerId, bXId, amountAtomic, receiverAddress, requestId).run();
+
+	return result.success && (result.meta.changes ?? 0) > 0;
+}
+
+export async function debitPerformerBalance(
+	db: D1Database,
+	bXId: string,
+	amountAtomic: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		UPDATE ad_performer_accounts
+		SET available_atomic = CAST(available_atomic AS INTEGER) - ?,
+		    updated_at = datetime('now')
+		WHERE b_x_id = ? AND asset_symbol = 'USDC'
+		  AND CAST(available_atomic AS INTEGER) >= ?
+	`).bind(amountAtomic, bXId, amountAtomic).run();
+
+	return result.success && (result.meta.changes ?? 0) > 0;
+}
+
+export async function settlePerformerWithdrawLedger(
+	db: D1Database,
+	ledgerId: string,
+	txHash: string
+): Promise<boolean> {
+	// Note: We don't store payer_address in performer ledger
+	const result = await db.prepare(`
+		UPDATE ad_performer_ledger
+		SET tx_hash = ?, status = 'SETTLED', updated_at = datetime('now')
+		WHERE ledger_id = ?
+	`).bind(txHash, ledgerId).run();
+
+	return result.success ?? false;
+}
+
+export async function failPerformerWithdrawLedger(
+	db: D1Database,
+	ledgerId: string,
+	errorReason: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		UPDATE ad_performer_ledger
+		SET status = 'FAILED', error_reason = ?, updated_at = datetime('now')
+		WHERE ledger_id = ?
+	`).bind(errorReason, ledgerId).run();
+
+	return result.success ?? false;
+}
+
+export async function refundPerformerBalance(
+	db: D1Database,
+	bXId: string,
+	amountAtomic: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		UPDATE ad_performer_accounts
+		SET available_atomic = CAST(available_atomic AS INTEGER) + ?,
+		    updated_at = datetime('now')
+		WHERE b_x_id = ? AND asset_symbol = 'USDC'
+	`).bind(amountAtomic, bXId).run();
+
+	return result.success ?? false;
+}
+
 /**
  * 查询广告托管账本记录列表（充值/提现历史）
  * @param db - D1 数据库实例
@@ -1165,11 +1261,11 @@ export async function settleAdReward(
 		  AND CAST(frozen_atomic AS INTEGER) >= ?
 	`;
 
-	// 2. 增加执行者可用余额 (如果账户不存在则创建)
+	// 2. 增加执行者可用余额 (如果账户不存在则创建)，保存在 ad_performer_accounts 表中
 	const creditPerformerSql = `
-		INSERT INTO ad_escrow_accounts (a_x_id, asset_symbol, available_atomic, frozen_atomic, created_at, updated_at)
+		INSERT INTO ad_performer_accounts (b_x_id, asset_symbol, available_atomic, withdrawn_atomic, created_at, updated_at)
 		VALUES (?, 'USDC', ?, 0, datetime('now'), datetime('now'))
-		ON CONFLICT(a_x_id, asset_symbol) DO UPDATE SET
+		ON CONFLICT(b_x_id, asset_symbol) DO UPDATE SET
 			available_atomic = CAST(available_atomic AS INTEGER) + ?,
 			updated_at = datetime('now')
 	`;

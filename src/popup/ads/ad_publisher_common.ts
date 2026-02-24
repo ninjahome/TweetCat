@@ -65,6 +65,7 @@ export const API_PATH_ADS_TOP_UP_BUDGET = "/ads/publisher/top_up_budget";
 export const API_PATH_ADS_PUBLISHER_DASHBOARD_INFO = "/ads/publisher/dashboard_info";
 export const API_PATH_ADS_PUBLISHER_SPEND_HISTORY = "/ads/publisher/spend_history";
 export const API_PATH_ADS_EXECUTOR_DASHBOARD_INFO = "/ads/executor/dashboard_info";
+export const API_PATH_ADS_EXECUTOR_WITHDRAW = "/ads/executor/withdraw";
 
 // ========= Dashboard Info 相关类型定义 =========
 export interface DashboardInfo {
