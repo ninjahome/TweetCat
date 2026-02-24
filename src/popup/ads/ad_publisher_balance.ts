@@ -135,6 +135,12 @@ function setTransferDirection(dir: TransferDirection) {
     }
 
     setTransferInlineError(null);
+
+    // Clear the amount input when switching directions, as the max limits differ
+    const amountInput = $Id("transfer-amount") as HTMLInputElement | null;
+    if (amountInput) {
+        amountInput.value = "";
+    }
 }
 
 function syncTransferModalUI() {

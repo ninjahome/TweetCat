@@ -95,14 +95,14 @@
 | B-03 | ✅ 👋 充值金额为 0 | 前端拦截："Please enter a valid amount." | P1 |
 | B-04 | ✅ 👋 充值金额为负数 | 前端拦截 | P1 |
 | B-05 | ✅ 🤖 同一 txHash 的充值请求重复到达 | 幂等保护：`ON CONFLICT(tx_hash) DO NOTHING`，余额只增加一次 | P0 |
-| B-06 | 🤖 **提现**：正常金额 from Ads 账户提现到绑定钱包 | 扣减 available → 链上转账 → 账本 SETTLED → txHash 返回 | P0 |
+| B-06 | ✅ 🤖 **提现**：正常金额 from Ads 账户提现到绑定钱包 | 扣减 available → 链上转账 → 账本 SETTLED → txHash 返回 | P0 |
 | B-07 | ✅ 🤖 提现金额超过可用余额 | 返回 `INSUFFICIENT_BALANCE` | P0 |
-| B-08 | 🤖 **月度提现限制**：本月已提现一次，再次提现 | 返回 `alreadyWithdrawn: true`，显示上次 txHash 和下次可用日期 | P0 |
+| B-08 | ✅ 🤖 **月度提现限制**：本月已提现一次，再次提现 | 返回 `alreadyWithdrawn: true`，显示上次 txHash 和下次可用日期 | P0 |
 | B-09 | 🤖 上月提现过，本月首次提现 | 正常执行（幂等 key 变了：`{xId}_{YYYYMM}`） | P0 |
 | B-10 | 🤖 提现过程中链上转账失败 | 账本标记 FAILED，余额退回 (refundEscrowBalance) | P0 |
 | B-11 | 🤖 提现请求 PENDING 状态中，再次发起提现 | 返回 `PENDING` 错误 | P1 |
-| B-12 | 👋 前端 "Max" 按钮 | 正确填入当前方向的最大可用金额 | P1 |
-| B-13 | 👋 切换方向后校验状态更新 | 月度限制警告只在 `ads_to_wallet` 方向显示 | P1 |
+| B-12 | ✅ 👋 前端 "Max" 按钮 | 正确填入当前方向的最大可用金额 | P1 |
+| B-13 | ✅ 👋 切换方向后校验状态更新 | 月度限制警告只在 `ads_to_wallet` 方向显示 | P1 |
 | B-14 | 🤖 未绑定钱包地址的用户尝试提现 | 后端返回 "User wallet address not found" | P1 |
 | B-15 | 🤖 并发充值请求（同一用户同时发起两笔） | 两笔均应正确处理（不同 txHash），余额累加 | P2 |
 
