@@ -90,13 +90,13 @@
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| B-01 | 🤖 **充值**：正常金额从钱包转入 Ads 账户 | x402 支付成功 → 账本记录(DEPOSIT/SETTLED) → available_atomic 增加 | P0 |
-| B-02 | 👋 充值金额超过钱包余额 | 前端拦截："Amount exceeds Wallet Balance." | P0 |
-| B-03 | 👋 充值金额为 0 | 前端拦截："Please enter a valid amount." | P1 |
-| B-04 | 👋 充值金额为负数 | 前端拦截 | P1 |
-| B-05 | 🤖 同一 txHash 的充值请求重复到达 | 幂等保护：`ON CONFLICT(tx_hash) DO NOTHING`，余额只增加一次 | P0 |
+| B-01 | ✅ 🤖 **充值**：正常金额从钱包转入 Ads 账户 | x402 支付成功 → 账本记录(DEPOSIT/SETTLED) → available_atomic 增加 | P0 |
+| B-02 | ✅ 👋 充值金额超过钱包余额 | 前端拦截："Amount exceeds Wallet Balance." | P0 |
+| B-03 | ✅ 👋 充值金额为 0 | 前端拦截："Please enter a valid amount." | P1 |
+| B-04 | ✅ 👋 充值金额为负数 | 前端拦截 | P1 |
+| B-05 | ✅ 🤖 同一 txHash 的充值请求重复到达 | 幂等保护：`ON CONFLICT(tx_hash) DO NOTHING`，余额只增加一次 | P0 |
 | B-06 | 🤖 **提现**：正常金额 from Ads 账户提现到绑定钱包 | 扣减 available → 链上转账 → 账本 SETTLED → txHash 返回 | P0 |
-| B-07 | 🤖 提现金额超过可用余额 | 返回 `INSUFFICIENT_BALANCE` | P0 |
+| B-07 | ✅ 🤖 提现金额超过可用余额 | 返回 `INSUFFICIENT_BALANCE` | P0 |
 | B-08 | 🤖 **月度提现限制**：本月已提现一次，再次提现 | 返回 `alreadyWithdrawn: true`，显示上次 txHash 和下次可用日期 | P0 |
 | B-09 | 🤖 上月提现过，本月首次提现 | 正常执行（幂等 key 变了：`{xId}_{YYYYMM}`） | P0 |
 | B-10 | 🤖 提现过程中链上转账失败 | 账本标记 FAILED，余额退回 (refundEscrowBalance) | P0 |

@@ -162,6 +162,15 @@ export function openRechargeModal() {
 function closeRechargeModal() {
     const modal = $Id("recharge-modal");
     if (modal) modal.classList.remove("active");
+
+    // Clear state
+    setTransferInlineError(null);
+    const limitDetails = $Id("monthly-limit-details");
+    if (limitDetails) limitDetails.classList.add("hidden");
+
+    // Clear amount
+    const amountInput = $Id("transfer-amount") as HTMLInputElement | null;
+    if (amountInput) amountInput.value = "";
 }
 
 
@@ -229,21 +238,27 @@ async function handleAdsEscrowTransfer(): Promise<void> {
         const payload = prepareEscrowTransferParam();
         let result: any;
 
+        // Reset limit details before each submit attempt
+        const limitDetails = $Id("monthly-limit-details");
+        if (limitDetails) limitDetails.classList.add("hidden");
+
+        console.log(`[Transfer] Initiating transfer: direction=${transferDirection}, amount=${payload.amount}`);
+
         if (transferDirection === "wallet_to_ads") {
             setTransferBusy(true, "Processing deposit...");
             result = await postToX402Srv(API_PATH_ADS_PUBLISHER_RECHARGE, payload);
         } else {
             setTransferBusy(true, "Processing withdraw...");
+            // Use x402WorkerFetch for withdrawal as it should be a server-side treasury payout (no x402 payment from user)
             result = await x402WorkerFetch(API_PATH_ADS_PUBLISHER_WITHDRAW, payload);
         }
+
+        console.log("[Transfer] API Response:", result);
 
         if (transferDirection === "ads_to_wallet" && result.alreadyWithdrawn === true) {
             handleMonthlyWithdrawLimitIfNeeded(result);
             return;
         }
-
-        const limitDetails = $Id("monthly-limit-details");
-        if (limitDetails) limitDetails.classList.add("hidden");
 
         if (!result.success || !result.txHash) {
             const msg = (result.detail || result.message || result.error || "Invalid response").toString();

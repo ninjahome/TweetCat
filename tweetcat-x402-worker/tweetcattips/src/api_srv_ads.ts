@@ -917,12 +917,13 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 			console.log(`[apiWithdrawFromAdsEscrowAccount] 更新账本为已结算: txHash=${txHash}, payer=${payer}`);
 			await settleWithdrawLedger(c.env.DB, ledgerId, txHash, payer || "");
 
-			console.log(`[apiWithdrawFromAdsEscrowAccount] 提现成功完成`);
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 提现成功完成. final txHash=${txHash}, toAddress=${toAddress}`);
 			return c.json({
 				success: true,
 				txHash,
 				to_address: toAddress,
-				amount_atomic: amountAtomic
+				amount_atomic: amountAtomic,
+				debug_msg: "Withdrawal processed successfully via Treasury payout"
 			});
 		} catch (err: any) {
 			// 支付失败：标记账本为失败并退款
