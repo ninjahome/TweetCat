@@ -88,6 +88,12 @@
 
 ### 测试用例
 
+> 💡 **提示**: 带有 🤖 标记的用例已实现为自动化集成测试。
+> 请在 `tweetcat-x402-worker/tweetcattips` 目录下执行如下命令完成测试：
+> ```bash
+> npm test -- --run test/ads_withdrawal.spec.ts
+> ```
+
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
 | B-01 | ✅ 🤖 **充值**：正常金额从钱包转入 Ads 账户 | x402 支付成功 → 账本记录(DEPOSIT/SETTLED) → available_atomic 增加 | P0 |
