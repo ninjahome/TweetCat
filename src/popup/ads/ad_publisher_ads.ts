@@ -98,8 +98,8 @@ async function submitPublishForm() {
             return;
         }
 
-        if (quotaTotal <= 0) {
-            showNotification("Max followers must be at least 1.", "error");
+        if (isNaN(quotaTotal) || !Number.isInteger(quotaTotal) || quotaTotal <= 0) {
+            showNotification("Max followers must be a positive integer.", "error");
             return;
         }
 
@@ -115,6 +115,10 @@ async function submitPublishForm() {
         }
 
         const unitPriceAtomic = usdcToAtomic(reward);
+        if (!unitPriceAtomic) {
+            showNotification("Invalid reward amount format.", "error");
+            return;
+        }
 
         // MVP: 只需要核心字段，后端自动填充 title/description/detail_url
         const payload = {

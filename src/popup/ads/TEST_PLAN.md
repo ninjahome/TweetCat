@@ -122,11 +122,11 @@
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
 | P-01 | 🤖 正常发布：填写所有必填字段，余额充足 | 广告创建成功，余额 from available 移至 frozen，feed version 递增 | P0 |
-| P-02 | 👋 缺少广告名称 | 前端拦截："Please enter a campaign name." | P0 |
-| P-03 | 👋 奖励金额为 0 或负数 | 前端拦截："Reward per follow must be greater than 0." | P0 |
-| P-04 | 👋 奖励金额非数字（如 "abc"） | 前端拦截：parseFloat 返回 NaN → 提示错误 | P1 |
-| P-05 | 👋 截止日期为过去时间 | 前端和后端均拦截："End date must be in the future." | P0 |
-| P-06 | 👋 未选择截止日期 | 前端拦截 | P1 |
+| P-02 | ✅ 👋 缺少广告名称 | 前端拦截："Please enter a campaign name." | P0 |
+| P-03 | ✅ 👋 奖励金额为 0 或负数 | 前端拦截："Reward per follow must be greater than 0." | P0 |
+| P-04 | ✅ 👋 奖励金额非数字（如 "abc"） | 前端拦截：parseFloat 返回 NaN → 提示错误 | P1 |
+| P-05 | ✅ 👋 截止日期为过去时间 | 前端和后端均拦截："End date must be in the future." | P0 |
+| P-06 | ✅ 👋 未选择截止日期 | 前端拦截 | P1 |
 | P-07 | 🤖 余额不足 | 后端返回 `INSUFFICIENT_BALANCE`，前端显示具体差额（已修复展示单位问题） | P0 |
 | P-08 | 👋 目标 URL 为空 | 前端拦截："Please enter a target Twitter profile URL." | P1 |
 | P-09 | 🤖 极大配额（如 1,000,000）× 高单价（如 10 USDC） | 验证 BigInt 计算是否溢出，余额校验是否正确 | P1 |
