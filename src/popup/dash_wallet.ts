@@ -441,7 +441,7 @@ async function initRewards(): Promise<void> {
             rewardsArea.onclick = async () => {
                 const status = rewards.length > 0 ? 0 : -1;
                 await browser.tabs.create({
-                    url: browser.runtime.getURL(`html / rewards.html ? status = ${status} `)
+                    url: browser.runtime.getURL(`html/rewards.html?status=${status}`)
                 });
             };
         } else {
