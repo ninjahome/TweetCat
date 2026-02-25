@@ -88,6 +88,12 @@
 
 ### 测试用例
 
+> 💡 **提示**: 带有 🤖 标记的用例已实现为自动化集成测试。
+> 请在 `tweetcat-x402-worker/tweetcattips` 目录下执行如下命令完成测试：
+> ```bash
+> npm test -- --run test/ads_withdrawal.spec.ts
+> ```
+
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
 | B-01 | ✅ 🤖 **充值**：正常金额从钱包转入 Ads 账户 | x402 支付成功 → 账本记录(DEPOSIT/SETTLED) → available_atomic 增加 | P0 |
@@ -241,12 +247,12 @@
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
 | EW-01 | 🤖 可提现金额 > 0，点击提现 | 链上转账成功，withdrawableUSDC 归零，txHash 显示（✅ **验证 C-2**） | P0 |
-| EW-02 | 👋 可提现金额 = 0 | 提示 "Nothing to withdraw." | P0 |
+| EW-02 | ❓ 待定：可提现金额 = 0 | 提示 "Nothing to withdraw." | P0 |
 | EW-03 | 👋 提现金额不一致（前端计算 vs 服务器余额） | 以服务器实际 `available_atomic` 为准，防止超扣（✅ **验证 C-2**） | P0 |
 | EW-04 | 🤖 提现过程中链上转账失败 | 余额退回，提示错误信息 | P0 |
 | EW-05 | 🤖 月度提现限制（如果适用于 Executor） | 同模块二 B-08 | P1 |
 | EW-06 | 👋 提现后 2 秒自动刷新 summary | withdrawableUSDC 已更新，totalEarnedUSDC 不变 | P1 |
-| EW-07 | 👋 查看 Activity 列表 | 显示所有 claim 记录，时间和状态正确 | P2 |
+| EW-07 | ✅ 👋 查看 Activity 列表 | 显示所有 claim 记录，时间和状态正确 | P2 |
 | EW-08 | 👋 Activity Modal 打开/关闭 | 正常切换，点击遮罩关闭 | P2 |
 
 ---

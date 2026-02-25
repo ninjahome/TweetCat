@@ -97,11 +97,30 @@ export function getRewardRange(rewardUSDC: number): "0.1-0.5" | "0.5-1" | "1+" {
     return "1+";
 }
 
-export function formatClaimTime(value?: string): string {
+export function formatClaimTime(value?: string | number): string {
     if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return value;
-    return date.toLocaleString();
+
+    let date: Date;
+    if (typeof value === 'number') {
+        date = new Date(value);
+    } else {
+        if (/^\d{10,}$/.test(value)) {
+            date = new Date(Number(value));
+        } else {
+            // Ensure strings like "2026-02-25 08:00:00" are treated as UTC
+            let isoStr = value.replace(' ', 'T');
+            if (isoStr.length > 0 && !isoStr.includes('Z') && !isoStr.includes('+')) {
+                isoStr += 'Z';
+            }
+            date = new Date(isoStr);
+        }
+    }
+
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    // Format as YYYY-MM-DD HH:mm:ss in local time
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 import browser from "webextension-polyfill";
 
