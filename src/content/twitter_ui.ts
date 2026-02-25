@@ -294,6 +294,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
         if (mode === ADS_FOLLOW_UI_MODE.AlreadyFollowing) text = "已关注";
         if (mode === ADS_FOLLOW_UI_MODE.Processing) text = "处理中...";
         if (mode === ADS_FOLLOW_UI_MODE.Claimed) text = "已领取，待验证";
+        if (mode === ADS_FOLLOW_UI_MODE.AlreadyClaimed) text = "已领取";
         if (title) title.textContent = text;
     };
 
@@ -314,7 +315,9 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
             }
         }
 
-        if (claimStatus === ADS_FOLLOW_CLAIM_STATUS.ClaimedPendingProof) {
+        if (claimStatus === ADS_FOLLOW_CLAIM_STATUS.Claimed) {
+            setUi(ADS_FOLLOW_UI_MODE.AlreadyClaimed);
+        } else if (claimStatus === ADS_FOLLOW_CLAIM_STATUS.ClaimedPendingProof) {
             setUi(ADS_FOLLOW_UI_MODE.Claimed);
         } else if (claimStatus === ADS_FOLLOW_CLAIM_STATUS.Processing) {
             setUi(ADS_FOLLOW_UI_MODE.Processing);
@@ -419,7 +422,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
                     showDialog(t('tips_title'), "申领成功！奖励后续将发放至您的钱包。您可以前往广告广场查看状态。", openPlaza);
                 }
 
-                setUi(ADS_FOLLOW_UI_MODE.Claimed);
+                setUi(ADS_FOLLOW_UI_MODE.AlreadyClaimed);
                 /*
                 console.log("---------------- [DEBUG: AdsFollowClaim Material] ----------------");
                 ...

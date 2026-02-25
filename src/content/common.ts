@@ -64,6 +64,7 @@ export const ADS_FOLLOW_UI_MODE = {
     AlreadyFollowing: "already_following",
     Processing: "processing",
     Claimed: "claimed",
+    AlreadyClaimed: "already_claimed",
 } as const;
 
 export type AdsFollowUiMode = typeof ADS_FOLLOW_UI_MODE[keyof typeof ADS_FOLLOW_UI_MODE];
@@ -71,6 +72,7 @@ export type AdsFollowUiMode = typeof ADS_FOLLOW_UI_MODE[keyof typeof ADS_FOLLOW_
 export const ADS_FOLLOW_CLAIM_STATUS = {
     Processing: "processing",
     ClaimedPendingProof: "claimed_pending_proof",
+    Claimed: "claimed",
 } as const;
 
 export type AdsFollowClaimStatus = typeof ADS_FOLLOW_CLAIM_STATUS[keyof typeof ADS_FOLLOW_CLAIM_STATUS];

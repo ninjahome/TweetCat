@@ -7,7 +7,7 @@ import { getFollowOfferForProfile, pollAdsFeedIfNeeded } from "./bg_ads_feed";
 export type AdsFollowClaimState = {
     ad_id: string;
     profileUrl?: string;
-    status: "processing" | "claimed_pending_proof";
+    status: "processing" | "claimed_pending_proof" | "claimed";
     claim_id?: string;
     claimed_at: number;
     expires_at: number;
@@ -42,12 +42,12 @@ async function getClaimState(adId: string): Promise<AdsFollowClaimState | null> 
     return row;
 }
 
-async function setClaimState(state: AdsFollowClaimState): Promise<void> {
+export async function setClaimState(state: AdsFollowClaimState): Promise<void> {
     await checkAndInitDatabase();
     await databaseUpdateOrAddItem(__tableAdsFollowClaimState, state);
 }
 
-async function clearClaimState(adId: string): Promise<void> {
+export async function clearClaimState(adId: string): Promise<void> {
     await checkAndInitDatabase();
     await databaseDelete(__tableAdsFollowClaimState, adId);
 }

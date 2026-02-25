@@ -2,6 +2,7 @@ import { fetchProfileSpotlights, setExternalCsrfToken } from "../x_api/twitter_a
 import { x402WorkerFetch } from "../wallet/cdp_wallet";
 import { API_PATH_ADS_CLAIM, API_PATH_ADS_SUBMIT_PROOF } from "../common/api_paths";
 import browser from "webextension-polyfill";
+import { setClaimState } from "./bg_ads_follow";
 
 /**
  * 从浏览器 Cookie 中同步 CSRF Token (ct0) 到 twitter_api 模块
@@ -91,6 +92,19 @@ export async function verifyFollowAndClaim(params: {
         }, userId);
 
         console.log(`[AdsVerifier] [LOG_END] Claim & Proof SUCCESS:`, resp);
+
+        // Persist the claimed state locally so the UI can reflect it even if user unfollows
+        if (resp && typeof resp === 'object') {
+            await setClaimState({
+                ad_id,
+                status: "claimed",
+                claimed_at: Date.now(),
+                updated_at: Date.now(),
+                expires_at: Date.now() + 30 * 24 * 60 * 60 * 1000, // Keep for 30 days
+                profileUrl: params.profileUrl
+            });
+        }
+
         return resp;
     } catch (err: any) {
         console.error(`[AdsVerifier] [LOG_ERROR] flow interrupted:`, err);
