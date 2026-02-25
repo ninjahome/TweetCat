@@ -134,19 +134,7 @@ async function submitPublishForm() {
         const result = await x402WorkerFetch(API_PATH_ADS_CREATE, payload);
 
         if (!result.ok) {
-            if (result.error?.error === "INSUFFICIENT_BALANCE") {
-                let detail = result.error?.detail || "";
-                // Reformat atomic string "Required 1000000, available 0" to USDC
-                const match = detail.match(/Required (\d+), available (\d+)/);
-                if (match) {
-                    const req = formatUSDC(atomicToUsdcNumber(match[1]));
-                    const avail = formatUSDC(atomicToUsdcNumber(match[2]));
-                    detail = `Required ${req}, available ${avail}.`;
-                }
-                showNotification(`Insufficient balance. ${detail}`.trim(), "error");
-                return;
-            }
-            showNotification(result.error?.detail || "Failed to create campaign.", "error");
+            showNotification(result.error?.detail || result.error?.message || "Failed to create campaign.", "error");
             return;
         }
 
@@ -157,7 +145,23 @@ async function submitPublishForm() {
         resetPublishForm();
     } catch (e: any) {
         console.error("[ads][create] failed", e);
-        showNotification(e?.message || "Failed to create campaign.", "error");
+        let msg = (e?.message || "Failed to create campaign.").toString();
+
+        // Handle technical "Insufficient Balance" technical message from x402WorkerFetch
+        if (msg.includes("INSUFFICIENT_BALANCE")) {
+            // Reformat atomic string "Required 1000000, available 0" to USDC
+            const match = msg.match(/Required (\d+), available (\d+)/);
+            let detail = "";
+            if (match) {
+                const req = formatUSDC(atomicToUsdcNumber(match[1]));
+                const avail = formatUSDC(atomicToUsdcNumber(match[2]));
+                detail = `Required ${req}, available ${avail}.`;
+            }
+            showNotification(`余额不足. ${detail}`.trim(), "error");
+            return;
+        }
+
+        showNotification(msg, "error");
     } finally {
         if (submitBtn) submitBtn.disabled = false;
         hideLoading();

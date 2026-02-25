@@ -287,7 +287,21 @@ async function handleAdsEscrowTransfer(): Promise<void> {
 
         await openTxInExplorer(txHash);
     } catch (e: any) {
-        const msg = (e?.message || "Transfer failed").toString();
+        let msg = (e?.message || "Transfer failed").toString();
+
+        // Handle technical "Insufficient Balance" technical message from x402WorkerFetch
+        if (msg.includes("INSUFFICIENT_BALANCE")) {
+            // Reformat atomic string "Required 1000000, available 0" to USDC
+            const match = msg.match(/Required (\d+), available (\d+)/);
+            let detail = "";
+            if (match) {
+                const req = formatUSDC(atomicToUsdcNumber(match[1]));
+                const avail = formatUSDC(atomicToUsdcNumber(match[2]));
+                detail = `Required ${req}, available ${avail}.`;
+            }
+            msg = `余额不足. ${detail}`.trim();
+        }
+
         setTransferInlineError(msg);
         showNotification(msg, "error");
     } finally {
