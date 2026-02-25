@@ -127,12 +127,12 @@
 | P-04 | ✅ 👋 奖励金额非数字（如 "abc"） | 前端拦截：parseFloat 返回 NaN → 提示错误 | P1 |
 | P-05 | ✅ 👋 截止日期为过去时间 | 前端和后端均拦截："End date must be in the future." | P0 |
 | P-06 | ✅ 👋 未选择截止日期 | 前端拦截 | P1 |
-| P-07 | 🤖 余额不足 | 后端返回 `INSUFFICIENT_BALANCE`，前端显示具体差额（已修复展示单位问题） | P0 |
-| P-08 | 👋 目标 URL 为空 | 前端拦截："Please enter a target Twitter profile URL." | P1 |
+| P-07 | ✅ 🤖 余额不足 | 后端返回 `INSUFFICIENT_BALANCE`，前端显示具体差额（已修复展示单位问题） | P0 |
+| P-08 | ✅ 👋 目标 URL 为空 | 前端拦截："Please enter a target Twitter profile URL." | P1 |
 | P-09 | 🤖 极大配额（如 1,000,000）× 高单价（如 10 USDC） | 验证 BigInt 计算是否溢出，余额校验是否正确 | P1 |
-| P-10 | 👋 发布后刷新页面查看广告列表 | 新广告应出现在 "My Ads" 表格中，状态为 ACTIVE | P0 |
-| P-11 | 👋 连续快速点击提交按钮 | 按钮应在第一次点击后 disable，防止重复提交 | P1 |
-| P-12 | 👋 发布完成后预算摘要更新 | dashboard 的 frozen、active campaigns 数量正确更新 | P1 |
+| P-10 | ✅ 👋 发布后刷新页面查看广告列表 | 新广告应出现在 "My Ads" 表格中，状态为 ACTIVE | P0 |
+| P-11 | ✅ 👋 连续快速点击提交按钮 | 按钮应在第一次点击后 disable，防止重复提交 | P1 |
+| P-12 | ✅ 👋 发布完成后预算摘要更新 | dashboard 的 frozen、active campaigns 数量正确更新 | P1 |
 
 ---
 
@@ -149,8 +149,8 @@
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| LC-01 | 👋 ACTIVE → 暂停 (pause) | 状态变为 `PAUSED_MANUAL`，无网络报错提示（✅ **验证 M-2**） | P0 |
-| LC-02 | 👋 PAUSED_MANUAL → 启用 (resume) | 状态变为 `ACTIVE`，界面更新正常（✅ **验证 M-2**） | P0 |
+| LC-01 | ✅ 👋 ACTIVE → 暂停 (pause) | 状态变为 `PAUSED_MANUAL`，无网络报错提示（✅ **验证 M-2**） | P0 |
+| LC-02 | ✅ 👋 PAUSED_MANUAL → 启用 (resume) | 状态变为 `ACTIVE`，界面更新正常（✅ **验证 M-2**） | P0 |
 | LC-03 | 🤖 对非 ACTIVE 广告执行 pause | 返回 `INVALID_STATE` | P1 |
 | LC-04 | 🤖 对非 PAUSED_MANUAL 广告执行 resume | 返回 `INVALID_STATE` | P1 |
 | LC-05 | 🤖 ACTIVE → 结束 (stop) | 状态变为 `COMPLETED`，按钮变为 N/A | P0 |
@@ -180,9 +180,9 @@
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| EX-01 | 👋 用户访问有广告的 KOL 主页 | 显示「关注即领 X USDC」按钮 | P0 |
-| EX-02 | 👋 用户已关注该 KOL | 不显示按钮或按钮状态为「已关注」 | P0 |
-| EX-03 | 👋 用户是该 KOL 本人 | 不显示按钮（self-follow 防护） | P1 |
+| EX-01 | ✅ 👋 用户访问有广告的 KOL 主页 | 显示「关注即领 X USDC」按钮 | P0 |
+| EX-02 | ✅ 👋 用户已关注该 KOL | 不显示按钮或按钮状态为「已关注」 | P0 |
+| EX-03 | ✅ 👋 用户是该 KOL 本人 | 不显示按钮（self-follow 防护） | P1 |
 | EX-04 | 👋 用户未登录钱包 | 点击按钮 → 提示登录钱包 | P0 |
 | EX-05 | 🤖 正常关注流程：点击按钮 → 触发原生关注 → 拦截确认 → 提交证据 | Claim 创建成功，状态 PENDING_CONFIRM | P0 |
 | EX-06 | 👋 关注确认超时（15秒） | 提示"关注确认超时或失败"，状态回到 Eligible | P0 |
@@ -197,7 +197,7 @@
 | EX-15 | 🤖 蓝V状态为 false（非蓝V用户） | 服务器返回 `NOT_BLUE_VERIFIED` 或前端拦截 | P0 |
 | EX-16 | 👋 蓝V状态过期（超过 7 天） | 前端引导用户刷新状态 | P1 |
 | EX-17 | 🤖 claim 创建失败后的回滚 | quota_claimed 应该 -1（best effort），claim state 被 clear | P0 |
-| EX-18 | 👋 多个广告指向同一 KOL | Feed 选最高 reward 的 offer 展示 | P2 |
+| EX-18 | ✅ 👋 多个广告指向同一 KOL | Feed 选最高 reward 的 offer 展示 | P2 |
 
 ---
 
