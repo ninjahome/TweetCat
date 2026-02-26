@@ -1101,8 +1101,13 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 		}
 
 	} catch (err: any) {
-		console.error("[apiAdsExecutorWithdraw] 提现异常:", err);
-		return jsonError(c, 500, "INTERNAL_ERROR", "An unexpected error occurred during executor withdrawal");
+		console.error("[apiAdsExecutorWithdraw] 提现严重异常:", err);
+		return c.json({
+			error: "INTERNAL_ERROR",
+			message: "An unexpected error occurred during executor withdrawal",
+			detail: err?.message || String(err),
+			stack: err?.stack
+		}, 500);
 	}
 }
 
