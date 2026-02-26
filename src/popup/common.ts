@@ -280,3 +280,34 @@ export async function openTxInExplorer(txHash: string, chainId?: number): Promis
         console.error("openTxInExplorer error:", e);
     }
 }
+
+/**
+ * 将 UTC 时间字符串（YYYY-MM-DD HH:mm:ss）转换为本地时间格式
+ * @param value - 时间字符串或数字
+ * @returns 格式化后的本地时间字符串
+ */
+export function formatTimeLocal(value?: string | number): string {
+    if (!value) return "-";
+
+    let date: Date;
+    if (typeof value === 'number') {
+        date = new Date(value);
+    } else {
+        if (/^\d{10,}$/.test(value)) {
+            date = new Date(Number(value));
+        } else {
+            // Ensure strings like "2026-02-25 08:00:00" are treated as UTC
+            let isoStr = value.replace(' ', 'T');
+            if (isoStr.length > 0 && !isoStr.includes('Z') && !isoStr.includes('+')) {
+                isoStr += 'Z';
+            }
+            date = new Date(isoStr);
+        }
+    }
+
+    if (Number.isNaN(date.getTime())) return String(value);
+
+    // Format as YYYY-MM-DD HH:mm:ss in local time
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}

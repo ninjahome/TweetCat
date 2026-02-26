@@ -40,7 +40,12 @@ export async function cronSettleAds(env: Env) {
                         rejectionReason = "Invalid spotlight data: user result not found";
                     } else {
                         // 1. 提取正在被关注的 KOL 账号名 (from proof)
-                        const proofScreenName = String(relationship.legacy?.screen_name || "").toLowerCase();
+                        // 兼容不同版本的 Twitter GQL 结构 (legacy 或 core)
+                        const proofScreenName = String(
+                            relationship.legacy?.screen_name ||
+                            relationship.core?.screen_name ||
+                            ""
+                        ).toLowerCase();
 
                         // 2. 提取广告主要求的 KOL 账号名 (from ad detail_url)
                         // detail_url 格式一般为 https://x.com/username 或 https://twitter.com/username

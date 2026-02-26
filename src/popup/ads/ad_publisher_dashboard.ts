@@ -9,7 +9,8 @@ import {
     showLoading,
     showNotification,
     showConfirm,
-    usdcToAtomic
+    usdcToAtomic,
+    formatTimeLocal
 } from "../common";
 import { logAdP } from "../../common/debug_flags";
 import type { AdRecord, AdStatus, HistoryRow } from "./ad_publisher_common";
@@ -366,7 +367,7 @@ function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
     const daysUntilEnd = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
     // 格式化日期显示
-    endDateEl.textContent = new Date(rowData.endDate).toLocaleDateString();
+    endDateEl.textContent = formatTimeLocal(rowData.endDate).split(' ')[0];
 
     // 根据剩余天数添加样式类
     if (daysUntilEnd < 0) {
@@ -553,7 +554,7 @@ function openAdDetailModal(ad: AdRecord) {
         statusEl.className = `detail-value status--${ad.status.toLowerCase().replace(/_/g, '-')}`;
     }
 
-    setText("detail-created", ad.created_at ? new Date(ad.created_at).toLocaleString() : "-");
+    setText("detail-created", ad.created_at ? formatTimeLocal(ad.created_at) : "-");
 
     const rewardUSDC = atomicToUsdcNumber(ad.unit_price_atomic);
     setText("detail-reward", formatUSDC(rewardUSDC));
@@ -562,7 +563,7 @@ function openAdDetailModal(ad: AdRecord) {
     // End date
     const endDateEl = $Id("detail-end-date");
     if (endDateEl) {
-        endDateEl.textContent = ad.end_date ? new Date(ad.end_date).toLocaleString() : "-";
+        endDateEl.textContent = ad.end_date ? formatTimeLocal(ad.end_date) : "-";
     }
 
     // Populate Editable fields (Developer Settings)
@@ -731,7 +732,7 @@ export function renderSpendTable() {
         const tr = cloneTemplate("tpl-spend-row") as HTMLTableRowElement;
         tr.dataset.id = r.id;
 
-        $2<HTMLElement>(tr, ".td-time").textContent = r.time;
+        $2<HTMLElement>(tr, ".td-time").textContent = formatTimeLocal(r.time);
         $2<HTMLElement>(tr, ".td-ad").textContent = r.adName;
         $2<HTMLElement>(tr, ".td-event").textContent = r.event;
         $2<HTMLElement>(tr, ".td-amount").textContent = formatUSDC(r.amount);

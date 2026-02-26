@@ -298,18 +298,17 @@
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| UI-01 | 👋 首次加载 KOL 主页（有广告投放） | 按钮正确注入到 profile toolbar | P0 |
-| UI-02 | 👋 从 KOL 主页导航到其他用户主页 | 旧按钮移除，新按钮正确注入 | P1 |
-| UI-03 | 👋 页面滚动加载后按钮位置 | 按钮不因 re-render 重复添加 | P1 |
-| UI-04 | 👋 按钮 UI 状态流转 | Loading → Eligible / AlreadyFollowing → Processing → Claimed | P0 |
-| UI-05 | 👋 暗色模式 / Dim 模式兼容 | 按钮样式自适应 Twitter 主题 | P2 |
-| UI-06 | 👋 `tc_verify=1` 验证模式 | 页面加载后触发蓝V验证弹窗 | P1 |
-| UI-07 | 👋 验证模式：用户是蓝V | 弹窗 "✅ Verification Success!" | P1 |
-| UI-08 | 👋 验证模式：用户不是蓝V | 弹窗 "❌ Verification Failed" | P1 |
-| UI-09 | 👋 原生关注按钮不存在（用户已关注/页面未完全加载） | 提示 "未找到关注按钮" | P1 |
-| UI-10 | 👋 侧边栏推荐用户 vs 主页面用户区分 | 按钮只注入到 primaryColumn 的按钮 | P2 |
-| UI-11 | 👋 IJFollowActionCaptured 拦截 | 正确更新缓存的 following 状态 | P1 |
-| UI-12 | 👋 offscreen wallet 查询超时 | 合理的超时处理和错误提示 | P2 |
+| UI-01 | ✅ 👋 首次加载 KOL 主页（有广告投放） | 按钮正确注入到 profile toolbar | P0 |
+| UI-02 | ✅ 👋 从 KOL 主页导航到其他用户主页 | 旧按钮移除，新按钮正确注入 | P1 |
+| UI-03 | ✅ 👋 页面滚动加载后按钮位置 | 按钮不因 re-render 重复添加 | P1 |
+| UI-04 | ✅ 👋 按钮 UI 状态流转 | Loading → Eligible / AlreadyFollowing → Processing → Claimed | P0 |
+| UI-05 | ✅ 👋 暗色模式 / Dim 模式兼容 | 按钮样式自适应 Twitter 主题 | P2 |
+| UI-06 | ❓ 👋 `tc_verify=1` 验证模式 | 页面加载后触发蓝V验证弹窗 | P1 |
+| UI-07 | ❓ 👋 验证模式：用户是蓝V | 弹窗 "✅ Verification Success!" | P1 |
+| UI-08 | ❓ 👋 验证模式：用户不是蓝V | 弹窗 "❌ Verification Failed" | P1 |
+| UI-10 | ❓ 👋 侧边栏推荐用户 vs 主页面用户区分 | 按钮只注入到 primaryColumn 的按钮 | P2 |
+| UI-11 | ✅ 👋 IJFollowActionCaptured 拦截 | 正确更新缓存的 following 状态 | P1 |
+| UI-12 | ❓ 👋 offscreen wallet 查询超时 | 合理的超时处理和错误提示 | P2 |
 
 ---
 
