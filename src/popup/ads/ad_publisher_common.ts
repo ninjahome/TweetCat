@@ -50,22 +50,43 @@ export interface HistoryRow {
 }
 
 // API Paths (Matching tweetcat-x402-worker common.ts)
-export const API_PATH_ADS_LIST = "/ads/executor/list";
-export const API_PATH_ADS_CLAIM = "/ads/executor/claim";
-export const API_PATH_ADS_MY_CLAIMS = "/ads/executor/my_claims";
+import {
+    API_PATH_ADS_LIST,
+    API_PATH_ADS_CLAIM,
+    API_PATH_ADS_MY_CLAIMS,
+    API_PATH_ADS_CREATE,
+    API_PATH_ADS_UPDATE,
+    API_PATH_ADS_MY_ADS,
+    API_PATH_ADS_PUBLISHER_RECHARGE,
+    API_PATH_ADS_PUBLISHER_WITHDRAW,
+    API_PATH_ADS_PUBLISHER_LEDGER,
+    API_PATH_ADS_TOGGLE_STATUS,
+    API_PATH_ADS_TOP_UP_BUDGET,
+    API_PATH_ADS_PUBLISHER_DASHBOARD_INFO,
+    API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
+    API_PATH_ADS_EXECUTOR_DASHBOARD_INFO,
+    API_PATH_ADS_EXECUTOR_WITHDRAW
+} from "../../common/api_paths";
+
+export {
+    API_PATH_ADS_LIST,
+    API_PATH_ADS_CLAIM,
+    API_PATH_ADS_MY_CLAIMS,
+    API_PATH_ADS_CREATE,
+    API_PATH_ADS_UPDATE,
+    API_PATH_ADS_MY_ADS,
+    API_PATH_ADS_PUBLISHER_RECHARGE,
+    API_PATH_ADS_PUBLISHER_WITHDRAW,
+    API_PATH_ADS_PUBLISHER_LEDGER,
+    API_PATH_ADS_TOGGLE_STATUS,
+    API_PATH_ADS_TOP_UP_BUDGET,
+    API_PATH_ADS_PUBLISHER_DASHBOARD_INFO,
+    API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
+    API_PATH_ADS_EXECUTOR_DASHBOARD_INFO,
+    API_PATH_ADS_EXECUTOR_WITHDRAW
+};
+
 export const API_PATH_ADS_MY_TASKS = "/ads/executor/my_tasks";
-export const API_PATH_ADS_CREATE = "/ads/publisher/create";
-export const API_PATH_ADS_UPDATE = "/ads/publisher/update";
-export const API_PATH_ADS_MY_ADS = "/ads/publisher/my_ads";
-export const API_PATH_ADS_PUBLISHER_RECHARGE = "/ads/publisher/recharge";
-export const API_PATH_ADS_PUBLISHER_WITHDRAW = "/ads/publisher/withdraw";
-export const API_PATH_ADS_PUBLISHER_LEDGER = "/ads/publisher/ledger";
-export const API_PATH_ADS_TOGGLE_STATUS = "/ads/publisher/toggle_status";
-export const API_PATH_ADS_TOP_UP_BUDGET = "/ads/publisher/top_up_budget";
-export const API_PATH_ADS_PUBLISHER_DASHBOARD_INFO = "/ads/publisher/dashboard_info";
-export const API_PATH_ADS_PUBLISHER_SPEND_HISTORY = "/ads/publisher/spend_history";
-export const API_PATH_ADS_EXECUTOR_DASHBOARD_INFO = "/ads/executor/dashboard_info";
-export const API_PATH_ADS_EXECUTOR_WITHDRAW = "/ads/executor/withdraw";
 
 // ========= Dashboard Info 相关类型定义 =========
 export interface DashboardInfo {

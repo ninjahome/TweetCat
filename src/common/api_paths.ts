@@ -34,6 +34,9 @@ export const API_PATH_ADS_TOP_UP_BUDGET = "/ads/publisher/top_up_budget";
 export const API_PATH_ADS_PUBLISHER_DASHBOARD_INFO = "/ads/publisher/dashboard_info";
 export const API_PATH_ADS_PUBLISHER_SPEND_HISTORY = "/ads/publisher/spend_history";
 
+export const API_PATH_ADS_EXECUTOR_DASHBOARD_INFO = "/ads/executor/dashboard_info";
+export const API_PATH_ADS_EXECUTOR_WITHDRAW = "/ads/executor/withdraw";
+
 /**
  * 需要执行设备私钥签名的操作 (X-Device-Signature V2)
  */
@@ -41,5 +44,6 @@ export const signedOperationPaths: string[] = [
     API_PATH_ADS_CREATE,
     API_PATH_ADS_UPDATE,
     API_PATH_ADS_CLAIM,
-    API_PATH_ADS_PUBLISHER_WITHDRAW
+    API_PATH_ADS_PUBLISHER_WITHDRAW,
+    API_PATH_ADS_EXECUTOR_WITHDRAW
 ];

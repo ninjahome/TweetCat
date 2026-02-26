@@ -1027,11 +1027,11 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 		// 2. 幂等性控制 & 每周限制 (每周一次)
 		const now = new Date();
 		const year = now.getUTCFullYear();
-		// Compute strict ISO week number
-		const jsDay = now.getUTCDay();
-		const dayNum = jsDay === 0 ? 7 : jsDay;
-		const firstThursday = new Date(Date.UTC(now.getUTCFullYear(), 0, 4));
-		const weekNum = Math.ceil((((now.getTime() - firstThursday.getTime()) / 86400000) + firstThursday.getUTCDay() + 1) / 7);
+
+		// 简单的周数计算（从 1月1日开始每 7天算一周，足够用于幂等性控制）
+		const startOfYear = new Date(Date.UTC(year, 0, 1));
+		const diffDays = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000);
+		const weekNum = Math.floor(diffDays / 7) + 1;
 
 		const requestId = `executor_withdraw_${bXId}_${year}_W${weekNum}`;
 

@@ -256,3 +256,34 @@ CREATE TABLE ad_claim_evidence (
     FOREIGN KEY (claim_id) REFERENCES ad_reward_claims(claim_id) ON DELETE CASCADE
 );
 CREATE INDEX idx_ad_claim_evidence_claim ON ad_claim_evidence(claim_id);
+
+-- 广告执行者账户 (任务收益池)
+CREATE TABLE ad_performer_accounts (
+    b_x_id           TEXT NOT NULL,
+    asset_symbol     TEXT NOT NULL DEFAULT 'USDC',
+    available_atomic TEXT NOT NULL DEFAULT '0', -- 可提现的任务收益
+    withdrawn_atomic TEXT NOT NULL DEFAULT '0', -- 已提现的总额
+    created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (b_x_id, asset_symbol),
+    FOREIGN KEY (b_x_id) REFERENCES kol_binding(x_id)
+);
+
+-- 广告执行者提现流水
+CREATE TABLE ad_performer_ledger (
+    ledger_id        TEXT PRIMARY KEY,
+    b_x_id           TEXT NOT NULL,
+    asset_symbol     TEXT NOT NULL DEFAULT 'USDC',
+    amount_atomic    TEXT NOT NULL,
+    receiver_address TEXT,
+    status           TEXT NOT NULL DEFAULT 'PENDING', -- PENDING, SETTLED, FAILED
+    request_id       TEXT,                             -- 幂等请求 ID
+    tx_hash          TEXT,
+    payer_address    TEXT,
+    error_reason     TEXT,
+    created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(request_id),
+    FOREIGN KEY (b_x_id) REFERENCES kol_binding(x_id)
+);
+CREATE INDEX idx_ad_performer_ledger_user ON ad_performer_ledger(b_x_id, created_at DESC);
