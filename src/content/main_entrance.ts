@@ -103,6 +103,9 @@ async function onDocumentLoaded() {
     appendTweetCatMenuItem();
     queryProfileOfTwitterOwner();
     logTPR('------>>>TweetCat content script success ✨');
+
+    // Trigger initial navigation handling for cold start
+    handleNaviUrlChanged();
 }
 
 function appendTweetCatMenuItem() {
@@ -131,19 +134,7 @@ function contentMsgDispatch(request: any, _sender: Runtime.MessageSender, sendRe
 
     switch (type) {
         case MsgType.NaviUrlChanged: {
-            const linkInfo = parseTwitterPath(window.location.href)
-            logTPR("------>>> link info:", linkInfo)
-            if (linkInfo.kind === "profile") {
-                appendFilterOnKolProfilePage(linkInfo.username).then();
-            } else if (linkInfo.kind === "home" || linkInfo.kind === "explore") {
-                if (getTweetCatFlag()) {
-                    navigateToTweetCat();
-                }
-            } else if (linkInfo.kind === "tweet") {
-                console.log("------>>>link info:", linkInfo)
-                addTipBtnForTweet(linkInfo.tweetId)
-            }
-            checkFilterStatusAfterUrlChanged();
+            handleNaviUrlChanged();
             sendResponse({ success: true });
             break;
         }
@@ -259,6 +250,22 @@ export function parseNameFromTweetCell(tweetNode: HTMLElement): TweetKol | null 
 
 function checkFilterStatusAfterUrlChanged() {
     hidePopupMenu();
+}
+
+function handleNaviUrlChanged() {
+    const linkInfo = parseTwitterPath(window.location.href)
+    logTPR("------>>> handleNaviUrlChanged, link info:", linkInfo)
+    if (linkInfo.kind === "profile") {
+        appendFilterOnKolProfilePage(linkInfo.username).then();
+    } else if (linkInfo.kind === "home" || linkInfo.kind === "explore") {
+        if (getTweetCatFlag()) {
+            navigateToTweetCat();
+        }
+    } else if (linkInfo.kind === "tweet") {
+        console.log("------>>>link info:", linkInfo)
+        addTipBtnForTweet(linkInfo.tweetId)
+    }
+    checkFilterStatusAfterUrlChanged();
 }
 
 

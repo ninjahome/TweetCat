@@ -1,5 +1,5 @@
-import {deferByFrames} from "../common/utils";
-import {TweetManager} from "../timeline/div_cell_manager";
+import { deferByFrames } from "../common/utils";
+import { TweetManager } from "../timeline/div_cell_manager";
 import {
     handleGrokMenuClick,
     isInTweetCatRoute,
@@ -7,12 +7,12 @@ import {
     swapSvgToNormal,
     swapSvgToSelected
 } from "../timeline/route_helper";
-import {logGuard} from "../common/debug_flags";
+import { logGuard } from "../common/debug_flags";
 
-import {resetNewestTweet, setSelectedCategory} from "./tweetcat_web3_area";
-import {getSessCatID} from "../timeline/tweet_pager";
-import {MsgType} from "../common/consts";
-import {t} from "../common/i18n";
+import { resetNewestTweet, setSelectedCategory } from "./tweetcat_web3_area";
+import { getSessCatID } from "../timeline/tweet_pager";
+import { MsgType } from "../common/consts";
+import { t } from "../common/i18n";
 
 let manager: TweetManager | null = null;
 
@@ -41,7 +41,6 @@ function prepareElementOfWeb3(tpl: HTMLTemplateElement) {
     let dialogDiv = tpl.content.getElementById("tw-dialog-overlay")!.cloneNode(true) as HTMLElement;
     document.body.appendChild(dialogDiv);
 
-    (dialogDiv.querySelector(".tw-dialog-btn-confirm") as HTMLElement).innerText = t('confirm');
     dialogDiv.style.setProperty('display', 'none', 'important');
     const dialogClose = dialogDiv.querySelector(".tw-dialog-close") as HTMLButtonElement;
     dialogClose.addEventListener('click', () => {
@@ -126,7 +125,7 @@ export function setupTweetCatMenuAndTimeline(menuList: HTMLElement, tpl: HTMLTem
     }
 
     const grokLink = document.querySelector('a[href="/i/grok"]') as HTMLAnchorElement | null;
-    grokLink?.addEventListener('click', handleGrokMenuClick, {passive: false});
+    grokLink?.addEventListener('click', handleGrokMenuClick, { passive: false });
 }
 
 function tcMount(area: HTMLElement, originalArea: HTMLElement, tpl: HTMLTemplateElement, force = false) {

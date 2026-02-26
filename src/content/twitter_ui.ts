@@ -100,8 +100,25 @@ export async function appendFilterOnKolProfilePage(kolName: string) {
     }
 
     observing = true;
+
+    // We try multiple selectors to find the action bar/toolbar on the profile page
+    const selectors = [
+        ".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs", // Brittle but common
+        'div[data-testid="primaryColumn"] [data-testid="userActions"]', // Good candidate
+        'div[data-testid="UserProfileHeader_Items"]', // Header items area
+    ];
+
     observeForElement(document.body, 800, () => {
-        return document.querySelector(".css-175oi2r.r-obd0qt.r-18u37iz.r-1w6e6rj.r-1h0z5md.r-dnmrzs") as HTMLElement
+        for (const selector of selectors) {
+            const el = document.querySelector(selector) as HTMLElement;
+            if (el) return el;
+        }
+        // Fallback: search for the follow button and find its parent toolbar container
+        const followBtn = findNativeFollowButton();
+        if (followBtn) {
+            return followBtn.closest('.css-175oi2r.r-18u37iz.r-1w6e6rj') as HTMLElement;
+        }
+        return null;
     }, async (profileToolBarDiv) => {
         __lastProfileToolbar = profileToolBarDiv;
         __lastProfileUsername = kolName;
@@ -237,21 +254,26 @@ function checkIsFollowingFromDom(username: string): boolean {
     return false;
 }
 
-async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
-    if (toolBar.querySelector(".follow-claim-on-profile")) {
-        return;
-    }
+async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, retryCount = 0) {
+    const existing = toolBar.querySelector(".follow-claim-on-profile");
 
-    if (loggedInUserScreenName && kolName.toLowerCase() === loggedInUserScreenName.toLowerCase()) {
-        return;
-    }
-
-    // Check if already following
+    // Requirement: If already following (detected via DOM or internal cache), the button should not exist.
+    // This handles the case where a user manually clicks the native "Follow" button.
     if (checkIsFollowingFromDom(kolName)) {
+        existing?.remove();
         return;
     }
     const earlySnap = __followingCache.get(kolName.toLowerCase());
     if (earlySnap && earlySnap.isFollowing === true) {
+        existing?.remove();
+        return;
+    }
+
+    if (existing) {
+        return;
+    }
+
+    if (loggedInUserScreenName && kolName.toLowerCase() === loggedInUserScreenName.toLowerCase()) {
         return;
     }
 
@@ -267,7 +289,14 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
         : payload?.offer;
     const claimState = payload?.claim_state ?? null;
 
-    if (!offer?.ad_id) return;
+    if (!offer?.ad_id) {
+        // If no offer found on initial load, retry a few times (in case ads feed is still polling)
+        if (retryCount < 3) {
+            console.log(`[TwitterUI] No follow offer found for ${kolName}, retry ${retryCount + 1}/3 in 2s...`);
+            setTimeout(() => _appendAdsFollowOfferBtn(toolBar, kolName, retryCount + 1), 2000);
+        }
+        return;
+    }
 
     const contentTemplate = await parseContentHtml("html/content.html");
     const template = contentTemplate.content.getElementById("follow-claim-on-profile") as HTMLElement | null;
@@ -294,7 +323,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
         if (mode === ADS_FOLLOW_UI_MODE.AlreadyFollowing) text = "已关注";
         if (mode === ADS_FOLLOW_UI_MODE.Processing) text = "处理中...";
         if (mode === ADS_FOLLOW_UI_MODE.Claimed) text = "已领取，待验证";
-        if (mode === ADS_FOLLOW_UI_MODE.AlreadyClaimed) text = "已领取";
+        if (mode === ADS_FOLLOW_UI_MODE.AlreadyClaimed) text = "已领取过,不可再次领取";
         if (title) title.textContent = text;
     };
 
@@ -417,12 +446,13 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string) {
 
                 if (resp.data?.already_claimed) {
                     console.log("[TwitterUI] Detected repeated claim, showing dialog.");
-                    showDialog(t('tips_title'), "您已成功重新关注！检测到该奖励之前已成功领取。您可以前往广告广场查看状态。", openPlaza);
+                    showDialog(t('tips_title'), "您已成功重新关注！检测到该奖励之前已成功领取。您可以前往广告广场查看状态。", openPlaza, "立即查看");
                 } else {
-                    showDialog(t('tips_title'), "申领成功！奖励后续将发放至您的钱包。您可以前往广告广场查看状态。", openPlaza);
+                    showDialog(t('tips_title'), "申领成功！奖励后续将发放至您的钱包。您可以前往广告广场查看状态。", openPlaza, "立即查看");
                 }
 
-                setUi(ADS_FOLLOW_UI_MODE.AlreadyClaimed);
+                // Requirement: After success, no longer show "Claimed" status on page if they are now following
+                clone.remove();
                 /*
                 console.log("---------------- [DEBUG: AdsFollowClaim Material] ----------------");
                 ...
