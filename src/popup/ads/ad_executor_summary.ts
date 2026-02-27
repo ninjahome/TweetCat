@@ -43,10 +43,17 @@ export function renderEarnSummary() {
     const today = document.querySelector<HTMLElement>("#today-earned");
     const pending = document.querySelector<HTMLElement>("#pending-earned");
 
-    if (withdrawable) withdrawable.textContent = formatUSDC(executorState.withdrawableUSDC);
-    if (total) total.textContent = formatUSDC(executorState.totalEarnedUSDC);
-    if (today) today.textContent = formatUSDC(executorState.todayEarnedUSDC);
-    if (pending) pending.textContent = formatUSDC(executorState.pendingUSDC);
+    if (withdrawable) {
+        const amountEl = withdrawable.querySelector(".card-value-amount");
+        if (amountEl) {
+            amountEl.textContent = formatUSDC(executorState.withdrawableUSDC, false);
+        } else {
+            withdrawable.textContent = formatUSDC(executorState.withdrawableUSDC);
+        }
+    }
+    if (total) total.textContent = formatUSDC(executorState.totalEarnedUSDC, false);
+    if (today) today.textContent = formatUSDC(executorState.todayEarnedUSDC, false);
+    if (pending) pending.textContent = formatUSDC(executorState.pendingUSDC, false);
 }
 
 export function renderActivityList(claims: EarnClaim[]) {

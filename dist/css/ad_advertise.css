@@ -179,7 +179,6 @@ body {
 
 .btn-recharge:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
 }
 
 .btn-history-inline {
@@ -256,7 +255,6 @@ body {
     padding: 16px;
     border-radius: 16px;
     border: 1px solid #e5e7eb;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     display: flex;
     align-items: flex-start;
     gap: 12px;
@@ -352,7 +350,6 @@ body {
     background: white;
     border-radius: 16px;
     border: 1px solid #e5e7eb;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     overflow: hidden;
 }
 
@@ -437,7 +434,6 @@ body {
     font-size: 12px;
     font-weight: 900;
     white-space: nowrap;
-    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.18);
 }
 
 /* balances block: Available 主信息 + Frozen 次信息 */
@@ -620,19 +616,16 @@ body {
     font-weight: 900;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.22);
 }
 
 .btn-publish-ad:hover {
     transform: translateY(-1px);
-    box-shadow: 0 10px 28px rgba(16, 185, 129, 0.30);
 }
 
 .btn-publish-ad--sm {
     padding: 10px 14px;
     border-radius: 12px;
     font-size: 13px;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.18);
 }
 
 .publish-icon {
@@ -645,7 +638,6 @@ body {
     background: white;
     border-radius: 16px;
     border: 1px solid #e5e7eb;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     overflow: hidden;
 }
 
@@ -718,7 +710,6 @@ body {
 
 .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
 }
 
 .btn-primary:disabled {
@@ -763,7 +754,6 @@ body {
     max-width: 600px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 .modal-large {
@@ -947,7 +937,6 @@ body {
 .form-textarea:focus {
     outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.10);
 }
 
 .form-hint {
@@ -1010,12 +999,10 @@ body {
     font-size: 16px;
     font-weight: 900;
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);
 }
 
 .btn-publish-main:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.35);
 }
 
 /* ==================== Budget Summary ==================== */
@@ -1323,7 +1310,6 @@ body {
     border-color: rgba(102, 126, 234, 0.4);
     color: #5568d3;
     transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(102, 126, 234, 0.25);
 }
 
 .tx-hash-link:hover::after {
@@ -1332,7 +1318,6 @@ body {
 
 .tx-hash-link:active {
     transform: translateY(0);
-    box-shadow: 0 1px 3px rgba(102, 126, 234, 0.2);
 }
 
 /* ==================== Responsive Design ==================== */
@@ -1489,7 +1474,6 @@ body {
     background: #fee2e2;
     border-color: #ef4444;
     transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(239, 68, 68, 0.2);
 }
 
 .btn-view-previous-tx.hidden {

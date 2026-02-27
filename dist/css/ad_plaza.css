@@ -29,6 +29,7 @@ button {
     white-space: nowrap;
     word-break: keep-all;
 }
+
 /* ==================== Top Header ==================== */
 .plaza-header {
     background: white;
@@ -85,7 +86,8 @@ button {
 .earn-layout {
     padding: 0 140px;
     display: flex;
-    min-height: 100vh; /* ✅ 替换 height: 100vh; */
+    min-height: 100vh;
+    /* ✅ 替换 height: 100vh; */
 }
 
 .earn-left {
@@ -106,19 +108,20 @@ button {
 
 .withdraw-card {
     background: linear-gradient(135deg,
-    #1d9bf0 0%,
-    #1d9bf0 35%,
-    rgba(3, 203, 173, 1) 100%
-    );
+            #1d9bf0 0%,
+            #1d9bf0 35%,
+            rgba(3, 203, 173, 1) 100%);
     border-radius: 16px;
 
 }
+
 .withdraw-card-top {
     padding: 32px 16px 16px 16px;
     display: flex;
     flex-direction: column;
     gap: 16px;
 }
+
 .withdraw-card-header {
     display: flex;
     justify-content: flex-start;
@@ -152,7 +155,8 @@ button {
     align-items: flex-end;
     gap: 6px;
 }
-.card-value-amount{
+
+.card-value-amount {
     font-size: 32px;
     font-weight: 700;
     color: #fff;
@@ -179,31 +183,37 @@ button {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    text-align: center;
 }
-.summary-label{
+
+.summary-label {
     font-size: 13px;
     font-weight: 400;
     color: rgba(255, 255, 255, 0.9);
 }
+
 .summary-value {
     font-weight: 600;
     font-size: 18px;
     color: #fff;
 }
+
 /* earn-summary：3项之间竖向分割线 */
 .earn-summary .summary-item {
     position: relative;
 }
 
 /* 中间两条线（第2、3项左侧画线） */
-.earn-summary .summary-item + .summary-item::before {
+.earn-summary .summary-item+.summary-item::before {
     content: "";
     position: absolute;
-    left: -14px;              /* 线在 gap 中间：gap=10px 时用 -5px */
+    left: -5px;
+    /* 线在 gap 中间：gap=10px 时用 -5px */
     top: 8px;
     bottom: 8px;
     width: 1px;
     background: var(--tc-border-subtle, rgba(255, 255, 255, 0.6));
+    opacity: 0.4;
 }
 
 
@@ -226,6 +236,7 @@ button {
     border-radius: 999px;
     background: #fff;
 }
+
 .filter-search-icon {
     display: inline-flex;
     align-items: center;
@@ -233,7 +244,8 @@ button {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
-    color: #536471;     /* Twitter-like muted */
+    color: #536471;
+    /* Twitter-like muted */
     user-select: none;
     opacity: 1;
 }
@@ -242,7 +254,8 @@ button {
     width: 18px;
     height: 18px;
     display: block;
-    fill: currentColor; /* 由 .filter-search-icon 的 color 控制 */
+    fill: currentColor;
+    /* 由 .filter-search-icon 的 color 控制 */
 }
 
 .filter-search-input {
@@ -280,7 +293,8 @@ button {
     padding: 4px 6px;
     border-radius: 6px;
     color: #6b7280;
-    visibility: hidden; /* TS 控制显示 */
+    visibility: hidden;
+    /* TS 控制显示 */
 }
 
 .filter-search-clear:hover {
@@ -321,12 +335,14 @@ button {
     padding: 16px;
     border-radius: 16px;
 }
-.filters-sidebar-title{
+
+.filters-sidebar-title {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
 }
+
 .filter-title {
     font-size: 18px;
     font-weight: 600;
@@ -368,7 +384,8 @@ button {
     width: 16px;
     height: 16px;
     border-radius: 4px;
-    border: 2px solid #e1e8ed; /* 未选中边框 */
+    border: 2px solid #e1e8ed;
+    /* 未选中边框 */
     background-color: #ffffff;
     display: inline-flex;
     align-items: center;
@@ -380,7 +397,8 @@ button {
 
 /* 选中状态：填充主题色 */
 .filter-checkbox input[type="checkbox"]:checked {
-    background-color: #1d9bf0; /* 你的主题蓝 */
+    background-color: #1d9bf0;
+    /* 你的主题蓝 */
     border-color: #1d9bf0;
 }
 
@@ -478,24 +496,45 @@ button {
     transform: translateY(0);
 }
 
-.ad-card-image {
+.ad-card-banner {
+    position: relative;
     width: 100%;
-    height: 180px;
+}
+
+.ad-card-cover {
+    width: 100%;
+    height: 100px;
     background: linear-gradient(135deg, #1d9bf0 0%, #06CBAD 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
     overflow: hidden;
 }
 
-.ad-card-image img {
+.ad-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ad-card-avatar-container {
+    position: absolute;
+    left: 16px;
+    bottom: -34px;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    border: 3.5px solid #fff;
+    background: #f3f4f6;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.ad-avatar-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
 .ad-card-content {
-    padding: 16px;
+    padding: 30px 16px 16px;
     flex: 1;
 }
 
@@ -604,7 +643,8 @@ button {
 }
 
 /* ==================== Buttons ==================== */
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
     padding: 10px 20px;
     border: none;
     border-radius: 999px;
@@ -774,6 +814,7 @@ button {
         grid-template-columns: 1fr;
     }
 }
+
 @media (max-width: 960px) {
     .earn-layout {
         flex-direction: column;
@@ -848,6 +889,7 @@ button {
     color: #536471;
     font-weight: 500;
 }
+
 /* ==================== Status Badges ==================== */
 .ad-card-claimed {
     border-color: #10b981;

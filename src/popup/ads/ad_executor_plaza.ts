@@ -225,8 +225,21 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
         card.dataset.adId = task.ad_id;
         card.classList.add("ad-card-claimed");
 
-        const iconEl = $2<HTMLElement>(card, ".ad-card-icon");
-        iconEl.textContent = categoryIcon[task.ad.category as AdCategory] || "📢";
+        // Set Banner and Avatar
+        const coverEl = card.querySelector<HTMLImageElement>(".ad-cover-img");
+        const avatarEl = card.querySelector<HTMLImageElement>(".ad-avatar-img");
+
+        // For now, we don't have banner/avatar URLs in the task object, 
+        // using the category icon as a fallback in the avatar container.
+        if (avatarEl) {
+            avatarEl.style.display = "none"; // Hide empty img
+            const avatarContainer = $2<HTMLElement>(card, ".ad-card-avatar-container");
+            avatarContainer.style.display = "flex";
+            avatarContainer.style.alignItems = "center";
+            avatarContainer.style.justifyContent = "center";
+            avatarContainer.style.fontSize = "24px";
+            avatarContainer.textContent = categoryIcon[task.ad.category as AdCategory] || "👤";
+        }
 
         const statusMap: Record<string, string> = {
             "CLAIMED": "Claimed - To Do",
@@ -306,8 +319,20 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
         const card = cloneTemplate("tpl-ad-card");
         card.dataset.adId = ad.id;
 
-        const iconEl = $2<HTMLElement>(card, ".ad-card-icon");
-        iconEl.textContent = categoryIcon[ad.category] || "📢";
+        // Set Banner and Avatar
+        const coverEl = card.querySelector<HTMLImageElement>(".ad-cover-img");
+        const avatarEl = card.querySelector<HTMLImageElement>(".ad-avatar-img");
+
+        // Fallback to category icon in avatar
+        if (avatarEl) {
+            avatarEl.style.display = "none";
+            const avatarContainer = $2<HTMLElement>(card, ".ad-card-avatar-container");
+            avatarContainer.style.display = "flex";
+            avatarContainer.style.alignItems = "center";
+            avatarContainer.style.justifyContent = "center";
+            avatarContainer.style.fontSize = "24px";
+            avatarContainer.textContent = categoryIcon[ad.category] || "👤";
+        }
 
         $2<HTMLElement>(card, ".ad-card-title").textContent = ad.title;
         $2<HTMLElement>(card, ".ad-card-brand").textContent = ad.brand;

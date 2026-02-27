@@ -1156,7 +1156,7 @@ input.category-input:focus {
 .wallet-main-menu-list {
     background-color: #fff;
     border-color: rgba(15, 20, 25, 0.1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+
     width: 60%;
     border-radius: 16px;
     position: absolute;
@@ -1246,7 +1246,7 @@ input.category-input:focus {
     max-width: 260px;
     background: #ffffff;
     border-radius: 16px;
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.25);
+
     padding: 20px 20px 16px;
     display: flex;
     flex-direction: column;
@@ -1419,12 +1419,12 @@ input.category-input:focus {
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+
 }
 
 .btn-buy-usdc:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+
 }
 
 .btn-buy-usdc:active {

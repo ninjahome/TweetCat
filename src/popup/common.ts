@@ -78,10 +78,11 @@ export function cloneTemplate(id: string): HTMLElement {
     return first.cloneNode(true) as HTMLElement;
 }
 
-export function formatUSDC(amount: number): string {
+export function formatUSDC(amount: number, includeUnit: boolean = true): string {
     const n = Number(amount);
-    if (!Number.isFinite(n)) return "0.00 USDC";
-    return n.toFixed(2) + " USDC";
+    const suffix = includeUnit ? " USDC" : "";
+    if (!Number.isFinite(n)) return "0.00" + suffix;
+    return n.toFixed(2) + suffix;
 }
 
 export function $input(sel: string) {
