@@ -257,7 +257,7 @@
 
 ---
 
-## 10. 模块七：安全性与签名验证
+## 10. 模块七：安全性与签名验证 (AI测试)
 
 ### 涉及代码
 | 层级 | 文件 |
@@ -312,7 +312,7 @@
 
 ---
 
-## 12. 模块九：Service Worker (Background) 消息路由与权限控制
+## 12. 模块九：Service Worker (Background) 消息路由与权限控制 (AI测试)
 
 ### 涉及代码
 | 文件 | 职责 |
@@ -353,7 +353,7 @@
 | FD-05 | 🤖 并发 poll（SW wakeup bursts） | `pollInFlight` 锁保护，只执行一次 | P1 |
 | FD-06 | 🤖 `normalizeProfileUrl` 归一化 | `https://x.com/User` → `https://x.com/user`, 忽略 query/hash | P2 |
 | FD-07 | 🤖 多个 offer 指向同一 URL | `pickBetterOffer` 选 reward 最高的 | P2 |
-| FD-08 | 👋 IndexedDB 持久化失败 | 降级使用 localStorage 缓存，不抛错 | P2 |
+| ~~FD-08~~ | ~~👋 IndexedDB 持久化失败~~ | ~~降级使用 localStorage 缓存，不抛错~~ | ~~P2~~ |
 
 ---
 
@@ -371,8 +371,8 @@
 | E-06 | 🤖 同一广告被 EXPIRED 和 COMPLETED 同时触发 | SQL UPDATE 的 WHERE 条件确保只更新一次 | P2 |
 | E-07 | 🤖 极小金额（1 atomic unit = 0.000001 USDC） | 全链路支持 | P2 |
 | E-08 | 🤖 BigInt 边界：`unit_price_atomic` 极大值 | `CAST ... AS INTEGER` 在 SQLite 中的行为验证 | P2 |
-| E-09 | 👋 网络断开后重连 | 前端正确恢复状态（loading/error/retry） | P2 |
-| E-10 | 👋 Extension 升级期间的 SW 重启 | claim state 持久化到 IndexedDB，升级后可恢复 | P2 |
+| E-09 | ✅ 👋 网络断开后重连 | 前端正确恢复状态（loading/error/retry） | P2 |
+| ~~E-10~~ | ~~👋 Extension 升级期间的 SW 重启~~ | ~~claim state 持久化到 IndexedDB，升级后可恢复~~ | ~~P2~~ |
 | E-11 | 🤖 广告主自己 claim 自己的广告 | 应返回 403 HTTP 错误及 SELF_CLAIM_FORBIDDEN（✅ **已修复 SEC-03**） | P0 |
 | E-12 | 🤖 同一用户对同一广告重复提交不同证据 | 第二次应返回 already_claimed | P1 |
 | E-13 | 🤖 `unit_price_atomic` 为 0 的广告 | `apiAdsCreate` 的 `parsePositiveAtomic` 应拦截 | P1 |
@@ -388,14 +388,14 @@
 | # | 测试场景 | 步骤 | 预期结果 | 优先级 |
 |---|---------|------|---------|--------|
 | E2E-01 | ✅ 👋 完整的广告生命周期 | 充值 → 发布 → 用户关注 → 等待结算 → 结算完成 → 广告过期 → 退款 | 各阶段余额变化正确 | P0 |
-| E2E-02 | 🤖 广告满额关闭 | 发布(quota=3) → 3人 claim → 全部结算 → 自动 COMPLETED → 退款(0) | 无退款，冻结余额清零 | P0 |
-| E2E-03 | 🤖 广告中途 stop + 退款 | 发布(quota=10) → 3人 claim → stop → 等待 3 人结算 → 退款(7*price) | 广告主余额正确增加 | P0 |
-| E2E-04 | 👋 用户取消关注后重新关注 | claim1 结算 → 用户 unfollow → 再次 follow → 尝试 claim2 | 返回 already_claimed | P1 |
-| E2E-05 | 👋 多广告主同一 KOL | A 发布 follow @X (0.1U), B 发布 follow @X (0.5U) | 用户看到 0.5U 的 offer（pickBetterOffer） | P1 |
+| E2E-02 | ✅ 🤖 广告满额关闭 | 发布(quota=3) → 3人 claim → 全部结算 → 自动 COMPLETED → 退款(0) | 无退款，冻结余额清零 | P0 |
+| E2E-03 | ✅ 🤖 广告中途 stop + 退款 | 发布(quota=10) → 3人 claim → stop → 等待 3 人结算 → 退款(7*price) | 广告主余额正确增加 | P0 |
+| E2E-04 | ✅ 👋 用户取消关注后重新关注 | claim1 结算 → 用户 unfollow → 再次 follow → 尝试 claim2 | 返回 already_claimed | P1 |
+| E2E-05 | ✅ 👋 多广告主同一 KOL | A 发布 follow @X (0.1U), B 发布 follow @X (0.5U) | 用户看到 0.5U 的 offer（pickBetterOffer） | P1 |
 | E2E-06 | 🤖 用户同时是广告主和执行者 | 充值 → 发布自己的广告 → 尝试 claim 自己的广告 | 应被拒绝（缺陷 E-11 覆盖） | P0 |
 | E2E-07 | 🤖 Cron 任务并发执行 | expire + settle + refund 同时运行 | 无死锁，数据一致 | P2 |
 | E2E-08 | 🤖 大规模数据 | 1000 广告 + 10000 claims | API 响应时间 < 3s，分页正确 | P2 |
-| E2E-09 | 👋 广告主提现 → 查看历史 | 历史记录中有 txHash 可点击查看区块浏览器 | P1 |
+| E2E-09 | ✅ 👋 广告主提现 → 查看历史 | 历史记录中有 txHash 可点击查看区块浏览器 | P1 |
 | E2E-10 | 🤖 全流程账本审计 | 对比 available + frozen 与 所有 ledger 记录的 sum | 恒等式成立 | P0 |
 
 ---
