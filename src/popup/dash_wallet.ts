@@ -457,11 +457,11 @@ async function initRewards(): Promise<void> {
 
 async function initAdPlaza(): Promise<void> {
     const adPlazaContainer = document.querySelector(".ad-plaza-container") as HTMLElement;
-    const adPlazaBtn = document.getElementById("btn-ad-plaza");
+    const adPlazaEntry = document.getElementById("ad-plaza-entry");
 
-    if (!adPlazaContainer || !adPlazaBtn) return;
+    if (!adPlazaContainer || !adPlazaEntry) return;
 
-    adPlazaBtn.onclick = async () => {
+    adPlazaEntry.onclick = async () => {
         await browser.tabs.create({
             url: browser.runtime.getURL("html/ad_plaza.html")
         })

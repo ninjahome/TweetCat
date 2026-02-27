@@ -2,9 +2,12 @@ body {
     font: 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-weight: 700;
     margin: 0;
-    width: 360px; /* 宽度为 360px */
-    height: 600px; /* 高度为 600px */
-    overflow: hidden; /* 防止内容溢出 */
+    width: 360px;
+    /* 宽度为 360px */
+    height: 600px;
+    /* 高度为 600px */
+    overflow: hidden;
+    /* 防止内容溢出 */
     display: flex;
     flex-direction: column;
 }
@@ -51,10 +54,12 @@ button {
     cursor: pointer;
     margin-top: 16px;
 }
+
 /* Rewards: zero value -> gray */
 .rewards-count.is-zero,
 .rewards-amount.is-zero {
-    color: #9ca3af; /* gray */
+    color: #9ca3af;
+    /* gray */
 }
 
 .btn-create-wallet {
@@ -96,12 +101,13 @@ button {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    background-color:  rgba(134, 106, 251, 0.1);
+    background-color: rgba(134, 106, 251, 0.1);
     border: 1px solid rgba(161, 164, 168, 0.2);
     border-radius: 16px;
 }
+
 .rewards-summary:hover {
-    background-color:  rgba(134, 106, 251, 0.2);
+    background-color: rgba(134, 106, 251, 0.2);
 }
 
 .rewards-header {
@@ -133,7 +139,7 @@ button {
 
 .rewards-label,
 .ad-plaza-earnings-label,
-.ad-plaza-withdrawable-label{
+.ad-plaza-withdrawable-label {
     color: #5b7083;
     font-size: 14px;
     font-weight: 400;
@@ -149,6 +155,7 @@ button {
     padding: 4px 18px;
     border-radius: 999px;
 }
+
 .rewards-amount {
     font-size: 18px;
     font-weight: 600;
@@ -158,6 +165,7 @@ button {
     padding: 4px 18px;
     border-radius: 999px;
 }
+
 .wallet-summary {
     display: flex;
     flex-direction: column;
@@ -176,21 +184,26 @@ button {
     font-size: 14px;
     font-weight: 400;
     gap: 4px;
-    flex: 1;                /* 两个子项均分一行 */
-    min-width: 0;           /* 防止内容撑爆 */
+    flex: 1;
+    /* 两个子项均分一行 */
+    min-width: 0;
+    /* 防止内容撑爆 */
     border-radius: 16px;
     padding: 16px;
 }
-.wallet-row-address{
+
+.wallet-row-address {
     background-color: rgba(161, 164, 168, 0.1);
 }
-.wallet-row-usdt{
+
+.wallet-row-usdt {
     background-color: rgba(6, 203, 173, 0.1);
 }
 
-.wallet-row-eth{
+.wallet-row-eth {
     background-color: rgba(74, 153, 233, 0.1);
 }
+
 .wallet-label {
     color: #5b7083;
     font-weight: 400;
@@ -202,10 +215,13 @@ button {
     font-weight: 600;
     margin-top: 4px;
 }
+
 .rewards-content {
     display: flex;
-    gap: 0;              /* 原来是 16px */
-    position: relative;  /* 给伪元素定位用 */
+    gap: 0;
+    /* 原来是 16px */
+    position: relative;
+    /* 给伪元素定位用 */
     padding: 8px 16px;
 }
 
@@ -213,11 +229,13 @@ button {
     content: "";
     position: absolute;
     left: 50%;
-    top: 6px;            /* 竖线不顶到边，可按需调 */
+    top: 6px;
+    /* 竖线不顶到边，可按需调 */
     bottom: 6px;
     width: 1px;
     transform: translateX(-0.5px);
-    background:  #e5e7eb; /* 灰色 */
+    background: #e5e7eb;
+    /* 灰色 */
     pointer-events: none;
 }
 
@@ -229,6 +247,7 @@ button {
 .rewards-item:last-child {
     padding-left: 16px;
 }
+
 .wallet-actions button {
     width: 100%;
     padding: 16px 0;
@@ -278,7 +297,8 @@ button {
     outline: none;
     transition: border-color .15s ease, box-shadow .15s ease;
     box-sizing: border-box;
-    padding: 12px 44px 12px 12px; /* 原来是 10px，这里多预留一点 */
+    padding: 12px 44px 12px 12px;
+    /* 原来是 10px，这里多预留一点 */
 }
 
 .settings-group input[type="text"]:focus {
@@ -290,6 +310,7 @@ button {
     display: flex;
     gap: 8px;
 }
+
 /* USDT: zero value -> gray (override inline color) */
 .wallet-usdt-value.is-zero {
     color: #9ca3af !important;
@@ -478,8 +499,10 @@ input.category-input:focus {
 .category-name-val {
     padding: 12px 16px;
     box-sizing: border-box;
-    text-align: center; /* 水平居中 */
-    vertical-align: middle; /* 垂直居中（非 input 有效） */
+    text-align: center;
+    /* 水平居中 */
+    vertical-align: middle;
+    /* 垂直居中（非 input 有效） */
     max-width: 100%;
     width: 100%;
     border-radius: 9999px;
@@ -560,6 +583,7 @@ input.category-input:focus {
     font-weight: 700;
     color: #5b7083;
 }
+
 .wallet-actions .btn-wallet-list {
     width: 100%;
     padding: 16px 0;
@@ -633,9 +657,11 @@ input.category-input:focus {
     position: absolute;
     left: 50%;
     top: 50%;
-    transform: translate(-50%, -50%);  /* 水平 + 垂直居中 */
+    transform: translate(-50%, -50%);
+    /* 水平 + 垂直居中 */
     display: flex;
-    align-items: center; /* 垂直居中 */
+    align-items: center;
+    /* 垂直居中 */
     text-align: center;
     font-size: 16px;
     font-weight: 700;
@@ -648,7 +674,7 @@ input.category-input:focus {
     padding: 8px;
     border-radius: 999px;
     border: none;
-    background-color:transparent;
+    background-color: transparent;
     color: var(--text-secondary, #374151);
     cursor: pointer;
     transition: background .15s ease, border-color .15s ease;
@@ -703,7 +729,7 @@ input.category-input:focus {
 }
 
 /* 每个 label 块：标题在上，输入在下 */
-#view-ipfs-settings .grid > label {
+#view-ipfs-settings .grid>label {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -711,6 +737,7 @@ input.category-input:focus {
     font-weight: 500;
     color: var(--text-secondary, #6b7280);
 }
+
 /* IPFS 表单里的 label 做成定位容器 */
 #view-ipfs-settings .ipfs-provider-section label {
     position: relative;
@@ -722,7 +749,7 @@ input.category-input:focus {
 /* 输入框通用样式 */
 #view-ipfs-settings input[type="text"],
 #view-ipfs-settings input[type="password"],
-#transfer-to[type="text"]{
+#transfer-to[type="text"] {
     width: 100%;
     border-radius: 8px;
     border: 1px solid var(--border-subtle, #e5e7eb);
@@ -731,7 +758,8 @@ input.category-input:focus {
     outline: none;
     transition: border-color .15s ease, box-shadow .15s ease;
     box-sizing: border-box;
-    padding: 12px 44px 12px 12px; /* 原来是 10px，这里多预留一点 */
+    padding: 12px 44px 12px 12px;
+    /* 原来是 10px，这里多预留一点 */
 }
 
 #view-ipfs-settings input[type="text"]::placeholder,
@@ -766,6 +794,7 @@ input.category-input:focus {
 .secret-toggle .icon-secret-visible {
     display: none;
 }
+
 .secret-toggle .icon-secret-hidden {
     display: block;
 }
@@ -774,6 +803,7 @@ input.category-input:focus {
 .secret-toggle.is-visible .icon-secret-visible {
     display: block;
 }
+
 .secret-toggle.is-visible .icon-secret-hidden {
     display: none;
 }
@@ -783,6 +813,7 @@ input.category-input:focus {
     color: var(--accent, #1d9bf0);
     font-weight: 600;
 }
+
 /* URL 类输入用等宽字体，便于校对 */
 #view-ipfs-settings #custom-api-url,
 #view-ipfs-settings #custom-gateway-url {
@@ -878,6 +909,7 @@ input.category-input:focus {
     border-color: var(--border, #d1d5db);
     transform: translateY(-1px);
 }
+
 /* 顶部「设为 TweetCat 默认」按钮：默认状态 = 主题蓝色 */
 #view-ipfs-settings #ipfs-provider-set-tweetcat {
     width: 100%;
@@ -915,7 +947,8 @@ input.category-input:focus {
 
 /* 通用基底：用 padding 撑开高度，pill 形按钮 */
 #view-ipfs-settings .provider-section-actions button {
-    padding: 12px 14px;                          /* 通过 padding 控制高度 */
+    padding: 12px 14px;
+    /* 通过 padding 控制高度 */
     border-radius: 999px;
     border: 1px solid var(--border-subtle, #e5e7eb);
     background: var(--surface, #fff);
@@ -923,10 +956,10 @@ input.category-input:focus {
     font-size: 13px;
     cursor: pointer;
     transition:
-            background .15s ease,
-            border-color .15s ease,
-            color .15s ease,
-            transform .1s ease;
+        background .15s ease,
+        border-color .15s ease,
+        color .15s ease,
+        transform .1s ease;
 }
 
 #view-ipfs-settings .provider-section-actions button:hover {
@@ -946,7 +979,7 @@ input.category-input:focus {
 
 #view-ipfs-settings .provider-section-actions .primary:hover {
     background: #428ad2;
-    border-color: rgba(29,155,240,0.35);
+    border-color: rgba(29, 155, 240, 0.35);
 }
 
 /* 危险按钮（清空 自建节点 等） */
@@ -955,6 +988,7 @@ input.category-input:focus {
     color: #b91c1c;
     border-color: #fecdd3;
 }
+
 #view-ipfs-settings .provider-section-actions .danger:hover {
     background: #ffe4e6;
     border-color: #fda4af;
@@ -967,6 +1001,7 @@ input.category-input:focus {
     color: #fff;
     font-weight: 500;
 }
+
 #view-ipfs-settings .provider-section-actions .primary:hover {
     background: #428ad2;
 }
@@ -977,6 +1012,7 @@ input.category-input:focus {
     color: #b91c1c;
     border-color: #fecdd3;
 }
+
 #view-ipfs-settings .provider-section-actions .danger:hover {
     background: #ffe4e6;
     border-color: #fda4af;
@@ -1004,7 +1040,8 @@ input.category-input:focus {
 #view-ipfs-settings .ipfs-provider-section .secret-toggle {
     position: absolute;
     right: 8px;
-    bottom: 7%; /* 贴着输入框下边缘，看起来居中一点 */
+    bottom: 7%;
+    /* 贴着输入框下边缘，看起来居中一点 */
     width: 32px;
     height: 32px;
     border-radius: 999px;
@@ -1017,9 +1054,9 @@ input.category-input:focus {
     font-size: 12px;
     color: var(--text-tertiary, #9ca3af);
     transition:
-            background .15s ease,
-            color .15s ease,
-            transform .1s ease;
+        background .15s ease,
+        color .15s ease,
+        transform .1s ease;
 }
 
 /* hover 效果：浅背景 + 颜色略变深 */
@@ -1035,14 +1072,15 @@ input.category-input:focus {
     font-weight: 600;
 }
 
-.wallet-action-div{
+.wallet-action-div {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 6px;
     border-bottom: 1px solid var(--border-subtle, #e5e7eb);
 }
-.wallet-network-pill  {
+
+.wallet-network-pill {
     background-color: rgba(161, 164, 168, 0.1);
     padding: 4px 12px;
     border-radius: 8px;
@@ -1051,22 +1089,25 @@ input.category-input:focus {
 }
 
 /* Network badge: online dot */
-.wallet-network-pill__text{
+.wallet-network-pill__text {
     display: inline-flex;
     align-items: center;
-    gap: 2px; /* 圆点和文字间距 */
+    gap: 2px;
+    /* 圆点和文字间距 */
 
 }
 
-.wallet-network-pill__text::before{
+.wallet-network-pill__text::before {
     content: "";
     width: 6px;
     height: 6px;
     border-radius: 999px;
-    background: var(--accent, #1d9bf0); /* green: online */
+    background: var(--accent, #1d9bf0);
+    /* green: online */
     flex: 0 0 auto;
 }
-.wallet-top-actions{
+
+.wallet-top-actions {
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -1074,7 +1115,7 @@ input.category-input:focus {
     padding: 8px 0;
 }
 
-.wallet-top-actions > button{
+.wallet-top-actions>button {
     width: 32px;
     height: 32px;
     border: none;
@@ -1086,27 +1127,32 @@ input.category-input:focus {
     align-items: center;
     justify-content: center;
 }
+
 /* 顶部右侧两个 SVG 图标统一样式 */
-.wallet-top-actions > button {
-    color: #374151; /* 默认图标颜色（深灰） */
+.wallet-top-actions>button {
+    color: #374151;
+    /* 默认图标颜色（深灰） */
 }
 
 /* 控制 SVG 的尺寸 */
-.wallet-top-actions > button svg {
+.wallet-top-actions>button svg {
     width: 22px;
     height: 22px;
     font-weight: 600;
-    display: block; /* 去掉内联 svg 默认的空隙 */
+    display: block;
+    /* 去掉内联 svg 默认的空隙 */
 }
 
 .top-icon-btn .active {
     color: var(--accent, #1d9bf0);
-    background-color: rgba(29, 155, 240, 0.1) ;
+    background-color: rgba(29, 155, 240, 0.1);
 }
+
 /* hover 高亮 */
-.wallet-top-actions> button:hover {
+.wallet-top-actions>button:hover {
     background-color: rgba(15, 20, 25, 0.03);
 }
+
 .wallet-main-menu-list {
     background-color: #fff;
     border-color: rgba(15, 20, 25, 0.1);
@@ -1117,9 +1163,11 @@ input.category-input:focus {
     top: 48px;
     right: 16px;
 }
+
 /* 主菜单列表：去掉默认的圆点和间距 */
 .wallet-main-menu-list .main-actions {
-    list-style: none;  /* 去掉 ul 的圆点 */
+    list-style: none;
+    /* 去掉 ul 的圆点 */
     margin: 0;
     padding: 12px;
 
@@ -1133,16 +1181,19 @@ input.category-input:focus {
     font-size: 14px;
     color: rgb(15, 20, 25);
 }
+
 .wallet-main-menu-list .main-actions li:hover {
     background-color: rgba(29, 155, 240, 0.1);
 }
- .secret-select {
+
+.secret-select {
     -webkit-appearance: none;
     appearance: none;
     width: 16px;
     height: 16px;
     border-radius: 4px;
-    border: 2px solid #c6cad0; /* 未选中边框 */
+    border: 2px solid #c6cad0;
+    /* 未选中边框 */
     background-color: #ffffff;
     display: inline-flex;
     align-items: center;
@@ -1150,9 +1201,11 @@ input.category-input:focus {
     box-sizing: border-box;
     cursor: pointer;
 }
+
 /* 选中状态：填充主题色 */
 .secret-select:checked {
-    background-color: #1d9bf0;   /* 你的主题蓝 */
+    background-color: #1d9bf0;
+    /* 你的主题蓝 */
     border-color: #1d9bf0;
 }
 
@@ -1176,11 +1229,13 @@ input.category-input:focus {
 .tc-modal {
     position: fixed;
     inset: 0;
-    z-index: 2200; /* 比钱包面板略高 */
+    z-index: 2200;
+    /* 比钱包面板略高 */
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(15, 23, 42, 0.45); /* 半透明遮罩 */
+    background: rgba(15, 23, 42, 0.45);
+    /* 半透明遮罩 */
 }
 
 .tc-modal.hidden {
@@ -1285,9 +1340,11 @@ input.category-input:focus {
     padding: 0 8px;
     background-color: #f9fafb;
 }
-.tc-field__row--space-between{
+
+.tc-field__row--space-between {
     justify-content: space-between;
 }
+
 .tc-field__suffix {
     font-size: 13px;
     color: #6b7280;
@@ -1312,9 +1369,11 @@ input.category-input:focus {
     font-size: 12px;
     color: #b91c1c;
 }
+
 #transfer-error:empty {
     display: none;
 }
+
 /* 小标签 */
 .tc-tag {
     border-radius: 999px;
@@ -1398,28 +1457,33 @@ input.category-input:focus {
 .ad-plaza-container {
     display: none;
     margin-top: 16px;
-    padding: 16px;
     border-radius: 16px;
     flex-direction: column;
     background: linear-gradient(135deg,
-    #1d9bf0 0%,
-    #1d9bf0 35%,
-    rgba(3, 203, 173, 1) 100%
-    );
+            #1d9bf0 0%,
+            #1d9bf0 35%,
+            rgba(3, 203, 173, 1) 100%);
 }
+
 .ad-plaza-entry {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 100%;
-    margin-bottom: 16px;
+    padding: 12px 16px;
     color: white;
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
+
+.ad-plaza-entry:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
 .btn-ad-plaza {
     border: none;
-    cursor: pointer;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -1427,29 +1491,32 @@ input.category-input:focus {
     font-size: 14px;
     color: white;
 }
-.ad-plaza-arrow-icon{
+
+.ad-plaza-arrow-icon {
     width: 14px;
     height: 14px;
     flex: 0 0 22px;
 }
 
-.ad-plaza-stats{
-    width: 100%;
+.ad-plaza-stats {
     display: flex;
     align-items: flex-start;
     gap: 4px;
+    padding: 16px;
     justify-content: space-between;
     flex-direction: row;
     transition: all 0.3s ease;
     font-size: 15px;
 }
-.ad-plaza-earnings{
+
+.ad-plaza-earnings {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-end;
     gap: 28px;
 }
+
 .ad-plaza-earnings-value,
 .ad-plaza-withdrawable-value {
     font-size: 18px;
@@ -1458,7 +1525,7 @@ input.category-input:focus {
 }
 
 .ad-plaza-withdrawable,
-.ad-plaza-earnings-item{
+.ad-plaza-earnings-item {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -1466,24 +1533,30 @@ input.category-input:focus {
 }
 
 .ad-plaza-earnings-label,
-.ad-plaza-withdrawable-label{
+.ad-plaza-withdrawable-label {
     color: rgba(255, 255, 255, 0.76);
 }
-.ad-plaza-earnings-item{
+
+.ad-plaza-earnings-item {
     position: relative;
 
 
 }
+
 .ad-plaza-earnings-item.ad-plaza-earnings-today::after {
     content: "";
     position: absolute;
-    top: 6px;               /* 控制线的上下留白 */
+    top: 6px;
+    /* 控制线的上下留白 */
     bottom: 6px;
-    right: -14px;           /* = gap/2，线在中间 */
+    right: -14px;
+    /* = gap/2，线在中间 */
     width: 1px;
-    background: rgba(255, 255, 255, .3); /* 灰色分割线（可调） */
+    background: rgba(255, 255, 255, .3);
+    /* 灰色分割线（可调） */
     border-radius: 1px;
 }
+
 .plaza-icon {
     font-size: 24px;
     flex-shrink: 0;
@@ -1496,19 +1569,22 @@ input.category-input:focus {
     font-weight: 600;
     font-size: 15px;
 }
+
 .btn {
     padding: 12px 16px;
     border-radius: 999px;
     font-size: 13px;
     cursor: pointer;
 }
+
 .btn-primary {
     background: #1d9bf0;
     color: #fff;
     font-weight: 500;
 
 }
-.btn-secondary{
+
+.btn-secondary {
     border: 1px solid var(--border-subtle, #e5e7eb);
     background: var(--surface, #fff);
     color: var(--text-secondary, #374151);
