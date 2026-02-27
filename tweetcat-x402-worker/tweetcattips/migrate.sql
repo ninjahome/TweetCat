@@ -3,6 +3,8 @@
 -- All data will be lost. This is intended for environment synchronization and clean rebuilds.
 
 -- 1. Drop existing tables in reverse order of dependencies
+DROP TABLE IF EXISTS ad_performer_ledger;
+DROP TABLE IF EXISTS ad_performer_accounts;
 DROP TABLE IF EXISTS ad_claim_evidence;
 DROP TABLE IF EXISTS ad_reward_claims;
 DROP TABLE IF EXISTS ad_campaigns;
@@ -277,13 +279,12 @@ CREATE TABLE ad_performer_ledger (
     amount_atomic    TEXT NOT NULL,
     receiver_address TEXT,
     status           TEXT NOT NULL DEFAULT 'PENDING', -- PENDING, SETTLED, FAILED
-    request_id       TEXT,                             -- 幂等请求 ID
+    request_id       TEXT UNIQUE,                      -- 幂等请求 ID
     tx_hash          TEXT,
     payer_address    TEXT,
     error_reason     TEXT,
     created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(request_id),
     FOREIGN KEY (b_x_id) REFERENCES kol_binding(x_id)
 );
 CREATE INDEX idx_ad_performer_ledger_user ON ad_performer_ledger(b_x_id, created_at DESC);
