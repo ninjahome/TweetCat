@@ -71,7 +71,12 @@ export async function loadMyTasks(page: number = 0): Promise<void> {
     } catch (err) {
         console.error("Failed to load my tasks:", err);
         executorState.myTasks = [];
-        showNotification("Failed to load your tasks.", "error");
+        const msg = (err as any)?.name === "AbortError"
+            ? "Network timeout while loading tasks. Please try again."
+            : ((err as any)?.message?.includes("Failed to fetch")
+                ? "Network error while loading tasks. Check connection and worker status."
+                : "Failed to load your tasks.");
+        showNotification(msg, "error");
     } finally {
         executorState.myTasksLoading = false;
     }

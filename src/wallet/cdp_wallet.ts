@@ -36,6 +36,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { logX402 } from "../common/debug_flags";
 import { t } from "../common/i18n";
 import { signDeviceRequestV2 } from "../common/device_key";
+import { fetchWithTimeout, sleep } from "../common/utils";
 
 const ERC20_BALANCE_ABI = [
     {
@@ -79,15 +80,21 @@ export function getCdpNetwork(chainId: number): "base" | "base-sepolia" {
 
 // ============ CDP 账户管理 ============
 export async function getEOA(): Promise<EndUserEvmAccount> {
-    await initCDP();
-    if (!await isSignedIn()) throw new Error("Not signed in");
-
-    const user = await getCurrentUser();
-    const eoa = user.evmAccountObjects?.[0];
-    if (!eoa) {
-        throw new Error("EOA account not found");
+    try {
+        await initCDP();
+        if (!await isSignedIn()) throw new Error("Not signed in");
+        const user = await getCurrentUser();
+        const eoa = user.evmAccountObjects?.[0];
+        if (!eoa) {
+            throw new Error("EOA account not found");
+        }
+        return eoa;
+    } catch (e: any) {
+        if (e instanceof TypeError && e.message?.includes("Failed to fetch")) {
+            throw new Error("CDP service temporarily unavailable. Please retry later.");
+        }
+        throw e;
     }
-    return eoa;
 }
 
 export async function getSmart(): Promise<EndUserEvmSmartAccount> {
@@ -566,30 +573,44 @@ export async function x402WorkerFetch(path: string, body: any, userIdOverride?: 
     logX402("------>>> url:", url);
     try {
         console.log(`[x402Fetch] Request Headers:`, JSON.stringify(headers));
-        const response = await fetch(url, {
-            method: "POST",
-            headers,
-            body: bodyText,
-            referrerPolicy: "no-referrer",
-            credentials: "omit"
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            logX402("[x402WorkerFetch] failed path=", path, " status=", response.status, " body=", errorText);
-            let detail = errorText;
+        const MAX_RETRIES = 2;
+        const TIMEOUT_MS = 12_000;
+        let lastErr: any = null;
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
             try {
-                const parsed = JSON.parse(errorText);
-                const code = parsed?.code || parsed?.error?.code || parsed?.error;
-                const message = parsed?.message || parsed?.error?.message || parsed?.detail;
-                if (code || message) detail = `${code}: ${message}`;
-            } catch {
-                // keep raw text
+                const response = await fetchWithTimeout(url, {
+                    method: "POST",
+                    headers,
+                    body: bodyText,
+                    referrerPolicy: "no-referrer",
+                    credentials: "omit"
+                }, TIMEOUT_MS);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    logX402("[x402WorkerFetch] failed path=", path, " status=", response.status, " body=", errorText);
+                    let detail = errorText;
+                    try {
+                        const parsed = JSON.parse(errorText);
+                        const code = parsed?.code || parsed?.error?.code || parsed?.error;
+                        const message = parsed?.message || parsed?.error?.message || parsed?.detail;
+                        if (code || message) detail = `${code}: ${message}`;
+                    } catch {
+                    }
+                    throw new Error(`x402WorkerFetch failed (${response.status}): ${detail}`);
+                }
+                return await response.json();
+            } catch (err: any) {
+                lastErr = err;
+                const isAbort = err?.name === "AbortError";
+                const isTypeError = err instanceof TypeError && err.message?.includes("Failed to fetch");
+                if (attempt < MAX_RETRIES && (isAbort || isTypeError)) {
+                    await sleep(500 * (attempt + 1));
+                    continue;
+                }
+                throw err;
             }
-            throw new Error(`x402WorkerFetch failed (${response.status}): ${detail}`);
         }
-
-        return await response.json();
+        throw lastErr;
     } catch (e: any) {
         console.error(`[x402Fetch] CRITICAL ERROR for path ${path}:`, e);
         if (e instanceof TypeError && e.message === "Failed to fetch") {
@@ -610,17 +631,32 @@ export async function x402WorkerGet(path: string, params?: Record<string, string
     }
 
     logX402("------>>> GET url:", url)
-    const response = await fetch(url, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json",
-        },
-    });
-
-    if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`x402worker GET failed: ${response.status} - ${errorData}`);
+    const MAX_RETRIES = 2;
+    const TIMEOUT_MS = 10_000;
+    let lastErr: any = null;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        try {
+            const response = await fetchWithTimeout(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }, TIMEOUT_MS);
+            if (!response.ok) {
+                const errorData = await response.text();
+                throw new Error(`x402worker GET failed: ${response.status} - ${errorData}`);
+            }
+            return await response.json();
+        } catch (err: any) {
+            lastErr = err;
+            const isAbort = err?.name === "AbortError";
+            const isTypeError = err instanceof TypeError && err.message?.includes("Failed to fetch");
+            if (attempt < MAX_RETRIES && (isAbort || isTypeError)) {
+                await sleep(400 * (attempt + 1));
+                continue;
+            }
+            throw err;
+        }
     }
-
-    return await response.json();
+    throw lastErr;
 }
