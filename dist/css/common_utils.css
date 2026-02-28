@@ -16,16 +16,67 @@
 #loading-content {
     color: #fff;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
 }
 
 .spinner {
-    width: 48px;
-    height: 48px;
-    border: 6px solid #ccc;
-    border-top: 6px solid #fff;
+    display: none;
+    /* Hide old spinner */
+}
+
+.ai-loading-container {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    animation: ai-loading-spin 1.2s linear infinite;
+}
+
+.ai-loading-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    margin: -6px;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 8px;
+}
+
+.ai-loading-dot1 {
+    background: #ff6b91;
+    transform: rotate(0deg) translate(18px);
+}
+
+.ai-loading-dot2 {
+    background: #2E8EF1;
+    transform: rotate(72deg) translate(18px);
+}
+
+.ai-loading-dot3 {
+    background: #7d65f3;
+    transform: rotate(144deg) translate(18px);
+}
+
+.ai-loading-dot4 {
+    background: #ffdb3a;
+    transform: rotate(216deg) translate(18px);
+}
+
+.ai-loading-dot5 {
+    background: #1dd6c6;
+    transform: rotate(288deg) translate(18px);
+}
+
+@keyframes ai-loading-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes spin {

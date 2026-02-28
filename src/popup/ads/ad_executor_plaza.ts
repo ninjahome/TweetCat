@@ -116,6 +116,33 @@ export async function updateBlueVDisplay() {
     }
 }
 
+function getTwitterHandle(ad: { brand: string, detailUrl: string }): string | null {
+    if (ad.brand) {
+        let b = ad.brand.trim();
+        if (b.startsWith('@')) b = b.slice(1);
+        // Regular handles usually aren't just digits
+        if (b && !/^\d+$/.test(b)) return b;
+    }
+
+    if (ad.detailUrl) {
+        const url = ad.detailUrl.toLowerCase();
+        // Extract from https://x.com/username
+        const handleMatch = url.match(/x\.com\/([^/?#\s]+)/);
+        if (handleMatch && handleMatch[1] !== 'i' && handleMatch[1] !== 'intent') {
+            return handleMatch[1];
+        }
+        // Extract from https://x.com/i/user/12345
+        const idMatch = url.match(/x\.com\/i\/user\/(\d+)/);
+        if (idMatch) return idMatch[1];
+    }
+
+    if (ad.brand) {
+        return ad.brand.startsWith('@') ? ad.brand.slice(1) : ad.brand;
+    }
+
+    return null;
+}
+
 export async function startTask(ad: EarnAd) {
     if (executorState.taskRunState[ad.id] === "running") return;
     executorState.taskRunState[ad.id] = "running";
@@ -228,17 +255,31 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
         // Set Banner and Avatar
         const coverEl = card.querySelector<HTMLImageElement>(".ad-cover-img");
         const avatarEl = card.querySelector<HTMLImageElement>(".ad-avatar-img");
+        const avatarContainer = $2<HTMLElement>(card, ".ad-card-avatar-container");
 
-        // For now, we don't have banner/avatar URLs in the task object, 
-        // using the category icon as a fallback in the avatar container.
-        if (avatarEl) {
-            avatarEl.style.display = "none"; // Hide empty img
-            const avatarContainer = $2<HTMLElement>(card, ".ad-card-avatar-container");
-            avatarContainer.style.display = "flex";
-            avatarContainer.style.alignItems = "center";
-            avatarContainer.style.justifyContent = "center";
-            avatarContainer.style.fontSize = "24px";
-            avatarContainer.textContent = categoryIcon[task.ad.category as AdCategory] || "👤";
+        if (task.ad.brandBannerUrl && coverEl) {
+            coverEl.src = task.ad.brandBannerUrl;
+            coverEl.style.display = "block";
+        } else if (coverEl) {
+            coverEl.style.display = "none";
+        }
+
+        let avatarUrl = task.ad.brandAvatarUrl;
+        if (!avatarUrl) {
+            const handle = getTwitterHandle({ brand: task.ad.brand, detailUrl: task.ad.detailUrl });
+            if (handle) {
+                avatarUrl = `https://unavatar.io/twitter/${handle}`;
+            }
+        }
+
+        if (avatarUrl && avatarEl) {
+            avatarEl.src = avatarUrl;
+            avatarEl.style.display = "block";
+            avatarEl.onerror = () => {
+                avatarEl.style.display = "none";
+            };
+        } else if (avatarEl) {
+            avatarEl.style.display = "none";
         }
 
         const statusMap: Record<string, string> = {
@@ -322,16 +363,31 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
         // Set Banner and Avatar
         const coverEl = card.querySelector<HTMLImageElement>(".ad-cover-img");
         const avatarEl = card.querySelector<HTMLImageElement>(".ad-avatar-img");
+        const avatarContainer = $2<HTMLElement>(card, ".ad-card-avatar-container");
 
-        // Fallback to category icon in avatar
-        if (avatarEl) {
+        if (ad.brandBannerUrl && coverEl) {
+            coverEl.src = ad.brandBannerUrl;
+            coverEl.style.display = "block";
+        } else if (coverEl) {
+            coverEl.style.display = "none";
+        }
+
+        let avatarUrl = ad.brandAvatarUrl;
+        if (!avatarUrl) {
+            const handle = getTwitterHandle(ad);
+            if (handle) {
+                avatarUrl = `https://unavatar.io/twitter/${handle}`;
+            }
+        }
+
+        if (avatarUrl && avatarEl) {
+            avatarEl.src = avatarUrl;
+            avatarEl.style.display = "block";
+            avatarEl.onerror = () => {
+                avatarEl.style.display = "none";
+            };
+        } else if (avatarEl) {
             avatarEl.style.display = "none";
-            const avatarContainer = $2<HTMLElement>(card, ".ad-card-avatar-container");
-            avatarContainer.style.display = "flex";
-            avatarContainer.style.alignItems = "center";
-            avatarContainer.style.justifyContent = "center";
-            avatarContainer.style.fontSize = "24px";
-            avatarContainer.textContent = categoryIcon[ad.category] || "👤";
         }
 
         $2<HTMLElement>(card, ".ad-card-title").textContent = ad.title;

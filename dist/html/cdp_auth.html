@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8" />
     <title id="pageTitle">Connect Coinbase Wallet</title>
-    <link rel="stylesheet" href="../css/common_utils.css"/>
+    <link rel="stylesheet" href="../css/common_utils.css" />
     <style>
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont;
@@ -13,14 +14,16 @@
             height: 100vh;
             background: #f7f8fa;
         }
+
         .card {
             width: 320px;
             padding: 24px;
             border-radius: 12px;
             background: #fff;
-            box-shadow: 0 4px 16px rgba(0,0,0,.08);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, .08);
             text-align: center;
         }
+
         button {
             width: 100%;
             padding: 10px;
@@ -31,24 +34,32 @@
     </style>
     <script type="module" src="../js/cdp_auth.js" defer></script>
 </head>
+
 <body>
-<div class="card">
-    <h2 id="pageHeader">Connect Wallet</h2>
-    <p id="description">选择一种方式登录 Coinbase</p>
+    <div class="card">
+        <h2 id="pageHeader">Connect Wallet</h2>
+        <p id="description">选择一种方式登录 Coinbase</p>
 
-    <button id="btn-google" data-i18n-key="sign_in_with_google">Sign in with Google</button>
-    <button id="btn-apple" data-i18n-key="sign_in_with_apple">Sign in with Apple</button>
-    <button id="btn-x" data-i18n-key="sign_in_with_x">Sign in with X</button>
+        <button id="btn-google" data-i18n-key="sign_in_with_google">Sign in with Google</button>
+        <button id="btn-apple" data-i18n-key="sign_in_with_apple">Sign in with Apple</button>
+        <button id="btn-x" data-i18n-key="sign_in_with_x">Sign in with X</button>
 
-    <p id="status" style="margin-top:12px;color:#FF4646;"></p>
-</div>
-
-<div id="loading-overlay">
-    <div id="loading-content">
-        <div class="spinner"></div>
-        <div id="loading-message" class="loading-message"></div>
+        <p id="status" style="margin-top:12px;color:#FF4646;"></p>
     </div>
-</div>
+
+    <div id="loading-overlay">
+        <div id="loading-content">
+            <div class="ai-loading-container">
+                <div class="ai-loading-dot ai-loading-dot1"></div>
+                <div class="ai-loading-dot ai-loading-dot2"></div>
+                <div class="ai-loading-dot ai-loading-dot3"></div>
+                <div class="ai-loading-dot ai-loading-dot4"></div>
+                <div class="ai-loading-dot ai-loading-dot5"></div>
+            </div>
+            <div id="loading-message" class="loading-message"></div>
+        </div>
+    </div>
 
 </body>
+
 </html>

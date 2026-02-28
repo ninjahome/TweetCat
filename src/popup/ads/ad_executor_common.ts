@@ -24,6 +24,8 @@ export interface EarnAd {
     popularityScore: number;
     createdAt: number;
     detailUrl: string;
+    brandAvatarUrl?: string;
+    brandBannerUrl?: string;
     isClaimed?: boolean;
 }
 
@@ -50,6 +52,8 @@ export interface TaskWithAdInfo {
         detailUrl: string;
         durationMinutes: number;
         deadlineText: string;
+        brandAvatarUrl?: string;
+        brandBannerUrl?: string;
     };
 }
 

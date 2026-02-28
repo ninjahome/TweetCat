@@ -1,10 +1,10 @@
 import browser from "webextension-polyfill";
-import {__tableKolsInCategory, checkAndInitDatabase, databaseQueryAll} from "../common/database";
-import {tweetFM} from "./tweet_fetch_manager";
-import {checkIfXIsOpen, sendMessageToX} from "./bg_msg";
-import {MsgType} from "../common/consts";
-import {refillApiAccessToken, useTokenByTimer} from "./api_bucket_state";
-import {logBGT} from "../common/debug_flags";
+import { __tableKolsInCategory, checkAndInitDatabase, databaseQueryAll } from "../common/database";
+import { tweetFM } from "./tweet_fetch_manager";
+import { checkIfXIsOpen, sendMessageToX } from "./bg_msg";
+import { MsgType } from "../common/consts";
+import { refillApiAccessToken, useTokenByTimer } from "./api_bucket_state";
+import { logBGT } from "../common/debug_flags";
 import { pollAdsFeedIfNeeded } from "./bg_ads_feed";
 
 const alarms = browser.alarms;
@@ -74,7 +74,11 @@ async function timerTaskWork(alarm: any): Promise<void> {
             break;
         }
         case __alarm_ads_feed__: {
-            await pollAdsFeedIfNeeded(false);
+            try {
+                await pollAdsFeedIfNeeded(false);
+            } catch (e) {
+                console.warn("------>>> Error in pollAdsFeedIfNeeded timer:", e);
+            }
             break;
         }
         default:

@@ -503,7 +503,7 @@ button {
 
 .ad-card-cover {
     width: 100%;
-    height: 100px;
+    height: 136px;
     background: linear-gradient(135deg, #1d9bf0 0%, #06CBAD 100%);
     overflow: hidden;
 }
@@ -534,7 +534,7 @@ button {
 }
 
 .ad-card-content {
-    padding: 30px 16px 16px;
+    padding: 48px 16px 16px;
     flex: 1;
 }
 

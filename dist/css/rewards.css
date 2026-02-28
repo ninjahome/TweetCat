@@ -249,7 +249,8 @@ body {
 #loading-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(2, 6, 23, 0.45); /* deep slate overlay */
+    background: rgba(2, 6, 23, 0.45);
+    /* deep slate overlay */
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     align-items: center;
@@ -261,9 +262,8 @@ body {
     width: min(220px, calc(100vw - 48px));
     background: rgba(255, 255, 255, 0.92);
     border-radius: 16px;
-    padding: 28px 24px 22px;
+    padding: 16px;
     text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
     animation: loadingPopIn 180ms ease-out;
 }
 
@@ -284,7 +284,8 @@ body {
 }
 
 .loading-message {
-    font-size: 14px;
+    font-size: 16px;
+    font-weight: 600;
     color: #666;
 }
 
@@ -319,9 +320,9 @@ body {
     white-space: normal;
     word-break: break-word;
     transition:
-            transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-            opacity 220ms ease,
-            visibility 0s linear 0s;
+        transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 220ms ease,
+        visibility 0s linear 0s;
 }
 
 .notification.hidden {

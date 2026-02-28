@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang=en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -42,13 +43,17 @@
       }
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: radial-gradient(1200px 600px at 30% 10%, rgba(59,130,246,0.15), transparent 50%),
-      radial-gradient(1000px 500px at 70% 90%, rgba(99,102,241,0.12), transparent 50%),
-      var(--bg-page);
+      background: radial-gradient(1200px 600px at 30% 10%, rgba(59, 130, 246, 0.15), transparent 50%),
+        radial-gradient(1000px 500px at 70% 90%, rgba(99, 102, 241, 0.12), transparent 50%),
+        var(--bg-page);
       color: var(--text-primary);
       min-height: 100vh;
       display: flex;
@@ -69,8 +74,15 @@
     }
 
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .card-header {
@@ -111,7 +123,9 @@
       justify-content: center;
       transition: background 0.2s;
     }
-    .btn-close:hover { background-color: rgba(69, 146, 239, 0.2)
+
+    .btn-close:hover {
+      background-color: rgba(69, 146, 239, 0.2)
     }
 
     .card-content {
@@ -128,7 +142,7 @@
       gap: 6px;
       padding: 12px;
       border: 1px solid var(--border-subtle);
-        border-radius: 16px;
+      border-radius: 16px;
     }
 
     .avatar {
@@ -143,11 +157,24 @@
     .user-info {
       min-width: 0;
     }
-    .display-name { font-weight: 800; font-size: 15px; }
-    .user-handle { color: var(--text-secondary); font-size: 13px; }
+
+    .display-name {
+      font-weight: 800;
+      font-size: 15px;
+    }
+
+    .user-handle {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
 
     /* 输入区域 */
-    .field-group { display: flex; flex-direction: column; gap: 8px; }
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
     .field-label {
       font-size: 13px;
       color: var(--text-secondary);
@@ -167,7 +194,11 @@
       outline: none;
       transition: all 0.2s;
     }
-    .input-main:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle); }
+
+    .input-main:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-subtle);
+    }
 
     .input-hint {
       display: flex;
@@ -177,7 +208,11 @@
       color: var(--text-muted);
     }
 
-    .presets { display: flex; gap: 6px; }
+    .presets {
+      display: flex;
+      gap: 6px;
+    }
+
     .chip {
       padding: 4px 12px;
       border-radius: 999px;
@@ -188,12 +223,27 @@
       font-weight: 700;
       color: var(--text-secondary);
     }
-    .chip:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+    .chip:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
 
     /* 状态信息 */
-    .message-area { min-height: 20px; font-size: 13px; line-height: 1.4; }
-    .text-error { color: var(--danger); font-weight: 500; }
-    .text-status { color: var(--accent); }
+    .message-area {
+      min-height: 20px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .text-error {
+      color: var(--danger);
+      font-weight: 500;
+    }
+
+    .text-status {
+      color: var(--accent);
+    }
 
     /* 操作栏 */
     .card-actions {
@@ -215,10 +265,20 @@
       border: none;
       transition: opacity 0.2s;
     }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .btn-secondary { background: transparent; color: var(--text-secondary); }
-    .btn-secondary:hover { color: var(--text-primary); }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+
+    .btn-secondary:hover {
+      color: var(--text-primary);
+    }
 
     .btn-primary {
       background: var(--accent);
@@ -227,85 +287,129 @@
       align-items: center;
       gap: 8px;
     }
-    .btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
+
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
 
     /* 加载动画 */
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    .ai-loading-container-mini {
+      position: relative;
+      width: 20px;
+      height: 20px;
+      animation: ai-loading-spin 1.2s linear infinite;
       display: none;
     }
-    .loading .spinner { display: block; }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading .ai-loading-container-mini {
+      display: block;
+    }
+
+    .ai-loading-dot-mini {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 4px;
+      height: 4px;
+      margin: -2px;
+      border-radius: 50%;
+    }
+
+    .ai-loading-dot1-mini {
+      background: #ff6b91;
+      transform: rotate(0deg) translate(6px);
+    }
+
+    .ai-loading-dot2-mini {
+      background: #2E8EF1;
+      transform: rotate(72deg) translate(6px);
+    }
+
+    .ai-loading-dot3-mini {
+      background: #7d65f3;
+      transform: rotate(144deg) translate(6px);
+    }
+
+    .ai-loading-dot4-mini {
+      background: #ffdb3a;
+      transform: rotate(216deg) translate(6px);
+    }
+
+    .ai-loading-dot5-mini {
+      background: #1dd6c6;
+      transform: rotate(288deg) translate(6px);
+    }
+
+    @keyframes ai-loading-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
+
 <body>
 
-<main class="transfer-card">
-  <header class="card-header">
-    <h2 class="card-title"><span id="pageHeader">转账 USDC</span> <span class="badge">x402</span></h2>
-    <button class="btn-close" id="js-close" title="关闭">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-    </button>
-  </header>
+  <main class="transfer-card">
+    <header class="card-header">
+      <h2 class="card-title"><span id="pageHeader">转账 USDC</span> <span class="badge">x402</span></h2>
+      <button class="btn-close" id="js-close" title="关闭">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
+    </header>
 
-  <div class="card-content">
-    <section class="user-profile">
-      <img id="js-avatar" class="avatar" src="" alt="" />
-      <div class="user-info">
-        <div id="js-display-name" class="display-name">-</div>
-        <div id="js-user-handle" class="user-handle">-</div>
-      </div>
-    </section>
+    <div class="card-content">
+      <section class="user-profile">
+        <img id="js-avatar" class="avatar" src="" alt="" />
+        <div class="user-info">
+          <div id="js-display-name" class="display-name">-</div>
+          <div id="js-user-handle" class="user-handle">-</div>
+        </div>
+      </section>
 
-    <div class="field-group">
-      <label class="field-label" for="js-amount">
-        <span id="js-label-usdc" class="balance-title-usdt">金额 (USDC)</span>
-        <span id="js-decimals-hint" class="badge">6小数位</span>
-      </label>
-      <input
-              id="js-amount"
-              class="input-main"
-              type="text"
-              inputmode="decimal"
-              placeholder="0.00"
-              autocomplete="off"
-      />
-      <div class="input-hint">
-          <span
-                  id="js-max-amount_transfor"
-                  class="max_amount_transfor"
-                  data-max="100.00"
-          >建议：不超过余额 100.00(USDC)</span>
+      <div class="field-group">
+        <label class="field-label" for="js-amount">
+          <span id="js-label-usdc" class="balance-title-usdt">金额 (USDC)</span>
+          <span id="js-decimals-hint" class="badge">6小数位</span>
+        </label>
+        <input id="js-amount" class="input-main" type="text" inputmode="decimal" placeholder="0.00"
+          autocomplete="off" />
+        <div class="input-hint">
+          <span id="js-max-amount_transfor" class="max_amount_transfor" data-max="100.00">建议：不超过余额 100.00(USDC)</span>
 
           <div class="presets">
-          <button class="chip" data-amt="0.1">0.1</button>
-          <button class="chip" data-amt="1">1</button>
-          <button class="chip" data-amt="5">5</button>
+            <button class="chip" data-amt="0.1">0.1</button>
+            <button class="chip" data-amt="1">1</button>
+            <button class="chip" data-amt="5">5</button>
+          </div>
         </div>
+      </div>
+
+      <div class="message-area">
+        <div id="js-error" class="text-error" aria-live="polite"></div>
+        <div id="js-status" class="text-status" aria-live="polite"></div>
       </div>
     </div>
 
-    <div class="message-area">
-      <div id="js-error" class="text-error" aria-live="polite"></div>
-      <div id="js-status" class="text-status" aria-live="polite"></div>
-    </div>
-  </div>
+    <footer class="card-actions">
+      <button id="js-cancel" class="btn btn-secondary">取消</button>
+      <button id="js-confirm" class="btn btn-primary" disabled>
+        <div class="ai-loading-container-mini">
+          <div class="ai-loading-dot-mini ai-loading-dot1-mini"></div>
+          <div class="ai-loading-dot-mini ai-loading-dot2-mini"></div>
+          <div class="ai-loading-dot-mini ai-loading-dot3-mini"></div>
+          <div class="ai-loading-dot-mini ai-loading-dot4-mini"></div>
+          <div class="ai-loading-dot-mini ai-loading-dot5-mini"></div>
+        </div>
+        <span id="js-confirm-text">确认转账</span>
+      </button>
+    </footer>
+  </main>
 
-  <footer class="card-actions">
-    <button id="js-cancel" class="btn btn-secondary">取消</button>
-    <button id="js-confirm" class="btn btn-primary" disabled>
-      <span class="spinner"></span>
-      <span id="js-confirm-text">确认转账</span>
-    </button>
-  </footer>
-</main>
-
-<script src="../js/x402_transfer.js"></script>
+  <script src="../js/x402_transfer.js"></script>
 </body>
+
 </html>

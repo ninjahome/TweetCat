@@ -232,28 +232,35 @@ export function usdcToAtomic(amountStr: string): string | null {
  * const { xId, walletAddress } = await getCurrentUserInfo();
  */
 export async function getCurrentUserInfo(): Promise<{ xId: string; walletAddress: string }> {
+    try {
+        await initCDP();
 
-    await initCDP();
+        const user = await getCurrentUser();
+        if (!user) {
+            throw new Error("Please sign in first");
+        }
 
-    const user = await getCurrentUser();
-    if (!user) {
-        throw new Error("Please sign in first");
+        const xId = user?.authenticationMethods?.x?.sub;
+        if (!xId) {
+            throw new Error("X account not connected. Please sign in with X");
+        }
+
+        const eoa = await getEOA();
+        if (!eoa?.address) {
+            throw new Error("Wallet not found. Please create a wallet first");
+        }
+
+        return {
+            xId,
+            walletAddress: eoa.address,
+        };
+    } catch (e: any) {
+        console.error("getCurrentUserInfo failed:", e);
+        if (e?.message?.includes("Failed to fetch") || e?.message?.includes("ERR_CONNECTION_CLOSED") || e?.message?.includes("network")) {
+            throw new Error("Network error: Failed to connect to authentication server. Please check your internet connection and try again.");
+        }
+        throw e;
     }
-
-    const xId = user?.authenticationMethods?.x?.sub;
-    if (!xId) {
-        throw new Error("X account not connected. Please sign in with X");
-    }
-
-    const eoa = await getEOA();
-    if (!eoa?.address) {
-        throw new Error("Wallet not found. Please create a wallet first");
-    }
-
-    return {
-        xId,
-        walletAddress: eoa.address,
-    };
 }
 
 

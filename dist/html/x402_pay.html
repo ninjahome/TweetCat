@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,9 +28,9 @@
       padding: 32px;
       max-width: 400px;
       width: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     h1 {
@@ -55,26 +56,64 @@
       color: #27ae60;
     }
 
-    .loading {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
-      border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      animation: spin 1s linear infinite;
+    .ai-loading-container {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      animation: ai-loading-spin 1.2s linear infinite;
       margin: 20px auto;
     }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .ai-loading-dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      margin: -6px;
+      border-radius: 50%;
+    }
+
+    .ai-loading-dot1 {
+      background: #ff6b91;
+      transform: rotate(0deg) translate(18px);
+    }
+
+    .ai-loading-dot2 {
+      background: #2E8EF1;
+      transform: rotate(72deg) translate(18px);
+    }
+
+    .ai-loading-dot3 {
+      background: #7d65f3;
+      transform: rotate(144deg) translate(18px);
+    }
+
+    .ai-loading-dot4 {
+      background: #ffdb3a;
+      transform: rotate(216deg) translate(18px);
+    }
+
+    .ai-loading-dot5 {
+      background: #1dd6c6;
+      transform: rotate(288deg) translate(18px);
+    }
+
+    @keyframes ai-loading-spin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .tweet-info,
     .amount-container {
       background: #f8f9fa;
       border-radius: 8px;
-      padding:12px 16px;
+      padding: 12px 16px;
       margin-bottom: 20px;
     }
 
@@ -84,16 +123,17 @@
       color: #666;
     }
 
- .amount {
+    .amount {
       font-size: 32px;
       font-weight: 400;
       color: #4592EF;
       text-align: center;
       margin: 16px 0;
     }
-.amount span {
-    font-weight: 700;
-}
+
+    .amount span {
+      font-weight: 700;
+    }
 
     .btn-close {
       display: none;
@@ -121,37 +161,49 @@
       margin-top: 12px;
       border: 1px solid rgba(161, 164, 168, 0.2);
       color: #5b7083;
-        border-radius: 8px;
+      border-radius: 8px;
     }
+
     .btn-visited {
-        background-color: #4592EF;
-        padding: 12px 16px;
-        border-radius: 999px;
-        border: none;
-        color: white;
-        font-size: 16px;
-        font-weight: 500;
+      background-color: #4592EF;
+      padding: 12px 16px;
+      border-radius: 999px;
+      border: none;
+      color: white;
+      font-size: 16px;
+      font-weight: 500;
     }
+
     .btn-visited:hover {
-        background-color: #428ad2;
+      background-color: #428ad2;
     }
   </style>
 </head>
+
 <body>
-<div class="container">
-  <h1 id="pageHeader">💎 X402 打赏支付</h1>
+  <div class="container">
+    <h1 id="pageHeader">💎 X402 打赏支付</h1>
     <div class="amount">$<span id="amount"></span> <span id="currencyUnit" style="font-size: 14px">USDC</span></div>
-  <div id="tweetInfo" class="tweet-info" style="display: none;">
-    <p><strong><span id="tweetIdLabel">推文 ID:</span></strong> <span id="tweetId"></span></p>
-    <p><strong><span id="authorIdLabel">作者 ID:</span></strong> <span id="authorId"></span></p>
-  </div>
-<div class="amount-container">
-    <div class="loading" id="loading"></div>
-    <div class="status" id="status" data-default-text="正在初始化...">正在初始化...</div>
-    <button class="btn-close" id="btnClose">关闭</button>
-</div>
+    <div id="tweetInfo" class="tweet-info" style="display: none;">
+      <p><strong><span id="tweetIdLabel">推文 ID:</span></strong> <span id="tweetId"></span></p>
+      <p><strong><span id="authorIdLabel">作者 ID:</span></strong> <span id="authorId"></span></p>
+    </div>
+    <div class="amount-container">
+      <div id="loading">
+        <div class="ai-loading-container">
+          <div class="ai-loading-dot ai-loading-dot1"></div>
+          <div class="ai-loading-dot ai-loading-dot2"></div>
+          <div class="ai-loading-dot ai-loading-dot3"></div>
+          <div class="ai-loading-dot ai-loading-dot4"></div>
+          <div class="ai-loading-dot ai-loading-dot5"></div>
+        </div>
+      </div>
+      <div class="status" id="status" data-default-text="正在初始化...">正在初始化...</div>
+      <button class="btn-close" id="btnClose">关闭</button>
+    </div>
     <button class="btn-visited" id="btn-visited-blockchain">查看区块链浏览器</button>
-</div>
-<script src="../js/x402_payment.js"></script>
+  </div>
+  <script src="../js/x402_payment.js"></script>
 </body>
+
 </html>

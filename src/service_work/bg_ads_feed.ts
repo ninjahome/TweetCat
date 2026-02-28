@@ -71,17 +71,22 @@ async function getWorkerEndpoint(): Promise<string> {
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-    const resp = await fetch(url, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        referrerPolicy: "no-referrer",
-        credentials: "omit"
-    });
-    if (!resp.ok) {
-        const text = await resp.text().catch(() => "");
-        throw new Error(`GET ${url} failed: ${resp.status} ${text}`);
+    try {
+        const resp = await fetch(url, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            referrerPolicy: "no-referrer",
+            credentials: "omit"
+        });
+        if (!resp.ok) {
+            const text = await resp.text().catch(() => "");
+            throw new Error(`GET ${url} failed: ${resp.status} ${text}`);
+        }
+        return await resp.json() as T;
+    } catch (e) {
+        logAdsFeed(`fetchJson failed for ${url}:`, e);
+        throw e;
     }
-    return await resp.json() as T;
 }
 
 export async function pollAdsFeedIfNeeded(forceListFetch: boolean = false): Promise<void> {
