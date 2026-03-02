@@ -25,12 +25,16 @@
 
         <div class="plaza-header-right">
             <div class="account-info">
-                <div class="card-avatar-container">
-                    <span><img id="twitter-avatar" class="card-avatar" src="" alt="Avatar" /></span>
-                    <span id="twitter-user-name" class="twitter-user-name">Twitter</span>
-                </div>
                 <div class="chain-info">
-                    <span id="header-network" class="chain-pill chain-pill--net" title="Current network">—</span>
+                    <div class="card-avatar-container">
+                        <span><img id="twitter-avatar" class="card-avatar" src="" alt="Avatar" /></span>
+                        <div class="chain-user-block">
+                            <span id="twitter-user-name" class="twitter-user-name">Twitter</span>
+                            <span id="header-network" class="chain-pill chain-pill--net" title="Current network">—</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="chain-hover-panel" aria-hidden="true">
                     <span id="header-account" class="chain-pill chain-pill--addr" title="Account">—</span>
                 </div>
                 <div class="account-balance">
@@ -195,9 +199,10 @@
                             <div class="card-icon">📊</div>
                             <div class="card-content">
                                 <div class="card-label">Active Campaigns</div>
-                                <div class="card-value">0</div>
                                 <div class="card-meta">Running / deliverable</div>
+                                <div class="card-value">0</div>
                             </div>
+                            <img class="dashboard-card-right-image" src="../images/number.png" alt="" />
                         </div>
 
                         <!-- Spend group: visually one module, but keeps 2 cards for TS indexes 2 & 3 -->
