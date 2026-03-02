@@ -29,7 +29,7 @@ body {
 .plaza-header {
     background: white;
     border-bottom: 1px solid #e6edf5;
-    padding: 16px 48px;
+    padding: 16px 300px;
     display: flex;
     align-items: center;
     justify-content: space-between;
