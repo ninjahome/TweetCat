@@ -539,7 +539,7 @@ neg_saturated = 1
 | E2E-07 | 🤖 🔵 Cron 任务并发执行 | expire + settle + refund 同时运行 | 无死锁，数据一致 | P2 |
 | E2E-08 | 🤖 🔵 大规模数据 | 1000 广告 + 10000 claims | API 响应时间 < 3s，分页正确 | P2 |
 | E2E-09 | ✅ 👋 广告主提现 → 查看历史 | 历史记录中有 txHash 可点击查看区块浏览器 | P1 |
-| E2E-10 | 🤖 🟣 全流程账本审计 | 对比 available + frozen 与 所有 ledger 记录的 sum | 恒等式成立 | P0 |
+| E2E-10 | ✅ 🤖 🔵 全流程账本审计 | 运行审计脚本，对比余额与账本/claims 汇总 | 恒等式成立 | P0 |
 
 ---
 
@@ -556,7 +556,6 @@ neg_saturated = 1
 
 ### 🟣 需要 SQL 造数（改 D1/SQLite 数据）
 - 边界/一致性：E-08
-- 审计：E2E-10
 
 ### 🔵 需要编写 TS 测试脚本（单测/集测/E2E）
 - 发布：P-01, P-09
@@ -567,6 +566,7 @@ neg_saturated = 1
 - 签名验证：S-01 ~ S-07, S-10
 - Service Worker：SW-06, SW-07
 - Feed：FD-01 ~ FD-07
+- 审计：E2E-10
 - 并发：E-01, E-02
 - E2E：E2E-07, E2E-08
 
