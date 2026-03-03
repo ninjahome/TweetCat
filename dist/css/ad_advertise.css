@@ -6,7 +6,7 @@
     --tc-primary-weak: rgba(29, 155, 240, 0.12);
     --tc-text: #0f1419;
     --tc-muted: #536471;
-    --tc-border: #dbe3ee;
+    --tc-border: rgb(239, 243, 244);
     --tc-border-subtle: #edf1f6;
     --tc-surface: #ffffff;
     --tc-bg: #f3f6fb;
@@ -28,8 +28,8 @@ body {
 /* ==================== Top Header ==================== */
 .plaza-header {
     background: white;
-    border-bottom: 1px solid #e6edf5;
-    padding: 16px 300px;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 150px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -241,8 +241,8 @@ body {
 
 /* ==================== Plaza Views ==================== */
 .plaza-view {
-    padding: 22px 28px 32px;
-    max-width: 1240px;
+    padding: 0 24px;
+    max-width: 1480px;
     margin: 0 auto;
 }
 
@@ -256,6 +256,8 @@ body {
 
 .advertise-main {
     min-width: 0;
+    border-left: 1px solid rgb(239, 243, 244);
+    border-right: 1px solid rgb(239, 243, 244);
 }
 
 .advertise-side {
@@ -411,6 +413,7 @@ body {
     border-radius: 999px;
     border: 1px solid #e6edf5;
     background: #ffffff;
+    min-width: 120px; /* 增加最小宽度，确保滑块效果明显 */
 }
 
 .dashboard-tabs::before {
@@ -419,7 +422,7 @@ body {
     top: 2px;
     bottom: 2px;
     left: 2px;
-    width: calc((100% - 4px) / 2);
+    width: calc(50% - 2px);
     border-radius: 999px;
     background: #0f172a;
     transition: transform 0.2s ease;
@@ -430,7 +433,10 @@ body {
 }
 
 .dashboard-tab {
-    flex: 1 1 0;
+    flex: 1; /* 确保两个按钮同宽 */
+    display: flex; /* 使用 flex 实现文字居中 */
+    align-items: center;
+    justify-content: center;
     padding: 6px 12px;
     border-radius: 999px;
     border: none;
@@ -441,6 +447,7 @@ body {
     cursor: pointer;
     position: relative;
     z-index: 1;
+    line-height: 1; /* 统一行高辅助垂直居中 */
 }
 
 .dashboard-tab.active {
@@ -670,9 +677,7 @@ body {
     background: linear-gradient(135deg, #1d9bf0 0%, #06CBAD 100%);
     color: white;
     border: none;
-    border-radius: 14px;
-    font-size: 14px;
-    font-weight: 900;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -682,9 +687,8 @@ body {
 }
 
 .btn-publish-ad--sm {
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 13px;
+    border-radius: 999px;
+    font-size: 16px;
 }
 
 .publish-icon {
@@ -694,9 +698,9 @@ body {
 /* ==================== Tables ==================== */
 .ads-table-container,
 .spending-table-container {
-    background: white;
-    border-radius: 16px;
-    border: 1px solid #e6edf5;
+    background: transparent;
+    border-top: 1px solid rgb(239, 243, 244);
+    border-bottom: 1px solid rgb(239, 243, 244);
     overflow: hidden;
 }
 
@@ -706,12 +710,22 @@ body {
     border-collapse: collapse;
 }
 
-.ads-table thead,
-.spending-table thead {
-    background: #f8fafc;
+.ads-table thead tr,
+.my-ad-row {
+    display: grid;
+    grid-template-columns: repeat(9, minmax(116px, 1fr));
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #edf1f6;
+    justify-content: center;
+    text-align: center;
 }
 
-.ads-table th,
+.ads-table thead,
+.spending-table thead {
+    background: transparent;
+}
+
 .spending-table th {
     padding: 12px 14px;
     text-align: left;
@@ -721,12 +735,25 @@ body {
     border-bottom: 1px solid #e6edf5;
 }
 
-.ads-table td,
 .spending-table td {
     padding: 14px;
     font-size: 13px;
     color: #475569;
     border-bottom: 1px solid #edf1f6;
+}
+
+.ads-table th,
+.ads-table td {
+    padding: 0;
+    border-bottom: none;
+    font-size: 13px;
+    color: #475569;
+}
+
+.ads-table th {
+    font-size: 12px;
+    font-weight: 400;
+    color: #0f172a;
 }
 
 .ads-table tbody tr:hover,
@@ -785,6 +812,18 @@ body {
 
 .btn-secondary:hover {
     background: #f9fafb;
+}
+
+.td-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+}
+
+.td-actions .btn-secondary {
+    padding: 6px 12px;
+    font-size: 12px;
 }
 
 /* ==================== Modal Styles (keep original) ==================== */
@@ -1731,10 +1770,7 @@ body {
     justify-content: space-between;
     padding: 16px;
     background: #fff;
-    border: 1px solid #e5e7eb;
-    border-top: none;
-    border-bottom-left-radius: 16px;
-    border-bottom-right-radius: 16px;
+    border-bottom: 1px solid rgb(239, 243, 244);
 }
 
 .pagination-info {
