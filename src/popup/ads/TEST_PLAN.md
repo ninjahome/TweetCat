@@ -132,7 +132,7 @@
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| P-01 | 🤖 🔵 正常发布：填写所有必填字段，余额充足 | 广告创建成功，余额 from available 移至 frozen，feed version 递增 | P0 |
+| P-01 | ✅ 🤖 🔵 正常发布：填写所有必填字段，余额充足 | 广告创建成功，余额 from available 移至 frozen，feed version 递增 | P0 |
 | P-02 | ✅ 👋 缺少广告名称 | 前端拦截："Please enter a campaign name." | P0 |
 | P-03 | ✅ 👋 奖励金额为 0 或负数 | 前端拦截："Reward per follow must be greater than 0." | P0 |
 | P-04 | ✅ 👋 奖励金额非数字（如 "abc"） | 前端拦截：parseFloat 返回 NaN → 提示错误 | P1 |
@@ -140,10 +140,28 @@
 | P-06 | ✅ 👋 未选择截止日期 | 前端拦截 | P1 |
 | P-07 | ✅ 🤖 余额不足 | 后端返回 `INSUFFICIENT_BALANCE`，前端显示具体差额（已修复展示单位问题） | P0 |
 | P-08 | ✅ 👋 目标 URL 为空 | 前端拦截："Please enter a target Twitter profile URL." | P1 |
-| P-09 | 🤖 🔵 极大配额（如 1,000,000）× 高单价（如 10 USDC） | 验证 BigInt 计算是否溢出，余额校验是否正确 | P1 |
+| P-09 | ✅ 🤖 🔵 极大配额（如 1,000,000）× 高单价（如 10 USDC） | 验证 BigInt 计算是否溢出，余额校验是否正确 | P1 |
 | P-10 | ✅ 👋 发布后刷新页面查看广告列表 | 新广告应出现在 "My Ads" 表格中，状态为 ACTIVE | P0 |
 | P-11 | ✅ 👋 连续快速点击提交按钮 | 按钮应在第一次点击后 disable，防止重复提交 | P1 |
 | P-12 | ✅ 👋 发布完成后预算摘要更新 | dashboard 的 frozen、active campaigns 数量正确更新 | P1 |
+
+#### P-01（TS 测试脚本）
+
+- 脚本路径：`tweetcat-x402-worker/tweetcattips/test/ads_publisher_create.spec.ts`
+- 复跑命令（在 `tweetcat-x402-worker/tweetcattips/` 目录下）：
+
+```bash
+npm test -- --run test/ads_publisher_create.spec.ts
+```
+
+#### P-09（TS 测试脚本）
+
+- 脚本路径：`tweetcat-x402-worker/tweetcattips/test/ads_publisher_create_bigint.spec.ts`
+- 复跑命令（在 `tweetcat-x402-worker/tweetcattips/` 目录下）：
+
+```bash
+npm test -- --run test/ads_publisher_create_bigint.spec.ts
+```
 
 ---
 
