@@ -2,7 +2,7 @@ import { t } from "../common/i18n";
 import browser from "webextension-polyfill";
 import { getChainId } from "../wallet/wallet_setting";
 import { initCDP, X402_FACILITATORS } from "../common/x402_obj";
-import { getCurrentUser } from "@coinbase/cdp-core";
+import { getCurrentUser, isSignedIn } from "@coinbase/cdp-core";
 import { getEOA } from "../wallet/cdp_wallet";
 
 let notificationTimer: number | null = null;
@@ -231,36 +231,54 @@ export function usdcToAtomic(amountStr: string): string | null {
  * @example
  * const { xId, walletAddress } = await getCurrentUserInfo();
  */
+let userInfoPromise: Promise<{ xId: string; walletAddress: string }> | null = null;
+
 export async function getCurrentUserInfo(): Promise<{ xId: string; walletAddress: string }> {
-    try {
-        await initCDP();
+    if (userInfoPromise) return userInfoPromise;
 
-        const user = await getCurrentUser();
-        if (!user) {
-            throw new Error("Please sign in first");
-        }
+    userInfoPromise = (async () => {
+        try {
+            await initCDP();
 
-        const xId = user?.authenticationMethods?.x?.sub;
-        if (!xId) {
-            throw new Error("X account not connected. Please sign in with X");
-        }
+            const user = await getCurrentUser();
+            if (!user) {
+                // Check if signed in but user object just missing (rare race condition)
+                const signed = await isSignedIn();
+                if (!signed) {
+                    throw new Error("Please sign in first");
+                }
+                // If signed in, maybe retry once or wait? For now, throw specific error
+                throw new Error("User session detected but profile not loaded. Please refresh.");
+            }
 
-        const eoa = await getEOA();
-        if (!eoa?.address) {
-            throw new Error("Wallet not found. Please create a wallet first");
-        }
+            const xId = user?.authenticationMethods?.x?.sub;
+            if (!xId) {
+                throw new Error("X account not connected. Please sign in with X");
+            }
 
-        return {
-            xId,
-            walletAddress: eoa.address,
-        };
-    } catch (e: any) {
-        console.error("getCurrentUserInfo failed:", e);
-        if (e?.message?.includes("Failed to fetch") || e?.message?.includes("ERR_CONNECTION_CLOSED") || e?.message?.includes("network")) {
-            throw new Error("Network error: Failed to connect to authentication server. Please check your internet connection and try again.");
+            const eoa = await getEOA();
+            if (!eoa?.address) {
+                throw new Error("Wallet not found. Please create a wallet first");
+            }
+
+            return {
+                xId,
+                walletAddress: eoa.address,
+            };
+        } catch (e: any) {
+            console.error("getCurrentUserInfo failed:", e);
+            if (e?.message?.includes("Failed to fetch") || e?.message?.includes("ERR_CONNECTION_CLOSED") || e?.message?.includes("network")) {
+                throw new Error("Network error: Failed to connect to authentication server. Please check your internet connection and try again.");
+            }
+            throw e;
+        } finally {
+            // Clear promise after a short while or immediately so next explicit check can run
+            // but for concurrent calls during init, it serves its purpose.
+            setTimeout(() => { userInfoPromise = null; }, 1000);
         }
-        throw e;
-    }
+    })();
+
+    return userInfoPromise;
 }
 
 

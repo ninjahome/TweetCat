@@ -65,13 +65,16 @@ export async function doSignOut() {
 
 const PROJECT_ID = "602a8505-5645-45e5-81aa-a0a642ed9a0d";
 
+let cdpInitPromise: Promise<void> | null = null;
 export async function initCDP() {
-    await initialize({
+    if (cdpInitPromise) return cdpInitPromise;
+    cdpInitPromise = initialize({
         projectId: PROJECT_ID,
         ethereum: {
             createOnLogin: "smart",
         },
     });
+    return cdpInitPromise;
 }
 
 export interface walletInfo {

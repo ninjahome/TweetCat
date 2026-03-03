@@ -1,16 +1,16 @@
-import {parseNameFromTweetCell} from "./main_entrance";
-import {__DBK_AD_Block_Key, choseColorByID, MsgType} from "../common/consts";
-import {isAdTweetNode, parseContentHtml, parseTwitterPath, sendMsgToService} from "../common/utils";
-import {localGet, localSet} from "../common/local_storage";
-import {TweetKol, updateKolIdToSw} from "../object/tweet_kol";
-import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
-import {getUserIdByUsername} from "../x_api/twitter_api";
-import {fetchImmediateInNextRound, videoParamForTweets} from "../timeline/tweet_fetcher";
-import {logAD, logTPR} from "../common/debug_flags";
-import {blockedAdNumIncrease} from "../object/system_setting";
-import {prepareDownloadBtn} from "../timeline/render_action";
-import {t} from "../common/i18n";
-import {showDialog} from "./common";
+import { parseNameFromTweetCell } from "./main_entrance";
+import { __DBK_AD_Block_Key, choseColorByID, MsgType } from "../common/consts";
+import { isAdTweetNode, parseContentHtml, parseTwitterPath, sendMsgToService } from "../common/utils";
+import { localGet, localSet } from "../common/local_storage";
+import { TweetKol, updateKolIdToSw } from "../object/tweet_kol";
+import { Category, queryCategoriesFromBG, queryCategoryById } from "../object/category";
+import { getUserIdByUsername } from "../x_api/twitter_api";
+import { fetchImmediateInNextRound, videoParamForTweets } from "../timeline/tweet_fetcher";
+import { logAD, logTPR } from "../common/debug_flags";
+import { blockedAdNumIncrease } from "../object/system_setting";
+import { prepareDownloadBtn } from "../timeline/render_action";
+import { t } from "../common/i18n";
+import { showDialog } from "./common";
 
 let __menuBtnDiv: HTMLElement;
 let __categoryPopupMenu: HTMLElement;
@@ -45,7 +45,7 @@ export let _contentTemplate: HTMLTemplateElement | null = null;
 export async function initObserver() {
     __blockAdStatus = await localGet(__DBK_AD_Block_Key) as boolean ?? false;
 
-    observer.observe(document.body, {childList: true, subtree: true});
+    observer.observe(document.body, { childList: true, subtree: true });
 
     const tpl = await parseContentHtml('html/content.html');
 
@@ -304,7 +304,7 @@ export function showPopupMenu(event: MouseEvent, buttonElement: HTMLElement, cat
             }
             if (kol.kolUserId) {
                 sendMsgToService(kol.kolUserId, MsgType.TweetRemoveByKolID).then()
-                sendMsgToService({userIds: [kol.kolUserId], categoryId: null}, MsgType.FollowingAssignCategory).then()
+                sendMsgToService({ userIds: [kol.kolUserId], categoryId: null }, MsgType.FollowingAssignCategory).then()
             }
         });
     }
@@ -324,7 +324,9 @@ function handleClickOutside(evt: MouseEvent) {
 }
 
 export function hidePopupMenu() {
-    __categoryPopupMenu.style.display = 'none';
+    if (__categoryPopupMenu) {
+        __categoryPopupMenu.style.display = 'none';
+    }
     document.removeEventListener('click', handleClickOutside);
 }
 

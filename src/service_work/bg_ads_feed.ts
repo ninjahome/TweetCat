@@ -42,13 +42,27 @@ function normalizeProfileUrl(raw: string): string | null {
     try {
         const u = new URL(raw);
         const host = u.hostname.toLowerCase();
-        if (host !== "x.com" && host !== "twitter.com") return null;
+        // Support www. or other subdomains if they exist (though unlikely for direct profile links)
+        if (!host.endsWith("x.com") && !host.endsWith("twitter.com")) return null;
 
-        const parts = u.pathname.split("/").filter(Boolean);
-        if (parts.length !== 1) return null;
-        const username = parts[0].toLowerCase();
-        if (!username) return null;
-        return `https://x.com/${username}`;
+        const path = u.pathname;
+        const parts = path.split("/").filter(Boolean);
+
+        // Handle https://x.com/username
+        if (parts.length === 1) {
+            const username = parts[0].toLowerCase();
+            if (!username) return null;
+            return `https://x.com/${username}`;
+        }
+
+        // Handle https://x.com/i/user/1740205143621238785
+        if (parts.length === 3 && parts[0] === "i" && parts[1] === "user") {
+            const userId = parts[2];
+            if (!/^\d+$/.test(userId)) return null;
+            return `https://x.com/i/user/${userId}`;
+        }
+
+        return null;
     } catch {
         return null;
     }
@@ -117,14 +131,19 @@ export async function pollAdsFeedIfNeeded(forceListFetch: boolean = false): Prom
         const nextInv = nextInvStr ? Date.parse(nextInvStr) : NaN;
         const now = Date.now();
 
+        // Check if cache itself exists to handle "cleared storage" state without needing explicit clear
+        const currentCache = await localGet(__DBK_ADS_FOLLOW_OFFER_CACHE);
+        const hasCache = currentCache && typeof currentCache === 'object' && Object.keys(currentCache).length > 0;
+
         const versionChanged = ver.version !== lastVersion;
         const invalidatedByTime = !!ver.next_invalidation_at && Number.isFinite(Date.parse(ver.next_invalidation_at)) && now >= Date.parse(ver.next_invalidation_at);
-        const shouldFetchList = forceListFetch || versionChanged || invalidatedByTime || (Number.isFinite(nextInv) && now >= nextInv);
+        const shouldFetchList = forceListFetch || versionChanged || invalidatedByTime || !hasCache || (Number.isFinite(nextInv) && now >= nextInv);
 
         logAdsFeed("version fetched", {
             lastVersion,
             version: ver.version,
             versionChanged,
+            hasCache,
             next_invalidation_at: ver.next_invalidation_at,
             invalidatedByTime,
             cached_next_invalidation_at: nextInvStr,

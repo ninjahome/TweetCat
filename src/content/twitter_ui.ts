@@ -231,23 +231,29 @@ async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
 }
 
 function checkIsFollowingFromDom(username: string): boolean {
-    // 1. Check for specific unfollow button by testid suffix
-    // Twitter usually puts UserCell or Profile timeline elements with testid like "12345-unfollow"
-    const unfollowBtns = document.querySelectorAll('div[role="button"][data-testid$="-unfollow"]');
-    if (unfollowBtns.length > 0) return true;
+    // 1. Target the profile header action area specifically
+    const header = document.querySelector('div[data-testid="UserProfileHeader_Items"]') ||
+        document.querySelector('div[data-testid="primaryColumn"] div[data-testid="userActions"]')?.parentElement;
 
-    // 2. Check for text content "Following" or "关注中" in prominent buttons
-    // This is less reliable but a good backup.
-    // We restrict search to the primary column or user profile header area if possible.
-    const primaryCol = document.querySelector('div[data-testid="primaryColumn"]');
-    if (!primaryCol) return false;
+    if (header) {
+        const unfollowBtn = header.querySelector('div[role="button"][data-testid$="-unfollow"]');
+        if (unfollowBtn) return true;
 
-    // Look for the main action button on profile
-    const userActions = primaryCol.querySelector('div[data-testid="userActions"]');
-    if (userActions) {
-        const text = userActions.textContent?.toLowerCase() || "";
+        const text = header.textContent?.toLowerCase() || "";
         if (text.includes("following") || text.includes("关注中") || text.includes("正在关注")) {
             return true;
+        }
+    }
+
+    // 2. Secondary check restricted to primary column (Top area only)
+    const primaryCol = document.querySelector('div[data-testid="primaryColumn"]');
+    if (primaryCol) {
+        // Limit search to the top of the profile (where the header is)
+        // This avoids picking up tweets in the timeline
+        const userHeader = primaryCol.querySelector('div[data-testid="UserName"]')?.closest('.css-175oi2r');
+        if (userHeader) {
+            const unfollowBtn = userHeader.querySelector('div[role="button"][data-testid$="-unfollow"]');
+            if (unfollowBtn) return true;
         }
     }
 
