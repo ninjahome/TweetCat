@@ -718,7 +718,6 @@ body {
     padding: 16px 0;
     border-bottom: 1px solid #edf1f6;
     justify-content: center;
-    text-align: center;
 }
 
 .ads-table thead,
@@ -748,6 +747,8 @@ body {
     border-bottom: none;
     font-size: 13px;
     color: #475569;
+    text-align: left;
+    margin-left: 8px;
 }
 
 .ads-table th {
