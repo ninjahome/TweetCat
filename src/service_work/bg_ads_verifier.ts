@@ -3,6 +3,7 @@ import { x402WorkerFetch } from "../wallet/cdp_wallet";
 import { API_PATH_ADS_CLAIM, API_PATH_ADS_SUBMIT_PROOF } from "../common/api_paths";
 import browser from "webextension-polyfill";
 import { setClaimState } from "./bg_ads_follow";
+import { pollAdsFeedIfNeeded } from "./bg_ads_feed";
 
 /**
  * 从浏览器 Cookie 中同步 CSRF Token (ct0) 到 twitter_api 模块
@@ -103,6 +104,9 @@ export async function verifyFollowAndClaim(params: {
                 expires_at: Date.now() + 30 * 24 * 60 * 60 * 1000, // Keep for 30 days
                 profileUrl: params.profileUrl
             });
+
+            // Trigger feed poll to update quotas/list after successful claim
+            pollAdsFeedIfNeeded(true).catch(e => console.warn("[AdsVerifier] background poll failed:", e));
         }
 
         return resp;

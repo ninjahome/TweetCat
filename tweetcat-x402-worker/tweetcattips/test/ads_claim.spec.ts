@@ -488,6 +488,80 @@ describe('Ads Claim Flow Tests', () => {
             expect(data.error).toBe('USER_MISMATCH');
         });
 
+        it('S-04: Mismatched key (signed by attacker, verified by registered key) should FAIL', async () => {
+            // Register a legit key
+            const { publicKey: legitPubKey } = (await crypto.subtle.generateKey(
+                { name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]
+            )) as CryptoKeyPair;
+            const legitPubKeyB64 = arrayBufferToBase64Url(await crypto.subtle.exportKey("spki", legitPubKey) as ArrayBuffer);
+            await env.DB.prepare('UPDATE kol_binding SET device_pubkey_spki = ? WHERE x_id = ?').bind(legitPubKeyB64, XID).run();
+
+            // Attacker signs with THEIR own key
+            const { proof: attackerProof } = await (generateBlueVProof as any)(XID, true);
+            // Even if attackerProof contains their own public key, the server uses the registered legitPubKeyB64
+
+            const reqBody = {
+                ad_id: 'ad_sec', b_x_id: XID, b_wallet: ADDR,
+                blue_v_proof: JSON.stringify(attackerProof),
+                proof_data: { following: true }, proof_type: 'twitter_profile_spotlight', category: 'follow'
+            };
+            const res = await app.fetch(new Request('http://localhost/ads/executor/claim', {
+                method: 'POST', body: JSON.stringify(reqBody)
+            }), TEST_ENV as any);
+            const data = await res.json<any>();
+            expect(data.error).toBe('INVALID_BLUE_V_PROOF');
+        });
+
+        it('S-05: Missing signature field should FAIL', async () => {
+            const { proof } = await (generateBlueVProof as any)(XID, true);
+            const proofObj = { ...proof };
+            delete (proofObj as any).signature;
+            const reqBody = {
+                ad_id: 'ad_sec', b_x_id: XID, b_wallet: ADDR,
+                blue_v_proof: JSON.stringify(proofObj),
+                proof_data: { following: true }, proof_type: 'twitter_profile_spotlight', category: 'follow'
+            };
+            const res = await app.fetch(new Request('http://localhost/ads/executor/claim', {
+                method: 'POST', body: JSON.stringify(reqBody)
+            }), TEST_ENV as any);
+            const data = await res.json<any>();
+            expect(data.error).toBe('INVALID_BLUE_V_PROOF');
+        });
+
+        it('S-06: Missing devicePubKey field should FAIL', async () => {
+            const { proof } = await (generateBlueVProof as any)(XID, true);
+            const proofObj = { ...proof };
+            delete (proofObj as any).devicePubKey;
+            const reqBody = {
+                ad_id: 'ad_sec', b_x_id: XID, b_wallet: ADDR,
+                blue_v_proof: JSON.stringify(proofObj),
+                proof_data: { following: true }, proof_type: 'twitter_profile_spotlight', category: 'follow'
+            };
+            const res = await app.fetch(new Request('http://localhost/ads/executor/claim', {
+                method: 'POST', body: JSON.stringify(reqBody)
+            }), TEST_ENV as any);
+            const data = await res.json<any>();
+            expect(data.error).toBe('INVALID_BLUE_V_PROOF');
+        });
+
+        it('S-07: Mixed Base64 and Base64URL should PASS (if correctly handled)', async () => {
+            const { proof } = await (generateBlueVProof as any)(XID, true);
+            const proofObj = { ...proof };
+            // Convert signature to standard Base64 (with + and /)
+            proofObj.signature = proofObj.signature.replace(/-/g, '+').replace(/_/g, '/');
+
+            const reqBody = {
+                ad_id: 'ad_sec', b_x_id: XID, b_wallet: ADDR,
+                blue_v_proof: JSON.stringify(proofObj),
+                proof_data: { following: true }, proof_type: 'twitter_profile_spotlight', category: 'follow'
+            };
+            const res = await app.fetch(new Request('http://localhost/ads/executor/claim', {
+                method: 'POST', body: JSON.stringify(reqBody)
+            }), TEST_ENV as any);
+            const data = await res.json<any>();
+            expect(data.success).toBe(true);
+        });
+
         it('S-10: Self-signed with arbitrary key should FAIL if user has registered key', async () => {
             const { publicKey: legitPubKey } = (await crypto.subtle.generateKey(
                 { name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]
