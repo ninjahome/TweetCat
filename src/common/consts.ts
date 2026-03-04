@@ -70,6 +70,7 @@ export enum MsgType {
     IJUserByScreenNameCaptured = "IJUserByScreenNameCaptured",
     IJProfileSpotlightsCaptured = "IJProfileSpotlightsCaptured", // New message type
     IJFollowActionCaptured = "IJFollowActionCaptured", // 关注动作执行结果
+    IJUnfollowActionCaptured = "IJUnfollowActionCaptured", // 取消关注动作执行结果
 
     TokenUsedByUser = 'TokenUsedByUser',
     TokenFreeze = 'TokenFreeze',
@@ -126,6 +127,7 @@ export const CreateGrokConversation = "CreateGrokConversation"
 export const ConversationItem_DeleteConversationMutation = "ConversationItem_DeleteConversationMutation"
 export const ProfileSpotlightsQuery = "ProfileSpotlightsQuery" // 个人高光/关系查询
 export const CreateFriendship = "CreateFriendship" // 执行关注动作
+export const DestroyFriendship = "DestroyFriendship" // 执行取消关注动作
 export const SNAPSHOT_TYPE = 'following-snapshot';
 
 export const watchedOps = [
@@ -146,6 +148,7 @@ export const watchedOps = [
     ConversationItem_DeleteConversationMutation,
     ProfileSpotlightsQuery,
     CreateFriendship,
+    DestroyFriendship,
 ];
 
 export const defaultQueryKeyMap: Record<string, string> = {
@@ -165,4 +168,5 @@ export const defaultQueryKeyMap: Record<string, string> = {
     CreateGrokConversation: "vvC5uy7pWWHXS2aDi1FZeA",
     ConversationItem_DeleteConversationMutation: "TlKHSWVMVeaa-i7dqQqFQA",
     ProfileSpotlightsQuery: "mzoqrVGwk-YTSGME1dRfXQ",
+    DestroyFriendship: "Opv7_p8AunMhJvD8X8c9rw", // Example ID, might need update but good for identification
 }

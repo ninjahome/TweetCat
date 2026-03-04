@@ -90,7 +90,18 @@ export function updateFollowingSnapshotFromInject(screenName: string, rawProfile
     __followingCache.set(key, { isFollowing, capturedAt: Date.now() });
 
     if (__lastProfileToolbar && __lastProfileUsername && __lastProfileUsername.toLowerCase() === key) {
-        _appendAdsFollowOfferBtn(__lastProfileToolbar, __lastProfileUsername).then();
+        // If unfollowed, we definitely want to ensure the button is refreshed/shown
+        if (isFollowing === false) {
+            const existing = __lastProfileToolbar.querySelector(".follow-claim-on-profile");
+            const isProcessing = existing?.querySelector(".tc-processing");
+            if (!isProcessing) {
+                existing?.remove();
+                _appendAdsFollowOfferBtn(__lastProfileToolbar, __lastProfileUsername).then();
+            }
+        } else if (isFollowing === true) {
+            // If following, ensure it is removed (or updated to "Already Following")
+            _appendAdsFollowOfferBtn(__lastProfileToolbar, __lastProfileUsername).then();
+        }
     }
 }
 
@@ -265,12 +276,14 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
 
     // Requirement: If already following (detected via DOM or internal cache), the button should not exist.
     // This handles the case where a user manually clicks the native "Follow" button.
-    if (checkIsFollowingFromDom(kolName)) {
-        existing?.remove();
-        return;
-    }
     const earlySnap = __followingCache.get(kolName.toLowerCase());
-    if (earlySnap && earlySnap.isFollowing === true) {
+
+    // We trust the explicitly "false" cache more than the DOM, 
+    // because the DOM might still show "Following" immediately after clicking unfollow.
+    const isNowFollowing = (earlySnap && earlySnap.isFollowing === true) ||
+        ((!earlySnap || earlySnap.isFollowing === null) && checkIsFollowingFromDom(kolName));
+
+    if (isNowFollowing) {
         existing?.remove();
         return;
     }

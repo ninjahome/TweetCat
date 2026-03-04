@@ -1,4 +1,4 @@
-import { CreateFriendship, HomeLatestTimeline, HomeTimeline, MsgType, ProfileSpotlightsQuery, TweetDetail, UserByScreenName, UserTweets } from "./common/consts";
+import { CreateFriendship, DestroyFriendship, HomeLatestTimeline, HomeTimeline, MsgType, ProfileSpotlightsQuery, TweetDetail, UserByScreenName, UserTweets } from "./common/consts";
 import { logIC } from "./common/debug_flags";
 import { postWindowMsg } from "./common/msg_obj";
 
@@ -45,6 +45,10 @@ function __tc_isTargetTimelineUrl__(input: any): string | null {
         // 兼容 GraphQL (CreateFriendship) 和 传统 REST (/friendships/create.json)
         if (url.includes("/CreateFriendship") || url.includes("/friendships/create.json")) {
             return CreateFriendship;
+        }
+
+        if (url.includes("/DestroyFriendship") || url.includes("/DeleteFriendship") || url.includes("/Unfollow") || url.includes("/friendships/destroy.json")) {
+            return DestroyFriendship;
         }
 
         return null;
@@ -165,6 +169,20 @@ function __tc_installFetch__(): void {
                     success: isSuccess,
                     screenName,
                 });
+            } else if (timeType === DestroyFriendship) {
+                // 兼容 GraphQL 和 Legacy 结构
+                const following = result?.data?.destroy_friendship?.legacy?.following ?? result?.following;
+                const screenName = result?.data?.destroy_friendship?.legacy?.screen_name ?? result?.screen_name ?? "(unknown)";
+
+                // 如果 following 为 false，或者返回了用户信息说明操作成功
+                const isSuccess = (following === false) || !!(result?.id_str || result?.data?.destroy_friendship?.legacy?.id_str);
+
+                logIC(`[F#${reqId}] Unfollow Action Captured: @${screenName}, following=${following} -> success=${isSuccess}`);
+
+                postWindowMsg(MsgType.IJUnfollowActionCaptured, {
+                    success: isSuccess,
+                    screenName,
+                });
             }
 
             return response;
@@ -228,7 +246,8 @@ function __tc_installXHR__(): void {
                 && timeType !== TweetDetail
                 && timeType !== UserByScreenName
                 && timeType !== ProfileSpotlightsQuery
-                && timeType !== CreateFriendship)) {
+                && timeType !== CreateFriendship
+                && timeType !== DestroyFriendship)) {
                 return (OriginalXHR.prototype.send as any).apply(this, args);
             }
 
@@ -305,6 +324,18 @@ function __tc_installXHR__(): void {
                         logIC(`[X#${reqId}] Follow Action Captured: @${screenName}, following=${following}, hasId=${!!idStr} -> success=${isSuccess}`);
 
                         postWindowMsg(MsgType.IJFollowActionCaptured, {
+                            success: isSuccess,
+                            screenName,
+                        });
+                    } else if (timeType === DestroyFriendship) {
+                        const following = result?.data?.destroy_friendship?.legacy?.following ?? result?.following;
+                        const screenName = result?.data?.destroy_friendship?.legacy?.screen_name ?? result?.screen_name ?? "(unknown)";
+
+                        const isSuccess = (following === false) || !!(result?.id_str || result?.data?.destroy_friendship?.legacy?.id_str);
+
+                        logIC(`[X#${reqId}] Unfollow Action Captured: @${screenName}, following=${following} -> success=${isSuccess}`);
+
+                        postWindowMsg(MsgType.IJUnfollowActionCaptured, {
                             success: isSuccess,
                             screenName,
                         });

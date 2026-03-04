@@ -347,8 +347,15 @@ window.addEventListener('message', (e) => {
                 notifyFollowResult(msg.data.success);
                 break;
             }
+            case MsgType.IJUnfollowActionCaptured: {
+                console.log(`[Content] Unfollow action result intercepted for @${msg.data.screenName}: success=${msg.data.success}`);
+                if (msg.data.success) {
+                    updateFollowingSnapshotFromInject(msg.data.screenName, false);
+                }
+                break;
+            }
             default: {
-                console.warn("⚠️content message unknown message:", msg);
+                console.warn("⚠️ content message unknown message:", msg);
                 return;
             }
         }
