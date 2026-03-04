@@ -271,7 +271,7 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | EX-02 | ✅ 👋 用户已关注该 KOL | 不显示按钮或按钮状态为「已关注」 | P0 |
 | EX-03 | ✅ 👋 用户是该 KOL 本人 | 不显示按钮（self-follow 防护） | P1 |
 | EX-04 | ✅ 👋 用户未登录钱包 | 点击按钮 → 提示登录钱包 | P0 |
-| EX-05 | 🤖 🔵 正常关注流程：点击按钮 → 触发原生关注 → 拦截确认 → 提交证据 | Claim 创建成功，状态 PENDING_CONFIRM | P0 |
+| EX-05 | ✅ 🤖 🔵  正常关注流程：点击按钮 → 触发原生关注 → 拦截确认 → 提交证据 | Claim 创建成功，状态 PENDING_CONFIRM | P0 |
 | EX-06 | ✅ 🤖 🟢 关注确认超时（15秒） | 提示"关注确认超时或失败"，状态回到 Eligible | P0 |
 | EX-07 | ✅ 🤖 🟢 关注成功但 ProfileSpotlights 返回未关注 | 不会触发后端 claim；返回失败并回退 UI（代码审查确认） | P0 |
 | EX-08 | ✅ 🤖 🟢 重复 claim 同一广告 | 服务器返回 `already_claimed: true` | P0 |
@@ -279,11 +279,11 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | EX-10 | ✅ 🤖 🟢 广告已过期 | 服务器返回 `AD_EXPIRED` | P0 |
 | EX-11 | ✅ 🤖 🟢 广告已暂停 | 服务器返回 `AD_NOT_ACTIVE` | P0 |
 | EX-12 | 🤖 🟠 白名单用户跳过蓝V检查 | 允许 claim 但应记录日志 | P1 |
-| EX-13 | 🤖 🔵 蓝V证据签名无效 | 服务器返回 `INVALID_BLUE_V_PROOF` | P0 |
-| EX-14 | 🤖 🔵 蓝V证据中的 userId 与 b_x_id 不匹配 | 服务器返回 `USER_MISMATCH` | P0 |
-| EX-15 | 🤖 🔵 蓝V状态为 false（非蓝V用户） | 服务器返回 `NOT_BLUE_VERIFIED` 或前端拦截 | P0 |
+| EX-13 | ✅ 🤖 🔵 蓝V证据签名无效 | 服务器返回 `INVALID_BLUE_V_PROOF` | P0 |
+| EX-14 | ✅ 🤖 🔵 蓝V证据中的 userId 与 b_x_id 不匹配 | 服务器返回 `USER_MISMATCH` | P0 |
+| EX-15 | ✅ 🤖 🔵 蓝V状态为 false（非蓝V用户） | 服务器返回 `NOT_BLUE_VERIFIED` 或前端拦截 | P0 |
 | EX-16 | 👋 蓝V状态过期（超过 7 天） | 前端引导用户刷新状态 | P1 |
-| EX-17 | 🤖 🔵 claim 创建失败后的回滚 | quota_claimed 应该 -1（best effort），claim state 被 clear | P0 |
+| EX-17 | ✅ 🤖 🔵 claim 创建失败后的回滚 | quota_claimed 应该 -1（best effort），claim state 被 clear | P0 |
 | EX-18 | ✅ 👋 多个广告指向同一 KOL | Feed 选最高 reward 的 offer 展示 | P2 |
 
 ---
@@ -304,11 +304,11 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 |---|---------|---------|--------|
 | CR-01 | 👋 PENDING_CONFIRM 超过 1h（dev 环境），proof 中 following=true | Claim 状态 → CONFIRMED，广告主 frozen 扣减，执行者 available 增加，quota_used +1 | P0 |
 | CR-02 | 👋 PENDING_CONFIRM 超过 1h（dev 环境），proof 中 following=false | Claim 状态 → REJECTED，`quota_claimed` 配额退回广告可用池，quota_used 不变（✅ **已修复 C-3**）| P0 |
-| CR-03 | 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_data 为空 | Claim 状态 → REJECTED（Missing proof data） | P0 |
-| CR-04 | 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_type 未知 | Claim 状态 → REJECTED | P1 |
-| CR-05 | 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_data JSON 格式错误 | Claim 状态 → REJECTED（Malformed proof JSON） | P1 |
-| CR-06 | 🤖 🔵 广告主冻结余额不足（异常情况） | settleAdReward 返回 false，claim 保留 PENDING 状态 | P0 |
-| CR-07 | 🤖 🔵 批量结算：50 条 claims 同时处理 | 每条独立处理，一条失败不影响其他 | P1 |
+| CR-03 | ✅ 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_data 为空 | Claim 状态 → REJECTED（Missing proof data） | P0 |
+| CR-04 | ✅ 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_type 未知 | Claim 状态 → REJECTED | P1 |
+| CR-05 | ✅ 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_data JSON 格式错误 | Claim 状态 → REJECTED（Malformed proof JSON） | P1 |
+| CR-06 | ✅ 🤖 🔵 广告主冻结余额不足（异常情况） | settleAdReward 返回 false，claim 保留 PENDING 状态 | P0 |
+| CR-07 | ✅ 🤖 🔵 批量结算：50 条 claims 同时处理 | 每条独立处理，一条失败不影响其他 | P1 |
 | CR-08 | 👋 **退款流程（小规模等价验证）**：结束广告且 quota_used < quota_total | 无 pending 时退回 `(quota_total - quota_used) * unit_price` | P0 |
 | CR-09 | 👋 退款流程：有 PENDING_CONFIRM claims | 退款 cron 跳过；待结算/拒绝后再退 | P0 |
 | CR-10 | ✅ 🤖 🟢 退款流程：冻结余额不足以退回计算金额 | 退款失败，不更新 budget_settlement_status（代码审查确认） | P1 |
@@ -354,11 +354,11 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| EW-01 | 🤖 🔵 可提现金额 > 0，点击提现 | 链上转账成功，withdrawableUSDC 归零，txHash 显示（✅ **验证 C-2**） | P0 |
+| EW-01 | ✅ 🤖 🔵 可提现金额 > 0，点击提现 | 链上转账成功，withdrawableUSDC 归零，txHash 显示（✅ **验证 C-2**） | P0 |
 | EW-02 | ❓ 待定：可提现金额 = 0 | 提示 "Nothing to withdraw." | P0 |
 | EW-03 | 👋 提现金额不一致（前端计算 vs 服务器余额） | 以服务器实际 `available_atomic` 为准，防止超扣（✅ **验证 C-2**） | P0 |
-| EW-04 | 🤖 🔵 提现过程中链上转账失败 | 余额退回，提示错误信息 | P0 |
-| EW-05 | 🤖 🔵 每周提现限制（Executor） | 重复请求返回 alreadyWithdrawn / status | P1 |
+| EW-04 | ✅ 🤖 🔵 提现过程中链上转账失败 | 余额退回，提示错误信息 | P0 |
+| EW-05 | ✅ 🤖 🔵 每周提现限制（Executor） | 重复请求返回 alreadyWithdrawn / status | P1 |
 | EW-06 | 👋 提现后 2 秒自动刷新 summary | withdrawableUSDC 已更新，totalEarnedUSDC 不变 | P1 |
 | EW-07 | ✅ 👋 查看 Activity 列表 | 显示所有 claim 记录，时间和状态正确 | P2 |
 | EW-08 | 👋 Activity Modal 打开/关闭 | 正常切换，点击遮罩关闭 | P2 |
