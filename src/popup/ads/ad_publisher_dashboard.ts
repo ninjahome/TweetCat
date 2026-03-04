@@ -792,6 +792,33 @@ export function initNavEvents() {
     if (btnBack) btnBack.addEventListener("click", () => {
         window.location.href = "ad_plaza.html";
     });
+
+    const chainInfoCont = document.querySelector(".chain-info");
+    const hoverPanel = document.querySelector(".chain-hover-panel");
+
+    if (chainInfoCont && hoverPanel) {
+        chainInfoCont.addEventListener("click", (e) => {
+            e.stopPropagation();
+            hoverPanel.classList.toggle("active");
+        });
+
+        window.addEventListener("click", (e) => {
+            if (!chainInfoCont.contains(e.target as Node) && !hoverPanel.contains(e.target as Node)) {
+                hoverPanel.classList.remove("active");
+            }
+        });
+    }
+
+    const addrWrapper = $Id("header-account-wrapper");
+    if (addrWrapper) {
+        addrWrapper.addEventListener("click", async () => {
+            const addr = publisherState.walletInfoCache?.address;
+            if (addr) {
+                await navigator.clipboard.writeText(addr);
+                showNotification("Copy Success", "success");
+            }
+        });
+    }
 }
 
 export function initSpendTabs() {

@@ -47,13 +47,17 @@ body {
 }
 
 .btn-back-plaza {
-    padding: 8px 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    margin: 16px 20px 8px;
     border-radius: 999px;
     border: 1px solid #e6edf5;
     background: #fff;
     color: #374151;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s;
     flex: 0 0 auto;
@@ -61,6 +65,12 @@ body {
 
 .btn-back-plaza:hover {
     background: #f3f6fb;
+    border-color: #d1d5db;
+}
+
+.back-icon {
+    flex-shrink: 0;
+    margin-top: 1px;
 }
 
 .plaza-logo {
@@ -112,6 +122,25 @@ body {
     background: linear-gradient(135deg, #1d9bf0 0%, #06CBAD 100%);
     border-radius: 999px;
     padding: 4px 16px 4px 6px;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.chain-info::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0);
+    transition: background 0.2s;
+    pointer-events: none;
+}
+
+.chain-info:hover::after {
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .plaza-header .chain-info .card-avatar-container {
@@ -138,23 +167,81 @@ body {
     display: none;
     position: absolute;
     top: calc(100% + 8px);
-    left: 0;
+    right: 0;
     z-index: 1000;
-    padding: 6px;
+    padding: 12px 16px;
     border-radius: 14px;
     border: 1px solid #e6edf5;
     background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    min-width: 240px;
 }
 
-.chain-info:hover + .chain-hover-panel,
-.chain-hover-panel:hover {
+.chain-hover-panel.active {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.panel-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.panel-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.balance-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.copy-box {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: fit-content;
+}
+
+.copy-box:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
+.copy-icon {
+    color: #94a3b8;
+}
+
+.chain-pill--net-panel {
+    font-size: 11px;
+    font-weight: 800;
+    color: #1d9bf0;
+    background: rgba(29, 155, 240, 0.1);
+    padding: 2px 8px;
+    border-radius: 6px;
+    width: fit-content;
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
 }
 
 .chain-pill {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     line-height: 12px;
 }
@@ -171,12 +258,8 @@ body {
 
 .account-balance {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    background: #ffffff;
-    border-radius: 999px;
-    border: 1px solid #e6edf5;
+    align-items: baseline;
+    gap: 4px;
 }
 
 /* ===== Header USDC unit ===== */
@@ -413,7 +496,8 @@ body {
     border-radius: 999px;
     border: 1px solid #e6edf5;
     background: #ffffff;
-    min-width: 120px; /* 增加最小宽度，确保滑块效果明显 */
+    min-width: 120px;
+    /* 增加最小宽度，确保滑块效果明显 */
 }
 
 .dashboard-tabs::before {
@@ -433,8 +517,10 @@ body {
 }
 
 .dashboard-tab {
-    flex: 1; /* 确保两个按钮同宽 */
-    display: flex; /* 使用 flex 实现文字居中 */
+    flex: 1;
+    /* 确保两个按钮同宽 */
+    display: flex;
+    /* 使用 flex 实现文字居中 */
     align-items: center;
     justify-content: center;
     padding: 6px 12px;
@@ -447,7 +533,8 @@ body {
     cursor: pointer;
     position: relative;
     z-index: 1;
-    line-height: 1; /* 统一行高辅助垂直居中 */
+    line-height: 1;
+    /* 统一行高辅助垂直居中 */
 }
 
 .dashboard-tab.active {
@@ -624,7 +711,13 @@ body {
 .transfer-actions {
     margin-top: 14px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
+}
+
+.transfer-actions .btn-primary {
+    border-radius: 9999px;
+    padding-left: 32px;
+    padding-right: 32px;
 }
 
 /* ==================== Sections ==================== */
@@ -638,7 +731,8 @@ body {
     align-items: flex-end;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--tc-border);
 }
 
 .section-header--compact {
@@ -673,7 +767,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 22px;
+    padding: 12px 16px;
     background: linear-gradient(135deg, #1d9bf0 0%, #06CBAD 100%);
     color: white;
     border: none;

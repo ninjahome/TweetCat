@@ -377,8 +377,11 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
             if (onlyFirstTab) return resp;
 
         } catch (err) {
-            console.warn("------>>> 发送消息失败", err);
-            return { success: false, data: (err as Error).message };
+            const errorMsg = (err as Error).message || "";
+            if (!errorMsg.includes("Could not establish connection")) {
+                console.warn("------>>> 发送消息失败", err);
+            }
+            return { success: false, data: errorMsg };
         }
     }
 
