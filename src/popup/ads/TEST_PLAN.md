@@ -185,13 +185,22 @@ npm test -- --run test/ads_publisher_create_bigint.spec.ts
 | LC-05 | ✅ 🤖 🟢 ACTIVE → 结束 (stop) | 状态变为 `COMPLETED`，按钮变为 N/A | P0 |
 | LC-06 | ✅ 🤖 🟢 PAUSED_MANUAL → 结束 (stop) | 状态变为 `COMPLETED` | P1 |
 | LC-07 | ✅ 🤖 🟢 EXPIRED/COMPLETED → 任何操作 | 返回 `INVALID_STATE` | P0 |
-| LC-08 | 🤖 🔵 **追加预算**：ACTIVE 广告充值 5 USDC (单价 0.1) | quota_total += 50, available -= 5, frozen += 5 | P0 |
+| LC-08 | ✅ 🤖 🔵 **追加预算**：ACTIVE 广告充值 5 USDC (单价 0.1) | quota_total += 50, available -= 5, frozen += 5 | P0 |
 | LC-09 | ✅ 🤖 🟢 追加预算金额不够一个任务 | 返回 `INVALID_AMOUNT` | P1 |
 | LC-10 | ✅ 🤖 🟢 PAUSED_NO_BUDGET → 充值 | 追加配额后状态自动变为 ACTIVE | P0 |
 | LC-11 | ✅ 🤖 🟢 充值余额不足 | 返回 `INSUFFICIENT_BALANCE` | P0 |
 | LC-12 | 👋 **Cron 过期扫描**：广告 end_date 已过 | 状态自动变为 EXPIRED | P0 |
 | LC-13 | 👋 **Cron 满额扫描**：quota_claimed >= quota_total | 状态自动变为 COMPLETED | P0 |
 | LC-14 | 👋 **Cron 退款**：EXPIRED/COMPLETED 广告无 pending claims | frozen 退回 available，budget_settlement_status = SETTLED | P0 |
+
+#### LC-08（TS 测试脚本）
+
+- 脚本路径：`tweetcat-x402-worker/tweetcattips/test/ads_publisher_topup.spec.ts`
+- 复跑命令（在 `tweetcat-x402-worker/tweetcattips/` 目录下）：
+
+```bash
+npm test -- --run test/ads_publisher_topup.spec.ts
+```
 
 #### LC-12（手动测试）
 
