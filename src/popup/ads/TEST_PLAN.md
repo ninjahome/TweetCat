@@ -132,7 +132,7 @@
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| P-01 | 🤖 🔵 正常发布：填写所有必填字段，余额充足 | 广告创建成功，余额 from available 移至 frozen，feed version 递增 | P0 |
+| P-01 | ✅ 🤖 🔵 正常发布：填写所有必填字段，余额充足 | 广告创建成功，余额 from available 移至 frozen，feed version 递增 | P0 |
 | P-02 | ✅ 👋 缺少广告名称 | 前端拦截："Please enter a campaign name." | P0 |
 | P-03 | ✅ 👋 奖励金额为 0 或负数 | 前端拦截："Reward per follow must be greater than 0." | P0 |
 | P-04 | ✅ 👋 奖励金额非数字（如 "abc"） | 前端拦截：parseFloat 返回 NaN → 提示错误 | P1 |
@@ -140,10 +140,28 @@
 | P-06 | ✅ 👋 未选择截止日期 | 前端拦截 | P1 |
 | P-07 | ✅ 🤖 余额不足 | 后端返回 `INSUFFICIENT_BALANCE`，前端显示具体差额（已修复展示单位问题） | P0 |
 | P-08 | ✅ 👋 目标 URL 为空 | 前端拦截："Please enter a target Twitter profile URL." | P1 |
-| P-09 | 🤖 🔵 极大配额（如 1,000,000）× 高单价（如 10 USDC） | 验证 BigInt 计算是否溢出，余额校验是否正确 | P1 |
+| P-09 | ✅ 🤖 🔵 极大配额（如 1,000,000）× 高单价（如 10 USDC） | 验证 BigInt 计算是否溢出，余额校验是否正确 | P1 |
 | P-10 | ✅ 👋 发布后刷新页面查看广告列表 | 新广告应出现在 "My Ads" 表格中，状态为 ACTIVE | P0 |
 | P-11 | ✅ 👋 连续快速点击提交按钮 | 按钮应在第一次点击后 disable，防止重复提交 | P1 |
 | P-12 | ✅ 👋 发布完成后预算摘要更新 | dashboard 的 frozen、active campaigns 数量正确更新 | P1 |
+
+#### P-01（TS 测试脚本）
+
+- 脚本路径：`tweetcat-x402-worker/tweetcattips/test/ads_publisher_create.spec.ts`
+- 复跑命令（在 `tweetcat-x402-worker/tweetcattips/` 目录下）：
+
+```bash
+npm test -- --run test/ads_publisher_create.spec.ts
+```
+
+#### P-09（TS 测试脚本）
+
+- 脚本路径：`tweetcat-x402-worker/tweetcattips/test/ads_publisher_create_bigint.spec.ts`
+- 复跑命令（在 `tweetcat-x402-worker/tweetcattips/` 目录下）：
+
+```bash
+npm test -- --run test/ads_publisher_create_bigint.spec.ts
+```
 
 ---
 
@@ -167,13 +185,22 @@
 | LC-05 | ✅ 🤖 🟢 ACTIVE → 结束 (stop) | 状态变为 `COMPLETED`，按钮变为 N/A | P0 |
 | LC-06 | ✅ 🤖 🟢 PAUSED_MANUAL → 结束 (stop) | 状态变为 `COMPLETED` | P1 |
 | LC-07 | ✅ 🤖 🟢 EXPIRED/COMPLETED → 任何操作 | 返回 `INVALID_STATE` | P0 |
-| LC-08 | 🤖 🔵 **追加预算**：ACTIVE 广告充值 5 USDC (单价 0.1) | quota_total += 50, available -= 5, frozen += 5 | P0 |
+| LC-08 | ✅ 🤖 🔵 **追加预算**：ACTIVE 广告充值 5 USDC (单价 0.1) | quota_total += 50, available -= 5, frozen += 5 | P0 |
 | LC-09 | ✅ 🤖 🟢 追加预算金额不够一个任务 | 返回 `INVALID_AMOUNT` | P1 |
 | LC-10 | ✅ 🤖 🟢 PAUSED_NO_BUDGET → 充值 | 追加配额后状态自动变为 ACTIVE | P0 |
 | LC-11 | ✅ 🤖 🟢 充值余额不足 | 返回 `INSUFFICIENT_BALANCE` | P0 |
 | LC-12 | 👋 **Cron 过期扫描**：广告 end_date 已过 | 状态自动变为 EXPIRED | P0 |
 | LC-13 | 👋 **Cron 满额扫描**：quota_claimed >= quota_total | 状态自动变为 COMPLETED | P0 |
 | LC-14 | 👋 **Cron 退款**：EXPIRED/COMPLETED 广告无 pending claims | frozen 退回 available，budget_settlement_status = SETTLED | P0 |
+
+#### LC-08（TS 测试脚本）
+
+- 脚本路径：`tweetcat-x402-worker/tweetcattips/test/ads_publisher_topup.spec.ts`
+- 复跑命令（在 `tweetcat-x402-worker/tweetcattips/` 目录下）：
+
+```bash
+npm test -- --run test/ads_publisher_topup.spec.ts
+```
 
 #### LC-12（手动测试）
 
@@ -539,7 +566,7 @@ neg_saturated = 1
 | E2E-07 | 🤖 🔵 Cron 任务并发执行 | expire + settle + refund 同时运行 | 无死锁，数据一致 | P2 |
 | E2E-08 | 🤖 🔵 大规模数据 | 1000 广告 + 10000 claims | API 响应时间 < 3s，分页正确 | P2 |
 | E2E-09 | ✅ 👋 广告主提现 → 查看历史 | 历史记录中有 txHash 可点击查看区块浏览器 | P1 |
-| E2E-10 | 🤖 🟣 全流程账本审计 | 对比 available + frozen 与 所有 ledger 记录的 sum | 恒等式成立 | P0 |
+| E2E-10 | ✅ 🤖 🔵 全流程账本审计 | 运行审计脚本，对比余额与账本/claims 汇总 | 恒等式成立 | P0 |
 
 ---
 
@@ -556,7 +583,6 @@ neg_saturated = 1
 
 ### 🟣 需要 SQL 造数（改 D1/SQLite 数据）
 - 边界/一致性：E-08
-- 审计：E2E-10
 
 ### 🔵 需要编写 TS 测试脚本（单测/集测/E2E）
 - 发布：P-01, P-09
@@ -567,6 +593,7 @@ neg_saturated = 1
 - 签名验证：S-01 ~ S-07, S-10
 - Service Worker：SW-06, SW-07
 - Feed：FD-01 ~ FD-07
+- 审计：E2E-10
 - 并发：E-01, E-02
 - E2E：E2E-07, E2E-08
 
