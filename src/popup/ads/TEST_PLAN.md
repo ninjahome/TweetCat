@@ -611,7 +611,7 @@ neg_saturated = 1
 | SEC-02 | 白名单用户 ID 硬编码在源码中 | 🟡 中等 | ✅ **已修复**: 已移至环境变量 `BLUE_V_BYPASS_WHITELIST` |
 | SEC-03 | 广告主可以 claim 自己的广告（缺少 a_x_id ≠ b_x_id 校验） | 🔴 严重 | ✅ **已修复**: `apiAdsClaim` 已加入 `a_x_id === bXId` 服务端拦截并返回 Http 403 |
 | SEC-04 | Cron 结算时不验证蓝V签名，只检查 proof_data | 🟡 中等 | Claim 阶段已验证，结算时可信任 |
-| SEC-06 | SQL 字符串拼接（非参数化查询） | 🟢 轻微 | 输入已受限，但应改进 |
+| SEC-06 | SQL 字符串拼接（非参数化查询） | 🟢 轻微 | ✅ **已修复**: 全面审计 `src` 目录，已将 `database_402.ts` 等处的常量插值改为 `?` 参数化查询 |
 
 ---
 
