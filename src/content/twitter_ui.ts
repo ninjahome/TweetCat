@@ -1,5 +1,5 @@
 import browser from "webextension-polyfill";
-import { observeForElement, parseContentHtml, sendMsgToOffScreen, sendMsgToService } from "../common/utils";
+import { observeForElement, parseContentHtml, sendMsgToOffScreen, sendMsgToOffScreenWithTimeout, sendMsgToService } from "../common/utils";
 import { choseColorByID, MsgType } from "../common/consts";
 import { queryKolDetailByName, showPopupMenu } from "./twitter_observer";
 import { TweetKol, updateKolIdToSw } from "../object/tweet_kol";
@@ -381,10 +381,11 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                 if (title) title.textContent = "正在验证钱包状态...";
 
                 // 1. 优先检查钱包登录状态 (走 Offscreen 以获得准确 CDP 状态)
-                const walletInfo = await sendMsgToOffScreen({}, MsgType.WalletInfoQuery);
+                const walletInfo = await sendMsgToOffScreenWithTimeout({}, MsgType.WalletInfoQuery, 8000);
                 if (!walletInfo?.success || !walletInfo?.data?.address) {
                     setUi(ADS_FOLLOW_UI_MODE.Eligible);
-                    showDialog(t('tips_title'), "请先在插件中登录钱包账号，再执行关注领奖。");
+                    const errMsg = walletInfo?.data === "TIMEOUT" ? "连接钱包超时，请刷新页面重试。" : "请先在插件中登录钱包账号，再执行关注领奖。";
+                    showDialog(t('tips_title'), errMsg);
                     return;
                 }
 

@@ -61,6 +61,7 @@ export interface Env {
 	TREASURY_ADDRESS: string;
 	TREASURY_PRIVATE_KEY: string;
 	SETTLEMENT_DELAY_HOURS: number;
+	BLUE_V_BYPASS_WHITELIST?: string;
 }
 
 export type ExtendedEnv = {

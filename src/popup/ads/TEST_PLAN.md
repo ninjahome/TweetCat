@@ -355,7 +355,7 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
 | EW-01 | ✅ 🤖 🔵 可提现金额 > 0，点击提现 | 链上转账成功，withdrawableUSDC 归零，txHash 显示（✅ **验证 C-2**） | P0 |
-| EW-02 | ❓ 待定：可提现金额 = 0 | 提示 "Nothing to withdraw." | P0 |
+| EW-02 | ✅ 🤖 🟢 输入金额 = 0 | 拦截并提示 "Amount must be greater than zero" | P0 |
 | EW-03 | 👋 提现金额不一致（前端计算 vs 服务器余额） | 以服务器实际 `available_atomic` 为准，防止超扣（✅ **验证 C-2**） | P0 |
 | EW-04 | ✅ 🤖 🔵 提现过程中链上转账失败 | 余额退回，提示错误信息 | P0 |
 | EW-05 | ✅ 🤖 🔵 每周提现限制（Executor） | 重复请求返回 alreadyWithdrawn / status | P1 |
@@ -411,12 +411,12 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | UI-03 | ✅ 👋 页面滚动加载后按钮位置 | 按钮不因 re-render 重复添加 | P1 |
 | UI-04 | ✅ 👋 按钮 UI 状态流转 | Loading → Eligible / AlreadyFollowing → Processing → Claimed | P0 |
 | UI-05 | ✅ 👋 暗色模式 / Dim 模式兼容 | 按钮样式自适应 Twitter 主题 | P2 |
-| UI-06 | ❓ 👋 `tc_verify=1` 验证模式 | 页面加载后触发蓝V验证弹窗 | P1 |
-| UI-07 | ❓ 👋 验证模式：用户是蓝V | 弹窗 "✅ Verification Success!" | P1 |
-| UI-08 | ❓ 👋 验证模式：用户不是蓝V | 弹窗 "❌ Verification Failed" | P1 |
-| UI-10 | ❓ 👋 侧边栏推荐用户 vs 主页面用户区分 | 按钮只注入到 primaryColumn 的按钮 | P2 |
+| UI-06 | ✅ 👋 `tc_verify=1` 验证模式 | 页面加载后触发蓝V验证弹窗 | P1 |
+| UI-07 | ✅ 👋 验证模式：用户是蓝V | 弹窗 "✅ Verification Success!" | P1 |
+| UI-08 | ✅ 👋 验证模式：用户不是蓝V | 弹窗 "❌ Verification Failed" | P1 |
+| UI-10 | ✅ 👋 侧边栏推荐用户 vs 主页面用户区分 | 按钮只注入到 primaryColumn 的按钮 | P2 |
 | UI-11 | ✅ 👋 IJFollowActionCaptured 拦截 | 正确更新缓存的 following 状态 | P1 |
-| UI-12 | ❓ 👋 offscreen wallet 查询超时 | 合理的超时处理和错误提示 | P2 |
+| UI-12 | ✅ 👋 offscreen wallet 查询超时 | 合理的超时处理和错误提示 (使用 `sendMsgToOffScreenWithTimeout`) | P2 |
 
 ---
 
@@ -458,7 +458,7 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | FD-02 | ✅ 🤖 🔵 二次 poll：version 未变 | 跳过 list 获取 | P1 |
 | FD-03 | ✅ 🤖 🔵 version 变化后 poll | 重新获取 list 并更新缓存 | P0 |
 | FD-04 | ✅ 🤖 🔵 `next_invalidation_at` 到达 | 即使 version 不变也重新拉取 list | P1 |
-| FD-05 | 🤖 🔵 并发 poll（SW wakeup bursts） | `pollInFlight` 锁保护，只执行一次 | P1 |
+| FD-05 | ✅ 🤖 🔵 并发 poll（SW wakeup bursts） | `pollInFlight` 锁保护，只执行一次 | P1 |
 | FD-06 | ✅ 🤖 🔵 `normalizeProfileUrl` 归一化 | `https://x.com/User` → `https://x.com/user`, 忽略 query/hash | P2 |
 | FD-07 | ✅ 🤖 🔵 多个 offer 指向同一 URL | `pickBetterOffer` 选 reward 最高的 | P2 |
 | ~~FD-08~~ | ~~👋 IndexedDB 持久化失败~~ | ~~降级使用 localStorage 缓存，不抛错~~ | ~~P2~~ |
@@ -485,7 +485,7 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | E-12 | ✅ 🤖 🟢 同一用户对同一广告重复提交不同证据 | 第二次应返回 already_claimed | P1 |
 | E-13 | ✅ 🤖 🟢 `unit_price_atomic` 为 0 的广告 | `apiAdsCreate` 的 `parsePositiveAtomic` 应拦截 | P1 |
 | E-14 | 👋 广告主在广告有 pending claims 时尝试 stop | 不会立刻退款；待 pending 结算/拒绝后再退款 | P1 |
-| E-15 | 🤖 🟠 提现 FAILED 后再次尝试提现（同月） | 已有 FAILED 记录，当前逻辑会返回错误。应允许 retry。 | P1 |
+| E-15 | ❌ 🤖 🟠 提现 FAILED 后再次尝试提现（同月） | 故意不支持 retry，避免双花风险，交由管理员处理 | P1 |
 
 #### E-14（手动测试）
 
@@ -599,7 +599,7 @@ neg_saturated = 1
 
 ### 🟠 需要临时改系统代码/配置或先修复缺陷
 - 白名单跳过蓝V：EX-12（当前白名单硬编码在 Worker 侧）
-- 提现失败重试：E-15（当前逻辑会拦截 FAILED，需要调整策略）
+- 提现失败重试：E-15（出于资金安全考虑，不实现自动 retry，交由管理员人工介入）
 
 ---
 

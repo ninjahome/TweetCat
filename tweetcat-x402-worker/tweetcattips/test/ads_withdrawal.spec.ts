@@ -215,8 +215,9 @@ describe('Ads Integration Tests', () => {
         // 1. Setup a PENDING withdrawal for this week
         const now = new Date();
         const year = now.getUTCFullYear();
-        const firstThursday = new Date(Date.UTC(now.getUTCFullYear(), 0, 4));
-        const weekNum = Math.ceil((((now.getTime() - firstThursday.getTime()) / 86400000) + firstThursday.getUTCDay() + 1) / 7);
+        const startOfYear = new Date(Date.UTC(year, 0, 1));
+        const diffDays = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000);
+        const weekNum = Math.floor(diffDays / 7) + 1;
         const requestId = `executor_withdraw_${TEST_XID}_${year}_W${weekNum}`;
 
         await env.DB.prepare('INSERT INTO ad_performer_ledger (ledger_id, b_x_id, status, request_id, amount_atomic) VALUES (?, ?, ?, ?, ?)')
@@ -315,5 +316,18 @@ describe('Ads Integration Tests', () => {
         const data = await res.json() as any;
         expect(res.status).toBe(400);
         expect(data.error).toBe('WALLET_NOT_BOUND');
+    });
+
+    it('EW-02: Should reject withdrawal with amount 0', async () => {
+        const req = new Request('http://localhost/ads/executor/withdraw', {
+            method: 'POST',
+            body: JSON.stringify({ b_x_id: TEST_XID, amount: '0' }),
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const res = await app.fetch(req, TEST_ENV);
+        const data = await res.json() as any;
+        expect(res.status).toBe(400);
+        expect(data.detail).toBe('Amount must be greater than zero');
     });
 });

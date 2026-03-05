@@ -276,6 +276,10 @@ async function parseEscrowRequest(c: ExtCtx): Promise<ParsedEscrowRequest | Resp
 		return jsonError(c, 400, "INVALID_REQUEST", "Missing amount or amount_atomic");
 	}
 
+	if (BigInt(amountAtomic) <= 0n) {
+		return jsonError(c, 400, "INVALID_REQUEST", "Amount must be greater than zero");
+	}
+
 	return {
 		aXId: xId, // 统一使用 aXId 字段表示用户 ID
 		amountAtomic
@@ -548,16 +552,6 @@ export async function apiAdsExecutorVersion(c: ExtCtx) {
 	}
 }
 
-// TODO: Replace with real user IDs for testing
-const BLUE_V_BYPASS_WHITELIST = [
-	"1899045104146644992",
-	"1735224873365225472",
-	"1236539014406012928",
-	"1554341020246061059",
-	"1740205143621238785",
-	"1514598908273463303"
-];
-
 export async function apiAdsClaim(c: ExtCtx) {
 	try {
 		const body = await c.req.json().catch(() => ({}));
@@ -578,7 +572,10 @@ export async function apiAdsClaim(c: ExtCtx) {
 		if (!requireStringField(bWallet)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_wallet");
 
 		// [ENFORCE] Blue V proof is MANDATORY (unless whitelisted)
-		if (!BLUE_V_BYPASS_WHITELIST.includes(bXId)) {
+		const whitelistStr = c.env.BLUE_V_BYPASS_WHITELIST || "";
+		const whitelist = whitelistStr.split(",").map(s => s.trim()).filter(Boolean);
+
+		if (!whitelist.includes(bXId)) {
 			if (!blueVProof) {
 				return jsonError(c, 401, "BLUE_V_REQUIRED", "Blue Verified status proof is required to claim rewards");
 			}
