@@ -1,5 +1,6 @@
-import { Env } from "./common";
+import { Env, digestSha256, decodeB64OrB64UrlToArrayBuffer } from "./common";
 import { getPendingSettlementClaims, settleAdReward, rejectAdReward } from "./database_ad";
+import { getKolBindingByXId } from "./database_402";
 
 /**
  * 广告结算定时任务
@@ -26,6 +27,71 @@ export async function cronSettleAds(env: Env) {
 
     for (const claim of claims) {
         try {
+            // --- [SEC-04] Secure Claim Signature Re-verification ---
+            // Before business logic, verify the evidence has not been tampered with in DB.
+            const whitelistStr = env.BLUE_V_BYPASS_WHITELIST || "";
+            const whitelist = whitelistStr.split(",").map(s => s.trim()).filter(Boolean);
+
+            if (!whitelist.includes(claim.b_x_id)) {
+                if (!claim.signature || !claim.claim_bundle) {
+                    console.warn(`[Cron] Rejecting claim ${claim.claim_id}: Missing required security signature (SEC-04)`);
+                    await rejectAdReward(env.DB, claim.claim_id, "Missing security signature");
+                    failCount++;
+                    continue;
+                }
+
+                try {
+                    const bundle = JSON.parse(claim.claim_bundle);
+                    // 1. Verify bundle content
+                    if (bundle.u !== claim.b_x_id || bundle.a !== claim.ad_id) {
+                        throw new Error("Signature bundle user/ad mismatch");
+                    }
+
+                    // 2. Verify hash of proof_data from DB
+                    if (!claim.proof_data) throw new Error("Missing proof data in DB");
+                    const currentProofHash = await digestSha256(claim.proof_data);
+                    if (bundle.h !== currentProofHash) {
+                        throw new Error("EVIDENCE_TAMPERED: DB proof_data hash mismatch");
+                    }
+
+                    // 3. Verify cryptographic signature
+                    const kolBinding = await getKolBindingByXId(env.DB, claim.b_x_id);
+                    const registeredDeviceKey = kolBinding?.device_pubkey_spki ?? null;
+                    if (!registeredDeviceKey) throw new Error("User device key not found");
+
+                    const sigBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(claim.signature));
+                    const dataBytes = new TextEncoder().encode(claim.claim_bundle);
+                    const spkiBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(registeredDeviceKey));
+
+                    const publicKey = await crypto.subtle.importKey(
+                        "spki",
+                        spkiBytes,
+                        { name: "ECDSA", namedCurve: "P-256" },
+                        false,
+                        ["verify"]
+                    );
+
+                    const isSigValid = await crypto.subtle.verify(
+                        { name: "ECDSA", hash: "SHA-256" },
+                        publicKey,
+                        sigBytes,
+                        dataBytes
+                    );
+
+                    if (!isSigValid) {
+                        throw new Error("Cryptographic signature verification failed");
+                    }
+                    // console.log(`[Cron] SEC-04 Verified claim ${claim.claim_id} for user ${claim.b_x_id}`);
+                } catch (secErr: any) {
+                    const msg = `Security check failed for claim ${claim.claim_id}: ${secErr.message}`;
+                    console.error(`[Cron] [SECURITY_ALERT] ${msg}`);
+                    await rejectAdReward(env.DB, claim.claim_id, `Security Violation: ${secErr.message}`);
+                    failCount++;
+                    continue;
+                }
+            }
+            // --------------------------------------------------------
+
             // --- Proof Validation Logic ---
             let isValid = false;
             let rejectionReason = "Unknown proof type";

@@ -386,6 +386,19 @@ export async function sha256Base64Url(bytes: Uint8Array): Promise<string> {
 	return arrayBufferToBase64Url(digest);
 }
 
+export function arrayBufferToBase64(ab: ArrayBuffer): string {
+	const bytes = new Uint8Array(ab);
+	let binary = "";
+	for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+	return btoa(binary);
+}
+
+export async function digestSha256(text: string): Promise<string> {
+	const bytes = new TextEncoder().encode(text);
+	const hashBuffer = await crypto.subtle.digest("SHA-256", bytes);
+	return arrayBufferToBase64(hashBuffer);
+}
+
 export function canonicalHtu(rawUrl: string): string {
 	const u = new URL(rawUrl);
 	return `${u.origin}${u.pathname}`;

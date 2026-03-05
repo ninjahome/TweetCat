@@ -52,7 +52,7 @@ async function putRecord(db: IDBDatabase, rec: DeviceKeyRecord): Promise<void> {
     await requestToPromise(store.put(rec));
 }
 
-function abToBase64(ab: ArrayBuffer): string {
+export function abToBase64(ab: ArrayBuffer): string {
     const bytes = new Uint8Array(ab);
     let binary = "";
     for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
@@ -164,6 +164,12 @@ export async function signDeviceData(text: string): Promise<{ signatureB64: stri
         signatureB64: abToBase64(sig),
         publicKeyB64: rec.publicKeySpkiB64
     };
+}
+
+export async function sha256(text: string): Promise<string> {
+    const bytes = new TextEncoder().encode(text);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return abToBase64(digest);
 }
 
 async function sha256Base64Url(bytes: Uint8Array): Promise<string> {

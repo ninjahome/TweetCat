@@ -100,6 +100,8 @@ export interface AdRewardClaimRecord {
 	b_wallet: string;
 	status: ClaimStatus;
 	unit_price_atomic: string;
+	signature?: string | null;           // [SEC-04] Cryptographic signature of the claim
+	proof?: string | null;               // [SEC-04] The claim bundle (JSON string) that was signed
 	created_at: string;
 	updated_at: string;
 	verified_at?: string | null;
@@ -593,6 +595,23 @@ export async function getDetailedClaim(db: D1Database, adId: string, bXId: strin
 	return await db.prepare(
 		"SELECT * FROM ad_reward_claims WHERE ad_id = ? AND b_x_id = ?"
 	).bind(adId, bXId).first<AdRewardClaimRecord>();
+}
+
+/**
+ * 更新状态 (含签章)
+ */
+export async function updateClaimStatusWithSignature(
+	db: D1Database,
+	claimId: string,
+	newStatus: ClaimStatus,
+	signature: string,
+	claimBundle: string
+): Promise<boolean> {
+	const result = await db.prepare(
+		"UPDATE ad_reward_claims SET status = ?, signature = ?, proof = ?, updated_at = datetime('now') WHERE claim_id = ?"
+	).bind(newStatus, signature, claimBundle, claimId).run();
+
+	return result.success;
 }
 
 /**
@@ -1377,12 +1396,15 @@ export async function getPendingSettlementClaims(
 	detail_url: string;
 	b_x_id: string;
 	unit_price_atomic: string;
+	signature: string | null;
+	claim_bundle: string | null;
 	proof_data: string | null;
 	proof_type: string | null;
 	category: string | null;
 }[]> {
 	const sql = `
 		SELECT c.claim_id, c.ad_id, a.a_x_id, a.detail_url, c.b_x_id, c.unit_price_atomic,
+			   c.signature, c.proof as claim_bundle,
 			   e.proof_data, e.proof_type, e.category
 		FROM ad_reward_claims c
 		JOIN ad_campaigns a ON c.ad_id = a.ad_id
@@ -1399,6 +1421,8 @@ export async function getPendingSettlementClaims(
 		detail_url: string;
 		b_x_id: string;
 		unit_price_atomic: string;
+		signature: string | null;
+		claim_bundle: string | null;
 		proof_data: string | null;
 		proof_type: string | null;
 		category: string | null;

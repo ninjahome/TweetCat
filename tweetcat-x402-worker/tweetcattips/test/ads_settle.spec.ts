@@ -54,6 +54,8 @@ describe('Ads Settlement Cron Tests', () => {
 				b_wallet TEXT,
 				status TEXT NOT NULL,
 				unit_price_atomic TEXT,
+				signature TEXT,
+				proof TEXT,
                 verification_notes TEXT,
                 verified_at DATETIME,
 				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

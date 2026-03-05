@@ -149,6 +149,8 @@ describe('Ads Claim Flow Tests', () => {
 				b_wallet TEXT,
 				status TEXT NOT NULL,
 				unit_price_atomic TEXT,
+				signature TEXT,
+				proof TEXT,
                 verified_at DATETIME,
 				created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 				updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
