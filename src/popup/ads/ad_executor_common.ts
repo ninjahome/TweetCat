@@ -88,11 +88,20 @@ export const CATEGORY_DURATION: Record<AdCategory, number> = {
     share: 4,
 };
 
+import { t } from "../../common/i18n";
+
 export const CATEGORY_TAGS: Record<AdCategory, string[]> = {
-    follow: ["New", "Easy"],
-    visit: ["Explore"],
-    register: ["High Reward"],
-    share: ["Popular"],
+    follow: [t("tag_new"), t("tag_easy")],
+    visit: [t("tag_explore")],
+    register: [t("tag_high_reward")],
+    share: [t("tag_popular")],
+};
+
+export const TASK_STATUS_MAP: Record<string, string> = {
+    "CLAIMED": t("status_claimed_todo"),
+    "PENDING_CONFIRM": t("status_pending_verification"),
+    "CONFIRMED": t("status_settled_paid"),
+    "REJECTED": t("status_rejected")
 };
 
 export function getRewardRange(rewardUSDC: number): "0.1-0.5" | "0.5-1" | "1+" {

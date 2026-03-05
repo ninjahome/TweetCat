@@ -1427,5 +1427,653 @@
   },
   "wallet_network_changed_relogin": {
     "message": "Network switched. Please sign in to your Coinbase account again."
+  },
+  "tag_new": {
+    "message": "New"
+  },
+  "tag_easy": {
+    "message": "Easy"
+  },
+  "tag_explore": {
+    "message": "Explore"
+  },
+  "tag_high_reward": {
+    "message": "High Reward"
+  },
+  "tag_popular": {
+    "message": "Popular"
+  },
+  "status_claimed_todo": {
+    "message": "To Do"
+  },
+  "status_pending_verification": {
+    "message": "Pending Verification"
+  },
+  "status_settled_paid": {
+    "message": "Settled & Paid"
+  },
+  "status_rejected": {
+    "message": "Rejected"
+  },
+  "status_completed": {
+    "message": "Completed"
+  },
+  "status_running": {
+    "message": "Running..."
+  },
+  "btn_go_to_follow": {
+    "message": "Go to Follow"
+  },
+  "no_tasks_yet": {
+    "message": "No tasks yet"
+  },
+  "explore_ads_earning": {
+    "message": "Explore ads and start earning rewards!"
+  },
+  "no_ads_available": {
+    "message": "No ads available"
+  },
+  "check_back_later": {
+    "message": "Check back later for new earning opportunities!"
+  },
+  "not_linked": {
+    "message": "Not Linked"
+  },
+  "verified": {
+    "message": "Verified"
+  },
+  "not_verified": {
+    "message": "Not Verified"
+  },
+  "unknown": {
+    "message": "Unknown"
+  },
+  "visit_profile_update": {
+    "message": "Visit your X profile to update status"
+  },
+  "verification_failed": {
+    "message": "Verification Failed"
+  },
+  "blue_v_required": {
+    "message": "Only Blue Verified users can participate in this campaign. Please ensure your account has the Blue Checkmark."
+  },
+  "verification_required_msg": {
+    "message": "Verification Required: To participate in this campaign, we need to verify your Blue Verified status. We can do this by briefly visiting your X profile page. Proceed?"
+  },
+  "status_expired_msg": {
+    "message": "Status Expired: Your Blue Verified status hasn't been updated for over a week. Please visit your profile to refresh your status. Proceed?"
+  },
+  "missing_landing_page": {
+    "message": "Missing landing page URL for this ad."
+  },
+  "start_task_failed": {
+    "message": "Start task failed"
+  },
+  "loading_tasks": {
+    "message": "Loading tasks..."
+  },
+  "filtering": {
+    "message": "Filtering..."
+  },
+  "no_activity_yet": {
+    "message": "No activity yet."
+  },
+  "activity_created": {
+    "message": "Created"
+  },
+  "activity_expires": {
+    "message": "Expires"
+  },
+  "nothing_to_withdraw": {
+    "message": "Nothing to withdraw."
+  },
+  "withdrawing": {
+    "message": "Withdrawing..."
+  },
+  "withdraw_success": {
+    "message": "Withdraw success!"
+  },
+  "withdraw_failed": {
+    "message": "Withdraw failed"
+  },
+  "withdraw_error": {
+    "message": "Withdraw error"
+  },
+  "failed_to_load_activity": {
+    "message": "Failed to load activity."
+  },
+  "page_indicator": {
+    "message": "Page $1 of $2"
+  },
+  "tab_explore": {
+    "message": "Explore"
+  },
+  "status_label": {
+    "message": "Status"
+  },
+  "plaza_title": {
+    "message": "Ad Plaza - Earn - TweetCat"
+  },
+  "plaza_header_logo": {
+    "message": "Ad Plaza"
+  },
+  "btn_publish_ad": {
+    "message": "Publish Ad / Advertise"
+  },
+  "withdraw_updated_today": {
+    "message": "Updated today"
+  },
+  "withdrawable_label": {
+    "message": "Withdrawable"
+  },
+  "btn_withdraw": {
+    "message": "Withdraw"
+  },
+  "btn_activity": {
+    "message": "Activity"
+  },
+  "verification_label": {
+    "message": "Verification:"
+  },
+  "summaries_total_earned": {
+    "message": "Total Earned"
+  },
+  "summaries_today_earned": {
+    "message": "Today Earned"
+  },
+  "summaries_pending": {
+    "message": "Pending"
+  },
+  "filters_title": {
+    "message": "Filters"
+  },
+  "btn_clear_filters": {
+    "message": "Clear filters"
+  },
+  "search_ads_placeholder": {
+    "message": "Search ads..."
+  },
+  "reward_range_label": {
+    "message": "Reward Range"
+  },
+  "sort_by_label": {
+    "message": "Sort By"
+  },
+  "sort_reward_high": {
+    "message": "Highest Reward"
+  },
+  "sort_newest": {
+    "message": "Newest"
+  },
+  "sort_time_short": {
+    "message": "Shortest Time"
+  },
+  "sort_popular": {
+    "message": "Most Popular"
+  },
+  "task_status_all_option": {
+    "message": "All Status"
+  },
+  "btn_previous": {
+    "message": "Previous"
+  },
+  "btn_next": {
+    "message": "Next"
+  },
+  "earn_label": {
+    "message": "Earn:"
+  },
+  "btn_start_task": {
+    "message": "Start Task"
+  },
+  "activity_title": {
+    "message": "Activity"
+  },
+  "publishing_campaign": {
+    "message": "Publishing campaign..."
+  },
+  "err_enter_campaign_name": {
+    "message": "Please enter a campaign name."
+  },
+  "err_enter_target_url": {
+    "message": "Please enter a target Twitter profile URL."
+  },
+  "err_reward_positive": {
+    "message": "Reward per follow must be greater than 0."
+  },
+  "err_quota_positive": {
+    "message": "Max followers must be a positive integer."
+  },
+  "err_select_end_date": {
+    "message": "Please select an end date."
+  },
+  "err_end_date_future": {
+    "message": "End date must be in the future."
+  },
+  "err_invalid_reward_format": {
+    "message": "Invalid reward amount format."
+  },
+  "err_failed_create_campaign": {
+    "message": "Failed to create campaign."
+  },
+  "msg_campaign_published": {
+    "message": "Campaign published successfully!"
+  },
+  "err_insufficient_balance": {
+    "message": "Insufficient Balance."
+  },
+  "required_label": {
+    "message": "Required"
+  },
+  "available_label": {
+    "message": "available"
+  },
+  "header_advertise_title": {
+    "message": "Advertise"
+  },
+  "header_advertise_sub": {
+    "message": "P2P on-chain campaigns"
+  },
+  "balance_label": {
+    "message": "Balance"
+  },
+  "btn_plaza": {
+    "message": "Plaza"
+  },
+  "section_my_ads": {
+    "message": "My Ads"
+  },
+  "section_my_ads_sub": {
+    "message": "Create campaigns, lock budgets, and track delivery."
+  },
+  "btn_publish_new_ad": {
+    "message": "Publish New Ad"
+  },
+  "th_ad_name": {
+    "message": "Ad Name"
+  },
+  "th_status": {
+    "message": "Status"
+  },
+  "th_reward_per_task": {
+    "message": "Reward per Task"
+  },
+  "th_claimed": {
+    "message": "Claimed"
+  },
+  "th_settled": {
+    "message": "Settled"
+  },
+  "th_spent": {
+    "message": "Spent"
+  },
+  "th_remaining_budget": {
+    "message": "Remaining Budget"
+  },
+  "th_end_date": {
+    "message": "End Date"
+  },
+  "th_actions": {
+    "message": "Actions"
+  },
+  "msg_no_ads_published": {
+    "message": "No ads published yet. Click \"Publish New Ad\" to get started!"
+  },
+  "pagination_showing": {
+    "message": "Showing $1 of $2"
+  },
+  "section_recent_activity": {
+    "message": "Recent Activity"
+  },
+  "section_recent_activity_sub": {
+    "message": "Latest spending records (preview)."
+  },
+  "th_time": {
+    "message": "Time"
+  },
+  "th_ad": {
+    "message": "Ad"
+  },
+  "th_event": {
+    "message": "Event"
+  },
+  "th_amount": {
+    "message": "Amount"
+  },
+  "th_service_fee": {
+    "message": "Service Fee"
+  },
+  "msg_no_spending_records": {
+    "message": "No spending records yet."
+  },
+  "pagination_page_info": {
+    "message": "Page $1 of $2 ($3 records)"
+  },
+  "side_wallet_insights": {
+    "message": "Wallet & Insights"
+  },
+  "label_available": {
+    "message": "Available"
+  },
+  "label_frozen": {
+    "message": "Frozen"
+  },
+  "meta_frozen_funds": {
+    "message": "Frozen funds cannot be transferred"
+  },
+  "btn_transfer": {
+    "message": "Transfer"
+  },
+  "label_active_campaigns": {
+    "message": "Active Campaigns"
+  },
+  "meta_running_deliverable": {
+    "message": "Running / deliverable"
+  },
+  "label_spend": {
+    "message": "Spend"
+  },
+  "tab_today": {
+    "message": "Today"
+  },
+  "tab_7d": {
+    "message": "7D"
+  },
+  "label_today_spend": {
+    "message": "Today's Spend"
+  },
+  "label_week_spend": {
+    "message": "This Week's Spend"
+  },
+  "side_tips": {
+    "message": "Tips: Your budget is locked for campaign delivery; activity is queryable via History."
+  },
+  "modal_publish_follow_title": {
+    "message": "Publish Follow Campaign"
+  },
+  "form_intro_follow": {
+    "message": "Create a campaign to get Blue Verified users to follow you. You set the reward per follower and the maximum number of followers."
+  },
+  "label_campaign_name": {
+    "message": "Campaign Name"
+  },
+  "placeholder_campaign_name": {
+    "message": "e.g., My Follow Campaign"
+  },
+  "hint_campaign_name": {
+    "message": "For your reference only"
+  },
+  "label_reward_per_follow": {
+    "message": "Reward per Follow (USDC)"
+  },
+  "label_max_followers": {
+    "message": "Max Followers"
+  },
+  "hint_quota": {
+    "message": "e.g. 500 followers ($10 budget)"
+  },
+  "label_target_profile_url": {
+    "message": "Target Twitter Profile URL"
+  },
+  "hint_target_profile_url": {
+    "message": "The X profile you want users to follow (e.g. https://x.com/TweetCatOrg)"
+  },
+  "label_campaign_end_date": {
+    "message": "Campaign End Date"
+  },
+  "hint_end_date": {
+    "message": "Campaign will stop accepting new followers after this date"
+  },
+  "label_total_budget": {
+    "message": "Total Budget:"
+  },
+  "label_your_balance": {
+    "message": "Your Balance:"
+  },
+  "note_blue_verified_only": {
+    "message": "Only Blue Verified (✓) users can participate in your campaign"
+  },
+  "btn_pay_publish": {
+    "message": "Pay & Publish"
+  },
+  "modal_recharge_title": {
+    "message": "Recharge Account"
+  },
+  "recharge_transfer_title": {
+    "message": "Transfer between Wallet and Ads"
+  },
+  "label_direction": {
+    "message": "Direction"
+  },
+  "btn_wallet_to_ads": {
+    "message": "Wallet → Ads"
+  },
+  "btn_ads_to_wallet": {
+    "message": "Ads → Wallet"
+  },
+  "label_wallet_usdc": {
+    "message": "Wallet USDC"
+  },
+  "label_ads_available": {
+    "message": "Ads Available"
+  },
+  "label_ads_frozen": {
+    "message": "Ads Frozen"
+  },
+  "indicator_wallet_to_ads": {
+    "message": "On-chain Wallet → Ads Account"
+  },
+  "indicator_ads_to_wallet": {
+    "message": "Ads Account → On-chain Wallet"
+  },
+  "warning_monthly_limit": {
+    "message": "Withdrawals are limited to once per month"
+  },
+  "label_amount": {
+    "message": "Amount"
+  },
+  "hint_transfer_amount": {
+    "message": "Enter the amount to transfer (USDC)."
+  },
+  "btn_max": {
+    "message": "Max"
+  },
+  "hint_frozen_no_transfer": {
+    "message": "Frozen funds are not transferable."
+  },
+  "modal_limit_reached_title": {
+    "message": "Monthly Withdrawal Limit Reached"
+  },
+  "limit_reached_msg": {
+    "message": "You have already withdrawn this month. Each account can only withdraw once per month."
+  },
+  "label_prev_withdrawal": {
+    "message": "Previous Withdrawal:"
+  },
+  "label_next_available": {
+    "message": "Next Available:"
+  },
+  "btn_view_prev_tx": {
+    "message": "View Previous Transaction"
+  },
+  "btn_transfer_submit": {
+    "message": "Transfer"
+  },
+  "btn_view_history": {
+    "message": "View Transfer History"
+  },
+  "modal_history_title": {
+    "message": "Transfer History"
+  },
+  "th_direction": {
+    "message": "Direction"
+  },
+  "th_transaction": {
+    "message": "Transaction"
+  },
+  "msg_no_recharge_records": {
+    "message": "No recharge records yet"
+  },
+  "modal_add_budget_title": {
+    "message": "Add Budget"
+  },
+  "label_curr_available": {
+    "message": "Current Available Balance"
+  },
+  "modal_campaign_details_title": {
+    "message": "Campaign Details"
+  },
+  "label_overview": {
+    "message": "Overview"
+  },
+  "label_created_at": {
+    "message": "Created At"
+  },
+  "label_dev_settings": {
+    "message": "Developer Settings"
+  },
+  "label_callback_url": {
+    "message": "Callback URL"
+  },
+  "label_custom_data": {
+    "message": "Custom Data (JSON)"
+  },
+  "btn_update_settings": {
+    "message": "Update Settings"
+  },
+  "btn_pause": {
+    "message": "Pause"
+  },
+  "btn_resume": {
+    "message": "Resume"
+  },
+  "msg_no_records": {
+    "message": "No records"
+  },
+  "tab_my_tasks": {
+    "message": "My Tasks"
+  },
+  "status_active": {
+    "message": "Active"
+  },
+  "status_paused": {
+    "message": "Paused"
+  },
+  "status_paused_no_budget": {
+    "message": "Paused (No Budget)"
+  },
+  "status_ended": {
+    "message": "Ended"
+  },
+  "pagination_page_info_simple": {
+    "message": "Page $1 / $2"
+  },
+  "btn_pause_label": {
+    "message": "Pause"
+  },
+  "btn_resume_label": {
+    "message": "Resume"
+  },
+  "btn_recharge_label": {
+    "message": "Recharge"
+  },
+  "msg_ad_paused": {
+    "message": "Ad paused"
+  },
+  "msg_ad_resumed": {
+    "message": "Ad resumed"
+  },
+  "msg_ad_ended_refund": {
+    "message": "Ad ended. Remaining budget will be refunded soon."
+  },
+  "err_operation_failed": {
+    "message": "Operation failed"
+  },
+  "err_enter_valid_amount": {
+    "message": "Please enter a valid amount"
+  },
+  "msg_budget_topped_up": {
+    "message": "Budget topped up successfully"
+  },
+  "err_recharge_failed": {
+    "message": "Recharge failed"
+  },
+  "err_ended_ads_no_update": {
+    "message": "Ended ads cannot be updated."
+  },
+  "err_invalid_json_format": {
+    "message": "Invalid JSON format in Custom Data"
+  },
+  "updating_ad_settings": {
+    "message": "Updating ad settings..."
+  },
+  "msg_ad_settings_updated": {
+    "message": "Ad settings updated successfully!"
+  },
+  "err_failed_update_ad": {
+    "message": "Failed to update ad"
+  },
+  "btn_pause_ad": {
+    "message": "Pause Ad"
+  },
+  "btn_resume_ad": {
+    "message": "Resume Ad"
+  },
+  "btn_recharge_resume": {
+    "message": "Top Up and Resume"
+  },
+  "btn_add_budget": {
+    "message": "Add Budget"
+  },
+  "btn_end_campaign": {
+    "message": "End Campaign"
+  },
+  "confirm_end_campaign": {
+    "message": "Are you sure you want to end this ad?\n\nEnded ads cannot be restored, and unused budget will be automatically refunded to your account balance."
+  },
+  "msg_sufficient_balance": {
+    "message": "Your balance is sufficient to publish this ad."
+  },
+  "msg_insufficient_balance_recharge": {
+    "message": "Insufficient balance. Please recharge before publishing."
+  },
+  "btn_transfer_to_ads": {
+    "message": "Transfer to Ads"
+  },
+  "btn_transfer_to_wallet": {
+    "message": "Transfer to Wallet"
+  },
+  "msg_withdraw_limit_reached": {
+    "message": "Monthly withdrawal limit reached. Next available: $1"
+  },
+  "err_missing_xid": {
+    "message": "Missing user xId. Please sign in again."
+  },
+  "err_amount_exceeds_ads": {
+    "message": "Amount exceeds Ads Available."
+  },
+  "err_amount_exceeds_wallet": {
+    "message": "Amount exceeds Wallet Balance."
+  },
+  "processing_deposit": {
+    "message": "Processing deposit..."
+  },
+  "processing_withdraw": {
+    "message": "Processing withdraw..."
+  },
+  "msg_transfer_success": {
+    "message": "Transfer submitted successfully."
+  },
+  "err_transfer_failed": {
+    "message": "Transfer failed"
+  },
+  "msg_no_transfer_records": {
+    "message": "No transfer records yet"
+  },
+  "loading_history": {
+    "message": "Loading transfer history..."
+  },
+  "err_load_history_failed": {
+    "message": "Failed to load history"
   }
 }

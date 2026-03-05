@@ -1430,5 +1430,653 @@
   },
   "wallet_network_changed_relogin": {
     "message": "网络已切换，请重新登录 Coinbase 账号"
+  },
+  "tag_new": {
+    "message": "新任务"
+  },
+  "tag_easy": {
+    "message": "简单"
+  },
+  "tag_explore": {
+    "message": "探索"
+  },
+  "tag_high_reward": {
+    "message": "高收益"
+  },
+  "tag_popular": {
+    "message": "热门"
+  },
+  "status_claimed_todo": {
+    "message": "已领 - 待执行"
+  },
+  "status_pending_verification": {
+    "message": "审核中"
+  },
+  "status_settled_paid": {
+    "message": "已结算"
+  },
+  "status_rejected": {
+    "message": "已拒绝"
+  },
+  "status_completed": {
+    "message": "已结束"
+  },
+  "status_running": {
+    "message": "进行中..."
+  },
+  "btn_go_to_follow": {
+    "message": "去关注"
+  },
+  "no_tasks_yet": {
+    "message": "暂无任务"
+  },
+  "explore_ads_earning": {
+    "message": "去探索广告并开始赚取奖励吧！"
+  },
+  "no_ads_available": {
+    "message": "暂无可用广告"
+  },
+  "check_back_later": {
+    "message": "请稍后再来看看新的赚钱机会！"
+  },
+  "not_linked": {
+    "message": "未关推"
+  },
+  "verified": {
+    "message": "已认证"
+  },
+  "not_verified": {
+    "message": "未认证"
+  },
+  "unknown": {
+    "message": "未知"
+  },
+  "visit_profile_update": {
+    "message": "访问您的 X 个人资料以更新状态"
+  },
+  "verification_failed": {
+    "message": "验证失败"
+  },
+  "blue_v_required": {
+    "message": "只有蓝V认证用户可以参与此活动。请确保您的账号拥有蓝色复选标记。"
+  },
+  "verification_required_msg": {
+    "message": "需要验证：为了参与此活动，我们需要验证您的蓝V状态。我们可以通过简短访问您的 X 个人资料页面来实现。是否继续？"
+  },
+  "status_expired_msg": {
+    "message": "状态已过期：您的蓝V状态已超过一周未更新。请访问您的个人资料以刷新状态。是否继续？"
+  },
+  "missing_landing_page": {
+    "message": "该广告缺少落地页链接。"
+  },
+  "start_task_failed": {
+    "message": "开始任务失败"
+  },
+  "loading_tasks": {
+    "message": "正在加载任务..."
+  },
+  "filtering": {
+    "message": "正在筛选..."
+  },
+  "no_activity_yet": {
+    "message": "暂无记录。"
+  },
+  "activity_created": {
+    "message": "创建时间"
+  },
+  "activity_expires": {
+    "message": "过期时间"
+  },
+  "nothing_to_withdraw": {
+    "message": "没有可提现的金额。"
+  },
+  "withdrawing": {
+    "message": "正在提现..."
+  },
+  "withdraw_success": {
+    "message": "提现成功！"
+  },
+  "withdraw_failed": {
+    "message": "提现失败"
+  },
+  "withdraw_error": {
+    "message": "提现错误"
+  },
+  "failed_to_load_activity": {
+    "message": "无法加载动态。"
+  },
+  "page_indicator": {
+    "message": "第 $1 页，共 $2 页"
+  },
+  "tab_explore": {
+    "message": "探索"
+  },
+  "status_label": {
+    "message": "状态"
+  },
+  "plaza_title": {
+    "message": "Ad Plaza - 挣钱 - TweetCat"
+  },
+  "plaza_header_logo": {
+    "message": "Ad Plaza"
+  },
+  "btn_publish_ad": {
+    "message": "发布广告 / 推广"
+  },
+  "withdraw_updated_today": {
+    "message": "今天已更新"
+  },
+  "withdrawable_label": {
+    "message": "可提现"
+  },
+  "btn_withdraw": {
+    "message": "提现"
+  },
+  "btn_activity": {
+    "message": "动态"
+  },
+  "verification_label": {
+    "message": "验证状态："
+  },
+  "summaries_total_earned": {
+    "message": "总共获得"
+  },
+  "summaries_today_earned": {
+    "message": "今日获得"
+  },
+  "summaries_pending": {
+    "message": "待确认"
+  },
+  "filters_title": {
+    "message": "筛选"
+  },
+  "btn_clear_filters": {
+    "message": "清除筛选"
+  },
+  "search_ads_placeholder": {
+    "message": "搜索广告..."
+  },
+  "reward_range_label": {
+    "message": "奖励范围"
+  },
+  "sort_by_label": {
+    "message": "排序方式"
+  },
+  "sort_reward_high": {
+    "message": "最高奖励"
+  },
+  "sort_newest": {
+    "message": "最新发布"
+  },
+  "sort_time_short": {
+    "message": "最短时间"
+  },
+  "sort_popular": {
+    "message": "最热门"
+  },
+  "task_status_all_option": {
+    "message": "所有状态"
+  },
+  "btn_previous": {
+    "message": "上一页"
+  },
+  "btn_next": {
+    "message": "下一页"
+  },
+  "earn_label": {
+    "message": "收益："
+  },
+  "btn_start_task": {
+    "message": "开始任务"
+  },
+  "activity_title": {
+    "message": "活动记录"
+  },
+  "publishing_campaign": {
+    "message": "正在发布广告..."
+  },
+  "err_enter_campaign_name": {
+    "message": "请输入广告名称。"
+  },
+  "err_enter_target_url": {
+    "message": "请输入目标 Twitter 个人资料链接。"
+  },
+  "err_reward_positive": {
+    "message": "每次关注的奖励必须大于 0。"
+  },
+  "err_quota_positive": {
+    "message": "最大关注人数必须为正整数。"
+  },
+  "err_select_end_date": {
+    "message": "请选择结束日期。"
+  },
+  "err_end_date_future": {
+    "message": "结束日期必须在未来。"
+  },
+  "err_invalid_reward_format": {
+    "message": "奖励金额格式无效。"
+  },
+  "err_failed_create_campaign": {
+    "message": "创建广告失败。"
+  },
+  "msg_campaign_published": {
+    "message": "广告发布成功！"
+  },
+  "err_insufficient_balance": {
+    "message": "余额不足。"
+  },
+  "required_label": {
+    "message": "需要"
+  },
+  "available_label": {
+    "message": "可用"
+  },
+  "header_advertise_title": {
+    "message": "推广"
+  },
+  "header_advertise_sub": {
+    "message": "P2P 链上推广活动"
+  },
+  "balance_label": {
+    "message": "余额"
+  },
+  "btn_plaza": {
+    "message": "广场"
+  },
+  "section_my_ads": {
+    "message": "我的广告"
+  },
+  "section_my_ads_sub": {
+    "message": "创建活动、锁定预算并跟踪投放进度。"
+  },
+  "btn_publish_new_ad": {
+    "message": "发布新广告"
+  },
+  "th_ad_name": {
+    "message": "广告名称"
+  },
+  "th_status": {
+    "message": "状态"
+  },
+  "th_reward_per_task": {
+    "message": "任务奖励"
+  },
+  "th_claimed": {
+    "message": "已领取"
+  },
+  "th_settled": {
+    "message": "已结算"
+  },
+  "th_spent": {
+    "message": "已花费"
+  },
+  "th_remaining_budget": {
+    "message": "剩余预算"
+  },
+  "th_end_date": {
+    "message": "结束日期"
+  },
+  "th_actions": {
+    "message": "操作"
+  },
+  "msg_no_ads_published": {
+    "message": "暂无发布的广告。点击“发布新广告”开始吧！"
+  },
+  "pagination_showing": {
+    "message": "正在显示 $1 / $2"
+  },
+  "section_recent_activity": {
+    "message": "最近动态"
+  },
+  "section_recent_activity_sub": {
+    "message": "最近的支出记录（预览）。"
+  },
+  "th_time": {
+    "message": "时间"
+  },
+  "th_ad": {
+    "message": "广告"
+  },
+  "th_event": {
+    "message": "事件"
+  },
+  "th_amount": {
+    "message": "金额"
+  },
+  "th_service_fee": {
+    "message": "服务费"
+  },
+  "msg_no_spending_records": {
+    "message": "暂无支出记录。"
+  },
+  "pagination_page_info": {
+    "message": "第 $1 页，共 $2 页（$3 条记录）"
+  },
+  "side_wallet_insights": {
+    "message": "钱包与见解"
+  },
+  "label_available": {
+    "message": "可用"
+  },
+  "label_frozen": {
+    "message": "冻结"
+  },
+  "meta_frozen_funds": {
+    "message": "冻结的资金无法转移"
+  },
+  "btn_transfer": {
+    "message": "划转"
+  },
+  "label_active_campaigns": {
+    "message": "进行中的活动"
+  },
+  "meta_running_deliverable": {
+    "message": "正在运行 / 可投放"
+  },
+  "label_spend": {
+    "message": "支出"
+  },
+  "tab_today": {
+    "message": "今天"
+  },
+  "tab_7d": {
+    "message": "7D"
+  },
+  "label_today_spend": {
+    "message": "今日支出"
+  },
+  "label_week_spend": {
+    "message": "本周支出"
+  },
+  "side_tips": {
+    "message": "提示：您的预算已锁定用于活动投放；活动记录可通过“动态”查询。"
+  },
+  "modal_publish_follow_title": {
+    "message": "发布关注活动"
+  },
+  "form_intro_follow": {
+    "message": "创建一个活动，吸引蓝V认证用户关注您。您可以设置每个关注者的奖励和最大关注人数。"
+  },
+  "label_campaign_name": {
+    "message": "活动名称"
+  },
+  "placeholder_campaign_name": {
+    "message": "例如：我的关注活动"
+  },
+  "hint_campaign_name": {
+    "message": "仅供您参考"
+  },
+  "label_reward_per_follow": {
+    "message": "每个关注的奖励 (USDC)"
+  },
+  "label_max_followers": {
+    "message": "最大关注人数"
+  },
+  "hint_quota": {
+    "message": "例如：500 个关注者（$10 预算）"
+  },
+  "label_target_profile_url": {
+    "message": "目标 Twitter 个人资料链接"
+  },
+  "hint_target_profile_url": {
+    "message": "您希望用户关注的 X 个人资料（例如：https://x.com/TweetCatOrg）"
+  },
+  "label_campaign_end_date": {
+    "message": "活动结束日期"
+  },
+  "hint_end_date": {
+    "message": "此日期后活动将停止接受新关注者"
+  },
+  "label_total_budget": {
+    "message": "总预算："
+  },
+  "label_your_balance": {
+    "message": "您的余额："
+  },
+  "note_blue_verified_only": {
+    "message": "只有蓝V认证（✓）用户才能参与您的活动"
+  },
+  "btn_pay_publish": {
+    "message": "支付并发布"
+  },
+  "modal_recharge_title": {
+    "message": "充值账户"
+  },
+  "recharge_transfer_title": {
+    "message": "在钱包和广告账户之间划转"
+  },
+  "label_direction": {
+    "message": "方向"
+  },
+  "btn_wallet_to_ads": {
+    "message": "钱包 → 广告"
+  },
+  "btn_ads_to_wallet": {
+    "message": "广告 → 钱包"
+  },
+  "label_wallet_usdc": {
+    "message": "钱包 USDC"
+  },
+  "label_ads_available": {
+    "message": "广告账户可用"
+  },
+  "label_ads_frozen": {
+    "message": "广告账户冻结"
+  },
+  "indicator_wallet_to_ads": {
+    "message": "链上钱包 → 广告账户"
+  },
+  "indicator_ads_to_wallet": {
+    "message": "广告账户 → 链上钱包"
+  },
+  "warning_monthly_limit": {
+    "message": "提现每月限额一次"
+  },
+  "label_amount": {
+    "message": "金额"
+  },
+  "hint_transfer_amount": {
+    "message": "输入划转金额 (USDC)。"
+  },
+  "btn_max": {
+    "message": "最大"
+  },
+  "hint_frozen_no_transfer": {
+    "message": "冻结的资金无法划转。"
+  },
+  "modal_limit_reached_title": {
+    "message": "已达到每月提现限额"
+  },
+  "limit_reached_msg": {
+    "message": "您本月已经提现过。每个账户每月只能提现一次。"
+  },
+  "label_prev_withdrawal": {
+    "message": "上次提现："
+  },
+  "label_next_available": {
+    "message": "下次可用："
+  },
+  "btn_view_prev_tx": {
+    "message": "查看上次交易"
+  },
+  "btn_transfer_submit": {
+    "message": "划转"
+  },
+  "btn_view_history": {
+    "message": "查看划转历史"
+  },
+  "modal_history_title": {
+    "message": "划转历史"
+  },
+  "th_direction": {
+    "message": "方向"
+  },
+  "th_transaction": {
+    "message": "交易"
+  },
+  "msg_no_recharge_records": {
+    "message": "暂无充值记录"
+  },
+  "modal_add_budget_title": {
+    "message": "追加预算"
+  },
+  "label_curr_available": {
+    "message": "当前可用余额"
+  },
+  "modal_campaign_details_title": {
+    "message": "活动详情"
+  },
+  "label_overview": {
+    "message": "概览"
+  },
+  "label_created_at": {
+    "message": "创建时间"
+  },
+  "label_dev_settings": {
+    "message": "开发者设置"
+  },
+  "label_callback_url": {
+    "message": "回调 URL"
+  },
+  "label_custom_data": {
+    "message": "自定义数据 (JSON)"
+  },
+  "btn_update_settings": {
+    "message": "更新设置"
+  },
+  "btn_pause": {
+    "message": "暂停"
+  },
+  "btn_resume": {
+    "message": "恢复"
+  },
+  "msg_no_records": {
+    "message": "暂无记录"
+  },
+  "tab_my_tasks": {
+    "message": "我的任务"
+  },
+  "status_active": {
+    "message": "投放中"
+  },
+  "status_paused": {
+    "message": "已暂停"
+  },
+  "status_paused_no_budget": {
+    "message": "暂停（余额不足）"
+  },
+  "status_ended": {
+    "message": "已结束"
+  },
+  "pagination_page_info_simple": {
+    "message": "第 $1 / $2 页"
+  },
+  "btn_pause_label": {
+    "message": "暂停"
+  },
+  "btn_resume_label": {
+    "message": "启用"
+  },
+  "btn_recharge_label": {
+    "message": "充值"
+  },
+  "msg_ad_paused": {
+    "message": "广告已暂停"
+  },
+  "msg_ad_resumed": {
+    "message": "广告已恢复"
+  },
+  "msg_ad_ended_refund": {
+    "message": "投放已结束。剩余预算将很快退回。"
+  },
+  "err_operation_failed": {
+    "message": "操作失败"
+  },
+  "err_enter_valid_amount": {
+    "message": "请输入有效金额"
+  },
+  "msg_budget_topped_up": {
+    "message": "预算追加成功"
+  },
+  "err_recharge_failed": {
+    "message": "充值失败"
+  },
+  "err_ended_ads_no_update": {
+    "message": "已结束的广告无法更新。"
+  },
+  "err_invalid_json_format": {
+    "message": "自定义数据 JSON 格式无效"
+  },
+  "updating_ad_settings": {
+    "message": "正在更新广告设置..."
+  },
+  "msg_ad_settings_updated": {
+    "message": "广告设置更新成功！"
+  },
+  "err_failed_update_ad": {
+    "message": "更新广告失败"
+  },
+  "btn_pause_ad": {
+    "message": "暂停广告"
+  },
+  "btn_resume_ad": {
+    "message": "启用广告"
+  },
+  "btn_recharge_resume": {
+    "message": "充值并启用"
+  },
+  "btn_add_budget": {
+    "message": "追加预算"
+  },
+  "btn_end_campaign": {
+    "message": "结束投放"
+  },
+  "confirm_end_campaign": {
+    "message": "确定要结束此广告吗？\n\n结束后的广告无法恢复，未使用的预算将自动退回到您的账户余额。"
+  },
+  "msg_sufficient_balance": {
+    "message": "您的余额充足，可以发布此广告。"
+  },
+  "msg_insufficient_balance_recharge": {
+    "message": "余额不足。请在发布前充值。"
+  },
+  "btn_transfer_to_ads": {
+    "message": "划转至广告账户"
+  },
+  "btn_transfer_to_wallet": {
+    "message": "划转至钱包"
+  },
+  "msg_withdraw_limit_reached": {
+    "message": "已达到每月提现限额。下次可用：$1"
+  },
+  "err_missing_xid": {
+    "message": "缺少用户 ID。请重新登录。"
+  },
+  "err_amount_exceeds_ads": {
+    "message": "金额超过广告账户可用余额。"
+  },
+  "err_amount_exceeds_wallet": {
+    "message": "金额超过钱包余额。"
+  },
+  "processing_deposit": {
+    "message": "正在划转至广告账户..."
+  },
+  "processing_withdraw": {
+    "message": "正在划转至钱包..."
+  },
+  "msg_transfer_success": {
+    "message": "划转提交成功。"
+  },
+  "err_transfer_failed": {
+    "message": "划转失败"
+  },
+  "msg_no_transfer_records": {
+    "message": "暂无划转记录"
+  },
+  "loading_history": {
+    "message": "正在加载划转历史..."
+  },
+  "err_load_history_failed": {
+    "message": "加载历史记录失败"
   }
 }

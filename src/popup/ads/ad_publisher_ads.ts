@@ -9,6 +9,7 @@ import {
     fetchDashboardInfo
 } from "./ad_publisher_dashboard";
 import { showNotification, usdcToAtomic, atomicToUsdcNumber, formatUSDC, showLoading, hideLoading, $Id } from "../common";
+import { t } from "../../common/i18n";
 import { x402WorkerFetch } from "../../wallet/cdp_wallet";
 
 
@@ -64,7 +65,7 @@ async function openPublishModal() {
 async function submitPublishForm() {
     const submitBtn = $Id("btn-wizard-submit") as HTMLButtonElement | null;
     if (submitBtn) submitBtn.disabled = true;
-    showLoading("Publishing campaign...");
+    showLoading(t("publishing_campaign"));
 
     try {
         const currentXId = getCurrentXId();
@@ -83,40 +84,40 @@ async function submitPublishForm() {
 
         // 校验必填字段
         if (!name) {
-            showNotification("Please enter a campaign name.", "error");
+            showNotification(t("err_enter_campaign_name"), "error");
             return;
         }
 
         if (!detailUrl) {
-            showNotification("Please enter a target Twitter profile URL.", "error");
+            showNotification(t("err_enter_target_url"), "error");
             return;
         }
 
         const rewardNum = parseFloat(reward);
         if (isNaN(rewardNum) || rewardNum <= 0) {
-            showNotification("Reward per follow must be greater than 0.", "error");
+            showNotification(t("err_reward_positive"), "error");
             return;
         }
 
         if (isNaN(quotaTotal) || !Number.isInteger(quotaTotal) || quotaTotal <= 0) {
-            showNotification("Max followers must be a positive integer.", "error");
+            showNotification(t("err_quota_positive"), "error");
             return;
         }
 
         if (!endDateStr) {
-            showNotification("Please select an end date.", "error");
+            showNotification(t("err_select_end_date"), "error");
             return;
         }
 
         const endDate = new Date(`${endDateStr}T23:59:59`);
         if (isNaN(endDate.getTime()) || endDate <= new Date()) {
-            showNotification("End date must be in the future.", "error");
+            showNotification(t("err_end_date_future"), "error");
             return;
         }
 
         const unitPriceAtomic = usdcToAtomic(reward);
         if (!unitPriceAtomic) {
-            showNotification("Invalid reward amount format.", "error");
+            showNotification(t("err_invalid_reward_format"), "error");
             return;
         }
 
@@ -134,18 +135,18 @@ async function submitPublishForm() {
         const result = await x402WorkerFetch(API_PATH_ADS_CREATE, payload);
 
         if (!result.ok) {
-            showNotification(result.error?.detail || result.error?.message || "Failed to create campaign.", "error");
+            showNotification(result.error?.detail || result.error?.message || t("err_failed_create_campaign"), "error");
             return;
         }
 
-        showNotification("Campaign published successfully!", "success");
+        showNotification(t("msg_campaign_published"), "success");
         closePublishModal();
         await fetchDashboardInfo();
         await refreshAdsData(1);
         resetPublishForm();
     } catch (e: any) {
         console.error("[ads][create] failed", e);
-        let msg = (e?.message || "Failed to create campaign.").toString();
+        let msg = (e?.message || t("err_failed_create_campaign")).toString();
 
         // Handle technical "Insufficient Balance" technical message from x402WorkerFetch
         if (msg.includes("INSUFFICIENT_BALANCE")) {
@@ -155,9 +156,9 @@ async function submitPublishForm() {
             if (match) {
                 const req = formatUSDC(atomicToUsdcNumber(match[1]));
                 const avail = formatUSDC(atomicToUsdcNumber(match[2]));
-                detail = `Required ${req}, available ${avail}.`;
+                detail = `${t("required_label")} ${req}, ${t("available_label")} ${avail}.`;
             }
-            showNotification(`余额不足. ${detail}`.trim(), "error");
+            showNotification(`${t("err_insufficient_balance")} ${detail}`.trim(), "error");
             return;
         }
 

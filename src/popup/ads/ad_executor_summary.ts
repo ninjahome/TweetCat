@@ -1,7 +1,8 @@
 import { $2, atomicToUsdcNumber, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification } from "../common";
+import { t } from "../../common/i18n";
 import { x402WorkerGet, x402WorkerFetch } from "../../wallet/cdp_wallet";
 import { API_PATH_ADS_MY_CLAIMS, API_PATH_ADS_EXECUTOR_WITHDRAW, API_PATH_ADS_EXECUTOR_DASHBOARD_INFO } from "./ad_publisher_common";
-import { EarnClaim, executorState, formatClaimTime } from "./ad_executor_common";
+import { EarnClaim, executorState, formatClaimTime, TASK_STATUS_MAP } from "./ad_executor_common";
 
 export async function loadClaims(): Promise<EarnClaim[]> {
     const { xId } = await getCurrentUserInfo();
@@ -62,15 +63,15 @@ export function renderActivityList(claims: EarnClaim[]) {
     list.innerHTML = "";
 
     if (claims.length === 0) {
-        list.innerHTML = `<div class="activity-empty">No activity yet.</div>`;
+        list.innerHTML = `<div class="activity-empty">${t("no_activity_yet")}</div>`;
         return;
     }
 
     claims.forEach((claim) => {
         const item = cloneTemplate("tpl-activity-item");
         $2<HTMLElement>(item, ".activity-title").textContent = claim.ad_title || claim.ad_id;
-        $2<HTMLElement>(item, ".activity-status").textContent = claim.status;
-        $2<HTMLElement>(item, ".activity-meta").textContent = `Created: ${formatClaimTime(claim.created_at)} · Expires: ${formatClaimTime(claim.expires_at)}`;
+        $2<HTMLElement>(item, ".activity-status").textContent = TASK_STATUS_MAP[claim.status || ""] || claim.status;
+        $2<HTMLElement>(item, ".activity-meta").textContent = `${t("activity_created")}: ${formatClaimTime(claim.created_at)} · ${t("activity_expires")}: ${formatClaimTime(claim.expires_at)}`;
         $2<HTMLElement>(item, ".activity-reward").textContent = formatUSDC(atomicToUsdcNumber(claim.unit_price_atomic));
         list.appendChild(item);
     });
@@ -85,7 +86,7 @@ export function toggleActivityModal(open: boolean) {
 export function initSummaryActions() {
     document.querySelector<HTMLButtonElement>("#btn-withdraw")?.addEventListener("click", async () => {
         if (executorState.withdrawableUSDC <= 0) {
-            showNotification("Nothing to withdraw.");
+            showNotification(t("nothing_to_withdraw"));
             return;
         }
 
@@ -99,13 +100,12 @@ export function initSummaryActions() {
             // This is more accurate than recalculating from local claims which could be stale
             const amountAtomic = executorState.withdrawableAtomic || "0";
             if (!amountAtomic || BigInt(amountAtomic) <= 0n) {
-                showNotification("Nothing to withdraw (atomic check).");
+                showNotification(t("nothing_to_withdraw"));
                 return;
             }
 
             const amountUSDC = executorState.withdrawableUSDC;
-
-            showNotification("Withdrawing...", "info");
+            showNotification(t("withdrawing"), "info");
 
             // Call Backend (Executor uses their specific withdraw API)
             const resp = await x402WorkerFetch(API_PATH_ADS_EXECUTOR_WITHDRAW, {
@@ -119,19 +119,19 @@ export function initSummaryActions() {
                 renderEarnSummary();
 
                 const txLink = resp.txHash ? ` Tx: ${resp.txHash.slice(0, 6)}...` : "";
-                showNotification(`Withdraw success! ${formatUSDC(amountUSDC)}${txLink}`, "success");
+                showNotification(`${t("withdraw_success")} ${formatUSDC(amountUSDC)}${txLink}`, "success");
 
                 // Reload claims/summary to ensure state consistency
                 setTimeout(() => loadEarnSummary(), 2000);
             } else {
                 // Failed
-                const msg = resp?.error || resp?.message || "Withdraw failed";
+                const msg = resp?.error || resp?.message || t("withdraw_failed");
                 showNotification(msg, "error");
             }
 
         } catch (e: any) {
             console.error("Withdraw failed:", e);
-            showNotification(e.message || "Withdraw error", "error");
+            showNotification(e.message || t("withdraw_error"), "error");
         } finally {
             if (btn) btn.disabled = false;
         }
@@ -143,7 +143,7 @@ export function initSummaryActions() {
             .then(renderActivityList)
             .catch((err) => {
                 console.error("Load claims failed:", err);
-                showNotification((err as Error).message || "Failed to load activity.", "error");
+                showNotification((err as Error).message || t("failed_to_load_activity"), "error");
             });
     });
 

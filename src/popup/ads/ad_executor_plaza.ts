@@ -1,4 +1,5 @@
 import { $2, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification, showConfirm, showAlert, showLoading, hideLoading } from "../common";
+import { t } from "../../common/i18n";
 import { logAdP } from "../../common/debug_flags";
 import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 import { API_PATH_ADS_CLAIM, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS } from "./ad_publisher_common";
@@ -12,7 +13,8 @@ import {
     getRewardRange,
     TaskWithAdInfo,
     loadTaskRunState,
-    saveTaskRunState
+    saveTaskRunState,
+    TASK_STATUS_MAP
 } from "./ad_executor_common";
 import { loadEarnSummary } from "./ad_executor_summary";
 
@@ -23,7 +25,7 @@ export async function loadAds(): Promise<void> {
         const { xId } = await getCurrentUserInfo();
         const response = await x402WorkerGet(API_PATH_ADS_LIST, { b_x_id: xId });
         if (!Array.isArray(response)) {
-            showNotification("Invalid ads payload", "error");
+            showNotification(t("operation_failed"), "error");
             return;
         }
 
@@ -37,7 +39,7 @@ export async function loadAds(): Promise<void> {
     } catch (err) {
         console.error("Failed to load ads list:", err);
         executorState.earnAds = [];
-        showNotification("Failed to load ads.", "error");
+        showNotification(t("failed_to_sync_followings"), "error");
     }
 }
 
@@ -59,7 +61,7 @@ export async function loadMyTasks(page: number = 0): Promise<void> {
         });
 
         if (!response?.success) {
-            showNotification("Failed to load tasks", "error");
+            showNotification(t("loading_tasks"), "error");
             return;
         }
 
@@ -72,10 +74,10 @@ export async function loadMyTasks(page: number = 0): Promise<void> {
         console.error("Failed to load my tasks:", err);
         executorState.myTasks = [];
         const msg = (err as any)?.name === "AbortError"
-            ? "Network timeout while loading tasks. Please try again."
+            ? t("grok_timeout")
             : ((err as any)?.message?.includes("Failed to fetch")
-                ? "Network error while loading tasks. Check connection and worker status."
-                : "Failed to load your tasks.");
+                ? t("ipfs_local_request_failed")
+                : t("loading_tasks"));
         showNotification(msg, "error");
     } finally {
         executorState.myTasksLoading = false;
@@ -93,31 +95,31 @@ export async function updateBlueVDisplay() {
     try {
         const { xId } = await getCurrentUserInfo();
         if (!xId) {
-            el.textContent = "Not Linked";
+            el.textContent = t("not_linked");
             return;
         }
 
         const status = await getCurrentUserBlueVStatus();
         if (status && status.userId === xId) {
             if (status.isBlueVerified) {
-                el.textContent = "Verified";
+                el.textContent = t("verified");
                 el.classList.add("status-verified");
                 el.style.color = "#1d9bf0";
                 el.style.fontWeight = "600";
             } else {
-                el.textContent = "Not Verified";
+                el.textContent = t("not_verified");
                 el.classList.add("status-unverified");
                 el.style.color = "#e0245e";
             }
         } else {
-            el.textContent = "Unknown";
-            el.title = "Visit your X profile to update status";
+            el.textContent = t("unknown");
+            el.title = t("visit_profile_update");
             el.style.cursor = "help";
             el.style.color = "#888";
         }
     } catch (e) {
         console.warn("Failed to update Blue V display:", e);
-        el.textContent = "Error";
+        el.textContent = t("operation_failed");
     }
 }
 
@@ -180,7 +182,7 @@ export async function startTask(ad: EarnAd) {
         } else if (isFresh) {
             // 如果是最近 7 天内验证过的，直接根据结果通过或拦截
             if (!blueVStatus.isBlueVerified) {
-                showAlert("Verification Failed", "Only Blue Verified users can participate in this campaign. Please ensure your account has the Blue Checkmark.");
+                showAlert(t("verification_failed"), t("blue_v_required"));
                 executorState.taskRunState[ad.id] = "idle";
                 renderEarnAds();
                 return;
@@ -188,8 +190,8 @@ export async function startTask(ad: EarnAd) {
         } else {
             // 状态缺失 或 超过 7 天没有更新 -> 提示跳转到 Profile 更新
             const msg = !blueVStatus || blueVStatus.userId !== xId
-                ? "Verification Required: To participate in this campaign, we need to verify your Blue Verified status. We can do this by briefly visiting your X profile page. Proceed?"
-                : "Status Expired: Your Blue Verified status hasn't been updated for over a week. Please visit your profile to refresh your status. Proceed?";
+                ? t("verification_required_msg")
+                : t("status_expired_msg");
 
             const confirmed = await showConfirm(msg);
 
@@ -207,7 +209,7 @@ export async function startTask(ad: EarnAd) {
         if (ad.detailUrl) {
             window.open(ad.detailUrl, "_blank");
         } else {
-            showAlert("Error", "Missing landing page URL for this ad.");
+            showAlert(t("warning"), t("missing_landing_page"));
         }
 
         executorState.taskRunState[ad.id] = "idle";
@@ -215,7 +217,7 @@ export async function startTask(ad: EarnAd) {
         renderEarnAds();
     } catch (e: any) {
         console.error("Start task failed:", e);
-        showNotification(e.message || "Start task failed", "error");
+        showNotification(e.message || t("start_task_failed"), "error");
         executorState.taskRunState[ad.id] = "idle";
         await saveTaskRunState();
         renderEarnAds();
@@ -246,8 +248,8 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
         emptyState.style.display = "block";
         const emptyTitle = emptyState.querySelector("h3");
         const emptyText = emptyState.querySelector("p");
-        if (emptyTitle) emptyTitle.textContent = "No tasks yet";
-        if (emptyText) emptyText.textContent = "Explore ads and start earning rewards!";
+        if (emptyTitle) emptyTitle.textContent = t("no_tasks_yet");
+        if (emptyText) emptyText.textContent = t("explore_ads_earning");
         return;
     }
     emptyState.style.display = "none";
@@ -287,17 +289,11 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
             avatarEl.style.display = "none";
         }
 
-        const statusMap: Record<string, string> = {
-            "CLAIMED": "Claimed - To Do",
-            "PENDING_CONFIRM": "Pending Verification",
-            "CONFIRMED": "Settled & Paid",
-            "REJECTED": "Rejected"
-        };
-        const friendlyStatus = statusMap[task.status] || task.status;
+        const friendlyStatus = TASK_STATUS_MAP[task.status] || task.status;
 
         $2<HTMLElement>(card, ".ad-card-title").textContent = task.ad.title;
         $2<HTMLElement>(card, ".ad-card-brand").textContent = task.ad.brand;
-        $2<HTMLElement>(card, ".ad-card-description").textContent = `Status: ${friendlyStatus}`;
+        $2<HTMLElement>(card, ".ad-card-description").textContent = `${t("status_label")}: ${friendlyStatus}`;
 
         $2<HTMLElement>(card, ".meta-time").textContent = `⏱️ ${task.ad.durationMinutes} min`;
         $2<HTMLElement>(card, ".meta-quota").textContent = `📅 ${new Date(task.created_at).toLocaleDateString()}`;
@@ -343,7 +339,7 @@ function updatePaginationUI() {
     const total = executorState.myTasksTotal;
     const totalPages = Math.ceil(total / MY_TASKS_PAGE_SIZE);
 
-    indicator.textContent = `Page ${currentPage + 1} of ${totalPages || 1}`;
+    indicator.textContent = t("page_indicator").replace("$1", String(currentPage + 1)).replace("$2", String(totalPages || 1));
 
     prevBtn.disabled = currentPage <= 0;
     nextBtn.disabled = (currentPage + 1) * MY_TASKS_PAGE_SIZE >= total;
@@ -355,8 +351,8 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
         emptyState.style.display = "block";
         const emptyTitle = emptyState.querySelector("h3");
         const emptyText = emptyState.querySelector("p");
-        if (emptyTitle) emptyTitle.textContent = "No ads available";
-        if (emptyText) emptyText.textContent = "Check back later for new earning opportunities!";
+        if (emptyTitle) emptyTitle.textContent = t("no_ads_available");
+        if (emptyText) emptyText.textContent = t("check_back_later");
         return;
     }
     emptyState.style.display = "none";
@@ -449,7 +445,7 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
         const isClaimed = !!myClaim;
 
         if (isClaimed) {
-            btn.textContent = myClaim?.status || "Claimed";
+            btn.textContent = myClaim?.status ? (TASK_STATUS_MAP[myClaim.status] || myClaim.status) : t("status_claimed_todo");
             btn.classList.add("claimed");
             card.classList.add("ad-card-claimed");
             // If claimed, maybe we allow clicking to see details?
@@ -457,8 +453,8 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
             btn.disabled = false; // Allow clicking to open link
         } else {
             btn.textContent = ad.completed >= ad.totalQuota
-                ? "Completed"
-                : (executorState.taskRunState[ad.id] === "running" ? "Running..." : "Go to Follow");
+                ? t("status_completed")
+                : (executorState.taskRunState[ad.id] === "running" ? t("status_running") : t("btn_go_to_follow"));
             btn.disabled = executorState.taskRunState[ad.id] === "running" || ad.completed >= ad.totalQuota;
         }
 
@@ -630,7 +626,7 @@ export function initPlazaFiltersEvents() {
 
             // Load My Tasks data from backend when switching to that tab
             if (nextTab === 'my-tasks') {
-                showLoading("Loading tasks...");
+                showLoading(t("loading_tasks"));
                 try {
                     await loadMyTasks(0);
                     renderEarnAds();
@@ -649,7 +645,7 @@ export function initPlazaFiltersEvents() {
         statusFilter.addEventListener("change", async () => {
             executorState.myTasksStatus = statusFilter.value as any;
             executorState.myTasksPage = 0; // Reset to page 0
-            showLoading("Filtering...");
+            showLoading(t("filtering"));
             try {
                 await loadMyTasks(0);
                 renderEarnAds();
@@ -665,7 +661,7 @@ export function initPlazaFiltersEvents() {
     if (prevBtn) {
         prevBtn.addEventListener("click", async () => {
             if (executorState.myTasksPage > 0) {
-                showLoading("Loading...");
+                showLoading(t("loading"));
                 try {
                     await loadMyTasks(executorState.myTasksPage - 1);
                     renderEarnAds();
@@ -679,7 +675,7 @@ export function initPlazaFiltersEvents() {
     if (nextBtn) {
         nextBtn.addEventListener("click", async () => {
             if ((executorState.myTasksPage + 1) * MY_TASKS_PAGE_SIZE < executorState.myTasksTotal) {
-                showLoading("Loading...");
+                showLoading(t("loading"));
                 try {
                     await loadMyTasks(executorState.myTasksPage + 1);
                     renderEarnAds();

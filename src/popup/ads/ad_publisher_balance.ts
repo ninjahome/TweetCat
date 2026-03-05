@@ -5,6 +5,7 @@ import {
     openTxInExplorer,
     showNotification
 } from "../common";
+import { t } from "../../common/i18n";
 import {
     API_PATH_ADS_PUBLISHER_RECHARGE,
     API_PATH_ADS_PUBLISHER_WITHDRAW,
@@ -73,14 +74,14 @@ function setTransferDirection(dir: TransferDirection) {
     btnB?.classList.toggle("active", dir === "ads_to_wallet");
 
     const submitBtn = $Id("btn-transfer-submit") as HTMLButtonElement | null;
-    if (submitBtn) submitBtn.textContent = dir === "wallet_to_ads" ? "Transfer to Ads" : "Transfer to Wallet";
+    if (submitBtn) submitBtn.textContent = dir === "wallet_to_ads" ? t("btn_transfer_to_ads") : t("btn_transfer_to_wallet");
 
     const indicator = $Id("transfer-direction-indicator");
     if (indicator) {
         indicator.textContent =
             dir === "wallet_to_ads"
-                ? "On-chain Wallet → Ads Account"
-                : "Ads Account → On-chain Wallet";
+                ? t("indicator_wallet_to_ads")
+                : t("indicator_ads_to_wallet");
     }
 
     const monthlyWarning = $Id("monthly-limit-warning");
@@ -115,7 +116,7 @@ function setTransferDirection(dir: TransferDirection) {
                 const submitBtn = $Id("btn-transfer-submit") as HTMLButtonElement | null;
                 if (submitBtn) {
                     submitBtn.disabled = true;
-                    submitBtn.title = "Monthly withdrawal limit reached";
+                    submitBtn.title = t("modal_limit_reached_title");
                 }
             }
         } else {
@@ -216,22 +217,22 @@ function handleMonthlyWithdrawLimitIfNeeded(result: any) {
     const nextDateText = result.nextAvailableDate
         ? new Date(result.nextAvailableDate).toLocaleDateString()
         : "next month";
-    showNotification(`Monthly withdrawal limit reached. Next available: ${nextDateText}`, "error");
+    showNotification(t("msg_withdraw_limit_reached").replace("$1", nextDateText), "error");
 }
 
 function prepareEscrowTransferParam(): any {
     const input = $Id("transfer-amount") as HTMLInputElement | null;
     const amount = Number((input?.value || "0").trim());
 
-    if (!Number.isFinite(amount) || amount <= 0) throw new Error("Please enter a valid amount.");
-    if (!publisherState.walletInfoCache?.xId) throw new Error("Missing user xId. Please sign in again.");
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error(t("err_enter_valid_amount"));
+    if (!publisherState.walletInfoCache?.xId) throw new Error(t("err_missing_xid"));
 
     if (transferDirection === "ads_to_wallet") {
         const maxAds = atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic);
-        if (amount > maxAds + 1e-9) throw new Error("Amount exceeds Ads Available.");
+        if (amount > maxAds + 1e-9) throw new Error(t("err_amount_exceeds_ads"));
     } else if (transferDirection === "wallet_to_ads") {
         const walletUsdc = parseUsdcNumber(publisherState.walletInfoCache?.usdcVal || "0");
-        if (amount > walletUsdc + 1e-9) throw new Error("Amount exceeds Wallet Balance.");
+        if (amount > walletUsdc + 1e-9) throw new Error(t("err_amount_exceeds_wallet"));
     }
 
     return { a_x_id: publisherState.walletInfoCache.xId, amount: amount.toFixed(2) };
@@ -251,10 +252,10 @@ async function handleAdsEscrowTransfer(): Promise<void> {
         console.log(`[Transfer] Initiating transfer: direction=${transferDirection}, amount=${payload.amount}`);
 
         if (transferDirection === "wallet_to_ads") {
-            setTransferBusy(true, "Processing deposit...");
+            setTransferBusy(true, t("processing_deposit"));
             result = await postToX402Srv(API_PATH_ADS_PUBLISHER_RECHARGE, payload);
         } else {
-            setTransferBusy(true, "Processing withdraw...");
+            setTransferBusy(true, t("processing_withdraw"));
             // Use x402WorkerFetch for withdrawal as it should be a server-side treasury payout (no x402 payment from user)
             result = await x402WorkerFetch(API_PATH_ADS_PUBLISHER_WITHDRAW, payload);
         }
@@ -276,7 +277,7 @@ async function handleAdsEscrowTransfer(): Promise<void> {
         const txHash = String(result.txHash);
 
         closeRechargeModal();
-        showNotification("Transfer submitted successfully.", "success");
+        showNotification(t("msg_transfer_success"), "success");
 
         // Refresh all balances and history
         await Promise.all([
@@ -287,7 +288,7 @@ async function handleAdsEscrowTransfer(): Promise<void> {
 
         await openTxInExplorer(txHash);
     } catch (e: any) {
-        let msg = (e?.message || "Transfer failed").toString();
+        let msg = (e?.message || t("err_transfer_failed")).toString();
 
         // Handle technical "Insufficient Balance" technical message from x402WorkerFetch
         if (msg.includes("INSUFFICIENT_BALANCE")) {
@@ -297,9 +298,9 @@ async function handleAdsEscrowTransfer(): Promise<void> {
             if (match) {
                 const req = formatUSDC(atomicToUsdcNumber(match[1]));
                 const avail = formatUSDC(atomicToUsdcNumber(match[2]));
-                detail = `Required ${req}, available ${avail}.`;
+                detail = `${t("required_label")} ${req}, ${t("available_label")} ${avail}.`;
             }
-            msg = `余额不足. ${detail}`.trim();
+            msg = `${t("err_insufficient_balance")} ${detail}`.trim();
         }
 
         setTransferInlineError(msg);

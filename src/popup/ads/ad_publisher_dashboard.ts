@@ -12,6 +12,7 @@ import {
     usdcToAtomic,
     formatTimeLocal
 } from "../common";
+import { t } from "../../common/i18n";
 import { logAdP } from "../../common/debug_flags";
 import type { AdRecord, AdStatus, HistoryRow } from "./ad_publisher_common";
 import {
@@ -30,11 +31,11 @@ import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 
 // 状态显示名称映射
 const AD_STATUS_LABELS: Record<string, string> = {
-    'ACTIVE': 'Active',
-    'PAUSED_MANUAL': 'Paused',
-    'PAUSED_NO_BUDGET': 'Paused (No Budget)',
-    'EXPIRED': 'Ended',
-    'COMPLETED': 'Ended'
+    'ACTIVE': t("status_active"),
+    'PAUSED_MANUAL': t("status_paused"),
+    'PAUSED_NO_BUDGET': t("status_paused_no_budget"),
+    'EXPIRED': t("status_ended"),
+    'COMPLETED': t("status_ended")
 };
 
 // ========= 数据刷新 =========
@@ -251,7 +252,7 @@ export function renderPaginationUI() {
 
     if (infoRange) infoRange.textContent = totalCount > 0 ? `${start}-${end}` : "0";
     if (infoTotal) infoTotal.textContent = totalCount.toString();
-    if (pageInfo) pageInfo.textContent = `Page ${currentPage} / ${maxPage}`;
+    if (pageInfo) pageInfo.textContent = t("pagination_page_info_simple").replace("$1", currentPage.toString()).replace("$2", maxPage.toString());
 
     if (btnPrev) btnPrev.disabled = currentPage <= 1;
     if (btnNext) btnNext.disabled = currentPage >= maxPage;
@@ -388,15 +389,15 @@ function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
 
     // 根据广告状态动态渲染操作按钮
     if (ad.status === "ACTIVE") {
-        btnToggle.textContent = "暂停";
+        btnToggle.textContent = t("btn_pause_label");
         btnToggle.disabled = false;
         btnToggle.onclick = () => handleToggleAdStatus(ad.ad_id, "pause");
     } else if (ad.status === "PAUSED_MANUAL") {
-        btnToggle.textContent = "启用";
+        btnToggle.textContent = t("btn_resume_label");
         btnToggle.disabled = false;
         btnToggle.onclick = () => handleToggleAdStatus(ad.ad_id, "resume");
     } else if (ad.status === "PAUSED_NO_BUDGET") {
-        btnToggle.textContent = "充值";
+        btnToggle.textContent = t("btn_recharge_label");
         btnToggle.disabled = false;
         btnToggle.onclick = () => handleTopUpAdBudget(ad.ad_id);
     } else {
@@ -438,9 +439,9 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume" | "
         });
 
         let msg = "Success";
-        if (action === "pause") msg = "Ad paused";
-        if (action === "resume") msg = "Ad resumed";
-        if (action === "stop") msg = "Ad ended. Remaining budget will be refunded soon.";
+        if (action === "pause") msg = t("msg_ad_paused");
+        if (action === "resume") msg = t("msg_ad_resumed");
+        if (action === "stop") msg = t("msg_ad_ended_refund");
         showNotification(msg, "success");
 
         // 局部更新本地状态并更新 UI
@@ -453,7 +454,7 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume" | "
             await refreshAdsData(publisherState.ads.currentPage);
         }
     } catch (err: any) {
-        showNotification(err?.message || "Operation failed", "error");
+        showNotification(err?.message || t("err_operation_failed"), "error");
     } finally {
         hideLoading();
     }
@@ -505,7 +506,7 @@ async function handleTopUpSubmit(adId: string) {
 
         const amount = parseFloat(amountStr);
         if (isNaN(amount) || amount <= 0) {
-            showNotification("Please enter a valid amount", "error");
+            showNotification(t("err_enter_valid_amount"), "error");
             return;
         }
 
@@ -521,7 +522,7 @@ async function handleTopUpSubmit(adId: string) {
             amount_atomic: amountAtomic
         });
 
-        showNotification("Budget topped up successfully", "success");
+        showNotification(t("msg_budget_topped_up"), "success");
         if (modal) modal.classList.remove("active");
 
         // 局部更新：即使是充值，也涉及余额变化，所以通常需要刷新 dashboard
@@ -529,7 +530,7 @@ async function handleTopUpSubmit(adId: string) {
         await fetchDashboardInfo(); // 更新顶部余额
         await refreshAdsData(publisherState.ads.currentPage);
     } catch (err: any) {
-        showNotification(err?.message || "Recharge failed", "error");
+        showNotification(err?.message || t("err_recharge_failed"), "error");
     } finally {
         hideLoading();
     }
@@ -588,7 +589,7 @@ function openAdDetailModal(ad: AdRecord) {
 
         newBtn.disabled = isEnded;
         if (isEnded) {
-            newBtn.title = "Ended ads cannot be updated.";
+            newBtn.title = t("err_ended_ads_no_update");
         } else {
             newBtn.title = "";
             newBtn.addEventListener("click", async () => {
@@ -600,7 +601,7 @@ function openAdDetailModal(ad: AdRecord) {
                     try {
                         JSON.parse(newCustomData);
                     } catch (e) {
-                        showNotification("Invalid JSON format in Custom Data", "error");
+                        showNotification(t("err_invalid_json_format"), "error");
                         return;
                     }
                 }
@@ -617,7 +618,7 @@ function openAdDetailModal(ad: AdRecord) {
                     const result = await x402WorkerFetch(API_PATH_ADS_UPDATE, payload);
 
                     if (result.ok) {
-                        showNotification("Ad settings updated successfully!", "success");
+                        showNotification(t("msg_ad_settings_updated"), "success");
                         // 局部更新本地状态并刷新行 UI (主要为了让 View 按钮拿到最新引用)
                         const localAd = publisherState.ads.list.find(a => a.ad_id === ad.ad_id);
                         if (localAd) {
@@ -627,7 +628,7 @@ function openAdDetailModal(ad: AdRecord) {
                         }
                         modal.classList.remove("active");
                     } else {
-                        const errorMsg = result.error?.detail || "Failed to update ad";
+                        const errorMsg = result.error?.detail || t("err_failed_update_ad");
                         showNotification(errorMsg, "error");
                     }
                 } catch (err: any) {
@@ -649,7 +650,7 @@ function openAdDetailModal(ad: AdRecord) {
         if (ad.status === "ACTIVE") {
             const btnPause = document.createElement("button");
             btnPause.className = "btn btn-warning";
-            btnPause.textContent = "暂停广告";
+            btnPause.textContent = t("btn_pause_ad");
             btnPause.onclick = async () => {
                 modal.classList.remove("active");
                 await handleToggleAdStatus(ad.ad_id, "pause");
@@ -658,7 +659,7 @@ function openAdDetailModal(ad: AdRecord) {
         } else if (ad.status === "PAUSED_MANUAL") {
             const btnResume = document.createElement("button");
             btnResume.className = "btn btn-primary";
-            btnResume.textContent = "启用广告";
+            btnResume.textContent = t("btn_resume_ad");
             btnResume.onclick = async () => {
                 modal.classList.remove("active");
                 await handleToggleAdStatus(ad.ad_id, "resume");
@@ -667,7 +668,7 @@ function openAdDetailModal(ad: AdRecord) {
         } else if (ad.status === "PAUSED_NO_BUDGET") {
             const btnTopUp = document.createElement("button");
             btnTopUp.className = "btn btn-success";
-            btnTopUp.textContent = "充值并启用";
+            btnTopUp.textContent = t("btn_recharge_resume");
             btnTopUp.onclick = async () => {
                 modal.classList.remove("active");
                 handleTopUpAdBudget(ad.ad_id);
@@ -679,7 +680,7 @@ function openAdDetailModal(ad: AdRecord) {
         if (ad.status === "ACTIVE" || ad.status === "PAUSED_MANUAL") {
             const btnAddBudget = document.createElement("button");
             btnAddBudget.className = "btn btn-success";
-            btnAddBudget.textContent = "追加预算";
+            btnAddBudget.textContent = t("btn_add_budget");
             btnAddBudget.onclick = () => {
                 modal.classList.remove("active");
                 handleTopUpAdBudget(ad.ad_id);
@@ -694,9 +695,9 @@ function openAdDetailModal(ad: AdRecord) {
             btnStop.className = "btn btn-danger"; // Ensure you have danger style or use inline style
             btnStop.style.backgroundColor = "var(--color-danger, #dc3545)";
             btnStop.style.color = "white";
-            btnStop.textContent = "结束投放";
+            btnStop.textContent = t("btn_end_campaign");
             btnStop.onclick = async () => {
-                const confirmed = await showConfirm("确定要结束此广告吗？\n\n结束后的广告无法恢复，未使用的预算将自动退回到您的账户余额。");
+                const confirmed = await showConfirm(t("confirm_end_campaign"));
                 if (!confirmed) return;
 
                 modal.classList.remove("active");
@@ -776,10 +777,10 @@ export function updateBudgetSummaryAndBalance() {
 
         if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(publisherState.dashboardInfo.balance_atomic) >= BigInt(requiredAtomic)) {
             balanceStatus.classList.add("sufficient");
-            balanceStatus.textContent = "Your balance is sufficient to publish this ad.";
+            balanceStatus.textContent = t("msg_sufficient_balance");
         } else if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(publisherState.dashboardInfo.balance_atomic) < BigInt(requiredAtomic)) {
             balanceStatus.classList.add("insufficient");
-            balanceStatus.textContent = "Insufficient balance. Please recharge before publishing.";
+            balanceStatus.textContent = t("msg_insufficient_balance_recharge");
         } else {
             balanceStatus.textContent = "";
         }
@@ -815,7 +816,7 @@ export function initNavEvents() {
             const addr = publisherState.walletInfoCache?.address;
             if (addr) {
                 await navigator.clipboard.writeText(addr);
-                showNotification("Copy Success", "success");
+                showNotification(t("copy_success"), "success");
             }
         });
     }
@@ -869,16 +870,15 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
 
     if (rows.length === 0) {
         const tr = cloneTemplate("tpl-empty-history-row") as HTMLTableRowElement;
-        $2<HTMLElement>(tr, ".td-empty").textContent = "No transfer records yet";
+        $2<HTMLElement>(tr, ".td-empty").textContent = t("msg_no_transfer_records");
         tbody.appendChild(tr);
         return;
     }
 
     rows.forEach((row) => {
         const tr = cloneTemplate("tpl-history-row") as HTMLTableRowElement;
-
-        const isDeposit = row.adNameOrMethod.includes("Wallet → Ads");
-        const isWithdraw = row.adNameOrMethod.includes("Ads → Wallet");
+        const isDeposit = row.adNameOrMethod === t("btn_wallet_to_ads");
+        const isWithdraw = row.adNameOrMethod === t("btn_ads_to_wallet");
 
         if (isDeposit) tr.classList.add("history-row--deposit");
         else if (isWithdraw) tr.classList.add("history-row--withdraw");
@@ -930,7 +930,7 @@ export async function loadAndRenderTransferHistory(): Promise<void> {
     if (tbody) {
         tbody.replaceChildren();
         const loadingTr = cloneTemplate("tpl-empty-history-row") as HTMLTableRowElement;
-        $2<HTMLElement>(loadingTr, ".td-empty").textContent = "Loading transfer history...";
+        $2<HTMLElement>(loadingTr, ".td-empty").textContent = t("loading_history");
         tbody.appendChild(loadingTr);
     }
 
@@ -941,8 +941,8 @@ export async function loadAndRenderTransferHistory(): Promise<void> {
 
         const op = row.op || row.direction || "UNKNOWN";
         const adNameOrMethod =
-            op === "DEPOSIT" ? "Wallet → Ads" :
-                op === "WITHDRAW" ? "Ads → Wallet" : op;
+            op === "DEPOSIT" ? t("btn_wallet_to_ads") :
+                op === "WITHDRAW" ? t("btn_ads_to_wallet") : op;
 
         const amount = atomicToUsdcNumber(row.amount_atomic || "0");
 
@@ -971,7 +971,7 @@ export function initHistoryModalEvents() {
                 if (!tbody) return;
                 tbody.replaceChildren();
                 const errorTr = cloneTemplate("tpl-empty-history-row") as HTMLTableRowElement;
-                const errorMsg = err?.message || "Failed to load history";
+                const errorMsg = err?.message || t("err_load_history_failed");
                 $2<HTMLElement>(errorTr, ".td-empty").textContent = `Error: ${errorMsg}`;
                 tbody.appendChild(errorTr);
             }
