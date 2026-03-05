@@ -1,13 +1,13 @@
 import browser from "webextension-polyfill";
-import {localGet, localSet} from "./local_storage";
-import {__DBK_Bearer_Token, DEFAULT_BEARER} from "./consts";
-export async function openOrUpdateTab(uiUrl:string){
+import { localGet, localSet } from "./local_storage";
+import { __DBK_Bearer_Token, DEFAULT_BEARER } from "./consts";
+export async function openOrUpdateTab(uiUrl: string) {
     const base = uiUrl.split('#')[0];
-    const tabs = await browser.tabs.query({url: base + '*'});
+    const tabs = await browser.tabs.query({ url: base + '*' });
     if (tabs.length > 0 && tabs[0].id) {
-        await browser.tabs.update(tabs[0].id, {active: true, url: uiUrl});
+        await browser.tabs.update(tabs[0].id, { active: true, url: uiUrl });
     } else {
-        await browser.tabs.create({url: uiUrl, active: true});
+        await browser.tabs.create({ url: uiUrl, active: true });
     }
 }
 
@@ -20,7 +20,7 @@ export async function sendMsgToService(data: any, actTyp: string): Promise<any> 
     } catch (e) {
         const error = e as Error;
         console.warn("------>>>send message error", error, data, actTyp);
-        return {success: false, data: error.message}
+        return { success: false, data: error.message }
     }
 }
 
@@ -35,8 +35,22 @@ export async function sendMsgToOffScreen(data: any, actTyp: string): Promise<any
     } catch (e) {
         const error = e as Error;
         console.warn("------>>>send message error", error, data, actTyp);
-        return {success: false, data: error.message}
+        return { success: false, data: error.message }
     }
+}
+
+/**
+ * Send message to off-screen with explicit timeout protection
+ */
+export async function sendMsgToOffScreenWithTimeout(data: any, actTyp: string, timeout = 10_000): Promise<any> {
+    return Promise.race([
+        sendMsgToOffScreen(data, actTyp),
+        new Promise((resolve) => {
+            setTimeout(() => {
+                resolve({ success: false, data: "TIMEOUT", message: "Request timed out" });
+            }, timeout);
+        })
+    ]);
 }
 
 export function showView(hash: string, callback?: (hash: string) => void): void {
@@ -65,8 +79,8 @@ export function addCustomStyles(cssFilePath: string): void {
 
 
 function observeAction(target: HTMLElement, idleThreshold: number,
-                       foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
-                       options: MutationObserverInit, continueMonitor?: boolean) {
+    foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
+    options: MutationObserverInit, continueMonitor?: boolean) {
     const cb: MutationCallback = (_, observer) => {
         const element = foundFunc();
         if (!element) {
@@ -87,16 +101,16 @@ function observeAction(target: HTMLElement, idleThreshold: number,
 }
 
 export function observeForElement(target: HTMLElement, idleThreshold: number,
-                                  foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
-                                  continueMonitor?: boolean) {
+    foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
+    continueMonitor?: boolean) {
 
-    observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: true}, continueMonitor);
+    observeAction(target, idleThreshold, foundFunc, callback, { childList: true, subtree: true }, continueMonitor);
 }
 
 export function observeForElementDirect(target: HTMLElement, idleThreshold: number,
-                                        foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
-                                        continueMonitor?: boolean) {
-    observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: false}, continueMonitor);
+    foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
+    continueMonitor?: boolean) {
+    observeAction(target, idleThreshold, foundFunc, callback, { childList: true, subtree: false }, continueMonitor);
 }
 
 
@@ -149,9 +163,9 @@ export function isAdTweetNode(node: HTMLElement, atStartUp: boolean = true): boo
  *************************************************************************************/
 
 export function observeSimple(targetNode: HTMLElement,
-                              judgeFunc: (mutationsList: MutationRecord[]) => HTMLElement | null,
-                              callback: (elm: HTMLElement) => boolean,
-                              attributes: boolean = false): MutationObserver {
+    judgeFunc: (mutationsList: MutationRecord[]) => HTMLElement | null,
+    callback: (elm: HTMLElement) => boolean,
+    attributes: boolean = false): MutationObserver {
     const observer = new MutationObserver(async (mutationsList) => {
         const elm = judgeFunc(mutationsList);
         if (!elm) {
@@ -214,7 +228,7 @@ export function formatTweetTime(
     if (finalLocale === 'zh') {
         return `${date.getMonth() + 1}月${date.getDate()}日`;
     }
-    return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 export function deferByFrames(callback: () => void, frameCount: number = 3): void {
@@ -375,7 +389,7 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
-        return await fetch(url, {...options, signal: controller.signal});
+        return await fetch(url, { ...options, signal: controller.signal });
     } finally {
         clearTimeout(timer);
     }

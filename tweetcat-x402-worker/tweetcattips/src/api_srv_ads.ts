@@ -26,7 +26,8 @@ import {
 	API_PATH_ADS_EXECUTOR_DASHBOARD_INFO,
 	API_PATH_ADS_EXECUTOR_WITHDRAW,
 	API_PATH_ADS_SUBMIT_PROOF,
-	decodeB64OrB64UrlToArrayBuffer
+	decodeB64OrB64UrlToArrayBuffer,
+	digestSha256
 } from "./common";
 import {
 	AdCategory,
@@ -60,6 +61,8 @@ import {
 	listAdEscrowLedger,
 	createDetailedClaim,
 	getDetailedClaim,
+	updateClaimStatus,
+	updateClaimStatusWithSignature,
 	getPerformerHistory,
 	type AdCreatePayload,
 	type CreateDetailedClaimParams,
@@ -78,8 +81,7 @@ import {
 	debitPerformerBalance,
 	settlePerformerWithdrawLedger,
 	failPerformerWithdrawLedger,
-	refundPerformerBalance,
-	updateClaimStatus
+	refundPerformerBalance
 } from "./database_ad";
 import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
 import { getKolBindingByXId } from "./database_402";
@@ -274,6 +276,10 @@ async function parseEscrowRequest(c: ExtCtx): Promise<ParsedEscrowRequest | Resp
 		}
 	} else {
 		return jsonError(c, 400, "INVALID_REQUEST", "Missing amount or amount_atomic");
+	}
+
+	if (BigInt(amountAtomic) <= 0n) {
+		return jsonError(c, 400, "INVALID_REQUEST", "Amount must be greater than zero");
 	}
 
 	return {
@@ -548,16 +554,6 @@ export async function apiAdsExecutorVersion(c: ExtCtx) {
 	}
 }
 
-// TODO: Replace with real user IDs for testing
-const BLUE_V_BYPASS_WHITELIST = [
-	"1899045104146644992",
-	"1735224873365225472",
-	"1236539014406012928",
-	"1554341020246061059",
-	"1740205143621238785",
-	"1514598908273463303"
-];
-
 export async function apiAdsClaim(c: ExtCtx) {
 	try {
 		const body = await c.req.json().catch(() => ({}));
@@ -577,8 +573,15 @@ export async function apiAdsClaim(c: ExtCtx) {
 		if (!requireStringField(bXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
 		if (!requireStringField(bWallet)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_wallet");
 
+		// [SEC-04] Secure Claim Signature
+		const claimSignature = body?.claim_signature;
+		const claimBundle = body?.claim_bundle; // JSON string containing {u, a, h, t}
+
 		// [ENFORCE] Blue V proof is MANDATORY (unless whitelisted)
-		if (!BLUE_V_BYPASS_WHITELIST.includes(bXId)) {
+		const whitelistStr = c.env.BLUE_V_BYPASS_WHITELIST || "";
+		const whitelist = whitelistStr.split(",").map(s => s.trim()).filter(Boolean);
+
+		if (!whitelist.includes(bXId)) {
 			if (!blueVProof) {
 				return jsonError(c, 401, "BLUE_V_REQUIRED", "Blue Verified status proof is required to claim rewards");
 			}
@@ -611,6 +614,60 @@ export async function apiAdsClaim(c: ExtCtx) {
 		// [ENFORCE] Activity proof is also REQUIRED to finish claim
 		if (!proofData) {
 			return jsonError(c, 400, "EVIDENCE_REQUIRED", "Activity proof (follow evidence) is required to claim rewards");
+		}
+
+		// [SEC-04] [ENFORCE] Claim Signature is MANDATORY (unless whitelisted)
+		if (!whitelist.includes(bXId)) {
+			if (!claimSignature || !claimBundle) {
+				return jsonError(c, 400, "SIGNATURE_REQUIRED", "Claim signature is required for security (SEC-04)");
+			}
+
+			try {
+				const bundle = typeof claimBundle === 'string' ? JSON.parse(claimBundle) : claimBundle;
+				// 1. Verify bundle content
+				if (bundle.u !== bXId || bundle.a !== adId) {
+					return jsonError(c, 401, "SIGNATURE_MISMATCH", "Signature bundle does not match user or ad ID");
+				}
+
+				// 2. Verify hash of proofData
+				const proofDataStr = typeof proofData === 'object' ? JSON.stringify(proofData) : String(proofData);
+				const calculatedHash = await digestSha256(proofDataStr);
+				if (bundle.h !== calculatedHash) {
+					return jsonError(c, 401, "EVIDENCE_TAMPERED", "Activity proof does not match the provided signature");
+				}
+
+				// 3. Verify cryptographic signature
+				const kolBinding = await getKolBindingByXId(c.env.DB, bXId);
+				const registeredDeviceKey = kolBinding?.device_pubkey_spki ?? null;
+				if (!registeredDeviceKey) {
+					return jsonError(c, 401, "KEY_NOT_FOUND", "No registered device key for this user");
+				}
+
+				const sigBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(claimSignature));
+				const dataBytes = new TextEncoder().encode(typeof claimBundle === 'string' ? claimBundle : JSON.stringify(claimBundle));
+				const spkiBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(registeredDeviceKey));
+
+				const publicKey = await crypto.subtle.importKey(
+					"spki",
+					spkiBytes,
+					{ name: "ECDSA", namedCurve: "P-256" },
+					false,
+					["verify"]
+				);
+
+				const isSigValid = await crypto.subtle.verify(
+					{ name: "ECDSA", hash: "SHA-256" },
+					publicKey,
+					sigBytes,
+					dataBytes
+				);
+
+				if (!isSigValid) {
+					return jsonError(c, 401, "INVALID_CLAIM_SIGNATURE", "End-to-End claim signature verification failed");
+				}
+			} catch (e: any) {
+				return jsonError(c, 400, "SIGNATURE_VERIFY_ERROR", e.message || "Failed to process claim signature");
+			}
 		}
 
 		// Get ad info
@@ -696,8 +753,9 @@ export async function apiAdsClaim(c: ExtCtx) {
 			const evidenceInserted = await insertClaimEvidence(c.env.DB, evidenceParams);
 			if (evidenceInserted) {
 				// 延迟结算策略：只保存证据，状态改为 PENDING_CONFIRM
-				// 真正的结算 (CONFIRMED + 转账) 由 Cron job 在 24 小时后执行
-				await updateClaimStatus(c.env.DB, claimId!, 'PENDING_CONFIRM');
+				// [SEC-04] 同时存储签章信息
+				const claimBundleStr = typeof claimBundle === 'string' ? claimBundle : JSON.stringify(claimBundle);
+				await updateClaimStatusWithSignature(c.env.DB, claimId!, 'PENDING_CONFIRM', claimSignature || "", claimBundleStr || "");
 				finalStatus = 'PENDING_CONFIRM';
 
 				// 广场可见集合变化：bump feed version

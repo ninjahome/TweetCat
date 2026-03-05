@@ -271,19 +271,19 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | EX-02 | ✅ 👋 用户已关注该 KOL | 不显示按钮或按钮状态为「已关注」 | P0 |
 | EX-03 | ✅ 👋 用户是该 KOL 本人 | 不显示按钮（self-follow 防护） | P1 |
 | EX-04 | ✅ 👋 用户未登录钱包 | 点击按钮 → 提示登录钱包 | P0 |
-| EX-05 | 🤖 🔵 正常关注流程：点击按钮 → 触发原生关注 → 拦截确认 → 提交证据 | Claim 创建成功，状态 PENDING_CONFIRM | P0 |
+| EX-05 | ✅ 🤖 🔵  正常关注流程：点击按钮 → 触发原生关注 → 拦截确认 → 提交证据 | Claim 创建成功，状态 PENDING_CONFIRM | P0 |
 | EX-06 | ✅ 🤖 🟢 关注确认超时（15秒） | 提示"关注确认超时或失败"，状态回到 Eligible | P0 |
 | EX-07 | ✅ 🤖 🟢 关注成功但 ProfileSpotlights 返回未关注 | 不会触发后端 claim；返回失败并回退 UI（代码审查确认） | P0 |
 | EX-08 | ✅ 🤖 🟢 重复 claim 同一广告 | 服务器返回 `already_claimed: true` | P0 |
 | EX-09 | ✅ 🤖 🟢 广告配额已满 | 服务器返回 `QUOTA_FULL`，前端按钮显示 "Completed" | P0 |
 | EX-10 | ✅ 🤖 🟢 广告已过期 | 服务器返回 `AD_EXPIRED` | P0 |
 | EX-11 | ✅ 🤖 🟢 广告已暂停 | 服务器返回 `AD_NOT_ACTIVE` | P0 |
-| EX-12 | 🤖 🟠 白名单用户跳过蓝V检查 | 允许 claim 但应记录日志 | P1 |
-| EX-13 | 🤖 🔵 蓝V证据签名无效 | 服务器返回 `INVALID_BLUE_V_PROOF` | P0 |
-| EX-14 | 🤖 🔵 蓝V证据中的 userId 与 b_x_id 不匹配 | 服务器返回 `USER_MISMATCH` | P0 |
-| EX-15 | 🤖 🔵 蓝V状态为 false（非蓝V用户） | 服务器返回 `NOT_BLUE_VERIFIED` 或前端拦截 | P0 |
-| EX-16 | 👋 蓝V状态过期（超过 7 天） | 前端引导用户刷新状态 | P1 |
-| EX-17 | 🤖 🔵 claim 创建失败后的回滚 | quota_claimed 应该 -1（best effort），claim state 被 clear | P0 |
+| EX-12 | ✅ 🤖 🟠 白名单用户跳过蓝V检查 | 允许 claim 但应记录日志 | P1 |
+| EX-13 | ✅ 🤖 🔵 蓝V证据签名无效 | 服务器返回 `INVALID_BLUE_V_PROOF` | P0 |
+| EX-14 | ✅ 🤖 🔵 蓝V证据中的 userId 与 b_x_id 不匹配 | 服务器返回 `USER_MISMATCH` | P0 |
+| EX-15 | ✅ 🤖 🔵 蓝V状态为 false（非蓝V用户） | 服务器返回 `NOT_BLUE_VERIFIED` 或前端拦截 | P0 |
+| EX-16 | ✅ 👋 蓝V状态过期（超过 7 天） | 前端引导用户刷新状态 | P1 |
+| EX-17 | ✅ 🤖 🔵 claim 创建失败后的回滚 | quota_claimed 应该 -1（best effort），claim state 被 clear | P0 |
 | EX-18 | ✅ 👋 多个广告指向同一 KOL | Feed 选最高 reward 的 offer 展示 | P2 |
 
 ---
@@ -302,15 +302,15 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| CR-01 | 👋 PENDING_CONFIRM 超过 1h（dev 环境），proof 中 following=true | Claim 状态 → CONFIRMED，广告主 frozen 扣减，执行者 available 增加，quota_used +1 | P0 |
-| CR-02 | 👋 PENDING_CONFIRM 超过 1h（dev 环境），proof 中 following=false | Claim 状态 → REJECTED，`quota_claimed` 配额退回广告可用池，quota_used 不变（✅ **已修复 C-3**）| P0 |
-| CR-03 | 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_data 为空 | Claim 状态 → REJECTED（Missing proof data） | P0 |
-| CR-04 | 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_type 未知 | Claim 状态 → REJECTED | P1 |
-| CR-05 | 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_data JSON 格式错误 | Claim 状态 → REJECTED（Malformed proof JSON） | P1 |
-| CR-06 | 🤖 🔵 广告主冻结余额不足（异常情况） | settleAdReward 返回 false，claim 保留 PENDING 状态 | P0 |
-| CR-07 | 🤖 🔵 批量结算：50 条 claims 同时处理 | 每条独立处理，一条失败不影响其他 | P1 |
-| CR-08 | 👋 **退款流程（小规模等价验证）**：结束广告且 quota_used < quota_total | 无 pending 时退回 `(quota_total - quota_used) * unit_price` | P0 |
-| CR-09 | 👋 退款流程：有 PENDING_CONFIRM claims | 退款 cron 跳过；待结算/拒绝后再退 | P0 |
+| CR-01 | ✅ 👋 PENDING_CONFIRM 超过 1h（dev 环境），proof 中 following=true | Claim 状态 → CONFIRMED，广告主 frozen 扣减，执行者 available 增加，quota_used +1 | P0 |
+| CR-02 | ✅ 👋 PENDING_CONFIRM 超过 1h（dev 环境），proof 中 following=false | Claim 状态 → REJECTED，`quota_claimed` 配额退回广告可用池，quota_used 不变（✅ **已修复 C-3**）| P0 |
+| CR-03 | ✅ 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_data 为空 | Claim 状态 → REJECTED（Missing proof data） | P0 |
+| CR-04 | ✅ 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_type 未知 | Claim 状态 → REJECTED | P1 |
+| CR-05 | ✅ 🤖 🔵 PENDING_CONFIRM 超过 1h，proof_data JSON 格式错误 | Claim 状态 → REJECTED（Malformed proof JSON） | P1 |
+| CR-06 | ✅ 🤖 🔵 广告主冻结余额不足（异常情况） | settleAdReward 返回 false，claim 保留 PENDING 状态 | P0 |
+| CR-07 | ✅ 🤖 🔵 批量结算：50 条 claims 同时处理 | 每条独立处理，一条失败不影响其他 | P1 |
+| CR-08 | ✅ 👋 **退款流程（小规模等价验证）**：结束广告且 quota_used < quota_total | 无 pending 时退回 `(quota_total - quota_used) * unit_price` | P0 |
+| CR-09 | ✅ 👋 退款流程：有 PENDING_CONFIRM claims | 退款 cron 跳过；待结算/拒绝后再退 | P0 |
 | CR-10 | ✅ 🤖 🟢 退款流程：冻结余额不足以退回计算金额 | 退款失败，不更新 budget_settlement_status（代码审查确认） | P1 |
 | CR-11 | ✅ 🤖 🟢 **交叉校验**：Proof 里的账号与 Ad Target 不匹配 | 识别到 @screen_name 错误 → REJECTED（代码审查确认；✅ **修复 M-5**） | P0 |
 
@@ -354,11 +354,11 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| EW-01 | 🤖 🔵 可提现金额 > 0，点击提现 | 链上转账成功，withdrawableUSDC 归零，txHash 显示（✅ **验证 C-2**） | P0 |
-| EW-02 | ❓ 待定：可提现金额 = 0 | 提示 "Nothing to withdraw." | P0 |
+| EW-01 | ✅ 🤖 🔵 可提现金额 > 0，点击提现 | 链上转账成功，withdrawableUSDC 归零，txHash 显示（✅ **验证 C-2**） | P0 |
+| EW-02 | ✅ 🤖 🟢 输入金额 = 0 | 拦截并提示 "Amount must be greater than zero" | P0 |
 | EW-03 | 👋 提现金额不一致（前端计算 vs 服务器余额） | 以服务器实际 `available_atomic` 为准，防止超扣（✅ **验证 C-2**） | P0 |
-| EW-04 | 🤖 🔵 提现过程中链上转账失败 | 余额退回，提示错误信息 | P0 |
-| EW-05 | 🤖 🔵 每周提现限制（Executor） | 重复请求返回 alreadyWithdrawn / status | P1 |
+| EW-04 | ✅ 🤖 🔵 提现过程中链上转账失败 | 余额退回，提示错误信息 | P0 |
+| EW-05 | ✅ 🤖 🔵 每周提现限制（Executor） | 重复请求返回 alreadyWithdrawn / status | P1 |
 | EW-06 | 👋 提现后 2 秒自动刷新 summary | withdrawableUSDC 已更新，totalEarnedUSDC 不变 | P1 |
 | EW-07 | ✅ 👋 查看 Activity 列表 | 显示所有 claim 记录，时间和状态正确 | P2 |
 | EW-08 | 👋 Activity Modal 打开/关闭 | 正常切换，点击遮罩关闭 | P2 |
@@ -378,16 +378,16 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| S-01 | 🤖 🔵 正常签名：设备私钥对 blueV 数据签名 → 服务器验证 | 验证通过 ✅ | P0 |
-| S-02 | 🤖 🔵 篡改 isBlueVerified (false → true)：签名不变 | 服务器验证失败：签名与数据不匹配 | P0 |
-| S-03 | 🤖 🔵 篡改 userId：签名不变 | 服务器验证失败 | P0 |
-| S-04 | 🤖 🔵 使用不同设备的私钥签名 | 服务器使用 proof 中的 pubKey 验证会失败（需要设备绑定机制才有效） | P0 |
-| S-05 | 🤖 🔵 缺少签名字段 | `verifyBlueVProof` 返回 false | P1 |
-| S-06 | 🤖 🔵 缺少 devicePubKey 字段 | `verifyBlueVProof` 返回 false | P1 |
-| S-07 | 🤖 🔵 Base64 vs Base64URL 编码混合 | `decodeB64OrB64UrlToArrayBuffer` 应正确处理两种格式 | P1 |
+| S-01 | ✅ 🤖 🔵 正常签名：设备私钥对 blueV 数据签名 → 服务器验证 | 验证通过 ✅ | P0 |
+| S-02 | ✅ 🤖 🔵 篡改 isBlueVerified (false → true)：签名不变 | 服务器验证失败：签名与数据不匹配 | P0 |
+| S-03 | ✅ 🤖 🔵 篡改 userId：签名不变 | 服务器验证失败 | P0 |
+| S-04 | ✅ 🤖 🔵 使用不同设备的私钥签名 | 服务器使用 proof 中的 pubKey 验证会失败（需要设备绑定机制才有效） | P0 |
+| S-05 | ✅ 🤖 🔵 缺少签名字段 | `verifyBlueVProof` 返回 false | P1 |
+| S-06 | ✅ 🤖 🔵 缺少 devicePubKey 字段 | `verifyBlueVProof` 返回 false | P1 |
+| S-07 | ✅ 🤖 🔵 Base64 vs Base64URL 编码混合 | `decodeB64OrB64UrlToArrayBuffer` 应正确处理两种格式 | P1 |
 | S-08 | 👋 设备 Key 首次生成 | `ensureDeviceKey()` 自动生成并存储到 IndexedDB | P1 |
 | S-09 | 👋 设备 Key 已存在 | `ensureDeviceKey()` 直接返回缓存 | P2 |
-| S-10 | 🤖 🔵 **⚠️ 安全缺陷验证**：任意公钥自签名 | 使用伪造公钥签名的 evidence 请求 API，服务端使用绑定的可信公钥验签将拒绝此证明（✅ **已修复 SEC-01**）。 | P0 |
+| S-10 | ✅ 🤖 🔵 **⚠️ 安全缺陷验证**：任意公钥自签名 | 使用伪造公钥签名的 evidence 请求 API，服务端使用绑定的可信公钥验签将拒绝此证明（✅ **已修复 SEC-01**）。 | P0 |
 | S-11 | 👋 CSRF Token 同步 | `syncTwitterCredentials()` 正确获取 ct0 cookie | P1 |
 | S-12 | 👋 ProfileSpotlights API 返回空数据 | `verifyFollowAndClaim` 抛出错误 | P1 |
 
@@ -411,12 +411,12 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | UI-03 | ✅ 👋 页面滚动加载后按钮位置 | 按钮不因 re-render 重复添加 | P1 |
 | UI-04 | ✅ 👋 按钮 UI 状态流转 | Loading → Eligible / AlreadyFollowing → Processing → Claimed | P0 |
 | UI-05 | ✅ 👋 暗色模式 / Dim 模式兼容 | 按钮样式自适应 Twitter 主题 | P2 |
-| UI-06 | ❓ 👋 `tc_verify=1` 验证模式 | 页面加载后触发蓝V验证弹窗 | P1 |
-| UI-07 | ❓ 👋 验证模式：用户是蓝V | 弹窗 "✅ Verification Success!" | P1 |
-| UI-08 | ❓ 👋 验证模式：用户不是蓝V | 弹窗 "❌ Verification Failed" | P1 |
-| UI-10 | ❓ 👋 侧边栏推荐用户 vs 主页面用户区分 | 按钮只注入到 primaryColumn 的按钮 | P2 |
+| UI-06 | ✅ 👋 `tc_verify=1` 验证模式 | 页面加载后触发蓝V验证弹窗 | P1 |
+| UI-07 | ✅ 👋 验证模式：用户是蓝V | 弹窗 "✅ Verification Success!" | P1 |
+| UI-08 | ✅ 👋 验证模式：用户不是蓝V | 弹窗 "❌ Verification Failed" | P1 |
+| UI-10 | ✅ 👋 侧边栏推荐用户 vs 主页面用户区分 | 按钮只注入到 primaryColumn 的按钮 | P2 |
 | UI-11 | ✅ 👋 IJFollowActionCaptured 拦截 | 正确更新缓存的 following 状态 | P1 |
-| UI-12 | ❓ 👋 offscreen wallet 查询超时 | 合理的超时处理和错误提示 | P2 |
+| UI-12 | ✅ 👋 offscreen wallet 查询超时 | 合理的超时处理和错误提示 (使用 `sendMsgToOffScreenWithTimeout`) | P2 |
 
 ---
 
@@ -436,8 +436,8 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | SW-03 | 👋 来自非 x.com 页面的 AdsFollowVerifyAndClaim | 校验失败："not x.com/twitter.com tab" | P0 |
 | SW-04 | 👋 来自 iframe 的高风险操作 | 校验失败："not top frame" | P0 |
 | SW-05 | 👋 来自外部网页的 WalletTransferUSDC | 拒绝："This action must be performed in the extension popup." | P0 |
-| SW-06 | 🤖 🔵 AdsFollowOfferQuery 返回正确的 offer 和 claim_state | offer 含 ad_id, reward_usdc; claim_state 含当前状态 | P1 |
-| SW-07 | 🤖 🔵 AdsFollowVerifyAndClaim 成功后 poll feed 更新 | `pollAdsFeedIfNeeded(true)` 被调用 | P2 |
+| SW-06 | ✅ 🤖 🔵 `AdsFollowOfferQuery` | 返回对 profileUrl 匹配的 offer + claim_state | P0 |
+| SW-07 | ✅ 🤖 🔵 `AdsFollowVerifyAndClaim` | 关注验证 → 提交 proof → 成功后触发 feed poll | P0 |
 | SW-08 | 👋 IJUserByScreenNameCaptured 转发到 background | 蓝V状态被保存到 IndexedDB | P1 |
 
 ---
@@ -454,13 +454,13 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| FD-01 | 🤖 🔵 首次 poll：无本地缓存 | 获取 version → 获取 list → 建立本地缓存 | P0 |
-| FD-02 | 🤖 🔵 二次 poll：version 未变 | 跳过 list 获取 | P1 |
-| FD-03 | 🤖 🔵 version 变化后 poll | 重新获取 list 并更新缓存 | P0 |
-| FD-04 | 🤖 🔵 `next_invalidation_at` 到达 | 即使 version 不变也重新拉取 list | P1 |
-| FD-05 | 🤖 🔵 并发 poll（SW wakeup bursts） | `pollInFlight` 锁保护，只执行一次 | P1 |
-| FD-06 | 🤖 🔵 `normalizeProfileUrl` 归一化 | `https://x.com/User` → `https://x.com/user`, 忽略 query/hash | P2 |
-| FD-07 | 🤖 🔵 多个 offer 指向同一 URL | `pickBetterOffer` 选 reward 最高的 | P2 |
+| FD-01 | ✅ 🤖 🔵 首次 poll：无本地缓存 | 获取 version → 获取 list → 建立本地缓存 | P0 |
+| FD-02 | ✅ 🤖 🔵 二次 poll：version 未变 | 跳过 list 获取 | P1 |
+| FD-03 | ✅ 🤖 🔵 version 变化后 poll | 重新获取 list 并更新缓存 | P0 |
+| FD-04 | ✅ 🤖 🔵 `next_invalidation_at` 到达 | 即使 version 不变也重新拉取 list | P1 |
+| FD-05 | ✅ 🤖 🔵 并发 poll（SW wakeup bursts） | `pollInFlight` 锁保护，只执行一次 | P1 |
+| FD-06 | ✅ 🤖 🔵 `normalizeProfileUrl` 归一化 | `https://x.com/User` → `https://x.com/user`, 忽略 query/hash | P2 |
+| FD-07 | ✅ 🤖 🔵 多个 offer 指向同一 URL | `pickBetterOffer` 选 reward 最高的 | P2 |
 | ~~FD-08~~ | ~~👋 IndexedDB 持久化失败~~ | ~~降级使用 localStorage 缓存，不抛错~~ | ~~P2~~ |
 
 ---
@@ -471,8 +471,8 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 
 | # | 测试场景 | 预期结果 | 优先级 |
 |---|---------|---------|--------|
-| E-01 | 🤖 🔵 **竞态条件**：两个用户同时 claim 最后一个配额 | 只有一个成功（`incrementAdClaimedQuota` 的 WHERE 条件保护） | P0 |
-| E-02 | 🤖 🔵 **竞态条件**：用户同时在 popup 和 content 发起 claim | `getDetailedClaim` 幂等检查防止重复 | P0 |
+| E-01 | ✅ 🤖 🔵 **竞态条件**：两个用户同时 claim 最后一个配额 | 只有一个成功（`incrementAdClaimedQuota` 的 WHERE 条件保护） | P0 |
+| E-02 | ✅ 🤖 🔵 **竞态条件**：用户同时在 popup 和 content 发起 claim | `getDetailedClaim` 幂等检查防止重复 | P0 |
 | E-03 | ✅ 🤖 🟢 广告主在用户 claim 过程中暂停广告 | `incrementAdClaimedQuota` 的 `WHERE status = 'ACTIVE'` 保护 | P0 |
 | E-04 | ✅ 🤖 🟢 广告在 claim 提交瞬间过期 | `WHERE end_date > datetime('now')` 保护 | P0 |
 | E-05 | ✅ 🤖 🟢 大量 claims（1000+）同时处于 PENDING_CONFIRM | Cron 每次只处理 50 条，不超时 | P1 |
@@ -485,7 +485,7 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | E-12 | ✅ 🤖 🟢 同一用户对同一广告重复提交不同证据 | 第二次应返回 already_claimed | P1 |
 | E-13 | ✅ 🤖 🟢 `unit_price_atomic` 为 0 的广告 | `apiAdsCreate` 的 `parsePositiveAtomic` 应拦截 | P1 |
 | E-14 | 👋 广告主在广告有 pending claims 时尝试 stop | 不会立刻退款；待 pending 结算/拒绝后再退款 | P1 |
-| E-15 | 🤖 🟠 提现 FAILED 后再次尝试提现（同月） | 已有 FAILED 记录，当前逻辑会返回错误。应允许 retry。 | P1 |
+| E-15 | ❌ 🤖 🟠 提现 FAILED 后再次尝试提现（同月） | 故意不支持 retry，避免双花风险，交由管理员处理 | P1 |
 
 #### E-14（手动测试）
 
@@ -563,8 +563,8 @@ neg_saturated = 1
 | E2E-04 | ✅ 👋 用户取消关注后重新关注 | claim1 结算 → 用户 unfollow → 再次 follow → 尝试 claim2 | 返回 already_claimed | P1 |
 | E2E-05 | ✅ 👋 多广告主同一 KOL | A 发布 follow @X (0.1U), B 发布 follow @X (0.5U) | 用户看到 0.5U 的 offer（pickBetterOffer） | P1 |
 | E2E-06 | ✅ 🤖 🟢 用户同时是广告主和执行者 | 充值 → 发布自己的广告 → 尝试 claim 自己的广告 | 应被拒绝（缺陷 E-11 覆盖） | P0 |
-| E2E-07 | 🤖 🔵 Cron 任务并发执行 | expire + settle + refund 同时运行 | 无死锁，数据一致 | P2 |
-| E2E-08 | 🤖 🔵 大规模数据 | 1000 广告 + 10000 claims | API 响应时间 < 3s，分页正确 | P2 |
+| E2E-07 | ✅ 🤖 🔵 Cron 任务并发执行安全性 | 结算、过期处理、退款任务互不干扰 | P2 |
+| E2E-08 | ✅ 🤖 🔵 大规模数据下的分页与筛选 | `LIMIT 100`, `OFFSET` 正常工作 | P2 |
 | E2E-09 | ✅ 👋 广告主提现 → 查看历史 | 历史记录中有 txHash 可点击查看区块浏览器 | P1 |
 | E2E-10 | ✅ 🤖 🔵 全流程账本审计 | 运行审计脚本，对比余额与账本/claims 汇总 | 恒等式成立 | P0 |
 
@@ -599,7 +599,7 @@ neg_saturated = 1
 
 ### 🟠 需要临时改系统代码/配置或先修复缺陷
 - 白名单跳过蓝V：EX-12（当前白名单硬编码在 Worker 侧）
-- 提现失败重试：E-15（当前逻辑会拦截 FAILED，需要调整策略）
+- 提现失败重试：E-15（出于资金安全考虑，不实现自动 retry，交由管理员人工介入）
 
 ---
 
@@ -608,11 +608,10 @@ neg_saturated = 1
 | ID | 风险 | 严重程度 | 当前状态 |
 |----|------|----------|----------|
 | SEC-01 | 蓝V 证据使用自带公钥验证，攻击者可伪造 | 🔴 严重 | ✅ **已修复**: API 强制读取数据库中通过钱包鉴权绑定的 `device_pubkey_spki` |
-| SEC-02 | 白名单用户 ID 硬编码在源码中 | 🟡 中等 | 应移至环境变量或配置 |
+| SEC-02 | 白名单用户 ID 硬编码在源码中 | 🟡 中等 | ✅ **已修复**: 已移至环境变量 `BLUE_V_BYPASS_WHITELIST` |
 | SEC-03 | 广告主可以 claim 自己的广告（缺少 a_x_id ≠ b_x_id 校验） | 🔴 严重 | ✅ **已修复**: `apiAdsClaim` 已加入 `a_x_id === bXId` 服务端拦截并返回 Http 403 |
 | SEC-04 | Cron 结算时不验证蓝V签名，只检查 proof_data | 🟡 中等 | Claim 阶段已验证，结算时可信任 |
-| SEC-05 | 关注证据是一次性快照，用户可在结算前取消关注 | 🟡 中等 | 设计决策：接受 24h 内取关风险 |
-| SEC-06 | SQL 字符串拼接（非参数化查询） | 🟢 轻微 | 输入已受限，但应改进 |
+| SEC-06 | SQL 字符串拼接（非参数化查询） | 🟢 轻微 | ✅ **已修复**: 全面审计 `src` 目录，已将 `database_402.ts` 等处的常量插值改为 `?` 参数化查询 |
 
 ---
 

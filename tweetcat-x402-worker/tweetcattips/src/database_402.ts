@@ -1,4 +1,4 @@
-import {CURRENCY_SYMBOL_USDC} from "./common";
+import { CURRENCY_SYMBOL_USDC } from "./common";
 
 export const TIP_RECORD_PENDING = 0
 export const TIP_RECORD_CLAIMED = 10
@@ -42,11 +42,11 @@ export async function usdcEscrowTips(db: D1Database, params: TipRecord) {
 			UPDATE SET
 				amount_atomic = CAST (tip_escrow.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER),
 				updated_at = CURRENT_TIMESTAMP
-			WHERE status = ${TIP_RECORD_PENDING};
+			WHERE status = ?;
 		`;
 
 		const result = await db.prepare(sql)
-			.bind(params.xId, params.amountAtomic)
+			.bind(params.xId, params.amountAtomic, TIP_RECORD_PENDING)
 			.run();
 
 		if (!result.success || result.meta.changes === 0) {
@@ -117,14 +117,14 @@ export async function createKolBinding(
 	      x_id, cdp_user_id, wallet_address, email, username, evm_account_created_at, device_pubkey_spki, device_key_updated_at
 	    ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
 		`).bind(
-			userInfo.xSub,
-			userInfo.userId,
-			userInfo.walletAddress,
-			userInfo.email,
-			userInfo.username,
-			userInfo.walletCreatedAt,
-			devicePubkeySpkiB64
-		);
+		userInfo.xSub,
+		userInfo.userId,
+		userInfo.walletAddress,
+		userInfo.email,
+		userInfo.username,
+		userInfo.walletCreatedAt,
+		devicePubkeySpkiB64
+	);
 
 	// 2. 将 PENDING 状态的余额搬运到 user_rewards（使用 UPSERT 累加到 status=0 的余额行）
 	// 如果不存在 status=0 行则创建，存在则累加金额
@@ -133,18 +133,18 @@ export async function createKolBinding(
 		SELECT kb.cdp_user_id,
 			   ?,
 			   te.amount_atomic,
-			   ${REWARD_STATUS_PENDING},
+			   ?,
 			   'Tips rewards'
 		FROM tip_escrow te
 				 JOIN kol_binding kb ON kb.x_id = te.x_id
 		WHERE te.x_id = ?
 		  AND te.status = ? ON CONFLICT(cdp_user_id, asset_symbol)
-		WHERE status = ${REWARD_STATUS_PENDING}
+		WHERE status = ?
 			DO
 		UPDATE SET
 			amount_atomic = CAST (CAST (user_rewards.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER) AS TEXT),
 			updated_at = CURRENT_TIMESTAMP
-	`).bind(CURRENCY_SYMBOL_USDC, userInfo.xSub, TIP_RECORD_PENDING);
+	`).bind(CURRENCY_SYMBOL_USDC, REWARD_STATUS_PENDING, userInfo.xSub, TIP_RECORD_PENDING, REWARD_STATUS_PENDING);
 
 	// 3. 统一更新状态
 	// 注意：即便 moveEscrowToRewards 没找到数据（即没有待领取打赏），这条 UPDATE 也只是执行成功但影响行数为 0，不会报错
@@ -236,7 +236,7 @@ export async function queryRewardHistory(
 		rewards.pop(); // 移除多查询的一条
 	}
 
-	return {rewards, hasMore};
+	return { rewards, hasMore };
 }
 
 export async function updateRewardStatus(
@@ -312,7 +312,7 @@ export async function logX402Failure(db: D1Database, input: X402FailureInput): P
 			(input.raw)
 		).run();
 	} catch (err: any) {
-		console.error("[x402_failures] insert failed:", err?.message || err, {input});
+		console.error("[x402_failures] insert failed:", err?.message || err, { input });
 	}
 }
 
@@ -331,8 +331,8 @@ export async function creditRewardsBalance(
 	try {
 		const sql = `
 			INSERT INTO user_rewards (cdp_user_id, asset_symbol, amount_atomic, status, reason)
-			VALUES (?, ?, ?, ${REWARD_STATUS_PENDING}, ?) ON CONFLICT(cdp_user_id, asset_symbol)
-			WHERE status = ${REWARD_STATUS_PENDING}
+			VALUES (?, ?, ?, ?, ?) ON CONFLICT(cdp_user_id, asset_symbol)
+			WHERE status = ?
 				DO
 			UPDATE SET
 				amount_atomic = CAST (CAST (user_rewards.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER) AS TEXT),
@@ -340,18 +340,18 @@ export async function creditRewardsBalance(
 		`;
 
 		const result = await db.prepare(sql)
-			.bind(cdpUserId, assetSymbol.toUpperCase(), amountAtomic, reason)
+			.bind(cdpUserId, assetSymbol.toUpperCase(), amountAtomic, REWARD_STATUS_PENDING, reason, REWARD_STATUS_PENDING)
 			.run();
 
 		if (!result.success || result.meta.changes === 0) {
 			console.error(`Failed to credit rewards balance for user ${cdpUserId}，amount:${amountAtomic}`);
 		}
 	} catch (err: any) {
-		console.error("creditRewardsBalance error:", err, " params:", {cdpUserId, amountAtomic, assetSymbol, reason});
+		console.error("creditRewardsBalance error:", err, " params:", { cdpUserId, amountAtomic, assetSymbol, reason });
 		await logX402Failure(db, {
 			kind: "reward_action",
 			stage: "credit rewards balance",
-			context: JSON.stringify({cdpUserId, amountAtomic, assetSymbol, reason}),
+			context: JSON.stringify({ cdpUserId, amountAtomic, assetSymbol, reason }),
 			message: err?.message
 		})
 	}
@@ -487,7 +487,7 @@ export async function queryPlatformFees(
 		fees.pop(); // 移除多查询的一条
 	}
 
-	return {fees, hasMore};
+	return { fees, hasMore };
 }
 
 export async function getPlatformFeesStats(
@@ -520,7 +520,7 @@ export async function getPlatformFeesStats(
 			? parseFloat(row.avg_rate) || 0
 			: (row?.avg_rate ?? 0);
 
-	return {totalFees, totalCount, avgRate};
+	return { totalFees, totalCount, avgRate };
 }
 
 // ==================== Onramp Purchase History ====================
@@ -657,5 +657,5 @@ export async function queryOnrampPurchases(
 		purchases.pop();
 	}
 
-	return {purchases, hasMore};
+	return { purchases, hasMore };
 }
