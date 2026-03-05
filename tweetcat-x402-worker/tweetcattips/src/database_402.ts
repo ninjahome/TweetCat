@@ -138,13 +138,13 @@ export async function createKolBinding(
 		FROM tip_escrow te
 				 JOIN kol_binding kb ON kb.x_id = te.x_id
 		WHERE te.x_id = ?
-		  AND te.status = ? ON CONFLICT(cdp_user_id, asset_symbol)
-		WHERE status = ?
-			DO
+		  AND te.status = ?
+		ON CONFLICT(cdp_user_id, asset_symbol) WHERE status = 0
+		DO
 		UPDATE SET
 			amount_atomic = CAST (CAST (user_rewards.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER) AS TEXT),
 			updated_at = CURRENT_TIMESTAMP
-	`).bind(CURRENCY_SYMBOL_USDC, REWARD_STATUS_PENDING, userInfo.xSub, TIP_RECORD_PENDING, REWARD_STATUS_PENDING);
+	`).bind(CURRENCY_SYMBOL_USDC, REWARD_STATUS_PENDING, userInfo.xSub, TIP_RECORD_PENDING);
 
 	// 3. 统一更新状态
 	// 注意：即便 moveEscrowToRewards 没找到数据（即没有待领取打赏），这条 UPDATE 也只是执行成功但影响行数为 0，不会报错
@@ -331,16 +331,16 @@ export async function creditRewardsBalance(
 	try {
 		const sql = `
 			INSERT INTO user_rewards (cdp_user_id, asset_symbol, amount_atomic, status, reason)
-			VALUES (?, ?, ?, ?, ?) ON CONFLICT(cdp_user_id, asset_symbol)
-			WHERE status = ?
-				DO
+			VALUES (?, ?, ?, ?, ?)
+			ON CONFLICT(cdp_user_id, asset_symbol) WHERE status = 0
+			DO
 			UPDATE SET
 				amount_atomic = CAST (CAST (user_rewards.amount_atomic AS INTEGER) + CAST (excluded.amount_atomic AS INTEGER) AS TEXT),
 				updated_at = CURRENT_TIMESTAMP
 		`;
 
 		const result = await db.prepare(sql)
-			.bind(cdpUserId, assetSymbol.toUpperCase(), amountAtomic, REWARD_STATUS_PENDING, reason, REWARD_STATUS_PENDING)
+			.bind(cdpUserId, assetSymbol.toUpperCase(), amountAtomic, REWARD_STATUS_PENDING, reason)
 			.run();
 
 		if (!result.success || result.meta.changes === 0) {
