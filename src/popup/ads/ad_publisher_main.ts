@@ -12,7 +12,7 @@ import {
 } from "./ad_publisher_dashboard";
 import { initWizardEvents } from "./ad_publisher_ads";
 import { initRechargeModalEvents } from "./ad_publisher_balance";
-import { t } from "../../common/i18n";
+import { t, initI18n } from "../../common/i18n";
 import { $Id } from "../common";
 
 export function translateAdvertiseUI() {
@@ -269,6 +269,7 @@ export function translateAdvertiseUI() {
 }
 
 async function initAdvertise() {
+    initI18n(); // 初始化语言环境
     translateAdvertiseUI();
     initNavEvents();
     initSpendTabs();

@@ -11,7 +11,7 @@ import {
 } from "./ad_executor_summary";
 import { loadTaskRunState } from "./ad_executor_common";
 
-import { t } from "../../common/i18n";
+import { t, initI18n } from "../../common/i18n";
 
 async function translatePlazaUI() {
     // Page Title
@@ -136,6 +136,7 @@ async function translatePlazaUI() {
 }
 
 async function initAdPlaza() {
+    initI18n(); // 初始化语言环境
     // 初始翻译
     await translatePlazaUI();
 

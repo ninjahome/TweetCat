@@ -293,7 +293,7 @@ export function initWalletOrCreate() {
     setupWalletActionButtons();
 }
 
-function hideWalletMenu(ev: PointerEvent, menu: HTMLElement) {
+function hideWalletMenu(ev: MouseEvent, menu: HTMLElement) {
     const target = ev.target as Node | null;
     if (!target) return;
 

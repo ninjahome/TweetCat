@@ -127,7 +127,7 @@ const updateUIState = (loading: boolean, status?: string, error?: string) => {
 };
 
 // --- 核心业务：转账桩函数 ---
-async function performTransfer(profile: UserProfile, amount: string): Promise<void> {
+async function performTransfer(profile: UserProfile, amount: string): Promise<string> {
     logX402(`[Transfer] To: ${profile.userId}, Amount: ${amount} USDC`);
     const result = await postToX402Srv("/user/transfer_by_twitter", {
         amount: amount,
