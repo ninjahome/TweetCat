@@ -1392,8 +1392,11 @@
   "cdp_auth_redirecting_to_x_login": {
     "message": "正在跳转 X (Twitter) 登录..."
   },
+  "cdp_auth_encountered_error": {
+    "message": "发生错误：$1"
+  },
   "fetch_reward_info_failed": {
-    "message": "获取奖励信息失败: $1"
+    "message": "获取奖励信息失败：$1"
   },
   "init_ad_plaza_failed": {
     "message": "初始化 Ad Plaza 失败: $1"
@@ -1430,6 +1433,9 @@
   },
   "wallet_new_loading_creating": {
     "message": "创建中..."
+  },
+  "wallet_password_prompt_title": {
+    "message": "请输入钱包密码"
   },
   "wallet_network_change_confirm": {
     "message": "切换网络将退出当前 Coinbase 账号以重新确认绑定关系，确定要切换吗？"

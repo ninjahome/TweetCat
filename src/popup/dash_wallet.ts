@@ -124,7 +124,7 @@ async function __handleTransfer(typ: "eth" | "usdc", action: (chain: number, rec
         }
 
         if (typ === "usdc" && Number(wi.usdcVal) < FIXED_MINI_USDC_TRANSFER) {
-            showAlert(t('tips_title'), t('wallet_insufficient_funds') + "(Minimum:" + FIXED_MINI_USDC_TRANSFER + ")")
+            showAlert(t('tips_title'), t('wallet_insufficient_funds') + t('wallet_minimum_amount_hint', FIXED_MINI_USDC_TRANSFER.toString()))
             return
         }
 

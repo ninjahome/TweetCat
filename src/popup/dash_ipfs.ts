@@ -146,7 +146,7 @@ async function handleIpfsSave(): Promise<boolean> {
                 apiUrl,
                 gatewayUrl: gatewayUrl || undefined
             };
-            scheduleSensitive($input('#custom-auth'), currentIpfsSettings?.custom?.authEnc, '自建节点 Authorization', block => {
+            scheduleSensitive($input('#custom-auth'), currentIpfsSettings?.custom?.authEnc, t('ipfs_custom_auth_label_short'), block => {
                 if (block) custom.authEnc = block; else delete custom.authEnc;
             }, pending);
             next.custom = custom;

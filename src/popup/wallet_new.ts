@@ -145,7 +145,7 @@ async function saveWalletFlow() {
         return;
     }
 
-    showLoading("Creating.....")
+    showLoading(t('wallet_creating_status'))
 
     try {
         await saveFromMnemonic(generated, p1);

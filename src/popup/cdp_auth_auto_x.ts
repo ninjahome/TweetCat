@@ -100,7 +100,7 @@ class AuthManager {
         } catch (e: any) {
             console.error("Auth Error:", e);
             this.updateUI(
-                t("cdp_auth_error_with_detail", e?.message || t("initialization_failed")),
+                t("cdp_auth_encountered_error", e?.message || t("initialization_failed")),
                 "error"
             );
         } finally {

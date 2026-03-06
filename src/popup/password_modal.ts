@@ -28,7 +28,7 @@ function ensureInitialized(promptMessage?:string): boolean {
     // 初始化文案（走 i18n）
     const titleEl = $Id("modal-password-title") as HTMLElement | null;
     if (titleEl) {
-        titleEl.textContent = promptMessage ?? "Need Wallet Password";
+        titleEl.textContent = promptMessage ?? t('wallet_password_prompt_title');
     }
     inputEl.placeholder = t("ipfs_password_msg");
     cancelBtn.textContent = t("cancel");

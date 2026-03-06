@@ -1389,6 +1389,9 @@
   "cdp_auth_redirecting_to_x_login": {
     "message": "Redirecting to X (Twitter) login..."
   },
+  "cdp_auth_encountered_error": {
+    "message": "Encountered error: $1"
+  },
   "fetch_reward_info_failed": {
     "message": "Failed to fetch reward info: $1"
   },
@@ -1427,6 +1430,9 @@
   },
   "wallet_new_loading_creating": {
     "message": "Creating..."
+  },
+  "wallet_password_prompt_title": {
+    "message": "Need Wallet Password"
   },
   "wallet_network_change_confirm": {
     "message": "Switching networks will sign out of your current Coinbase account to re-confirm the binding. Are you sure you want to switch?"
