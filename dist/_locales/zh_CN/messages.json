@@ -1774,7 +1774,7 @@
     "message": "冻结的资金无法转移"
   },
   "btn_transfer": {
-    "message": "划转"
+    "message": "转账"
   },
   "label_active_campaigns": {
     "message": "进行中的活动"
