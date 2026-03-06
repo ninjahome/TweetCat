@@ -1191,6 +1191,12 @@
   "buy_usdc_no_fees_feature": {
     "message": "No Fees on Base Network"
   },
+  "buy_usdc_enter_amount": {
+    "message": "Enter amount"
+  },
+  "btn_back": {
+    "message": "Back"
+  },
   "buy_usdc_fast_payment": {
     "message": "Apple Pay & Debit Card"
   },

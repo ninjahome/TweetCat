@@ -1191,6 +1191,12 @@
   "buy_usdc_no_fees_feature": {
     "message": "Base 网络零手续费"
   },
+  "buy_usdc_enter_amount": {
+    "message": "输入金额"
+  },
+  "btn_back": {
+    "message": "返回"
+  },
   "buy_usdc_fast_payment": {
     "message": "Apple Pay 和借记卡"
   },

@@ -1,8 +1,8 @@
 import browser from "webextension-polyfill";
-import {getWalletAddress, queryCdpUserID, queryCdpWalletInfo, x402WorkerFetch} from "../wallet/cdp_wallet";
-import {showLoading, hideLoading, showNotification} from "./common";
-import {getChainId} from "../wallet/wallet_setting";
-import {initI18n, t} from "../common/i18n";
+import { getWalletAddress, queryCdpUserID, queryCdpWalletInfo, x402WorkerFetch } from "../wallet/cdp_wallet";
+import { showLoading, hideLoading, showNotification } from "./common";
+import { getChainId } from "../wallet/wallet_setting";
+import { initI18n, t } from "../common/i18n";
 
 interface OnrampSessionResponse {
     success: boolean;
@@ -26,7 +26,13 @@ function initBuyUsdcTexts() {
     document.title = t('buy_usdc_title') || 'Buy USDC';
     const pageTitle = document.getElementById('buy-usdc-title');
     if (pageTitle) {
-        pageTitle.textContent = t('buy_usdc_title') || 'Buy USDC';
+        pageTitle.textContent = t('buy_usdc_title');
+    }
+
+    // 返回按钮 aria-label
+    const backBtn = document.getElementById('buy-back-btn');
+    if (backBtn) {
+        backBtn.setAttribute('aria-label', t('btn_back') || 'Back');
     }
 
     // 标签
@@ -50,10 +56,15 @@ function initBuyUsdcTexts() {
         labelCustomAmount.textContent = t('buy_usdc_custom_amount') || 'Or enter custom amount ($5 - $500)';
     }
 
+    const inputCustomAmount = document.getElementById('custom-amount') as HTMLInputElement;
+    if (inputCustomAmount) {
+        inputCustomAmount.placeholder = t('buy_usdc_enter_amount') || 'Enter amount';
+    }
+
     // 特性
     const featureNoFees = document.getElementById('feature-no-fees');
     if (featureNoFees) {
-        featureNoFees.textContent = t('buy_usdc_no_fees') || 'No Fees on Base Network';
+        featureNoFees.textContent = t('buy_usdc_no_fees_feature') || 'No Fees on Base Network';
     }
 
     const featureFastPayment = document.getElementById('feature-fast-payment');
@@ -103,7 +114,7 @@ async function initBuyUsdcPage() {
             const target = e.currentTarget as HTMLButtonElement;
             const amount = parseInt(target.dataset.amount || "50");
             selectAmount(amount);
-            
+
             // 更新选中状态
             amountButtons.forEach(b => b.classList.remove("selected"));
             target.classList.add("selected");
@@ -159,7 +170,7 @@ async function loadWalletInfo() {
 
         const chainId = await getChainId();
         const walletInfo = await queryCdpWalletInfo(chainId);
-        
+
         const balanceEl = document.getElementById("current-balance");
         if (balanceEl && walletInfo.hasCreated) {
             balanceEl.textContent = `${walletInfo.usdcVal} USDC`;
@@ -213,7 +224,7 @@ async function handleBuyNow() {
 
             // 显示提示
             showNotification(t('buy_usdc_redirecting') || "Redirecting to Coinbase Pay...", "success");
-            
+
             // 等待一会后返回
             setTimeout(() => {
                 window.history.back();
@@ -224,7 +235,7 @@ async function handleBuyNow() {
     } catch (error) {
         console.error("Buy USDC failed:", error);
         showNotification(
-            t('buy_usdc_failed') || "Failed to initialize purchase" + ": " + (error as Error).message, 
+            t('buy_usdc_failed') || "Failed to initialize purchase" + ": " + (error as Error).message,
             "error"
         );
     } finally {
