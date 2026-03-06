@@ -1431,9 +1431,6 @@
   "wallet_new_loading_creating": {
     "message": "Creating..."
   },
-  "wallet_password_prompt_title": {
-    "message": "Need Wallet Password"
-  },
   "wallet_network_change_confirm": {
     "message": "Switching networks will sign out of your current Coinbase account to re-confirm the binding. Are you sure you want to switch?"
   },
@@ -2087,5 +2084,29 @@
   },
   "err_load_history_failed": {
     "message": "Failed to load history"
-  }
+  },
+  "ipfs_custom_auth_label_short": {
+    "message": "Authorization"
+  },
+  "wallet_minimum_amount_hint": {
+    "message": "(Minimum: $1)"
+  },
+  "unfollow_success_single": {
+    "message": "Unfollowed $1 account successfully."
+  },
+  "unfollow_success_multiple": {
+    "message": "Unfollowed $1 accounts. $2 failed."
+  },
+  "unfollow_failed_all": {
+    "message": "Failed to unfollow accounts."
+  },
+  "wallet_creating_status": {
+    "message": "Creating..."
+  },
+  "transfer_success_with_hash": {
+    "message": "✅ Transfer succeeded: $1"
+  },
+  "need_wallet_password": {
+  "message": "Need Wallet Password"
+}
 }
