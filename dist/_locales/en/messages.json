@@ -1512,6 +1512,9 @@
   "status_expired_msg": {
     "message": "Status Expired: Your Blue Verified status hasn't been updated for over a week. Please visit your profile to refresh your status. Proceed?"
   },
+  "ad_has_expired": {
+    "message": "This ad campaign has ended"
+  },
   "missing_landing_page": {
     "message": "Missing landing page URL for this ad."
   },

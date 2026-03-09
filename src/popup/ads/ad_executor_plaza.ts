@@ -151,6 +151,15 @@ function getTwitterHandle(ad: { brand: string, detailUrl: string }): string | nu
 }
 
 export async function startTask(ad: EarnAd) {
+    // 提前检查广告是否已过期
+    if (ad.deadlineText.includes("Ended")) {
+        showAlert(t("verification_failed"), t("ad_has_expired"));
+        executorState.taskRunState[ad.id] = "idle";
+        await saveTaskRunState();
+        renderEarnAds();
+        return;
+    }
+
     if (executorState.taskRunState[ad.id] === "running") return;
     executorState.taskRunState[ad.id] = "running";
     await saveTaskRunState();
@@ -434,7 +443,9 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
         };
 
         const btn = $2<HTMLButtonElement>(card, ".btn-start-task");
-        btn.disabled = executorState.taskRunState[ad.id] === "running" || ad.completed >= ad.totalQuota;
+        // 检查广告是否已过期
+        const isExpired = ad.deadlineText.includes("Ended");
+        btn.disabled = executorState.taskRunState[ad.id] === "running" || ad.completed >= ad.totalQuota || isExpired;
 
         // Remove old logic for btn.disabled based on isClaimed, because we want users to be able to click "Claimed" to re-open link?
         // But UI says: if isClaimed, button text is "Claimed" and disabled?
@@ -481,7 +492,9 @@ function filterAndSortAds(): EarnAd[] {
         // categories.includes(ad.category) && // MVP: Only follow ads exists
         ad.category === "follow" && // Enforce follow only just in case
         rewardRanges.includes(ad.rewardRange) &&
-        matchAdSearch(ad, qstr)
+        matchAdSearch(ad, qstr) &&
+        // 过滤掉已过期的广告
+        !ad.deadlineText.includes("Ended")
     );
 
     switch (sortBy) {
