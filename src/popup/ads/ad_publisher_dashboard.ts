@@ -40,7 +40,7 @@ const AD_STATUS_LABELS: Record<string, string> = {
 
 // ========= 数据刷新 =========
 export async function refreshAdsData(page: number = 1) {
-    if (publisherState.ads.isLoading) return; // 简单的锁，防止重复点击导致的竞态
+    if (publisherState.ads.isLoading || !publisherState.walletInfoCache?.xId) return;
 
     const currentXId = getCurrentXId();
     const { pageSize } = publisherState.ads;
@@ -72,6 +72,7 @@ export async function refreshAdsData(page: number = 1) {
 // 新增函数：获取dashboard信息
 // 加载仪表盘数据并更新状态
 export async function fetchDashboardInfo() {
+    if (!publisherState.walletInfoCache?.xId) return;
     const currentXId = getCurrentXId();
 
     try {
@@ -103,7 +104,7 @@ export async function fetchDashboardInfo() {
  * 获取广告消费记录并更新状态
  */
 export async function fetchSpendHistory(page: number = 1) {
-    if (publisherState.spend.isLoading) return;
+    if (publisherState.spend.isLoading || !publisherState.walletInfoCache?.xId) return;
 
     const currentXId = getCurrentXId();
     const { pageSize } = publisherState.spend;

@@ -36,8 +36,8 @@ function closePublishModal() {
 }
 
 async function openPublishModal() {
-    if (!publisherState || !publisherState.walletInfoCache) {
-        showNotification(t("msg_loading_wallet") || "Loading wallet info, please wait...", "info");
+    if (!publisherState?.walletInfoCache?.hasCreated || !publisherState?.walletInfoCache?.xId) {
+        showNotification(t("please_sign_in_first") || "Please sign in and create wallet first.", "error");
         return;
     }
 

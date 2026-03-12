@@ -2110,6 +2110,9 @@
     "message": "✅ Transfer succeeded: $1"
   },
   "need_wallet_password": {
-  "message": "Need Wallet Password"
-}
+    "message": "Need Wallet Password"
+  },
+  "guide_blockchain_balance": {
+    "message": "Click here to view your blockchain balance"
+  }
 }

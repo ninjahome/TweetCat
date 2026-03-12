@@ -57,7 +57,9 @@ button {
 }
 
 .logo-icon {
-    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .plaza-header-right {

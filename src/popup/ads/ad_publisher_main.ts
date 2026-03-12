@@ -266,6 +266,50 @@ export function translateAdvertiseUI() {
     if (alertTitle) alertTitle.textContent = t("alert_title");
     const alertOk = $Id("alert-ok");
     if (alertOk) alertOk.textContent = t("btn_ok");
+
+    const guideText = $Id("guide-hint-text");
+    if (guideText) guideText.textContent = t("guide_blockchain_balance");
+}
+
+function initGuideHint() {
+    const guideHint = $Id("balance-guide-hint");
+    if (!guideHint) return;
+
+    // Check if prompted before
+    const isGuided = localStorage.getItem("tc_ad_balance_guided") === "1";
+    if (isGuided) {
+        guideHint.classList.add("hidden");
+        return;
+    }
+
+    // Show it
+    guideHint.classList.remove("hidden");
+
+    // Close on clicking 'X' or any interaction after a delay
+    const closeGuide = () => {
+        guideHint.classList.add("hidden");
+        localStorage.setItem("tc_ad_balance_guided", "1");
+        document.removeEventListener("mousedown", closeGuide);
+    };
+
+    const btnClose = $Id("btn-close-guide");
+    if (btnClose) {
+        btnClose.addEventListener("click", (e) => {
+            e.stopPropagation(); // Prevent trigger multiple listeners if any
+            closeGuide();
+        });
+    }
+
+    // Still allow dismissal by clicking elsewhere after 1s
+    setTimeout(() => {
+        document.addEventListener("mousedown", (e) => {
+            // If user clicked inside the hint (including the button), button will handle it
+            // but we add this to dismiss if they click elsewhere
+            if (!guideHint.contains(e.target as Node)) {
+                closeGuide();
+            }
+        });
+    }, 1000);
 }
 
 async function initAdvertise() {
@@ -285,6 +329,7 @@ async function initAdvertise() {
         await fetchDashboardInfo();
         await refreshAdsData();
         await fetchSpendHistory();
+        initGuideHint();
     } catch (err: any) {
         console.error("Failed to initialize wallet info:", err);
         showNotification(err?.message || t("please_sign_in_first"), "error");

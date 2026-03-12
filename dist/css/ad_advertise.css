@@ -1909,3 +1909,72 @@ body {
     min-width: 65px;
     text-align: center;
 }
+/* ==================== Guide Hint ==================== */
+.guide-hint {
+    position: absolute;
+    right: calc(100% + 14px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(15, 23, 42, 0.5); /* Slate color with 0.5 transparency */
+    backdrop-filter: blur(8px); /* Premium glassmorphism effect */
+    color: white;
+    padding: 8px 12px;
+    border-radius: 10px; /* Slightly smoother corners */
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    z-index: 1001;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2); /* Enhanced shadow */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: auto; /* Active by default since we have a close button */
+}
+
+.guide-hint.hidden {
+    display: none;
+}
+
+.guide-hint-arrow {
+    position: absolute;
+    right: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-left: 6px solid rgba(15, 23, 42, 0.5);
+}
+
+@keyframes hintBounce {
+    0%, 20%, 50%, 80%, 100% {transform: translateY(-50%) translateX(0);}
+    40% {transform: translateY(-50%) translateX(-6px);}
+    60% {transform: translateY(-50%) translateX(-3px);}
+}
+
+.guide-hint {
+    animation: hintBounce 2s infinite ease-in-out;
+}
+
+/* Close button for guide hint */
+.btn-close-hint {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 10px;
+    padding: 2px 4px;
+    margin-left: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+    pointer-events: auto; /* Ensure button can be clicked even if hint is pointer-events: none */
+}
+
+.btn-close-hint:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}

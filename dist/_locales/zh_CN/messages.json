@@ -2113,6 +2113,9 @@
     "message": "✅ 转账成功：$1"
   },
   "need_wallet_password": {
-  "message": "需要钱包口令"
-}
+    "message": "需要钱包口令"
+  },
+  "guide_blockchain_balance": {
+    "message": "点击此处可以查看区块链余额"
+  }
 }
