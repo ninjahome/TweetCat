@@ -1,7 +1,8 @@
 import {
     API_PATH_ADS_CREATE,
     getCurrentXId,
-    getCurrentXUserName
+    getCurrentXUserName,
+    publisherState
 } from "./ad_publisher_common";
 import {
     updateBudgetSummaryAndBalance,
@@ -35,6 +36,11 @@ function closePublishModal() {
 }
 
 async function openPublishModal() {
+    if (!publisherState || !publisherState.walletInfoCache) {
+        showNotification(t("msg_loading_wallet") || "Loading wallet info, please wait...", "info");
+        return;
+    }
+
     resetPublishForm();
     updateBudgetSummaryAndBalance();
 

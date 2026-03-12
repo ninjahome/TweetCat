@@ -452,8 +452,19 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
 
                 if (!resp?.success) {
                     setUi(ADS_FOLLOW_UI_MODE.Eligible);
-                    const errorMsg = typeof resp?.data === 'object' ? JSON.stringify(resp.data) : String(resp?.data || "未知错误");
-                    showDialog(t('tips_title'), `验证失败: ${errorMsg}`);
+                    const errorMsg = typeof resp?.data === 'object' ? JSON.stringify(resp.data) : String(resp?.data || t('rewards_unknown_error'));
+                    if (errorMsg.includes("BLUE_V_REQUIRED")) {
+                        showDialog(
+                            t('tips_title'), 
+                            t('verification_required_msg'), 
+                            () => {
+                                window.open(`https://x.com/i/user/${walletInfo.data?.xId}?tc_verify=1`, "_blank");
+                            }, 
+                            t('confirm') || "Confirm"
+                        );
+                    } else {
+                        showDialog(t('tips_title'), `${t('verification_failed')}: ${errorMsg}`);
+                    }
                     return;
                 }
 

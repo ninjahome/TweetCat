@@ -971,6 +971,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     color: rgb(83, 100, 113);
     display: -webkit-box; /* 弹性盒子模型 */
     -webkit-line-clamp: 2; /* 限制为 2 行 */
+    line-clamp: 2;
     -webkit-box-orient: vertical; /* 垂直排列子元素 */
     overflow: hidden; /* 隐藏超出的文本 */
     text-overflow: ellipsis; /* 超出用省略号 */
@@ -1004,14 +1005,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 /* 如果你想分别定制，也可以加： */
-.tweet-content .url { /* 普通链接 */
-}
-
-.tweet-content .mention { /* @alice   */
-}
-
-.tweet-content .hashtag { /* #测试    */
-}
 
 .tc-main-more {
     display: inline-block;
@@ -1164,6 +1157,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tweet-card-area .inline-link-card--small .meta .js-card-desc {
     display: -webkit-box;
     -webkit-line-clamp: 2; /* 限两行 */
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.4;
@@ -1171,8 +1165,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 /* ============= Large（官方结构版） ============= */
-.tweet-card-area .tc-card-large { /* 外层容器，仅用于分组，不做样式限制 */
-}
 
 /* 点击区域：整张大图 */
 .tweet-card-area .tc-card-large__media {
