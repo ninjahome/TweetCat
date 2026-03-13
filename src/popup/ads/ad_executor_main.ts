@@ -131,6 +131,15 @@ async function translatePlazaUI() {
     const btnConfirmOk = document.getElementById("btn-ok");
     if (btnConfirmOk) btnConfirmOk.textContent = t("confirm");
 
+    const withdrawSuccessTitle = document.getElementById("withdraw-success-title");
+    if (withdrawSuccessTitle) withdrawSuccessTitle.textContent = t("withdraw_modal_success");
+    const withdrawSuccessMsg = document.getElementById("withdraw-success-message");
+    if (withdrawSuccessMsg) withdrawSuccessMsg.textContent = t("withdraw_modal_success");
+    const btnWithdrawOk = document.getElementById("btn-withdraw-success-ok");
+    if (btnWithdrawOk) btnWithdrawOk.textContent = t("btn_confirm_withdraw");
+    const btnWithdrawView = document.getElementById("btn-withdraw-success-view");
+    if (btnWithdrawView) btnWithdrawView.textContent = t("btn_view_tx");
+
     const loadingMsg = document.querySelector("#loading-overlay .loading-message");
     if (loadingMsg) loadingMsg.textContent = t("processing");
 }

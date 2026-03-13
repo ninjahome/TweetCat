@@ -1,4 +1,4 @@
-import { $Id, showNotification } from "../common";
+import { $Id, showNotification, openTxInExplorer, openAddrInExplorer } from "../common";
 import { ChainNameBaseMain, walletInfo, X402_FACILITATORS } from "../../common/x402_obj";
 import { getChainId } from "../../wallet/wallet_setting";
 import { queryCdpWalletInfo, x402WorkerGet } from "../../wallet/cdp_wallet";
@@ -238,19 +238,8 @@ export function isZeroAtomic(v: string | null | undefined): boolean {
     }
 }
 
-export function openTxInExplorer(txHash: string): void {
-    const networkLabel = ($Id("header-network")?.textContent || "").toLowerCase();
-    const isSepolia = networkLabel.includes("sepolia");
-    const baseUrl = isSepolia ? "https://sepolia.basescan.org/tx/" : "https://basescan.org/tx/";
-    window.open(`${baseUrl}${txHash}`, "_blank");
-}
-
-export function openAddrInExplorer(addr: string): void {
-    const networkLabel = ($Id("header-network")?.textContent || "").toLowerCase();
-    const isSepolia = networkLabel.includes("sepolia");
-    const baseUrl = isSepolia ? "https://sepolia.basescan.org/address/" : "https://basescan.org/address/";
-    window.open(`${baseUrl}${addr}`, "_blank");
-}
+// Re-export from common.ts for backward compatibility
+export { openTxInExplorer, openAddrInExplorer };
 
 // ========= API helpers =========
 export async function fetchAdEscrowLedger(aXId: string, limit: number = 50, offset: number = 0): Promise<any[]> {

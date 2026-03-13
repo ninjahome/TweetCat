@@ -284,26 +284,51 @@ export async function getCurrentUserInfo(): Promise<{ xId: string; walletAddress
 
 export async function openTxInExplorer(txHash: string, chainId?: number): Promise<void> {
     try {
-
         if (!txHash) return;
         const normalizedHash = txHash.trim();
 
         let resolvedChainId = chainId;
         if (!resolvedChainId) {
-            try {
-                resolvedChainId = await getChainId();
-            } catch {
-                // ignore: fallback to a generic explorer below
-            }
+            resolvedChainId = await getChainId().catch(() => 0);
         }
 
         const browserBase = resolvedChainId ? X402_FACILITATORS[resolvedChainId]?.browser : undefined;
         const url = browserBase
-            ? `${browserBase}/tx/${normalizedHash}`
+            ? `${browserBase.replace(/\/$/, "")}/tx/${normalizedHash}`
             : `https://blockscan.com/tx/${normalizedHash}`;
-        await browser.tabs.create({ url });
+        
+        if (typeof browser !== 'undefined' && browser?.tabs) {
+            await browser.tabs.create({ url });
+        } else {
+            window.open(url, "_blank");
+        }
     } catch (e) {
         console.error("openTxInExplorer error:", e);
+    }
+}
+
+export async function openAddrInExplorer(addr: string, chainId?: number): Promise<void> {
+    try {
+        if (!addr) return;
+        const normalizedAddr = addr.trim();
+
+        let resolvedChainId = chainId;
+        if (!resolvedChainId) {
+            resolvedChainId = await getChainId().catch(() => 0);
+        }
+
+        const browserBase = resolvedChainId ? X402_FACILITATORS[resolvedChainId]?.browser : undefined;
+        const url = browserBase
+            ? `${browserBase.replace(/\/$/, "")}/address/${normalizedAddr}`
+            : `https://blockscan.com/address/${normalizedAddr}`;
+
+        if (typeof browser !== 'undefined' && browser?.tabs) {
+            await browser.tabs.create({ url });
+        } else {
+            window.open(url, "_blank");
+        }
+    } catch (e) {
+        console.error("openAddrInExplorer error:", e);
     }
 }
 

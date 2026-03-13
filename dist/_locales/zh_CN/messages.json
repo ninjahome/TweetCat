@@ -2117,5 +2117,14 @@
   },
   "guide_blockchain_balance": {
     "message": "点击此处可以查看区块链余额"
+  },
+  "withdraw_modal_success": {
+    "message": "提现成功"
+  },
+  "btn_view_tx": {
+    "message": "查看提现记录"
+  },
+  "btn_confirm_withdraw": {
+    "message": "确认"
   }
 }

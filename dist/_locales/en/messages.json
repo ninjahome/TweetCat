@@ -2114,5 +2114,14 @@
   },
   "guide_blockchain_balance": {
     "message": "Click here to view your blockchain balance"
+  },
+  "withdraw_modal_success": {
+    "message": "Withdrawal Successful"
+  },
+  "btn_view_tx": {
+    "message": "View Transaction"
+  },
+  "btn_confirm_withdraw": {
+    "message": "Confirm"
   }
 }

@@ -1,7 +1,8 @@
 import { $2, atomicToUsdcNumber, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification } from "../common";
 import { t } from "../../common/i18n";
 import { x402WorkerGet, x402WorkerFetch } from "../../wallet/cdp_wallet";
-import { API_PATH_ADS_MY_CLAIMS, API_PATH_ADS_EXECUTOR_WITHDRAW, API_PATH_ADS_EXECUTOR_DASHBOARD_INFO } from "./ad_publisher_common";
+import { ChainNameBaseMain, X402_FACILITATORS } from "../../common/x402_obj";
+import { API_PATH_ADS_MY_CLAIMS, API_PATH_ADS_EXECUTOR_WITHDRAW, API_PATH_ADS_EXECUTOR_DASHBOARD_INFO, openTxInExplorer } from "./ad_publisher_common";
 import { EarnClaim, executorState, formatClaimTime, TASK_STATUS_MAP } from "./ad_executor_common";
 
 export async function loadClaims(): Promise<EarnClaim[]> {
@@ -30,6 +31,14 @@ export async function loadEarnSummary(): Promise<void> {
             executorState.pendingUSDC = atomicToUsdcNumber(stats.pending_atomic);
             executorState.todayEarnedUSDC = atomicToUsdcNumber(stats.today_earned_atomic);
             executorState.totalEarnedUSDC = atomicToUsdcNumber(stats.total_earned_atomic);
+
+            // Set network name for explorer links
+            const chainId = stats.chain_id || 8453; // Default to base mainnet
+            const networkEl = document.getElementById("header-network");
+            if (networkEl) {
+                const config = X402_FACILITATORS[chainId];
+                networkEl.textContent = config?.network || "base-mainnet";
+            }
         }
 
         renderEarnSummary();
@@ -83,6 +92,23 @@ export function toggleActivityModal(open: boolean) {
     modal.classList.toggle("active", open);
 }
 
+export function toggleWithdrawSuccessModal(open: boolean, txHash: string = "") {
+    const modal = document.querySelector<HTMLElement>("#withdraw-success-modal");
+    if (!modal) return;
+    modal.classList.toggle("active", open);
+
+    if (open && txHash) {
+        const btnView = document.getElementById("btn-withdraw-success-view");
+        if (btnView) {
+            // Remove previous listeners (if any) by replacing the element or using a flag
+            // For simplicity in this context, we'll just set the click handler
+            btnView.onclick = () => {
+                openTxInExplorer(txHash);
+            };
+        }
+    }
+}
+
 export function initSummaryActions() {
     document.querySelector<HTMLButtonElement>("#btn-withdraw")?.addEventListener("click", async () => {
         if (executorState.withdrawableUSDC <= 0) {
@@ -118,8 +144,8 @@ export function initSummaryActions() {
                 executorState.withdrawableUSDC = 0;
                 renderEarnSummary();
 
-                const txLink = resp.txHash ? ` Tx: ${resp.txHash.slice(0, 6)}...` : "";
-                showNotification(`${t("withdraw_success")} ${formatUSDC(amountUSDC)}${txLink}`, "success");
+                // Show success modal instead of simple notification
+                toggleWithdrawSuccessModal(true, resp.txHash || "");
 
                 // Reload claims/summary to ensure state consistency
                 setTimeout(() => loadEarnSummary(), 2000);
@@ -149,6 +175,16 @@ export function initSummaryActions() {
 
     document.querySelector<HTMLButtonElement>("#earn-activity-modal .btn-close")?.addEventListener("click", () => {
         toggleActivityModal(false);
+    });
+
+    document.getElementById("btn-withdraw-success-ok")?.addEventListener("click", () => {
+        toggleWithdrawSuccessModal(false);
+    });
+
+    document.querySelector<HTMLElement>("#withdraw-success-modal")?.addEventListener("click", (ev) => {
+        if ((ev.target as HTMLElement).id === "withdraw-success-modal") {
+            toggleWithdrawSuccessModal(false);
+        }
     });
 
     document.querySelector<HTMLElement>("#earn-activity-modal")?.addEventListener("click", (ev) => {
