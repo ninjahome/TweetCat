@@ -32,6 +32,13 @@ npm install
 npx wrangler login
 ```
 
+如果你在仓库根目录 `/Users/dou/work/TweetyCat` 操作，也可以直接用根脚本：
+
+```bash
+npm run worker:dev
+npm run worker:deploy:dev
+```
+
 ---
 
 ## 3) 本地运行（Local）
@@ -86,6 +93,12 @@ npx wrangler deploy
 
 ```bash
 npx wrangler deploy --env dev
+```
+
+或者从仓库根目录执行：
+
+```bash
+npm run worker:deploy:dev
 ```
 
 部署成功后域名通常类似：

@@ -49,6 +49,14 @@ export interface HistoryRow {
     txHash?: string | null;
 }
 
+export interface ClaimantRecord {
+    b_x_id: string;
+    username: string;
+    amount_atomic: string;
+    created_at: string;
+    status: string;
+}
+
 // API Paths (Matching tweetcat-x402-worker common.ts)
 import {
     API_PATH_ADS_LIST,
@@ -64,6 +72,7 @@ import {
     API_PATH_ADS_TOP_UP_BUDGET,
     API_PATH_ADS_PUBLISHER_DASHBOARD_INFO,
     API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
+    API_PATH_ADS_PUBLISHER_AD_CLAIMS,
     API_PATH_ADS_EXECUTOR_DASHBOARD_INFO,
     API_PATH_ADS_EXECUTOR_WITHDRAW
 } from "../../common/api_paths";
@@ -82,6 +91,7 @@ export {
     API_PATH_ADS_TOP_UP_BUDGET,
     API_PATH_ADS_PUBLISHER_DASHBOARD_INFO,
     API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
+    API_PATH_ADS_PUBLISHER_AD_CLAIMS,
     API_PATH_ADS_EXECUTOR_DASHBOARD_INFO,
     API_PATH_ADS_EXECUTOR_WITHDRAW
 };

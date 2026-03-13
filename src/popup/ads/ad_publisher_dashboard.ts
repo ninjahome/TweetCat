@@ -14,8 +14,9 @@ import {
 } from "../common";
 import { t } from "../../common/i18n";
 import { logAdP } from "../../common/debug_flags";
-import type { AdRecord, AdStatus, HistoryRow } from "./ad_publisher_common";
+import type { AdRecord, AdStatus, ClaimantRecord, HistoryRow } from "./ad_publisher_common";
 import {
+    API_PATH_ADS_PUBLISHER_AD_CLAIMS,
     API_PATH_ADS_MY_ADS,
     API_PATH_ADS_PUBLISHER_DASHBOARD_INFO,
     API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
@@ -37,6 +38,40 @@ const AD_STATUS_LABELS: Record<string, string> = {
     'EXPIRED': t("status_ended"),
     'COMPLETED': t("status_ended")
 };
+
+const CLAIMANT_STATUS_LABELS: Record<string, string> = {
+    PENDING_CONFIRM: "Pending",
+    CLAIMED: "Claimed",
+    CONFIRMED: "Confirmed",
+    REJECTED: "Rejected",
+};
+
+function ensureClaimantsModal(): HTMLElement | null {
+    let modal = $Id("claimants-modal");
+    if (modal) return modal;
+
+    modal = document.createElement("div");
+    modal.id = "claimants-modal";
+    modal.className = "modal";
+    modal.innerHTML = `
+        <div class="modal-dialog modal-large">
+            <div class="modal-header">
+                <h2 id="claimants-title" class="modal-title">Claimants List</h2>
+                <button id="close-claimants" class="btn-close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="claimants-modal-content">
+                    <div id="claimants-list" class="claimants-list">
+                        <div class="claimants-empty">No claimants yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    return modal;
+}
 
 // ========= 数据刷新 =========
 export async function refreshAdsData(page: number = 1) {
@@ -354,7 +389,19 @@ function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
 
     $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(rowData.rewardPerTask);
     // “Completed”列当前展示 claimed（占位/已领取），避免误把领取当成已结算消耗
-    $2<HTMLElement>(tr, ".td-completed").textContent = rowData.claimed.toString();
+    const claimedCell = $2<HTMLElement>(tr, ".td-completed");
+    claimedCell.replaceChildren();
+    if (rowData.claimed > 0) {
+        const claimedBtn = document.createElement("button");
+        claimedBtn.type = "button";
+        claimedBtn.className = "claimed-count-btn";
+        claimedBtn.textContent = rowData.claimed.toString();
+        claimedBtn.title = "View claimants";
+        claimedBtn.onclick = () => void openClaimantsModal(ad);
+        claimedCell.appendChild(claimedBtn);
+    } else {
+        claimedCell.textContent = "0";
+    }
     $2<HTMLElement>(tr, ".td-settled").textContent = rowData.settled.toString();
     $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(rowData.spent);
     $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(rowData.remainingBudget);
@@ -406,6 +453,122 @@ function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
         btnToggle.textContent = "N/A";
         btnToggle.disabled = true;
         btnToggle.onclick = null;
+    }
+}
+
+async function fetchAdClaimants(adId: string): Promise<ClaimantRecord[]> {
+    const currentXId = getCurrentXId();
+    const response = await x402WorkerGet(API_PATH_ADS_PUBLISHER_AD_CLAIMS, {
+        ad_id: adId,
+        a_x_id: currentXId
+    });
+
+    if (!response?.success || !Array.isArray(response.claimants)) {
+        throw new Error(response?.error || "Failed to load claimants");
+    }
+
+    return response.claimants;
+}
+
+function renderClaimantsList(claimants: ClaimantRecord[]) {
+    const listEl = $Id("claimants-list");
+    if (!listEl) return;
+
+    listEl.replaceChildren();
+
+    if (claimants.length === 0) {
+        const emptyState = document.createElement("div");
+        emptyState.className = "claimants-empty";
+        emptyState.textContent = "No claimants yet";
+        listEl.appendChild(emptyState);
+        return;
+    }
+
+    claimants.forEach((claimant) => {
+        const item = document.createElement("div");
+        item.className = "claimant-item";
+
+        const avatar = document.createElement("img");
+        avatar.className = "claimant-avatar";
+        avatar.src = `https://unavatar.io/twitter/${encodeURIComponent(claimant.username || claimant.b_x_id)}`;
+        avatar.alt = claimant.username || claimant.b_x_id;
+        avatar.loading = "lazy";
+        avatar.referrerPolicy = "no-referrer";
+        avatar.onerror = () => {
+            avatar.src =
+                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%23e5e7eb'/%3E%3Ctext x='24' y='30' text-anchor='middle' fill='%2394a3b8' font-size='20' font-family='Arial,sans-serif'%3E%F0%9F%91%A4%3C/text%3E%3C/svg%3E";
+        };
+
+        const main = document.createElement("div");
+        main.className = "claimant-main";
+
+        const topRow = document.createElement("div");
+        topRow.className = "claimant-top-row";
+
+        const nameBlock = document.createElement("div");
+        nameBlock.className = "claimant-name-block";
+
+        const nameEl = document.createElement("div");
+        nameEl.className = "claimant-name";
+        nameEl.textContent = claimant.username || claimant.b_x_id;
+
+        const amountEl = document.createElement("div");
+        amountEl.className = "claimant-amount";
+        amountEl.textContent = formatUSDC(atomicToUsdcNumber(claimant.amount_atomic || "0"));
+
+        nameBlock.appendChild(nameEl);
+        topRow.appendChild(nameBlock);
+        topRow.appendChild(amountEl);
+
+        const metaRow = document.createElement("div");
+        metaRow.className = "claimant-meta-row";
+
+        const timeEl = document.createElement("span");
+        timeEl.className = "claimant-time";
+        timeEl.textContent = claimant.created_at ? formatTimeLocal(claimant.created_at) : "-";
+
+        const statusEl = document.createElement("span");
+        statusEl.className = "claimant-status";
+        statusEl.textContent = CLAIMANT_STATUS_LABELS[claimant.status] || claimant.status || "-";
+
+        metaRow.appendChild(timeEl);
+        metaRow.appendChild(statusEl);
+
+        main.appendChild(topRow);
+        main.appendChild(metaRow);
+
+        item.appendChild(avatar);
+        item.appendChild(main);
+        listEl.appendChild(item);
+    });
+}
+
+async function openClaimantsModal(ad: AdRecord) {
+    const modal = ensureClaimantsModal();
+    const titleEl = $Id("claimants-title");
+    const listEl = $Id("claimants-list");
+    if (!modal || !titleEl || !listEl) return;
+
+    titleEl.textContent = `Claimants - ${ad.name}`;
+    listEl.replaceChildren();
+
+    const loadingState = document.createElement("div");
+    loadingState.className = "claimants-empty";
+    loadingState.textContent = "Loading claimants...";
+    listEl.appendChild(loadingState);
+
+    modal.classList.add("active");
+
+    try {
+        const claimants = await fetchAdClaimants(ad.ad_id);
+        renderClaimantsList(claimants);
+    } catch (err: any) {
+        listEl.replaceChildren();
+        const errorState = document.createElement("div");
+        errorState.className = "claimants-empty claimants-empty--error";
+        errorState.textContent = err?.message || "Failed to load claimants";
+        listEl.appendChild(errorState);
+        showNotification(err?.message || "Failed to load claimants", "error");
     }
 }
 
@@ -981,4 +1144,18 @@ export function initHistoryModalEvents() {
 
     const closeHistory = $Id("close-history") as HTMLButtonElement | null;
     if (closeHistory) closeHistory.addEventListener("click", closeHistoryModal);
+}
+
+export function initClaimantsModalEvents() {
+    const modal = ensureClaimantsModal();
+    if (!modal) return;
+
+    const closeModal = () => modal.classList.remove("active");
+
+    const btnClose = $Id("close-claimants") as HTMLButtonElement | null;
+    if (btnClose) btnClose.addEventListener("click", closeModal);
+
+    modal.addEventListener("click", (e) => {
+        if (e.target === modal) closeModal();
+    });
 }

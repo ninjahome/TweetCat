@@ -1978,3 +1978,106 @@ body {
     color: white;
     background: rgba(255, 255, 255, 0.1);
 }
+
+/* ==================== Claimants Modal ==================== */
+.claimed-count-btn {
+    border: none;
+    background: transparent;
+    color: var(--tc-primary);
+    font-weight: 800;
+    cursor: pointer;
+    padding: 0;
+    font-size: inherit;
+    line-height: 1.2;
+}
+
+.claimed-count-btn:hover {
+    text-decoration: underline;
+}
+
+.claimants-modal-content {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.claimants-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.claimant-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid #e6edf5;
+    border-radius: 16px;
+    background: #f8fbff;
+}
+
+.claimant-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 999px;
+    object-fit: cover;
+    flex: 0 0 auto;
+    background: #e5e7eb;
+}
+
+.claimant-main {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.claimant-top-row,
+.claimant-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.claimant-top-row {
+    margin-bottom: 4px;
+}
+
+.claimant-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
+    word-break: break-word;
+}
+
+.claimant-amount {
+    color: #0f766e;
+    font-size: 14px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.claimant-time,
+.claimant-status {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.claimant-status {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #eef6ff;
+    color: #2563eb;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.claimants-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.claimants-empty--error {
+    color: #b91c1c;
+}

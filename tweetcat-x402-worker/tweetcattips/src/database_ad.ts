@@ -652,6 +652,31 @@ export async function getAdvertiserHistory(
 }
 
 /**
+ * 广告主查询特定广告的领取人详情
+ */
+export async function getAdClaimants(
+	db: D1Database,
+	adId: string,
+	aXId: string
+): Promise<any[]> {
+	const sql = `
+		SELECT
+			c.b_x_id,
+			kb.username,
+			c.unit_price_atomic,
+			c.created_at,
+			c.status
+		FROM ad_reward_claims c
+		LEFT JOIN kol_binding kb ON c.b_x_id = kb.x_id
+		JOIN ad_campaigns a ON c.ad_id = a.ad_id
+		WHERE c.ad_id = ? AND a.a_x_id = ?
+		ORDER BY c.created_at DESC
+	`;
+	const { results } = await db.prepare(sql).bind(adId, aXId).all<any>();
+	return results ?? [];
+}
+
+/**
  * 获取广告主消费记录总数
  */
 export async function getAdvertiserHistoryCount(db: D1Database, aXId: string): Promise<number> {

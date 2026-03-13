@@ -22,6 +22,7 @@ import {
 	API_PATH_ADS_TOGGLE_STATUS,
 	API_PATH_ADS_TOP_UP_BUDGET,
 	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
+	API_PATH_ADS_PUBLISHER_AD_CLAIMS,
 	API_PATH_ADS_MY_TASKS,
 	API_PATH_ADS_EXECUTOR_DASHBOARD_INFO,
 	API_PATH_ADS_EXECUTOR_WITHDRAW,
@@ -66,7 +67,7 @@ import {
 	getPerformerHistory,
 	type AdCreatePayload,
 	type CreateDetailedClaimParams,
-	type AdCampaignStatus, getPublisherDashboardStats, getPerformerDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount, addAdQuota,
+	type AdCampaignStatus, getPublisherDashboardStats, getPerformerDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount, getAdClaimants, addAdQuota,
 	getAdsFeedVersion,
 	getAdsNextInvalidationAt,
 	bumpAdsFeedVersion,
@@ -1261,6 +1262,37 @@ export async function apiAdsPublisherSpendHistory(c: ExtCtx) {
 }
 
 /**
+ * 查询特定广告的领取人详情
+ */
+export async function apiAdsAdClaimants(c: ExtCtx) {
+	try {
+		const adId = c.req.query("ad_id");
+		const aXId = c.req.query("a_x_id");
+
+		if (!adId) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
+		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		const rows = await getAdClaimants(c.env.DB, adId, aXId);
+
+		const claimants = rows.map((r: any) => ({
+			b_x_id: r.b_x_id,
+			username: r.username || r.b_x_id,
+			amount_atomic: String(r.unit_price_atomic || "0"),
+			created_at: r.created_at,
+			status: r.status
+		}));
+
+		return c.json({
+			success: true,
+			claimants
+		});
+	} catch (err: any) {
+		console.error("fetch ad claimants error:", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
  * 注册广告相关路由
  */
 export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
@@ -1280,6 +1312,7 @@ export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
 	app.get(API_PATH_ADS_PUBLISHER_LEDGER, apiAdsPublisherLedger);
 	app.get(API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, apiAdsPublisherDashboardInfo);
 	app.get(API_PATH_ADS_PUBLISHER_SPEND_HISTORY, apiAdsPublisherSpendHistory);
+	app.get(API_PATH_ADS_PUBLISHER_AD_CLAIMS, apiAdsAdClaimants);
 	app.post(API_PATH_ADS_TOGGLE_STATUS, apiAdsToggleStatus);
 	app.post(API_PATH_ADS_TOP_UP_BUDGET, apiAdsTopUpBudget);
 }

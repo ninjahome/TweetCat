@@ -32,7 +32,13 @@
     "build:d": "webpack --mode development --stats-error-details",
     "build:r": "webpack --mode production --stats-error-details",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "worker:dev": "npm --prefix tweetcat-x402-worker/tweetcattips run dev",
+    "worker:dev:prod": "npm --prefix tweetcat-x402-worker/tweetcattips run dev:prod",
+    "worker:deploy:dev": "npm --prefix tweetcat-x402-worker/tweetcattips run deploy:dev",
+    "worker:deploy:prod": "npm --prefix tweetcat-x402-worker/tweetcattips run deploy:prod",
+    "worker:db:migrate:dev": "npm --prefix tweetcat-x402-worker/tweetcattips run db:migrate:test",
+    "worker:db:migrate:prod": "npm --prefix tweetcat-x402-worker/tweetcattips run db:migrate:main"
   },
   "version": "3.7.8"
 }

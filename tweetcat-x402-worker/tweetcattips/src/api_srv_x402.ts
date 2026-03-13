@@ -6,11 +6,13 @@ import {
 	isHexAddress,
 	usdcToAtomicSafe
 } from "./common";
-import {ResourceInfo} from "@x402/core/server";
-import {SettleResponse} from "@x402/core/types";
+import type { ResourceInfo, SettleResponse } from "@x402/core/types";
 import {creditRewardsBalance, getKolBindingByXId, usdcEscrowTips} from "./database_402";
 import {x402Client} from "@x402/core/client";
 import {registerExactEvmScheme} from "@x402/evm/exact/client";
+import { toClientEvmSigner } from "@x402/evm";
+import { createPublicClient, http } from "viem";
+import { base, baseSepolia } from "viem/chains";
 import {privateKeyToAccount} from "viem/accounts";
 
 interface TipRequestParams {
@@ -78,6 +80,11 @@ export class PaymentRequiredError extends Error {
 	}
 }
 
+function getChainForNetwork(network: string) {
+	if (network === "eip155:84532") return baseSepolia;
+	return base;
+}
+
 export async function x402Workflow(c: ExtCtx, payTo: string, atomicAmount: string, desc: string = "x402 transfer",): Promise<SettleResponse> {
 
 	const cfg = c.get("cfg");
@@ -107,7 +114,7 @@ export async function x402Workflow(c: ExtCtx, payTo: string, atomicAmount: strin
 
 	const paymentHeader = getPaymentHeader(c);
 	if (!paymentHeader) {
-		const pr = rs.createPaymentRequiredResponse([requirements], resource);
+		const pr = await rs.createPaymentRequiredResponse([requirements], resource);
 		c.status(402);
 		c.header("PAYMENT-REQUIRED", encodeBase64Json(pr));
 		throw new PaymentRequiredError()
@@ -176,7 +183,12 @@ export async function internalTreasurySettle(
 
 	if (!privateKey) throw new Error("TREASURY_PRIVATE_KEY not set");
 	const rawKey = privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`;
-	const signer = privateKeyToAccount(rawKey as `0x${string}`);
+	const account = privateKeyToAccount(rawKey as `0x${string}`);
+	const publicClient = createPublicClient({
+		chain: getChainForNetwork(cfg.NETWORK),
+		transport: http(),
+	});
+	const signer = toClientEvmSigner(account, publicClient);
 	/*
 		const treasuryAccount = await getOrCreateTreasuryEOA(c);
 		const signer = toAccount(treasuryAccount);
@@ -204,7 +216,7 @@ export async function internalTreasurySettle(
 		mimeType: "application/json",
 	};
 
-	const paymentRequired = rs.createPaymentRequiredResponse([requirements], resource);
+	const paymentRequired = await rs.createPaymentRequiredResponse([requirements], resource);
 
 	const paymentPayload = await client.createPaymentPayload(paymentRequired);
 

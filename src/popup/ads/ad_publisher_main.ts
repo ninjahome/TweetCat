@@ -2,6 +2,7 @@ import { showNotification } from "../common";
 import { initWalletInfo } from "./ad_publisher_common";
 import {
     initHistoryModalEvents,
+    initClaimantsModalEvents,
     initNavEvents,
     initSpendTabs,
     initPaginationEvents,
@@ -320,6 +321,7 @@ async function initAdvertise() {
     initWizardEvents();
     initRechargeModalEvents();
     initHistoryModalEvents();
+    initClaimantsModalEvents();
     initPaginationEvents();
     initSpendPaginationEvents();
 
