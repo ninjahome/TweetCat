@@ -351,6 +351,9 @@
   "sync_user_not_found": {
     "message": "User not found or sync failed."
   },
+  "failed_to_sync_account": {
+    "message": "Failed to sync account info."
+  },
   "refresh": {
     "message": "Refresh"
   },

@@ -366,6 +366,9 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
         return { success: false, data: noXTabError }
     }
 
+    let lastErrorMsg = "";
+    let successCount = 0;
+
     for (let i = 0; i < tabs.length; i++) {
         const tab = tabs[i];
         try {
@@ -374,16 +377,22 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
                 data: data
             });
 
+            successCount += 1;
             if (onlyFirstTab) return resp;
 
         } catch (err) {
             const errorMsg = (err as Error).message || "";
+            lastErrorMsg = errorMsg;
             if (!errorMsg.includes("Could not establish connection")) {
-                console.warn("------>>> 发送消息失败", err);
+                console.warn("------>>> send message to x tab failed", { action, tabId: tab.id, err });
             }
-            return { success: false, data: errorMsg };
+            continue;
         }
     }
 
-    return { success: true };
+    if (successCount > 0) {
+        return { success: true };
+    }
+
+    return { success: false, data: lastErrorMsg || "Failed to reach any x.com tab." };
 }

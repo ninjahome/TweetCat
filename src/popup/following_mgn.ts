@@ -224,6 +224,8 @@ type ConfirmCallback = () => void | Promise<void>;
 let activeModal: HTMLElement | null = null;
 let pendingConfirmHandler: ConfirmCallback | null = null;
 let isProcessingUnfollow = false;
+let categoryInputMode: "create" | "rename" = "create";
+let pendingRenameCategory: Category | null = null;
 
 document.addEventListener("DOMContentLoaded", initFollowingManager as EventListener);
 
@@ -259,20 +261,20 @@ function bindEvents() {
     unfollowSelectedBtn?.addEventListener("click", handleUnfollowSelected);
     newCategoryBtn?.addEventListener("click", showAddCategoryModal);
 
-    cancelNewCategoryBtn?.addEventListener("click", hideAddCategoryModal);
+    cancelNewCategoryBtn?.addEventListener("click", hideCategoryInputModal);
     confirmNewCategoryBtn?.addEventListener("click", () => {
-        void handleAddCategoryConfirm();
+        void handleCategoryInputConfirm();
     });
     dialogInput?.addEventListener("input", handleAddCategoryInputChange);
     dialogInput?.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
-            void handleAddCategoryConfirm();
+            void handleCategoryInputConfirm();
         }
     });
     commInputDialog?.addEventListener("click", (event) => {
         if (event.target === commInputDialog) {
-            hideAddCategoryModal();
+            hideCategoryInputModal();
         }
     });
 
@@ -487,7 +489,7 @@ function handleGlobalKeydown(event: KeyboardEvent) {
     }
     event.preventDefault();
     if (activeModal === commInputDialog) {
-        hideAddCategoryModal();
+        hideCategoryInputModal();
     } else if (activeModal === confirmModal) {
         hideConfirmModal();
     }
@@ -499,35 +501,48 @@ function handleAddCategoryInputChange() {
     confirmNewCategoryBtn.disabled = !hasValue;
 }
 
-function resetAddCategoryModal() {
-    if (!dialogInput || !confirmNewCategoryBtn) return;
-    dialogInput.value = "";
-    confirmNewCategoryBtn.disabled = true;
+function configureCategoryInputModal(mode: "create" | "rename", initialValue: string = "") {
+    if (!dialogInput || !confirmNewCategoryBtn || !cancelNewCategoryBtn) return;
+    categoryInputMode = mode;
+    const title = mode === "rename" ? t("rename_category_prompt") : t("create_new_category");
+    $Id("modal-add-category-title")!.textContent = title;
+    dialogInput.placeholder = t("enter_category_name");
+    dialogInput.value = initialValue;
+    confirmNewCategoryBtn.textContent = t("confirm");
+    cancelNewCategoryBtn.textContent = t("cancel");
+    confirmNewCategoryBtn.disabled = dialogInput.value.trim().length === 0;
 }
 
 function showAddCategoryModal() {
-    resetAddCategoryModal();
+    pendingRenameCategory = null;
+    configureCategoryInputModal("create");
     openModal(commInputDialog);
     window.setTimeout(() => {
         dialogInput?.focus();
     }, 0);
 }
 
-function hideAddCategoryModal() {
-    resetAddCategoryModal();
+function hideCategoryInputModal() {
+    pendingRenameCategory = null;
+    configureCategoryInputModal("create");
     closeModal(commInputDialog);
 }
 
-async function handleAddCategoryConfirm() {
+async function handleCategoryInputConfirm() {
     if (!dialogInput || !confirmNewCategoryBtn) return;
     const name = dialogInput.value.trim();
     if (!name) return;
     confirmNewCategoryBtn.disabled = true;
+
     try {
-        await addNewCategory(name);
-        hideAddCategoryModal();
+        if (categoryInputMode === "rename" && pendingRenameCategory) {
+            await renameCategory(pendingRenameCategory, name);
+        } else {
+            await addNewCategory(name);
+        }
+        hideCategoryInputModal();
     } catch (error) {
-        console.warn("------>>> add category failed", error);
+        console.warn("------>>> category input submit failed", error);
         confirmNewCategoryBtn.disabled = dialogInput.value.trim().length === 0;
         confirmNewCategoryBtn.focus();
     }
@@ -1035,17 +1050,20 @@ async function addNewCategory(name: string) {
 }
 
 async function handleRenameCategory(category: Category) {
+    pendingRenameCategory = category;
+    configureCategoryInputModal("rename", category.catName);
+    openModal(commInputDialog);
+    window.setTimeout(() => {
+        dialogInput?.focus();
+        dialogInput?.select();
+    }, 0);
+}
 
-    const name = await showRenameCategoryDialog(
-        category.catName,
-        t("rename_category_prompt")
-    );
-    if (!name) return;
-
+async function renameCategory(category: Category, name: string) {
     const trimmed = name.trim();
     if (!trimmed) {
         showNotification(t("category_name_empty"), "error");
-        return;
+        throw new Error(t("category_name_empty"));
     }
     category.catName = trimmed;
     try {
@@ -1057,6 +1075,7 @@ async function handleRenameCategory(category: Category) {
     } catch (error) {
         console.warn("------>>> rename category failed", error);
         showNotification(t("failed_to_rename_category"), "error");
+        throw error;
     }
 }
 
@@ -1419,10 +1438,12 @@ function fillUserSyncButton(card: HTMLElement, user: UnifiedKOL) {
         return;
     }
 
-    const web2FollowingNoTitle = $Id("web2-following-no-title")
+    const web2FollowingNoTitle = $Id("web2-following-no-title");
     web2FollowingNoTitle.textContent = t("web2_following_no_title");
     syncBtn.classList.remove("hidden");
-    syncBtn.title = t("sync_user_now");
+    const syncLabel = t("sync_user_now");
+    syncBtn.title = syncLabel;
+    syncBtn.setAttribute("aria-label", syncLabel);
     syncBtn.addEventListener("click", async (ev) => {
         ev.stopPropagation();
         await syncFollowingFromTwitterSrv(user);
@@ -1452,10 +1473,11 @@ function handleSyncError(resp: any) {
     const message = typeof resp?.data === "string" ? resp.data : resp?.error;
     if (message?.includes(noXTabError)) {
         showConfirmModal(t("confirm_signin_x_first"), () => {
-            window.open("https://x.com", "_blank")
+            window.open("https://x.com", "_blank");
         });
     } else {
-        showNotification(message || t('failed_to_unfollow_selected'), "error");
+        console.warn("[FollowingMgn] Failed to sync account info:", message, resp);
+        showNotification(t("failed_to_sync_account"), "error");
     }
 }
 
@@ -1673,92 +1695,4 @@ async function openSnapshotInGateway(cid: string): Promise<void> {
     } finally {
         hideLoading();
     }
-}
-
-export function showRenameCategoryDialog(
-    initialName: string = "",
-    title?: string
-): Promise<string | null> {
-    return new Promise((resolve) => {
-        const dialog = document.getElementById("new-category-dialog") as HTMLDivElement | null;
-        const input = dialog?.querySelector<HTMLInputElement>("#new-category-name-input");
-        const btnConfirm = dialog?.querySelector<HTMLButtonElement>("#btn-confirm-rename");
-        const btnCancel = dialog?.querySelector<HTMLButtonElement>("#btn-cancel-rename");
-        const titleEl = dialog?.querySelector<HTMLElement>("#new-category-dialog-title");
-
-        if (!dialog || !input || !btnConfirm || !btnCancel) {
-            console.warn("[rename-dialog] DOM not found");
-            resolve(null);
-            return;
-        }
-
-        // 设置标题（如果有传）
-        if (title && titleEl) {
-            titleEl.textContent = title;
-        }
-
-        // 初始值
-        input.value = initialName ?? "";
-
-        const updateConfirmState = () => {
-            const trimmed = input.value.trim();
-            btnConfirm.disabled = trimmed.length === 0;
-        };
-        updateConfirmState();
-
-        dialog.classList.remove("hidden");
-        document.body.classList.add("modal-open");
-        input.focus();
-        input.select();
-
-        const cleanup = (value: string | null) => {
-            dialog.classList.add("hidden");
-            document.body.classList.remove("modal-open");
-
-            btnConfirm.removeEventListener("click", onConfirm);
-            btnCancel.removeEventListener("click", onCancel);
-            dialog.removeEventListener("click", onBackdropClick);
-            input.removeEventListener("keydown", onKeydown);
-            input.removeEventListener("input", onInput);
-
-            resolve(value);
-        };
-
-        const onConfirm = () => {
-            const value = input.value;
-            cleanup(value);
-        };
-
-        const onCancel = () => {
-            cleanup(null);
-        };
-
-        const onBackdropClick = (ev: MouseEvent) => {
-            if (ev.target === dialog) {
-                cleanup(null);
-            }
-        };
-
-        const onKeydown = (ev: KeyboardEvent) => {
-            if (ev.key === "Enter") {
-                ev.preventDefault();
-                if (!btnConfirm.disabled) {
-                    onConfirm();
-                }
-            } else if (ev.key === "Escape") {
-                ev.preventDefault();
-                onCancel();
-            }
-        };
-
-        const onInput = () => {
-            updateConfirmState();
-        };
-
-        btnConfirm.addEventListener("click", onConfirm);
-        btnCancel.addEventListener("click", onCancel);
-        dialog.addEventListener("click", onBackdropClick);
-        input.addEventListener("keydown", onKeydown);
-        input.addEventListener("input", onInput);
-    });
 }
