@@ -657,7 +657,9 @@ export async function getAdvertiserHistory(
 export async function getAdClaimants(
 	db: D1Database,
 	adId: string,
-	aXId: string
+	aXId: string,
+	limit: number = 10,
+	offset: number = 0
 ): Promise<any[]> {
 	const sql = `
 		SELECT
@@ -671,9 +673,25 @@ export async function getAdClaimants(
 		JOIN ad_campaigns a ON c.ad_id = a.ad_id
 		WHERE c.ad_id = ? AND a.a_x_id = ?
 		ORDER BY c.created_at DESC
+		LIMIT ? OFFSET ?
 	`;
-	const { results } = await db.prepare(sql).bind(adId, aXId).all<any>();
+	const { results } = await db.prepare(sql).bind(adId, aXId, limit, offset).all<any>();
 	return results ?? [];
+}
+
+export async function getAdClaimantsCount(
+	db: D1Database,
+	adId: string,
+	aXId: string
+): Promise<number> {
+	const sql = `
+		SELECT COUNT(*) as total
+		FROM ad_reward_claims c
+		JOIN ad_campaigns a ON c.ad_id = a.ad_id
+		WHERE c.ad_id = ? AND a.a_x_id = ?
+	`;
+	const result = await db.prepare(sql).bind(adId, aXId).first<{ total: number }>();
+	return result?.total ?? 0;
 }
 
 /**

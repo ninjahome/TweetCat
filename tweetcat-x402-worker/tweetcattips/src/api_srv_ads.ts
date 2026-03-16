@@ -67,7 +67,7 @@ import {
 	getPerformerHistory,
 	type AdCreatePayload,
 	type CreateDetailedClaimParams,
-	type AdCampaignStatus, getPublisherDashboardStats, getPerformerDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount, getAdClaimants, addAdQuota,
+	type AdCampaignStatus, getPublisherDashboardStats, getPerformerDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount, getAdClaimants, getAdClaimantsCount, addAdQuota,
 	getAdsFeedVersion,
 	getAdsNextInvalidationAt,
 	bumpAdsFeedVersion,
@@ -1268,11 +1268,18 @@ export async function apiAdsAdClaimants(c: ExtCtx) {
 	try {
 		const adId = c.req.query("ad_id");
 		const aXId = c.req.query("a_x_id");
+		const limitStr = c.req.query("limit");
+		const offsetStr = c.req.query("offset");
 
 		if (!adId) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
 		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+		const limit = Math.min(Math.max(parseInt(limitStr || "10", 10) || 10, 1), 100);
+		const offset = Math.max(parseInt(offsetStr || "0", 10) || 0, 0);
 
-		const rows = await getAdClaimants(c.env.DB, adId, aXId);
+		const [rows, total] = await Promise.all([
+			getAdClaimants(c.env.DB, adId, aXId, limit, offset),
+			getAdClaimantsCount(c.env.DB, adId, aXId)
+		]);
 
 		const claimants = rows.map((r: any) => ({
 			b_x_id: r.b_x_id,
@@ -1284,7 +1291,8 @@ export async function apiAdsAdClaimants(c: ExtCtx) {
 
 		return c.json({
 			success: true,
-			claimants
+			claimants,
+			total
 		});
 	} catch (err: any) {
 		console.error("fetch ad claimants error:", err);

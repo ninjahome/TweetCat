@@ -46,9 +46,34 @@ const CLAIMANT_STATUS_LABELS: Record<string, string> = {
     REJECTED: "Rejected",
 };
 
+const claimantsModalState = {
+    ad: null as AdRecord | null,
+    currentPage: 1,
+    pageSize: 10,
+    totalCount: 0,
+};
+
+function getClaimantsPaginationMarkup(): string {
+    return `
+        <div id="claimants-pagination" class="claimants-pagination" style="display: none;">
+            <button type="button" id="claimants-prev-page" class="claimants-page-btn">Previous</button>
+            <span id="claimants-page-info" class="claimants-page-info">Page 1 / 1</span>
+            <button type="button" id="claimants-next-page" class="claimants-page-btn">Next</button>
+        </div>
+    `;
+}
+
 function ensureClaimantsModal(): HTMLElement | null {
     let modal = $Id("claimants-modal");
-    if (modal) return modal;
+    if (modal) {
+        const content = modal.querySelector<HTMLElement>(".claimants-modal-content");
+        const mockToolbar = content?.querySelector("#claimants-mock-toolbar");
+        if (mockToolbar) mockToolbar.remove();
+        if (content && !content.querySelector("#claimants-pagination")) {
+            content.insertAdjacentHTML("beforeend", getClaimantsPaginationMarkup());
+        }
+        return modal;
+    }
 
     modal = document.createElement("div");
     modal.id = "claimants-modal";
@@ -64,6 +89,7 @@ function ensureClaimantsModal(): HTMLElement | null {
                     <div id="claimants-list" class="claimants-list">
                         <div class="claimants-empty">No claimants yet</div>
                     </div>
+                    ${getClaimantsPaginationMarkup()}
                 </div>
             </div>
         </div>
@@ -71,6 +97,46 @@ function ensureClaimantsModal(): HTMLElement | null {
 
     document.body.appendChild(modal);
     return modal;
+}
+
+function renderClaimantsPagination() {
+    const pager = $Id("claimants-pagination");
+    const pageInfo = $Id("claimants-page-info");
+    const prevBtn = $Id("claimants-prev-page") as HTMLButtonElement | null;
+    const nextBtn = $Id("claimants-next-page") as HTMLButtonElement | null;
+    if (!pager || !pageInfo || !prevBtn || !nextBtn) return;
+
+    const totalPages = Math.max(1, Math.ceil(claimantsModalState.totalCount / claimantsModalState.pageSize));
+    pager.style.display = claimantsModalState.totalCount > 0 ? "flex" : "none";
+
+    if (claimantsModalState.currentPage > totalPages) {
+        claimantsModalState.currentPage = totalPages;
+    }
+
+    pageInfo.textContent = `Page ${claimantsModalState.currentPage} / ${totalPages}`;
+    prevBtn.disabled = claimantsModalState.currentPage <= 1;
+    nextBtn.disabled = claimantsModalState.currentPage >= totalPages;
+}
+
+function bindClaimantsPaginationEvents() {
+    const prevBtn = $Id("claimants-prev-page") as HTMLButtonElement | null;
+    const nextBtn = $Id("claimants-next-page") as HTMLButtonElement | null;
+
+    if (prevBtn) {
+        prevBtn.onclick = () => {
+            if (!claimantsModalState.ad || claimantsModalState.currentPage <= 1) return;
+            void loadClaimantsPage(claimantsModalState.ad, claimantsModalState.currentPage - 1);
+        };
+    }
+
+    if (nextBtn) {
+        nextBtn.onclick = () => {
+            if (!claimantsModalState.ad) return;
+            const totalPages = Math.max(1, Math.ceil(claimantsModalState.totalCount / claimantsModalState.pageSize));
+            if (claimantsModalState.currentPage >= totalPages) return;
+            void loadClaimantsPage(claimantsModalState.ad, claimantsModalState.currentPage + 1);
+        };
+    }
 }
 
 // ========= 数据刷新 =========
@@ -456,18 +522,24 @@ function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
     }
 }
 
-async function fetchAdClaimants(adId: string): Promise<ClaimantRecord[]> {
+async function fetchAdClaimants(adId: string, page: number): Promise<{ claimants: ClaimantRecord[]; total: number }> {
     const currentXId = getCurrentXId();
+    const offset = (page - 1) * claimantsModalState.pageSize;
     const response = await x402WorkerGet(API_PATH_ADS_PUBLISHER_AD_CLAIMS, {
         ad_id: adId,
-        a_x_id: currentXId
+        a_x_id: currentXId,
+        limit: claimantsModalState.pageSize.toString(),
+        offset: offset.toString()
     });
 
     if (!response?.success || !Array.isArray(response.claimants)) {
         throw new Error(response?.error || "Failed to load claimants");
     }
 
-    return response.claimants;
+    return {
+        claimants: response.claimants,
+        total: Number(response.total || 0)
+    };
 }
 
 function renderClaimantsList(claimants: ClaimantRecord[]) {
@@ -481,6 +553,7 @@ function renderClaimantsList(claimants: ClaimantRecord[]) {
         emptyState.className = "claimants-empty";
         emptyState.textContent = "No claimants yet";
         listEl.appendChild(emptyState);
+        renderClaimantsPagination();
         return;
     }
 
@@ -541,26 +614,26 @@ function renderClaimantsList(claimants: ClaimantRecord[]) {
         item.appendChild(main);
         listEl.appendChild(item);
     });
+
+    renderClaimantsPagination();
 }
 
-async function openClaimantsModal(ad: AdRecord) {
-    const modal = ensureClaimantsModal();
-    const titleEl = $Id("claimants-title");
+async function loadClaimantsPage(ad: AdRecord, page: number) {
     const listEl = $Id("claimants-list");
-    if (!modal || !titleEl || !listEl) return;
+    if (!listEl) return;
 
-    titleEl.textContent = `Claimants - ${ad.name}`;
+    claimantsModalState.ad = ad;
+    claimantsModalState.currentPage = Math.max(1, page);
+
     listEl.replaceChildren();
-
     const loadingState = document.createElement("div");
     loadingState.className = "claimants-empty";
     loadingState.textContent = "Loading claimants...";
     listEl.appendChild(loadingState);
 
-    modal.classList.add("active");
-
     try {
-        const claimants = await fetchAdClaimants(ad.ad_id);
+        const { claimants, total } = await fetchAdClaimants(ad.ad_id, claimantsModalState.currentPage);
+        claimantsModalState.totalCount = total;
         renderClaimantsList(claimants);
     } catch (err: any) {
         listEl.replaceChildren();
@@ -568,8 +641,25 @@ async function openClaimantsModal(ad: AdRecord) {
         errorState.className = "claimants-empty claimants-empty--error";
         errorState.textContent = err?.message || "Failed to load claimants";
         listEl.appendChild(errorState);
+        claimantsModalState.totalCount = 0;
+        renderClaimantsPagination();
         showNotification(err?.message || "Failed to load claimants", "error");
     }
+}
+
+async function openClaimantsModal(ad: AdRecord) {
+    const modal = ensureClaimantsModal();
+    const titleEl = $Id("claimants-title");
+    const listEl = $Id("claimants-list");
+    if (!modal || !titleEl || !listEl) return;
+    claimantsModalState.ad = ad;
+    claimantsModalState.currentPage = 1;
+    claimantsModalState.totalCount = 0;
+    titleEl.textContent = `Claimants - ${ad.name}`;
+    listEl.replaceChildren();
+    bindClaimantsPaginationEvents();
+    modal.classList.add("active");
+    await loadClaimantsPage(ad, 1);
 }
 
 export function renderMyAdsTable() {
@@ -1150,7 +1240,12 @@ export function initClaimantsModalEvents() {
     const modal = ensureClaimantsModal();
     if (!modal) return;
 
-    const closeModal = () => modal.classList.remove("active");
+    const closeModal = () => {
+        claimantsModalState.ad = null;
+        claimantsModalState.currentPage = 1;
+        claimantsModalState.totalCount = 0;
+        modal.classList.remove("active");
+    };
 
     const btnClose = $Id("close-claimants") as HTMLButtonElement | null;
     if (btnClose) btnClose.addEventListener("click", closeModal);

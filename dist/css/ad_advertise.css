@@ -2006,6 +2006,39 @@ body {
     gap: 12px;
 }
 
+.claimants-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 8px;
+}
+
+.claimants-page-btn {
+    border: 1px solid #d7e3f5;
+    background: #fff;
+    color: #334155;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.claimants-page-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.claimants-page-info {
+    min-width: 96px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    color: #475569;
+}
+
 .claimant-item {
     display: flex;
     align-items: center;
