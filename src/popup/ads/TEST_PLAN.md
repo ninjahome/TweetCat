@@ -299,6 +299,7 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | EX-17 | ✅ 🤖 🔵 claim 创建失败后的回滚 | quota_claimed 应该 -1（best effort），claim state 被 clear | P0 |
 | EX-18 | ✅ 👋 多个广告指向同一 KOL | Feed 选最高 reward 的 offer 展示 | P2 |
 | EX-19 | 👋 **推特频率限制 (Follow Limit)** | 用户因当日关注过多触发限流 → 按钮 15s 超时或 Spotlight 报错 → 提示："无法从推特获取验证材料 (Rate limit or Auth error)" | P1 |
+| EX-20 | 👋 从广告广场首次进入 KOL 主页，按钮未出现；刷新后恢复 | 记录为偶发竞态：首次进入可能未注入「关注即领」按钮，刷新或再次进入后恢复正常 | P1 |
 
 
 ---
@@ -429,6 +430,7 @@ npm test -- --run test/ads_publisher_topup.spec.ts
 | UI-06 | ✅ 👋 `tc_verify=1` 验证模式 | 页面加载后触发蓝V验证弹窗 | P1 |
 | UI-07 | ✅ 👋 验证模式：用户是蓝V | 弹窗 "✅ Verification Success!" | P1 |
 | UI-08 | ✅ 👋 验证模式：用户不是蓝V | 弹窗 "❌ Verification Failed" | P1 |
+| UI-09 | 👋 KOL 主页入口兼容性：`/username`、`/i/user/<id>`、广告广场冷启动跳转 | 三种入口都应正确查询 offer 并注入按钮；若首次未注入，需记录当前 URL、是否刷新后恢复 | P1 |
 | UI-10 | ✅ 👋 侧边栏推荐用户 vs 主页面用户区分 | 按钮只注入到 primaryColumn 的按钮 | P2 |
 | UI-11 | ✅ 👋 IJFollowActionCaptured 拦截 | 正确更新缓存的 following 状态 | P1 |
 | UI-12 | ✅ 👋 offscreen wallet 查询超时 | 合理的超时处理和错误提示 (使用 `sendMsgToOffScreenWithTimeout`) | P2 |

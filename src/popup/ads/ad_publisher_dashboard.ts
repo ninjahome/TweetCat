@@ -23,12 +23,13 @@ import {
     API_PATH_ADS_TOGGLE_STATUS,
     API_PATH_ADS_TOP_UP_BUDGET,
     API_PATH_ADS_UPDATE,
+    adsWorkerFetch,
+    adsWorkerGet,
     fetchAdEscrowLedger,
     getCurrentXId,
     openTxInExplorer,
     publisherState
 } from "./ad_publisher_common";
-import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 
 // 状态显示名称映射
 const AD_STATUS_LABELS: Record<string, string> = {
@@ -150,7 +151,7 @@ export async function refreshAdsData(page: number = 1) {
     publisherState.ads.isLoading = true;
 
     try {
-        const response = await x402WorkerGet(API_PATH_ADS_MY_ADS, {
+        const response = await adsWorkerGet(API_PATH_ADS_MY_ADS, {
             a_x_id: currentXId,
             limit: pageSize.toString(),
             offset: offset.toString()
@@ -177,7 +178,7 @@ export async function fetchDashboardInfo() {
     const currentXId = getCurrentXId();
 
     try {
-        const dashboardInfo = await x402WorkerGet(API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, { a_x_id: currentXId });
+        const dashboardInfo = await adsWorkerGet(API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, { a_x_id: currentXId });
         console.log("Dashboard info:", dashboardInfo);
         logAdP("Dashboard info:", dashboardInfo);
 
@@ -215,7 +216,7 @@ export async function fetchSpendHistory(page: number = 1) {
 
     try {
         // 获取消费历史记录
-        const response = await x402WorkerGet(API_PATH_ADS_PUBLISHER_SPEND_HISTORY, {
+        const response = await adsWorkerGet(API_PATH_ADS_PUBLISHER_SPEND_HISTORY, {
             a_x_id: currentXId,
             limit: pageSize.toString(),
             offset: offset.toString()
@@ -525,7 +526,7 @@ function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
 async function fetchAdClaimants(adId: string, page: number): Promise<{ claimants: ClaimantRecord[]; total: number }> {
     const currentXId = getCurrentXId();
     const offset = (page - 1) * claimantsModalState.pageSize;
-    const response = await x402WorkerGet(API_PATH_ADS_PUBLISHER_AD_CLAIMS, {
+    const response = await adsWorkerGet(API_PATH_ADS_PUBLISHER_AD_CLAIMS, {
         ad_id: adId,
         a_x_id: currentXId,
         limit: claimantsModalState.pageSize.toString(),
@@ -686,7 +687,7 @@ async function handleToggleAdStatus(adId: string, action: "pause" | "resume" | "
         showLoading();
         const currentXId = getCurrentXId();
         // x402WorkerFetch returns parsed JSON directly; throws on HTTP error
-        const result = await x402WorkerFetch(API_PATH_ADS_TOGGLE_STATUS, {
+        const result = await adsWorkerFetch(API_PATH_ADS_TOGGLE_STATUS, {
             ad_id: adId,
             a_x_id: currentXId,
             action: action
@@ -770,7 +771,7 @@ async function handleTopUpSubmit(adId: string) {
         const currentXId = getCurrentXId();
         const amountAtomic = usdcToAtomic(amountStr);
 
-        await x402WorkerFetch(API_PATH_ADS_TOP_UP_BUDGET, {
+        await adsWorkerFetch(API_PATH_ADS_TOP_UP_BUDGET, {
             ad_id: adId,
             a_x_id: currentXId,
             amount_atomic: amountAtomic
@@ -869,7 +870,7 @@ function openAdDetailModal(ad: AdRecord) {
                         custom_data: newCustomData,
                     };
 
-                    const result = await x402WorkerFetch(API_PATH_ADS_UPDATE, payload);
+                    const result = await adsWorkerFetch(API_PATH_ADS_UPDATE, payload);
 
                     if (result.ok) {
                         showNotification(t("msg_ad_settings_updated"), "success");

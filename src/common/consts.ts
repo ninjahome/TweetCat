@@ -20,6 +20,7 @@ export const __DBK_AD_Block_Key = "__DBK_AD_Block_Key";
 export const __DBK_ADS_FEED_VERSION = "__DBK_ADS_FEED_VERSION";
 export const __DBK_ADS_FEED_NEXT_INVALIDATION_AT = "__DBK_ADS_FEED_NEXT_INVALIDATION_AT";
 export const __DBK_ADS_FOLLOW_OFFER_CACHE = "__DBK_ADS_FOLLOW_OFFER_CACHE";
+export const __DBK_WALLET_NETWORK_SYNC = "__DBK_WALLET_NETWORK_SYNC";
 
 export enum MsgType {
     OpenCategoryManagement = 'OpenCategoryManagement',

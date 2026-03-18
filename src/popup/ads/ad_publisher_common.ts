@@ -1,7 +1,7 @@
 import { $Id, showNotification, openTxInExplorer, openAddrInExplorer } from "../common";
 import { ChainNameBaseMain, walletInfo, X402_FACILITATORS } from "../../common/x402_obj";
 import { getChainId } from "../../wallet/wallet_setting";
-import { queryCdpWalletInfo, x402WorkerGet } from "../../wallet/cdp_wallet";
+import { queryCdpWalletInfo, x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
 
 export type AdStatus = 'ACTIVE' | 'PAUSED_NO_BUDGET' | 'PAUSED_MANUAL' | 'EXPIRED' | 'COMPLETED';
 
@@ -117,6 +117,7 @@ export interface PaginatedModule<T> {
 
 // ========= 共享状态（原来那些 let 全搬到这里） =========
 export const publisherState = {
+    adsChainId: 0,
     dashboardInfo: {
         balance_atomic: "0",
         frozen_atomic: "0",
@@ -148,6 +149,31 @@ export const publisherState = {
     walletInfoCache: null as walletInfo | null,
 };
 
+export async function initAdsNetworkContext(): Promise<number> {
+    if (publisherState.adsChainId) return publisherState.adsChainId;
+    publisherState.adsChainId = await getChainId();
+    return publisherState.adsChainId;
+}
+
+export function resetAdsNetworkContext(): void {
+    publisherState.adsChainId = 0;
+    publisherState.walletInfoCache = null;
+}
+
+export async function getAdsChainId(): Promise<number> {
+    return initAdsNetworkContext();
+}
+
+export async function adsWorkerGet(path: string, params?: Record<string, string>): Promise<any> {
+    const chainId = await getAdsChainId();
+    return x402WorkerGet(path, params, chainId);
+}
+
+export async function adsWorkerFetch(path: string, body: any, userIdOverride?: string | null): Promise<any> {
+    const chainId = await getAdsChainId();
+    return x402WorkerFetch(path, body, userIdOverride, chainId);
+}
+
 // ========= Wallet / Header =========
 
 /**
@@ -155,7 +181,7 @@ export const publisherState = {
  * @throws 如果用户未登录
  */
 export async function initWalletInfo(): Promise<void> {
-    const chainId = await getChainId();
+    const chainId = await initAdsNetworkContext();
     publisherState.walletInfoCache = await queryCdpWalletInfo(chainId);
 
     if (!publisherState.walletInfoCache.hasCreated) {
@@ -253,7 +279,7 @@ export { openTxInExplorer, openAddrInExplorer };
 
 // ========= API helpers =========
 export async function fetchAdEscrowLedger(aXId: string, limit: number = 50, offset: number = 0): Promise<any[]> {
-    const data = await x402WorkerGet(API_PATH_ADS_PUBLISHER_LEDGER, {
+    const data = await adsWorkerGet(API_PATH_ADS_PUBLISHER_LEDGER, {
         a_x_id: aXId,
         limit: limit.toString(),
         offset: offset.toString()

@@ -22,6 +22,7 @@ import {
     EndUserEvmSmartAccount,
     EvmAddress,
     exportEvmAccount,
+    getAccessToken,
     getCurrentUser,
     isSignedIn,
     sendEvmTransaction,
@@ -35,7 +36,7 @@ import { wrapFetchWithPayment } from "@x402/fetch";
 import { privateKeyToAccount } from "viem/accounts";
 import { logX402 } from "../common/debug_flags";
 import { t } from "../common/i18n";
-import { signDeviceRequestV2 } from "../common/device_key";
+import { getDevicePublicKeySpkiB64, signDeviceRequestV2 } from "../common/device_key";
 import { fetchWithTimeout, sleep } from "../common/utils";
 
 const ERC20_BALANCE_ABI = [
@@ -500,8 +501,8 @@ export async function initX402ClientWithPrivateKey(): Promise<typeof fetch> {
     return wrapFetchWithPayment(fetch, client);
 }
 
-export async function postToX402Srv(path: string, body: any) {
-    const chainId = await getChainId();
+export async function postToX402Srv(path: string, body: any, chainIdOverride?: number) {
+    const chainId = chainIdOverride ?? await getChainId();
     const endPoint = X402_FACILITATORS[chainId].endpoint + path;
 
     const x402Fetch = await initX402Client();
@@ -522,10 +523,74 @@ export async function postToX402Srv(path: string, body: any) {
     return await response.json();
 }
 
-import { signedOperationPaths } from "../common/api_paths";
+import { API_PATH_VALIDATE_TOKEN, signedOperationPaths } from "../common/api_paths";
 
-export async function x402WorkerFetch(path: string, body: any, userIdOverride?: string | null): Promise<any> {
-    const chainID = await getChainId();
+function extractWorkerErrorDetail(errorText: string): string {
+    let detail = errorText;
+    try {
+        const parsed = JSON.parse(errorText);
+        const code = parsed?.code || parsed?.error?.code || parsed?.error;
+        const message = parsed?.message || parsed?.error?.message || parsed?.detail;
+        if (code || message) detail = `${code}: ${message}`;
+    } catch {
+    }
+    return detail;
+}
+
+function shouldRefreshDeviceKey(path: string, status: number, detail: string): boolean {
+    if (!signedOperationPaths.includes(path)) return false;
+    if (status !== 400 && status !== 401) return false;
+    return detail.includes("INVALID_SIGNATURE")
+        || detail.includes("DEVICE_KEY_NOT_FOUND")
+        || detail.includes("USER_NOT_FOUND");
+}
+
+async function syncDeviceKeyWithWorker(chainID: number): Promise<boolean> {
+    try {
+        await initCDP();
+        if (!await isSignedIn()) {
+            logX402("[device-sign:resync] skipped: user not signed in");
+            return false;
+        }
+
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+            logX402("[device-sign:resync] skipped: missing access token");
+            return false;
+        }
+
+        const devicePubkey = await getDevicePublicKeySpkiB64();
+        const url = X402_FACILITATORS[chainID].endpoint + API_PATH_VALIDATE_TOKEN;
+        const response = await fetchWithTimeout(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                accessToken,
+                device_pubkey: devicePubkey,
+            }),
+            referrerPolicy: "no-referrer",
+            credentials: "omit"
+        }, 12_000);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            logX402("[device-sign:resync] failed status=", response.status, " body=", errorText);
+            return false;
+        }
+
+        const result = await response.json().catch(() => ({}));
+        logX402("[device-sign:resync] success chain=", chainID, " isNewUser=", result?.isNewUser);
+        return true;
+    } catch (err) {
+        console.error("[device-sign:resync] unexpected error", err);
+        return false;
+    }
+}
+
+export async function x402WorkerFetch(path: string, body: any, userIdOverride?: string | null, chainIdOverride?: number, didRefreshDeviceKey: boolean = false): Promise<any> {
+    const chainID = chainIdOverride ?? await getChainId();
     const url = X402_FACILITATORS[chainID].endpoint + path;
     let requestBody = body;
     let bodyText = "";
@@ -588,14 +653,16 @@ export async function x402WorkerFetch(path: string, body: any, userIdOverride?: 
                 if (!response.ok) {
                     const errorText = await response.text();
                     logX402("[x402WorkerFetch] failed path=", path, " status=", response.status, " body=", errorText);
-                    let detail = errorText;
-                    try {
-                        const parsed = JSON.parse(errorText);
-                        const code = parsed?.code || parsed?.error?.code || parsed?.error;
-                        const message = parsed?.message || parsed?.error?.message || parsed?.detail;
-                        if (code || message) detail = `${code}: ${message}`;
-                    } catch {
+                    const detail = extractWorkerErrorDetail(errorText);
+
+                    if (!didRefreshDeviceKey && shouldRefreshDeviceKey(path, response.status, detail)) {
+                        logX402("[x402WorkerFetch] attempting device key resync for path=", path, " status=", response.status);
+                        const refreshed = await syncDeviceKeyWithWorker(chainID);
+                        if (refreshed) {
+                            return await x402WorkerFetch(path, body, userIdOverride, chainID, true);
+                        }
                     }
+
                     throw new Error(`x402WorkerFetch failed (${response.status}): ${detail}`);
                 }
                 return await response.json();
@@ -621,8 +688,8 @@ export async function x402WorkerFetch(path: string, body: any, userIdOverride?: 
 }
 
 
-export async function x402WorkerGet(path: string, params?: Record<string, string>): Promise<any> {
-    const chainID = await getChainId()
+export async function x402WorkerGet(path: string, params?: Record<string, string>, chainIdOverride?: number): Promise<any> {
+    const chainID = chainIdOverride ?? await getChainId()
     let url = X402_FACILITATORS[chainID].endpoint + path
 
     if (params) {
@@ -638,8 +705,11 @@ export async function x402WorkerGet(path: string, params?: Record<string, string
         try {
             const response = await fetchWithTimeout(url, {
                 method: "GET",
+                cache: "no-store",
                 headers: {
                     "Content-Type": "application/json",
+                    "Cache-Control": "no-cache",
+                    "Pragma": "no-cache",
                 },
             }, TIMEOUT_MS);
             if (!response.ok) {

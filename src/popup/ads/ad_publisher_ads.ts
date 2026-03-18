@@ -1,5 +1,6 @@
 import {
     API_PATH_ADS_CREATE,
+    adsWorkerFetch,
     getCurrentXId,
     getCurrentXUserName,
     publisherState
@@ -11,7 +12,6 @@ import {
 } from "./ad_publisher_dashboard";
 import { showNotification, usdcToAtomic, atomicToUsdcNumber, formatUSDC, showLoading, hideLoading, $Id } from "../common";
 import { t } from "../../common/i18n";
-import { x402WorkerFetch } from "../../wallet/cdp_wallet";
 
 
 // ========= 发布广告（简化版 MVP - 仅 Follow） =========
@@ -138,7 +138,7 @@ async function submitPublishForm() {
         };
 
         console.log("[ads][create] payload", payload);
-        const result = await x402WorkerFetch(API_PATH_ADS_CREATE, payload);
+        const result = await adsWorkerFetch(API_PATH_ADS_CREATE, payload);
 
         if (!result.ok) {
             showNotification(result.error?.detail || result.error?.message || t("err_failed_create_campaign"), "error");

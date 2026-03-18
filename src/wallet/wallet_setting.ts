@@ -5,12 +5,14 @@ import {
     ChainNameBaseSepolia,
     ChainNetwork
 } from "../common/x402_obj";
+import { __DBK_WALLET_NETWORK_SYNC } from "../common/consts";
 import {
     __tableWalletSettings,
     checkAndInitDatabase,
     databaseQueryAll,
     databaseUpdateOrAddItem
 } from "../common/database";
+import browser from "webextension-polyfill";
 
 export interface WalletSettings {
     useDefaultRpc: boolean;
@@ -25,6 +27,7 @@ export const defaultWalletSettings: WalletSettings = {
 };
 
 export async function saveWalletSettings(settings: WalletSettings): Promise<void> {
+    const previousSettings = await loadWalletSettings().catch(() => ({ ...defaultWalletSettings }));
     await checkAndInitDatabase();
 
     const payload = {
@@ -34,6 +37,15 @@ export async function saveWalletSettings(settings: WalletSettings): Promise<void
     };
 
     await databaseUpdateOrAddItem(__tableWalletSettings, payload);
+
+    if (previousSettings.network !== settings.network) {
+        await browser.storage.local.set({
+            [__DBK_WALLET_NETWORK_SYNC]: {
+                network: settings.network,
+                changedAt: Date.now(),
+            },
+        });
+    }
 }
 
 export async function loadWalletSettings(): Promise<WalletSettings> {

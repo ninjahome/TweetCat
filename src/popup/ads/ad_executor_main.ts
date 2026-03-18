@@ -1,17 +1,23 @@
 import {
     initPlazaFiltersEvents,
     loadAds,
+    loadMyTasks,
     renderEarnAds,
     updateFilterToolsUI,
     updateBlueVDisplay
 } from "./ad_executor_plaza";
 import {
     initSummaryActions,
-    loadEarnSummary
+    loadEarnSummary,
+    renderEarnSummary
 } from "./ad_executor_summary";
-import { loadTaskRunState } from "./ad_executor_common";
+import { executorState, loadTaskRunState } from "./ad_executor_common";
+import { initAdsNetworkContext, resetAdsNetworkContext } from "./ad_publisher_common";
 
 import { t, initI18n } from "../../common/i18n";
+import { __DBK_WALLET_NETWORK_SYNC } from "../../common/consts";
+import { hideLoading, showLoading } from "../common";
+import browser from "webextension-polyfill";
 
 async function translatePlazaUI() {
     // Page Title
@@ -148,6 +154,7 @@ async function initAdPlaza() {
     initI18n(); // 初始化语言环境
     // 初始翻译
     await translatePlazaUI();
+    await initAdsNetworkContext();
 
     // 并行获取初始数据
     await Promise.all([
@@ -168,8 +175,73 @@ async function initAdPlaza() {
     });
 }
 
+function resetAdPlazaState(): void {
+    executorState.earnAds = [];
+    executorState.myClaims = [];
+    executorState.myTasks = [];
+    executorState.myTasksTotal = 0;
+    executorState.myTasksPage = 0;
+    executorState.myTasksLoading = false;
+    executorState.withdrawableUSDC = 0;
+    executorState.withdrawableAtomic = "0";
+    executorState.totalEarnedUSDC = 0;
+    executorState.todayEarnedUSDC = 0;
+    executorState.pendingUSDC = 0;
+
+    const networkEl = document.getElementById("header-network");
+    if (networkEl) {
+        networkEl.textContent = "—";
+    }
+}
+
+let plazaNetworkRefreshPromise: Promise<void> | null = null;
+
+async function refreshAdPlazaForNetworkChange(): Promise<void> {
+    if (plazaNetworkRefreshPromise) return plazaNetworkRefreshPromise;
+
+    plazaNetworkRefreshPromise = (async () => {
+        showLoading(t("loading"));
+        try {
+            resetAdsNetworkContext();
+            resetAdPlazaState();
+            renderEarnSummary();
+            renderEarnAds();
+
+            await initAdsNetworkContext();
+            await Promise.all([
+                loadAds(),
+                loadEarnSummary(),
+                updateBlueVDisplay(),
+                loadTaskRunState(),
+                executorState.currentTab === "my-tasks"
+                    ? loadMyTasks(executorState.myTasksPage)
+                    : Promise.resolve(),
+            ]);
+        } catch (err) {
+            console.error("Ad Plaza refresh after network change failed:", err);
+        } finally {
+            renderEarnAds();
+            hideLoading();
+            plazaNetworkRefreshPromise = null;
+        }
+    })();
+
+    return plazaNetworkRefreshPromise;
+}
+
+function watchWalletNetworkChange(): void {
+    browser.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== "local" || !changes[__DBK_WALLET_NETWORK_SYNC]?.newValue) {
+            return;
+        }
+
+        refreshAdPlazaForNetworkChange().then();
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     try {
+        watchWalletNetworkChange();
         initAdPlaza().then();
     } catch (err) {
         console.error("Ad Plaza (Executor) init error:", err);

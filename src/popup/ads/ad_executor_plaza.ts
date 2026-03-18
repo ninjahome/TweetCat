@@ -1,8 +1,7 @@
 import { $2, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification, showConfirm, showAlert, showLoading, hideLoading } from "../common";
 import { t } from "../../common/i18n";
 import { logAdP } from "../../common/debug_flags";
-import { x402WorkerFetch, x402WorkerGet } from "../../wallet/cdp_wallet";
-import { API_PATH_ADS_CLAIM, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS } from "./ad_publisher_common";
+import { adsWorkerGet, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS } from "./ad_publisher_common";
 import {
     AdCategory,
     CATEGORY_DURATION,
@@ -12,7 +11,6 @@ import {
     categoryIcon,
     getRewardRange,
     TaskWithAdInfo,
-    loadTaskRunState,
     saveTaskRunState,
     TASK_STATUS_MAP
 } from "./ad_executor_common";
@@ -23,7 +21,7 @@ const DEFAULT_SORT = "reward-high";
 export async function loadAds(): Promise<void> {
     try {
         const { xId } = await getCurrentUserInfo();
-        const response = await x402WorkerGet(API_PATH_ADS_LIST, { b_x_id: xId });
+        const response = await adsWorkerGet(API_PATH_ADS_LIST, { b_x_id: xId });
         if (!Array.isArray(response)) {
             showNotification(t("operation_failed"), "error");
             return;
@@ -53,7 +51,7 @@ export async function loadMyTasks(page: number = 0): Promise<void> {
         const { xId } = await getCurrentUserInfo();
         const offset = page * MY_TASKS_PAGE_SIZE;
 
-        const response = await x402WorkerGet(API_PATH_ADS_MY_TASKS, {
+        const response = await adsWorkerGet(API_PATH_ADS_MY_TASKS, {
             b_x_id: xId,
             limit: String(MY_TASKS_PAGE_SIZE),
             offset: String(offset),
