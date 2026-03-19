@@ -989,14 +989,14 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     gap: var(--tweet-toast-gap);
     padding: var(--tweet-toast-pad);
     border-radius: 999px;
-    background: var(--accent);
+    background: #df3f3f;
     color: #fff;
     box-shadow: var(--tweet-toast-shadow);
     font: 600 16px/1.3 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     max-width: calc(100vw - 24px);
     white-space: nowrap;
     transition: opacity var(--tweet-toast-speed) ease, transform var(--tweet-toast-speed) ease;
-    z-index: 9999;
+    z-index: 2147483647;
 }
 
 /* 显示状态：上移并显现 */
