@@ -1548,6 +1548,18 @@
   "withdrawing": {
     "message": "正在提现..."
   },
+  "warning_weekly_limit": {
+    "message": "执行者提现每周限额一次"
+  },
+  "weekly_limit_reached_title": {
+    "message": "已达到每周提现限额"
+  },
+  "weekly_limit_reached_msg": {
+    "message": "您本周已经提现过。每个账户每周只能提现一次。"
+  },
+  "already_withdrawn_this_week": {
+    "message": "您本周已经提现过，请下周再试。"
+  },
   "withdraw_success": {
     "message": "提现成功！"
   },

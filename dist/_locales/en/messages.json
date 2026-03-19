@@ -1545,6 +1545,18 @@
   "withdrawing": {
     "message": "Withdrawing..."
   },
+  "warning_weekly_limit": {
+    "message": "Executor withdrawals are limited to once per week"
+  },
+  "weekly_limit_reached_title": {
+    "message": "Weekly withdrawal limit reached"
+  },
+  "weekly_limit_reached_msg": {
+    "message": "You have already withdrawn this week. Each account can only withdraw once per week."
+  },
+  "already_withdrawn_this_week": {
+    "message": "You have already withdrawn this week. Please try again next week."
+  },
   "withdraw_success": {
     "message": "Withdraw success!"
   },

@@ -38,6 +38,7 @@ export async function loadEarnSummary(): Promise<void> {
             executorState.pendingUSDC = atomicToUsdcNumber(stats.pending_atomic);
             executorState.todayEarnedUSDC = atomicToUsdcNumber(stats.today_earned_atomic);
             executorState.totalEarnedUSDC = atomicToUsdcNumber(stats.total_earned_atomic);
+            executorState.lastWithdrawAt = stats.last_withdraw_at || null;
 
             // Set network name for explorer links
             const chainId = await getAdsChainId();
@@ -51,6 +52,80 @@ export async function loadEarnSummary(): Promise<void> {
         renderEarnSummary();
     } catch (err) {
         console.error("Failed to load earn summary:", err);
+    }
+}
+
+function getWeeklyWindowInfo(date: Date): { key: string; nextStart: Date } | null {
+    const time = date.getTime();
+    if (!Number.isFinite(time)) return null;
+
+    const year = date.getUTCFullYear();
+    const startOfYearMs = Date.UTC(year, 0, 1);
+    const diffDays = Math.floor((time - startOfYearMs) / 86400000);
+    const weekNum = Math.floor(diffDays / 7) + 1;
+
+    return {
+        key: `${year}-W${weekNum}`,
+        nextStart: new Date(startOfYearMs + weekNum * 7 * 86400000)
+    };
+}
+
+function getWithdrawLimitState(now: Date = new Date()) {
+    const lastWithdrawAt = executorState.lastWithdrawAt;
+    if (!lastWithdrawAt) {
+        return {
+            limited: false,
+            lastWithdrawDate: null,
+            nextAvailableDate: null
+        };
+    }
+
+    const lastWithdrawDate = new Date(lastWithdrawAt);
+    const nowWindow = getWeeklyWindowInfo(now);
+    const lastWindow = getWeeklyWindowInfo(lastWithdrawDate);
+
+    if (!nowWindow || !lastWindow || nowWindow.key !== lastWindow.key) {
+        return {
+            limited: false,
+            lastWithdrawDate,
+            nextAvailableDate: null
+        };
+    }
+
+    return {
+        limited: true,
+        lastWithdrawDate,
+        nextAvailableDate: nowWindow.nextStart
+    };
+}
+
+function renderWithdrawLimitState() {
+    const weeklyWarning = document.getElementById("weekly-limit-warning");
+    const limitDetails = document.getElementById("weekly-limit-details");
+    const prevDateEl = document.getElementById("weekly-previous-withdraw-date");
+    const nextDateEl = document.getElementById("weekly-next-available-date");
+    const submitBtn = document.querySelector<HTMLButtonElement>("#btn-withdraw");
+    const { limited, lastWithdrawDate, nextAvailableDate } = getWithdrawLimitState();
+
+    if (weeklyWarning) {
+        weeklyWarning.classList.toggle("hidden", !limited);
+    }
+
+    if (limitDetails) {
+        limitDetails.classList.toggle("hidden", !limited);
+    }
+
+    if (prevDateEl) {
+        prevDateEl.textContent = lastWithdrawDate ? lastWithdrawDate.toLocaleString() : "--";
+    }
+
+    if (nextDateEl) {
+        nextDateEl.textContent = nextAvailableDate ? nextAvailableDate.toLocaleString() : "--";
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = limited;
+        submitBtn.title = limited ? t("weekly_limit_reached_title") : "";
     }
 }
 
@@ -71,6 +146,7 @@ export function renderEarnSummary() {
     if (total) total.textContent = formatUSDC(executorState.totalEarnedUSDC, false);
     if (today) today.textContent = formatUSDC(executorState.todayEarnedUSDC, false);
     if (pending) pending.textContent = formatUSDC(executorState.pendingUSDC, false);
+    renderWithdrawLimitState();
 }
 
 export function renderActivityList(claims: EarnClaim[]) {
@@ -149,6 +225,8 @@ export function initSummaryActions() {
             if (resp && resp.success) {
                 // Success
                 executorState.withdrawableUSDC = 0;
+                executorState.withdrawableAtomic = "0";
+                executorState.lastWithdrawAt = new Date().toISOString();
                 renderEarnSummary();
 
                 // Show success modal instead of simple notification

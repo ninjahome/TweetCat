@@ -68,6 +68,7 @@ export const executorState = {
     currentTab: 'explore' as 'explore' | 'my-tasks',
     withdrawableUSDC: 0,
     withdrawableAtomic: "0" as string,  // Server-side available_atomic (precise, for withdraw)
+    lastWithdrawAt: null as string | null,
     totalEarnedUSDC: 0,
     todayEarnedUSDC: 0,
     pendingUSDC: 0,

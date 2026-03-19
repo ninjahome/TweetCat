@@ -44,7 +44,25 @@
                             <button id="btn-withdraw" class="btn-primary">Withdraw</button>
                             <button id="btn-earn-activity" class="btn-secondary">Activity</button>
                         </div>
+                    </div>
 
+                    <div id="weekly-limit-warning" class="weekly-limit-warning hidden">
+                        <span class="warning-icon">i</span>
+                        <span class="warning-text">Executor withdrawals are limited to once per week</span>
+                    </div>
+
+                    <div id="weekly-limit-details" class="weekly-limit-details hidden">
+                        <div class="weekly-limit-message" id="weekly-limit-message">
+                            You have already withdrawn this week. Please try again next week.
+                        </div>
+                        <div class="weekly-limit-row">
+                            <span id="weekly-label-prev-withdrawal">Last withdrawal:</span>
+                            <strong id="weekly-previous-withdraw-date">--</strong>
+                        </div>
+                        <div class="weekly-limit-row">
+                            <span id="weekly-label-next-available">Next available:</span>
+                            <strong id="weekly-next-available-date">--</strong>
+                        </div>
                     </div>
 
                     <div class="user-verification-status"
@@ -184,7 +202,7 @@
                     <div class="ad-card-footer">
                         <div class="ad-card-reward">
                             <span class="reward-label">Earn:</span>
-                            <span class="reward-value">0.50 USDC</span>
+                            <span class="reward-value">0.500000 USDC</span>
                         </div>
                         <button class="btn-start-task">Start Task</button>
                     </div>

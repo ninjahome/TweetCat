@@ -454,7 +454,7 @@ function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
     const statusEl = $2<HTMLElement>(tr, ".td-status");
     statusEl.textContent = AD_STATUS_LABELS[ad.status] || ad.status;
 
-    $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDC(rowData.rewardPerTask);
+    $2<HTMLElement>(tr, ".td-reward").textContent = formatUSDCForPublish(rowData.rewardPerTask);
     // “Completed”列当前展示 claimed（占位/已领取），避免误把领取当成已结算消耗
     const claimedCell = $2<HTMLElement>(tr, ".td-completed");
     claimedCell.replaceChildren();
@@ -813,7 +813,7 @@ function openAdDetailModal(ad: AdRecord) {
     setText("detail-created", ad.created_at ? formatTimeLocal(ad.created_at) : "-");
 
     const rewardUSDC = atomicToUsdcNumber(ad.unit_price_atomic);
-    setText("detail-reward", formatUSDC(rewardUSDC));
+    setText("detail-reward", formatUSDCForPublish(rewardUSDC));
     setText("detail-quota", ad.quota_total.toString());
 
     // End date
@@ -1000,6 +1000,12 @@ export function renderSpendTable() {
 }
 
 // ========= Wizard Step4 预算摘要（为避免循环依赖放这里） =========
+function formatUSDCForPublish(amount: number): string {
+    const n = Number(amount);
+    if (!Number.isFinite(n)) return "0.000000 USDC";
+    return `${n.toFixed(6)} USDC`;
+}
+
 export function updateBudgetSummaryAndBalance() {
     const rewardInput = document.querySelector<HTMLInputElement>("#reward-amount");
     const taskLimitInput = document.querySelector<HTMLInputElement>("#task-limit");
@@ -1015,13 +1021,13 @@ export function updateBudgetSummaryAndBalance() {
     const total = requiredUsdc + fee;
 
     const summaryReward = $Id("summary-reward");
-    if (summaryReward) summaryReward.textContent = formatUSDC(Number(reward) || 0);
+    if (summaryReward) summaryReward.textContent = formatUSDCForPublish(Number(reward) || 0);
 
     const summaryTasks = $Id("summary-tasks");
     if (summaryTasks) summaryTasks.textContent = Number.isFinite(tasks) ? tasks.toString() : "0";
 
     const summaryTotal = $Id("summary-total");
-    if (summaryTotal) summaryTotal.textContent = formatUSDC(total);
+    if (summaryTotal) summaryTotal.textContent = formatUSDCForPublish(total);
 
     const currentBalance = $Id("current-balance");
     if (currentBalance) currentBalance.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));

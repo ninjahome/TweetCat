@@ -86,6 +86,12 @@ import { getCurrentUserBlueVStatus } from "../../object/blue_v";
 
 // ... existing imports ...
 
+function formatRewardUSDC(amount: number): string {
+    const n = Number(amount);
+    if (!Number.isFinite(n)) return "0.000000 USDC";
+    return `${n.toFixed(6)} USDC`;
+}
+
 export async function updateBlueVDisplay() {
     const el = document.getElementById("blue-v-display");
     if (!el) return;
@@ -306,7 +312,7 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
         $2<HTMLElement>(card, ".meta-quota").textContent = `📅 ${new Date(task.created_at).toLocaleDateString()}`;
         $2<HTMLElement>(card, ".meta-deadline").textContent = `📅 ${task.ad.deadlineText}`;
 
-        $2<HTMLElement>(card, ".reward-value").textContent = formatUSDC(task.ad.rewardUSDC);
+        $2<HTMLElement>(card, ".reward-value").textContent = formatRewardUSDC(task.ad.rewardUSDC);
 
         // Tags
         const tagsContainer = $2<HTMLElement>(card, ".ad-card-tags");
@@ -406,7 +412,7 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
         $2<HTMLElement>(card, ".meta-quota").textContent = `👥 ${ad.completed}/${ad.totalQuota}`;
         $2<HTMLElement>(card, ".meta-deadline").textContent = `📅 ${ad.deadlineText}`;
 
-        $2<HTMLElement>(card, ".reward-value").textContent = formatUSDC(ad.rewardUSDC);
+        $2<HTMLElement>(card, ".reward-value").textContent = formatRewardUSDC(ad.rewardUSDC);
 
         const tagsContainer = $2<HTMLElement>(card, ".ad-card-tags");
         const tagTpl = $2<HTMLElement>(tagsContainer, ".tpl-tag");

@@ -759,11 +759,22 @@ export async function getPerformerDashboardStats(db: D1Database, bXId: string) {
 		total_earned_atomic: number;
 	}>();
 
+	const lastWithdrawSql = `
+		SELECT MAX(created_at) as last_withdraw_at
+		FROM ad_performer_ledger
+		WHERE b_x_id = ?
+		  AND status = 'SETTLED'
+	`;
+	const lastWithdraw = await db.prepare(lastWithdrawSql).bind(bXId).first<{
+		last_withdraw_at: string | null;
+	}>();
+
 	return {
 		withdrawable_atomic: withdrawableAtomic,
 		pending_atomic: claimsStats?.pending_atomic ?? 0,
 		today_earned_atomic: claimsStats?.today_earned_atomic ?? 0,
 		total_earned_atomic: claimsStats?.total_earned_atomic ?? 0,
+		last_withdraw_at: lastWithdraw?.last_withdraw_at ?? null,
 	};
 }
 

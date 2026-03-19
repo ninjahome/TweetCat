@@ -43,6 +43,18 @@ async function translatePlazaUI() {
     const btnActivity = document.getElementById("btn-earn-activity");
     if (btnActivity) btnActivity.textContent = t("btn_activity");
 
+    const weeklyWarning = document.querySelector("#weekly-limit-warning .warning-text");
+    if (weeklyWarning) weeklyWarning.textContent = t("warning_weekly_limit");
+
+    const weeklyLimitMsg = document.getElementById("weekly-limit-message");
+    if (weeklyLimitMsg) weeklyLimitMsg.textContent = t("weekly_limit_reached_msg");
+
+    const lastWithdrawLabel = document.getElementById("weekly-label-prev-withdrawal");
+    if (lastWithdrawLabel) lastWithdrawLabel.textContent = t("label_prev_withdrawal");
+
+    const nextAvailableLabel = document.getElementById("weekly-label-next-available");
+    if (nextAvailableLabel) nextAvailableLabel.textContent = t("label_next_available");
+
     const verificationLabel = document.querySelector(".user-verification-status span:first-child");
     if (verificationLabel) verificationLabel.textContent = t("verification_label");
 
