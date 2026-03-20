@@ -347,7 +347,6 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
         }
 
         case MsgType.X402NotSignedIn: {
-            await browser.offscreen.closeDocument();
             return { success: true };
         }
 

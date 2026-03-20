@@ -1,4 +1,4 @@
-import { $2, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification, showConfirm, showAlert, showLoading, hideLoading } from "../common";
+import { $2, cloneTemplate, formatUSDCTrimmed, getCurrentUserInfo, showNotification, showConfirm, showAlert, showLoading, hideLoading } from "../common";
 import { t } from "../../common/i18n";
 import { logAdP } from "../../common/debug_flags";
 import { adsWorkerGet, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS } from "./ad_publisher_common";
@@ -37,7 +37,7 @@ export async function loadAds(): Promise<void> {
     } catch (err) {
         console.error("Failed to load ads list:", err);
         executorState.earnAds = [];
-        showNotification(t("failed_to_sync_followings"), "error");
+        showNotification((err as Error)?.message || t("failed_to_sync_followings"), "error");
     }
 }
 
@@ -75,7 +75,7 @@ export async function loadMyTasks(page: number = 0): Promise<void> {
             ? t("grok_timeout")
             : ((err as any)?.message?.includes("Failed to fetch")
                 ? t("ipfs_local_request_failed")
-                : t("loading_tasks"));
+                : ((err as Error)?.message || t("loading_tasks")));
         showNotification(msg, "error");
     } finally {
         executorState.myTasksLoading = false;
@@ -87,9 +87,7 @@ import { getCurrentUserBlueVStatus } from "../../object/blue_v";
 // ... existing imports ...
 
 function formatRewardUSDC(amount: number): string {
-    const n = Number(amount);
-    if (!Number.isFinite(n)) return "0.000000 USDC";
-    return `${n.toFixed(6)} USDC`;
+    return formatUSDCTrimmed(amount);
 }
 
 export async function updateBlueVDisplay() {
@@ -123,7 +121,7 @@ export async function updateBlueVDisplay() {
         }
     } catch (e) {
         console.warn("Failed to update Blue V display:", e);
-        el.textContent = t("operation_failed");
+        el.textContent = (e as Error)?.message || t("operation_failed");
     }
 }
 

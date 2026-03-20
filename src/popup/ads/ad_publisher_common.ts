@@ -149,6 +149,8 @@ export const publisherState = {
     walletInfoCache: null as walletInfo | null,
 };
 
+let walletInfoInitPromise: Promise<void> | null = null;
+
 export async function initAdsNetworkContext(): Promise<number> {
     if (publisherState.adsChainId) return publisherState.adsChainId;
     publisherState.adsChainId = await getChainId();
@@ -158,6 +160,7 @@ export async function initAdsNetworkContext(): Promise<number> {
 export function resetAdsNetworkContext(): void {
     publisherState.adsChainId = 0;
     publisherState.walletInfoCache = null;
+    walletInfoInitPromise = null;
 }
 
 export async function getAdsChainId(): Promise<number> {
@@ -181,18 +184,32 @@ export async function adsWorkerFetch(path: string, body: any, userIdOverride?: s
  * @throws 如果用户未登录
  */
 export async function initWalletInfo(): Promise<void> {
-    const chainId = await initAdsNetworkContext();
-    publisherState.walletInfoCache = await queryCdpWalletInfo(chainId);
-
-    if (!publisherState.walletInfoCache.hasCreated) {
-        throw new Error("Please sign in and create wallet first");
-    }
-    if (!publisherState.walletInfoCache.xId) {
-        throw new Error("X account not connected. Please sign in with X");
+    if (publisherState.walletInfoCache?.hasCreated && publisherState.walletInfoCache?.xId) {
+        updateHeaderInfo();
+        updateTwitterAvatar();
+        return;
     }
 
-    updateHeaderInfo();
-    updateTwitterAvatar();
+    if (!walletInfoInitPromise) {
+        walletInfoInitPromise = (async () => {
+            const chainId = await initAdsNetworkContext();
+            publisherState.walletInfoCache = await queryCdpWalletInfo(chainId);
+
+            if (!publisherState.walletInfoCache.hasCreated) {
+                throw new Error("Please sign in and create wallet first");
+            }
+            if (!publisherState.walletInfoCache.xId) {
+                throw new Error("X account not connected. Please sign in with X");
+            }
+
+            updateHeaderInfo();
+            updateTwitterAvatar();
+        })().finally(() => {
+            walletInfoInitPromise = null;
+        });
+    }
+
+    await walletInfoInitPromise;
 }
 
 /**

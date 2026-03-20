@@ -4,6 +4,7 @@ import {
     atomicToUsdcNumber,
     cloneTemplate,
     formatUSDC,
+    formatUSDCTrimmed,
     hideLoading,
     multiplyAtomic,
     showLoading,
@@ -1001,9 +1002,7 @@ export function renderSpendTable() {
 
 // ========= Wizard Step4 预算摘要（为避免循环依赖放这里） =========
 function formatUSDCForPublish(amount: number): string {
-    const n = Number(amount);
-    if (!Number.isFinite(n)) return "0.000000 USDC";
-    return `${n.toFixed(6)} USDC`;
+    return formatUSDCTrimmed(amount);
 }
 
 export function updateBudgetSummaryAndBalance() {

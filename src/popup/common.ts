@@ -1,7 +1,7 @@
 import { t } from "../common/i18n";
 import browser from "webextension-polyfill";
 import { getChainId } from "../wallet/wallet_setting";
-import { initCDP, X402_FACILITATORS } from "../common/x402_obj";
+import { initCDP, toCdpSessionError, X402_FACILITATORS } from "../common/x402_obj";
 import { getCurrentUser, isSignedIn } from "@coinbase/cdp-core";
 import { getEOA } from "../wallet/cdp_wallet";
 
@@ -83,6 +83,18 @@ export function formatUSDC(amount: number, includeUnit: boolean = true): string 
     const suffix = includeUnit ? " USDC" : "";
     if (!Number.isFinite(n)) return "0.00" + suffix;
     return n.toFixed(2) + suffix;
+}
+
+export function formatUSDCTrimmed(amount: number, includeUnit: boolean = true, maxDecimals: number = 6): string {
+    const n = Number(amount);
+    const suffix = includeUnit ? " USDC" : "";
+    if (!Number.isFinite(n)) return "0" + suffix;
+
+    const normalized = n
+        .toFixed(maxDecimals)
+        .replace(/\.?0+$/, "");
+
+    return `${normalized}${suffix}`;
 }
 
 export function $input(sel: string) {
@@ -239,14 +251,13 @@ export async function getCurrentUserInfo(): Promise<{ xId: string; walletAddress
     userInfoPromise = (async () => {
         try {
             await initCDP();
+            const signed = await isSignedIn();
+            if (!signed) {
+                throw new Error("Please sign in first");
+            }
 
             const user = await getCurrentUser();
             if (!user) {
-                // Check if signed in but user object just missing (rare race condition)
-                const signed = await isSignedIn();
-                if (!signed) {
-                    throw new Error("Please sign in first");
-                }
                 // If signed in, maybe retry once or wait? For now, throw specific error
                 throw new Error("User session detected but profile not loaded. Please refresh.");
             }
@@ -270,7 +281,7 @@ export async function getCurrentUserInfo(): Promise<{ xId: string; walletAddress
             if (e?.message?.includes("Failed to fetch") || e?.message?.includes("ERR_CONNECTION_CLOSED") || e?.message?.includes("network")) {
                 throw new Error("Network error: Failed to connect to authentication server. Please check your internet connection and try again.");
             }
-            throw e;
+            throw toCdpSessionError(e);
         } finally {
             // Clear promise after a short while or immediately so next explicit check can run
             // but for concurrent calls during init, it serves its purpose.

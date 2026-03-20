@@ -52,6 +52,7 @@ export async function loadEarnSummary(): Promise<void> {
         renderEarnSummary();
     } catch (err) {
         console.error("Failed to load earn summary:", err);
+        showNotification((err as Error)?.message || t("operation_failed"), "error");
     }
 }
 

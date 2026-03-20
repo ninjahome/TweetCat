@@ -3,6 +3,7 @@ import {
     adsWorkerFetch,
     getCurrentXId,
     getCurrentXUserName,
+    initWalletInfo,
     publisherState
 } from "./ad_publisher_common";
 import {
@@ -37,8 +38,15 @@ function closePublishModal() {
 
 async function openPublishModal() {
     if (!publisherState?.walletInfoCache?.hasCreated || !publisherState?.walletInfoCache?.xId) {
-        showNotification(t("please_sign_in_first") || "Please sign in and create wallet first.", "error");
-        return;
+        showLoading(t("checking_login_status") || "Checking login status...");
+        try {
+            await initWalletInfo();
+        } catch (err: any) {
+            showNotification(err?.message || "Please sign in and create wallet first.", "error");
+            return;
+        } finally {
+            hideLoading();
+        }
     }
 
     resetPublishForm();

@@ -59,13 +59,46 @@ export interface x402TipPayload {
 }
 
 export async function doSignOut() {
-    await initCDP();
-    await signOut();
+    try {
+        await initCDP();
+        await signOut();
+    } catch (error) {
+        if (!isCdpAuthError(error)) {
+            throw error;
+        }
+    } finally {
+        resetCDPInitState();
+    }
 }
 
 const PROJECT_ID = "602a8505-5645-45e5-81aa-a0a642ed9a0d";
 
 let cdpInitPromise: Promise<void> | null = null;
+
+export function resetCDPInitState(): void {
+    cdpInitPromise = null;
+}
+
+export function isCdpAuthError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error ?? "");
+    const normalized = message.toLowerCase();
+    return normalized.includes("401")
+        || normalized.includes("unauthorized")
+        || normalized.includes("auth/refresh")
+        || normalized.includes("auth/logout")
+        || normalized.includes("not signed in")
+        || normalized.includes("please sign in first")
+        || normalized.includes("user not signed in");
+}
+
+export function toCdpSessionError(error: unknown, fallback = "Please sign in first"): Error {
+    if (isCdpAuthError(error)) {
+        return new Error(fallback);
+    }
+    if (error instanceof Error) return error;
+    return new Error(String(error ?? fallback));
+}
+
 export async function initCDP() {
     if (cdpInitPromise) return cdpInitPromise;
     cdpInitPromise = initialize({
@@ -73,6 +106,9 @@ export async function initCDP() {
         ethereum: {
             createOnLogin: "smart",
         },
+    });
+    cdpInitPromise.catch(() => {
+        resetCDPInitState();
     });
     return cdpInitPromise;
 }

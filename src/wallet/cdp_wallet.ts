@@ -15,7 +15,7 @@ import {
     parseUnits,
     toHex,
 } from 'viem'
-import { ChainIDBaseMain, ChainIDBaseSepolia, initCDP, walletInfo, X402_FACILITATORS } from "../common/x402_obj";
+import { ChainIDBaseMain, ChainIDBaseSepolia, initCDP, isCdpAuthError, toCdpSessionError, walletInfo, X402_FACILITATORS } from "../common/x402_obj";
 import { getChainId } from "./wallet_setting";
 import {
     EndUserEvmAccount,
@@ -94,7 +94,7 @@ export async function getEOA(): Promise<EndUserEvmAccount> {
         if (e instanceof TypeError && e.message?.includes("Failed to fetch")) {
             throw new Error("CDP service temporarily unavailable. Please retry later.");
         }
-        throw e;
+        throw toCdpSessionError(e);
     }
 }
 
@@ -128,6 +128,9 @@ export async function queryCdpUserID(): Promise<string | null> {
         const user = await getCurrentUser();
         return user.userId || null;
     } catch (e) {
+        if (isCdpAuthError(e)) {
+            return null;
+        }
         console.error('Failed to get CDP user ID:', e);
         return null;
     }
@@ -200,7 +203,9 @@ export async function queryCdpWalletInfo(chainId: number | null = null): Promise
             username
         };
     } catch (error) {
-        console.warn('Failed to query CDP wallet info:', error);
+        if (!isCdpAuthError(error)) {
+            console.warn('Failed to query CDP wallet info:', error);
+        }
         return failedWallet;
     }
 }
