@@ -1,4 +1,4 @@
-import { $2, atomicToUsdcNumber, cloneTemplate, formatUSDC, getCurrentUserInfo, showNotification } from "../common";
+import { $2, atomicToUsdcNumber, cloneTemplate, formatUSDC, formatUSDCTrimmed, getCurrentUserInfo, showNotification } from "../common";
 import { t } from "../../common/i18n";
 import { X402_FACILITATORS } from "../../common/x402_obj";
 import {
@@ -165,7 +165,7 @@ export function renderActivityList(claims: EarnClaim[]) {
         $2<HTMLElement>(item, ".activity-title").textContent = claim.ad_title || claim.ad_id;
         $2<HTMLElement>(item, ".activity-status").textContent = TASK_STATUS_MAP[claim.status || ""] || claim.status;
         $2<HTMLElement>(item, ".activity-meta").textContent = `${t("activity_created")}: ${formatClaimTime(claim.created_at)} · ${t("activity_expires")}: ${formatClaimTime(claim.expires_at)}`;
-        $2<HTMLElement>(item, ".activity-reward").textContent = formatUSDC(atomicToUsdcNumber(claim.unit_price_atomic));
+        $2<HTMLElement>(item, ".activity-reward").textContent = formatUSDCTrimmed(atomicToUsdcNumber(claim.unit_price_atomic));
         list.appendChild(item);
     });
 }

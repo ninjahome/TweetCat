@@ -247,7 +247,7 @@ export function updateDashboardUI() {
     if (availableEl) availableEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.balance_atomic));
 
     const frozenEl = $Id("ad-account-frozen-value");
-    if (frozenEl) frozenEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.frozen_atomic));
+    if (frozenEl) frozenEl.textContent = formatUSDCTrimmed(atomicToUsdcNumber(dashboardInfo.frozen_atomic));
 
     // 更新活跃广告数量
     const activeCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-active .card-value");
@@ -589,7 +589,7 @@ function renderClaimantsList(claimants: ClaimantRecord[]) {
 
         const amountEl = document.createElement("div");
         amountEl.className = "claimant-amount";
-        amountEl.textContent = formatUSDC(atomicToUsdcNumber(claimant.amount_atomic || "0"));
+        amountEl.textContent = formatUSDCTrimmed(atomicToUsdcNumber(claimant.amount_atomic || "0"));
 
         nameBlock.appendChild(nameEl);
         topRow.appendChild(nameBlock);
