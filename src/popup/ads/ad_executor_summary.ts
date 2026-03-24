@@ -139,14 +139,14 @@ export function renderEarnSummary() {
     if (withdrawable) {
         const amountEl = withdrawable.querySelector(".card-value-amount");
         if (amountEl) {
-            amountEl.textContent = formatUSDC(executorState.withdrawableUSDC, false);
+            amountEl.textContent = formatUSDCTrimmed(executorState.withdrawableUSDC, false);
         } else {
             withdrawable.textContent = formatUSDC(executorState.withdrawableUSDC);
         }
     }
-    if (total) total.textContent = formatUSDC(executorState.totalEarnedUSDC, false);
-    if (today) today.textContent = formatUSDC(executorState.todayEarnedUSDC, false);
-    if (pending) pending.textContent = formatUSDC(executorState.pendingUSDC, false);
+    if (total) total.textContent = formatUSDCTrimmed(executorState.totalEarnedUSDC, false);
+    if (today) today.textContent = formatUSDCTrimmed(executorState.todayEarnedUSDC, false);
+    if (pending) pending.textContent = formatUSDCTrimmed(executorState.pendingUSDC, false);
     renderWithdrawLimitState();
 }
 

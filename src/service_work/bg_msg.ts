@@ -42,6 +42,7 @@ import { x402TipPayload } from "../common/x402_obj";
 import { queryAdsFollowOffer } from "./bg_ads_follow";
 import { verifyFollowAndClaim } from "./bg_ads_verifier";
 import { handleUserByScreenNameCaptured } from "./bg_blue_v";
+import { pollAdsFeedIfNeeded } from "./bg_ads_feed";
 
 export async function checkIfXIsOpen(): Promise<boolean> {
     const tabs = await browser.tabs.query({
@@ -126,7 +127,18 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.AdsFollowOfferQuery: {
             const url = String(request?.data?.profileUrl || request?.data?.url || "");
-            const data = await queryAdsFollowOffer(url);
+            let data = await queryAdsFollowOffer(url);
+
+            // If the local feed cache has not caught up yet, force one refresh and retry once.
+            if (url && !data?.offer?.ad_id) {
+                try {
+                    await pollAdsFeedIfNeeded(true);
+                    data = await queryAdsFollowOffer(url);
+                } catch (e) {
+                    console.warn("[bgMsg] AdsFollowOfferQuery refresh failed:", e);
+                }
+            }
+
             return { success: true, data };
         }
 
