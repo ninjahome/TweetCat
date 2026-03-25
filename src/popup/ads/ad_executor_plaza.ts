@@ -183,7 +183,6 @@ export async function startTask(ad: EarnAd) {
             "1735224873365225472",
             "1236539014406012928",
             "1554341020246061059",
-            "1740205143621238785",
             "1514598908273463303"
         ];
         const isWhitelisted = BYPASS_WHITELIST.includes(xId);
@@ -195,6 +194,7 @@ export async function startTask(ad: EarnAd) {
             if (!blueVStatus.isBlueVerified) {
                 showAlert(t("verification_failed"), t("blue_v_required"));
                 executorState.taskRunState[ad.id] = "idle";
+                await saveTaskRunState();
                 renderEarnAds();
                 return;
             }
@@ -211,6 +211,7 @@ export async function startTask(ad: EarnAd) {
                 window.open(`https://x.com/i/user/${xId}?tc_verify=1`, "_blank");
             }
             executorState.taskRunState[ad.id] = "idle";
+            await saveTaskRunState();
             renderEarnAds();
             return;
         }

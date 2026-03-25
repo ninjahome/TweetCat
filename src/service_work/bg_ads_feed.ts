@@ -55,7 +55,7 @@ function normalizeProfileUrl(raw: string): string | null {
             return `https://x.com/${username}`;
         }
 
-        // Handle https://x.com/i/user/1740205143621238785
+        // Handle https://x.com/i/user/123456789
         if (parts.length === 3 && parts[0] === "i" && parts[1] === "user") {
             const userId = parts[2];
             if (!/^\d+$/.test(userId)) return null;

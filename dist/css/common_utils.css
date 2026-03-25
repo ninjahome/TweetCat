@@ -256,7 +256,6 @@
 #alert-content {
     background: #fff;
     border-radius: 16px;
-    width: 72%;
     padding: 24px 16px;
     display: flex;
     flex-direction: column;
