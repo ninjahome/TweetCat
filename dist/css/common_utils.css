@@ -267,6 +267,12 @@
     /* 偏移自身宽高的一半，实现真正居中 */
 }
 
+#confirm-popup .popup-content {
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+}
+
 #confirm-popup .button-row {
     text-align: right;
     margin-top: 16px;

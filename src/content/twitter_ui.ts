@@ -8,7 +8,7 @@ import { getUserIdByUsername } from "../x_api/twitter_api";
 import { logTPR } from "../common/debug_flags";
 import { calculateLevelBreakdown, LevelScoreBreakdown, UserProfile } from "../object/user_info";
 import { t } from "../common/i18n";
-import { ADS_FOLLOW_CLAIM_STATUS, ADS_FOLLOW_UI_MODE, AdsFollowClaimStatus, AdsFollowUiMode, showDialog, showToastMsg } from "./common";
+import { ADS_FOLLOW_CLAIM_STATUS, ADS_FOLLOW_UI_MODE, AdsFollowClaimStatus, AdsFollowUiMode, hideGlobalLoading, showDialog, showGlobalLoading, showToastMsg } from "./common";
 
 import { loggedInUserScreenName } from "./tweet_user_info";
 
@@ -431,55 +431,68 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
 
                 if (title) title.textContent = "关注成功，正在进行二次验证...";
 
-                console.log(`[TwitterUI] >>> Step 3: Sending AdsFollowVerifyAndClaim to SW`, {
-                    ad_id: offer.ad_id,
-                    screen_name: kolName
-                });
+                // The profile toolbar can re-render while the final verification is in flight.
+                // Keep a stable global loading state so users don't see a blank gap before the result dialog.
+                showGlobalLoading("正在验证领奖状态...", "奖励校验中，请稍候");
 
-                const resp = await sendMsgToService(
-                    {
+                try {
+                    console.log(`[TwitterUI] >>> Step 3: Sending AdsFollowVerifyAndClaim to SW`, {
                         ad_id: offer.ad_id,
-                        screen_name: kolName,
-                        profileUrl: window.location.href,
-                        userId: walletInfo.data?.userId,
-                        xId: walletInfo.data?.xId,
-                        walletAddress: walletInfo.data?.address
-                    },
-                    MsgType.AdsFollowVerifyAndClaim,
-                );
+                        screen_name: kolName
+                    });
 
-                console.log(`[TwitterUI] <<< Step 4: Received response from SW`, resp);
+                    const resp = await sendMsgToService(
+                        {
+                            ad_id: offer.ad_id,
+                            screen_name: kolName,
+                            profileUrl: window.location.href,
+                            userId: walletInfo.data?.userId,
+                            xId: walletInfo.data?.xId,
+                            walletAddress: walletInfo.data?.address
+                        },
+                        MsgType.AdsFollowVerifyAndClaim,
+                    );
 
-                if (!resp?.success) {
-                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
-                    const errorMsg = typeof resp?.data === 'object' ? JSON.stringify(resp.data) : String(resp?.data || t('rewards_unknown_error'));
-                    if (errorMsg.includes("BLUE_V_REQUIRED")) {
-                        showDialog(
-                            t('tips_title'), 
-                            t('verification_required_msg'), 
-                            () => {
-                                window.open(`https://x.com/i/user/${walletInfo.data?.xId}?tc_verify=1`, "_blank");
-                            }, 
-                            t('confirm') || "Confirm"
-                        );
-                    } else {
-                        showDialog(t('tips_title'), `${t('verification_failed')}: ${errorMsg}`);
+                    console.log(`[TwitterUI] <<< Step 4: Received response from SW`, resp);
+                    hideGlobalLoading();
+
+                    if (!resp?.success) {
+                        setUi(ADS_FOLLOW_UI_MODE.Eligible);
+                        const errorMsg = typeof resp?.data === 'object' ? JSON.stringify(resp.data) : String(resp?.data || t('rewards_unknown_error'));
+                        if (errorMsg.includes("BLUE_V_REQUIRED")) {
+                            showDialog(
+                                t('tips_title'),
+                                t('verification_required_msg'),
+                                () => {
+                                    window.open(`https://x.com/i/user/${walletInfo.data?.xId}?tc_verify=1`, "_blank");
+                                },
+                                t('confirm') || "Confirm"
+                            );
+                        } else {
+                            showDialog(t('tips_title'), `${t('verification_failed')}: ${errorMsg}`);
+                        }
+                        return;
                     }
+
+                    console.log(`[TwitterUI] SUCCESS: Claim flow finished.`, resp.data);
+
+                    const openPlaza = () => {
+                        const url = browser.runtime.getURL('html/ad_plaza.html');
+                        sendMsgToService(url, MsgType.OpenOrFocusUrl);
+                    };
+
+                    if (resp.data?.already_claimed) {
+                        console.log("[TwitterUI] Detected repeated claim, showing dialog.");
+                        showDialog(t('tips_title'), "您已成功重新关注！检测到该奖励之前已成功领取。您可以前往广告广场查看状态。", openPlaza, "立即查看");
+                    } else {
+                        showDialog(t('tips_title'), "申领成功！奖励后续将发放至您的钱包。您可以前往广告广场查看状态。", openPlaza, "立即查看");
+                    }
+                } catch (err) {
+                    hideGlobalLoading();
+                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
+                    const errorMsg = err instanceof Error ? err.message : String(err || t('rewards_unknown_error'));
+                    showDialog(t('tips_title'), `${t('verification_failed')}: ${errorMsg}`);
                     return;
-                }
-
-                console.log(`[TwitterUI] SUCCESS: Claim flow finished.`, resp.data);
-
-                const openPlaza = () => {
-                    const url = browser.runtime.getURL('html/ad_plaza.html');
-                    sendMsgToService(url, MsgType.OpenOrFocusUrl);
-                };
-
-                if (resp.data?.already_claimed) {
-                    console.log("[TwitterUI] Detected repeated claim, showing dialog.");
-                    showDialog(t('tips_title'), "您已成功重新关注！检测到该奖励之前已成功领取。您可以前往广告广场查看状态。", openPlaza, "立即查看");
-                } else {
-                    showDialog(t('tips_title'), "申领成功！奖励后续将发放至您的钱包。您可以前往广告广场查看状态。", openPlaza, "立即查看");
                 }
 
                 // Requirement: After success, no longer show "Claimed" status on page if they are now following
