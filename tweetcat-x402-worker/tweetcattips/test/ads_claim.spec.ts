@@ -569,7 +569,7 @@ describe('Ads Claim Flow Tests', () => {
             const { publicKey: legitPubKey } = (await crypto.subtle.generateKey(
                 { name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]
             )) as CryptoKeyPair;
-            const legitPubKeyB64 = arrayBufferToBase64Url(await crypto.subtle.exportKey("spki", legitPubKey));
+            const legitPubKeyB64 = arrayBufferToBase64Url((await crypto.subtle.exportKey("spki", legitPubKey)) as ArrayBuffer);
             await env.DB.prepare('UPDATE kol_binding SET device_pubkey_spki = ? WHERE x_id = ?').bind(legitPubKeyB64, XID).run();
 
             const { proof: attackerProof } = await (generateBlueVProof as any)(XID, true);

@@ -908,6 +908,26 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     color: #1d9bf0 !important; /* Twitter 品牌蓝 */
 }
 
+/* --- Responsive fixes for TweetCat Menu Item --- */
+@media (max-width: 1279px) { /* 紧凑模式 */
+    /* 1. 只是隐藏了文字显示,没有隐藏掉空占位符,导致图标偏移 */
+    a.tweetCatMenuItem .tc-menu-text {
+        display: none !important;
+    }
+    
+    /* 2. 紧凑模式下图片中的样式改为垂直居中 */
+    a.tweetCatMenuItem .tweetCatMenuItem-contain {
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    a.tweetCatMenuItem {
+        align-items: center !important;
+        justify-content: center !important;
+    }
+}
+
+
 /* 推文正文中的 inline media（图片/视频） */
 .tweet-content .inline-media {
     display: inline-block;

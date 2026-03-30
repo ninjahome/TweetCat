@@ -299,6 +299,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 .ai-trend-by-grok{
     background-color: #1D9BF0;
+    display: none !important;
 }
 .btn-ai-trend-of-category {
     font-weight: 700;

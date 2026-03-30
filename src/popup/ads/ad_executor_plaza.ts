@@ -241,14 +241,16 @@ export function renderEarnAds() {
     if (!grid) return;
 
     const emptyState = grid.querySelector<HTMLElement>(".empty-state");
-    grid.querySelectorAll<HTMLElement>(".ad-card").forEach((n) => n.remove());
+    grid.querySelectorAll<HTMLElement>(".ad-card, .my-task-card").forEach((n) => n.remove());
 
     if (!emptyState) return;
 
     // Branch based on current tab
     if (executorState.currentTab === 'my-tasks') {
+        grid.classList.add('list-view');
         renderMyTasksView(grid, emptyState);
     } else {
+        grid.classList.remove('list-view');
         renderExploreView(grid, emptyState);
     }
 }
@@ -267,22 +269,12 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
     emptyState.style.display = "none";
 
     tasks.forEach((task) => {
-        const card = cloneTemplate("tpl-ad-card");
+        const card = cloneTemplate("tpl-my-task-card");
         card.dataset.adId = task.ad_id;
-        card.classList.add("ad-card-claimed");
 
-        // Set Banner and Avatar
-        const coverEl = card.querySelector<HTMLImageElement>(".ad-cover-img");
-        const avatarEl = card.querySelector<HTMLImageElement>(".ad-avatar-img");
-        const avatarContainer = $2<HTMLElement>(card, ".ad-card-avatar-container");
-
-        if (task.ad.brandBannerUrl && coverEl) {
-            coverEl.src = task.ad.brandBannerUrl;
-            coverEl.style.display = "block";
-        } else if (coverEl) {
-            coverEl.style.display = "none";
-        }
-
+        // Set Avatar
+        const avatarEl = card.querySelector<HTMLImageElement>(".task-avatar-img");
+        
         let avatarUrl = task.ad.brandAvatarUrl;
         if (!avatarUrl) {
             const handle = getTwitterHandle({ brand: task.ad.brand, detailUrl: task.ad.detailUrl });
@@ -303,37 +295,31 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
 
         const friendlyStatus = TASK_STATUS_MAP[task.status] || task.status;
 
-        $2<HTMLElement>(card, ".ad-card-title").textContent = task.ad.title;
-        $2<HTMLElement>(card, ".ad-card-brand").textContent = task.ad.brand;
-        $2<HTMLElement>(card, ".ad-card-description").textContent = `${t("status_label")}: ${friendlyStatus}`;
+        $2<HTMLElement>(card, ".task-card-title").textContent = task.ad.title;
+        $2<HTMLElement>(card, ".task-card-brand").textContent = task.ad.brand;
 
         $2<HTMLElement>(card, ".meta-time").textContent = `⏱️ ${task.ad.durationMinutes} min`;
         $2<HTMLElement>(card, ".meta-quota").textContent = `📅 ${new Date(task.created_at).toLocaleDateString()}`;
-        $2<HTMLElement>(card, ".meta-deadline").textContent = `📅 ${task.ad.deadlineText}`;
 
-        $2<HTMLElement>(card, ".reward-value").textContent = formatRewardUSDC(task.ad.rewardUSDC);
+        $2<HTMLElement>(card, ".task-reward-value").textContent = formatRewardUSDC(task.ad.rewardUSDC);
 
-        // Tags
-        const tagsContainer = $2<HTMLElement>(card, ".ad-card-tags");
-        const tagTpl = $2<HTMLElement>(tagsContainer, ".tpl-tag");
-        tagTpl.remove();
-        const statusTag = tagTpl.cloneNode(true) as HTMLElement;
-        statusTag.className = "tag";
-        if (task.status === "CONFIRMED") statusTag.classList.add("tag-easy");
-        else if (task.status === "REJECTED") statusTag.classList.add("tag-high");
-        else if (task.status === "PENDING_CONFIRM") statusTag.classList.add("tag-new");
-        else statusTag.classList.add("tag-new");
-        statusTag.textContent = friendlyStatus;
-        tagsContainer.appendChild(statusTag);
+        const badge = $2<HTMLElement>(card, ".task-status-badge");
+        badge.textContent = friendlyStatus;
+        
+        if (task.status === "CONFIRMED") {
+            badge.classList.add("status-badge-confirmed");
+            card.classList.add("card-confirmed");
+        } else if (task.status === "REJECTED") {
+            badge.classList.add("status-badge-rejected");
+            card.classList.add("card-rejected");
+        } else {
+            badge.classList.add("status-badge-pending");
+            card.classList.add("card-pending");
+        }
 
         const openDetail = () => window.open(task.ad.detailUrl, "_blank");
-
-        const btn = $2<HTMLButtonElement>(card, ".btn-start-task");
-        btn.textContent = friendlyStatus;
-        btn.classList.add("claimed");
-        btn.disabled = true;
-
         card.addEventListener("click", openDetail);
+        
         grid.appendChild(card);
     });
 
