@@ -257,28 +257,29 @@
 
     <template id="tpl-my-task-card">
         <div class="my-task-card" data-ad-id="">
-            <div class="task-card-left">
-                <div class="task-avatar-wrapper">
-                    <img class="task-avatar-img" style="display: none;" src="" alt="">
+            <div class="task-card-top">
+                <div class="task-card-left">
+                    <div class="task-avatar-wrapper">
+                        <img class="task-avatar-img" style="display: none;" src="" alt="">
+                    </div>
+                </div>
+                
+                <div class="task-card-main">
+                    <div class="task-card-header">
+                        <h3 class="task-card-title"></h3>
+                        <span class="task-card-brand"></span>
+                    </div>
+                </div>
+                
+                <div class="task-reward-box">
+                    <span class="task-reward-value"></span>
                 </div>
             </div>
             
-            <div class="task-card-main">
-                <div class="task-card-header">
-                    <h3 class="task-card-title"></h3>
-                    <span class="task-card-brand"></span>
-                </div>
-                
+            <div class="task-card-bottom">
                 <div class="task-card-meta">
                     <span class="meta-item meta-time"></span>
                     <span class="meta-item meta-quota"></span>
-                </div>
-            </div>
-            
-            <div class="task-card-right">
-                <div class="task-reward-box">
-                    <span class="task-reward-label">Earned</span>
-                    <span class="task-reward-value"></span>
                 </div>
                 <div class="task-status-badge"></div>
             </div>
@@ -292,8 +293,8 @@
                 <div class="activity-meta"></div>
             </div>
             <div class="activity-side">
-                <span class="activity-status"></span>
                 <span class="activity-reward"></span>
+                <span class="activity-status"></span>
             </div>
         </div>
     </template>

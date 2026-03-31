@@ -301,7 +301,9 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
         $2<HTMLElement>(card, ".meta-time").textContent = `⏱️ ${task.ad.durationMinutes} min`;
         $2<HTMLElement>(card, ".meta-quota").textContent = `📅 ${new Date(task.created_at).toLocaleDateString()}`;
 
-        $2<HTMLElement>(card, ".task-reward-value").textContent = formatRewardUSDC(task.ad.rewardUSDC);
+        const fullAmountStr = formatRewardUSDC(task.ad.rewardUSDC);
+        const amountOnly = fullAmountStr.replace(/\s*USDC/i, "");
+        $2<HTMLElement>(card, ".task-reward-value").innerHTML = `<span style="font-size: 12px; font-weight: 500;">USDC</span><span>${amountOnly}</span>`;
 
         const badge = $2<HTMLElement>(card, ".task-status-badge");
         badge.textContent = friendlyStatus;

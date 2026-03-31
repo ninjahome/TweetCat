@@ -502,12 +502,6 @@ button {
     gap: 24px;
 }
 
-.ad-cards-grid.list-view {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
 .empty-state {
     grid-column: 1 / -1;
     text-align: center;
@@ -816,7 +810,7 @@ button {
     padding: 12px 14px;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
-    background: #f9fafb;
+    background: transparent;
 }
 
 .activity-info {
@@ -845,15 +839,20 @@ button {
 .activity-status {
     font-size: 12px;
     font-weight: 600;
-    color: #1f2937;
-    background: #e0e7ff;
-    padding: 4px 8px;
-    border-radius: 999px;
+    color: #6b7280;
+}
+
+.status-paying {
+    color: #03CBAD; /* Theme Green */
+}
+
+.status-failed {
+    color: #dc2626; /* Theme Red */
 }
 
 .activity-reward {
     font-weight: 700;
-    color: #10b981;
+    color: #111827;
 }
 
 .activity-empty {
@@ -1026,7 +1025,8 @@ button {
 /* ==================== My Tasks Card (Neo-Brutalist / Glass) ==================== */
 .my-task-card {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
@@ -1038,25 +1038,26 @@ button {
     overflow: hidden;
 }
 
-.my-task-card::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: transparent;
-    transition: background 0.2s;
-}
-
 .my-task-card:hover {
-    transform: translateX(4px);
-    box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.06);
+    background: #f9fafb;
     border-color: #d1d5db;
 }
 
-.my-task-card:hover::before {
-    background: #1d9bf0;
+.task-card-top {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    gap: 12px;
+}
+
+.task-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px dashed #e5e7eb;
 }
 
 .task-card-left {
@@ -1081,7 +1082,7 @@ button {
 
 .task-card-main {
     flex: 1;
-    min-width: 0;
+    min-width: 140px;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -1089,9 +1090,9 @@ button {
 
 .task-card-header {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
 }
 
 .task-card-title {
@@ -1107,7 +1108,7 @@ button {
 .task-card-brand {
     font-size: 13px;
     font-weight: 500;
-    color: #6366f1;
+    color: #6b7280;
 }
 
 .task-card-meta {
@@ -1117,33 +1118,21 @@ button {
     color: #6b7280;
 }
 
-.task-card-right {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    flex-shrink: 0;
-}
 
 .task-reward-box {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-}
-
-.task-reward-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #6b7280;
-    font-weight: 600;
-    margin-bottom: 2px;
+    align-items: flex-start;
+    margin-left: auto;
 }
 
 .task-reward-value {
-    font-size: 16px;
-    font-weight: 800;
-    color: #03CBAD;
-    line-height: 1.1;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.2;
 }
 
 .task-status-badge {
@@ -1160,16 +1149,14 @@ button {
     background: rgba(245, 158, 11, 0.12);
     color: #d97706;
 }
-.my-task-card.card-pending:hover::before { background: #d97706; }
 
 .status-badge-confirmed {
-    background: rgba(16, 185, 129, 0.12);
-    color: #059669;
+    background: rgba(3, 203, 173, 0.12);
+    color: #03CBAD;
 }
 .status-badge-confirmed .task-reward-value {
-    color: #059669; /* Make confirmed reward highly resonant */
+    color: #03CBAD; /* Make confirmed reward highly resonant */
 }
-.my-task-card.card-confirmed:hover::before { background: #059669; }
 
 .status-badge-rejected {
     background: rgba(239, 68, 68, 0.12);
@@ -1178,26 +1165,7 @@ button {
 .my-task-card.card-rejected {
     opacity: 0.7;
 }
-.my-task-card.card-rejected:hover::before { background: #dc2626; }
 .my-task-card.card-rejected .task-reward-value {
     text-decoration: line-through;
     color: #9ca3af;
-}
-
-@media (max-width: 600px) {
-    .my-task-card {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 12px;
-    }
-    .task-card-right {
-        width: 100%;
-        justify-content: space-between;
-        margin-top: 8px;
-        padding-top: 10px;
-        border-top: 1px dashed #e5e7eb;
-    }
-    .task-reward-box {
-        align-items: flex-start;
-    }
 }

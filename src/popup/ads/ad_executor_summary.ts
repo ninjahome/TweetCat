@@ -163,7 +163,13 @@ export function renderActivityList(claims: EarnClaim[]) {
     claims.forEach((claim) => {
         const item = cloneTemplate("tpl-activity-item");
         $2<HTMLElement>(item, ".activity-title").textContent = claim.ad_title || claim.ad_id;
-        $2<HTMLElement>(item, ".activity-status").textContent = TASK_STATUS_MAP[claim.status || ""] || claim.status;
+        const statusEl = $2<HTMLElement>(item, ".activity-status");
+        statusEl.textContent = TASK_STATUS_MAP[claim.status || ""] || claim.status;
+        if (claim.status === "PENDING_CONFIRM" || claim.status === "CONFIRMED" || claim.status === "PENDING") {
+            statusEl.classList.add("status-paying");
+        } else if (claim.status === "REJECTED" || claim.status === "FAILED") {
+            statusEl.classList.add("status-failed");
+        }
         $2<HTMLElement>(item, ".activity-meta").textContent = `${t("activity_created")}: ${formatClaimTime(claim.created_at)} · ${t("activity_expires")}: ${formatClaimTime(claim.expires_at)}`;
         $2<HTMLElement>(item, ".activity-reward").textContent = formatUSDCTrimmed(atomicToUsdcNumber(claim.unit_price_atomic));
         list.appendChild(item);
