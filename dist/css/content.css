@@ -1532,7 +1532,7 @@ html[data-bg="lightsout"] {
 
 .global-wait-detail {
     margin-top: 12px;
-    text-align: left;
+    text-align: center;
     font-size: 13px;
     line-height: 1.55;
     max-height: 40vh;
@@ -1542,6 +1542,9 @@ html[data-bg="lightsout"] {
     border-radius: 10px;
     white-space: pre-wrap;
     word-break: break-word;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .ai-trend-result {

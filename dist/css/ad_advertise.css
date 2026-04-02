@@ -976,10 +976,10 @@ body {
     height: 32px;
     border: none;
     background: transparent;
-    font-size: 24px;
+    font-size: 16px;
     color: #6b7280;
     cursor: pointer;
-    border-radius: 10px;
+    border-radius: 999px;
     transition: all 0.2s;
 }
 
@@ -1019,7 +1019,7 @@ body {
     border-top: 1px solid #e5e7eb;
     display: flex;
     gap: 12px;
-    justify-content: flex-end;
+    justify-content: center;
 }
 
 /* ==================== Wizard Steps ==================== */
@@ -1188,7 +1188,9 @@ body {
 
 .btn-publish-main {
     width: 100%;
-    padding: 16px 24px;
+    max-width: 480px;
+    padding: 12px 24px;
+    border-radius: 999px;
     font-size: 16px;
     font-weight: 900;
     background: linear-gradient(135deg, #1d9bf0 0%, #06CBAD 100%);
