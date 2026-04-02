@@ -161,8 +161,12 @@ export async function appendScoreInfoToProfilePage(usrProfile: UserProfile, user
             userInfoArea?.appendChild(scoreDiv);
         }
 
+        const isSelf = loggedInUserScreenName && userName.toLowerCase() === loggedInUserScreenName.toLowerCase();
         let transferDiv = document.getElementById("user-transfer-usdc") as HTMLElement;
-        if (!transferDiv) {
+
+        if (isSelf) {
+            transferDiv?.remove();
+        } else if (!transferDiv) {
             const tpl = await parseContentHtml("html/content.html");
             transferDiv = tpl.content.getElementById("user-transfer-usdc")?.cloneNode(true) as HTMLElement;
 

@@ -258,7 +258,20 @@ export async function apiTransferByTid(c: ExtCtx) {
 		return c.json({success: true, txHash: settleResult.transaction});
 	} catch (err: any) {
 		if (err instanceof PaymentRequiredError) return c.json({error: "Required"}, 402);
-		console.error("[Transfer By Twitter Account Error]", err);
-		return c.json({success: false, error: "Transfer By Twitter Account Error", message: err?.message}, 500);
+		
+		console.error("[Transfer By Twitter Account Error]", {
+			message: err?.message,
+			stack: err?.stack,
+			err
+		});
+
+		// Default to 400 for expected errors (verification, settlement, etc.)
+		const status = 400; 
+		return c.json({
+			success: false,
+			code: "TRANSFER_FAILED",
+			error: err?.message || "Transfer failed",
+			message: err?.message || "An error occurred during the transfer process"
+		}, status);
 	}
 }
