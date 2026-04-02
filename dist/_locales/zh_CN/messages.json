@@ -1692,6 +1692,9 @@
   "err_insufficient_balance": {
     "message": "余额不足。"
   },
+  "invalid_exact_evm_insufficient_balance": {
+    "message": "账户余额不足，请检查 USDC 余额。"
+  },
   "required_label": {
     "message": "需要"
   },

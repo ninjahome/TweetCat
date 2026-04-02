@@ -2,7 +2,7 @@ import {initCDP} from "../common/x402_obj";
 import {isSignedIn} from "@coinbase/cdp-core";
 import browser from "webextension-polyfill";
 import {openTxInExplorer, showPopupWindow} from "./common";
-import {postToX402Srv} from "../wallet/cdp_wallet";
+import {postToX402Srv, queryCdpWalletInfo} from "../wallet/cdp_wallet";
 import {initI18n, t} from "../common/i18n";
 import {logX402} from "../common/debug_flags";
 
@@ -40,7 +40,8 @@ const UI = {
     displayName: document.getElementById("js-display-name") as HTMLElement,
     userHandle: document.getElementById("js-user-handle") as HTMLElement,
     closeBtns: [document.getElementById("js-close"), document.getElementById("js-cancel")],
-    presetBtns: document.querySelectorAll("[data-amt]")
+    presetBtns: document.querySelectorAll("[data-amt]"),
+    maxHint: document.getElementById('js-max-amount_transfor') as HTMLSpanElement | null,
 };
 
 function translateStaticTexts() {
@@ -189,6 +190,17 @@ async function init() {
             }, 3_000)
             return;
         }
+
+        // 获取并显示真实余额
+        const walletInfo = await queryCdpWalletInfo();
+        if (walletInfo && walletInfo.hasCreated) {
+            const usdcBalance = walletInfo.usdcVal || '0.00';
+            if (UI.maxHint) {
+                UI.maxHint.dataset.max = usdcBalance;
+                UI.maxHint.textContent = `${t('x402_transfer_hint_max_balance_prefix')}${usdcBalance}(${t('currency_unit')})`;
+            }
+        }
+
     } catch (e) {
         updateUIState(false, "", t("initialization_failed"));
     }

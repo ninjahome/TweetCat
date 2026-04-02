@@ -1689,6 +1689,9 @@
   "err_insufficient_balance": {
     "message": "Insufficient Balance."
   },
+  "invalid_exact_evm_insufficient_balance": {
+    "message": "Insufficient wallet balance. Please check your USDC balance."
+  },
   "required_label": {
     "message": "Required"
   },
