@@ -255,6 +255,16 @@ export function translateAdvertiseUI() {
     const btnUpdateSet = $Id("btn-update-ad-settings");
     if (btnUpdateSet) btnUpdateSet.textContent = t("btn_update_settings");
 
+    // 13. Claimants Modal
+    const claimantsTitle = $Id("claimants-title");
+    if (claimantsTitle) claimantsTitle.textContent = t("modal_claimants_title");
+    const claimantsEmpty = document.querySelector("#claimants-modal .claimants-empty");
+    if (claimantsEmpty) claimantsEmpty.textContent = t("msg_no_claimants");
+    const claimantsPrev = $Id("claimants-prev-page");
+    if (claimantsPrev) claimantsPrev.textContent = t("btn_previous");
+    const claimantsNext = $Id("claimants-next-page");
+    if (claimantsNext) claimantsNext.textContent = t("btn_next");
+
     const loadingMsg = document.querySelector(".loading-message");
     if (loadingMsg) loadingMsg.textContent = t("processing_label");
 

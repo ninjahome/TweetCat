@@ -1537,10 +1537,10 @@
     "message": "暂无记录。"
   },
   "activity_created": {
-    "message": "创建时间"
+    "message": "领取时间"
   },
   "activity_expires": {
-    "message": "过期时间"
+    "message": "预计到账时间"
   },
   "nothing_to_withdraw": {
     "message": "没有可提现的金额。"
@@ -2144,5 +2144,11 @@
   },
   "btn_confirm_withdraw": {
     "message": "确认"
+  },
+  "modal_claimants_title": {
+    "message": "领取人列表"
+  },
+  "msg_no_claimants": {
+    "message": "暂无领取人"
   }
 }

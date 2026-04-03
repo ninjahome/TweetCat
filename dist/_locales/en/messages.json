@@ -1534,10 +1534,10 @@
     "message": "No activity yet."
   },
   "activity_created": {
-    "message": "Created"
+    "message": "Claimed"
   },
   "activity_expires": {
-    "message": "Expires"
+    "message": "Payout ETD"
   },
   "nothing_to_withdraw": {
     "message": "Nothing to withdraw."

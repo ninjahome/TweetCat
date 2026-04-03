@@ -55,49 +55,12 @@ const claimantsModalState = {
     totalCount: 0,
 };
 
-function getClaimantsPaginationMarkup(): string {
-    return `
-        <div id="claimants-pagination" class="claimants-pagination" style="display: none;">
-            <button type="button" id="claimants-prev-page" class="claimants-page-btn">Previous</button>
-            <span id="claimants-page-info" class="claimants-page-info">Page 1 / 1</span>
-            <button type="button" id="claimants-next-page" class="claimants-page-btn">Next</button>
-        </div>
-    `;
-}
 
 function ensureClaimantsModal(): HTMLElement | null {
     let modal = $Id("claimants-modal");
-    if (modal) {
-        const content = modal.querySelector<HTMLElement>(".claimants-modal-content");
-        const mockToolbar = content?.querySelector("#claimants-mock-toolbar");
-        if (mockToolbar) mockToolbar.remove();
-        if (content && !content.querySelector("#claimants-pagination")) {
-            content.insertAdjacentHTML("beforeend", getClaimantsPaginationMarkup());
-        }
-        return modal;
+    if (!modal) {
+        console.error("claimants-modal not found in HTML");
     }
-
-    modal = document.createElement("div");
-    modal.id = "claimants-modal";
-    modal.className = "modal";
-    modal.innerHTML = `
-        <div class="modal-dialog modal-large">
-            <div class="modal-header">
-                <h2 id="claimants-title" class="modal-title">Claimants List</h2>
-                <button id="close-claimants" class="btn-close">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="claimants-modal-content">
-                    <div id="claimants-list" class="claimants-list">
-                        <div class="claimants-empty">No claimants yet</div>
-                    </div>
-                    ${getClaimantsPaginationMarkup()}
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
     return modal;
 }
 

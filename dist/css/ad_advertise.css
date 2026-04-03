@@ -2086,7 +2086,7 @@ body {
 }
 
 .claimant-amount {
-    color: #0f766e;
+    color: #0f172a;
     font-size: 14px;
     font-weight: 800;
     white-space: nowrap;
@@ -2101,8 +2101,8 @@ body {
 .claimant-status {
     padding: 4px 10px;
     border-radius: 999px;
-    background: #eef6ff;
-    color: #2563eb;
+    background: rgba(3, 203, 173, 0.1);
+    color: #03CBAD;
     font-weight: 700;
     white-space: nowrap;
 }

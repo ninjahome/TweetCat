@@ -170,7 +170,24 @@ export function renderActivityList(claims: EarnClaim[]) {
         } else if (claim.status === "REJECTED" || claim.status === "FAILED") {
             statusEl.classList.add("status-failed");
         }
-        $2<HTMLElement>(item, ".activity-meta").textContent = `${t("activity_created")}: ${formatClaimTime(claim.created_at)} · ${t("activity_expires")}: ${formatClaimTime(claim.expires_at)}`;
+        const claimTime = formatClaimTime(claim.created_at);
+        const payoutTime = formatClaimTime(claim.expires_at);
+
+        const claimEl = $2<HTMLElement>(item, ".meta-claim-time");
+        const payoutEl = $2<HTMLElement>(item, ".meta-payout-time");
+        const sepEl = $2<HTMLElement>(item, ".meta-separator");
+
+        claimEl.textContent = `${t("activity_created")}: ${claimTime}`;
+        
+        if (claim.expires_at) {
+            payoutEl.textContent = `${t("activity_expires")}: ${payoutTime}`;
+            payoutEl.style.display = "";
+            sepEl.style.display = "";
+        } else {
+            payoutEl.style.display = "none";
+            sepEl.style.display = "none";
+        }
+
         $2<HTMLElement>(item, ".activity-reward").textContent = formatUSDCTrimmed(atomicToUsdcNumber(claim.unit_price_atomic));
         list.appendChild(item);
     });
