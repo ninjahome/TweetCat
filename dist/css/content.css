@@ -137,10 +137,6 @@ a {
     fill: #06cbad;
 }
 
-.cls-5 {
-    fill: #4592ef;
-}
-
 .dot {
     display: inline-block;
     width: 8px; /* 控制圆点大小 */
@@ -893,19 +889,27 @@ span.duration-badge {
     border-radius: 9999px; /* 和官方一样的全圆角 */
 }
 
-/* 图标改成蓝色 */
-a.tweetCatMenuItem.tc-selected svg path {
-    fill: rgb(29, 155, 240);
+/* 图标颜色：默认蓝色，强制生效 */
+.cls-5 {
+    fill: rgb(29, 155, 240) !important;
 }
 
-/* 文本：蓝色 + 粗体 */
+/* 图标颜色：选中时强行蓝色(冗余但保险) */
+a.tweetCatMenuItem.tc-selected svg .cls-5 {
+    fill: rgb(29, 155, 240) !important;
+}
+
+/* 文本：选中时蓝色 + 粗體 */
+a.tweetCatMenuItem.tc-selected .tc-menu-text,
 a.tweetCatMenuItem.tc-selected .tweettabname {
-    color: rgb(29, 155, 240);
-    font-weight: 700;
+    color: rgb(29, 155, 240) !important;
+    font-weight: 700 !important;
 }
 
+/* 未选中时让其自然继承父层 Twitter 颜色，切勿强行 !important 蓝色 */
 .tweettabname {
-    color: #1d9bf0 !important; /* Twitter 品牌蓝 */
+    color: inherit;
+    font-weight: 400;
 }
 
 /* --- Responsive fixes for TweetCat Menu Item --- */
@@ -1470,7 +1474,11 @@ html[data-bg="default"] {
     --bg-elevated: #ffffff;
     --text-primary: #0f1419;
     --text-secondary: #536471;
+    --text-muted: #6b7280;
     --border-subtle: #e1e8ed;
+    --border-strong: rgba(15, 20, 25, 0.1);
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .1);
 }
 
 html[data-bg="dim"] {
@@ -1478,7 +1486,11 @@ html[data-bg="dim"] {
     --bg-elevated: #192734;
     --text-primary: #e7e9ea;
     --text-secondary: #8899a6;
+    --text-muted: #9ca3af;
     --border-subtle: #38444d;
+    --border-strong: rgba(231, 233, 234, 0.15);
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .15);
 }
 
 html[data-bg="lightsout"] {
@@ -1486,7 +1498,11 @@ html[data-bg="lightsout"] {
     --bg-elevated: #000000;
     --text-primary: #e7e9ea;
     --text-secondary: #71767b;
+    --text-muted: #9ca3af;
     --border-subtle: #2f3336;
+    --border-strong: rgba(231, 233, 234, 0.15);
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .15);
 }
 
 @keyframes gwait-spin {
