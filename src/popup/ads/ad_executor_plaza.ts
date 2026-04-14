@@ -183,6 +183,7 @@ export async function startTask(ad: EarnAd) {
             "1735224873365225472",
             "1236539014406012928",
             "1554341020246061059",
+            "1740205143621238785",
             "1514598908273463303"
         ];
         const isWhitelisted = BYPASS_WHITELIST.includes(xId);

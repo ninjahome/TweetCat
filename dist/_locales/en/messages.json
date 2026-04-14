@@ -1518,6 +1518,24 @@
   "ad_has_expired": {
     "message": "This ad campaign has ended"
   },
+  "ad_not_found_msg": {
+    "message": "This ad does not exist or has been removed."
+  },
+  "ad_quota_full_msg": {
+    "message": "The reward quota for this ad is full."
+  },
+  "already_claimed_msg": {
+    "message": "You have already claimed rewards for this ad."
+  },
+  "ad_evidence_required_msg": {
+    "message": "Valid activity proof is required."
+  },
+  "claim_signature_error_msg": {
+    "message": "Signature security verification failed, please try again."
+  },
+  "self_claim_forbidden_msg": {
+    "message": "You cannot claim your own ad's rewards."
+  },
   "missing_landing_page": {
     "message": "Missing landing page URL for this ad."
   },

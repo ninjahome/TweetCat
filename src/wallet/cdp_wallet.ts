@@ -186,7 +186,16 @@ export async function queryCdpWalletInfo(chainId: number | null = null): Promise
             return failedWallet;
         }
 
-        const { eth, usdc } = await queryWalletBalance(eoa.address, chainId);
+        let eth = "0";
+        let usdc = "0";
+        try {
+            const balances = await queryWalletBalance(eoa.address, chainId);
+            eth = balances.eth;
+            usdc = balances.usdc;
+        } catch (balErr) {
+            console.warn("------>>>Failed to query wallet balance:", balErr);
+        }
+
         const xId = user?.authenticationMethods?.x?.sub || null;
         const userId = user?.userId || null;
         const username = user?.authenticationMethods?.x?.username

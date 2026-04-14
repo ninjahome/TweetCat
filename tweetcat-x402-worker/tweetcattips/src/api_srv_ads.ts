@@ -85,7 +85,7 @@ import {
 	refundPerformerBalance
 } from "./database_ad";
 import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
-import { getKolBindingByXId } from "./database_402";
+import { getKolBindingByXId, calculateWithdrawFee } from "./database_402";
 
 // ========= Types =========
 
@@ -1125,16 +1125,21 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 		// 插入提现流水记录
 		await insertPerformerWithdrawLedger(db, ledgerId, bXId, amountAtomicStr, toAddress, requestId);
 
+		// 计算提现手续费（FEE_FOR_WITHDRAW 在 Cloudflare Workers 中可能以字符串形式传入，需强制转为 number）
+		const feeRate = Math.round(Number(c.env.FEE_FOR_WITHDRAW) || 0);
+		const feeCalc = calculateWithdrawFee(amountAtomicStr, feeRate);
+		console.log(`[apiAdsExecutorWithdraw] Withdrawing: gross=${feeCalc.grossAmount}, fee=${feeCalc.feeAmount} (${feeRate}%), net=${feeCalc.netAmount}`);
+
 		// 4. 发起国库付款
 		let txHash = "";
 		let payer = "";
 		try {
-			console.log(`[apiAdsExecutorWithdraw] Initiating executor payout to ${toAddress}, amount=${amountAtomicStr}`);
+			console.log(`[apiAdsExecutorWithdraw] Initiating executor payout to ${toAddress}, amount=${feeCalc.netAmount}`);
 			const resourceUrl = `ads://executor-withdraw/${bXId}`;
 			const settleRes = await internalTreasurySettle(
 				c,
 				toAddress as `0x${string}`,
-				amountAtomicStr,
+				feeCalc.netAmount,
 				resourceUrl
 			);
 
@@ -1152,7 +1157,10 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 				success: true,
 				txHash,
 				to_address: toAddress,
-				amount_atomic: amountAtomicStr,
+				amount_atomic: feeCalc.grossAmount,
+				net_amount_atomic: feeCalc.netAmount,
+				fee_amount_atomic: feeCalc.feeAmount,
+				fee_rate: feeCalc.feeRate,
 				debug_msg: "Executor withdrawal processed successfully"
 			});
 		} catch (err: any) {

@@ -473,7 +473,28 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                                 t('confirm') || "Confirm"
                             );
                         } else {
-                            showDialog(t('tips_title'), `${t('verification_failed')}: ${errorMsg}`);
+                            let translatedErr = errorMsg;
+                            if (errorMsg.includes("NOT_FOUND") || errorMsg.includes("Ad not found")) {
+                                translatedErr = t("ad_not_found_msg") || "该广告不存在或已被删除。 (Ad not found)";
+                            } else if (errorMsg.includes("QUOTA_FULL")) {
+                                translatedErr = t("ad_quota_full_msg") || "该广告的奖励名额已满。 (Quota full)";
+                            } else if (errorMsg.includes("AD_EXPIRED")) {
+                                translatedErr = t("ad_has_expired") || "该广告活动已结束。 (Ad expired)";
+                            } else if (errorMsg.includes("Already claimed")) {
+                                translatedErr = t("already_claimed_msg") || "您已经领取过该广告的奖励。 (Already claimed)";
+                            } else if (errorMsg.includes("EVIDENCE_REQUIRED")) {
+                                translatedErr = t("ad_evidence_required_msg") || "缺少必需的活动证明。 (Evidence required)";
+                            } else if (errorMsg.includes("SIGNATURE_REQUIRED") || errorMsg.includes("SIGNATURE_MISMATCH") || errorMsg.includes("INVALID_CLAIM_SIGNATURE") || errorMsg.includes("EVIDENCE_TAMPERED")) {
+                                translatedErr = t("claim_signature_error_msg") || "签名验证失败，请重试。 (Signature error)";
+                            } else if (errorMsg.includes("SELF_CLAIM_FORBIDDEN")) {
+                                translatedErr = t("self_claim_forbidden_msg") || "您不能领取自己发布的广告。 (Cannot claim own ad)";
+                            }
+
+                            if (translatedErr !== errorMsg) {
+                                showDialog(t('tips_title'), translatedErr);
+                            } else {
+                                showDialog(t('tips_title'), `${t('verification_failed')}: ${errorMsg}`);
+                            }
                         }
                         return;
                     }
@@ -495,7 +516,22 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                     hideGlobalLoading();
                     setUi(ADS_FOLLOW_UI_MODE.Eligible);
                     const errorMsg = err instanceof Error ? err.message : String(err || t('rewards_unknown_error'));
-                    showDialog(t('tips_title'), `${t('verification_failed')}: ${errorMsg}`);
+                    let translatedErr = errorMsg;
+                    if (errorMsg.includes("NOT_FOUND") || errorMsg.includes("Ad not found")) {
+                        translatedErr = t("ad_not_found_msg") || "该广告不存在或已被删除。 (Ad not found)";
+                    } else if (errorMsg.includes("QUOTA_FULL")) {
+                        translatedErr = t("ad_quota_full_msg") || "该广告的奖励名额已满。 (Quota full)";
+                    } else if (errorMsg.includes("AD_EXPIRED")) {
+                        translatedErr = t("ad_has_expired") || "该广告活动已结束。 (Ad expired)";
+                    } else if (errorMsg.includes("Already claimed")) {
+                        translatedErr = t("already_claimed_msg") || "您已经领取过该广告的奖励。 (Already claimed)";
+                    }
+
+                    if (translatedErr !== errorMsg) {
+                        showDialog(t('tips_title'), translatedErr);
+                    } else {
+                        showDialog(t('tips_title'), `${t('verification_failed')}: ${errorMsg}`);
+                    }
                     return;
                 }
 
