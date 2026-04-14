@@ -1045,7 +1045,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 			await failWithdrawLedger(c.env.DB, ledgerId, errorMsg);
 			await refundEscrowBalance(c.env.DB, aXId, amountAtomicStr);
 
-			return jsonError(c, 500, "WITHDRAW_FAILED", errorMsg);
+			return jsonError(c, 400, "WITHDRAW_FAILED", errorMsg);
 		}
 	} catch (err: any) {
 		// ✅ 处理自定义的 EscrowRequestError
@@ -1060,7 +1060,12 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 		if (err instanceof EscrowRequestError) {
 			return jsonError(c, err.statusCode as ContentfulStatusCode, err.code, err.detail);
 		}
-		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+		return c.json({
+			success: false,
+			error: "INTERNAL_ERROR",
+			message: err?.message || "Internal Server Error",
+			stack: err?.stack
+		}, 400);
 	}
 }
 
@@ -1156,12 +1161,17 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 			await failPerformerWithdrawLedger(db, ledgerId, err.message || "Treasury payout failed");
 			await refundPerformerBalance(db, bXId, amountAtomicStr);
 
-			return jsonError(c, 500, "TREASURY_PAYOUT_FAILED", err.message || "Failed to process withdrawal from treasury");
+			return jsonError(c, 400, "TREASURY_PAYOUT_FAILED", err.message || "Failed to process withdrawal from treasury");
 		}
 
 	} catch (err: any) {
 		console.error("[apiAdsExecutorWithdraw] 提现异常:", err);
-		return jsonError(c, 500, "INTERNAL_ERROR", "An unexpected error occurred during executor withdrawal");
+		return c.json({
+			success: false,
+			error: "INTERNAL_ERROR",
+			message: err?.message || "An unexpected error occurred during executor withdrawal",
+			stack: err?.stack
+		}, 400);
 	}
 }
 
