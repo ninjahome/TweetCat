@@ -351,6 +351,9 @@
   "sync_user_not_found": {
     "message": "User not found or sync failed."
   },
+  "failed_to_sync_account": {
+    "message": "Failed to sync account info."
+  },
   "refresh": {
     "message": "Refresh"
   },
@@ -361,7 +364,7 @@
     "message": "Gas Fee"
   },
   "usdt_balance": {
-    "message": "USDT Balance"
+    "message": "USDC Balance"
   },
   "web3_id_tittle": {
     "message": "Web3 ID Infos"
@@ -377,6 +380,60 @@
   },
   "ipfs_password_msg": {
     "message": "Used for decrypting Pinata/Lighthouse/custom KEY"
+  },
+  "ipfs_photo_loading": {
+    "message": "Uploading IPFS snapshot..."
+  },
+  "Upload_failed": {
+    "message": "Upload failed:"
+  },
+  "ipfs_wallet_skipped": {
+    "message": "Wallet address not obtained, Manifest update skipped."
+  },
+  "ipfs_updated_manifest": {
+    "message": "The manifest has been updated."
+  },
+  "ipfs_local_failed": {
+    "message": "Upload successful, but local manifest file failed to write (this does not affect functionality)."
+  },
+  "ipfs_local_failed_pin": {
+    "message": "Local Kubo failed to unpin:"
+  },
+  "ipfs_local_copied_CID": {
+    "message": "CID has been copied to the clipboard."
+  },
+  "ipfs_local_copied_failed": {
+    "message": "Copy failed. Please copy manually."
+  },
+  "ipfs_local_backend_snapshot": {
+    "message": "Unable to retrieve snapshot from the backend."
+  },
+  "ipfs_local_request_failed": {
+    "message": "Failed to request background snapshot:"
+  },
+  "ipfs_local_no_snap": {
+    "message": "No snapshots available."
+  },
+  "ipfs_local_requesting_snapshot": {
+    "message": "Requesting snapshot from background…"
+  },
+  "ipfs_local_api_base_unknown": {
+    "message": "Unable to infer local IPFS API base."
+  },
+  "ipfs_local_uploading": {
+    "message": "Uploading to IPFS..."
+  },
+  "ipfs_local_upload_success_cid": {
+    "message": "Upload success! CID: $1"
+  },
+  "ipfs_local_kubo_upload_failed_http": {
+    "message": "Kubo upload failed: HTTP $1 $2"
+  },
+  "ipfs_local_uploading_test_data": {
+    "message": "Uploading test data to IPFS..."
+  },
+  "ipfs_local_kubo_missing_cid": {
+    "message": "CID not found in response"
   },
   "use_office_ipfs_node": {
     "message": "Use TweetCat Node"
@@ -402,14 +459,17 @@
   "wallet_action_refresh_balance": {
     "message": "Refresh balance"
   },
-  "wallet_action_export_private_key": {
-    "message": "Export private key"
+  "wallet_action_show_on_browser": {
+    "message": "View on browser"
   },
   "wallet_action_transfer_eth": {
     "message": "Transfer ETH"
   },
   "wallet_action_transfer_token": {
-    "message": "Transfer token"
+    "message": "Transfer USDC"
+  },
+  "wallet_action_sign_out": {
+    "message": "Sign Out Wallet"
   },
   "wallet_action_sign_message": {
     "message": "Sign message"
@@ -423,29 +483,11 @@
   "wallet_action_node_settings": {
     "message": "Node & RPC settings"
   },
-  "wallet_node_rpc_title": {
-    "message": "Node & RPC"
-  },
-  "wallet_infura_project_id_label": {
-    "message": "Infura Project ID (optional)"
-  },
-  "wallet_infura_project_id_placeholder": {
-    "message": "Example: 123abc456def"
-  },
-  "wallet_custom_rpc_url_label": {
-    "message": "Custom RPC URL (optional)"
-  },
-  "wallet_custom_rpc_url_placeholder": {
-    "message": "https://example.com/rpc"
-  },
   "wallet_rpc_mode_default": {
     "message": "Use default public RPC"
   },
   "wallet_rpc_mode_custom": {
     "message": "Use custom RPC"
-  },
-  "wallet_save_settings": {
-    "message": "Save"
   },
   "wallet_reset_settings": {
     "message": "Reset to default"
@@ -548,6 +590,12 @@
   },
   "ipfs_latest_copy_cid": {
     "message": "Copy CID"
+  },
+  "ipfs_sync_data": {
+    "message": "Sync From IPFS"
+  },
+  "ipfs_confirm_sync_from_ipfs_overwrite": {
+    "message": "Are you sure you want to use IPFS data to overwrite local data?"
   },
   "category_delete_tooltip": {
     "message": "Delete category"
@@ -654,32 +702,17 @@
   "wallet_transfer_tx_sent": {
     "message": "Transaction sent: "
   },
-  "wallet_transfer_eth_failed": {
-    "message": "ETH transfer failed"
-  },
-  "wallet_prompt_token_address": {
-    "message": "Enter the token contract address"
-  },
-  "wallet_prompt_transfer_token_amount": {
-    "message": "Enter the token amount to send"
-  },
-  "wallet_prompt_token_decimals": {
-    "message": "Enter the token decimals"
-  },
-  "wallet_prompt_password_send_token": {
-    "message": "Enter your wallet password to send tokens"
-  },
-  "wallet_transfer_token_tx_sent": {
-    "message": "Token transfer sent: "
-  },
-  "wallet_transfer_token_failed": {
-    "message": "Token transfer failed"
+  "wallet_transfer_failed": {
+    "message": "Transfer failed"
   },
   "wallet_prompt_sign_message": {
     "message": "Enter the message to sign"
   },
   "wallet_prompt_password_sign_message": {
     "message": "Enter your wallet password to sign the message"
+  },
+  "wallet_signing": {
+    "message": "Signing by wallet......"
   },
   "wallet_sign_message_success": {
     "message": "Message signature created"
@@ -809,9 +842,10 @@
   },
   "wallet_decrypting": {
     "message": "Decrypting......"
-  },"wallet_network_title": {
-  "message": "Network"
-},
+  },
+  "wallet_network_title": {
+    "message": "Network"
+  },
   "wallet_network_select_label": {
     "message": "Blockchain network"
   },
@@ -824,80 +858,1288 @@
   "wallet_transfer_eth_title": {
     "message": "Send ETH"
   },
-  "wallet_transfer_eth_subtitle": {
-    "message": "Please double-check the recipient address and amount before submitting the transaction."
-  },
-
   "wallet_transfer_to_label": {
     "message": "Recipient address"
   },
   "wallet_transfer_to_hint": {
     "message": "Make sure the address is correct. Blockchain transfers are irreversible."
   },
-
   "wallet_transfer_amount_label": {
     "message": "Amount"
   },
-  "wallet_transfer_fee_hint": {
-    "message": "Available balance ≈ current balance − estimated network fee."
-  },
-
-  "wallet_transfer_gas_label": {
-    "message": "Gas limit (optional)"
-  },
-  "wallet_transfer_gas_hint": {
-    "message": "If the gas limit is too low, the transaction may fail while still consuming fees."
-  },
-
   "wallet_transfer_confirm_btn": {
     "message": "Confirm & Send"
   },
-
   "wallet_current_balance": {
     "message": "Balance"
   },
   "wallet_error_to_required": {
     "message": "Please enter the recipient address."
   },
-  "wallet_error_amount_invalid": {
-    "message": "Please enter a valid amount greater than 0."
-  },
   "wallet_error_gas_invalid": {
-    "message": "Invalid gas limit. Please enter an integer no less than 21000."
+    "message": "Insufficient gas."
   },
   "wallet_transfer_token_title": {
     "message": "Send USDC"
   },
-  "wallet_transfer_token_subtitle": {
-    "message": "Please double-check the token address, recipient, and amount before submitting the transaction."
+  "wallet_sending_transaction": {
+    "message": "sending transaction......"
   },
-
-  "wallet_token_address_label": {
-    "message": "Token contract address"
+  "wallet_err_no_basic": {
+    "message": "Failed to fetch wallet info"
   },
-  "wallet_token_address_placeholder": {
-    "message": "ERC-20 token contract address"
+  "wallet_insufficient_funds": {
+    "message": "Insufficient funds"
   },
-  "wallet_token_address_hint": {
-    "message": "By default, the official USDC contract for the current network is used."
+  "cdp_wallet_connect": {
+    "message": "Connect Coinbase Wallet"
   },
-
-  "wallet_transfer_token_amount_label": {
+  "missing_payload_error": {
+    "message": "Missing payment parameters"
+  },
+  "coinbase_login_error": {
+    "message": "Please sign in to your Coinbase Wallet first"
+  },
+  "invalid_payment_amount": {
+    "message": "Invalid payment amount"
+  },
+  "checking_login_status": {
+    "message": "Checking login status..."
+  },
+  "verifying_payment_amount": {
+    "message": "Verifying payment amount..."
+  },
+  "fetching_network_info": {
+    "message": "Fetching network information..."
+  },
+  "requesting_payment": {
+    "message": "Requesting payment...\nPlease confirm in the pop-up window"
+  },
+  "post_payment_failure": {
+    "message": "Post-payment request failed"
+  },
+  "payment_process_error": {
+    "message": "An error occurred during payment"
+  },
+  "tip_success": {
+    "message": "✅ Tip successful!"
+  },
+  "window_auto_close": {
+    "message": "The window will close automatically in 10 seconds"
+  },
+  "page_title_payment": {
+    "message": "X402 Payment Confirmation"
+  },
+  "page_header_payment": {
+    "message": "💎 X402 Tip Payment"
+  },
+  "tweet_id_label": {
+    "message": "Tweet ID:"
+  },
+  "author_id_label": {
+    "message": "Author ID:"
+  },
+  "currency_unit": {
+    "message": "USDC"
+  },
+  "close_button": {
+    "message": "Close"
+  },
+  "initializing_status": {
+    "message": "Initializing..."
+  },
+  "initialization_error": {
+    "message": "Payment initialization error"
+  },
+  "txhash_label": {
+    "message": "TxHash"
+  },
+  "connect_wallet_page_title": {
+    "message": "Connect Coinbase Wallet"
+  },
+  "connect_wallet_page_header": {
+    "message": "Connect Wallet"
+  },
+  "connect_wallet_description": {
+    "message": "Choose a way to sign in to Coinbase"
+  },
+  "sign_in_with_google": {
+    "message": "Sign in with Google"
+  },
+  "sign_in_with_apple": {
+    "message": "Sign in with Apple"
+  },
+  "sign_in_with_x": {
+    "message": "Sign in with X"
+  },
+  "initializing_coinbase_wallet_sdk": {
+    "message": "Initializing Coinbase Wallet SDK"
+  },
+  "initialization_failed": {
+    "message": "Initialization failed"
+  },
+  "login_success_completing_connection": {
+    "message": "Login successful, completing connection..."
+  },
+  "login_success_window_closing": {
+    "message": "Login successful! Window will close soon..."
+  },
+  "wallet_connected": {
+    "message": "Wallet connected"
+  },
+  "redirecting_to_login": {
+    "message": "Redirecting to $1 login..."
+  },
+  "accessing_x402_service": {
+    "message": "Accessing X402 service"
+  },
+  "fetch_tweet_info_failed": {
+    "message": "Failed to fetch tweet information: $1"
+  },
+  "user_tip_button_title": {
+    "message": "Tip($1)U"
+  },
+  "rewards_page_title": {
+    "message": "My Rewards"
+  },
+  "rewards_filter_label": {
+    "message": "Status Filter"
+  },
+  "rewards_filter_all": {
+    "message": "All"
+  },
+  "rewards_status_pending": {
+    "message": "Pending"
+  },
+  "rewards_status_locked": {
+    "message": "Locked"
+  },
+  "rewards_status_success": {
+    "message": "Success"
+  },
+  "rewards_status_failed": {
+    "message": "Failed"
+  },
+  "rewards_status_cancelled": {
+    "message": "Cancelled"
+  },
+  "rewards_status_unknown": {
+    "message": "Unknown"
+  },
+  "rewards_prev_page": {
+    "message": "Previous"
+  },
+  "rewards_next_page": {
+    "message": "Next"
+  },
+  "rewards_page_info": {
+    "message": "Page $1"
+  },
+  "rewards_empty_state": {
+    "message": "No rewards yet"
+  },
+  "rewards_loading": {
+    "message": "Loading..."
+  },
+  "rewards_user_id_not_found": {
+    "message": "User ID not found"
+  },
+  "rewards_load_failed": {
+    "message": "Failed to load rewards"
+  },
+  "rewards_claiming": {
+    "message": "Claiming reward..."
+  },
+  "rewards_claim_success": {
+    "message": "Claimed successfully!"
+  },
+  "rewards_claim_failed": {
+    "message": "Failed to claim"
+  },
+  "rewards_unknown_error": {
+    "message": "Unknown error"
+  },
+  "rewards_field_id": {
+    "message": "ID"
+  },
+  "rewards_field_asset": {
+    "message": "Asset"
+  },
+  "rewards_field_amount": {
     "message": "Amount"
   },
-  "wallet_transfer_token_fee_hint": {
-    "message": "Make sure there is still enough ETH in this wallet to pay the network fee."
+  "rewards_field_status": {
+    "message": "Status"
   },
-
-  "wallet_token_decimals_label": {
-    "message": "Token decimals"
+  "rewards_field_created_at": {
+    "message": "Created At"
   },
-
-  "wallet_transfer_token_confirm_btn": {
-    "message": "Confirm & Send"
+  "rewards_field_updated_at": {
+    "message": "Updated At"
   },
-
-  "wallet_token_address_required": {
-    "message": "Please enter the token contract address."
+  "rewards_field_reason": {
+    "message": "Reason"
+  },
+  "rewards_field_tx_hash": {
+    "message": "Tx Hash"
+  },
+  "rewards_field_asset_address": {
+    "message": "Asset Address"
+  },
+  "rewards_btn_claim": {
+    "message": "Claim"
+  },
+  "rewards_btn_view_tx": {
+    "message": "View Transaction"
+  },
+  "dashboard_rewards_title": {
+    "message": "My Rewards"
+  },
+  "dashboard_rewards_pending": {
+    "message": "Pending"
+  },
+  "wallet_action_fee_history": {
+    "message": "Fee History"
+  },
+  "fees_page_title": {
+    "message": "Fee History"
+  },
+  "fees_total_paid": {
+    "message": "Total Fees Paid"
+  },
+  "fees_avg_rate": {
+    "message": "Average Fee Rate"
+  },
+  "fees_total_count": {
+    "message": "Total Transactions"
+  },
+  "fees_current_page_total": {
+    "message": "Current Page Fees"
+  },
+  "fees_current_page_avg_rate": {
+    "message": "Avg Fee Rate"
+  },
+  "fees_current_page_count": {
+    "message": "Records on Page"
+  },
+  "fees_prev_page": {
+    "message": "Previous"
+  },
+  "fees_next_page": {
+    "message": "Next"
+  },
+  "fees_page": {
+    "message": "Page"
+  },
+  "fees_empty_state": {
+    "message": "No fee records yet"
+  },
+  "fees_loading": {
+    "message": "Loading fee history..."
+  },
+  "fees_user_id_not_found": {
+    "message": "User ID not found"
+  },
+  "fees_load_failed": {
+    "message": "Failed to load fee history"
+  },
+  "fees_reward_id": {
+    "message": "Reward"
+  },
+  "fees_fee_badge": {
+    "message": "Fee"
+  },
+  "fees_field_gross": {
+    "message": "Gross"
+  },
+  "fees_field_fee": {
+    "message": "Fee"
+  },
+  "fees_field_net": {
+    "message": "Net"
+  },
+  "fees_field_date": {
+    "message": "Date"
+  },
+  "fees_detail_title": {
+    "message": "Fee Details"
+  },
+  "fees_view_on_chain": {
+    "message": "View on Blockchain"
+  },
+  "transfer_usdc_btn_title": {
+    "message": "Transfer(USDC)"
+  },
+  "buy_usdc_title": {
+    "message": "Buy USDC"
+  },
+  "buy_usdc_button": {
+    "message": "Buy USDC Now"
+  },
+  "buy_usdc_no_fees": {
+    "message": "No Fees"
+  },
+  "buy_usdc_your_wallet": {
+    "message": "Your Wallet"
+  },
+  "buy_usdc_current_balance": {
+    "message": "Current Balance"
+  },
+  "buy_usdc_select_amount": {
+    "message": "Select Amount"
+  },
+  "buy_usdc_custom_amount": {
+    "message": "Or enter custom amount ($5 - $500)"
+  },
+  "buy_usdc_no_fees_feature": {
+    "message": "No Fees on Base Network"
+  },
+  "buy_usdc_enter_amount": {
+    "message": "Enter amount"
+  },
+  "btn_back": {
+    "message": "Back"
+  },
+  "buy_usdc_fast_payment": {
+    "message": "Apple Pay & Debit Card"
+  },
+  "buy_usdc_secure": {
+    "message": "Secured by Coinbase"
+  },
+  "buy_usdc_powered_by": {
+    "message": "Powered by Coinbase Onramp"
+  },
+  "buy_usdc_funds_direct": {
+    "message": "Funds will be sent directly to your wallet"
+  },
+  "buy_usdc_no_wallet": {
+    "message": "Please connect your wallet first"
+  },
+  "buy_usdc_load_wallet_failed": {
+    "message": "Failed to load wallet info"
+  },
+  "buy_usdc_amount_error": {
+    "message": "Amount must be between $5 and $500"
+  },
+  "buy_usdc_preparing": {
+    "message": "Preparing your purchase..."
+  },
+  "buy_usdc_no_wallet_address": {
+    "message": "Wallet address not found"
+  },
+  "buy_usdc_no_user_id": {
+    "message": "User ID not found"
+  },
+  "buy_usdc_redirecting": {
+    "message": "Redirecting to Coinbase Pay..."
+  },
+  "buy_usdc_session_failed": {
+    "message": "Failed to create purchase session"
+  },
+  "buy_usdc_failed": {
+    "message": "Failed to initialize purchase"
+  },
+  "register_account_error": {
+    "message": "Please ensure the recipient has a linked Coinbase account."
+  },
+  "ipfs_sync_step_downloading": {
+    "message": "Downloading snapshot from IPFS..."
+  },
+  "ipfs_sync_step_clearing_categories": {
+    "message": "Clearing old categories..."
+  },
+  "ipfs_sync_step_importing_categories": {
+    "message": "Importing new categories..."
+  },
+  "ipfs_sync_step_updating_assignments": {
+    "message": "Updating category assignments..."
+  },
+  "ipfs_sync_step_refreshing": {
+    "message": "Refreshing data..."
+  },
+  "ipfs_sync_success": {
+    "message": "Data synchronized successfully"
+  },
+  "ipfs_sync_success_with_count": {
+    "message": "Data synchronized: $1 followings updated"
+  },
+  "ipfs_sync_failed": {
+    "message": "Failed to synchronize from IPFS"
+  },
+  "ipfs_invalid_snapshot_data": {
+    "message": "Invalid snapshot data"
+  },
+  "ipfs_invalid_snapshot_format": {
+    "message": "Invalid snapshot format: missing categories or assignments"
+  },
+  "resetting_local_data": {
+    "message": "Resetting local data..."
+  },
+  "creating_new_following": {
+    "message": "Processing followings..."
+  },
+  "ipfs_looking_for_snapshot": {
+    "message": "Looking for IPFS snapshot..."
+  },
+  "ipfs_no_available_gateway": {
+    "message": "No available IPFS gateways"
+  },
+  "ipfs_open_snapshot_failed": {
+    "message": "Failed to open snapshot"
+  },
+  "ipfs_sync_no_local_followings": {
+    "message": "You need to sync followings from Twitter first. Would you like to sync now?"
+  },
+  "label_detail_gross": {
+    "message": "Gross Amount"
+  },
+  "label_detail_rate": {
+    "message": "Fee Rate"
+  },
+  "label_detail_fee": {
+    "message": "Fee Amount"
+  },
+  "label_detail_net": {
+    "message": "Net Amount"
+  },
+  "label_detail_tx": {
+    "message": "Transaction Hash"
+  },
+  "label_detail_user_wallet": {
+    "message": "User Wallet"
+  },
+  "label_detail_platform_wallet": {
+    "message": "Platform Wallet"
+  },
+  "label_detail_created": {
+    "message": "Created At"
+  },
+  "transfer_create_tx_failed": {
+    "message": "Failed to create blockchain transaction. Please try again."
+  },
+  "page_title_transfer": {
+    "message": "X402 Transfer"
+  },
+  "page_header_transfer": {
+    "message": "USDC Transfer"
+  },
+  "x402_transfer_confirm": {
+    "message": "Confirm Transfer"
+  },
+  "x402_transfer_decimals_hint": {
+    "message": "Precision: 6 decimals"
+  },
+  "x402_usdt_balance_title": {
+    "message": "USDC Balance"
+  },
+  "x402_transfer_hint_max_balance_prefix": {
+    "message": "Suggestion: do not exceed balance "
+  },
+  "x402_transfer_amount_must_number": {
+    "message": "Amount must be a number"
+  },
+  "x402_transfer_amount_gt0": {
+    "message": "Amount must be greater than 0"
+  },
+  "x402_transfer_amount_max_decimals_6": {
+    "message": "Amount cannot have more than 6 decimals"
+  },
+  "x402_transfer_missing_recipient_info": {
+    "message": "Recipient info not found"
+  },
+  "x402_transfer_missing_recipient_address": {
+    "message": "Recipient wallet address missing"
+  },
+  "x402_transfer_wallet_required_auto_close": {
+    "message": "Please connect your wallet first. This window will close automatically in 3 seconds."
+  },
+  "x402_transfer_request_wallet_confirm": {
+    "message": "Requesting wallet confirmation..."
+  },
+  "x402_transfer_load_user_failed": {
+    "message": "Failed to load recipient info"
+  },
+  "x402_transfer_success_prefix": {
+    "message": "✅ Transfer succeeded: "
+  },
+  "x402_transfer_profile_load_failed": {
+    "message": "Error: failed to load user info. Please reopen this page."
+  },
+  "cdp_auth_action_close": {
+    "message": "Close"
+  },
+  "cdp_auth_action_retry": {
+    "message": "Retry"
+  },
+  "cdp_auth_page_title": {
+    "message": "Connect Coinbase Wallet "
+  },
+  "cdp_auth_page_title_header": {
+    "message": "Coinbase Wallet "
+  },
+  "cdp_auth_verifying_authorization_result": {
+    "message": "Verifying authorization result..."
+  },
+  "cdp_auth_verifying_user_info": {
+    "message": "Verifying user info..."
+  },
+  "cdp_auth_connecting_coinbase_service": {
+    "message": "Connecting to Coinbase service..."
+  },
+  "cdp_auth_connection_detected_closing": {
+    "message": "✅ Connection detected. Closing soon..."
+  },
+  "cdp_auth_redirecting_to_x_login": {
+    "message": "Redirecting to X (Twitter) login..."
+  },
+  "cdp_auth_encountered_error": {
+    "message": "Encountered error: $1"
+  },
+  "fetch_reward_info_failed": {
+    "message": "Failed to fetch reward info: $1"
+  },
+  "init_ad_plaza_failed": {
+    "message": "Failed to initialize Ad Plaza: $1"
+  },
+  "wallet_new_show": {
+    "message": "Show"
+  },
+  "wallet_new_hide": {
+    "message": "Hide"
+  },
+  "wallet_new_mnemonic_incomplete": {
+    "message": "Please enter the full mnemonic."
+  },
+  "wallet_new_mnemonic_mismatch": {
+    "message": "Mnemonics do not match."
+  },
+  "wallet_new_backup_checkbox_required": {
+    "message": "Please confirm you have backed it up offline."
+  },
+  "wallet_new_mnemonic_placeholder": {
+    "message": "Enter mnemonic"
+  },
+  "wallet_new_generate_failed": {
+    "message": "Failed to generate."
+  },
+  "wallet_new_save_failed": {
+    "message": "Failed to save."
+  },
+  "wallet_new_password_too_short": {
+    "message": "Password must be at least 8 characters."
+  },
+  "wallet_new_password_mismatch": {
+    "message": "Passwords do not match."
+  },
+  "wallet_new_loading_creating": {
+    "message": "Creating..."
+  },
+  "wallet_network_change_confirm": {
+    "message": "Switching networks will sign out of your current Coinbase account to re-confirm the binding. Are you sure you want to switch?"
+  },
+  "wallet_network_changed_relogin": {
+    "message": "Network switched. Please sign in to your Coinbase account again."
+  },
+  "tag_new": {
+    "message": "New"
+  },
+  "tag_easy": {
+    "message": "Easy"
+  },
+  "tag_explore": {
+    "message": "Explore"
+  },
+  "tag_high_reward": {
+    "message": "High Reward"
+  },
+  "tag_popular": {
+    "message": "Popular"
+  },
+  "status_claimed_todo": {
+    "message": "To Do"
+  },
+  "status_pending_verification": {
+    "message": "Pending Verification"
+  },
+  "status_settled_paid": {
+    "message": "Settled & Paid"
+  },
+  "status_rejected": {
+    "message": "Rejected"
+  },
+  "status_completed": {
+    "message": "Completed"
+  },
+  "status_running": {
+    "message": "Running..."
+  },
+  "btn_go_to_follow": {
+    "message": "Go to Follow"
+  },
+  "no_tasks_yet": {
+    "message": "No tasks yet"
+  },
+  "explore_ads_earning": {
+    "message": "Explore ads and start earning rewards!"
+  },
+  "no_ads_available": {
+    "message": "No ads available"
+  },
+  "check_back_later": {
+    "message": "Check back later for new earning opportunities!"
+  },
+  "not_linked": {
+    "message": "Not Linked"
+  },
+  "verified": {
+    "message": "Verified"
+  },
+  "not_verified": {
+    "message": "Not Verified"
+  },
+  "unknown": {
+    "message": "Unknown"
+  },
+  "visit_profile_update": {
+    "message": "Visit your X profile to update status"
+  },
+  "verification_failed": {
+    "message": "Verification Failed"
+  },
+  "blue_v_required": {
+    "message": "Only Blue Verified users can participate in this campaign. Please ensure your account has the Blue Checkmark."
+  },
+  "verification_required_msg": {
+    "message": "Verification Required: To participate in this campaign, we need to verify your Blue Verified status. We can do this by briefly visiting your X profile page. Proceed?"
+  },
+  "status_expired_msg": {
+    "message": "Status Expired: Your Blue Verified status hasn't been updated for over a week. Please visit your profile to refresh your status. Proceed?"
+  },
+  "ad_has_expired": {
+    "message": "This ad campaign has ended"
+  },
+  "missing_landing_page": {
+    "message": "Missing landing page URL for this ad."
+  },
+  "start_task_failed": {
+    "message": "Start task failed"
+  },
+  "loading_tasks": {
+    "message": "Loading tasks..."
+  },
+  "filtering": {
+    "message": "Filtering..."
+  },
+  "no_activity_yet": {
+    "message": "No activity yet."
+  },
+  "activity_created": {
+    "message": "Claimed"
+  },
+  "activity_expires": {
+    "message": "Payout ETD"
+  },
+  "nothing_to_withdraw": {
+    "message": "Nothing to withdraw."
+  },
+  "withdrawing": {
+    "message": "Withdrawing..."
+  },
+  "warning_weekly_limit": {
+    "message": "Executor withdrawals are limited to once per week"
+  },
+  "weekly_limit_reached_title": {
+    "message": "Weekly withdrawal limit reached"
+  },
+  "weekly_limit_reached_msg": {
+    "message": "You have already withdrawn this week. Each account can only withdraw once per week."
+  },
+  "already_withdrawn_this_week": {
+    "message": "You have already withdrawn this week. Please try again next week."
+  },
+  "withdraw_success": {
+    "message": "Withdraw success!"
+  },
+  "withdraw_failed": {
+    "message": "Withdraw failed"
+  },
+  "withdraw_error": {
+    "message": "Withdraw error"
+  },
+  "failed_to_load_activity": {
+    "message": "Failed to load activity."
+  },
+  "page_indicator": {
+    "message": "Page $1 of $2"
+  },
+  "tab_explore": {
+    "message": "Explore"
+  },
+  "status_label": {
+    "message": "Status"
+  },
+  "plaza_title": {
+    "message": "Ad Plaza - Earn - TweetCat"
+  },
+  "plaza_header_logo": {
+    "message": "Ad Plaza"
+  },
+  "btn_publish_ad": {
+    "message": "Publish Ad / Advertise"
+  },
+  "withdraw_updated_today": {
+    "message": "Updated today"
+  },
+  "withdrawable_label": {
+    "message": "Withdrawable"
+  },
+  "btn_withdraw": {
+    "message": "Withdraw"
+  },
+  "btn_activity": {
+    "message": "Activity"
+  },
+  "verification_label": {
+    "message": "Verification:"
+  },
+  "summaries_total_earned": {
+    "message": "Total Earned"
+  },
+  "summaries_today_earned": {
+    "message": "Today Earned"
+  },
+  "summaries_pending": {
+    "message": "Pending"
+  },
+  "filters_title": {
+    "message": "Filters"
+  },
+  "btn_clear_filters": {
+    "message": "Clear filters"
+  },
+  "search_ads_placeholder": {
+    "message": "Search ads..."
+  },
+  "reward_range_label": {
+    "message": "Reward Range"
+  },
+  "sort_by_label": {
+    "message": "Sort By"
+  },
+  "sort_reward_high": {
+    "message": "Highest Reward"
+  },
+  "sort_newest": {
+    "message": "Newest"
+  },
+  "sort_time_short": {
+    "message": "Shortest Time"
+  },
+  "sort_popular": {
+    "message": "Most Popular"
+  },
+  "task_status_all_option": {
+    "message": "All Status"
+  },
+  "btn_previous": {
+    "message": "Previous"
+  },
+  "btn_next": {
+    "message": "Next"
+  },
+  "earn_label": {
+    "message": "Earn:"
+  },
+  "btn_start_task": {
+    "message": "Start Task"
+  },
+  "activity_title": {
+    "message": "Activity"
+  },
+  "publishing_campaign": {
+    "message": "Publishing campaign..."
+  },
+  "err_enter_campaign_name": {
+    "message": "Please enter a campaign name."
+  },
+  "err_enter_target_url": {
+    "message": "Please enter a target Twitter profile URL."
+  },
+  "err_reward_positive": {
+    "message": "Reward per follow must be greater than 0."
+  },
+  "err_quota_positive": {
+    "message": "Max followers must be a positive integer."
+  },
+  "err_select_end_date": {
+    "message": "Please select an end date."
+  },
+  "err_end_date_future": {
+    "message": "End date must be in the future."
+  },
+  "err_invalid_reward_format": {
+    "message": "Invalid reward amount format."
+  },
+  "err_failed_create_campaign": {
+    "message": "Failed to create campaign."
+  },
+  "msg_campaign_published": {
+    "message": "Campaign published successfully!"
+  },
+  "err_insufficient_balance": {
+    "message": "Insufficient Balance."
+  },
+  "invalid_exact_evm_insufficient_balance": {
+    "message": "Insufficient wallet balance. Please check your USDC balance."
+  },
+  "required_label": {
+    "message": "Required"
+  },
+  "available_label": {
+    "message": "available"
+  },
+  "header_advertise_title": {
+    "message": "Advertise"
+  },
+  "header_advertise_sub": {
+    "message": "P2P on-chain campaigns"
+  },
+  "balance_label": {
+    "message": "Balance"
+  },
+  "btn_plaza": {
+    "message": "Plaza"
+  },
+  "section_my_ads": {
+    "message": "My Ads"
+  },
+  "section_my_ads_sub": {
+    "message": "Create campaigns, lock budgets, and track delivery."
+  },
+  "btn_publish_new_ad": {
+    "message": "Publish New Ad"
+  },
+  "th_ad_name": {
+    "message": "Ad Name"
+  },
+  "th_status": {
+    "message": "Status"
+  },
+  "th_reward_per_task": {
+    "message": "Reward per Task"
+  },
+  "th_claimed": {
+    "message": "Claimed"
+  },
+  "th_settled": {
+    "message": "Settled"
+  },
+  "th_spent": {
+    "message": "Spent"
+  },
+  "th_remaining_budget": {
+    "message": "Remaining Budget"
+  },
+  "th_end_date": {
+    "message": "End Date"
+  },
+  "th_actions": {
+    "message": "Actions"
+  },
+  "msg_no_ads_published": {
+    "message": "No ads published yet. Click \"Publish New Ad\" to get started!"
+  },
+  "pagination_showing": {
+    "message": "Showing $1 of $2"
+  },
+  "section_recent_activity": {
+    "message": "Recent Activity"
+  },
+  "section_recent_activity_sub": {
+    "message": "Latest spending records (preview)."
+  },
+  "th_time": {
+    "message": "Time"
+  },
+  "th_ad": {
+    "message": "Ad"
+  },
+  "th_event": {
+    "message": "Event"
+  },
+  "th_amount": {
+    "message": "Amount"
+  },
+  "th_service_fee": {
+    "message": "Service Fee"
+  },
+  "msg_no_spending_records": {
+    "message": "No spending records yet."
+  },
+  "pagination_page_info": {
+    "message": "Page $1 of $2 ($3 records)"
+  },
+  "side_wallet_insights": {
+    "message": "Wallet & Insights"
+  },
+  "label_available": {
+    "message": "Available"
+  },
+  "label_frozen": {
+    "message": "Frozen"
+  },
+  "meta_frozen_funds": {
+    "message": "Frozen funds cannot be transferred"
+  },
+  "btn_transfer": {
+    "message": "Transfer"
+  },
+  "label_active_campaigns": {
+    "message": "Active Campaigns"
+  },
+  "meta_running_deliverable": {
+    "message": "Running / deliverable"
+  },
+  "label_spend": {
+    "message": "Spend"
+  },
+  "tab_today": {
+    "message": "Today"
+  },
+  "tab_7d": {
+    "message": "7D"
+  },
+  "label_today_spend": {
+    "message": "Today's Spend"
+  },
+  "label_week_spend": {
+    "message": "This Week's Spend"
+  },
+  "side_tips": {
+    "message": "Tips: Your budget is locked for campaign delivery; activity is queryable via History."
+  },
+  "modal_publish_follow_title": {
+    "message": "Publish Follow Campaign"
+  },
+  "form_intro_follow": {
+    "message": "Create a campaign to get Blue Verified users to follow you. You set the reward per follower and the maximum number of followers."
+  },
+  "label_campaign_name": {
+    "message": "Campaign Name"
+  },
+  "placeholder_campaign_name": {
+    "message": "e.g., My Follow Campaign"
+  },
+  "hint_campaign_name": {
+    "message": "For your reference only"
+  },
+  "label_reward_per_follow": {
+    "message": "Reward per Follow (USDC)"
+  },
+  "label_max_followers": {
+    "message": "Max Followers"
+  },
+  "hint_quota": {
+    "message": "e.g. 500 followers ($10 budget)"
+  },
+  "label_target_profile_url": {
+    "message": "Target Twitter Profile URL"
+  },
+  "hint_target_profile_url": {
+    "message": "The X profile you want users to follow (e.g. https://x.com/TweetCatOrg)"
+  },
+  "label_campaign_end_date": {
+    "message": "Campaign End Date"
+  },
+  "hint_end_date": {
+    "message": "Campaign will stop accepting new followers after this date"
+  },
+  "label_total_budget": {
+    "message": "Total Budget:"
+  },
+  "label_your_balance": {
+    "message": "Your Balance:"
+  },
+  "note_blue_verified_only": {
+    "message": "Only Blue Verified (✓) users can participate in your campaign"
+  },
+  "btn_pay_publish": {
+    "message": "Pay & Publish"
+  },
+  "modal_recharge_title": {
+    "message": "Recharge Account"
+  },
+  "recharge_transfer_title": {
+    "message": "Transfer between Wallet and Ads"
+  },
+  "label_direction": {
+    "message": "Direction"
+  },
+  "btn_wallet_to_ads": {
+    "message": "Wallet → Ads"
+  },
+  "btn_ads_to_wallet": {
+    "message": "Ads → Wallet"
+  },
+  "label_wallet_usdc": {
+    "message": "Wallet USDC"
+  },
+  "label_ads_available": {
+    "message": "Ads Available"
+  },
+  "label_ads_frozen": {
+    "message": "Ads Frozen"
+  },
+  "indicator_wallet_to_ads": {
+    "message": "On-chain Wallet → Ads Account"
+  },
+  "indicator_ads_to_wallet": {
+    "message": "Ads Account → On-chain Wallet"
+  },
+  "warning_monthly_limit": {
+    "message": "Withdrawals are limited to once per month"
+  },
+  "label_amount": {
+    "message": "Amount"
+  },
+  "hint_transfer_amount": {
+    "message": "Enter the amount to transfer (USDC)."
+  },
+  "btn_max": {
+    "message": "Max"
+  },
+  "hint_frozen_no_transfer": {
+    "message": "Frozen funds are not transferable."
+  },
+  "modal_limit_reached_title": {
+    "message": "Monthly Withdrawal Limit Reached"
+  },
+  "limit_reached_msg": {
+    "message": "You have already withdrawn this month. Each account can only withdraw once per month."
+  },
+  "label_prev_withdrawal": {
+    "message": "Previous Withdrawal:"
+  },
+  "label_next_available": {
+    "message": "Next Available:"
+  },
+  "btn_view_prev_tx": {
+    "message": "View Previous Transaction"
+  },
+  "btn_transfer_submit": {
+    "message": "Transfer"
+  },
+  "btn_view_history": {
+    "message": "View Transfer History"
+  },
+  "modal_history_title": {
+    "message": "Transfer History"
+  },
+  "th_direction": {
+    "message": "Direction"
+  },
+  "th_transaction": {
+    "message": "Transaction"
+  },
+  "msg_no_recharge_records": {
+    "message": "No recharge records yet"
+  },
+  "modal_add_budget_title": {
+    "message": "Add Budget"
+  },
+  "label_curr_available": {
+    "message": "Current Available Balance"
+  },
+  "modal_campaign_details_title": {
+    "message": "Campaign Details"
+  },
+  "label_overview": {
+    "message": "Overview"
+  },
+  "label_created_at": {
+    "message": "Created At"
+  },
+  "label_dev_settings": {
+    "message": "Developer Settings"
+  },
+  "label_callback_url": {
+    "message": "Callback URL"
+  },
+  "label_custom_data": {
+    "message": "Custom Data (JSON)"
+  },
+  "btn_update_settings": {
+    "message": "Update Settings"
+  },
+  "btn_pause": {
+    "message": "Pause"
+  },
+  "btn_resume": {
+    "message": "Resume"
+  },
+  "msg_no_records": {
+    "message": "No records"
+  },
+  "tab_my_tasks": {
+    "message": "My Tasks"
+  },
+  "status_active": {
+    "message": "Active"
+  },
+  "status_paused": {
+    "message": "Paused"
+  },
+  "status_paused_no_budget": {
+    "message": "Paused (No Budget)"
+  },
+  "status_ended": {
+    "message": "Ended"
+  },
+  "pagination_page_info_simple": {
+    "message": "Page $1 / $2"
+  },
+  "btn_pause_label": {
+    "message": "Pause"
+  },
+  "btn_resume_label": {
+    "message": "Resume"
+  },
+  "btn_recharge_label": {
+    "message": "Recharge"
+  },
+  "msg_ad_paused": {
+    "message": "Ad paused"
+  },
+  "msg_ad_resumed": {
+    "message": "Ad resumed"
+  },
+  "msg_ad_ended_refund": {
+    "message": "Ad ended. Remaining budget will be refunded soon."
+  },
+  "err_operation_failed": {
+    "message": "Operation failed"
+  },
+  "err_enter_valid_amount": {
+    "message": "Please enter a valid amount"
+  },
+  "msg_budget_topped_up": {
+    "message": "Budget topped up successfully"
+  },
+  "err_recharge_failed": {
+    "message": "Recharge failed"
+  },
+  "err_ended_ads_no_update": {
+    "message": "Ended ads cannot be updated."
+  },
+  "err_invalid_json_format": {
+    "message": "Invalid JSON format in Custom Data"
+  },
+  "updating_ad_settings": {
+    "message": "Updating ad settings..."
+  },
+  "msg_ad_settings_updated": {
+    "message": "Ad settings updated successfully!"
+  },
+  "err_failed_update_ad": {
+    "message": "Failed to update ad"
+  },
+  "btn_pause_ad": {
+    "message": "Pause Ad"
+  },
+  "btn_resume_ad": {
+    "message": "Resume Ad"
+  },
+  "btn_recharge_resume": {
+    "message": "Top Up and Resume"
+  },
+  "btn_add_budget": {
+    "message": "Add Budget"
+  },
+  "btn_end_campaign": {
+    "message": "End Campaign"
+  },
+  "confirm_end_campaign": {
+    "message": "Are you sure you want to end this ad?\n\nEnded ads cannot be restored, and unused budget will be automatically refunded to your account balance."
+  },
+  "msg_sufficient_balance": {
+    "message": "Your balance is sufficient to publish this ad."
+  },
+  "msg_insufficient_balance_recharge": {
+    "message": "Insufficient balance. Please recharge before publishing."
+  },
+  "btn_transfer_to_ads": {
+    "message": "Transfer to Ads"
+  },
+  "btn_transfer_to_wallet": {
+    "message": "Transfer to Wallet"
+  },
+  "msg_withdraw_limit_reached": {
+    "message": "Monthly withdrawal limit reached. Next available: $1"
+  },
+  "err_missing_xid": {
+    "message": "Missing user xId. Please sign in again."
+  },
+  "err_amount_exceeds_ads": {
+    "message": "Amount exceeds Ads Available."
+  },
+  "err_amount_exceeds_wallet": {
+    "message": "Amount exceeds Wallet Balance."
+  },
+  "processing_deposit": {
+    "message": "Processing deposit..."
+  },
+  "processing_withdraw": {
+    "message": "Processing withdraw..."
+  },
+  "msg_transfer_success": {
+    "message": "Transfer submitted successfully."
+  },
+  "err_transfer_failed": {
+    "message": "Transfer failed"
+  },
+  "msg_no_transfer_records": {
+    "message": "No transfer records yet"
+  },
+  "loading_history": {
+    "message": "Loading transfer history..."
+  },
+  "err_load_history_failed": {
+    "message": "Failed to load history"
+  },
+  "ipfs_custom_auth_label_short": {
+    "message": "Authorization"
+  },
+  "wallet_minimum_amount_hint": {
+    "message": "(Minimum: $1)"
+  },
+  "unfollow_success_single": {
+    "message": "Unfollowed $1 account successfully."
+  },
+  "unfollow_success_multiple": {
+    "message": "Unfollowed $1 accounts. $2 failed."
+  },
+  "unfollow_failed_all": {
+    "message": "Failed to unfollow accounts."
+  },
+  "wallet_creating_status": {
+    "message": "Creating..."
+  },
+  "transfer_success_with_hash": {
+    "message": "✅ Transfer succeeded: $1"
+  },
+  "need_wallet_password": {
+    "message": "Need Wallet Password"
+  },
+  "guide_blockchain_balance": {
+    "message": "Click here to view your blockchain balance"
+  },
+  "withdraw_modal_success": {
+    "message": "Withdrawal Successful"
+  },
+  "btn_view_tx": {
+    "message": "View Transaction"
+  },
+  "btn_confirm_withdraw": {
+    "message": "Confirm"
   }
 }

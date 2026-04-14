@@ -1,10 +1,10 @@
 import {logPool} from "../common/debug_flags";
 import {TweetCatCell} from "./tweet_div_cell";
+import {LRUCache} from "../common/lru_map";
 
 export class NodePool {
-    private pool: Map<string, HTMLElement> = new Map();
-
-    private nodeToCellMap: Map<HTMLElement, TweetCatCell> = new Map();
+    private pool = new LRUCache<string, HTMLElement> (1000);
+    private nodeToCellMap = new LRUCache<HTMLElement, TweetCatCell>(1000);
 
     constructor(private readonly maxSize: number = 300) {
     }

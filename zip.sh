@@ -1,3 +1,3 @@
 cd dist
-zip -r ../dist.zip ./*
+zip -r ../tweetcat.zip ./*
 cd ..

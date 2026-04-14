@@ -1,27 +1,13 @@
 import browser from "webextension-polyfill";
-import {localGet, localSet} from "./local_storage";
-import {__DBK_Bearer_Token, DEFAULT_BEARER} from "./consts";
-
-
-export function isLikelyCorsError(err: unknown): boolean {
-    const name = String((err as any)?.name ?? '').toLowerCase();
-    const msg  = String((err as any)?.message ?? err ?? '').toLowerCase();
-    return (
-        name === 'typeerror' && msg.includes('failed to fetch') ||   // 最常见：TypeError: Failed to fetch
-        msg.includes('blocked by') ||                                 // “blocked by CORS policy”
-        msg.includes('cors') ||                                       // 显式出现 “cors”
-        msg.includes('net::err_failed') ||                            // 控制台里经常能看到
-        msg.includes('403') || msg.includes('forbidden')              // 少数情况下会把 403 透出来
-    );
-}
-
-export async function openOrUpdateTab(uiUrl:string){
+import { localGet, localSet } from "./local_storage";
+import { __DBK_Bearer_Token, DEFAULT_BEARER } from "./consts";
+export async function openOrUpdateTab(uiUrl: string) {
     const base = uiUrl.split('#')[0];
-    const tabs = await browser.tabs.query({url: base + '*'});
+    const tabs = await browser.tabs.query({ url: base + '*' });
     if (tabs.length > 0 && tabs[0].id) {
-        await browser.tabs.update(tabs[0].id, {active: true, url: uiUrl});
+        await browser.tabs.update(tabs[0].id, { active: true, url: uiUrl });
     } else {
-        await browser.tabs.create({url: uiUrl, active: true});
+        await browser.tabs.create({ url: uiUrl, active: true });
     }
 }
 
@@ -34,8 +20,37 @@ export async function sendMsgToService(data: any, actTyp: string): Promise<any> 
     } catch (e) {
         const error = e as Error;
         console.warn("------>>>send message error", error, data, actTyp);
-        return {success: false, data: error.message}
+        return { success: false, data: error.message }
     }
+}
+
+
+export async function sendMsgToOffScreen(data: any, actTyp: string): Promise<any> {
+    try {
+        return await browser.runtime.sendMessage({
+            action: actTyp,
+            data: data,
+            scope: "off-screen",
+        });
+    } catch (e) {
+        const error = e as Error;
+        console.warn("------>>>send message error", error, data, actTyp);
+        return { success: false, data: error.message }
+    }
+}
+
+/**
+ * Send message to off-screen with explicit timeout protection
+ */
+export async function sendMsgToOffScreenWithTimeout(data: any, actTyp: string, timeout = 10_000): Promise<any> {
+    return Promise.race([
+        sendMsgToOffScreen(data, actTyp),
+        new Promise((resolve) => {
+            setTimeout(() => {
+                resolve({ success: false, data: "TIMEOUT", message: "Request timed out" });
+            }, timeout);
+        })
+    ]);
 }
 
 export function showView(hash: string, callback?: (hash: string) => void): void {
@@ -64,8 +79,8 @@ export function addCustomStyles(cssFilePath: string): void {
 
 
 function observeAction(target: HTMLElement, idleThreshold: number,
-                       foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
-                       options: MutationObserverInit, continueMonitor?: boolean) {
+    foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
+    options: MutationObserverInit, continueMonitor?: boolean) {
     const cb: MutationCallback = (_, observer) => {
         const element = foundFunc();
         if (!element) {
@@ -86,16 +101,16 @@ function observeAction(target: HTMLElement, idleThreshold: number,
 }
 
 export function observeForElement(target: HTMLElement, idleThreshold: number,
-                                  foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
-                                  continueMonitor?: boolean) {
+    foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
+    continueMonitor?: boolean) {
 
-    observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: true}, continueMonitor);
+    observeAction(target, idleThreshold, foundFunc, callback, { childList: true, subtree: true }, continueMonitor);
 }
 
 export function observeForElementDirect(target: HTMLElement, idleThreshold: number,
-                                        foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
-                                        continueMonitor?: boolean) {
-    observeAction(target, idleThreshold, foundFunc, callback, {childList: true, subtree: false}, continueMonitor);
+    foundFunc: () => HTMLElement | null, callback: (elmFound: HTMLElement) => Promise<void>,
+    continueMonitor?: boolean) {
+    observeAction(target, idleThreshold, foundFunc, callback, { childList: true, subtree: false }, continueMonitor);
 }
 
 
@@ -148,9 +163,9 @@ export function isAdTweetNode(node: HTMLElement, atStartUp: boolean = true): boo
  *************************************************************************************/
 
 export function observeSimple(targetNode: HTMLElement,
-                              judgeFunc: (mutationsList: MutationRecord[]) => HTMLElement | null,
-                              callback: (elm: HTMLElement) => boolean,
-                              attributes: boolean = false): MutationObserver {
+    judgeFunc: (mutationsList: MutationRecord[]) => HTMLElement | null,
+    callback: (elm: HTMLElement) => boolean,
+    attributes: boolean = false): MutationObserver {
     const observer = new MutationObserver(async (mutationsList) => {
         const elm = judgeFunc(mutationsList);
         if (!elm) {
@@ -213,7 +228,7 @@ export function formatTweetTime(
     if (finalLocale === 'zh') {
         return `${date.getMonth() + 1}月${date.getDate()}日`;
     }
-    return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 export function deferByFrames(callback: () => void, frameCount: number = 3): void {
@@ -234,7 +249,7 @@ export function sleep(ms: number): Promise<void> {
 export type ParsedTwitterLink =
     | { kind: "tweet"; url: URL; tweetId: string; username?: string }
     | { kind: "profile"; url: URL; username: string }
-    | { kind: "followersPage"; url: URL; username: string; subpage: "following" | "followers" | "verified_followers" | "followers_you_follow" } // <— 新增
+    | { kind: "followersPage"; url: URL; username: string; subpage: "following" | "followers" | "verified_followers" | "followers_you_follow" }
     | { kind: "home"; url: URL }
     | { kind: "explore"; url: URL }
     | { kind: "other"; url: URL };
@@ -374,8 +389,115 @@ export async function fetchWithTimeout(url: string, options: RequestInit = {}, t
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
-        return await fetch(url, {...options, signal: controller.signal});
+        return await fetch(url, { ...options, signal: controller.signal });
     } finally {
         clearTimeout(timer);
+    }
+}
+
+export interface EncryptedBlock {
+    iv: string;
+    salt: string;
+    cipher: string;
+}
+
+const PBKDF2_ITERATIONS = 262_144;
+const SALT_LENGTH = 16;
+const IV_LENGTH = 12;
+
+function toBase64(buffer: ArrayBuffer | Uint8Array): string {
+    const bytes = buffer instanceof ArrayBuffer ? new Uint8Array(buffer) : buffer;
+    let binary = "";
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+}
+
+function fromBase64(value: string): Uint8Array {
+    const binary = atob(value);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
+function toArrayBuffer(view: Uint8Array): ArrayBuffer {
+    const copy = new Uint8Array(view.byteLength);
+    copy.set(view);
+    return copy.buffer;
+}
+
+async function importPasswordKey(password: string) {
+    const encoder = new TextEncoder();
+    return await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(password),
+        'PBKDF2',
+        false,
+        ['deriveKey']
+    );
+}
+
+async function deriveAesKey(password: string, salt: ArrayBuffer) {
+    const keyMaterial = await importPasswordKey(password);
+    return await crypto.subtle.deriveKey(
+        {
+            name: 'PBKDF2',
+            salt,
+            iterations: PBKDF2_ITERATIONS,
+            hash: 'SHA-256',
+        },
+        keyMaterial,
+        {
+            name: 'AES-GCM',
+            length: 256,
+        },
+        false,
+        ['encrypt', 'decrypt']
+    );
+}
+
+export async function encryptString(plain: string, password: string): Promise<EncryptedBlock> {
+    if (!password) throw new Error('密码不能为空');
+    const encoder = new TextEncoder();
+    const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+    const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+    const key = await deriveAesKey(password, toArrayBuffer(salt));
+    const data = encoder.encode(plain);
+    const cipherBuffer = await crypto.subtle.encrypt(
+        {
+            name: 'AES-GCM',
+            iv: toArrayBuffer(iv),
+        },
+        key,
+        toArrayBuffer(data)
+    );
+    return {
+        iv: toBase64(iv),
+        salt: toBase64(salt),
+        cipher: toBase64(cipherBuffer),
+    };
+}
+
+export async function decryptString(block: EncryptedBlock, password: string): Promise<string> {
+    if (!password) throw new Error('密码不能为空');
+    const decoder = new TextDecoder();
+    const salt = fromBase64(block.salt);
+    const iv = fromBase64(block.iv);
+    const key = await deriveAesKey(password, toArrayBuffer(salt));
+    try {
+        const plainBuffer = await crypto.subtle.decrypt(
+            {
+                name: 'AES-GCM',
+                iv: toArrayBuffer(iv),
+            },
+            key,
+            toArrayBuffer(fromBase64(block.cipher))
+        );
+        return decoder.decode(plainBuffer);
+    } catch (err) {
+        throw new Error('解密失败，口令可能不正确');
     }
 }

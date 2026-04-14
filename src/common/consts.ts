@@ -1,5 +1,3 @@
-export const __targetUrlToFilter = 'https://x.com/home';
-
 export const defaultCategoryName = "Main"
 export const maxElmFindTryTimes = 5;
 export const defaultCatID = 1;
@@ -19,6 +17,10 @@ export function choseColorByID(id: number, opacity: number = 1): string {
 }
 
 export const __DBK_AD_Block_Key = "__DBK_AD_Block_Key";
+export const __DBK_ADS_FEED_VERSION = "__DBK_ADS_FEED_VERSION";
+export const __DBK_ADS_FEED_NEXT_INVALIDATION_AT = "__DBK_ADS_FEED_NEXT_INVALIDATION_AT";
+export const __DBK_ADS_FOLLOW_OFFER_CACHE = "__DBK_ADS_FOLLOW_OFFER_CACHE";
+export const __DBK_WALLET_NETWORK_SYNC = "__DBK_WALLET_NETWORK_SYNC";
 
 export enum MsgType {
     OpenCategoryManagement = 'OpenCategoryManagement',
@@ -65,7 +67,11 @@ export enum MsgType {
     IJHomeLatestCaptured = 'IJHomeLatestCaptured',
     IJLocationChange = 'IJLocationChange',
     IJTweetDetailCaptured = 'IJTweetDetailCaptured',
+
     IJUserByScreenNameCaptured = "IJUserByScreenNameCaptured",
+    IJProfileSpotlightsCaptured = "IJProfileSpotlightsCaptured", // New message type
+    IJFollowActionCaptured = "IJFollowActionCaptured", // 关注动作执行结果
+    IJUnfollowActionCaptured = "IJUnfollowActionCaptured", // 取消关注动作执行结果
 
     TokenUsedByUser = 'TokenUsedByUser',
     TokenFreeze = 'TokenFreeze',
@@ -80,9 +86,26 @@ export enum MsgType {
     StartLocalApp = 'StartLocalApp',
 
     WalletInfoQuery = "WalletInfoQuery",
+    WalletUnlock = "WalletUnlock",
+    WalletSignMessage = "WALLET_SIGN_MESSAGE",
+    WalletTransferEth = "WALLET_TRANSFER_ETH",
+    WalletTransferUSDC = "WALLET_TRANSFER_USDC",
+    TransferUSDCByTwitterId = "TransferUSDCByTwitterId",
+    WalletExportPrivateKey = "WALLET_EXPORT_PRIVATE_KEY",
+
     OpenOrFocusUrl = "OpenOrFocusUrl",
     SW_ACTION_GET_SNAPSHOT = "SW_ACTION_GET_SNAPSHOT",
-    IPFS_GET_GATEWAY_BASE = "IPFS_GET_GATEWAY_BASE"
+    IPFS_GET_GATEWAY_BASE = "IPFS_GET_GATEWAY_BASE",
+
+    X402TipAction = "X402TipAction",
+    X402EmbeddWalletSignIn = "X402EmbeddWalletSignIn",
+    X402NotSignedIn = "X402NotSignedIn",
+
+    ProfileFollowClaim = "ProfileFollowClaim",
+
+    AdsFollowOfferQuery = "AdsFollowOfferQuery",
+    AdsFollowClaim = "AdsFollowClaim",
+    AdsFollowVerifyAndClaim = "AdsFollowVerifyAndClaim",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
@@ -93,7 +116,7 @@ export const UserByScreenName = "UserByScreenName" // 根据 username 获取 use
 export const HomeLatestTimeline = "HomeLatestTimeline"// 首页的最新推文流
 export const HomeTimeline = "HomeTimeline"// 首页的最新推文流
 export const TweetDetail = "TweetDetail"         // 单条推文详情（用于评论）
-export const UsersByRestIds = "UsersByRestIds"     // 根据一批 userId 查询用户信息
+
 export const SearchTimeline = "SearchTimeline" // 搜索结果（你可能以后用）
 export const CreateBookmark = "CreateBookmark"
 export const DeleteBookmark = "DeleteBookmark"
@@ -103,6 +126,9 @@ export const BlueVerifiedFollowers = "BlueVerifiedFollowers"
 export const Bookmarks = "Bookmarks"
 export const CreateGrokConversation = "CreateGrokConversation"
 export const ConversationItem_DeleteConversationMutation = "ConversationItem_DeleteConversationMutation"
+export const ProfileSpotlightsQuery = "ProfileSpotlightsQuery" // 个人高光/关系查询
+export const CreateFriendship = "CreateFriendship" // 执行关注动作
+export const DestroyFriendship = "DestroyFriendship" // 执行取消关注动作
 export const SNAPSHOT_TYPE = 'following-snapshot';
 
 export const watchedOps = [
@@ -110,7 +136,7 @@ export const watchedOps = [
     UserTweets,
     HomeLatestTimeline,
     TweetDetail,
-    UsersByRestIds,
+
     SearchTimeline,
     CreateBookmark,
     DeleteBookmark,
@@ -121,6 +147,9 @@ export const watchedOps = [
     Bookmarks,
     CreateGrokConversation,
     ConversationItem_DeleteConversationMutation,
+    ProfileSpotlightsQuery,
+    CreateFriendship,
+    DestroyFriendship,
 ];
 
 export const defaultQueryKeyMap: Record<string, string> = {
@@ -129,7 +158,7 @@ export const defaultQueryKeyMap: Record<string, string> = {
     HomeLatestTimeline: "SFxmNKWfN9ySJcXG_tjX8g",
     HomeTimeline: "DXmgQYmIft1oLP6vMkJixw",
     TweetDetail: "iFEr5AcP121Og4wx9Yqo3w",
-    UsersByRestIds: "1hjT2eXW1Zcw-2xk8EbvoA",
+
     SearchTimeline: "4fpceYZ6-YQCx_JSl_Cn_A",
     CreateBookmark: "aoDbu3RHznuiSkQ9aNM67Q",
     DeleteBookmark: "Wlmlj2-xzyS1GN3a6cj-mQ",
@@ -139,21 +168,6 @@ export const defaultQueryKeyMap: Record<string, string> = {
     Bookmarks: "pLtjrO4ubNh996M_Cubwsg",
     CreateGrokConversation: "vvC5uy7pWWHXS2aDi1FZeA",
     ConversationItem_DeleteConversationMutation: "TlKHSWVMVeaa-i7dqQqFQA",
+    ProfileSpotlightsQuery: "mzoqrVGwk-YTSGME1dRfXQ",
+    DestroyFriendship: "Opv7_p8AunMhJvD8X8c9rw", // Example ID, might need update but good for identification
 }
-
-// ===== Base 网络配置 =====
-export const BASE_MAINNET_CHAIN_ID = 8453;
-export const BASE_SEPOLIA_CHAIN_ID = 84532;
-
-export const BASE_MAINNET_DEFAULT_RPC = "https://mainnet.base.org";
-export const BASE_SEPOLIA_DEFAULT_RPC = "https://sepolia.base.org";
-
-// USDC 合约地址（6 位小数）
-export const BASE_MAINNET_USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
-// 测试网 USDC，仅用于开发测试
-export const BASE_SEPOLIA_USDC = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
-
-export const ERC20_ABI = [
-    "function balanceOf(address owner) view returns (uint256)",
-    "function transfer(address to, uint256 amount) returns (bool)"
-];

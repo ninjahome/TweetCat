@@ -48,7 +48,7 @@ function parseWalletFromHash(): string | null {
 
 async function updateManifestAfterLocalUpload(snapshotCid: string) {
     if (!walletFromHash) {
-        showStatus('未获取到钱包地址，已跳过 Manifest 更新');
+        showStatus(t('ipfs_wallet_skipped'));
         return;
     }
     try {
@@ -56,11 +56,11 @@ async function updateManifestAfterLocalUpload(snapshotCid: string) {
         for (const old of oldSnapshotCids) {
             await unpinFromLocalKubo(old);
         }
-        showStatus('已更新同步清单（Manifest）');
+        showStatus(t('ipfs_updated_manifest'));
         console.log("----->>>", manifest, cid)
     } catch (e) {
         console.warn('appendManifestItem failed:', e);
-        showStatus('上传成功，但本地清单写入失败（不影响使用）');
+        showStatus(t('ipfs_local_failed'));
     }
 }
 
@@ -71,7 +71,7 @@ async function unpinFromLocalKubo(cid: string): Promise<void> {
     const url = `${apiBase}/api/v0/pin/rm?arg=${encodeURIComponent(cid)}&recursive=true`;
     const resp = await fetch(url, {method: 'POST'});
     if (!resp.ok) {
-        console.warn('本地 Kubo 取消 pin 失败:', cid, resp.status);
+        console.warn(t('ipfs_local_failed_pin'), cid, resp.status);
     }
 }
 
@@ -120,17 +120,17 @@ function copyCid() {
     const link = document.getElementById('tc-cid-link') as HTMLAnchorElement | null;
     if (link?.dataset.cid) {
         navigator.clipboard?.writeText(link.dataset.cid)
-            .then(() => showStatus('CID 已复制到剪贴板'))
-            .catch(() => showStatus('复制失败，请手动复制'));
+            .then(() => showStatus(t('ipfs_local_copied_CID')))
+            .catch(() => showStatus(t('ipfs_local_copied_failed')));
     }
 }
 
 async function requestAndRenderSnapshot() {
-    setStatus('请求后台 Snapshot…');
+    setStatus(t('ipfs_local_requesting_snapshot'));
     try {
         const rsp = await sendMsgToService({}, MsgType.SW_ACTION_GET_SNAPSHOT);
         if (!rsp || !rsp.success || !rsp.data) {
-            const msg = (rsp && (rsp.error || rsp.data)) ?? '无法从后台获取快照';
+            const msg = (rsp && (rsp.error || rsp.data)) ?? t('ipfs_local_backend_snapshot');
             setStatus(msg);
             renderJson(null);
             return;
@@ -141,7 +141,7 @@ async function requestAndRenderSnapshot() {
         setStatus(`${t("ipfs_local_snapshot_time")}${snapshot.createdAt}`);
     } catch (err) {
         console.error('request snapshot error', err);
-        setStatus('请求后台快照失败：' + (err as Error).message);
+        setStatus(t('ipfs_local_request_failed') + (err as Error).message);
         renderJson(null);
     }
 }
@@ -152,7 +152,7 @@ function renderJson(snapshot: SnapshotV1 | null) {
     const cidLink = document.getElementById('tc-cid-link') as HTMLAnchorElement | null;
     if (!pre) return;
     if (!snapshot) {
-        pre.textContent = '（无可用快照）';
+        pre.textContent = t('ipfs_local_no_snap');
         results?.classList.add('hidden');
         if (cidLink) {
             cidLink.textContent = '';
@@ -178,7 +178,7 @@ async function handleUploadClick() {
         // 1) 读取当前展示的 snapshot（从 pre）
         const pre = document.getElementById('tc-json') as HTMLElement | null;
         if (!pre || !pre.textContent) {
-            showStatus('没有可用快照可上传');
+            showStatus(t('ipfs_local_no_snap'));
             return;
         }
         const snapshotText = pre.textContent;
@@ -187,13 +187,13 @@ async function handleUploadClick() {
         // 2) 以 FormData 上传到本地 Kubo API （当前 tab 的 origin）
         const apiBase = deriveApiFromLocation();
         if (!apiBase) {
-            showStatus('无法推断本地 IPFS API 地址');
+            showStatus(t('ipfs_local_api_base_unknown'));
             return;
         }
-        setStatus('正在上传测试数据到 IPFS...');
+        setStatus(t('ipfs_local_uploading_test_data'));
         const {createdAt, ...snapshotCore} = snapshotJson as any;
         const cid = await uploadJsonToLocalKubo(snapshotCore, apiBase);
-        setStatus('上传成功！CID: ' + cid);
+        setStatus(t('ipfs_local_upload_success_cid', cid));
         await navigator.clipboard?.writeText(cid).catch(() => {
         });
         showUploadResult(cid);
@@ -205,7 +205,7 @@ async function handleUploadClick() {
 
     } catch (err) {
         console.error('upload error', err);
-        showStatus('上传失败：' + ((err as Error).message || String(err)));
+        showStatus(t('ipfs_photo_loading') + ((err as Error).message || String(err)));
     }
 }
 
@@ -249,12 +249,12 @@ async function uploadJsonToLocalKubo(obj: any, apiBase: string): Promise<string>
     const resp = await fetch(url, {method: 'POST', body: form});
     const text = await resp.text();
     if (!resp.ok) {
-        throw new Error(`Kubo 上传失败: HTTP ${resp.status} ${text}`);
+        throw new Error(t('ipfs_local_kubo_upload_failed_http', [String(resp.status), text]));
     }
     const lines = text.trim().split(/\r?\n/).filter(Boolean);
     const parsed = JSON.parse(lines.pop()!);
     const cid = parsed.Hash || parsed.IpfsHash;
-    if (!cid) throw new Error('未在返回值找到 CID');
+    if (!cid) throw new Error(t('ipfs_local_kubo_missing_cid'));
     return cid;
 }
 

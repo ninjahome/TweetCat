@@ -1,5 +1,5 @@
-import browser, {Runtime} from "webextension-polyfill";
-import {MsgType, noXTabError} from "../common/consts";
+import browser, { Runtime } from "webextension-polyfill";
+import { MsgType, noXTabError } from "../common/consts";
 import {
     CategoryForId,
     loadCategories, loadCategorySnapshot,
@@ -7,7 +7,7 @@ import {
     removeKolsCategory,
     updateKolsCategory
 } from "../object/category";
-import {kolById, kolsForCategory, loadAllKols, TweetKol} from "../object/tweet_kol";
+import { kolById, kolsForCategory, loadAllKols, TweetKol } from "../object/tweet_kol";
 import {
     cacheRawTweets,
     initTweetsCheck,
@@ -15,20 +15,34 @@ import {
     loadLatestTweets, removeTweetsByKolID, updateBookmarked,
     WrapEntryObj
 } from "../timeline/db_raw_tweet";
-import {loadAllKolCursors, loadCursorById, writeKolsCursors, writeOneCursor} from "../object/kol_cursor";
-import {timerKolInQueueImmediate} from "./bg_timer";
-import {tweetFM} from "./tweet_fetch_manager";
-import {penalize429, useTokenByUser} from "./api_bucket_state";
-import {addBlockedAdsNumber} from "../object/system_setting";
-import {checkLocalApp, openLocalApp} from "./local_app";
+import { loadAllKolCursors, loadCursorById, writeKolsCursors, writeOneCursor } from "../object/kol_cursor";
+import { timerKolInQueueImmediate } from "./bg_timer";
+import { tweetFM } from "./tweet_fetch_manager";
+import { penalize429, useTokenByUser } from "./api_bucket_state";
+import { addBlockedAdsNumber } from "../object/system_setting";
+import { checkLocalApp, openLocalApp } from "./local_app";
 import {
     assignFollowingsToCategory,
     loadAllFollowings
 } from "../object/following";
-import {getBaseUsdcAddress, getEthBalance, getTokenBalance, loadWallet, loadWalletSettings} from "../wallet/wallet_api";
-import {openOrUpdateTab} from "../common/utils";
-import {loadIpfsLocalCustomGateWay} from "../wallet/ipfs_settings";
-
+import {
+    transEthParam, transUsdcParam
+} from "../wallet/wallet_api";
+import { openOrUpdateTab } from "../common/utils";
+import { loadIpfsLocalCustomGateWay } from "../wallet/ipfs_settings";
+import { msgTransferUsdcByTwitter, restartOffScreen, tipActionForTweet } from "./bg_x402";
+import {
+    msgExportPriKye,
+    msgSignMsg,
+    msgTransferEth,
+    msgTransferUsdc,
+    msgUnlockWallet
+} from "./wallet_controller";
+import { x402TipPayload } from "../common/x402_obj";
+import { queryAdsFollowOffer } from "./bg_ads_follow";
+import { verifyFollowAndClaim } from "./bg_ads_verifier";
+import { handleUserByScreenNameCaptured } from "./bg_blue_v";
+import { pollAdsFeedIfNeeded } from "./bg_ads_feed";
 
 export async function checkIfXIsOpen(): Promise<boolean> {
     const tabs = await browser.tabs.query({
@@ -38,8 +52,120 @@ export async function checkIfXIsOpen(): Promise<boolean> {
     return tabs.length > 0;
 }
 
+
+const HIGH_RISK_ACTIONS = [
+    MsgType.WalletTransferUSDC,
+    MsgType.TransferUSDCByTwitterId,
+    MsgType.WalletExportPrivateKey,
+    MsgType.WalletSignMessage,
+    MsgType.WalletTransferEth,
+    MsgType.ProfileFollowClaim,
+    MsgType.AdsFollowClaim,
+    MsgType.AdsFollowVerifyAndClaim,
+    MsgType.X402TipAction,
+];
+
+const X_PAGE_ALLOWED_ACTIONS = new Set([
+    MsgType.X402TipAction,
+    MsgType.TransferUSDCByTwitterId,
+    MsgType.ProfileFollowClaim, // 你如果允许从页面按钮触发 claim，可以放；否则移除
+    MsgType.AdsFollowClaim,
+    MsgType.AdsFollowVerifyAndClaim,
+]);
+
+function isInternalSource(sender: Runtime.MessageSender): boolean {
+    const senderUrl = sender.url || "";
+    return sender.id === browser.runtime.id && senderUrl.startsWith(browser.runtime.getURL(""));
+}
+
+function isXHostUrl(u: string): boolean {
+    try {
+        const host = new URL(u).hostname;
+        return host === "x.com" || host === "twitter.com";
+    } catch {
+        return false;
+    }
+}
+
+async function assertFromXTopFrame(sender: Runtime.MessageSender) {
+    if (!sender.tab?.id) throw new Error("missing sender.tab");
+    if (sender.frameId !== 0) throw new Error("not top frame");
+    const tab = await browser.tabs.get(sender.tab.id);
+    const tabUrl = tab.url || "";
+    if (!isXHostUrl(tabUrl)) throw new Error("not x.com/twitter.com tab");
+}
+
+
 export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender) {
+
+    const action = request?.action;
+
+    // 1) 高危动作：默认只允许 internal（扩展页面）
+    if (HIGH_RISK_ACTIONS.includes(action)) {
+        if (isInternalSource(_sender)) {
+            // ok
+        } else if (X_PAGE_ALLOWED_ACTIONS.has(action)) {
+            // 2) 例外：允许来自 x.com content script，但必须严格校验 tab + top frame
+            await assertFromXTopFrame(_sender);
+        } else {
+            return { success: false, data: "This action must be performed in the extension popup." };
+        }
+    }
+
     switch (request.action) {
+
+        case MsgType.ProfileFollowClaim: {
+            return { success: false, data: "Deprecated" };
+        }
+
+        case MsgType.IJUserByScreenNameCaptured:
+        case MsgType.IJProfileSpotlightsCaptured: {
+            // 后台静默处理蓝V更新
+            await handleUserByScreenNameCaptured(request.data);
+            return { success: true };
+        }
+
+        case MsgType.AdsFollowOfferQuery: {
+            const url = String(request?.data?.profileUrl || request?.data?.url || "");
+            let data = await queryAdsFollowOffer(url);
+
+            // If the local feed cache has not caught up yet, force one refresh and retry once.
+            if (url && !data?.offer?.ad_id) {
+                try {
+                    await pollAdsFeedIfNeeded(true);
+                    data = await queryAdsFollowOffer(url);
+                } catch (e) {
+                    console.warn("[bgMsg] AdsFollowOfferQuery refresh failed:", e);
+                }
+            }
+
+            return { success: true, data };
+        }
+
+        case MsgType.AdsFollowClaim: {
+            return {
+                success: false,
+                data: "This claim method is no longer supported."
+            };
+        }
+
+        case MsgType.AdsFollowVerifyAndClaim: {
+            try {
+                const ad_id = String(request?.data?.ad_id || "");
+                const screen_name = String(request?.data?.screen_name || "");
+                const profileUrl = String(request?.data?.profileUrl || "");
+                const userId = request?.data?.userId;
+                const xId = request?.data?.xId;
+                const walletAddress = request?.data?.walletAddress;
+
+                console.log(`[bgMsg] Handling AdsFollowVerifyAndClaim:`, { ad_id, screen_name, hasUserId: !!userId });
+                const data = await verifyFollowAndClaim({ ad_id, screen_name, profileUrl, userId, xId, walletAddress });
+                return { success: true, data };
+            } catch (e: any) {
+                console.error(`[bgMsg] AdsFollowVerifyAndClaim FAILED:`, e);
+                return { success: false, data: e.message || String(e) };
+            }
+        }
 
         case MsgType.FollowingBulkUnfollow: {
             return await sendMessageToX(MsgType.FollowingBulkUnfollow, request.data);
@@ -49,33 +175,33 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
             await browser.tabs.create({
                 url: browser.runtime.getURL("html/following_mgm.html"),
             });
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.KolQueryByCategoryId: {
             const data = await kolsForCategory(request.data);
-            return {success: true, data: Array.from(data.entries())};
+            return { success: true, data: Array.from(data.entries()) };
         }
 
         case MsgType.CategoryQueryAll: {
             const catData = await loadCategories();
-            return {success: true, data: catData};
+            return { success: true, data: catData };
         }
 
         case MsgType.CategoryQueryById: {
             const catData = await CategoryForId(request.data);
-            return {success: true, data: catData};
+            return { success: true, data: catData };
         }
 
         case MsgType.FollowingQueryAll: {
             const followings = await loadAllFollowings();
-            return {success: true, data: followings};
+            return { success: true, data: followings };
         }
 
         case MsgType.FollowingAssignCategory: {
-            const {userIds, categoryId} = request.data || {};
+            const { userIds, categoryId } = request.data || {};
             await assignFollowingsToCategory(userIds ?? [], typeof categoryId === 'number' ? categoryId : null);
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.FollowingFetchOne: {
@@ -88,139 +214,158 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
 
         case MsgType.KolUpdate: {
             await updateKolsCategory(request.data as TweetKol);
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.KolRemove:
             await removeKolsCategory(request.data);
-            return {success: true};
+            return { success: true };
 
         case MsgType.KolQueryByName: {
             const kolCat = await queryKolByName(request.data)
-            return {success: true, data: kolCat};
+            return { success: true, data: kolCat };
         }
 
         case MsgType.TweetCacheToDB: {
             const rd = request.data;
-            return {success: true, data: await cacheRawTweets(rd.kolId, rd.data as WrapEntryObj[])};
+            return { success: true, data: await cacheRawTweets(rd.kolId, rd.data as WrapEntryObj[]) };
         }
 
         case MsgType.TweetReadByKolId: {
             const reqData = request.data;
             const data = await loadCachedTweetsByUserId(reqData.kolId, reqData.limit)
-            return {success: true, data: data};
+            return { success: true, data: data };
         }
 
         case MsgType.TweetsBootStrap:
-            return {success: true, data: await initTweetsCheck()};
+            return { success: true, data: await initTweetsCheck() };
 
         case MsgType.TweetReadByCategoryId: {
             const reqData = request.data;
-            return {success: true, data: await loadLatestTweets(reqData.limit, reqData.category, reqData.timeStamp)};
+            return { success: true, data: await loadLatestTweets(reqData.limit, reqData.category, reqData.timeStamp) };
         }
 
         case MsgType.TweetRemoveByKolID: {
             const kid = request.data as string;
             await removeTweetsByKolID(kid);
             await tweetFM.removeFromImmediateQueue(kid);
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.TweetBookmarkToggle: {
             await updateBookmarked(request.data.entryID as string, request.data.bookmarked as boolean)
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.KolQueryAll: {
-            return {success: true, data: await loadAllKols()};
+            return { success: true, data: await loadAllKols() };
         }
 
         case MsgType.KolQueryByID: {
-            return {success: true, data: await kolById(request.data as string)};
+            return { success: true, data: await kolById(request.data as string) };
         }
 
         case MsgType.KolCursorLoadAll: {
-            return {success: true, data: await loadAllKolCursors()};
+            return { success: true, data: await loadAllKolCursors() };
         }
 
         case MsgType.KolCursorSaveAll: {
             await writeKolsCursors(request.data);
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.KolCursorSaveOne: {
             await writeOneCursor(request.data);
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.KolCursorQueryOne: {
-            return {success: true, data: await loadCursorById(request.data as string)};
+            return { success: true, data: await loadCursorById(request.data as string) };
         }
 
         case MsgType.KolCursorForFirstOpen: {
-            return {success: true, data: await tweetFM.getNextKolGroup(true)};
+            return { success: true, data: await tweetFM.getNextKolGroup(true) };
         }
 
         case MsgType.TimerKolInQueueAtOnce: {
             await timerKolInQueueImmediate(request.data as string)
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.TokenUsedByUser: {
             await useTokenByUser();
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.TokenFreeze: {
             await penalize429();
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.AdsBlockSuccess: {
             await addBlockedAdsNumber()
-            return {success: true};
+            return { success: true };
         }
 
         case MsgType.CheckIfLocalAppInstalled: {
-            return {success: await checkLocalApp()}
+            return { success: await checkLocalApp() }
         }
 
         case MsgType.StartLocalApp: {
-            return {success: await openLocalApp()}
+            return { success: await openLocalApp() }
         }
 
-        case MsgType.WalletInfoQuery: {
-            const wallet = await loadWallet();
-            if (!wallet) {
-                return { success: true, data: { unlocked: false } };
-            }
-
-            const address = wallet.address;
-            const settings = await loadWalletSettings();          // 读当前网络设置
-            const gas = await getEthBalance(address, settings);   // 可显式传 settings
-
-            const usdcAddress = getBaseUsdcAddress(settings);     // 👈 关键：选出当前链的 USDC 地址
-            const usdt = await getTokenBalance(address, usdcAddress, settings);
-
-            return { success: true, data: { unlocked: true, address, gas, usdt } };
-        }
-
-        case MsgType.OpenOrFocusUrl:{
+        case MsgType.OpenOrFocusUrl: {
             await openOrUpdateTab(request.data as string)
-            return {success: true};
+            return { success: true };
         }
 
-        case MsgType.SW_ACTION_GET_SNAPSHOT:{
-            return {success: true, data: await loadCategorySnapshot()};
+        case MsgType.SW_ACTION_GET_SNAPSHOT: {
+            return { success: true, data: await loadCategorySnapshot() };
         }
         case MsgType.IPFS_GET_GATEWAY_BASE: {
-            return {success: true, data: await loadIpfsLocalCustomGateWay()};
+            return { success: true, data: await loadIpfsLocalCustomGateWay() };
         }
+        case MsgType.X402TipAction: {
+            return await tipActionForTweet(request.data as x402TipPayload);
+        }
+
+        case MsgType.WalletUnlock: {
+            return await msgUnlockWallet(request.data as string);
+        }
+
+        case MsgType.WalletSignMessage: {
+            return await msgSignMsg(request.data);
+        }
+
+        case MsgType.WalletTransferEth: {
+            return await msgTransferEth(request.data as transEthParam)
+        }
+
+        case MsgType.WalletTransferUSDC: {
+            return await msgTransferUsdc(request.data as transUsdcParam);
+        }
+
+        case MsgType.TransferUSDCByTwitterId: {
+            return await msgTransferUsdcByTwitter(request.data);
+        }
+
+        case MsgType.WalletExportPrivateKey: {
+            return await msgExportPriKye(request.data as string);
+        }
+
+        case MsgType.X402EmbeddWalletSignIn: {
+            return { success: true, data: await restartOffScreen() };
+        }
+
+        case MsgType.X402NotSignedIn: {
+            return { success: true };
+        }
+
         default:
-            return {success: false, data: "unsupportable message type"};
+            return { success: false, data: "unsupportable message type" };
     }
 }
-
 
 export async function sendMessageToX(action: string, data: any, onlyFirstTab: boolean = true, url = '*://x.com/*'): Promise<any> {
     const tabs = await browser.tabs.query({
@@ -229,8 +374,11 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
 
     if (tabs.length === 0) {
         console.log(`------>>> x is not open!`);
-        return {success: false, data: noXTabError}
+        return { success: false, data: noXTabError }
     }
+
+    let lastErrorMsg = "";
+    let successCount = 0;
 
     for (let i = 0; i < tabs.length; i++) {
         const tab = tabs[i];
@@ -240,13 +388,22 @@ export async function sendMessageToX(action: string, data: any, onlyFirstTab: bo
                 data: data
             });
 
+            successCount += 1;
             if (onlyFirstTab) return resp;
 
         } catch (err) {
-            console.warn("------>>> 发送消息失败", err);
-            return {success: false, data: (err as Error).message};
+            const errorMsg = (err as Error).message || "";
+            lastErrorMsg = errorMsg;
+            if (!errorMsg.includes("Could not establish connection")) {
+                console.warn("------>>> send message to x tab failed", { action, tabId: tab.id, err });
+            }
+            continue;
         }
     }
 
-    return {success: true};
+    if (successCount > 0) {
+        return { success: true };
+    }
+
+    return { success: false, data: lastErrorMsg || "Failed to reach any x.com tab." };
 }

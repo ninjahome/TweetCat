@@ -22,11 +22,15 @@ export const DBG = {
     TwitterVideoRender: false,
     TwitterActionRender: false,
     AdBlock: false,
-    InjectCapture:false,
-    Youtube:false,
-    AiTrendApi:false,
-    FollowMgn:true,
-    UserIfo:false,
+    InjectCapture: false,
+    Youtube: false,
+    AiTrendApi: false,
+    FollowMgn: false,
+    UserIfo: false,
+    X402: true,
+    Wallet: false,
+    AdPlaza: true,
+    AdsFeed: true,
 } as const;
 
 /** 创建带模块名前缀、并受 DBG 开关控制的日志函数 */
@@ -62,3 +66,7 @@ export const logYT = makeLogger('Youtube', 'Youtube');
 export const logATA = makeLogger('AiTrendApi', 'AiTrendApi');
 export const logFM = makeLogger('FollowMgn', 'FollowMgn');
 export const logUI = makeLogger('UserIfo', 'UserIfo');
+export const logX402 = makeLogger('X402', 'X402');
+export const logW = makeLogger('Wallet', 'Wallet');
+export const logAdP = makeLogger('AdPlaza', 'AdPlaza');
+export const logAdsFeed = makeLogger('AdsFeed', 'AdsFeed');

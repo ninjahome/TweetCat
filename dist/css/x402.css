@@ -1,0 +1,49 @@
+/* 容器：固定在右下角（你也可以改成 left/top） */
+.user-tip-action{
+    z-index: 2147483647;
+}
+
+/* 按钮主体 */
+.user-tip-btn{
+    appearance: none;
+    background: linear-gradient(to right, #1d9bf0, #03CBAD);
+    color: #fff;
+    border-radius: 999px;
+    padding: 10px 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.user-tip-btn:hover {
+    background: linear-gradient(to right, #1a8cd8, #03B69B);
+}
+
+.user-tip-btn:active{
+    transform: translateY(0);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+}
+
+.user-tip-btn:focus{
+    outline: none;
+}
+
+.user-tip-btn:focus-visible{
+    outline: 3px solid rgba(56, 189, 248, 0.35);
+    outline-offset: 2px;
+}
+
+/* 文案 */
+#user-tip-btn-title{
+    font-weight: 700;
+}
+
+#user-tip-btn-val{
+    font-size: 12px;
+    color: #64748b;
+}

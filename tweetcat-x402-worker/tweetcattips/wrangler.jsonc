@@ -1,0 +1,55 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "tweetcattips",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-12-17",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"observability": {
+		"enabled": true
+	},
+	"triggers": {
+		"crons": [
+			"0 * * * *"
+		]
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "tweetcat_db",
+			"database_id": "c210d094-aee7-4f0a-a1ac-a44231b7aaec"
+		}
+	],
+	"vars": {
+		"CDP_TREASURY_ACCOUNT_NAME": "tweetcat-treasury",
+		"REWARD_FOR_SIGNUP": 0.1,
+		"FEE_FOR_WITHDRAW": 10,
+		"SETTLEMENT_DELAY_HOURS": 24
+	},
+	"env": {
+		"dev": {
+			"name": "tweetcattips-dev",
+			"main": "src/index-dev.ts",
+			"triggers": {
+				"crons": [
+					"*/5 * * * *"
+				]
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "tweetcat_db_test",
+					"database_id": "da2d57f9-031c-4b9b-a9c0-35f6cce07ab5"
+				}
+			],
+			"vars": {
+				"REWARD_FOR_SIGNUP": 0.2,
+				"FEE_FOR_WITHDRAW": 10,
+				"CDP_TREASURY_ACCOUNT_NAME": "tweetcat-treasury-test",
+				"SETTLEMENT_DELAY_HOURS": 1,
+				"BLUE_V_BYPASS_WHITELIST": "1899045104146644992,1735224873365225472,1236539014406012928,1554341020246061059,1740205143621238785,1514598908273463303"
+			}
+		}
+	}
+}

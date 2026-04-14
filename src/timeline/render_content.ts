@@ -1,4 +1,4 @@
-import {TweetContent, TweetEntity} from "./tweet_entry";
+import {TweetContent, TweetEntity} from "../x_api/tweet_entry";
 import {logRCT} from "../common/debug_flags";
 import {bindTwitterInternalLink} from "./render_common";
 import {t} from "../common/i18n";

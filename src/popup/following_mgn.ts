@@ -2,8 +2,7 @@ import browser from "webextension-polyfill";
 import {choseColorByID, MsgType, noXTabError, SNAPSHOT_TYPE} from "../common/consts";
 import {
     __tableCategory,
-    __tableFollowings,
-    checkAndInitDatabase,
+    __tableFollowings, checkAndInitDatabase,
     databaseAddItem,
     databaseUpdateOrAddItem
 } from "../common/database";
@@ -21,7 +20,7 @@ import {logFM} from "../common/debug_flags";
 import {sendMsgToService} from "../common/utils";
 import {initI18n, t} from "../common/i18n";
 import {$Id, hideLoading, showAlert, showLoading, showNotification} from "./common";
-import {buildGatewayUrls, ensureSettings, LIGHTHOUSE_GATEWAY, unpinCid, uploadJson} from "../wallet/ipfs_api";
+import {buildGatewayUrls, download, ensureSettings, unpinCid, uploadJson} from "../wallet/ipfs_api";
 import {
     ERR_LOCAL_IPFS_HANDOFF,
     PROVIDER_TYPE_CUSTOM,
@@ -29,9 +28,9 @@ import {
     PROVIDER_TYPE_PINATA
 } from "../wallet/ipfs_settings";
 import {SnapshotV1} from "../common/msg_obj";
-import {loadWallet} from "../wallet/wallet_api";
 import {getManifest, updateFollowingSnapshot} from "../wallet/ipfs_manifest";
 import {openPasswordModal} from "./password_modal";
+import {getEOA} from "../wallet/cdp_wallet";
 
 const ALL_FILTER = "all" as const;
 const UNCATEGORIZED_FILTER = "uncategorized" as const;
@@ -115,6 +114,7 @@ let exportIpfsBtn: HTMLButtonElement | null;
 let ipfsLatestCidSpan: HTMLSpanElement | null;
 let ipfsLatestOpenBtn: HTMLButtonElement | null;
 let ipfsLatestCopyBtn: HTMLButtonElement | null;
+let ipfsLatestSyncBtn: HTMLButtonElement | null = null;
 let latestSnapshotCid: string | null = null;
 
 // ===== DOM 初始化封装 =====
@@ -203,7 +203,14 @@ function initDomRefs(): void {
     ipfsLatestOpenBtn = $Id("ipfs-latest-open") as HTMLButtonElement | null;
     ipfsLatestCopyBtn = $Id("ipfs-latest-copy") as HTMLButtonElement | null;
     if (ipfsLatestCopyBtn) {
-        ipfsLatestCopyBtn.textContent = t("ipfs_latest_copy_cid");
+        const label = t("ipfs_latest_copy_cid");
+        ipfsLatestCopyBtn.title = label;
+        ipfsLatestCopyBtn.setAttribute("aria-label", label);
+    }
+
+    ipfsLatestSyncBtn = $Id("ipfs-latest-sync") as HTMLButtonElement | null;
+    if (ipfsLatestSyncBtn) {
+        ipfsLatestSyncBtn.textContent = t("ipfs_sync_data");
     }
 
     const processingText = $Id("processing-overlay-text") as HTMLSpanElement | null;
@@ -217,22 +224,27 @@ type ConfirmCallback = () => void | Promise<void>;
 let activeModal: HTMLElement | null = null;
 let pendingConfirmHandler: ConfirmCallback | null = null;
 let isProcessingUnfollow = false;
+let categoryInputMode: "create" | "rename" = "create";
+let pendingRenameCategory: Category | null = null;
 
 document.addEventListener("DOMContentLoaded", initFollowingManager as EventListener);
 
 async function initFollowingManager() {
+    await checkAndInitDatabase()
     initDomRefs();
     document.title = t("mgn_following");
-    await checkAndInitDatabase();
     bindEvents();
 
-    loadWallet().then((wallet) => {
-        if (!wallet) return;
-        loadLatestSnapshotCid(wallet.address).catch(e => {
+    getEOA().then((acc) => {
+        if (!acc) return;
+        loadLatestSnapshotCid(acc.address).catch(e => {
             console.warn("[IPFS] skip loading latest snapshot cid:", e);
             updateIpfsLatestUI();
         });
+    }).catch(err => {
+        showNotification(err.message, "error")
     });
+
     await refreshData();
 }
 
@@ -249,20 +261,20 @@ function bindEvents() {
     unfollowSelectedBtn?.addEventListener("click", handleUnfollowSelected);
     newCategoryBtn?.addEventListener("click", showAddCategoryModal);
 
-    cancelNewCategoryBtn?.addEventListener("click", hideAddCategoryModal);
+    cancelNewCategoryBtn?.addEventListener("click", hideCategoryInputModal);
     confirmNewCategoryBtn?.addEventListener("click", () => {
-        void handleAddCategoryConfirm();
+        void handleCategoryInputConfirm();
     });
     dialogInput?.addEventListener("input", handleAddCategoryInputChange);
     dialogInput?.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
-            void handleAddCategoryConfirm();
+            void handleCategoryInputConfirm();
         }
     });
     commInputDialog?.addEventListener("click", (event) => {
         if (event.target === commInputDialog) {
-            hideAddCategoryModal();
+            hideCategoryInputModal();
         }
     });
 
@@ -278,18 +290,12 @@ function bindEvents() {
 
     document.addEventListener("keydown", handleGlobalKeydown);
 
-    exportIpfsBtn?.addEventListener("click", async () => {
-        const w = await loadWallet();
-        if (!w) {
-            showAlert(t('tips_title'), t('wallet_error_no_wallet'))
-            return
-        }
-
-        await handleExportSnapshotToIpfs(w.address, (cid) => {
+    exportIpfsBtn.onclick = async () => {
+        await handleExportSnapshotToIpfs((cid) => {
             latestSnapshotCid = cid;
             updateIpfsLatestUI();
         });
-    });
+    }
 
     ipfsLatestOpenBtn?.addEventListener("click", () => {
         if (!latestSnapshotCid) return;
@@ -302,6 +308,161 @@ function bindEvents() {
             .then(() => showNotification("CID 已复制到剪贴板", "info"))
             .catch(() => showNotification("复制失败，请手动复制", "error"));
     });
+
+    ipfsLatestSyncBtn?.addEventListener("click", handleSyncFromIpfsClick);
+}
+
+async function handleSyncFromIpfsClick() {
+    if (!latestSnapshotCid) return;
+
+    // 第0步：检查本地是否有 followings 数据
+    const localFollowings = await fetchFollowings();
+    if (!localFollowings || localFollowings.length === 0) {
+        showConfirmModal(t("ipfs_sync_no_local_followings"), () => {
+            if (syncButtons && syncButtons[0]) {
+                console.log("------>>> Auto-triggering sync followings");
+                syncButtons[0].click();
+            }
+        })
+        return;
+    }
+
+    showConfirmModal(t("ipfs_confirm_sync_from_ipfs_overwrite"), async () => {
+        try {
+            // 第1步：下载快照数据
+            showLoading(t("ipfs_sync_step_downloading"));
+            const jsonObj = await download(latestSnapshotCid);
+            console.log("------>>> Downloaded snapshot:", jsonObj);
+
+            if (!jsonObj || typeof jsonObj !== 'object') {
+                showNotification(t("ipfs_invalid_snapshot_data") || 'Invalid snapshot data', "error");
+                return;
+            }
+
+            const {version, categories: importedCategories, assignments: importedAssignments} = jsonObj as any;
+            console.log("------>>>current snapshot version:", version)
+            if (!Array.isArray(importedCategories) || !Array.isArray(importedAssignments)) {
+                showNotification(t("ipfs_invalid_snapshot_format") || 'Invalid snapshot format', "error");
+                return;
+            }
+
+            // 第2步：清除旧分类
+            showLoading(t("ipfs_sync_step_clearing_categories"));
+            for (const cat of categories) {
+                if (cat.id) {
+                    await removeCategory(cat.id);
+                }
+            }
+
+            // 第3步：导入新分类，并建立 ID 映射
+            showLoading(t("ipfs_sync_step_importing_categories"));
+            const newCatMap = new Map<number, number>();
+            for (const importedCat of importedCategories) {
+                const catName = importedCat.name || importedCat.catName;
+                if (!catName) continue;
+
+                const newCat = new Category(catName);
+                // 不设置 id，让数据库自动生成
+                delete (newCat as any).id;
+                const newId = await databaseAddItem(__tableCategory, newCat);
+                newCatMap.set(importedCat.id, Number(newId));
+                console.log(`------>>> Category mapped: ${importedCat.id} -> ${newId}`);
+            }
+
+            // 第4步：更新 followings 的分类关联
+            showLoading(t("ipfs_sync_step_updating_assignments"));
+
+            // 建立 userId -> 新分类 ID 的映射
+            const assignmentMap = new Map<string, number | null>();
+            const kolAssignmentMap = new Map<string, number | null>(); // KOL 的 screenName -> 新分类 ID 的映射
+            for (const assign of importedAssignments) {
+                if (assign.userId) {
+                    const newCatId = assign.categoryId ? newCatMap.get(assign.categoryId) || null : null;
+                    assignmentMap.set(assign.userId, newCatId);
+                }
+                // 同时为 KOL 建立映射（使用 screenName 作为 key）
+                if (assign.screenName) {
+                    const newCatId = assign.categoryId ? newCatMap.get(assign.categoryId) || null : null;
+                    kolAssignmentMap.set(assign.screenName.toLowerCase(), newCatId);
+                }
+            }
+
+            // 从后台脚本获取所有 followings
+            const allFollowings = await fetchFollowings();
+            let updatedCount = 0;
+
+            // 遍历所有 followings，更新分类
+            for (const following of allFollowings) {
+                if (!following.userId) continue;
+
+                // 如果在导入的 assignments 中，使用新的分类ID
+                // 如果不在，则设为 null（未分类）
+                if (assignmentMap.has(following.userId)) {
+                    following.categoryId = assignmentMap.get(following.userId) || null;
+                } else {
+                    following.categoryId = null;
+                }
+
+                // 保存到数据库
+                await databaseUpdateOrAddItem(__tableFollowings, following);
+                updatedCount++;
+            }
+
+            console.log(`------>>> Updated ${updatedCount} followings`);
+
+            // 第4.5步：重新导入 KOL 数据（修复 __tableKolsInCategory 表）
+            showLoading(t("ipfs_sync_step_updating_assignments"));
+            let kolUpdatedCount = 0;
+            for (const assign of importedAssignments) {
+                if (!assign.screenName) continue;
+                
+                const newCatId = assign.categoryId ? newCatMap.get(assign.categoryId) || null : null;
+                
+                // 如果有 newCatId（即在新分类中），才需要重新导入
+                if (newCatId !== null) {
+                    try {
+                        const kolSnapshot = {
+                            kolName: assign.screenName,
+                            displayName: assign.screenName,
+                            kolUserId: assign.userId,
+                            catID: newCatId,
+                        };
+                        
+                        await browser.runtime.sendMessage({
+                            action: MsgType.KolUpdate,
+                            data: kolSnapshot,
+                        });
+                        kolUpdatedCount++;
+                    } catch (e) {
+                        console.warn(`------>>> Failed to update KOL ${assign.screenName}:`, e);
+                    }
+                }
+            }
+            console.log(`------>>> Updated ${kolUpdatedCount} KOLs`);
+
+            // 第5步：刷新界面
+            showLoading(t("ipfs_sync_step_refreshing"));
+            selectedKeys.clear();
+            await refreshData();
+
+            showNotification(
+                t("ipfs_sync_success_with_count", updatedCount.toString()) ||
+                `Data synchronized: ${updatedCount} followings updated`,
+                "info"
+            );
+
+        } catch (e) {
+            const err = e as Error;
+            console.error("------>>> handleSyncFromIpfsClick error details:", e);
+            showNotification(
+                err.message || (t("ipfs_sync_failed") || "Failed to synchronize from IPFS"),
+                "error"
+            );
+        } finally {
+            hideLoading();
+        }
+    })
+
 }
 
 function openModal(modal: HTMLElement | null) {
@@ -328,7 +489,7 @@ function handleGlobalKeydown(event: KeyboardEvent) {
     }
     event.preventDefault();
     if (activeModal === commInputDialog) {
-        hideAddCategoryModal();
+        hideCategoryInputModal();
     } else if (activeModal === confirmModal) {
         hideConfirmModal();
     }
@@ -340,35 +501,48 @@ function handleAddCategoryInputChange() {
     confirmNewCategoryBtn.disabled = !hasValue;
 }
 
-function resetAddCategoryModal() {
-    if (!dialogInput || !confirmNewCategoryBtn) return;
-    dialogInput.value = "";
-    confirmNewCategoryBtn.disabled = true;
+function configureCategoryInputModal(mode: "create" | "rename", initialValue: string = "") {
+    if (!dialogInput || !confirmNewCategoryBtn || !cancelNewCategoryBtn) return;
+    categoryInputMode = mode;
+    const title = mode === "rename" ? t("rename_category_prompt") : t("create_new_category");
+    $Id("modal-add-category-title")!.textContent = title;
+    dialogInput.placeholder = t("enter_category_name");
+    dialogInput.value = initialValue;
+    confirmNewCategoryBtn.textContent = t("confirm");
+    cancelNewCategoryBtn.textContent = t("cancel");
+    confirmNewCategoryBtn.disabled = dialogInput.value.trim().length === 0;
 }
 
 function showAddCategoryModal() {
-    resetAddCategoryModal();
+    pendingRenameCategory = null;
+    configureCategoryInputModal("create");
     openModal(commInputDialog);
     window.setTimeout(() => {
         dialogInput?.focus();
     }, 0);
 }
 
-function hideAddCategoryModal() {
-    resetAddCategoryModal();
+function hideCategoryInputModal() {
+    pendingRenameCategory = null;
+    configureCategoryInputModal("create");
     closeModal(commInputDialog);
 }
 
-async function handleAddCategoryConfirm() {
+async function handleCategoryInputConfirm() {
     if (!dialogInput || !confirmNewCategoryBtn) return;
     const name = dialogInput.value.trim();
     if (!name) return;
     confirmNewCategoryBtn.disabled = true;
+
     try {
-        await addNewCategory(name);
-        hideAddCategoryModal();
+        if (categoryInputMode === "rename" && pendingRenameCategory) {
+            await renameCategory(pendingRenameCategory, name);
+        } else {
+            await addNewCategory(name);
+        }
+        hideCategoryInputModal();
     } catch (error) {
-        console.warn("------>>> add category failed", error);
+        console.warn("------>>> category input submit failed", error);
         confirmNewCategoryBtn.disabled = dialogInput.value.trim().length === 0;
         confirmNewCategoryBtn.focus();
     }
@@ -636,6 +810,7 @@ function updateEmptyState() {
 }
 
 async function handleSyncClick() {
+    showLoading(t("sync_followings"))
     setSyncLoading(true);
     try {
         const rsp = await sendMsgToService({}, MsgType.FollowingSync)// browser.runtime.sendMessage({action: MsgType.FollowingSync});
@@ -664,6 +839,7 @@ async function handleSyncClick() {
         showNotification(err.message ?? "Failed to sync followings.", "error");
     } finally {
         setSyncLoading(false);
+        hideLoading()
     }
 }
 
@@ -874,17 +1050,20 @@ async function addNewCategory(name: string) {
 }
 
 async function handleRenameCategory(category: Category) {
+    pendingRenameCategory = category;
+    configureCategoryInputModal("rename", category.catName);
+    openModal(commInputDialog);
+    window.setTimeout(() => {
+        dialogInput?.focus();
+        dialogInput?.select();
+    }, 0);
+}
 
-    const name = await showRenameCategoryDialog(
-        category.catName,
-        t("rename_category_prompt")
-    );
-    if (!name) return;
-
+async function renameCategory(category: Category, name: string) {
     const trimmed = name.trim();
     if (!trimmed) {
         showNotification(t("category_name_empty"), "error");
-        return;
+        throw new Error(t("category_name_empty"));
     }
     category.catName = trimmed;
     try {
@@ -896,6 +1075,7 @@ async function handleRenameCategory(category: Category) {
     } catch (error) {
         console.warn("------>>> rename category failed", error);
         showNotification(t("failed_to_rename_category"), "error");
+        throw error;
     }
 }
 
@@ -1258,28 +1438,34 @@ function fillUserSyncButton(card: HTMLElement, user: UnifiedKOL) {
         return;
     }
 
-    const web2FollowingNoTitle = $Id("web2-following-no-title")
+    const web2FollowingNoTitle = $Id("web2-following-no-title");
     web2FollowingNoTitle.textContent = t("web2_following_no_title");
     syncBtn.classList.remove("hidden");
-    syncBtn.title = t("sync_user_now");
+    const syncLabel = t("sync_user_now");
+    syncBtn.title = syncLabel;
+    syncBtn.setAttribute("aria-label", syncLabel);
     syncBtn.addEventListener("click", async (ev) => {
         ev.stopPropagation();
-        try {
-            showNotification(t("syncing_user", user.displayName ?? user.screenName ?? user.key));
-            const resp = await sendMsgToService(user.screenName ?? user.key, MsgType.FollowingFetchOne);
-
-            if (resp?.success && resp.data) {
-                const updated = {...user, ...resp.data, categoryId: user.categoryId ?? null, lastSyncedAt: Date.now()};
-                await databaseUpdateOrAddItem(__tableFollowings, updated);
-                showNotification(t("account_updated"), "info");
-                await refreshData();
-            } else {
-                handleSyncError(resp);
-            }
-        } catch (err) {
-            showNotification(t("sync_failed_with_error", (err as Error).message), "error");
-        }
+        await syncFollowingFromTwitterSrv(user);
     });
+}
+
+async function syncFollowingFromTwitterSrv(user: UnifiedKOL) {
+    try {
+        showNotification(t("syncing_user", user.displayName ?? user.screenName ?? user.key));
+        const resp = await sendMsgToService(user.screenName ?? user.key, MsgType.FollowingFetchOne);
+
+        if (resp?.success && resp.data) {
+            const updated = {...user, ...resp.data, categoryId: user.categoryId ?? null, lastSyncedAt: Date.now()};
+            await databaseUpdateOrAddItem(__tableFollowings, updated);
+            showNotification(t("account_updated"), "info");
+            await refreshData();
+        } else {
+            handleSyncError(resp);
+        }
+    } catch (err) {
+        showNotification(t("sync_failed_with_error", (err as Error).message), "error");
+    }
 }
 
 function handleSyncError(resp: any) {
@@ -1287,10 +1473,11 @@ function handleSyncError(resp: any) {
     const message = typeof resp?.data === "string" ? resp.data : resp?.error;
     if (message?.includes(noXTabError)) {
         showConfirmModal(t("confirm_signin_x_first"), () => {
-            window.open("https://x.com", "_blank")
+            window.open("https://x.com", "_blank");
         });
     } else {
-        showNotification(message || t('failed_to_unfollow_selected'), "error");
+        console.warn("[FollowingMgn] Failed to sync account info:", message, resp);
+        showNotification(t("failed_to_sync_account"), "error");
     }
 }
 
@@ -1366,27 +1553,20 @@ async function loadLatestSnapshotCid(walletAddress: string): Promise<void> {
 
 
 async function handleExportSnapshotToIpfs(
-    walletAddress: string,
     onSuccess?: (cid: string) => void
 ): Promise<void> {
-    const wallet = walletAddress.toLowerCase();
     let settings: any;
     let password: string | undefined;
 
     try {
-        // 1️⃣ 先拿设置 & 询问密码，这一步不显示全局 loading
-        settings = await ensureSettings(); // 不解密，仅拿配置判断
+        settings = await ensureSettings();
         const needPassword = ipfsNeedsPassword(settings);
         if (needPassword) {
-            password = await promptPasswordOnce(); // 这里会弹你自定义的密码弹窗
+            password = await promptPasswordOnce();
         }
 
-        // 如果上面用户取消了，会 throw "已取消：未输入口令" 被下面 catch 掉
+        showLoading(t('ipfs_photo_loading'));
 
-        // 2️⃣ 真正开始上传时再显示全局 loading
-        showLoading("正在上传 IPFS 快照…");
-
-        // 3️⃣ 组装快照（直接用内存中的 categories / unifiedKols）
         const cats = categories
             .filter(c => typeof c.id === "number")
             .map(c => ({id: c.id!, name: c.catName}));
@@ -1408,6 +1588,12 @@ async function handleExportSnapshotToIpfs(
 
         const {createdAt, ...snapshotCore} = snapshot;
 
+        const w = await getEOA();
+        if (!w) {
+            showAlert(t('tips_title'), t('wallet_error_no_wallet'))
+            return
+        }
+        const wallet = w.address.toLowerCase();
         const snapshotCid = await uploadJson(settings, snapshotCore, wallet, password);
         showNotification(t("ipfs_snapshot_uploaded_copied", snapshotCid), "info");
         onSuccess?.(snapshotCid);
@@ -1420,20 +1606,15 @@ async function handleExportSnapshotToIpfs(
         }
     } catch (err) {
         const e = err as Error;
-
-        // 本地节点接管：沿用你原来的特殊分支
         if (e.message === ERR_LOCAL_IPFS_HANDOFF) {
             return;
         }
-
-        // 用户在密码弹窗里取消：这里我按“静默取消”处理，不弹 error
         if (e.message === "已取消：未输入口令") {
             return;
         }
 
-        showNotification(e.message ?? "上传失败", "error");
+        showNotification(e.message ?? t("upload_failed"), "error");
     } finally {
-        // 即使前面因为没 showLoading，这里 hideLoading 也无害
         hideLoading();
     }
 }
@@ -1459,40 +1640,19 @@ function updateIpfsLatestUI(): void {
     if (ipfsLatestCopyBtn) {
         ipfsLatestCopyBtn.disabled = !hasCid;
     }
-}
 
-async function openSnapshotInGateway(cid: string): Promise<void> {
-    try {
-        showLoading("正在寻找 IPFS 快照…");
-        const canUseIpfsIo = await canReachViaIpfsIo(cid, 3000);
-
-        if (canUseIpfsIo) {
-            const url = `https://ipfs.io/ipfs/${cid}`;
-            window.open(url, "_blank");
-            return;
-        }
-        const lighthouseUrl = `${LIGHTHOUSE_GATEWAY}/${cid}`
-        window.open(lighthouseUrl, "_blank");
-    } catch (err) {
-        console.error("[IPFS] openSnapshotInGateway failed", err);
-        const urls = await buildGatewayUrls(cid);
-        if (urls.length === 0) {
-            return;
-        }
-        window.open(urls[0], "_blank");
-    } finally {
-        hideLoading();
+    if (ipfsLatestSyncBtn) {
+        ipfsLatestSyncBtn.disabled = !hasCid;
+        ipfsLatestSyncBtn.classList.toggle("hidden", !hasCid);
     }
 }
 
-
-/** 用 HEAD 简单测试这个 CID 是否能通过 ipfs.io 访问 */
-async function canReachViaIpfsIo(cid: string, timeoutMs: number = 3000): Promise<boolean> {
+async function canReachGateway(url: string, timeoutMs: number = 5000): Promise<boolean> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-        const resp = await fetch(`https://ipfs.io/ipfs/${cid}`, {
+        const resp = await fetch(url, {
             method: "HEAD",
             signal: controller.signal,
         });
@@ -1504,90 +1664,35 @@ async function canReachViaIpfsIo(cid: string, timeoutMs: number = 3000): Promise
     }
 }
 
-export function showRenameCategoryDialog(
-    initialName: string = "",
-    title?: string
-): Promise<string | null> {
-    return new Promise((resolve) => {
-        const dialog = document.getElementById("new-category-dialog") as HTMLDivElement | null;
-        const input = dialog?.querySelector<HTMLInputElement>("#new-category-name-input");
-        const btnConfirm = dialog?.querySelector<HTMLButtonElement>("#btn-confirm-rename");
-        const btnCancel = dialog?.querySelector<HTMLButtonElement>("#btn-cancel-rename");
-        const titleEl = dialog?.querySelector<HTMLElement>("#new-category-dialog-title");
+async function openSnapshotInGateway(cid: string): Promise<void> {
+    try {
+        showLoading(t("ipfs_looking_for_snapshot"));
 
-        if (!dialog || !input || !btnConfirm || !btnCancel) {
-            console.warn("[rename-dialog] DOM not found");
-            resolve(null);
+        // 获取所有网关列表（已按优先级排序）
+        const gatewayUrls = await buildGatewayUrls(cid);
+
+        if (gatewayUrls.length === 0) {
+            showNotification(t("ipfs_no_available_gateway") || "No available gateways", "error");
             return;
         }
 
-        // 设置标题（如果有传）
-        if (title && titleEl) {
-            titleEl.textContent = title;
+        // 依次测试每个网关的可达性
+        let reachableUrl: string | null = null;
+        for (const url of gatewayUrls) {
+            if (await canReachGateway(url, 5000)) {
+                reachableUrl = url;
+                break;
+            }
         }
 
-        // 初始值
-        input.value = initialName ?? "";
+        // 打开第一个可达的网关，如果都不可达就打开第一个 URL（网络问题交给浏览器处理）
+        const urlToOpen = reachableUrl || gatewayUrls[0];
+        window.open(urlToOpen, "_blank");
 
-        const updateConfirmState = () => {
-            const trimmed = input.value.trim();
-            btnConfirm.disabled = trimmed.length === 0;
-        };
-        updateConfirmState();
-
-        dialog.classList.remove("hidden");
-        document.body.classList.add("modal-open");
-        input.focus();
-        input.select();
-
-        const cleanup = (value: string | null) => {
-            dialog.classList.add("hidden");
-            document.body.classList.remove("modal-open");
-
-            btnConfirm.removeEventListener("click", onConfirm);
-            btnCancel.removeEventListener("click", onCancel);
-            dialog.removeEventListener("click", onBackdropClick);
-            input.removeEventListener("keydown", onKeydown);
-            input.removeEventListener("input", onInput);
-
-            resolve(value);
-        };
-
-        const onConfirm = () => {
-            const value = input.value;
-            cleanup(value);
-        };
-
-        const onCancel = () => {
-            cleanup(null);
-        };
-
-        const onBackdropClick = (ev: MouseEvent) => {
-            if (ev.target === dialog) {
-                cleanup(null);
-            }
-        };
-
-        const onKeydown = (ev: KeyboardEvent) => {
-            if (ev.key === "Enter") {
-                ev.preventDefault();
-                if (!btnConfirm.disabled) {
-                    onConfirm();
-                }
-            } else if (ev.key === "Escape") {
-                ev.preventDefault();
-                onCancel();
-            }
-        };
-
-        const onInput = () => {
-            updateConfirmState();
-        };
-
-        btnConfirm.addEventListener("click", onConfirm);
-        btnCancel.addEventListener("click", onCancel);
-        dialog.addEventListener("click", onBackdropClick);
-        input.addEventListener("keydown", onKeydown);
-        input.addEventListener("input", onInput);
-    });
+    } catch (err) {
+        console.error("[IPFS] openSnapshotInGateway failed", err);
+        showNotification(t("ipfs_open_snapshot_failed") || "Failed to open snapshot", "error");
+    } finally {
+        hideLoading();
+    }
 }

@@ -19,9 +19,7 @@ module.exports = (env, argv) => {
             'process.env.NODE_ENV': JSON.stringify(mode),
         }),
         new Dotenv({
-            systemvars: true,   // 允许从 CI 的 env 读取
-            // path: 默认会自动寻找 .env、.env.development、.env.production 等
-            // safe: true, // 如需与 .env.example 做键校验可打开
+            systemvars: true,
         }),
     ];
 
@@ -37,6 +35,13 @@ module.exports = (env, argv) => {
                 },
             ],
         },
+        // --- 新增：调整性能限制以消除 [big] 告警 ---
+        performance: {
+            hints: mode === 'production' ? 'warning' : false, // 仅在生产模式显示警告
+            maxAssetSize: 2000000, // 提高限额到 2MB (你目前最大是 ~961KB)
+            maxEntrypointSize: 2000000,
+        },
+        // ---------------------------------------
         optimization: {
             minimize: mode === 'production',
             usedExports: true,
@@ -44,8 +49,9 @@ module.exports = (env, argv) => {
                 new TerserPlugin({
                     terserOptions: {
                         compress: {
-                            drop_console: true,
+                            drop_console: mode === 'production', // 仅生产环境删除 log
                             unused: true,
+                            dead_code: true,
                         },
                         format: {
                             comments: false,
@@ -104,10 +110,20 @@ module.exports = (env, argv) => {
             dashboard: path.resolve(__dirname, './src/popup/dashboard.ts'),
             content: path.resolve(__dirname, './src/content/main_entrance.ts'),
             following_mgn: path.resolve(__dirname, './src/popup/following_mgn.ts'),
+            wallet_offscreen: path.resolve(__dirname, './src/popup/wallet_offscreen.ts'),
             yt_content: path.resolve(__dirname, './src/youtube/content.ts'),
             yt_inject: path.resolve(__dirname, './src/youtube/inject.ts'),
             wallet_new: path.resolve(__dirname, './src/popup/wallet_new.ts'),
+            cdp_auth: path.resolve(__dirname, './src/popup/cdp_auth.ts'),
+            cdp_auth_auto_x: path.resolve(__dirname, './src/popup/cdp_auth_auto_x.ts'),
+            x402_payment: path.resolve(__dirname, './src/popup/x402_payment.ts'),
+            x402_transfer: path.resolve(__dirname, './src/popup/x402_transfer.ts'),
             ipfs_local_content: path.resolve(__dirname, './src/content/ipfs_local.ts'),
+            rewards: path.resolve(__dirname, './src/popup/rewards.ts'),
+            fees: path.resolve(__dirname, './src/popup/fees.ts'),
+            buy_usdc: path.resolve(__dirname, './src/popup/buy_usdc.ts'),
+            ad_plaza: path.resolve(__dirname, './src/popup/ads/ad_executor_main.ts'),
+            ad_advertise: path.resolve(__dirname, './src/popup/ads/ad_publisher_main.ts'),
         },
         target: 'web',
     };

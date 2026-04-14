@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coinbase Wallet 连接</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(to bottom, #1d9bf0, #03CBAD);
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+        }
+        .container {
+            background: #fff;
+            border-radius: 20px;
+            padding: 32px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        .title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 24px;
+        }
+
+        /* 状态容器：统一管理 Loading 和 文字 */
+        .status-box {
+            min-height: 120px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 16px;
+            padding: 16px; border-radius: 12px; background: rgba(69, 146, 239, 0.1);
+        }
+        .ai-loading-container {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            animation: ai-loading-spin 1.2s linear infinite;
+        }
+        .ai-loading-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 12px;
+            height: 12px;
+            margin: -6px;
+            border-radius: 50%;
+        }
+        .ai-loading-dot1 {
+            background: #ff6b91;
+            transform: rotate(0deg) translate(18px);
+        }
+        .ai-loading-dot2 {
+            background: #2E8EF1;
+            transform: rotate(72deg) translate(18px);
+        }
+        .ai-loading-dot3 {
+            background: #7d65f3;
+            transform: rotate(144deg) translate(18px);
+        }
+        .ai-loading-dot4 {
+            background: #ffdb3a;
+            transform: rotate(216deg) translate(18px);
+        }
+        .ai-loading-dot5 {
+            background: #1dd6c6;
+            transform: rotate(288deg) translate(18px);
+        }
+        .status-text { font-size: 15px; color: #444; line-height: 1.5; white-space: pre-line; }
+        .status-text.error { color: #FF4646; font-weight: 500; }
+        .status-text.success { color: #03B69B; font-weight: 500; }
+
+        @keyframes ai-loading-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .actions { margin-top: 24px; display: flex; gap: 12px; }
+        button {
+            flex: 1; padding: 12px; border: none; border-radius: 10px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #4592EF;
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: #4592EF;
+        }
+        .btn-ghost {
+            background: #eee;
+            color: #444;
+        }
+
+        .btn-ghost:hover {
+            background: rgba(69, 146, 239, 0.2);
+            color: #4592EF;
+        }
+        .btn-hidden { display: none; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .brandline { margin-top: 20px; font-size: 11px; color: #aaa; }
+    </style>
+    <script type="module" src="../js/cdp_auth_auto_x.js" defer></script>
+</head>
+<body>
+<div class="container">
+    <div class="title" id="container-title">🔐 Coinbase Wallet</div>
+
+    <div class="status-box">
+        <div id="loader" class="ai-loading-container">
+            <div class="ai-loading-dot ai-loading-dot1"></div>
+            <div class="ai-loading-dot ai-loading-dot2"></div>
+            <div class="ai-loading-dot ai-loading-dot3"></div>
+            <div class="ai-loading-dot ai-loading-dot4"></div>
+            <div class="ai-loading-dot ai-loading-dot5"></div>
+        </div>
+        <div id="statusText" class="status-text">初始化中...</div>
+    </div>
+
+    <div class="actions">
+        <button id="btnRetry" class="btn-primary btn-hidden">重试</button>
+        <button id="btnClose" class="btn-ghost">关闭窗口</button>
+    </div>
+
+    <div class="brandline">Powered by CDP Embedded Wallet</div>
+</div>
+</body>
+</html>

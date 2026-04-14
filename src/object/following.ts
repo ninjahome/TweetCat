@@ -7,7 +7,7 @@ import {
     databaseUpdateFields,
     databaseUpdateOrAddItem
 } from "../common/database";
-import {fetchFollowingPage, getUserByUsername, unfollowUser} from "../timeline/twitter_api";
+import {fetchFollowingPage, getUserByUsername, unfollowUser} from "../x_api/twitter_api";
 import {sleep} from "../common/utils";
 import {logFM} from "../common/debug_flags";
 

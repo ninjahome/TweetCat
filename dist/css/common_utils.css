@@ -1,36 +1,109 @@
 #loading-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    display: none; /* 默认隐藏 */
-    z-index: 9999;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: none;
     justify-content: center;
     align-items: center;
-    font-family: sans-serif;
+    z-index: 9999;
 }
 
 #loading-content {
-    color: #fff;
+    background: #ffffff;
+    padding: 32px;
+    border-radius: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    min-width: 180px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    animation: loadingPopIn 0.2s ease-out;
+}
+
+.loading-message {
+    color: #475569;
+    font-size: 14px;
+    font-weight: 600;
     text-align: center;
 }
 
+@keyframes loadingPopIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 .spinner {
-    width: 48px;
-    height: 48px;
-    border: 6px solid #ccc;
-    border-top: 6px solid #fff;
+    display: none;
+    /* Hide old spinner */
+}
+
+.ai-loading-container {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    animation: ai-loading-spin 1.2s linear infinite;
+}
+
+.ai-loading-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    margin: -6px;
     border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 8px;
+}
+
+.ai-loading-dot1 {
+    background: #ff6b91;
+    transform: rotate(0deg) translate(18px);
+}
+
+.ai-loading-dot2 {
+    background: #2E8EF1;
+    transform: rotate(72deg) translate(18px);
+}
+
+.ai-loading-dot3 {
+    background: #7d65f3;
+    transform: rotate(144deg) translate(18px);
+}
+
+.ai-loading-dot4 {
+    background: #ffdb3a;
+    transform: rotate(216deg) translate(18px);
+}
+
+.ai-loading-dot5 {
+    background: #1dd6c6;
+    transform: rotate(288deg) translate(18px);
+}
+
+@keyframes ai-loading-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes spin {
     0% {
         transform: rotate(0deg);
     }
+
     100% {
         transform: rotate(360deg);
     }
@@ -45,7 +118,6 @@
     border-radius: 999px;
     background: #1d9bf0;
     color: #fff;
-    box-shadow: 0 10px 30px rgba(15, 20, 25, 0.12);
     z-index: 1200;
     font-size: 14px;
     transition: opacity 0.2s ease;
@@ -53,11 +125,14 @@
 
 .notification.info {
     background: #1d9bf0;
-
 }
 
 .notification.error {
     background: #df3f3f;
+}
+
+.notification.success {
+    background: #16a34a;
 }
 
 .modal {
@@ -76,7 +151,6 @@
     border-radius: 16px;
     padding: 24px;
     width: min(420px, 100%);
-    box-shadow: 0 20px 50px rgba(15, 20, 25, 0.2);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -98,7 +172,7 @@
     box-sizing: border-box;
     outline: none;
     transition: border-color 0.15s ease, background-color 0.15s ease,
-    box-shadow 0.15s ease;
+        box-shadow 0.15s ease;
 }
 
 .modal-actions {
@@ -145,14 +219,16 @@
 
 
 /* 全屏遮罩 */
-#custom-alert {
+#custom-alert,
+#confirm-popup {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    display: none; /* 默认隐藏 */
+    display: none;
+    /* 默认隐藏 */
     z-index: 9999;
 }
 
@@ -179,13 +255,22 @@
 #confirm-popup .popup-content,
 #alert-content {
     background: #fff;
-    border-radius: 8px;
-    width: 300px;
-    margin: 100px auto;
+    border-radius: 16px;
     padding: 24px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* 偏移自身宽高的一半，实现真正居中 */
+}
+
+#confirm-popup .popup-content {
+    width: 420px;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
 }
 
 #confirm-popup .button-row {
@@ -197,16 +282,19 @@
     margin-left: 8px;
 }
 
-
 .name-edit,
 #btn-ok,
 #alert-ok,
 #btn-confirm-new-category {
-    padding: 12px 16px;
+    padding: 12px 32px;
     background-color: #1d9bf0;
     font-size: 15px;
     font-weight: 1000;
     color: white;
     border-radius: 9999px;
     border: none;
+}
+
+.hidden {
+    display: none !important;
 }

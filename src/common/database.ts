@@ -1,10 +1,10 @@
-import {defaultCategoryName, defaultCatID} from "./consts";
-import {logDB} from "./debug_flags";
+import { defaultCategoryName, defaultCatID } from "./consts";
+import { logDB } from "./debug_flags";
 
 let __databaseObj: IDBDatabase | null = null;
 
 const __databaseName = 'tweet-cat-database';
-export const __currentDatabaseVersion = 22;
+export const __currentDatabaseVersion = 25;
 
 export const __tableCategory = '__table_category__';
 export const __tableKolsInCategory = '__table_kol_in_category__';
@@ -15,6 +15,10 @@ export const __tableFollowings = '__table_followings__';
 export const __tableWallets = '__table_wallets__';
 export const __tableWalletSettings = '__table_wallet_settings__';
 export const __tableIpfsSettings = '__table_ipfs_settings__';
+export const __tableAdsFeedMeta = '__table_ads_feed_meta__';
+export const __tableAdsFollowOffers = '__table_ads_follow_offers__';
+export const __tableAdsFollowClaimState = '__table_ads_follow_claim_state__';
+export const __tableUserBlueVStatus = '__table_user_blue_v_status__';
 
 export const idx_tweets_user_time = 'userId_timestamp_idx'
 export const idx_tweets_time_user = 'timestamp_userId_idx';
@@ -24,7 +28,7 @@ export const idx_kol_usr_id = 'idx_kolUserId'
 
 
 const initialCategories = [
-    {catName: defaultCategoryName},
+    { catName: defaultCategoryName },
 ];
 
 export const initialKols = [
@@ -86,6 +90,10 @@ function initDatabase(): Promise<IDBDatabase> {
             initWalletTable(request);
             initWalletSettingsTable(request);
             initIpfsSettingsTable(request);
+            initAdsFeedMetaTable(request);
+            initAdsFollowOffersTable(request);
+            initAdsFollowClaimStateTable(request);
+            initUserBlueVStatusTable(request);
         };
     });
 }
@@ -102,7 +110,7 @@ async function initCategory(request: IDBOpenDBRequest) {
 
     if (!db.objectStoreNames.contains(__tableCategory)) {
         // 表不存在，直接创建并初始化
-        const store = db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
+        const store = db.createObjectStore(__tableCategory, { keyPath: 'id', autoIncrement: true });
         for (const category of initialCategories) {
             store.add(category);
         }
@@ -129,7 +137,7 @@ async function initCategory(request: IDBOpenDBRequest) {
     queueMicrotask(() => {
         try {
             db.deleteObjectStore(__tableCategory);
-            const newStore = db.createObjectStore(__tableCategory, {keyPath: 'id', autoIncrement: true});
+            const newStore = db.createObjectStore(__tableCategory, { keyPath: 'id', autoIncrement: true });
             for (const category of initialCategories) {
                 newStore.add(category);
             }
@@ -153,7 +161,7 @@ async function initKolsInCategory(request: IDBOpenDBRequest) {
     // 1) 创建或获取对象仓库
     let store: IDBObjectStore;
     if (!db.objectStoreNames.contains(__tableKolsInCategory)) {
-        store = db.createObjectStore(__tableKolsInCategory, {keyPath: 'kolName'});
+        store = db.createObjectStore(__tableKolsInCategory, { keyPath: 'kolName' });
     } else {
         store = transaction.objectStore(__tableKolsInCategory);
     }
@@ -173,7 +181,7 @@ async function initKolsInCategory(request: IDBOpenDBRequest) {
     };
 
     // 单字段索引：按 kolUserId 查找
-    ensureIndex('idx_kolUserId', 'kolUserId', {unique: false});
+    ensureIndex('idx_kolUserId', 'kolUserId', { unique: false });
 
     // （可选）复合索引：按 catID + kolUserId 联合查询
     // ensureIndex('idx_cat_kol', ['catID', 'kolUserId'], { unique: false });
@@ -194,8 +202,8 @@ async function initFollowingsTable(request: IDBOpenDBRequest) {
     const db = request.result;
 
     if (!db.objectStoreNames.contains(__tableFollowings)) {
-        const store = db.createObjectStore(__tableFollowings, {keyPath: 'userId'});
-        store.createIndex('idx_category', 'categoryId', {unique: false});
+        const store = db.createObjectStore(__tableFollowings, { keyPath: 'userId' });
+        store.createIndex('idx_category', 'categoryId', { unique: false });
         logDB("------>>>[Database] Created followings table successfully.");
         return;
     }
@@ -208,7 +216,7 @@ async function initFollowingsTable(request: IDBOpenDBRequest) {
 
     const store = txn.objectStore(__tableFollowings);
     if (!store.indexNames.contains('idx_category')) {
-        store.createIndex('idx_category', 'categoryId', {unique: false});
+        store.createIndex('idx_category', 'categoryId', { unique: false });
         logDB("------>>>[Database] Added idx_category index on followings table.");
     }
 }
@@ -220,7 +228,7 @@ function initWalletTable(request: IDBOpenDBRequest) {
         return;
     }
 
-    db.createObjectStore(__tableWallets, {keyPath: 'address'});
+    db.createObjectStore(__tableWallets, { keyPath: 'address' });
     logDB("------>>>[Database]Created wallet table successfully.");
 }
 
@@ -231,7 +239,7 @@ function initWalletSettingsTable(request: IDBOpenDBRequest) {
         return;
     }
 
-    db.createObjectStore(__tableWalletSettings, {keyPath: 'id'});
+    db.createObjectStore(__tableWalletSettings, { keyPath: 'id' });
     logDB("------>>>[Database]Created wallet settings table successfully.");
 }
 
@@ -242,11 +250,39 @@ function initIpfsSettingsTable(request: IDBOpenDBRequest) {
     logDB("------>>>[Database]Created ipfs settings table successfully.");
 }
 
+function initAdsFeedMetaTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+    if (db.objectStoreNames.contains(__tableAdsFeedMeta)) return;
+    db.createObjectStore(__tableAdsFeedMeta, { keyPath: 'id' });
+    logDB("------>>>[Database]Created ads feed meta table successfully.");
+}
+
+function initAdsFollowOffersTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+    if (db.objectStoreNames.contains(__tableAdsFollowOffers)) return;
+    db.createObjectStore(__tableAdsFollowOffers, { keyPath: 'profileUrl' });
+    logDB("------>>>[Database]Created ads follow offers table successfully.");
+}
+
+function initAdsFollowClaimStateTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+    if (db.objectStoreNames.contains(__tableAdsFollowClaimState)) return;
+    db.createObjectStore(__tableAdsFollowClaimState, { keyPath: 'ad_id' });
+    logDB("------>>>[Database]Created ads follow claim state table successfully.");
+}
+
+function initUserBlueVStatusTable(request: IDBOpenDBRequest) {
+    const db = request.result;
+    if (db.objectStoreNames.contains(__tableUserBlueVStatus)) return;
+    db.createObjectStore(__tableUserBlueVStatus, { keyPath: 'userId' });
+    logDB("------>>>[Database]Created user blue v status table successfully.");
+}
+
 
 function initSystemSetting(request: IDBOpenDBRequest) {
     const db = request.result;
     if (!db.objectStoreNames.contains(__tableSystemSetting)) {
-        const objectStore = db.createObjectStore(__tableSystemSetting, {keyPath: 'id', autoIncrement: true});
+        const objectStore = db.createObjectStore(__tableSystemSetting, { keyPath: 'id', autoIncrement: true });
         logDB("------>>>[Database]Create system setting table successfully.", objectStore);
     }
 }
@@ -261,21 +297,21 @@ function initCachedTweetsTable(request: IDBOpenDBRequest) {
 
         // 只有不存在时才创建，避免报错
         if (!store.indexNames.contains(idx_tweets_userid)) {
-            store.createIndex(idx_tweets_userid, 'userId', {unique: false});
+            store.createIndex(idx_tweets_userid, 'userId', { unique: false });
             logDB("------>>>[Database] Added index userId_idx on existing cached tweets store.");
         }
         if (!store.indexNames.contains(idx_tweets_time_user)) {
-            store.createIndex(idx_tweets_time_user, ['timestamp', 'userId'], {unique: false});
+            store.createIndex(idx_tweets_time_user, ['timestamp', 'userId'], { unique: false });
         }
         logDB("------>>>[Database] ensured indexes on cached tweets.");
         return;
     }
 
-    const tweetStore = db.createObjectStore(__tableCachedTweets, {keyPath: 'tweetId'});
-    tweetStore.createIndex(idx_tweets_time, 'timestamp', {unique: false});
-    tweetStore.createIndex(idx_tweets_user_time, ['userId', 'timestamp'], {unique: false});
-    tweetStore.createIndex(idx_tweets_userid, 'userId', {unique: false});
-    tweetStore.createIndex(idx_tweets_time_user, ['timestamp', 'userId'], {unique: false});
+    const tweetStore = db.createObjectStore(__tableCachedTweets, { keyPath: 'tweetId' });
+    tweetStore.createIndex(idx_tweets_time, 'timestamp', { unique: false });
+    tweetStore.createIndex(idx_tweets_user_time, ['userId', 'timestamp'], { unique: false });
+    tweetStore.createIndex(idx_tweets_userid, 'userId', { unique: false });
+    tweetStore.createIndex(idx_tweets_time_user, ['timestamp', 'userId'], { unique: false });
 
     logDB("------>>>[Database] Created cached tweets table with indexes successfully.", __tableCachedTweets);
 }
@@ -287,9 +323,9 @@ function initKolCursorTable(request: IDBOpenDBRequest) {
         return;
     }
 
-    const store = db.createObjectStore(__tableKolCursor, {keyPath: 'userId'});
+    const store = db.createObjectStore(__tableKolCursor, { keyPath: 'userId' });
 
-    store.createIndex('newest_fetch_idx', 'nextNewestFetchTime', {unique: false});
+    store.createIndex('newest_fetch_idx', 'nextNewestFetchTime', { unique: false });
 
     logDB("------>>>[Database]Created KolCursor table successfully.", __tableKolCursor);
 }
@@ -395,7 +431,7 @@ export function databaseUpdate(storeName: string, keyName: string, keyVal: any, 
 
         const transaction = __databaseObj.transaction([storeName], 'readwrite');
         const objectStore = transaction.objectStore(storeName);
-        const request = objectStore.put({...newData, [keyName]: keyVal});
+        const request = objectStore.put({ ...newData, [keyName]: keyVal });
 
         request.onsuccess = () => {
             resolve(`Data updated in ${storeName} successfully`);
@@ -419,6 +455,17 @@ export function databaseUpdateOrAddItem(storeName: string, data: any): Promise<I
         request.onerror = event => {
             reject(`Error putting data to ${storeName}: ${(event.target as IDBRequest).error}`);
         };
+    });
+}
+
+export function databaseClear(storeName: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        if (!__databaseObj) return reject('Database is not initialized');
+        const transaction = __databaseObj.transaction([storeName], 'readwrite');
+        const objectStore = transaction.objectStore(storeName);
+        const request = objectStore.clear();
+        request.onsuccess = () => resolve();
+        request.onerror = event => reject(`Error clearing ${storeName}: ${(event.target as IDBRequest).error}`);
     });
 }
 

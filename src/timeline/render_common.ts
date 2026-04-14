@@ -63,23 +63,6 @@ export function ensurePhotoLightbox() {
     return {root, img, close};
 }
 
-export function showToastMsg(msg: string, timeout: number = 3) {
-    let root = document.getElementById('tweet-toast') as HTMLElement;
-    const msgSpan = root.querySelector(".tweet-toast__msg") as HTMLSpanElement;
-    if (root.style.display === 'flex') {
-        msgSpan.innerText = msg;
-        return;
-    }
-
-    root.style.display = 'flex';
-    msgSpan.innerText = msg;
-
-    setTimeout(() => {
-        root.style.display = 'none';
-        msgSpan.innerText = '';
-    }, timeout * 1000);
-}
-
 export function resolutionToNearestP(url: string): string {
     const m = url.match(/\/(\d+)x(\d+)\//);
     if (!m) return `${360}p`;
@@ -107,22 +90,3 @@ export function indexToGrade(idx: number, total: number): string {
     return t('quality_mid');
 }
 
-type DialogCallback = () => void | Promise<void>;
-
-export function showDialog(title: string, content: string, callback?: DialogCallback) {
-
-    const dialog = document.getElementById("tw-dialog-overlay") as HTMLElement;
-    if (!dialog) return;
-
-    (dialog.querySelector(".tw-dialog-title") as HTMLElement).innerText = title;
-    (dialog.querySelector(".tw-dialog-text") as HTMLElement).innerText = content;
-
-    dialog.style.setProperty('display', 'flex', 'important');
-
-    const dialogConfirm = dialog.querySelector(".tw-dialog-btn-confirm") as HTMLButtonElement;
-    dialogConfirm.addEventListener('click', async () => {
-        dialog.style.setProperty('display', 'none', 'important');
-        await callback?.()
-    }, {once: true});
-
-}

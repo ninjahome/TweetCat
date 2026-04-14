@@ -12,6 +12,9 @@ import {localGet, localSet} from "../common/local_storage";
 import {getBearerToken, updateBearerToken} from "../common/utils";
 import {createAlarm, updateAlarm} from "./bg_timer";
 import {resetApiBucketSetting} from "./api_bucket_state";
+import {ensureOffscreenWallet, relayWalletMsg} from "./bg_x402";
+import {ensureDeviceKey} from "../common/device_key";
+import { pollAdsFeedIfNeeded } from "./bg_ads_feed";
 
 /****************************************************************************************
  ┌────────────┐
@@ -62,6 +65,9 @@ browser.runtime.onInstalled.addListener((details: Runtime.OnInstalledDetailsType
         console.log("------>>> update api bucket settings")
     });
     initDefaultQueryKey().then();
+    ensureOffscreenWallet().then();
+    ensureDeviceKey().then();
+    pollAdsFeedIfNeeded(true).then();
 });
 
 
@@ -98,16 +104,24 @@ browser.runtime.onStartup.addListener(() => {
         console.log('------>>> onStartup......');
         await checkAndInitDatabase();
         await createAlarm();
+        await ensureOffscreenWallet();
+        await ensureDeviceKey();
+        await pollAdsFeedIfNeeded(true);
     })();
 });
 
 browser.runtime.onMessage.addListener((request: any, _sender: Runtime.MessageSender, sendResponse: (response?: any) => void): true => {
     (async () => {
         await checkAndInitDatabase();
-        await createAlarm(); // 保底恢复定时器
+        await createAlarm();
         try {
+            if (request.scope === "off-screen") {
+                relayWalletMsg(request).then(sendResponse);
+                return true
+            }
+
             const result = await bgMsgDispatch(request, _sender);
-            sendResponse(result);
+            if (!result.notForMe) sendResponse(result);
         } catch (e) {
             sendResponse({success: false, data: e});
         }

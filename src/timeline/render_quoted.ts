@@ -1,4 +1,4 @@
-import {TweetMediaEntity, TweetObj} from './tweet_entry';
+import {TweetMediaEntity, TweetObj} from '../x_api/tweet_entry';
 import {bindTwitterInternalLink, cloneFromTpl, ensurePhotoLightbox} from './render_common';
 import {updateTweetContentArea} from './render_content';
 import {formatTweetTime, formatVideoDuration} from "../common/utils";

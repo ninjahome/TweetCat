@@ -137,10 +137,6 @@ a {
     fill: #06cbad;
 }
 
-.cls-5 {
-    fill: #4592ef;
-}
-
 .dot {
     display: inline-block;
     width: 8px; /* 控制圆点大小 */
@@ -771,7 +767,10 @@ span.duration-badge {
     width: 16px;
     height: 16px;
     display: block;
-    fill: currentColor;
+    fill: currentColor !important;
+}
+.web3-row-content .web3-copy-btn .icon path {
+    fill: currentColor !important;
 }
 
 .web3-row-content .web3-copy-btn:hover {
@@ -890,20 +889,48 @@ span.duration-badge {
     border-radius: 9999px; /* 和官方一样的全圆角 */
 }
 
-/* 图标改成蓝色 */
-a.tweetCatMenuItem.tc-selected svg path {
-    fill: rgb(29, 155, 240);
+/* 图标颜色：默认蓝色，强制生效 */
+.cls-5 {
+    fill: rgb(29, 155, 240) !important;
 }
 
-/* 文本：蓝色 + 粗体 */
+/* 图标颜色：选中时强行蓝色(冗余但保险) */
+a.tweetCatMenuItem.tc-selected svg .cls-5 {
+    fill: rgb(29, 155, 240) !important;
+}
+
+/* 文本：选中时蓝色 + 粗體 */
+a.tweetCatMenuItem.tc-selected .tc-menu-text,
 a.tweetCatMenuItem.tc-selected .tweettabname {
-    color: rgb(29, 155, 240);
-    font-weight: 700;
+    color: rgb(29, 155, 240) !important;
+    font-weight: 700 !important;
 }
 
+/* 未选中时让其自然继承父层 Twitter 颜色，切勿强行 !important 蓝色 */
 .tweettabname {
-    color: #1d9bf0 !important; /* Twitter 品牌蓝 */
+    color: inherit;
+    font-weight: 400;
 }
+
+/* --- Responsive fixes for TweetCat Menu Item --- */
+@media (max-width: 1279px) { /* 紧凑模式 */
+    /* 1. 只是隐藏了文字显示,没有隐藏掉空占位符,导致图标偏移 */
+    a.tweetCatMenuItem .tc-menu-text {
+        display: none !important;
+    }
+    
+    /* 2. 紧凑模式下图片中的样式改为垂直居中 */
+    a.tweetCatMenuItem .tweetCatMenuItem-contain {
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    a.tweetCatMenuItem {
+        align-items: center !important;
+        justify-content: center !important;
+    }
+}
+
 
 /* 推文正文中的 inline media（图片/视频） */
 .tweet-content .inline-media {
@@ -968,6 +995,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     color: rgb(83, 100, 113);
     display: -webkit-box; /* 弹性盒子模型 */
     -webkit-line-clamp: 2; /* 限制为 2 行 */
+    line-clamp: 2;
     -webkit-box-orient: vertical; /* 垂直排列子元素 */
     overflow: hidden; /* 隐藏超出的文本 */
     text-overflow: ellipsis; /* 超出用省略号 */
@@ -1001,14 +1029,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 /* 如果你想分别定制，也可以加： */
-.tweet-content .url { /* 普通链接 */
-}
-
-.tweet-content .mention { /* @alice   */
-}
-
-.tweet-content .hashtag { /* #测试    */
-}
 
 .tc-main-more {
     display: inline-block;
@@ -1161,6 +1181,7 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 .tweet-card-area .inline-link-card--small .meta .js-card-desc {
     display: -webkit-box;
     -webkit-line-clamp: 2; /* 限两行 */
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.4;
@@ -1168,8 +1189,6 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
 }
 
 /* ============= Large（官方结构版） ============= */
-.tweet-card-area .tc-card-large { /* 外层容器，仅用于分组，不做样式限制 */
-}
 
 /* 点击区域：整张大图 */
 .tweet-card-area .tc-card-large__media {
@@ -1455,7 +1474,11 @@ html[data-bg="default"] {
     --bg-elevated: #ffffff;
     --text-primary: #0f1419;
     --text-secondary: #536471;
+    --text-muted: #6b7280;
     --border-subtle: #e1e8ed;
+    --border-strong: rgba(15, 20, 25, 0.1);
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .1);
 }
 
 html[data-bg="dim"] {
@@ -1463,7 +1486,11 @@ html[data-bg="dim"] {
     --bg-elevated: #192734;
     --text-primary: #e7e9ea;
     --text-secondary: #8899a6;
+    --text-muted: #9ca3af;
     --border-subtle: #38444d;
+    --border-strong: rgba(231, 233, 234, 0.15);
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .15);
 }
 
 html[data-bg="lightsout"] {
@@ -1471,7 +1498,11 @@ html[data-bg="lightsout"] {
     --bg-elevated: #000000;
     --text-primary: #e7e9ea;
     --text-secondary: #71767b;
+    --text-muted: #9ca3af;
     --border-subtle: #2f3336;
+    --border-strong: rgba(231, 233, 234, 0.15);
+    --accent: rgb(29, 155, 240);
+    --accent-subtle: rgba(29, 155, 240, .15);
 }
 
 @keyframes gwait-spin {
@@ -1517,7 +1548,7 @@ html[data-bg="lightsout"] {
 
 .global-wait-detail {
     margin-top: 12px;
-    text-align: left;
+    text-align: center;
     font-size: 13px;
     line-height: 1.55;
     max-height: 40vh;
@@ -1527,6 +1558,9 @@ html[data-bg="lightsout"] {
     border-radius: 10px;
     white-space: pre-wrap;
     word-break: break-word;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .ai-trend-result {
@@ -1770,7 +1804,7 @@ html[data-bg="lightsout"] {
 .user-profile-score {
     display: inline-flex;
     align-items: center;
-    margin: 0 0.375rem;
+    margin-right: 0.375rem;
     font-size: 14px;
     font-weight: 400;
     color: #1d9bf0; /* Twitter 蓝 */
@@ -1781,12 +1815,57 @@ html[data-bg="lightsout"] {
     transition: background 0.2s ease;
     border:  1px solid var(--border-subtle);
     height: 1.75rem;
+    margin-top: .375rem;
 }
 
 .user-profile-score:hover {
     background: rgba(29, 155, 240, 0.15);
 }
+.transfer-btn{
+    background: linear-gradient(to right, #1d9bf0, #03CBAD);
+    border-radius: 999px;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 2px 8px;
+    margin-right: 0.375rem;
+    margin-top: .375rem;
+}
+.transfer-btn:hover{
+    background: linear-gradient(to right, #1a8cd8, #03B69B);
+}
 
+.follow-claim-on-profile {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 0.375rem;
+}
+
+.follow-claim-btn-on-profile {
+    background: linear-gradient(to right, #1d9bf0, #06CBAD) !important;
+    border-color: transparent !important;
+    border-radius: 9999px !important;
+    height: 36px;
+    padding: 0 12px;
+    min-width: 120px;
+}
+
+.follow-claim-btn-on-profile:hover {
+    background: linear-gradient(to right, #1a8cd8, #03B69B) !important;
+}
+
+.follow-claim-btn-on-profile:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.follow-claim-btn-title {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 36px;
+    white-space: nowrap;
+}
 .user-profile-score-details {
     position: absolute;
     display: flex;

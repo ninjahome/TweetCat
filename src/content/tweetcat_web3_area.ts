@@ -1,14 +1,15 @@
-import {parseContentHtml, sendMsgToService} from "../common/utils";
+import {parseContentHtml, sendMsgToOffScreen, sendMsgToService} from "../common/utils";
 import {choseColorByID, defaultAllCategoryID, MsgType} from "../common/consts";
-import {EntryObj} from "../timeline/tweet_entry";
+import {EntryObj} from "../x_api/tweet_entry";
 import {switchCategory} from "./tweetcat_timeline";
 import {Category, queryCategoriesFromBG, queryCategoryById} from "../object/category";
 import {logTPR} from "../common/debug_flags";
 import {getSessCatID} from "../timeline/tweet_pager";
 import {t} from "../common/i18n";
 import {grokConversation} from "./ai_trend";
-import {showToastMsg} from "../timeline/render_common";
 import {LevelScoreBreakdown} from "../object/user_info";
+import {showToastMsg} from "./common";
+import {walletInfo} from "../common/x402_obj";
 
 const defaultCatPointColor = '#B9CAD3';
 
@@ -165,6 +166,9 @@ export function onVideoDownloadStart(total: number, filename: string, controller
 
     if (!hostDiv) {
         hostDiv = document.querySelector(".download-progress-list") as HTMLElement;
+        if (!hostDiv) return;
+
+        hostDiv.style.display = 'block';
     }
     const processBar = document.querySelector(".download-progress-item")?.cloneNode(true) as HTMLElement;
     if (!processBar) return;
@@ -273,8 +277,6 @@ export async function initWeb3IdentityArea(): Promise<void> {
     });
 
     host.querySelector(".web3-title-text").textContent = t('web3_id_tittle');
-    // host.querySelector("#web3-refresh-btn").textContent = t('refresh');
-    // host.querySelector("#web3-copy").textContent = t('copy');
     host.querySelector(".web3-gas-balance-hint").textContent = t('gas_balance');
     host.querySelector(".web3-usdt-balance-hint").textContent = t('usdt_balance');
 
@@ -286,18 +288,22 @@ async function fetchWeb3Identity() {
     if (!host) return;
     const state = host.querySelector("#web3-state") as HTMLElement;
     const card = host.querySelector("#web3-wallet-card") as HTMLElement;
-
+    const statusTips = host.querySelector(".wallet-status-error") as HTMLElement;
     state.style.display = "block";
     card.style.display = "none";
+    statusTips.style.display = "none"
 
     try {
-        const resp = await sendMsgToService({}, MsgType.WalletInfoQuery)
+        const resp = await sendMsgToOffScreen({}, MsgType.WalletInfoQuery)
         if (!resp || resp.success === false || !resp.data) {
             state.style.display = "none";
+            // showToastMsg(resp.error || resp.data || t('wallet_refresh_balance_failed'))
+            statusTips.style.display='block'
+            statusTips.querySelector(".wallet-status-txt").textContent = (resp.error || resp.data || t('wallet_refresh_balance_failed'));
             return;
         }
 
-        const data = resp.data;
+        const data = resp.data as walletInfo;
 
         const addrEl = host.querySelector("#web3-address") as HTMLSpanElement;
         const gasEl = host.querySelector("#web3-gas") as HTMLDivElement;
@@ -305,8 +311,10 @@ async function fetchWeb3Identity() {
 
         addrEl.textContent = data.address ?? "--";
         addrEl.title = data.address ?? "";
-        gasEl.textContent = data.gas ?? "--";
-        usdtEl.textContent = data.usdt ?? "--";
+        gasEl.textContent = data.ethVal ? Number(data.ethVal).toFixed(6) : "--";
+        gasEl.title = data.ethVal ?? "--";
+        usdtEl.textContent = data.usdcVal ?? "--";
+
         state.style.display = "none";
         card.style.display = "block";
     } catch (e) {

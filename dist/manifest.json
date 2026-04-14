@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "TweetCat",
-  "version": "2.3.21",
+  "version": "3.7.14",
   "default_locale": "en",
   "description": "TweetCat: Sort your Twitter feed, filter by custom labels, focus on what matters!",
   "action": {
@@ -19,18 +19,25 @@
   },
   "permissions": [
     "alarms",
+    "cookies",
     "webNavigation",
     "webRequest",
     "storage",
     "activeTab",
     "tabs",
-    "nativeMessaging"
+    "nativeMessaging",
+    "offscreen"
   ],
   "host_permissions": [
+    "https://api.cdp.coinbase.com/*",
+    "https://*.coinbase.com/*",
     "https://twitter.com/*",
     "https://x.com/*",
     "*://x.com/*",
-    "https://tweetcat.dessage.xyz/*"
+    "https://tweetcat.dessage.xyz/*",
+    "https://tweetcattips.ribencong.workers.dev/*",
+    "https://tweetcattips-dev.ribencong.workers.dev/*",
+    "http://localhost:8787/*"
   ],
   "background": {
     "service_worker": "js/background.js"
@@ -61,7 +68,8 @@
     {
       "resources": [
         "css/*.css",
-        "html/*.html",
+        "html/content.html",
+        "html/cdp_auth_auto_x.html",
         "images/tweetcat.svg",
         "js/injection.js"
       ],
@@ -74,6 +82,6 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'none'; base-uri 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'none';frame-ancestors 'none'; base-uri 'self'"
   }
 }

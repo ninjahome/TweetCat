@@ -351,6 +351,9 @@
   "sync_user_not_found": {
     "message": "未找到该账号或同步失败。"
   },
+  "failed_to_sync_account": {
+    "message": "同步账号信息失败。"
+  },
   "refresh": {
     "message": "刷新"
   },
@@ -361,7 +364,7 @@
     "message": "Gas 费"
   },
   "usdt_balance": {
-    "message": "USDT 余额"
+    "message": "USDC 余额"
   },
   "web3_id_tittle": {
     "message": "Web3身份信息"
@@ -377,6 +380,60 @@
   },
   "ipfs_password_msg": {
     "message": "请输入解密口令"
+  },
+  "ipfs_photo_loading": {
+    "message": "正在上传 IPFS 快照…"
+  },
+  "Upload_failed": {
+    "message": "上传失败:"
+  },
+  "ipfs_wallet_skipped": {
+    "message": "未获取到钱包地址，已跳过 Manifest 更新"
+  },
+  "ipfs_updated_manifest": {
+    "message": "已更新同步清单（Manifest）"
+  },
+  "ipfs_local_failed": {
+    "message": "上传成功，但本地清单写入失败（不影响使用）"
+  },
+  "ipfs_local_failed_pin": {
+    "message": "本地 Kubo 取消 pin 失败:"
+  },
+  "ipfs_local_copied_CID": {
+    "message": "CID 已复制到剪贴板"
+  },
+  "ipfs_local_copied_failed": {
+    "message": "复制失败，请手动复制"
+  },
+  "ipfs_local_backend_snapshot": {
+    "message": "无法从后台获取快照"
+  },
+  "ipfs_local_request_failed": {
+    "message": "请求后台快照失败:"
+  },
+  "ipfs_local_no_snap": {
+    "message": "无可用快照"
+  },
+  "ipfs_local_requesting_snapshot": {
+    "message": "请求后台 Snapshot…"
+  },
+  "ipfs_local_api_base_unknown": {
+    "message": "无法推断本地 IPFS API 地址"
+  },
+  "ipfs_local_uploading": {
+    "message": "正在上传到 IPFS..."
+  },
+  "ipfs_local_upload_success_cid": {
+    "message": "上传成功！CID: $1"
+  },
+  "ipfs_local_kubo_upload_failed_http": {
+    "message": "Kubo 上传失败: HTTP $1 $2"
+  },
+  "ipfs_local_uploading_test_data": {
+    "message": "正在上传测试数据到 IPFS..."
+  },
+  "ipfs_local_kubo_missing_cid": {
+    "message": "未在返回值找到 CID"
   },
   "use_office_ipfs_node": {
     "message": "使用官方 ipfs 节点"
@@ -402,14 +459,17 @@
   "wallet_action_refresh_balance": {
     "message": "刷新余额"
   },
-  "wallet_action_export_private_key": {
-    "message": "导出私钥"
+  "wallet_action_show_on_browser": {
+    "message": "浏览器查看"
   },
   "wallet_action_transfer_eth": {
     "message": "转账 ETH"
   },
   "wallet_action_transfer_token": {
-    "message": "转账代币"
+    "message": "转账 USDC"
+  },
+  "wallet_action_sign_out": {
+    "message": "退出钱包"
   },
   "wallet_action_sign_message": {
     "message": "签名消息"
@@ -423,29 +483,11 @@
   "wallet_action_node_settings": {
     "message": "节点设置"
   },
-  "wallet_node_rpc_title": {
-    "message": "节点与 RPC"
-  },
-  "wallet_infura_project_id_label": {
-    "message": "Infura Project ID（可选）"
-  },
-  "wallet_infura_project_id_placeholder": {
-    "message": "示例：123abc456def"
-  },
-  "wallet_custom_rpc_url_label": {
-    "message": "自定义 RPC URL（可选）"
-  },
-  "wallet_custom_rpc_url_placeholder": {
-    "message": "https://example.com/rpc"
-  },
   "wallet_rpc_mode_default": {
     "message": "使用默认公共 RPC"
   },
   "wallet_rpc_mode_custom": {
     "message": "使用自定义 RPC"
-  },
-  "wallet_save_settings": {
-    "message": "保存"
   },
   "wallet_reset_settings": {
     "message": "恢复默认"
@@ -549,6 +591,12 @@
   "ipfs_latest_copy_cid": {
     "message": "复制 CID"
   },
+  "ipfs_sync_data": {
+    "message": "同步IPFS数据"
+  },
+  "ipfs_confirm_sync_from_ipfs_overwrite": {
+    "message": "确认使用 IPFS 数据覆盖本地数据吗？"
+  },
   "category_delete_tooltip": {
     "message": "删除分类"
   },
@@ -627,7 +675,6 @@
   "wallet_refresh_balance_failed": {
     "message": "刷新余额失败"
   },
-
   "wallet_prompt_password_export_pk": {
     "message": "请输入钱包口令以导出私钥"
   },
@@ -640,7 +687,6 @@
   "wallet_export_pk_failed": {
     "message": "导出私钥失败"
   },
-
   "wallet_prompt_transfer_to": {
     "message": "请输入接收地址"
   },
@@ -654,31 +700,11 @@
     "message": "请输入钱包口令以发送 ETH"
   },
   "wallet_transfer_tx_sent": {
-    "message": "交易已发送：{0}"
+    "message": "交易已发送:"
   },
-  "wallet_transfer_eth_failed": {
+  "wallet_transfer_failed": {
     "message": "转账失败"
   },
-
-  "wallet_prompt_token_address": {
-    "message": "请输入代币合约地址"
-  },
-  "wallet_prompt_transfer_token_amount": {
-    "message": "请输入转账数量"
-  },
-  "wallet_prompt_token_decimals": {
-    "message": "请输入代币精度"
-  },
-  "wallet_prompt_password_send_token": {
-    "message": "请输入钱包口令以发送代币"
-  },
-  "wallet_transfer_token_tx_sent": {
-    "message": "代币转账已发送：{0}"
-  },
-  "wallet_transfer_token_failed": {
-    "message": "代币转账失败"
-  },
-
   "wallet_prompt_sign_message": {
     "message": "请输入要签名的消息"
   },
@@ -694,7 +720,6 @@
   "wallet_sign_message_failed": {
     "message": "签名失败"
   },
-
   "wallet_prompt_sign_typed_json": {
     "message": "请输入包含 domain/types/value 的 JSON"
   },
@@ -713,7 +738,6 @@
   "wallet_sign_typed_failed": {
     "message": "TypedData 签名失败"
   },
-
   "wallet_prompt_verify_signature_input_signature": {
     "message": "请输入签名字符串"
   },
@@ -738,7 +762,6 @@
   "wallet_verify_signer_alert_prefix": {
     "message": "签名者："
   },
-
   "wallet_error_operation_cancelled": {
     "message": "操作已取消"
   },
@@ -766,7 +789,6 @@
   "wallet_error_message_or_typed_required": {
     "message": "请提供消息或 TypedData"
   },
-
   "ipfs_error_custom_api_url_required": {
     "message": "请填写自建节点 API URL"
   },
@@ -782,7 +804,6 @@
   "ipfs_save_failed": {
     "message": "保存失败"
   },
-
   "ipfs_set_tweetcat_default_success": {
     "message": "已设为 TweetCat 默认"
   },
@@ -834,81 +855,1300 @@
   "wallet_transfer_eth_title": {
     "message": "发送 ETH"
   },
-  "wallet_transfer_eth_subtitle": {
-    "message": "请确认收款地址和转账金额，提交后将发起链上交易。"
-  },
-
   "wallet_transfer_to_label": {
     "message": "收款地址"
   },
   "wallet_transfer_to_hint": {
     "message": "请确保复制的地址正确，链上转账一旦发出将无法撤回。"
   },
-
   "wallet_transfer_amount_label": {
     "message": "转账数量"
   },
-  "wallet_transfer_fee_hint": {
-    "message": "实际可用余额 ≈ 当前余额 − 预估网络手续费。"
-  },
-
-  "wallet_transfer_gas_label": {
-    "message": "Gas 限额（可选）"
-  },
-  "wallet_transfer_gas_hint": {
-    "message": "Gas 设置过低可能导致交易失败，但仍然消耗部分手续费。"
-  },
-
   "wallet_transfer_confirm_btn": {
     "message": "确认并发送"
   },
-
   "wallet_current_balance": {
     "message": "当前余额"
   },
   "wallet_error_to_required": {
     "message": "请输入收款地址。"
   },
-  "wallet_error_amount_invalid": {
-    "message": "请输入大于 0 的有效转账金额。"
-  },
   "wallet_error_gas_invalid": {
-    "message": "Gas 限额不合法，请输入不小于 21000 的整数。"
+    "message": "Gas 不足"
   },
   "wallet_transfer_token_title": {
     "message": "发送 USDC"
   },
-  "wallet_transfer_token_subtitle": {
-    "message": "请仔细确认代币合约地址、收款地址和转账数量，提交后将发起链上交易。"
+  "wallet_sending_transaction": {
+    "message": "交易发送中......"
   },
-
-  "wallet_token_address_label": {
-    "message": "代币合约地址"
+  "wallet_signing": {
+    "message": "钱包签名......"
   },
-  "wallet_token_address_placeholder": {
-    "message": "ERC-20 代币合约地址"
+  "wallet_err_no_basic": {
+    "message": "获取钱包信息失败"
   },
-  "wallet_token_address_hint": {
-    "message": "默认使用当前网络的官方 USDC 合约地址。"
+  "wallet_insufficient_funds": {
+    "message": "余额不足"
   },
-
-  "wallet_transfer_token_amount_label": {
-    "message": "转账数量"
+  "cdp_wallet_connect": {
+    "message": "链接 Coinbase 钱包"
   },
-  "wallet_transfer_token_fee_hint": {
-    "message": "请确保钱包中仍有足够的 ETH 用于支付网络手续费。"
+  "missing_payload_error": {
+    "message": "缺少支付参数"
   },
-
-  "wallet_token_decimals_label": {
-    "message": "代币精度（decimals）"
+  "coinbase_login_error": {
+    "message": "请先登录 Coinbase 钱包"
   },
-
-  "wallet_transfer_token_confirm_btn": {
-    "message": "确认并发送"
+  "invalid_payment_amount": {
+    "message": "无效的支付金额"
   },
-
-  "wallet_token_address_required": {
-    "message": "请输入代币合约地址。"
+  "checking_login_status": {
+    "message": "检查登录状态..."
+  },
+  "verifying_payment_amount": {
+    "message": "验证支付金额..."
+  },
+  "fetching_network_info": {
+    "message": "获取网络信息..."
+  },
+  "requesting_payment": {
+    "message": "正在请求支付...\n请在弹出的窗口中确认"
+  },
+  "post_payment_failure": {
+    "message": "支付后请求失败"
+  },
+  "payment_process_error": {
+    "message": "支付过程中发生错误"
+  },
+  "tip_success": {
+    "message": "✅ 打赏成功！"
+  },
+  "window_auto_close": {
+    "message": "窗口将在 10 秒后自动关闭"
+  },
+  "page_title_payment": {
+    "message": "X402 支付确认"
+  },
+  "page_header_payment": {
+    "message": "💎 X402 打赏支付"
+  },
+  "tweet_id_label": {
+    "message": "推文 ID:"
+  },
+  "author_id_label": {
+    "message": "作者 ID:"
+  },
+  "currency_unit": {
+    "message": "USDC"
+  },
+  "close_button": {
+    "message": "关闭"
+  },
+  "initializing_status": {
+    "message": "正在初始化..."
+  },
+  "initialization_error": {
+    "message": "支付初始化错误"
+  },
+  "txhash_label": {
+    "message": "交易哈希"
+  },
+  "connect_wallet_page_title": {
+    "message": "连接 Coinbase 钱包"
+  },
+  "connect_wallet_page_header": {
+    "message": "连接钱包"
+  },
+  "connect_wallet_description": {
+    "message": "选择一种方式登录 Coinbase"
+  },
+  "sign_in_with_google": {
+    "message": "使用 Google 登录"
+  },
+  "sign_in_with_apple": {
+    "message": "使用 Apple 登录"
+  },
+  "sign_in_with_x": {
+    "message": "使用 X 登录"
+  },
+  "initializing_coinbase_wallet_sdk": {
+    "message": "正在初始化 Coinbase 钱包 SDK"
+  },
+  "initialization_failed": {
+    "message": "初始化失败"
+  },
+  "login_success_completing_connection": {
+    "message": "登录成功，正在完成连接..."
+  },
+  "login_success_window_closing": {
+    "message": "登录成功！窗口即将关闭..."
+  },
+  "wallet_connected": {
+    "message": "钱包已连接"
+  },
+  "redirecting_to_login": {
+    "message": "正在跳转到 $1 登录..."
+  },
+  "accessing_x402_service": {
+    "message": "正在访问 X402 服务"
+  },
+  "fetch_tweet_info_failed": {
+    "message": "获取推文信息失败: $1"
+  },
+  "user_tip_button_title": {
+    "message": "打赏($1)U"
+  },
+  "rewards_page_title": {
+    "message": "我的奖励"
+  },
+  "rewards_filter_label": {
+    "message": "状态筛选"
+  },
+  "rewards_filter_all": {
+    "message": "全部"
+  },
+  "rewards_status_pending": {
+    "message": "待领取"
+  },
+  "rewards_status_locked": {
+    "message": "锁定中"
+  },
+  "rewards_status_success": {
+    "message": "成功"
+  },
+  "rewards_status_failed": {
+    "message": "失败"
+  },
+  "rewards_status_cancelled": {
+    "message": "已取消"
+  },
+  "rewards_status_unknown": {
+    "message": "未知"
+  },
+  "rewards_prev_page": {
+    "message": "上一页"
+  },
+  "rewards_next_page": {
+    "message": "下一页"
+  },
+  "rewards_page_info": {
+    "message": "第 $1 页"
+  },
+  "rewards_empty_state": {
+    "message": "暂无奖励记录"
+  },
+  "rewards_loading": {
+    "message": "加载中..."
+  },
+  "rewards_user_id_not_found": {
+    "message": "未找到用户ID"
+  },
+  "rewards_load_failed": {
+    "message": "加载奖励失败"
+  },
+  "rewards_claiming": {
+    "message": "正在领取奖励..."
+  },
+  "rewards_claim_success": {
+    "message": "领取成功!"
+  },
+  "rewards_claim_failed": {
+    "message": "领取失败"
+  },
+  "rewards_unknown_error": {
+    "message": "未知错误"
+  },
+  "rewards_field_id": {
+    "message": "ID"
+  },
+  "rewards_field_asset": {
+    "message": "资产"
+  },
+  "rewards_field_amount": {
+    "message": "金额"
+  },
+  "rewards_field_status": {
+    "message": "状态"
+  },
+  "rewards_field_created_at": {
+    "message": "创建时间"
+  },
+  "rewards_field_updated_at": {
+    "message": "更新时间"
+  },
+  "rewards_field_reason": {
+    "message": "原因"
+  },
+  "rewards_field_tx_hash": {
+    "message": "交易哈希"
+  },
+  "rewards_field_asset_address": {
+    "message": "资产地址"
+  },
+  "rewards_btn_claim": {
+    "message": "领取"
+  },
+  "rewards_btn_view_tx": {
+    "message": "查看交易"
+  },
+  "dashboard_rewards_title": {
+    "message": "我的奖励"
+  },
+  "dashboard_rewards_pending": {
+    "message": "待领取"
+  },
+  "wallet_action_fee_history": {
+    "message": "平台费用"
+  },
+  "fees_page_title": {
+    "message": "费用历史"
+  },
+  "fees_total_paid": {
+    "message": "总计费用"
+  },
+  "fees_avg_rate": {
+    "message": "平均费率"
+  },
+  "fees_total_count": {
+    "message": "总交易数"
+  },
+  "fees_current_page_total": {
+    "message": "当前页费用"
+  },
+  "fees_current_page_avg_rate": {
+    "message": "平均费率"
+  },
+  "fees_current_page_count": {
+    "message": "当前页记录数"
+  },
+  "fees_prev_page": {
+    "message": "上一页"
+  },
+  "fees_next_page": {
+    "message": "下一页"
+  },
+  "fees_page": {
+    "message": "第"
+  },
+  "fees_empty_state": {
+    "message": "暂无费用记录"
+  },
+  "fees_loading": {
+    "message": "加载费用历史中..."
+  },
+  "fees_user_id_not_found": {
+    "message": "未找到用户ID"
+  },
+  "fees_load_failed": {
+    "message": "加载费用历史失败"
+  },
+  "fees_reward_id": {
+    "message": "奖励"
+  },
+  "fees_fee_badge": {
+    "message": "费用"
+  },
+  "fees_field_gross": {
+    "message": "总额"
+  },
+  "fees_field_fee": {
+    "message": "费用"
+  },
+  "fees_field_net": {
+    "message": "到账"
+  },
+  "fees_field_date": {
+    "message": "日期"
+  },
+  "fees_detail_title": {
+    "message": "费用详情"
+  },
+  "fees_view_on_chain": {
+    "message": "查看链上交易"
+  },
+  "transfer_usdc_btn_title": {
+    "message": "转账(USDC)"
+  },
+  "buy_usdc_title": {
+    "message": "购买 USDC"
+  },
+  "buy_usdc_button": {
+    "message": "立即购买 USDC"
+  },
+  "buy_usdc_no_fees": {
+    "message": "零费用"
+  },
+  "buy_usdc_your_wallet": {
+    "message": "您的钱包"
+  },
+  "buy_usdc_current_balance": {
+    "message": "当前余额"
+  },
+  "buy_usdc_select_amount": {
+    "message": "选择金额"
+  },
+  "buy_usdc_custom_amount": {
+    "message": "或者输入自定义金额 ($5 - $500)"
+  },
+  "buy_usdc_no_fees_feature": {
+    "message": "Base 网络零手续费"
+  },
+  "buy_usdc_enter_amount": {
+    "message": "输入金额"
+  },
+  "btn_back": {
+    "message": "返回"
+  },
+  "buy_usdc_fast_payment": {
+    "message": "Apple Pay 和借记卡"
+  },
+  "buy_usdc_secure": {
+    "message": "由 Coinbase 保护"
+  },
+  "buy_usdc_powered_by": {
+    "message": "由 Coinbase Onramp 提供支持"
+  },
+  "buy_usdc_funds_direct": {
+    "message": "资金将直接发送到您的钱包"
+  },
+  "buy_usdc_no_wallet": {
+    "message": "请先连接您的钱包"
+  },
+  "buy_usdc_load_wallet_failed": {
+    "message": "加载钱包信息失败"
+  },
+  "buy_usdc_amount_error": {
+    "message": "金额必须在 $5 到 $500 之间"
+  },
+  "buy_usdc_preparing": {
+    "message": "准备您的购买..."
+  },
+  "buy_usdc_no_wallet_address": {
+    "message": "未找到钱包地址"
+  },
+  "buy_usdc_no_user_id": {
+    "message": "未找到用户ID"
+  },
+  "buy_usdc_redirecting": {
+    "message": "跳转到 Coinbase Pay..."
+  },
+  "buy_usdc_session_failed": {
+    "message": "创建购买会话失败"
+  },
+  "buy_usdc_failed": {
+    "message": "初始化购买失败"
+  },
+  "register_account_error": {
+    "message": "请确保接收方已关联 Coinbase 账户。"
+  },
+  "ipfs_sync_step_downloading": {
+    "message": "从 IPFS 下载快照中..."
+  },
+  "ipfs_sync_step_clearing_categories": {
+    "message": "清除旧分类中..."
+  },
+  "ipfs_sync_step_importing_categories": {
+    "message": "导入新分类中..."
+  },
+  "ipfs_sync_step_updating_assignments": {
+    "message": "更新分类关联中..."
+  },
+  "ipfs_sync_step_refreshing": {
+    "message": "刷新数据中..."
+  },
+  "ipfs_sync_success": {
+    "message": "数据同步成功"
+  },
+  "ipfs_sync_success_with_count": {
+    "message": "数据已同步：$1 个账户已更新"
+  },
+  "ipfs_sync_failed": {
+    "message": "从 IPFS 同步失败"
+  },
+  "ipfs_invalid_snapshot_data": {
+    "message": "无效的快照数据"
+  },
+  "ipfs_invalid_snapshot_format": {
+    "message": "无效的快照格式：缺少分类或分配信息"
+  },
+  "resetting_local_data": {
+    "message": "重置本地数据中..."
+  },
+  "creating_new_following": {
+    "message": "处理账户关系中..."
+  },
+  "ipfs_looking_for_snapshot": {
+    "message": "正在寻找 IPFS 快照..."
+  },
+  "ipfs_no_available_gateway": {
+    "message": "没有可用的 IPFS 网关"
+  },
+  "ipfs_open_snapshot_failed": {
+    "message": "打开快照失败"
+  },
+  "ipfs_sync_no_local_followings": {
+    "message": "需要先从推特同步账户。是否需要现在同步？"
+  },
+  "label_detail_gross": {
+    "message": "总金额"
+  },
+  "label_detail_rate": {
+    "message": "费率"
+  },
+  "label_detail_fee": {
+    "message": "手续费"
+  },
+  "label_detail_net": {
+    "message": "到手金额"
+  },
+  "label_detail_tx": {
+    "message": "交易哈希"
+  },
+  "label_detail_user_wallet": {
+    "message": "用户钱包"
+  },
+  "label_detail_platform_wallet": {
+    "message": "平台钱包"
+  },
+  "label_detail_created": {
+    "message": "创建时间"
+  },
+  "transfer_create_tx_failed": {
+    "message": "创建链上交易失败，请稍后重试。"
+  },
+  "page_title_transfer": {
+    "message": "X402 转账"
+  },
+  "page_header_transfer": {
+    "message": "转账 USDC"
+  },
+  "x402_transfer_confirm": {
+    "message": "确认转账"
+  },
+  "x402_transfer_decimals_hint": {
+    "message": "精度：6 位小数"
+  },
+  "x402_usdt_balance_title": {
+    "message": "USDC 余额"
+  },
+  "x402_transfer_hint_max_balance_prefix": {
+    "message": "建议：不超过余额 "
+  },
+  "x402_transfer_amount_must_number": {
+    "message": "金额必须是数字"
+  },
+  "x402_transfer_amount_gt0": {
+    "message": "金额需大于 0"
+  },
+  "x402_transfer_amount_max_decimals_6": {
+    "message": "金额不能超过 6 位小数"
+  },
+  "x402_transfer_missing_recipient_info": {
+    "message": "未找到接收方信息"
+  },
+  "x402_transfer_missing_recipient_address": {
+    "message": "接收方钱包地址缺失"
+  },
+  "x402_transfer_wallet_required_auto_close": {
+    "message": "请先连接钱包。该窗口将在 3 秒后自动关闭。"
+  },
+  "x402_transfer_request_wallet_confirm": {
+    "message": "正在请求钱包确认..."
+  },
+  "x402_transfer_load_user_failed": {
+    "message": "加载接收方信息失败"
+  },
+  "x402_transfer_success_prefix": {
+    "message": "✅ 转账成功: "
+  },
+  "x402_transfer_profile_load_failed": {
+    "message": "错误：无法加载用户信息，请重新打开。"
+  },
+  "cdp_auth_action_close": {
+    "message": "关闭窗口"
+  },
+  "cdp_auth_action_retry": {
+    "message": "重试"
+  },
+  "cdp_auth_status_init": {
+    "message": "初始化中..."
+  },
+  "cdp_auth_page_title": {
+    "message": "Coinbase 钱包连接 "
+  },
+  "cdp_auth_page_title_header": {
+    "message": "Coinbase 钱包"
+  },
+  "cdp_auth_verifying_authorization_result": {
+    "message": "正在验证授权结果..."
+  },
+  "cdp_auth_verifying_user_info": {
+    "message": "正在验证用户信息..."
+  },
+  "cdp_auth_connecting_coinbase_service": {
+    "message": "正在连接 Coinbase 服务..."
+  },
+  "cdp_auth_connection_detected_closing": {
+    "message": "✅ 已检测到连接，即将关闭..."
+  },
+  "cdp_auth_redirecting_to_x_login": {
+    "message": "正在跳转 X (Twitter) 登录..."
+  },
+  "cdp_auth_encountered_error": {
+    "message": "发生错误：$1"
+  },
+  "fetch_reward_info_failed": {
+    "message": "获取奖励信息失败：$1"
+  },
+  "init_ad_plaza_failed": {
+    "message": "初始化 Ad Plaza 失败: $1"
+  },
+  "wallet_new_show": {
+    "message": "显示"
+  },
+  "wallet_new_hide": {
+    "message": "隐藏"
+  },
+  "wallet_new_mnemonic_incomplete": {
+    "message": "请完整输入助记词"
+  },
+  "wallet_new_mnemonic_mismatch": {
+    "message": "两次助记词不一致"
+  },
+  "wallet_new_backup_checkbox_required": {
+    "message": "请勾选已线下安全备份"
+  },
+  "wallet_new_mnemonic_placeholder": {
+    "message": "请输入助记词"
+  },
+  "wallet_new_generate_failed": {
+    "message": "生成失败"
+  },
+  "wallet_new_save_failed": {
+    "message": "保存失败"
+  },
+  "wallet_new_password_too_short": {
+    "message": "口令至少 8 位"
+  },
+  "wallet_new_password_mismatch": {
+    "message": "两次口令不一致"
+  },
+  "wallet_new_loading_creating": {
+    "message": "创建中..."
+  },
+  "wallet_network_change_confirm": {
+    "message": "切换网络将退出当前 Coinbase 账号以重新确认绑定关系，确定要切换吗？"
+  },
+  "wallet_network_changed_relogin": {
+    "message": "网络已切换，请重新登录 Coinbase 账号"
+  },
+  "tag_new": {
+    "message": "新任务"
+  },
+  "tag_easy": {
+    "message": "简单"
+  },
+  "tag_explore": {
+    "message": "探索"
+  },
+  "tag_high_reward": {
+    "message": "高收益"
+  },
+  "tag_popular": {
+    "message": "热门"
+  },
+  "status_claimed_todo": {
+    "message": "已领 - 待执行"
+  },
+  "status_pending_verification": {
+    "message": "审核中"
+  },
+  "status_settled_paid": {
+    "message": "已结算"
+  },
+  "status_rejected": {
+    "message": "已拒绝"
+  },
+  "status_completed": {
+    "message": "已结束"
+  },
+  "status_running": {
+    "message": "进行中..."
+  },
+  "btn_go_to_follow": {
+    "message": "去关注"
+  },
+  "no_tasks_yet": {
+    "message": "暂无任务"
+  },
+  "explore_ads_earning": {
+    "message": "去探索广告并开始赚取奖励吧！"
+  },
+  "no_ads_available": {
+    "message": "暂无可用广告"
+  },
+  "check_back_later": {
+    "message": "请稍后再来看看新的赚钱机会！"
+  },
+  "not_linked": {
+    "message": "未关推"
+  },
+  "verified": {
+    "message": "已认证"
+  },
+  "not_verified": {
+    "message": "未认证"
+  },
+  "unknown": {
+    "message": "未知"
+  },
+  "visit_profile_update": {
+    "message": "访问您的 X 个人资料以更新状态"
+  },
+  "verification_failed": {
+    "message": "验证失败"
+  },
+  "blue_v_required": {
+    "message": "只有蓝V认证用户可以参与此活动。请确保您的账号拥有蓝色复选标记。"
+  },
+  "verification_required_msg": {
+    "message": "需要验证：为了参与此活动，我们需要验证您的蓝V状态。我们可以通过简短访问您的 X 个人资料页面来实现。是否继续？"
+  },
+  "status_expired_msg": {
+    "message": "状态已过期：您的蓝 V 状态已超过一周未更新。请访问您的个人资料以刷新状态。是否继续？"
+  },
+  "ad_has_expired": {
+    "message": "该广告活动已结束"
+  },
+  "missing_landing_page": {
+    "message": "该广告缺少落地页链接。"
+  },
+  "start_task_failed": {
+    "message": "开始任务失败"
+  },
+  "loading_tasks": {
+    "message": "正在加载任务..."
+  },
+  "filtering": {
+    "message": "正在筛选..."
+  },
+  "no_activity_yet": {
+    "message": "暂无记录。"
+  },
+  "activity_created": {
+    "message": "领取时间"
+  },
+  "activity_expires": {
+    "message": "预计到账时间"
+  },
+  "nothing_to_withdraw": {
+    "message": "没有可提现的金额。"
+  },
+  "withdrawing": {
+    "message": "正在提现..."
+  },
+  "warning_weekly_limit": {
+    "message": "执行者提现每周限额一次"
+  },
+  "weekly_limit_reached_title": {
+    "message": "已达到每周提现限额"
+  },
+  "weekly_limit_reached_msg": {
+    "message": "您本周已经提现过。每个账户每周只能提现一次。"
+  },
+  "already_withdrawn_this_week": {
+    "message": "您本周已经提现过，请下周再试。"
+  },
+  "withdraw_success": {
+    "message": "提现成功！"
+  },
+  "withdraw_failed": {
+    "message": "提现失败"
+  },
+  "withdraw_error": {
+    "message": "提现错误"
+  },
+  "failed_to_load_activity": {
+    "message": "无法加载动态。"
+  },
+  "page_indicator": {
+    "message": "第 $1 页，共 $2 页"
+  },
+  "tab_explore": {
+    "message": "探索"
+  },
+  "status_label": {
+    "message": "状态"
+  },
+  "plaza_title": {
+    "message": "Ad Plaza - 挣钱 - TweetCat"
+  },
+  "plaza_header_logo": {
+    "message": "Ad Plaza"
+  },
+  "btn_publish_ad": {
+    "message": "发布广告 / 推广"
+  },
+  "withdraw_updated_today": {
+    "message": "今天已更新"
+  },
+  "withdrawable_label": {
+    "message": "可提现"
+  },
+  "btn_withdraw": {
+    "message": "提现"
+  },
+  "btn_activity": {
+    "message": "动态"
+  },
+  "verification_label": {
+    "message": "验证状态："
+  },
+  "summaries_total_earned": {
+    "message": "总共获得"
+  },
+  "summaries_today_earned": {
+    "message": "今日获得"
+  },
+  "summaries_pending": {
+    "message": "待确认"
+  },
+  "filters_title": {
+    "message": "筛选"
+  },
+  "btn_clear_filters": {
+    "message": "清除筛选"
+  },
+  "search_ads_placeholder": {
+    "message": "搜索广告..."
+  },
+  "reward_range_label": {
+    "message": "奖励范围"
+  },
+  "sort_by_label": {
+    "message": "排序方式"
+  },
+  "sort_reward_high": {
+    "message": "最高奖励"
+  },
+  "sort_newest": {
+    "message": "最新发布"
+  },
+  "sort_time_short": {
+    "message": "最短时间"
+  },
+  "sort_popular": {
+    "message": "最热门"
+  },
+  "task_status_all_option": {
+    "message": "所有状态"
+  },
+  "btn_previous": {
+    "message": "上一页"
+  },
+  "btn_next": {
+    "message": "下一页"
+  },
+  "earn_label": {
+    "message": "收益："
+  },
+  "btn_start_task": {
+    "message": "开始任务"
+  },
+  "activity_title": {
+    "message": "活动记录"
+  },
+  "publishing_campaign": {
+    "message": "正在发布广告..."
+  },
+  "err_enter_campaign_name": {
+    "message": "请输入广告名称。"
+  },
+  "err_enter_target_url": {
+    "message": "请输入目标 Twitter 个人资料链接。"
+  },
+  "err_reward_positive": {
+    "message": "每次关注的奖励必须大于 0。"
+  },
+  "err_quota_positive": {
+    "message": "最大关注人数必须为正整数。"
+  },
+  "err_select_end_date": {
+    "message": "请选择结束日期。"
+  },
+  "err_end_date_future": {
+    "message": "结束日期必须在未来。"
+  },
+  "err_invalid_reward_format": {
+    "message": "奖励金额格式无效。"
+  },
+  "err_failed_create_campaign": {
+    "message": "创建广告失败。"
+  },
+  "msg_campaign_published": {
+    "message": "广告发布成功！"
+  },
+  "err_insufficient_balance": {
+    "message": "余额不足。"
+  },
+  "invalid_exact_evm_insufficient_balance": {
+    "message": "账户余额不足，请检查 USDC 余额。"
+  },
+  "required_label": {
+    "message": "需要"
+  },
+  "available_label": {
+    "message": "可用"
+  },
+  "header_advertise_title": {
+    "message": "推广"
+  },
+  "header_advertise_sub": {
+    "message": "P2P 链上推广活动"
+  },
+  "balance_label": {
+    "message": "余额"
+  },
+  "btn_plaza": {
+    "message": "广场"
+  },
+  "section_my_ads": {
+    "message": "我的广告"
+  },
+  "section_my_ads_sub": {
+    "message": "创建活动、锁定预算并跟踪投放进度。"
+  },
+  "btn_publish_new_ad": {
+    "message": "发布新广告"
+  },
+  "th_ad_name": {
+    "message": "广告名称"
+  },
+  "th_status": {
+    "message": "状态"
+  },
+  "th_reward_per_task": {
+    "message": "任务奖励"
+  },
+  "th_claimed": {
+    "message": "已领取"
+  },
+  "th_settled": {
+    "message": "已结算"
+  },
+  "th_spent": {
+    "message": "已花费"
+  },
+  "th_remaining_budget": {
+    "message": "剩余预算"
+  },
+  "th_end_date": {
+    "message": "结束日期"
+  },
+  "th_actions": {
+    "message": "操作"
+  },
+  "msg_no_ads_published": {
+    "message": "暂无发布的广告。点击“发布新广告”开始吧！"
+  },
+  "pagination_showing": {
+    "message": "正在显示 $1 / $2"
+  },
+  "section_recent_activity": {
+    "message": "最近动态"
+  },
+  "section_recent_activity_sub": {
+    "message": "最近的支出记录（预览）。"
+  },
+  "th_time": {
+    "message": "时间"
+  },
+  "th_ad": {
+    "message": "广告"
+  },
+  "th_event": {
+    "message": "事件"
+  },
+  "th_amount": {
+    "message": "金额"
+  },
+  "th_service_fee": {
+    "message": "服务费"
+  },
+  "msg_no_spending_records": {
+    "message": "暂无支出记录。"
+  },
+  "pagination_page_info": {
+    "message": "第 $1 页，共 $2 页（$3 条记录）"
+  },
+  "side_wallet_insights": {
+    "message": "钱包与见解"
+  },
+  "label_available": {
+    "message": "可用"
+  },
+  "label_frozen": {
+    "message": "冻结"
+  },
+  "meta_frozen_funds": {
+    "message": "冻结的资金无法转移"
+  },
+  "btn_transfer": {
+    "message": "转账"
+  },
+  "label_active_campaigns": {
+    "message": "进行中的活动"
+  },
+  "meta_running_deliverable": {
+    "message": "正在运行 / 可投放"
+  },
+  "label_spend": {
+    "message": "支出"
+  },
+  "tab_today": {
+    "message": "今天"
+  },
+  "tab_7d": {
+    "message": "7D"
+  },
+  "label_today_spend": {
+    "message": "今日支出"
+  },
+  "label_week_spend": {
+    "message": "本周支出"
+  },
+  "side_tips": {
+    "message": "提示：您的预算已锁定用于活动投放；活动记录可通过“动态”查询。"
+  },
+  "modal_publish_follow_title": {
+    "message": "发布关注活动"
+  },
+  "form_intro_follow": {
+    "message": "创建一个活动，吸引蓝V认证用户关注您。您可以设置每个关注者的奖励和最大关注人数。"
+  },
+  "label_campaign_name": {
+    "message": "活动名称"
+  },
+  "placeholder_campaign_name": {
+    "message": "例如：我的关注活动"
+  },
+  "hint_campaign_name": {
+    "message": "仅供您参考"
+  },
+  "label_reward_per_follow": {
+    "message": "每个关注的奖励 (USDC)"
+  },
+  "label_max_followers": {
+    "message": "最大关注人数"
+  },
+  "hint_quota": {
+    "message": "例如：500 个关注者（$10 预算）"
+  },
+  "label_target_profile_url": {
+    "message": "目标 Twitter 个人资料链接"
+  },
+  "hint_target_profile_url": {
+    "message": "您希望用户关注的 X 个人资料（例如：https://x.com/TweetCatOrg）"
+  },
+  "label_campaign_end_date": {
+    "message": "活动结束日期"
+  },
+  "hint_end_date": {
+    "message": "此日期后活动将停止接受新关注者"
+  },
+  "label_total_budget": {
+    "message": "总预算："
+  },
+  "label_your_balance": {
+    "message": "您的余额："
+  },
+  "note_blue_verified_only": {
+    "message": "只有蓝V认证（✓）用户才能参与您的活动"
+  },
+  "btn_pay_publish": {
+    "message": "支付并发布"
+  },
+  "modal_recharge_title": {
+    "message": "充值账户"
+  },
+  "recharge_transfer_title": {
+    "message": "在钱包和广告账户之间划转"
+  },
+  "label_direction": {
+    "message": "方向"
+  },
+  "btn_wallet_to_ads": {
+    "message": "钱包 → 广告"
+  },
+  "btn_ads_to_wallet": {
+    "message": "广告 → 钱包"
+  },
+  "label_wallet_usdc": {
+    "message": "钱包 USDC"
+  },
+  "label_ads_available": {
+    "message": "广告账户可用"
+  },
+  "label_ads_frozen": {
+    "message": "广告账户冻结"
+  },
+  "indicator_wallet_to_ads": {
+    "message": "链上钱包 → 广告账户"
+  },
+  "indicator_ads_to_wallet": {
+    "message": "广告账户 → 链上钱包"
+  },
+  "warning_monthly_limit": {
+    "message": "提现每月限额一次"
+  },
+  "label_amount": {
+    "message": "金额"
+  },
+  "hint_transfer_amount": {
+    "message": "输入划转金额 (USDC)。"
+  },
+  "btn_max": {
+    "message": "最大"
+  },
+  "hint_frozen_no_transfer": {
+    "message": "冻结的资金无法划转。"
+  },
+  "modal_limit_reached_title": {
+    "message": "已达到每月提现限额"
+  },
+  "limit_reached_msg": {
+    "message": "您本月已经提现过。每个账户每月只能提现一次。"
+  },
+  "label_prev_withdrawal": {
+    "message": "上次提现："
+  },
+  "label_next_available": {
+    "message": "下次可用："
+  },
+  "btn_view_prev_tx": {
+    "message": "查看上次交易"
+  },
+  "btn_transfer_submit": {
+    "message": "划转"
+  },
+  "btn_view_history": {
+    "message": "查看划转历史"
+  },
+  "modal_history_title": {
+    "message": "划转历史"
+  },
+  "th_direction": {
+    "message": "方向"
+  },
+  "th_transaction": {
+    "message": "交易"
+  },
+  "msg_no_recharge_records": {
+    "message": "暂无充值记录"
+  },
+  "modal_add_budget_title": {
+    "message": "追加预算"
+  },
+  "label_curr_available": {
+    "message": "当前可用余额"
+  },
+  "modal_campaign_details_title": {
+    "message": "活动详情"
+  },
+  "label_overview": {
+    "message": "概览"
+  },
+  "label_created_at": {
+    "message": "创建时间"
+  },
+  "label_dev_settings": {
+    "message": "开发者设置"
+  },
+  "label_callback_url": {
+    "message": "回调 URL"
+  },
+  "label_custom_data": {
+    "message": "自定义数据 (JSON)"
+  },
+  "btn_update_settings": {
+    "message": "更新设置"
+  },
+  "btn_pause": {
+    "message": "暂停"
+  },
+  "btn_resume": {
+    "message": "恢复"
+  },
+  "msg_no_records": {
+    "message": "暂无记录"
+  },
+  "tab_my_tasks": {
+    "message": "我的任务"
+  },
+  "status_active": {
+    "message": "投放中"
+  },
+  "status_paused": {
+    "message": "已暂停"
+  },
+  "status_paused_no_budget": {
+    "message": "暂停（余额不足）"
+  },
+  "status_ended": {
+    "message": "已结束"
+  },
+  "pagination_page_info_simple": {
+    "message": "第 $1 / $2 页"
+  },
+  "btn_pause_label": {
+    "message": "暂停"
+  },
+  "btn_resume_label": {
+    "message": "启用"
+  },
+  "btn_recharge_label": {
+    "message": "充值"
+  },
+  "msg_ad_paused": {
+    "message": "广告已暂停"
+  },
+  "msg_ad_resumed": {
+    "message": "广告已恢复"
+  },
+  "msg_ad_ended_refund": {
+    "message": "投放已结束。剩余预算将很快退回。"
+  },
+  "err_operation_failed": {
+    "message": "操作失败"
+  },
+  "err_enter_valid_amount": {
+    "message": "请输入有效金额"
+  },
+  "msg_budget_topped_up": {
+    "message": "预算追加成功"
+  },
+  "err_recharge_failed": {
+    "message": "充值失败"
+  },
+  "err_ended_ads_no_update": {
+    "message": "已结束的广告无法更新。"
+  },
+  "err_invalid_json_format": {
+    "message": "自定义数据 JSON 格式无效"
+  },
+  "updating_ad_settings": {
+    "message": "正在更新广告设置..."
+  },
+  "msg_ad_settings_updated": {
+    "message": "广告设置更新成功！"
+  },
+  "err_failed_update_ad": {
+    "message": "更新广告失败"
+  },
+  "btn_pause_ad": {
+    "message": "暂停广告"
+  },
+  "btn_resume_ad": {
+    "message": "启用广告"
+  },
+  "btn_recharge_resume": {
+    "message": "充值并启用"
+  },
+  "btn_add_budget": {
+    "message": "追加预算"
+  },
+  "btn_end_campaign": {
+    "message": "结束投放"
+  },
+  "confirm_end_campaign": {
+    "message": "确定要结束此广告吗？\n\n结束后的广告无法恢复，未使用的预算将自动退回到您的账户余额。"
+  },
+  "msg_sufficient_balance": {
+    "message": "您的余额充足，可以发布此广告。"
+  },
+  "msg_insufficient_balance_recharge": {
+    "message": "余额不足。请在发布前充值。"
+  },
+  "btn_transfer_to_ads": {
+    "message": "划转至广告账户"
+  },
+  "btn_transfer_to_wallet": {
+    "message": "划转至钱包"
+  },
+  "msg_withdraw_limit_reached": {
+    "message": "已达到每月提现限额。下次可用：$1"
+  },
+  "err_missing_xid": {
+    "message": "缺少用户 ID。请重新登录。"
+  },
+  "err_amount_exceeds_ads": {
+    "message": "金额超过广告账户可用余额。"
+  },
+  "err_amount_exceeds_wallet": {
+    "message": "金额超过钱包余额。"
+  },
+  "processing_deposit": {
+    "message": "正在划转至广告账户..."
+  },
+  "processing_withdraw": {
+    "message": "正在划转至钱包..."
+  },
+  "msg_transfer_success": {
+    "message": "划转提交成功。"
+  },
+  "err_transfer_failed": {
+    "message": "划转失败"
+  },
+  "msg_no_transfer_records": {
+    "message": "暂无划转记录"
+  },
+  "loading_history": {
+    "message": "正在加载划转历史..."
+  },
+  "err_load_history_failed": {
+    "message": "加载历史记录失败"
+  },
+    "ipfs_custom_auth_label_short": {
+    "message": "Authorization"
+  },
+  "wallet_minimum_amount_hint": {
+    "message": "（最低：$1）"
+  },
+  "unfollow_success_single": {
+    "message": "已成功取消关注 $1 个账号。"
+  },
+  "unfollow_success_multiple": {
+    "message": "已成功取消关注 $1 个账号，$2 个失败。"
+  },
+  "unfollow_failed_all": {
+    "message": "取消关注失败。"
+  },
+  "wallet_creating_status": {
+    "message": "正在创建..."
+  },
+  "transfer_success_with_hash": {
+    "message": "✅ 转账成功：$1"
+  },
+  "need_wallet_password": {
+    "message": "需要钱包口令"
+  },
+  "guide_blockchain_balance": {
+    "message": "点击此处可以查看区块链余额"
+  },
+  "withdraw_modal_success": {
+    "message": "提现成功"
+  },
+  "btn_view_tx": {
+    "message": "查看提现记录"
+  },
+  "btn_confirm_withdraw": {
+    "message": "确认"
+  },
+  "modal_claimants_title": {
+    "message": "领取人列表"
+  },
+  "msg_no_claimants": {
+    "message": "暂无领取人"
   }
 }
-

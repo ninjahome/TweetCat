@@ -1,20 +1,21 @@
-// src/wallet/wallet_api.ts
-import {ethers} from "ethers";
+import { ethers } from "ethers";
 import {
-    __tableWalletSettings,
     __tableWallets,
     checkAndInitDatabase,
     databaseDelete,
     databaseQueryAll,
     databaseUpdateOrAddItem,
 } from "../common/database";
+
+import { logW } from "../common/debug_flags";
 import {
-    BASE_MAINNET_CHAIN_ID,
-    BASE_MAINNET_DEFAULT_RPC,
-    BASE_MAINNET_USDC, BASE_SEPOLIA_CHAIN_ID,
-    BASE_SEPOLIA_DEFAULT_RPC,
-    BASE_SEPOLIA_USDC
-} from "../common/consts";
+    BASE_MAINNET_DEFAULT_RPC, BASE_MAINNET_USDC,
+    BASE_SEPOLIA_DEFAULT_RPC, BASE_SEPOLIA_USDC, ChainIDBaseMain,
+    ChainIDBaseSepolia,
+    ChainNameBaseMain,
+    walletInfo
+} from "../common/x402_obj";
+import { loadWalletSettings, WalletSettings } from "./wallet_setting";
 
 /** ====== 类型 ====== */
 export interface TCWallet {
@@ -24,23 +25,24 @@ export interface TCWallet {
     peerId?: string;
 }
 
-export interface WalletSettings {
-    infuraProjectId?: string;
-    customRpcUrl?: string;
-    useDefaultRpc: boolean;
-
-    network: 'base-mainnet' | 'base-sepolia';
+export interface transEthParam {
+    to: string;
+    amountEther: string;
+    password: string;
+    gasLimitWei?: string;
+    settings?: WalletSettings;
 }
 
-const WALLET_SETTINGS_KEY = "default";
+export interface transUsdcParam {
+    tokenAddress: string;
+    to: string;
+    amount: string;
+    decimals: number;
+    password: string;
+    gasLimitWei?: string;
+    settings?: WalletSettings;
+}
 
-export const defaultWalletSettings: WalletSettings = {
-    useDefaultRpc: true,
-    infuraProjectId: "",
-    customRpcUrl: "",
-
-    network: 'base-mainnet',
-};
 
 /** ====== 存取（保留你已有的导出） ====== */
 export async function saveWallet(record: TCWallet): Promise<void> {
@@ -90,42 +92,6 @@ export async function clearWallet(address?: string): Promise<void> {
     await Promise.all(records.map((item: any) => databaseDelete(__tableWallets, item.address)));
 }
 
-export async function loadWalletSettings(): Promise<WalletSettings> {
-    await checkAndInitDatabase();
-
-    const records = (await databaseQueryAll(__tableWalletSettings)) as Array<WalletSettings & { id: string }>;
-    const stored = records.find((item) => item.id === WALLET_SETTINGS_KEY);
-    if (!stored) {
-        return { ...defaultWalletSettings };
-    }
-
-    const storedNetwork = (stored as any).network;
-    const network: WalletSettings['network'] =
-        storedNetwork === 'base-mainnet' || storedNetwork === 'base-sepolia'
-            ? storedNetwork
-            : defaultWalletSettings.network;
-
-    return {
-        useDefaultRpc: stored.useDefaultRpc ?? defaultWalletSettings.useDefaultRpc,
-        infuraProjectId: stored.infuraProjectId ?? "",
-        customRpcUrl: stored.customRpcUrl ?? "",
-        network,
-    };
-}
-
-export async function saveWalletSettings(settings: WalletSettings): Promise<void> {
-    await checkAndInitDatabase();
-
-    const payload = {
-        id: WALLET_SETTINGS_KEY,
-        useDefaultRpc: settings.useDefaultRpc,
-        infuraProjectId: settings.infuraProjectId?.trim() ?? "",
-        customRpcUrl: settings.customRpcUrl?.trim() ?? "",
-        network: settings.network,     // ← 新增这一行
-    };
-
-    await databaseUpdateOrAddItem(__tableWalletSettings, payload);
-}
 
 /** ====== 助记词与加密保存（新增） ====== */
 const fromPhrase = (ethers as any).Wallet.fromPhrase || (ethers as any).Wallet.fromMnemonic;
@@ -150,7 +116,7 @@ export async function saveFromMnemonic(mnemonic: string, password: string): Prom
 
     const wallet = fromPhrase(phrase);
     const keystoreJson = await wallet.encrypt(password, {
-        kdf: "pbkdf2", pbkdf2: {c: 65536, dklen: 32, prf: "hmac-sha256"}
+        kdf: "pbkdf2", pbkdf2: { c: 65536, dklen: 32, prf: "hmac-sha256" }
     });
 
     const record: TCWallet = {
@@ -164,25 +130,7 @@ export async function saveFromMnemonic(mnemonic: string, password: string): Prom
 
 /** ====== Provider 选择（与 dashboard 保持一致） ====== */
 export function getRpcEndpoint(settings: WalletSettings): string {
-    const infuraId = settings.infuraProjectId?.trim();
-    const custom = settings.customRpcUrl?.trim();
-
-    // 1) 自定义 RPC：useDefaultRpc === false 且 customRpcUrl 有值，优先走这里
-    if (!settings.useDefaultRpc && custom) {
-        return custom;
-    }
-
-    // 2) 配了 Infura 的情况：根据 network 选 base 主网 / 测试网
-    if (infuraId) {
-        if (settings.network === "base-mainnet") {
-            return `https://base-mainnet.infura.io/v3/${infuraId}`;
-        } else {
-            return `https://base-sepolia.infura.io/v3/${infuraId}`;
-        }
-    }
-
-    // 3) 否则走默认公共 RPC，直接用你的全局常量
-    return settings.network === "base-mainnet"
+    return settings.network === ChainNameBaseMain
         ? BASE_MAINNET_DEFAULT_RPC
         : BASE_SEPOLIA_DEFAULT_RPC;
 }
@@ -190,9 +138,9 @@ export function getRpcEndpoint(settings: WalletSettings): string {
 export function createProvider(settings: WalletSettings) {
     const url = getRpcEndpoint(settings);
     const chainId =
-        settings.network === "base-mainnet"
-            ? BASE_MAINNET_CHAIN_ID
-            : BASE_SEPOLIA_CHAIN_ID;
+        settings.network === ChainNameBaseMain
+            ? ChainIDBaseMain
+            : ChainIDBaseSepolia;
 
     return new ethers.providers.JsonRpcProvider(url, chainId);
 }
@@ -230,7 +178,7 @@ export async function getEthBalance(address: string, settings?: WalletSettings):
 }
 
 export function getBaseUsdcAddress(settings: WalletSettings): string {
-    return settings.network === "base-mainnet"
+    return settings.network === ChainNameBaseMain
         ? BASE_MAINNET_USDC
         : BASE_SEPOLIA_USDC;
 }
@@ -273,15 +221,8 @@ export async function getTokenBalance(
     return formatUnits(raw, decimals);
 }
 
-
-export async function transferEth(params: {
-    to: string;
-    amountEther: string;
-    password: string;
-    gasLimitWei?: string;
-    settings?: WalletSettings;
-}): Promise<string /* txHash */> {
-    const {to, amountEther, password, gasLimitWei, settings} = params;
+export async function transferEth(params: transEthParam): Promise<string> {
+    const { to, amountEther, password, gasLimitWei, settings } = params;
     if (!to) throw new Error("接收地址无效");
     if (!amountEther) throw new Error("请输入转账金额");
 
@@ -290,23 +231,15 @@ export async function transferEth(params: {
 
     return withDecryptedWallet(password, async (wallet) => {
         const connected = wallet.connect(provider);
-        const req: any = {to, value: parseEther(amountEther)};
+        const req: any = { to, value: parseEther(amountEther) };
         if (gasLimitWei) req.gasLimit = (ethers as any).BigNumber?.from?.(gasLimitWei) ?? gasLimitWei;
         const tx = await connected.sendTransaction(req);
         return tx.hash as string;
     });
 }
 
-export async function transferErc20(params: {
-    tokenAddress: string;
-    to: string;
-    amount: string;
-    decimals: number;
-    password: string;
-    gasLimitWei?: string;
-    settings?: WalletSettings;
-}): Promise<string> {
-    const {tokenAddress, to, amount, decimals, password, gasLimitWei, settings} = params;
+export async function transferErc20(params: transUsdcParam): Promise<string> {
+    const { tokenAddress, to, amount, decimals, password, gasLimitWei, settings } = params;
     if (!tokenAddress) throw new Error("代币合约地址无效");
     if (!to) throw new Error("接收地址无效");
     if (!amount) throw new Error("请输入转账数量");
@@ -319,13 +252,13 @@ export async function transferErc20(params: {
         const abi = ["function transfer(address to, uint256 amount) returns (bool)"];
         const contract = new (ethers as any).Contract(tokenAddress, abi, connected);
         const value = parseUnits(amount, decimals);
-        const tx = await contract.transfer(to, value, gasLimitWei ? {gasLimit: gasLimitWei} : {});
+        const tx = await contract.transfer(to, value, gasLimitWei ? { gasLimit: gasLimitWei } : {});
         return tx.hash as string;
     });
 }
 
 export async function signMessage(params: { message: string; password: string }): Promise<string> {
-    const {message, password} = params;
+    const { message, password } = params;
     if (!message) throw new Error("消息不能为空");
     return withDecryptedWallet(password, async (wallet) => wallet.signMessage(message));
 }
@@ -333,7 +266,7 @@ export async function signMessage(params: { message: string; password: string })
 export async function signTypedData(params: {
     domain: any; types: any; value: any; password: string;
 }): Promise<string> {
-    const {domain, types, value, password} = params;
+    const { domain, types, value, password } = params;
     return withDecryptedWallet(password, async (wallet) => {
         const fn = (wallet as any)._signTypedData || (wallet as any).signTypedData;
         return fn.call(wallet, domain, types, value);
@@ -346,7 +279,7 @@ export async function verifySignature(params: {
     signature: string;
     expectedAddress?: string;
 }): Promise<boolean | string> {
-    const {message, typed, signature, expectedAddress} = params;
+    const { message, typed, signature, expectedAddress } = params;
     if (!signature) throw new Error("缺少签名");
 
     const recovered = message !== undefined
@@ -359,17 +292,6 @@ export async function verifySignature(params: {
     return recovered;
 }
 
-// 1. 定义缓存对象和有效期
-const CACHE_LIFETIME_MS = 15 * 60 * 1000; // 15 分钟
-interface DecryptedWalletCache {
-    wallet: ethers.Wallet;
-    expires: number;
-    address: string;
-}
-
-let decryptedWalletCache: DecryptedWalletCache | null = null;
-
-
 export async function withDecryptedWallet<T>(
     password: string,
     action: (wallet: ethers.Wallet) => Promise<T>
@@ -377,20 +299,7 @@ export async function withDecryptedWallet<T>(
     const record = await loadWallet();
     if (!record) throw new Error("未找到本地钱包记录");
 
-    const normalizedAddress = record.address.toLowerCase();
-
-    // --- 缓存检查 ---
-    const now = Date.now();
-    if (decryptedWalletCache &&
-        decryptedWalletCache.address === normalizedAddress &&
-        decryptedWalletCache.expires > now
-    ) {
-        console.log("[Wallet] 使用缓存的钱包对象 (Expires:", new Date(decryptedWalletCache.expires).toLocaleTimeString(), ")");
-        return action(decryptedWalletCache.wallet);
-    }
-    // --- 缓存检查结束 ---
-
-    console.log("[Wallet] 缓存过期或未命中，开始执行耗时的 fromEncryptedJson...");
+    logW("[Wallet] 缓存过期或未命中，开始执行耗时的 fromEncryptedJson...");
 
     let wallet: ethers.Wallet;
     try {
@@ -401,25 +310,34 @@ export async function withDecryptedWallet<T>(
         throw new Error("密码错误或解密失败: " + (error as Error).message);
     }
 
-    // --- 缓存更新 ---
-    decryptedWalletCache = {
-        wallet,
-        expires: now + CACHE_LIFETIME_MS,
-        address: normalizedAddress,
-    };
-    console.log("[Wallet] 钱包对象已解密并缓存，有效期至:", new Date(decryptedWalletCache.expires).toLocaleTimeString());
-
     return action(wallet);
 }
 
-// 导出私钥（利用 withDecryptedWallet 自动获取缓存或解密的钱包）
 export async function exportPrivateKey(password: string): Promise<string> {
     return withDecryptedWallet(password, async (wallet) => wallet.privateKey);
 }
 
-// 登出/清理时清除缓存
-export function clearDecryptedWalletCache(): void {
-    decryptedWalletCache = null;
-    console.log("[Wallet] 已清除解密钱包缓存");
-}
 
+export async function queryBasicInfo(): Promise<walletInfo> {
+    try {
+        const wallet = await loadWallet();
+        if (!wallet) {
+            return { address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null, userId: null }
+        }
+
+        const address = wallet.address;
+        const settings = await loadWalletSettings();          // 读当前网络设置
+        const eth = await getEthBalance(address, settings);   // 可显式传 settings
+
+        const usdcAddress = getBaseUsdcAddress(settings);     // 👈 关键：选出当前链的 USDC 地址
+        const usdc = await getTokenBalance(address, usdcAddress, settings);
+        const chainId =
+            settings.network === ChainNameBaseMain
+                ? ChainIDBaseMain
+                : ChainIDBaseSepolia;
+        return { address: address, ethVal: eth, usdcVal: usdc, hasCreated: true, chainId, xId: null, userId: null }
+    } catch (e) {
+        console.warn("query basic info of wallet failed:", e)
+        return { address: "", ethVal: "", usdcVal: "", hasCreated: false, chainId: -1, xId: null, userId: null }
+    }
+}

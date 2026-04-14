@@ -1,16 +1,19 @@
 import browser from "webextension-polyfill";
-import {__tableKolsInCategory, checkAndInitDatabase, databaseQueryAll} from "../common/database";
-import {tweetFM} from "./tweet_fetch_manager";
-import {checkIfXIsOpen, sendMessageToX} from "./bg_msg";
-import {MsgType} from "../common/consts";
-import {refillApiAccessToken, useTokenByTimer} from "./api_bucket_state";
-import {logBGT} from "../common/debug_flags";
+import { __tableKolsInCategory, checkAndInitDatabase, databaseQueryAll } from "../common/database";
+import { tweetFM } from "./tweet_fetch_manager";
+import { checkIfXIsOpen, sendMessageToX } from "./bg_msg";
+import { MsgType } from "../common/consts";
+import { refillApiAccessToken, useTokenByTimer } from "./api_bucket_state";
+import { logBGT } from "../common/debug_flags";
+import { pollAdsFeedIfNeeded } from "./bg_ads_feed";
 
 const alarms = browser.alarms;
 const __alarm_tweets_fetch__: string = '__tweet__fetcher__timer__';
 const __alarm_userid_check__: string = '__alarm_userid_check__';
-const __interval_tweets_fetch__: number = 2;
+const __alarm_ads_feed__: string = '__alarm_ads_feed__';
+const __interval_tweets_fetch__: number = 4;
 const __interval_userID_check__: number = 5;
+const __interval_ads_feed__: number = 1;
 
 alarms.onAlarm.addListener(timerTaskWork);
 
@@ -30,20 +33,34 @@ export async function createAlarm(): Promise<void> {
         });
         logBGT("------>>> userid check alarm create success", __interval_userID_check__)
     }
+
+    const adsFeedAlarm = await alarms.get(__alarm_ads_feed__);
+    if (!adsFeedAlarm) {
+        alarms.create(__alarm_ads_feed__, {
+            periodInMinutes: __interval_ads_feed__
+        });
+        logBGT("------>>> ads feed alarm create success", __interval_ads_feed__)
+    }
 }
 
 export async function updateAlarm(): Promise<void> {
     await browser.alarms.clear(__alarm_tweets_fetch__);
     await browser.alarms.clear(__alarm_userid_check__);
-    alarms.create(__alarm_tweets_fetch__, {
+    await browser.alarms.clear(__alarm_ads_feed__);
+    await alarms.create(__alarm_tweets_fetch__, {
         periodInMinutes: __interval_tweets_fetch__
     });
     logBGT("------>>> alarm for tweets fetch recreate success,timer:", __interval_tweets_fetch__);
 
-    alarms.create(__alarm_userid_check__, {
+    await alarms.create(__alarm_userid_check__, {
         periodInMinutes: __interval_userID_check__
     });
     logBGT("------>>> alarm for user id check recreate success,timer:", __interval_userID_check__);
+
+    await alarms.create(__alarm_ads_feed__, {
+        periodInMinutes: __interval_ads_feed__
+    });
+    logBGT("------>>> alarm for ads feed recreate success,timer:", __interval_ads_feed__);
 }
 
 async function timerTaskWork(alarm: any): Promise<void> {
@@ -54,6 +71,14 @@ async function timerTaskWork(alarm: any): Promise<void> {
         }
         case __alarm_userid_check__: {
             await alarmUerIdCheck();
+            break;
+        }
+        case __alarm_ads_feed__: {
+            try {
+                await pollAdsFeedIfNeeded(false);
+            } catch (e) {
+                console.warn("------>>> Error in pollAdsFeedIfNeeded timer:", e);
+            }
             break;
         }
         default:

@@ -43,11 +43,11 @@ export interface IGrowthMetrics {
 
 export interface IUserScoreData
     extends IUserCore,
-        IScaleMetrics,
-        IActivityMetrics,
-        ITrustMetrics,
-        IBrandMetrics,
-        IGrowthMetrics {
+    IScaleMetrics,
+    IActivityMetrics,
+    ITrustMetrics,
+    IBrandMetrics,
+    IGrowthMetrics {
 }
 
 /* ====================== 2. 主类 ====================== */
@@ -59,6 +59,7 @@ export class UserProfile implements IUserScoreData {
     internalId: string = '';
     createdAt: string = '';
     avatar: string = '';  // 新增字段
+    isFollowing: boolean = false;
 
     /* ---------- 规模 ---------- */
     followersCount: number = 0;
@@ -88,23 +89,51 @@ export class UserProfile implements IUserScoreData {
     /* ---------- 成长 ---------- */
     accountAgeDays: number = 0;
 
+    public isValid: boolean = false;
+
     /* ====================== 构造函数 ====================== */
     constructor(rawTwitterJson: any) {
-        this.fillFromApi(rawTwitterJson);
+        try {
+            this.fillFromApi(rawTwitterJson);
+            this.isValid = true;
+        } catch (e) {
+            this.isValid = false;
+            // Never throw here to avoid crashing the caller (interceptors on refresh)
+            console.log("[UserProfile_V3_REFRESH_FIX] Silently handled invalid payload.", {
+                dataKeys: Object.keys(rawTwitterJson?.data || rawTwitterJson || {})
+            });
+        }
     }
 
     /* ====================== 填充 API 数据 ====================== */
     private fillFromApi(data: any): void {
-        const u = data?.data?.user?.result;
-        if (!u) throw new Error('Invalid Twitter API payload');
+        const findDeepUser = (obj: any): any => {
+            if (!obj) return null;
+            if (obj.rest_id && (obj.core || obj.legacy)) return obj;
+            if (obj.result && (obj.result.core || obj.result.legacy)) return obj.result;
+
+            // Try common paths
+            const next = obj.data || obj.user ||
+                obj.user_result_by_screen_name ||
+                obj.result;
+            if (next && next !== obj) return findDeepUser(next);
+
+            return null;
+        };
+
+        const u = findDeepUser(data);
+
+        if (!u || u.__typename === 'UserUnavailable') {
+            throw new Error('No valid user object found in payload');
+        }
 
         // 1. 核心 + 头像
-        this.userName = u.core?.screen_name ?? '';
-        this.displayName = u.core?.name ?? '';
+        this.userName = u.core?.screen_name ?? u.legacy?.screen_name ?? '';
+        this.displayName = u.core?.name ?? u.legacy?.name ?? u.legacy?.display_name ?? '';
         this.userId = u.rest_id ?? '';
         this.internalId = u.id ?? '';
-        this.createdAt = u.core?.created_at ?? '';
-        this.avatar = u.avatar?.image_url ?? '';  // 正确读取头像
+        this.createdAt = u.core?.created_at ?? u.legacy?.created_at ?? '';
+        this.avatar = u.avatar?.image_url ?? u.legacy?.profile_image_url_https ?? '';
 
         // 2. 规模
         this.followersCount = u.legacy?.followers_count ?? 0;
@@ -134,6 +163,9 @@ export class UserProfile implements IUserScoreData {
         this.accountAgeDays = this.calculateAgeInDays();
         this.avgTweetsPerDay = this.statusesCount / Math.max(this.accountAgeDays, 1);
 
+        // EXTRA
+        this.isFollowing = !!u.legacy?.following;
+
     }
 
     private calculateAgeInDays(): number {
@@ -146,17 +178,17 @@ export class UserProfile implements IUserScoreData {
 
     /* ====================== 辅助 ====================== */
     public toJSON(): IUserScoreData {
-        return {...this};
+        return { ...this };
     }
 }
 
 /* ====================== 评分常量（可调） ====================== */
 // 各分项权重 / Weights
 const W = {
-    scale: {followers: 30, ratio: 8, listed: 12},                 // =50
-    activity: {statuses: 8, favourites: 6, media: 6, creator: 5},    // =25
-    trust: {blue: 8, highlight: 8, affiliate: 9},                 // =25
-    brand: {banner: 3, pro: 4, hidden: 4, desc: 4},               // =15
+    scale: { followers: 30, ratio: 8, listed: 12 },                 // =50
+    activity: { statuses: 8, favourites: 6, media: 6, creator: 5 },    // =25
+    trust: { blue: 8, highlight: 8, affiliate: 9 },                 // =25
+    brand: { banner: 3, pro: 4, hidden: 4, desc: 4 },               // =15
     growth: 5,                                                       // =5
 } as const;
 
@@ -241,7 +273,7 @@ export function calculateLevelBreakdown(user: UserProfile): LevelScoreBreakdown 
     const totalRaw = scale + activity + trust + brand + growth; // 0..≈120
     const total = applyDifficulty(totalRaw);                    // 0..100
 
-    return {scale, activity, trust, brand, growth, total};
+    return { scale, activity, trust, brand, growth, total };
 }
 
 // 便捷封装：仅要总分时调用 / Shortcut

@@ -1,6 +1,6 @@
-import {HomeLatestTimeline, HomeTimeline, MsgType, TweetDetail, UserByScreenName, UserTweets} from "./common/consts";
-import {logIC} from "./common/debug_flags";
-import {postWindowMsg} from "./common/msg_obj";
+import { CreateFriendship, DestroyFriendship, HomeLatestTimeline, HomeTimeline, MsgType, ProfileSpotlightsQuery, TweetDetail, UserByScreenName, UserTweets } from "./common/consts";
+import { logIC } from "./common/debug_flags";
+import { postWindowMsg } from "./common/msg_obj";
 
 declare global {
     interface Window {
@@ -34,6 +34,21 @@ function __tc_isTargetTimelineUrl__(input: any): string | null {
 
         if (url.includes("/" + UserByScreenName)) {
             return UserByScreenName;
+        }
+
+
+
+        if (url.includes("/" + ProfileSpotlightsQuery)) {
+            return ProfileSpotlightsQuery;
+        }
+
+        // 兼容 GraphQL (CreateFriendship) 和 传统 REST (/friendships/create.json)
+        if (url.includes("/CreateFriendship") || url.includes("/friendships/create.json")) {
+            return CreateFriendship;
+        }
+
+        if (url.includes("/DestroyFriendship") || url.includes("/DeleteFriendship") || url.includes("/Unfollow") || url.includes("/friendships/destroy.json")) {
+            return DestroyFriendship;
         }
 
         return null;
@@ -91,9 +106,10 @@ function __tc_installFetch__(): void {
         try {
             const url = __tc_url_of__(input);
             const isGraphql = __tc_isGraphqlUrl__(url);
+            const isLegacyFollow = url.includes("/i/api/1.1/friendships/");
             const timeType = __tc_isTargetTimelineUrl__(url);
 
-            if (!isGraphql || !timeType) return (originalFetch as any).call(this, input, init);
+            if ((!isGraphql && !isLegacyFollow) || !timeType) return (originalFetch as any).call(this, input, init);
 
             const reqId = ++__tc_req_seq__;
             let response: Response;
@@ -105,17 +121,68 @@ function __tc_installFetch__(): void {
             if (timeType === UserTweets) {
                 const vars = __tc_parseVarsFromUrl__(url);
                 logIC(`[F#${reqId}] tweets result=${result}  for kol:${vars.userId}`);
-                postWindowMsg(MsgType.IJUserTweetsCaptured, {tweets: result, kolID: vars.userId});
+                postWindowMsg(MsgType.IJUserTweetsCaptured, { tweets: result, kolID: vars.userId });
             } else if (timeType === HomeLatestTimeline || timeType === HomeTimeline) {
                 logIC(`[F#${reqId}] home latest result result=${result}`);
                 postWindowMsg(MsgType.IJHomeLatestCaptured, result);
             } else if (timeType === TweetDetail) {
                 postWindowMsg(MsgType.IJTweetDetailCaptured, result);
-            }else if (timeType === UserByScreenName) {
+            } else if (timeType === UserByScreenName) {
                 const vars = __tc_parseVarsFromUrl__(url);
                 const screenName = vars?.screen_name ?? vars?.screenName ?? "(unknown)";
                 logIC(`[F#${reqId}] userByScreenName result for @${screenName}`, result);
                 postWindowMsg(MsgType.IJUserByScreenNameCaptured, { profile: result, screenName });
+            } else if (timeType === ProfileSpotlightsQuery) {
+                const vars = __tc_parseVarsFromUrl__(url);
+                const screenName = vars?.screen_name ?? vars?.screenName ?? "(unknown)";
+                const isFollowing = result?.data?.user_result_by_screen_name?.result?.relationship_perspectives?.following;
+                logIC(`[F#${reqId}] ProfileSpotlightsQuery @${screenName} isFollowing=${isFollowing}`);
+
+                // Send 1: Update status immediately
+                if (typeof isFollowing === "boolean") {
+                    postWindowMsg(MsgType.IJUserByScreenNameCaptured, {
+                        profile: { isFollowing },
+                        screenName,
+                    });
+                }
+
+                postWindowMsg(MsgType.IJProfileSpotlightsCaptured, {
+                    data: result,
+                    screenName,
+                });
+            } else if (timeType === CreateFriendship) {
+                // 兼容 GraphQL 和 Legacy 结构
+                const following = result?.data?.create_friendship?.legacy?.following ?? result?.following;
+                const screenName = result?.data?.create_friendship?.legacy?.screen_name ?? result?.screen_name ?? "(unknown)";
+                const idStr = result?.data?.create_friendship?.legacy?.id_str ?? result?.id_str;
+
+                // 诊断日志：打印所有 Key
+                console.log(`>>>> [DIAGNOSTIC: Follow API Keys] <<<<`, Object.keys(result || {}));
+                if (result?.data?.create_friendship) console.log(`>>>> [DIAGNOSTIC: GQL Data Keys] <<<<`, Object.keys(result.data.create_friendship));
+
+                // 鲁棒性判定：如果是 friendships/create 接口且返回了 id_str，说明操作已成功执行
+                const isSuccess = (following === true) || !!idStr;
+
+                logIC(`[F#${reqId}] Follow Action Captured: @${screenName}, following=${following}, hasId=${!!idStr} -> success=${isSuccess}`);
+
+                postWindowMsg(MsgType.IJFollowActionCaptured, {
+                    success: isSuccess,
+                    screenName,
+                });
+            } else if (timeType === DestroyFriendship) {
+                // 兼容 GraphQL 和 Legacy 结构
+                const following = result?.data?.destroy_friendship?.legacy?.following ?? result?.following;
+                const screenName = result?.data?.destroy_friendship?.legacy?.screen_name ?? result?.screen_name ?? "(unknown)";
+
+                // 如果 following 为 false，或者返回了用户信息说明操作成功
+                const isSuccess = (following === false) || !!(result?.id_str || result?.data?.destroy_friendship?.legacy?.id_str);
+
+                logIC(`[F#${reqId}] Unfollow Action Captured: @${screenName}, following=${following} -> success=${isSuccess}`);
+
+                postWindowMsg(MsgType.IJUnfollowActionCaptured, {
+                    success: isSuccess,
+                    screenName,
+                });
             }
 
             return response;
@@ -163,11 +230,24 @@ function __tc_installXHR__(): void {
 
         send(...args: any[]): void {
             const timeType = __tc_isTargetTimelineUrl__(this.__tc_url__);
-            if (!timeType || (timeType !== HomeLatestTimeline
-                && timeType !== UserTweets
+            const isGraphql = __tc_isGraphqlUrl__(this.__tc_url__);
+            const isLegacyFollow = this.__tc_url__?.includes("/i/api/1.1/friendships/");
+
+            // If it's not a GraphQL request and not a legacy follow request, then skip.
+            // Also, if it's a legacy follow but not identified as CreateFriendship, skip.
+            if ((!isGraphql && !isLegacyFollow) || (isLegacyFollow && timeType !== CreateFriendship)) {
+                return (OriginalXHR.prototype.send as any).apply(this, args);
+            }
+
+            // If it's a GraphQL request, but not one of our target types, skip.
+            if (isGraphql && (timeType !== UserTweets
+                && timeType !== HomeLatestTimeline
                 && timeType !== HomeTimeline
                 && timeType !== TweetDetail
-                && timeType !== UserByScreenName)) {
+                && timeType !== UserByScreenName
+                && timeType !== ProfileSpotlightsQuery
+                && timeType !== CreateFriendship
+                && timeType !== DestroyFriendship)) {
                 return (OriginalXHR.prototype.send as any).apply(this, args);
             }
 
@@ -213,6 +293,50 @@ function __tc_installXHR__(): void {
                         logIC(`[X#${reqId}] userByScreenName result for @${screenName}`, result);
                         postWindowMsg(MsgType.IJUserByScreenNameCaptured, {
                             profile: result,
+                            screenName,
+                        });
+                    } else if (timeType === ProfileSpotlightsQuery) {
+                        const isFollowing = result?.data?.user_result_by_screen_name?.result?.relationship_perspectives?.following;
+                        const screenName = this.__tc_screen_name__ ?? "(unknown)";
+                        logIC(`[X#${reqId}] ProfileSpotlightsQuery @${screenName} isFollowing=${isFollowing}`);
+
+                        if (typeof isFollowing === "boolean") {
+                            postWindowMsg(MsgType.IJUserByScreenNameCaptured, {
+                                profile: { isFollowing },
+                                screenName,
+                            });
+                        }
+
+                        postWindowMsg(MsgType.IJProfileSpotlightsCaptured, {
+                            data: result,
+                            screenName,
+                        });
+                    } else if (timeType === CreateFriendship) {
+                        const following = result?.data?.create_friendship?.legacy?.following ?? result?.following;
+                        const screenName = result?.data?.create_friendship?.legacy?.screen_name ?? result?.screen_name ?? "(unknown)";
+                        const idStr = result?.data?.create_friendship?.legacy?.id_str ?? result?.id_str;
+
+                        // 诊断日志
+                        console.log(`>>>> [DIAGNOSTIC: Follow API Keys (XHR)] <<<<`, Object.keys(result || {}));
+
+                        const isSuccess = (following === true) || !!idStr;
+
+                        logIC(`[X#${reqId}] Follow Action Captured: @${screenName}, following=${following}, hasId=${!!idStr} -> success=${isSuccess}`);
+
+                        postWindowMsg(MsgType.IJFollowActionCaptured, {
+                            success: isSuccess,
+                            screenName,
+                        });
+                    } else if (timeType === DestroyFriendship) {
+                        const following = result?.data?.destroy_friendship?.legacy?.following ?? result?.following;
+                        const screenName = result?.data?.destroy_friendship?.legacy?.screen_name ?? result?.screen_name ?? "(unknown)";
+
+                        const isSuccess = (following === false) || !!(result?.id_str || result?.data?.destroy_friendship?.legacy?.id_str);
+
+                        logIC(`[X#${reqId}] Unfollow Action Captured: @${screenName}, following=${following} -> success=${isSuccess}`);
+
+                        postWindowMsg(MsgType.IJUnfollowActionCaptured, {
+                            success: isSuccess,
                             screenName,
                         });
                     }

@@ -1,4 +1,4 @@
-import {buildSyntheticItemFromModule, EntryObj} from "./tweet_entry";
+import {buildSyntheticItemFromModule, EntryObj} from "../x_api/tweet_entry";
 import pLimit from 'p-limit';
 
 import {
@@ -14,7 +14,7 @@ import {
 import {logTC} from "../common/debug_flags";
 import {sendMsgToService, sleep} from "../common/utils";
 import {MsgType} from "../common/consts";
-import {fetchTweets} from "./twitter_api";
+import {fetchTweets} from "../x_api/twitter_api";
 
 const MAX_TWEETS_PER_KOL = 200;
 

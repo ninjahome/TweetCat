@@ -1,0 +1,10 @@
+{
+  "name": "com.tweetcat.ata_miner",
+  "description": "TweetCat ATA Miner Native Host (Dev)",
+  "path": "/Users/hyperorchid/ninja/TweetCat/local_app/ata_miner/.build/x86_64-apple-macosx/debug/ata_miner",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://gjdlclglpkjibapaafmfifnkjpmgodli/",
+    "chrome-extension://nljmkhkgpmecnjoikfcgfkhkbpocceed/" 
+  ]
+}

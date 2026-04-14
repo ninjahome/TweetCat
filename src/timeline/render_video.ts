@@ -1,4 +1,4 @@
-import {TweetMediaEntity} from "./tweet_entry";
+import {TweetMediaEntity} from "../x_api/tweet_entry";
 import Hls from 'hls.js';
 import {logTVR} from "../common/debug_flags";
 

@@ -1,231 +1,228 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Following Management</title>
-    <link rel="stylesheet" href="../css/common_utils.css"/>
-    <link rel="stylesheet" href="../css/following_mgn.css"/>
+    <link rel="stylesheet" href="../css/common_utils.css" />
+    <link rel="stylesheet" href="../css/following_mgn.css" />
     <script type="module" src="../js/following_mgn.js" defer></script>
 </head>
+
 <body>
-<div id="notification" class="notification hidden" role="alert"></div>
-<div class="follow-manager">
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>Categories</h2>
-        </div>
-        <div class="sidebar-new">
-            <button id="btn-new-category" class="primary new-btn">＋ New</button>
-        </div>
-        <ul id="category-list" class="category-list"></ul>
-    </aside>
-    <main class="content">
-        <div id="toolbar" class="toolbar">
-            <div class="toolbar-ops">
-                <div id="twitter-ops" class="toolbar-section toolbar-section-x">
-                    <div><span>Web2:</span></div>
-                    <div class="web2-area-info">
-                        <div>
-                            <span id="web2-following-no-title">关注人数:</span>
-                            <span id="web2-following-no-val">2</span>
-                        </div>
-                        <button id="sync-btn" class="primary primary-sync">Sync Followings</button>
-                    </div>
-                    <span id="sync-status" class="toolbar-status"></span>
-                </div>
-                <div id="ipfs-ops" class="toolbar-section toolbar-section-ipfs">
-                    <div><span>Web3:</span></div>
-                    <div class="ipfs-latest">
-                        <div>
-                            <span id="ipfs-latest-label" class="ipfs-latest-label">Latest Snapshot</span>
+    <div id="notification" class="notification hidden" role="alert"></div>
+    <div class="follow-manager">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Categories</h2>
+            </div>
+            <div class="sidebar-new">
+                <button id="btn-new-category" class="primary new-btn">＋ New</button>
+            </div>
+            <ul id="category-list" class="category-list"></ul>
+        </aside>
+        <main class="content">
+            <div id="toolbar" class="toolbar">
+                <div class="toolbar-ops">
+                    <div id="twitter-ops" class="toolbar-section toolbar-section-x">
+                        <div><span>Web2:</span></div>
+                        <div class="web2-area-info">
                             <div>
-                                <button id="ipfs-latest-open" type="button"
-                                        class="ipfs-latest-pill" disabled>
-                                    <span id="ipfs-latest-cid">None</span>
+                                <span id="web2-following-no-title">关注人数:</span>
+                                <span id="web2-following-no-val">2</span>
+                            </div>
+                            <button id="sync-btn" class="primary primary-sync">Sync Followings</button>
+                        </div>
+                        <span id="sync-status" class="toolbar-status"></span>
+                    </div>
+                    <div id="ipfs-ops" class="toolbar-section toolbar-section-ipfs">
+                        <div><span>Web3:</span></div>
+                        <div class="ipfs-latest">
+                            <div>
+                                <span id="ipfs-latest-label" class="ipfs-latest-label">Latest Snapshot</span>
+                                <div style="display: flex; align-items: center; gap: 4px">
+                                    <button id="ipfs-latest-open" type="button" class="ipfs-latest-pill" disabled>
+                                        <span id="ipfs-latest-cid">None</span>
+                                    </button>
+                                    <button id="ipfs-latest-copy" type="button" class="ipfs-latest-copy-btn"
+                                        title="Copy CID" aria-label="Copy CID" disabled>
+                                        <svg t="1763697332262" class="icon" viewBox="0 0 1024 1024" version="1.1"
+                                            xmlns="http://www.w3.org/2000/svg" p-id="11796" width="200" height="200">
+                                            <path
+                                                d="M234.794667 197.418667L234.666667 288v448.170667a138.666667 138.666667 0 0 0 138.666666 138.666666h367.616a96.042667 96.042667 0 0 1-90.538666 64H373.333333A202.666667 202.666667 0 0 1 170.666667 736.170667V288c0-41.813333 26.752-77.44 64.128-90.581333zM757.333333 85.333333A96 96 0 0 1 853.333333 181.333333v554.666667a96 96 0 0 1-96 96h-384a96 96 0 0 1-96-96v-554.666667A96 96 0 0 1 373.333333 85.333333h384z m0 64h-384a32 32 0 0 0-32 32v554.666667c0 17.664 14.336 32 32 32h384a32 32 0 0 0 32-32v-554.666667a32 32 0 0 0-32-32z"
+                                                fill="#212121" p-id="11797"></path>
+                                        </svg>
+                                    </button>
+
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column-reverse;align-items: center; gap: 4px">
+                                <button id="ipfs-latest-sync" type="button"
+                                    class="ipfs-latest-copy-btn ipfs-latest-sync-btn hidden" disabled>
+                                    Sync From IPFS
                                 </button>
-                                <button id="ipfs-latest-copy" type="button"
-                                        class="ipfs-latest-copy-btn" disabled>
-                                    Copy CID
+                                <button id="export-ipfs-btn" class="primary primary-IPFS" type="button" style="display: none;"
+                                    title="Export categories &amp; KOLs to IPFS (v1)">IPFS Snapshot
                                 </button>
+
 
                             </div>
-                        </div>
-                        <button id="export-ipfs-btn" class="primary primary-IPFS" type="button"
-                                title="Export categories &amp; KOLs to IPFS (v1)">IPFS Snapshot
-                        </button>
 
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="batch-actions">
-                <span id="selection-counter">0 selected</span>
-                <select id="assign-category-select"></select>
-                <button id="assign-category-btn" disabled>Apply</button>
-                <button id="clear-selection-btn" disabled>Clear</button>
-                <button id="unfollow-selected-btn" class="danger" disabled>Unfollow Selected</button>
-            </div>
-        </div>
-        <div id="empty-state" class="empty-state">
-            <p>Your followings have not been synced yet.</p>
-            <button id="empty-sync-btn" class="primary">Sync Followings</button>
-        </div>
-        <div id="no-users-message" class="empty-hint" style="display:none;">No users in this category.</div>
-        <div id="user-list" class="user-list"></div>
-    </main>
-</div>
-
-<template id="category-item-template">
-    <li class="category-item">
-        <div class="category-content">
-            <span class="category-name"></span>
-            <span class="category-count"></span>
-        </div>
-        <div class="category-actions">
-            <!-- 重命名：铅笔 -->
-            <button class="rename-btn" title="Rename category">
-                <svg class="icon icon-rename" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
-                    <path d="M940.8 953.6H83.2c-25.6 0-44.8-19.2-44.8-44.8 0-25.6 19.2-44.8 44.8-44.8h851.2c25.6 0 44.8 19.2 44.8 44.8 0 25.6-19.2 44.8-38.4 44.8zM780.8 179.2l-480 480c-19.2 19.2-44.8 19.2-57.6 0-19.2-19.2-19.2-44.8 0-57.6l480-480c19.2-19.2 44.8-19.2 57.6 0 19.2 12.8 19.2 38.4 0 57.6z"></path>
-                </svg>
-            </button>
-
-            <!-- 删除：叉号 -->
-            <button class="delete-btn" title="Delete category">
-                <svg class="icon icon-delete" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
-                    <path d="M512.076288 406.866188L128.142709 21.908786A75.020621 75.020621 0 0 0 22.177041 128.130409l384.701446 383.93358L21.921085 895.997568A75.020621 75.020621 0 1 0 128.142709 1001.963236l383.933579-384.701446 383.933579 383.933579a74.303945 74.303945 0 0 0 105.197801-104.941845l-383.933579-383.933579 383.933579-383.93358A74.380732 74.380732 0 0 0 897.289646 21.908786l-383.933579 383.933579z"></path>
-                </svg>
-            </button>
-        </div>
-    </li>
-</template>
-
-<template id="user-card-template">
-    <div class="user-card">
-        <div style="display: flex; align-items: center; gap: 6px">
-            <input type="checkbox" class="user-select"/>
-            <img class="user-avatar" src="" alt=""/>
-        </div>
-        <div class="name-row">
-            <div style="display: grid; grid-template-columns: 3fr 2fr; align-items: center; gap: 6px">
-                <div class="name"></div>
-                <div class="category-badge hidden">
-                    <span class="category-dot"></span>
-                    <span class="category-name"></span>
+                <div class="batch-actions">
+                    <span id="selection-counter">0 selected</span>
+                    <select id="assign-category-select"></select>
+                    <button id="assign-category-btn" disabled>Apply</button>
+                    <button id="clear-selection-btn" disabled>Clear</button>
+                    <button id="unfollow-selected-btn" class="danger" disabled>Unfollow Selected</button>
                 </div>
             </div>
+            <div id="empty-state" class="empty-state">
+                <p>Your followings have not been synced yet.</p>
+                <button id="empty-sync-btn" class="primary">Sync Followings</button>
+            </div>
+            <div id="no-users-message" class="empty-hint" style="display:none;">No users in this category.</div>
+            <div id="user-list" class="user-list"></div>
+        </main>
+    </div>
 
-            <div class="handle"></div>
-            <div>
-                <button class="sync-btn hidden" title="同步账号信息">
-                    <svg
-                            class="sync-icon"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 595.28 841.89"
-                            aria-hidden="true"
-                            focusable="false"
-                    >
-                        <path d="M696.96,550.93c0-14.14-11.46-25.6-25.6-25.6h-211.46l39.99-39.94c10.01-10,10.02-26.21.02-36.22-10-10.01-26.21-10.02-36.22-.02l-83.2,83.25c-10,10-10,26.2,0,36.2,3.15,3,7.04,5.11,11.26,6.14,2.77,1.11,5.72,1.72,8.7,1.79h270.85c14.14,0,25.6-11.46,25.6-25.6h.05ZM689.43,693.36c10-10,10-26.2,0-36.2-3.14-3.02-7.03-5.15-11.26-6.19-2.78-1.09-5.72-1.68-8.7-1.74h-270.85c-14.14,0-25.6,11.47-25.6,25.6s11.46,25.6,25.6,25.6h211.35l-39.94,39.93c-10.01,10-10.02,26.22-.02,36.23,10,10.01,26.21,10.02,36.22.02l83.2-83.25Z"/>
-                        <path d="M654.99,437.99c0,14.14,11.46,25.6,25.6,25.6s25.6-11.46,25.6-25.6c-.33-106.34-82.15-194.67-188.16-203.11-53.56-127.47-193.85-194.9-326.85-157.08C58.18,115.62-25.64,246.78-4.11,383.36c-83.71,45.4-125.97,141.78-102.65,234.11,23.33,92.32,106.29,157.07,201.52,157.27l.66.15h224.2c14.14,0,25.6-11.46,25.6-25.6s-11.46-25.6-25.6-25.6H96.09c-87.2,0-157.9-70.69-157.9-157.9S8.88,407.89,96.09,407.89s157.9,70.7,157.9,157.9c0,14.14,11.46,25.6,25.6,25.6s25.6-11.46,25.6-25.6c-.14-115.42-93.68-208.96-209.1-209.1-16.9.18-33.72,2.43-50.07,6.71-.62-6.81-2.2-13.47-2.2-20.33.02-108.02,77.44-200.5,183.78-219.51,106.34-19.01,211.01,40.92,248.45,142.25.52.98,1.1,1.92,1.74,2.82.2.51.56.82.77,1.28.92,1.76,2.03,3.41,3.33,4.91,4.72,5.99,11.89,9.5,19.51,9.57,84.8.09,153.51,68.8,153.6,153.6h0ZM654.99,437.99"/>
+    <template id="category-item-template">
+        <li class="category-item">
+            <div class="category-content">
+                <span class="category-name"></span>
+                <span class="category-count"></span>
+            </div>
+            <div class="category-actions">
+                <!-- 重命名：铅笔 -->
+                <button class="rename-btn" title="Rename category">
+                    <svg class="icon icon-rename" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
+                        <path
+                            d="M940.8 953.6H83.2c-25.6 0-44.8-19.2-44.8-44.8 0-25.6 19.2-44.8 44.8-44.8h851.2c25.6 0 44.8 19.2 44.8 44.8 0 25.6-19.2 44.8-38.4 44.8zM780.8 179.2l-480 480c-19.2 19.2-44.8 19.2-57.6 0-19.2-19.2-19.2-44.8 0-57.6l480-480c19.2-19.2 44.8-19.2 57.6 0 19.2 12.8 19.2 38.4 0 57.6z">
+                        </path>
+                    </svg>
+                </button>
+
+                <!-- 删除：叉号 -->
+                <button class="delete-btn" title="Delete category">
+                    <svg class="icon icon-delete" viewBox="0 0 1024 1024" aria-hidden="true" focusable="false">
+                        <path
+                            d="M512.076288 406.866188L128.142709 21.908786A75.020621 75.020621 0 0 0 22.177041 128.130409l384.701446 383.93358L21.921085 895.997568A75.020621 75.020621 0 1 0 128.142709 1001.963236l383.933579-384.701446 383.933579 383.933579a74.303945 74.303945 0 0 0 105.197801-104.941845l-383.933579-383.933579 383.933579-383.93358A74.380732 74.380732 0 0 0 897.289646 21.908786l-383.933579 383.933579z">
+                        </path>
                     </svg>
                 </button>
             </div>
+        </li>
+    </template>
 
-            <div class="meta">
-                <div class="location hidden"></div>
-                <div class="stats hidden"></div>
+    <template id="user-card-template">
+        <div class="user-card">
+            <div style="display: flex; align-items: center; gap: 6px">
+                <input type="checkbox" class="user-select" />
+                <img class="user-avatar" src="" alt="" />
             </div>
-            <div class="bio-wrapper">
-                <div class="bio-text"></div>
-                <div class="bio-tooltip"></div>
+            <div class="name-row">
+                <div style="display: grid; grid-template-columns: 3fr 2fr; align-items: center; gap: 6px">
+                    <div class="name"></div>
+                    <div class="category-badge hidden">
+                        <span class="category-dot"></span>
+                        <span class="category-name"></span>
+                    </div>
+                </div>
+
+                <div class="handle"></div>
+                <div>
+                    <button class="sync-btn hidden" title="Sync account info" aria-label="Sync account info">
+                        <svg class="sync-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 595.28 841.89"
+                            aria-hidden="true" focusable="false">
+                            <path
+                                d="M696.96,550.93c0-14.14-11.46-25.6-25.6-25.6h-211.46l39.99-39.94c10.01-10,10.02-26.21.02-36.22-10-10.01-26.21-10.02-36.22-.02l-83.2,83.25c-10,10-10,26.2,0,36.2,3.15,3,7.04,5.11,11.26,6.14,2.77,1.11,5.72,1.72,8.7,1.79h270.85c14.14,0,25.6-11.46,25.6-25.6h.05ZM689.43,693.36c10-10,10-26.2,0-36.2-3.14-3.02-7.03-5.15-11.26-6.19-2.78-1.09-5.72-1.68-8.7-1.74h-270.85c-14.14,0-25.6,11.47-25.6,25.6s11.46,25.6,25.6,25.6h211.35l-39.94,39.93c-10.01,10-10.02,26.22-.02,36.23,10,10.01,26.21,10.02,36.22.02l83.2-83.25Z" />
+                            <path
+                                d="M654.99,437.99c0,14.14,11.46,25.6,25.6,25.6s25.6-11.46,25.6-25.6c-.33-106.34-82.15-194.67-188.16-203.11-53.56-127.47-193.85-194.9-326.85-157.08C58.18,115.62-25.64,246.78-4.11,383.36c-83.71,45.4-125.97,141.78-102.65,234.11,23.33,92.32,106.29,157.07,201.52,157.27l.66.15h224.2c14.14,0,25.6-11.46,25.6-25.6s-11.46-25.6-25.6-25.6H96.09c-87.2,0-157.9-70.69-157.9-157.9S8.88,407.89,96.09,407.89s157.9,70.7,157.9,157.9c0,14.14,11.46,25.6,25.6,25.6s25.6-11.46,25.6-25.6c-.14-115.42-93.68-208.96-209.1-209.1-16.9.18-33.72,2.43-50.07,6.71-.62-6.81-2.2-13.47-2.2-20.33.02-108.02,77.44-200.5,183.78-219.51,106.34-19.01,211.01,40.92,248.45,142.25.52.98,1.1,1.92,1.74,2.82.2.51.56.82.77,1.28.92,1.76,2.03,3.41,3.33,4.91,4.72,5.99,11.89,9.5,19.51,9.57,84.8.09,153.51,68.8,153.6,153.6h0ZM654.99,437.99" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="meta">
+                    <div class="location hidden"></div>
+                    <div class="stats hidden"></div>
+                </div>
+                <div class="bio-wrapper">
+                    <div class="bio-text"></div>
+                    <div class="bio-tooltip"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <div id="modal-input-dialog" class="modal hidden" role="dialog" aria-modal="true"
+        aria-labelledby="modal-add-category-title">
+        <div class="modal-content">
+            <h3 id="modal-add-category-title">Create New Category</h3>
+            <input id="dialog-input" type="text" placeholder="Enter category name..." />
+            <div class="modal-actions">
+                <button id="btn-cancel-new-category" class="btn-cancel" type="button">Cancel</button>
+                <button id="btn-confirm-new-category" class="btn-confirm" type="button" disabled>Confirm</button>
             </div>
         </div>
     </div>
-</template>
 
-<div id="modal-input-dialog" class="modal hidden" role="dialog" aria-modal="true"
-     aria-labelledby="modal-add-category-title">
-    <div class="modal-content">
-        <h3 id="modal-add-category-title">Create New Category</h3>
-        <input id="dialog-input" type="text" placeholder="Enter category name..."/>
-        <div class="modal-actions">
-            <button id="btn-cancel-new-category" class="btn-cancel" type="button">Cancel</button>
-            <button id="btn-confirm-new-category" class="btn-confirm" type="button" disabled>Confirm</button>
+    <div id="modal-confirm" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-confirm-title">
+        <div class="modal-content">
+            <h3 id="modal-confirm-title">Confirm Action</h3>
+            <p id="confirm-message">Are you sure you want to proceed?</p>
+            <div class="modal-actions">
+                <button id="btn-cancel-confirm" class="btn-cancel" type="button">Cancel</button>
+                <button id="btn-confirm-confirm" class="btn-confirm" type="button">Confirm</button>
+            </div>
         </div>
     </div>
-</div>
 
-<div id="modal-confirm" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-confirm-title">
-    <div class="modal-content">
-        <h3 id="modal-confirm-title">Confirm Action</h3>
-        <p id="confirm-message">Are you sure you want to proceed?</p>
-        <div class="modal-actions">
-            <button id="btn-cancel-confirm" class="btn-cancel" type="button">Cancel</button>
-            <button id="btn-confirm-confirm" class="btn-confirm" type="button">Confirm</button>
+    <div id="unfollow-processing-overlay" class="processing-overlay hidden" role="status" aria-live="assertive">
+        <div class="processing-overlay__content">
+            <div class="ai-loading-container" aria-hidden="true" style="margin: 0 auto 12px">
+                <div class="ai-loading-dot ai-loading-dot1"></div>
+                <div class="ai-loading-dot ai-loading-dot2"></div>
+                <div class="ai-loading-dot ai-loading-dot3"></div>
+                <div class="ai-loading-dot ai-loading-dot4"></div>
+                <div class="ai-loading-dot ai-loading-dot5"></div>
+            </div>
+            <span id="processing-overlay-text" class="processing-overlay__text">Processing…</span>
         </div>
     </div>
-</div>
 
-<div id="unfollow-processing-overlay" class="processing-overlay hidden" role="status" aria-live="assertive">
-    <div class="processing-overlay__content">
-        <div class="processing-overlay__spinner" aria-hidden="true"></div>
-        <span id="processing-overlay-text" class="processing-overlay__text">Processing…</span>
-    </div>
-</div>
-
-<div id="loading-overlay">
-    <div id="loading-content">
-        <div class="spinner"></div>
-        <div class="loading-message"></div>
-    </div>
-</div>
-
-<div id="modal-password-dialog" class="modal hidden" role="dialog">
-    <div class="modal-content">
-        <h3 id="modal-password-title">请输入解密口令</h3>
-        <input id="password-input" type="password" placeholder="用于解密 IPFS 授权..."/>
-        <div class="modal-actions">
-            <button id="btn-cancel-password"  class="btn-cancel" type="button">取消</button>
-            <button id="btn-confirm-password" class="btn-confirm" type="button" disabled>确认</button>
+    <div id="loading-overlay">
+        <div id="loading-content">
+            <div class="ai-loading-container">
+                <div class="ai-loading-dot ai-loading-dot1"></div>
+                <div class="ai-loading-dot ai-loading-dot2"></div>
+                <div class="ai-loading-dot ai-loading-dot3"></div>
+                <div class="ai-loading-dot ai-loading-dot4"></div>
+                <div class="ai-loading-dot ai-loading-dot5"></div>
+            </div>
+            <div class="loading-message"></div>
         </div>
     </div>
-</div>
 
-
-<div id="new-category-dialog"
-     class="modal hidden"
-     role="dialog"
-     aria-modal="true"
-     aria-labelledby="new-category-dialog-title">
-    <div class="modal-content">
-        <h3 id="new-category-dialog-title">Rename Category</h3>
-
-        <div class="new-category-dialog-body">
-            <input
-                    type="text"
-                    class="new-category-name-val"
-                    id="new-category-name-input"
-                    placeholder="Enter new category name..."
-            />
-        </div>
-
-        <div class="modal-actions">
-            <button id="btn-cancel-rename" class="btn-cancel" type="button">
-                Cancel
-            </button>
-            <button id="btn-confirm-rename" class="btn-confirm" type="button">
-                Save
-            </button>
+    <div id="modal-password-dialog" class="modal hidden" role="dialog">
+        <div class="modal-content">
+            <h3 id="modal-password-title">请输入解密口令</h3>
+            <input id="password-input" type="password" placeholder="用于解密 IPFS 授权..." />
+            <div class="modal-actions">
+                <button id="btn-cancel-password" class="btn-cancel" type="button">取消</button>
+                <button id="btn-confirm-password" class="btn-confirm" type="button" disabled>确认</button>
+            </div>
         </div>
     </div>
-</div>
-
-
-<div id="custom-alert">
-    <div id="alert-content">
-        <h3 id="alert-title">__MSG_alert_title__</h3>
-        <p id="alert-message">__MSG_alert_message__</p>
-        <button id="alert-ok">__MSG_ok__</button>
+    <div id="custom-alert">
+        <div id="alert-content">
+            <h3 id="alert-title">__MSG_alert_title__</h3>
+            <p id="alert-message">__MSG_alert_message__</p>
+            <button id="alert-ok">__MSG_ok__</button>
+        </div>
     </div>
-</div>
 
 </body>
+
 </html>

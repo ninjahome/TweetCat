@@ -1,0 +1,1467 @@
+import { Hono } from "hono";
+import { ContentfulStatusCode } from "hono/utils/http-status";
+import {
+	ExtCtx,
+	ExtendedEnv,
+	jsonError,
+	requireStringField,
+	parsePositiveInt,
+	parsePositiveAtomic,
+	usdcToAtomicSafe,
+	API_PATH_ADS_BALANCE,
+	API_PATH_ADS_CREATE,
+	API_PATH_ADS_UPDATE,
+	API_PATH_ADS_MY_ADS,
+	API_PATH_ADS_LIST,
+	API_PATH_ADS_VERSION,
+	API_PATH_ADS_CLAIM,
+	API_PATH_ADS_MY_CLAIMS,
+	API_PATH_ADS_PUBLISHER_RECHARGE,
+	API_PATH_ADS_PUBLISHER_WITHDRAW,
+	API_PATH_ADS_PUBLISHER_LEDGER,
+	API_PATH_ADS_TOGGLE_STATUS,
+	API_PATH_ADS_TOP_UP_BUDGET,
+	API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, API_PATH_ADS_PUBLISHER_SPEND_HISTORY,
+	API_PATH_ADS_PUBLISHER_AD_CLAIMS,
+	API_PATH_ADS_MY_TASKS,
+	API_PATH_ADS_EXECUTOR_DASHBOARD_INFO,
+	API_PATH_ADS_EXECUTOR_WITHDRAW,
+	API_PATH_ADS_SUBMIT_PROOF,
+	decodeB64OrB64UrlToArrayBuffer,
+	digestSha256
+} from "./common";
+import {
+	AdCategory,
+	CATEGORY_DURATION,
+	CATEGORY_TAGS,
+	formatDeadlineText,
+	getRewardRange,
+	computePopularityScore,
+	toSqliteDate,
+	getAdAccountBalance,
+	getAccountBalanceAtomic,
+	reserveAdBudget,
+	createAd,
+	updateAdSettings,
+	updateAdStatus,
+	getMyAds,
+	getMyAdsCount,
+	getActiveAdsList,
+	getAdById,
+	incrementAdClaimedQuota,
+	ensureEscrowAccount,
+	getEscrowLedgerByRequestId,
+	getEscrowLedgerByTxHash,
+	insertDepositLedger,
+	creditEscrowBalance,
+	insertWithdrawLedger,
+	debitEscrowBalance,
+	settleWithdrawLedger,
+	failWithdrawLedger,
+	refundEscrowBalance,
+	listAdEscrowLedger,
+	createDetailedClaim,
+	getDetailedClaim,
+	updateClaimStatus,
+	updateClaimStatusWithSignature,
+	getPerformerHistory,
+	type AdCreatePayload,
+	type CreateDetailedClaimParams,
+	type AdCampaignStatus, getPublisherDashboardStats, getPerformerDashboardStats, getAdvertiserHistory, getAdvertiserHistoryCount, getAdClaimants, getAdClaimantsCount, addAdQuota,
+	getAdsFeedVersion,
+	getAdsNextInvalidationAt,
+	bumpAdsFeedVersion,
+	getPerformerTasksWithAdInfo,
+	getPerformerTasksCount,
+	getClaimById,
+	insertClaimEvidence,
+	settleAdReward,
+	type ClaimEvidenceParams,
+	getPerformerLedgerByRequestId,
+	insertPerformerWithdrawLedger,
+	debitPerformerBalance,
+	settlePerformerWithdrawLedger,
+	failPerformerWithdrawLedger,
+	refundPerformerBalance
+} from "./database_ad";
+import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
+import { getKolBindingByXId } from "./database_402";
+
+// ========= Types =========
+
+/**
+ * 提现/充值请求参数解析结果
+ * 用于统一处理来自请求体的 a_x_id 和 amount 参数
+ */
+export interface ParsedEscrowRequest {
+	/** 用户的 X ID (Twitter/X sub) */
+	aXId: string;
+	/** 转换为原子单位的金额 */
+	amountAtomic: string;
+}
+
+/**
+ * 提现/充值请求参数解析的自定义错误类
+ * 用于在 throw 中传递 HTTP 状态码和错误信息
+ */
+export class EscrowRequestError extends Error {
+	constructor(
+		public readonly code: string,
+		public readonly detail: string,
+		public readonly statusCode: number = 400
+	) {
+		super(detail);
+		this.name = "EscrowRequestError";
+	}
+}
+
+/**
+ * 校验蓝V设备签名证据
+ * @param proofInput - 蓝V证据 (含签名和设备公钥)
+ * @param registeredPubKeyB64 - 服务器存储的可信设备公钥 (来自 kol_binding.device_pubkey_spki)
+ *                              如果提供，则用此公钥验证签名，而非 proof 中自带的公钥
+ */
+async function verifyBlueVProof(proofInput: any, registeredPubKeyB64: string | null): Promise<boolean> {
+	try {
+		const proof = typeof proofInput === 'string' ? JSON.parse(proofInput) : proofInput;
+		if (!proof.userId || !proof.screenName || typeof proof.isBlueVerified !== 'boolean' || !proof.capturedAt || !proof.signature || !proof.devicePubKey) {
+			return false;
+		}
+
+		// Determine which public key to use for verification
+		let pubKeyB64ToUse: string;
+		if (registeredPubKeyB64) {
+			// Use the server-registered trusted key
+			if (registeredPubKeyB64 !== proof.devicePubKey) {
+				console.warn(`[verifyBlueVProof] Device key MISMATCH for user ${proof.userId}: registered key differs from proof key`);
+				// Still use the registered key — the proof must be signed with the registered device
+			}
+			pubKeyB64ToUse = registeredPubKeyB64;
+		} else {
+			// No registered key: fall back to proof's self-provided key (backwards compat)
+			console.warn(`[verifyBlueVProof] No registered device key for user ${proof.userId}. Falling back to proof-provided key (less secure).`);
+			pubKeyB64ToUse = proof.devicePubKey;
+		}
+
+		// Reconstruct dataToSign (MUST match frontend EXACTLY)
+		const dataToSign = JSON.stringify({
+			userId: proof.userId,
+			screenName: proof.screenName,
+			isBlueVerified: proof.isBlueVerified,
+			capturedAt: proof.capturedAt
+		});
+
+		const data = new TextEncoder().encode(dataToSign);
+		const spkiBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(pubKeyB64ToUse));
+		const sigBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(proof.signature));
+
+		const publicKey = await crypto.subtle.importKey(
+			"spki",
+			spkiBytes,
+			{ name: "ECDSA", namedCurve: "P-256" },
+			false,
+			["verify"]
+		);
+
+		return await crypto.subtle.verify(
+			{ name: "ECDSA", hash: "SHA-256" },
+			publicKey,
+			sigBytes,
+			data
+		);
+	} catch (e) {
+		console.error("[verifyBlueVProof] Error:", e);
+		return false;
+	}
+}
+
+// ========= Helpers =========
+
+/**
+ * 从请求体解析托管账户操作的参数（a_x_id 和 amount）
+ *
+ * @param c - Hono 请求上下文
+ * @returns ParsedEscrowRequest 包含 aXId 和 amountAtomic
+ * @throws EscrowRequestError 当参数无效时抛出
+ *
+ * @example
+ * try {
+ *   const params = await parseEscrowRequestParams(c);
+ *   console.log(params.aXId, params.amountAtomic);
+ * } catch (err) {
+ *   if (err instanceof EscrowRequestError) {
+ *     return jsonError(c, err.statusCode as ContentfulStatusCode, err.code, err.detail);
+ *   }
+ * }
+ */
+export async function parseEscrowRequestParams(c: ExtCtx): Promise<ParsedEscrowRequest> {
+	const body = await c.req.json().catch(() => ({}));
+	const aXId = body?.a_x_id;
+	const amountStr = body?.amount;
+	const amountAtomicBody = body?.amount_atomic;
+
+	// 验证 a_x_id
+	if (!requireStringField(aXId)) {
+		throw new EscrowRequestError(
+			"INVALID_REQUEST",
+			"Missing a_x_id",
+			400
+		);
+	}
+
+	// 将十进制金额或原子单位转换为原子单位
+	let amountAtomic: string;
+
+	if (requireStringField(amountAtomicBody)) {
+		// 如果直接提供了原子单位，验证其是否为纯数字
+		if (!/^\d+$/.test(amountAtomicBody)) {
+			throw new EscrowRequestError(
+				"INVALID_REQUEST",
+				"Invalid amount_atomic format",
+				400
+			);
+		}
+		amountAtomic = amountAtomicBody;
+	} else if (requireStringField(amountStr)) {
+		try {
+			amountAtomic = usdcToAtomicSafe(amountStr);
+		} catch (e) {
+			throw new EscrowRequestError(
+				"INVALID_REQUEST",
+				"Invalid amount format",
+				400
+			);
+		}
+	} else {
+		throw new EscrowRequestError(
+			"INVALID_REQUEST",
+			"Missing amount or amount_atomic",
+			400
+		);
+	}
+
+	return {
+		aXId,
+		amountAtomic
+	};
+}
+
+/**
+ * 从请求体解析托管账户操作的参数（a_x_id 或 b_x_id 和 amount）
+ * 这是一个更通用的版本，用于处理广告主和执行者的请求。
+ *
+ * @param c - Hono 请求上下文
+ * @returns ParsedEscrowRequest 包含 aXId (或 bXId) 和 amountAtomic，或 Hono Response (错误)
+ */
+async function parseEscrowRequest(c: ExtCtx): Promise<ParsedEscrowRequest | Response> {
+	const body = await c.req.json().catch(() => ({}));
+	const xId = body?.a_x_id || body?.b_x_id; // 兼容 a_x_id 和 b_x_id
+	const amountStr = body?.amount;
+	const amountAtomicBody = body?.amount_atomic;
+
+	if (!requireStringField(xId)) {
+		return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id or b_x_id");
+	}
+
+	let amountAtomic: string;
+	if (requireStringField(amountAtomicBody)) {
+		if (!/^\d+$/.test(amountAtomicBody)) {
+			return jsonError(c, 400, "INVALID_REQUEST", "Invalid amount_atomic format");
+		}
+		amountAtomic = amountAtomicBody;
+	} else if (requireStringField(amountStr)) {
+		try {
+			amountAtomic = usdcToAtomicSafe(amountStr);
+		} catch (e) {
+			return jsonError(c, 400, "INVALID_REQUEST", "Invalid amount format");
+		}
+	} else {
+		return jsonError(c, 400, "INVALID_REQUEST", "Missing amount or amount_atomic");
+	}
+
+	if (BigInt(amountAtomic) <= 0n) {
+		return jsonError(c, 400, "INVALID_REQUEST", "Amount must be greater than zero");
+	}
+
+	return {
+		aXId: xId, // 统一使用 aXId 字段表示用户 ID
+		amountAtomic
+	};
+}
+
+/**
+ * 验证 custom_data 格式
+ * @param customData - 待验证的数据
+ * @returns 错误信息字符串，如果验证通过则返回 null
+ */
+function validateCustomData(customData: any): string | null {
+	if (!customData) return null;
+
+	try {
+		if (typeof customData === "string") {
+			JSON.parse(customData);
+		} else if (typeof customData !== "object") {
+			return "Invalid custom_data format";
+		}
+		if (JSON.stringify(customData).length > 8192) {
+			return "custom_data exceeds maximum size (8KB)";
+		}
+	} catch (e) {
+		return "Invalid custom_data: must be valid JSON";
+	}
+	return null;
+}
+
+// ========= API Endpoints =========
+
+export async function apiAdsBalance(c: ExtCtx) {
+	try {
+		const aXId = c.req.query("a_x_id");
+		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		const row = await getAdAccountBalance(c.env.DB, aXId);
+		if (!row) {
+			return c.json({
+				a_x_id: aXId,
+				asset_symbol: "USDC",
+				balance_atomic: "0",
+				frozen_atomic: "0"
+			});
+		}
+		return c.json({
+			a_x_id: row.a_x_id,
+			asset_symbol: row.asset_symbol,
+			balance_atomic: row.available_atomic,
+			frozen_atomic: row.frozen_atomic
+		});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+export async function apiAdsCreate(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		const aXId = body?.a_x_id;
+		const name = body?.name;
+		const unitPriceAtomic = parsePositiveAtomic(body?.unit_price_atomic);
+		const quotaTotal = parsePositiveInt(body?.quota_total);
+		const endDateStr = body?.end_date;
+
+		// MVP: 只支持 follow 类型，category 固定
+		const category: AdCategory = "follow";
+
+		// 可选字段（前端可传，也可使用默认值）
+		const title = body?.title || name || "Follow Campaign";
+		const description = body?.description || `Follow to earn USDC rewards.`;
+		const detailUrl = body?.detail_url || `https://x.com/${aXId}`; // 默认指向广告主 Profile
+		const imageUrl = body?.image_url || null;
+		const callbackUrl = body?.callback_url || null;
+		const customData = body?.custom_data || null;
+
+		// 必填字段校验
+		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+		if (!requireStringField(name)) return jsonError(c, 400, "INVALID_REQUEST", "Missing name");
+		if (!unitPriceAtomic) return jsonError(c, 400, "INVALID_REQUEST", "Invalid unit_price_atomic");
+		if (!quotaTotal) return jsonError(c, 400, "INVALID_REQUEST", "Invalid quota_total");
+		if (!requireStringField(endDateStr)) return jsonError(c, 400, "INVALID_REQUEST", "Missing end_date");
+
+		// Validate end date
+		const endDate = new Date(endDateStr);
+		if (isNaN(endDate.getTime()) || endDate <= new Date()) {
+			return jsonError(c, 400, "INVALID_REQUEST", "End date must be in the future.");
+		}
+
+		// Validate custom_data (if provided)
+		const customDataError = validateCustomData(customData);
+		if (customDataError) {
+			return jsonError(c, 400, "INVALID_REQUEST", customDataError);
+		}
+
+		const requiredAtomic = (BigInt(unitPriceAtomic) * BigInt(quotaTotal)).toString();
+
+		// Try to reserve budget (move from available to frozen)
+		const reserved = await reserveAdBudget(c.env.DB, aXId, requiredAtomic);
+		if (!reserved) {
+			const accountInfo = await getAccountBalanceAtomic(c.env.DB, aXId);
+			return jsonError(
+				c,
+				400,
+				"INSUFFICIENT_BALANCE",
+				`Required ${requiredAtomic}, available ${accountInfo.balanceAtomic}.`
+			);
+		}
+
+		// Create ad
+		const adId = crypto.randomUUID();
+		const payload: AdCreatePayload = {
+			adId,
+			aXId,
+			category: category as AdCategory,
+			name,
+			title,
+			description,
+			detailUrl,
+			imageUrl,
+			callbackUrl,
+			customData: typeof customData === 'string' ? customData : (customData ? JSON.stringify(customData) : null),
+			unitPriceAtomic,
+			quotaTotal,
+			endDate: endDate.toISOString(),
+		};
+
+		const created = await createAd(c.env.DB, payload);
+		if (!created) {
+			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to create ad");
+		}
+
+		// 广场可见集合变化：bump feed version
+		await bumpAdsFeedVersion(c.env.DB);
+
+		return c.json({ ok: true, ad_id: adId, required_atomic: requiredAtomic });
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+export async function apiAdsUpdate(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		const adId = body?.ad_id;
+		const aXId = body?.a_x_id;
+		const callbackUrl = body?.callback_url;
+		const customData = body?.custom_data;
+
+		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
+		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		// 先检查广告存在性/归属/是否 ended（已决策：ended 不允许更新 callback/custom_data）
+		const ad = await getAdById(c.env.DB, adId);
+		if (!ad) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+		if (ad.a_x_id !== aXId) return jsonError(c, 403, "FORBIDDEN", "You do not own this ad");
+		if (ad.status === "EXPIRED" || ad.status === "COMPLETED") {
+			return jsonError(c, 400, "INVALID_STATE", "Cannot update ended ads.");
+		}
+
+		// Validate custom_data
+		const customDataError = validateCustomData(customData);
+		if (customDataError) {
+			return jsonError(c, 400, "INVALID_REQUEST", customDataError);
+		}
+
+		// Validate callback_url if provided
+		if (callbackUrl && typeof callbackUrl !== "string") {
+			return jsonError(c, 400, "INVALID_REQUEST", "Invalid callback_url format");
+		}
+
+		const updated = await updateAdSettings(
+			c.env.DB,
+			adId,
+			aXId,
+			callbackUrl || null,
+			typeof customData === 'string' ? customData : (customData ? JSON.stringify(customData) : null)
+		);
+
+		if (!updated) {
+			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad");
+		}
+
+		return c.json({ ok: true, ad_id: adId });
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+export async function apiAdsMyAds(c: ExtCtx) {
+	try {
+		const aXId = c.req.query("a_x_id");
+		const limitStr = c.req.query("limit") || "20";
+		const offsetStr = c.req.query("offset") || "0";
+
+		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		const limit = Math.min(Math.max(parseInt(limitStr, 10) || 20, 1), 100);
+		const offset = Math.max(parseInt(offsetStr, 10) || 0, 0);
+
+		const [ads, total] = await Promise.all([
+			getMyAds(c.env.DB, aXId, limit, offset),
+			getMyAdsCount(c.env.DB, aXId)
+		]);
+
+		return c.json({
+			success: true,
+			ads: ads,
+			total: total
+		});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+export async function apiAdsList(c: ExtCtx) {
+	try {
+		const bXId = c.req.query("b_x_id");
+		const rows = await getActiveAdsList(c.env.DB, bXId || undefined);
+
+		const ads = rows.map((row) => {
+			const rewardUSDC = Number(row.unit_price_atomic || 0) / 1_000_000;
+			const createdAt = row.created_at ? Date.parse(row.created_at) : Date.now();
+			const category = (row.category as AdCategory) || "visit";
+			const completedCount = Number.isFinite(row.quota_claimed as any) ? Number(row.quota_claimed) : (row.quota_used ?? 0);
+			return {
+				id: row.ad_id,
+				title: row.title,
+				brand: `@${row.a_x_id}`,
+				description: row.description,
+				category,
+				rewardUSDC,
+				durationMinutes: CATEGORY_DURATION[category] ?? 3,
+				completed: completedCount,
+				totalQuota: row.quota_total,
+				deadlineText: formatDeadlineText(row.end_date),
+				tags: CATEGORY_TAGS[category] ?? [],
+				rewardRange: getRewardRange(rewardUSDC),
+				popularityScore: computePopularityScore(completedCount, row.quota_total),
+				createdAt: Number.isFinite(createdAt) ? createdAt : Date.now(),
+				detailUrl: row.detail_url,
+				isClaimed: row.is_claimed || false, // Server provides truth
+			};
+		});
+
+		return c.json(ads);
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 查询广告广场 feed 元信息（version + next_invalidation_at）
+ * 用于客户端减少全量 /ads/executor/list 拉取频率。
+ */
+export async function apiAdsExecutorVersion(c: ExtCtx) {
+	try {
+		const [version, nextInvalidationAt] = await Promise.all([
+			getAdsFeedVersion(c.env.DB),
+			getAdsNextInvalidationAt(c.env.DB),
+		]);
+		return c.json({
+			success: true,
+			version,
+			next_invalidation_at: nextInvalidationAt,
+			generated_at: new Date().toISOString(),
+		});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+export async function apiAdsClaim(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		const adId = body?.ad_id;
+		const bXId = body?.b_x_id;
+		const bWallet = body?.b_wallet;
+
+		// Proof data (Evidence from Content Script)
+		const proofData = body?.proof_data;
+		const proofType = body?.proof_type;
+		const category = body?.category;
+
+		// Signed Blue V proof (Evidence from Device Storage)
+		const blueVProof = body?.blue_v_proof;
+
+		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
+		if (!requireStringField(bXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
+		if (!requireStringField(bWallet)) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_wallet");
+
+		// [SEC-04] Secure Claim Signature
+		const claimSignature = body?.claim_signature;
+		const claimBundle = body?.claim_bundle; // JSON string containing {u, a, h, t}
+
+		// [ENFORCE] Blue V proof is MANDATORY (unless whitelisted)
+		const whitelistStr = c.env.BLUE_V_BYPASS_WHITELIST || "";
+		const whitelist = whitelistStr.split(",").map(s => s.trim()).filter(Boolean);
+
+		if (!whitelist.includes(bXId)) {
+			if (!blueVProof) {
+				return jsonError(c, 401, "BLUE_V_REQUIRED", "Blue Verified status proof is required to claim rewards");
+			}
+
+			// Look up the registered device public key for this user
+			const kolBinding = await getKolBindingByXId(c.env.DB, bXId);
+			const registeredDeviceKey = kolBinding?.device_pubkey_spki ?? null;
+
+			const isBlueVValid = await verifyBlueVProof(blueVProof, registeredDeviceKey);
+			if (!isBlueVValid) {
+				return jsonError(c, 401, "INVALID_BLUE_V_PROOF", "Blue Verified status verification failed");
+			}
+
+			// Verify identity in proof matches request
+			try {
+				const proofObj = typeof blueVProof === 'string' ? JSON.parse(blueVProof) : blueVProof;
+				if (proofObj.userId !== bXId) {
+					return jsonError(c, 401, "USER_MISMATCH", "Blue V proof does not match the claiming user");
+				}
+				if (!proofObj.isBlueVerified) {
+					return jsonError(c, 401, "NOT_BLUE_VERIFIED", "Your account must be Blue Verified to participate");
+				}
+			} catch (e) {
+				return jsonError(c, 400, "INVALID_PROOF_JSON", "Malformed Blue V proof");
+			}
+		} else {
+			console.warn(`[apiAdsClaim] WAIVER: Bypassing Blue V check for whitelist user: ${bXId}`);
+		}
+
+		// [ENFORCE] Activity proof is also REQUIRED to finish claim
+		if (!proofData) {
+			return jsonError(c, 400, "EVIDENCE_REQUIRED", "Activity proof (follow evidence) is required to claim rewards");
+		}
+
+		// [SEC-04] [ENFORCE] Claim Signature is MANDATORY (unless whitelisted)
+		if (!whitelist.includes(bXId)) {
+			if (!claimSignature || !claimBundle) {
+				return jsonError(c, 400, "SIGNATURE_REQUIRED", "Claim signature is required for security (SEC-04)");
+			}
+
+			try {
+				const bundle = typeof claimBundle === 'string' ? JSON.parse(claimBundle) : claimBundle;
+				// 1. Verify bundle content
+				if (bundle.u !== bXId || bundle.a !== adId) {
+					return jsonError(c, 401, "SIGNATURE_MISMATCH", "Signature bundle does not match user or ad ID");
+				}
+
+				// 2. Verify hash of proofData
+				const proofDataStr = typeof proofData === 'object' ? JSON.stringify(proofData) : String(proofData);
+				const calculatedHash = await digestSha256(proofDataStr);
+				if (bundle.h !== calculatedHash) {
+					return jsonError(c, 401, "EVIDENCE_TAMPERED", "Activity proof does not match the provided signature");
+				}
+
+				// 3. Verify cryptographic signature
+				const kolBinding = await getKolBindingByXId(c.env.DB, bXId);
+				const registeredDeviceKey = kolBinding?.device_pubkey_spki ?? null;
+				if (!registeredDeviceKey) {
+					return jsonError(c, 401, "KEY_NOT_FOUND", "No registered device key for this user");
+				}
+
+				const sigBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(claimSignature));
+				const dataBytes = new TextEncoder().encode(typeof claimBundle === 'string' ? claimBundle : JSON.stringify(claimBundle));
+				const spkiBytes = new Uint8Array(decodeB64OrB64UrlToArrayBuffer(registeredDeviceKey));
+
+				const publicKey = await crypto.subtle.importKey(
+					"spki",
+					spkiBytes,
+					{ name: "ECDSA", namedCurve: "P-256" },
+					false,
+					["verify"]
+				);
+
+				const isSigValid = await crypto.subtle.verify(
+					{ name: "ECDSA", hash: "SHA-256" },
+					publicKey,
+					sigBytes,
+					dataBytes
+				);
+
+				if (!isSigValid) {
+					return jsonError(c, 401, "INVALID_CLAIM_SIGNATURE", "End-to-End claim signature verification failed");
+				}
+			} catch (e: any) {
+				return jsonError(c, 400, "SIGNATURE_VERIFY_ERROR", e.message || "Failed to process claim signature");
+			}
+		}
+
+		// Get ad info
+		const adRow = await getAdById(c.env.DB, adId);
+		if (!adRow) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+
+		// Prevent advertiser from claiming their own ad
+		if (adRow.a_x_id === bXId) {
+			return jsonError(c, 403, "SELF_CLAIM_FORBIDDEN", "You cannot claim your own ad");
+		}
+
+		// Check if already claimed
+		let claim = await getDetailedClaim(c.env.DB, adId, bXId);
+		let claimId = claim?.claim_id;
+
+		if (claim && (claim.status === 'CONFIRMED' || claim.status === 'PENDING_CONFIRM')) {
+			return c.json({
+				success: true,
+				already_claimed: true,
+				claim_id: claim.claim_id,
+				status: claim.status,
+				ad_title: adRow.title,
+				unit_price_atomic: adRow.unit_price_atomic,
+				settled: claim.status === 'CONFIRMED'
+			});
+		}
+
+		// If NOT claimed yet, establish the claim (Reserve Quota)
+		if (!claim) {
+			// Status Checks for New Claims
+			if (adRow.status === "COMPLETED") return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full");
+			if (adRow.status === "EXPIRED") return jsonError(c, 400, "AD_EXPIRED", "Ad campaign has expired");
+			if (adRow.status !== "ACTIVE") return jsonError(c, 400, "AD_NOT_ACTIVE", "Ad is not active");
+
+			// Increment claimed quota
+			const quotaIncremented = await incrementAdClaimedQuota(c.env.DB, adId);
+			if (!quotaIncremented) {
+				return jsonError(c, 400, "QUOTA_FULL", "Ad quota is full or inactive");
+			}
+
+			// Create db record
+			claimId = crypto.randomUUID();
+			const claimParams: CreateDetailedClaimParams = {
+				claimId,
+				adId: adRow.ad_id,
+				bXId,
+				bWallet,
+				unitPriceAtomic: adRow.unit_price_atomic
+			};
+
+			const claimCreated = await createDetailedClaim(c.env.DB, claimParams);
+			if (!claimCreated) {
+				// Rollback quota (best effort)
+				try {
+					await c.env.DB.prepare(
+						`UPDATE ad_campaigns SET quota_claimed = MAX(COALESCE(quota_claimed, 0) - 1, 0), updated_at = datetime('now') WHERE ad_id = ?`
+					).bind(adId).run();
+				} catch (rbErr) { console.error("Rollback failed:", rbErr); }
+				return jsonError(c, 500, "DB_ERROR", "Failed to create claim record");
+			}
+
+			// Use a temporary object for flow continuity
+			claim = { ...claimParams, status: 'CLAIMED', created_at: '', updated_at: '' } as any;
+		}
+
+		// At this point, we have a valid claim (either existing or new).
+		// Submit Evidence & Settle.
+		let finalStatus = claim!.status;
+
+		if (finalStatus === 'CLAIMED' || finalStatus === 'REJECTED') {
+			const evidenceId = crypto.randomUUID();
+			const evidenceParams: ClaimEvidenceParams = {
+				evidenceId,
+				claimId: claimId!,
+				adId: adRow.ad_id,
+				bXId,
+				category: category || 'follow',
+				proofType: proofType || 'unknown',
+				proofData: typeof proofData === 'object' ? JSON.stringify(proofData) : String(proofData),
+				observedData: typeof blueVProof === 'object' ? JSON.stringify(blueVProof) : String(blueVProof)
+			};
+
+			const evidenceInserted = await insertClaimEvidence(c.env.DB, evidenceParams);
+			if (evidenceInserted) {
+				// 延迟结算策略：只保存证据，状态改为 PENDING_CONFIRM
+				// [SEC-04] 同时存储签章信息
+				const claimBundleStr = typeof claimBundle === 'string' ? claimBundle : JSON.stringify(claimBundle);
+				await updateClaimStatusWithSignature(c.env.DB, claimId!, 'PENDING_CONFIRM', claimSignature || "", claimBundleStr || "");
+				finalStatus = 'PENDING_CONFIRM';
+
+				// 广场可见集合变化：bump feed version
+				await bumpAdsFeedVersion(c.env.DB);
+			}
+		}
+
+		return c.json({
+			success: true,
+			claim_id: claimId,
+			status: finalStatus,
+			ad_title: adRow.title,
+			unit_price_atomic: adRow.unit_price_atomic,
+			settled: false // 延迟结算
+		});
+
+	} catch (err: any) {
+		console.error("[apiAdsClaim] Internal error:", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", "Internal Server Error");
+	}
+}
+
+export async function apiAdsMyClaims(c: ExtCtx) {
+	try {
+		const bXId = c.req.query("b_x_id");
+		if (!bXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
+
+		const claims = await getPerformerHistory(c.env.DB, bXId);
+		return c.json(claims);
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 查询执行者的仪表盘信息
+ */
+export async function apiAdsExecutorDashboardInfo(c: ExtCtx) {
+	try {
+		const bXId = c.req.query("b_x_id");
+		if (!bXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
+
+		const stats = await getPerformerDashboardStats(c.env.DB, bXId);
+
+		return c.json({
+			success: true,
+			data: stats
+		});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 执行者任务列表（含广告详情）
+ * 用于 My Tasks 页签，返回任务 + 关联广告信息，支持分页和状态筛选
+ */
+export async function apiAdsMyTasks(c: ExtCtx) {
+	try {
+		const bXId = c.req.query("b_x_id");
+		const status = c.req.query("status") || "all";
+		const limitStr = c.req.query("limit") || "20";
+		const offsetStr = c.req.query("offset") || "0";
+
+		if (!bXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing b_x_id");
+
+		const limit = Math.min(Math.max(parseInt(limitStr, 10) || 20, 1), 100);
+		const offset = Math.max(parseInt(offsetStr, 10) || 0, 0);
+
+		const [tasks, total] = await Promise.all([
+			getPerformerTasksWithAdInfo(c.env.DB, bXId, status, limit, offset),
+			getPerformerTasksCount(c.env.DB, bXId, status)
+		]);
+
+		return c.json({
+			success: true,
+			tasks,
+			total,
+			hasMore: offset + tasks.length < total
+		});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 充值到广告托管账户
+ * 用户通过 x402 支付将 USDC 转账到平台库账户
+ */
+export async function apiRechargeToAdEscrowAccount(c: ExtCtx) {
+	try {
+		const parsed = await parseEscrowRequest(c);
+		if (parsed instanceof Response) return parsed;
+		const { aXId, amountAtomic: amountAtomicStr } = parsed;
+
+		const payTo = (c.env.TREASURY_ADDRESS as `0x${string}`)
+		const settleResult = await x402Workflow(c, payTo, amountAtomicStr, "USDC Transfer To Ad Escrow Account");
+
+		const txHash = settleResult.transaction;
+		const payer = settleResult.payer?.toLowerCase();
+
+		// Check if already processed
+		const existingLedger = await getEscrowLedgerByTxHash(c.env.DB, txHash);
+		if (existingLedger) {
+			return c.json({
+				success: true,
+				txHash,
+				payer,
+				a_x_id: aXId,
+				amount_atomic: amountAtomicStr,
+				alreadyProcessed: true
+			});
+		}
+
+		// Ensure account exists and insert ledger + credit balance atomically
+		await ensureEscrowAccount(c.env.DB, aXId);
+
+		const ledgerId = crypto.randomUUID();
+		const ledgerInserted = await insertDepositLedger(
+			c.env.DB,
+			ledgerId,
+			aXId,
+			amountAtomicStr,
+			txHash,
+			payer || "",
+			c.env.TREASURY_ADDRESS
+		);
+
+		// Only credit if ledger was actually inserted
+		if (ledgerInserted) {
+			await creditEscrowBalance(c.env.DB, aXId, amountAtomicStr);
+		}
+
+		return c.json({ success: true, txHash });
+	} catch (err: any) {
+		// ✅ 处理自定义的 EscrowRequestError
+		if (err instanceof EscrowRequestError) {
+			return jsonError(c, err.statusCode as ContentfulStatusCode, err.code, err.detail);
+		}
+		if (err instanceof PaymentRequiredError) return c.json({ error: "PAYMENT_REQUIRED" }, 402);
+		console.error("[apiRechargeToAdEscrowAccount Error]", err);
+
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 从广告托管账户提现资金
+ * 资金原路返回到用户的绑定钱包地址
+ * 防止重复提现：每个用户每月只能提现一次
+ */
+export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
+	try {
+		console.log("[apiWithdrawFromAdsEscrowAccount] 开始处理提现请求");
+
+		const parsed = await parseEscrowRequest(c);
+		if (parsed instanceof Response) return parsed;
+		const { aXId, amountAtomic: amountAtomicStr } = parsed;
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 参数验证成功: aXId=${aXId}, amountAtomic=${amountAtomicStr}`);
+
+		// 从 kol_binding 表查询用户的绑定钱包地址（原路返回）
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 查询用户绑定的钱包地址...`);
+		const kolBinding = await getKolBindingByXId(c.env.DB, aXId);
+		console.log(`[apiWithdrawFromAdsEscrowAccount] kolBinding 结果:`, kolBinding);
+
+		if (!kolBinding || !kolBinding.wallet_address) {
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：未找到钱包地址`);
+			return jsonError(c, 400, "INVALID_REQUEST", "User wallet address not found. Please bind your wallet first.");
+		}
+
+		const toAddress = kolBinding.wallet_address;
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 目标钱包: ${toAddress}`);
+
+		// 使用确定性的幂等性密钥来防止重复提现
+		// 格式：aXId_yearMonth (e.g., "user_123_202601") - 每月最多提现一次
+		const now = new Date();
+		const yearMonth = now.getFullYear().toString() + String(now.getMonth() + 1).padStart(2, '0');
+		const idempotencyKey = `${aXId}_${yearMonth}`; // "user_123_202601"
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 幂等性密钥: ${idempotencyKey}`);
+
+		// 检查该用户是否已经在本月提现过
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 检查本月是否已提现过...`);
+		const existingLedger = await getEscrowLedgerByRequestId(c.env.DB, aXId, 'WITHDRAW', idempotencyKey);
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 重复提现检查结果:`, existingLedger);
+
+		if (existingLedger) {
+			if (existingLedger.status === 'SETTLED' && existingLedger.tx_hash) {
+				console.log(`[apiWithdrawFromAdsEscrowAccount] 本月已提现过`);
+
+				// 计算下个月第一天
+				const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+				const nextAvailableDate = nextMonth.toISOString().split('T')[0]; // YYYY-MM-DD
+
+				return c.json({
+					success: false,  // 本次请求未执行新操作
+					alreadyWithdrawn: true,  // 标识已提现过
+					reason: "MONTHLY_LIMIT_REACHED",
+					message: "You have already withdrawn this month. Each account can only withdraw once per month.",
+					previousTxHash: existingLedger.tx_hash,  // 历史交易哈希
+					withdrawnAt: existingLedger.created_at,  // 提现时间
+					nextAvailableDate  // 下次可提现日期
+				});
+			} else if (existingLedger.status === 'PENDING') {
+				console.log(`[apiWithdrawFromAdsEscrowAccount] 前次提现仍在进行中`);
+				return jsonError(c, 400, "PENDING", "Withdrawal is still pending from previous attempt");
+			} else if (existingLedger.status === 'FAILED') {
+				console.log(`[apiWithdrawFromAdsEscrowAccount] 前次提现失败: ${existingLedger.error_reason}`);
+				return jsonError(c, 400, "FAILED", existingLedger.error_reason || "Previous withdrawal failed, please try later");
+			}
+		}
+
+		// 原子性地锁定资金：插入账本记录并扣除余额
+		const ledgerId = crypto.randomUUID();
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 插入账本记录: ledgerId=${ledgerId}`);
+		const ledgerInserted = await insertWithdrawLedger(
+			c.env.DB,
+			ledgerId,
+			aXId,
+			amountAtomicStr,
+			toAddress as `0x${string}`,
+			idempotencyKey
+		);
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 账本插入结果: ${ledgerInserted}`);
+
+		if (!ledgerInserted) {
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：账本记录插入失败`);
+			return jsonError(c, 400, "INVALID_REQUEST", "Withdrawal already processing. Please check again later.");
+		}
+
+		// 扣除余额
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 扣减余额...`);
+		const debited = await debitEscrowBalance(c.env.DB, aXId, amountAtomicStr);
+		console.log(`[apiWithdrawFromAdsEscrowAccount] 扣减结果: ${debited}`);
+
+		if (!debited) {
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 错误：余额不足或扣减失败`);
+			// 标记账本记录为失败
+			await failWithdrawLedger(c.env.DB, ledgerId, "Insufficient available balance");
+			return jsonError(c, 400, "INSUFFICIENT_BALANCE", `Required ${amountAtomicStr}, insufficient available balance`);
+		}
+
+		// 执行 x402 支付：从库账户转账到用户的绑定钱包
+		let txHash = "";
+		let payer = "";
+		try {
+			const resourceUrl = `ads://withdraw/${aXId}`;
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 开始调用 internalTreasurySettle...`);
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 参数: toAddress=${toAddress}, amountAtomic=${amountAtomicStr}, resourceUrl=${resourceUrl}`);
+
+			const settleRes = await internalTreasurySettle(
+				c,
+				toAddress as `0x${string}`,
+				amountAtomicStr,
+				resourceUrl
+			);
+
+			if (!settleRes || !settleRes.transaction) {
+				throw new Error("Treasury payout failed or returned no transaction hash");
+			}
+
+			txHash = settleRes.transaction;
+			payer = settleRes.payer || c.env.TREASURY_ADDRESS;
+
+			// 更新账本记录为已结算
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 更新账本为已结算: txHash=${txHash}, payer=${payer}`);
+			await settleWithdrawLedger(c.env.DB, ledgerId, txHash, payer || "");
+
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 提现成功完成. final txHash=${txHash}, toAddress=${toAddress}`);
+			return c.json({
+				success: true,
+				txHash,
+				to_address: toAddress,
+				amount_atomic: amountAtomicStr,
+				debug_msg: "Withdrawal processed successfully via Treasury payout"
+			});
+		} catch (err: any) {
+			// 支付失败：标记账本为失败并退款
+			const errorMsg = err?.message || "Payout failed";
+			console.error(`[apiWithdrawFromAdsEscrowAccount] internalTreasurySettle 异常:`, {
+				message: err?.message,
+				stack: err?.stack,
+				code: err?.code,
+				name: err?.name
+			});
+			console.log(`[apiWithdrawFromAdsEscrowAccount] 标记账本为失败并退款...`);
+			await failWithdrawLedger(c.env.DB, ledgerId, errorMsg);
+			await refundEscrowBalance(c.env.DB, aXId, amountAtomicStr);
+
+			return jsonError(c, 500, "WITHDRAW_FAILED", errorMsg);
+		}
+	} catch (err: any) {
+		// ✅ 处理自定义的 EscrowRequestError
+		console.error("[apiWithdrawFromAdsEscrowAccount] 外层异常:", {
+			name: err?.name,
+			message: err?.message,
+			stack: err?.stack,
+			code: err?.code,
+			isEscrowRequestError: err instanceof EscrowRequestError
+		});
+
+		if (err instanceof EscrowRequestError) {
+			return jsonError(c, err.statusCode as ContentfulStatusCode, err.code, err.detail);
+		}
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 广告执行者提现（从 ad_performer_accounts 提现）
+ * 设计：每周允许提现一次，金额独立于广告主。
+ */
+export async function apiAdsExecutorWithdraw(c: ExtCtx) {
+	try {
+		const parsed = await parseEscrowRequest(c);
+		if (parsed instanceof Response) return parsed;
+		const { aXId: bXId, amountAtomic: amountAtomicStr } = parsed; // Reuse parseEscrowRequest, aXId is actually b_x_id here
+
+		const db = c.env.DB;
+
+		// 1. 查找接收者的链上地址
+		const kolBinding = await getKolBindingByXId(db, bXId);
+		const toAddress = kolBinding?.wallet_address;
+		if (!toAddress) {
+			return jsonError(c, 400, "WALLET_NOT_BOUND", "Executor wallet address not found");
+		}
+
+		// 2. 幂等性控制 & 每周限制 (每周一次)
+		const now = new Date();
+		const year = now.getUTCFullYear();
+
+		// 简单的周数计算（从 1月1日开始每 7天算一周，足够用于幂等性控制）
+		const startOfYear = new Date(Date.UTC(year, 0, 1));
+		const diffDays = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000);
+		const weekNum = Math.floor(diffDays / 7) + 1;
+
+		const requestId = `executor_withdraw_${bXId}_${year}_W${weekNum}`;
+
+		const existingLedger = await getPerformerLedgerByRequestId(db, bXId, requestId);
+		if (existingLedger) {
+			if (existingLedger.status === 'SETTLED' || existingLedger.status === 'PENDING') {
+				// We don't want to show an error, but rather return a friendly status object like Publisher withdraw
+				return c.json({
+					success: false,
+					alreadyWithdrawn: true,
+					limitType: "Weekly",
+					txHash: existingLedger.tx_hash,
+					status: existingLedger.status,
+					message: "You have already reached the weekly withdrawal limit. Please try again next week."
+				});
+			}
+		}
+
+		// 3. 开始提现处理（预扣款）
+		const ledgerId = crypto.randomUUID();
+		const deductSuccess = await debitPerformerBalance(db, bXId, amountAtomicStr);
+
+		if (!deductSuccess) {
+			return jsonError(c, 400, "INSUFFICIENT_BALANCE", "Insufficient earned balance for withdrawal");
+		}
+
+		// 插入提现流水记录
+		await insertPerformerWithdrawLedger(db, ledgerId, bXId, amountAtomicStr, toAddress, requestId);
+
+		// 4. 发起国库付款
+		let txHash = "";
+		let payer = "";
+		try {
+			console.log(`[apiAdsExecutorWithdraw] Initiating executor payout to ${toAddress}, amount=${amountAtomicStr}`);
+			const resourceUrl = `ads://executor-withdraw/${bXId}`;
+			const settleRes = await internalTreasurySettle(
+				c,
+				toAddress as `0x${string}`,
+				amountAtomicStr,
+				resourceUrl
+			);
+
+			if (!settleRes || !settleRes.transaction) {
+				throw new Error("Treasury payout failed or returned no transaction hash");
+			}
+
+			txHash = settleRes.transaction;
+			payer = settleRes.payer || c.env.TREASURY_ADDRESS;
+
+			// 5. 更新为已结算
+			await settlePerformerWithdrawLedger(db, ledgerId, txHash);
+
+			return c.json({
+				success: true,
+				txHash,
+				to_address: toAddress,
+				amount_atomic: amountAtomicStr,
+				debug_msg: "Executor withdrawal processed successfully"
+			});
+		} catch (err: any) {
+			// 支付失败：标记账本为失败并退款
+			console.error(`[apiAdsExecutorWithdraw] 提现失败:`, err);
+			await failPerformerWithdrawLedger(db, ledgerId, err.message || "Treasury payout failed");
+			await refundPerformerBalance(db, bXId, amountAtomicStr);
+
+			return jsonError(c, 500, "TREASURY_PAYOUT_FAILED", err.message || "Failed to process withdrawal from treasury");
+		}
+
+	} catch (err: any) {
+		console.error("[apiAdsExecutorWithdraw] 提现异常:", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", "An unexpected error occurred during executor withdrawal");
+	}
+}
+
+/**
+ * 查询广告托管账本列表（充值/提现历史）
+ */
+export async function apiAdsPublisherLedger(c: ExtCtx) {
+	try {
+		const aXId = c.req.query("a_x_id");
+		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		const limitStr = c.req.query("limit") || "50";
+		const offsetStr = c.req.query("offset") || "0";
+
+		let limit = parseInt(limitStr, 10);
+		let offset = parseInt(offsetStr, 10);
+
+		if (!Number.isFinite(limit) || limit < 1) limit = 50;
+		if (!Number.isFinite(offset) || offset < 0) offset = 0;
+
+		const rows = await listAdEscrowLedger(c.env.DB, aXId, limit, offset);
+
+		return c.json({
+			success: true,
+			rows
+		});
+	} catch (err: any) {
+		console.error("[apiAdsPublisherLedger Error]", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 查询广告主的仪表盘信息
+ */
+export async function apiAdsPublisherDashboardInfo(c: ExtCtx) {
+	try {
+		const aXId = c.req.query("a_x_id");
+		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		// 查询仪表盘统计数据（一次性获取所有统计信息，包括余额和统计数据）
+		const stats = await getPublisherDashboardStats(c.env.DB, aXId);
+
+		return c.json({
+			balance_atomic: stats.balance_atomic,
+			frozen_atomic: stats.frozen_atomic,
+			active_campaigns_count: stats.active_campaigns_count,
+			today_spend_atomic: stats.today_spend_atomic,
+			week_spend_atomic: stats.week_spend_atomic,
+			last_withdraw_at: stats.last_withdraw_at
+		});
+	} catch (err: any) {
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 查询广告主的消费历史记录
+ */
+export async function apiAdsPublisherSpendHistory(c: ExtCtx) {
+	try {
+		const aXId = c.req.query("a_x_id");
+		const limitStr = c.req.query("limit") || "10";
+		const offsetStr = c.req.query("offset") || "0";
+
+		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+
+		const limit = Math.min(Math.max(parseInt(limitStr, 10) || 10, 1), 100);
+		const offset = Math.max(parseInt(offsetStr, 10) || 0, 0);
+
+		const [records, total] = await Promise.all([
+			getAdvertiserHistory(c.env.DB, aXId, limit, offset),
+			getAdvertiserHistoryCount(c.env.DB, aXId)
+		]);
+
+		const spendRecords = records.map(record => {
+			const amount = record.unit_price_atomic ? Number(BigInt(record.unit_price_atomic) / 1000000n) : 0;
+			return {
+				id: record.claim_id,
+				time: record.created_at,
+				adName: `Ad ${record.ad_id.substring(0, 8)}`,
+				event: "Task Completion",
+				amount: amount,
+				fee: 0,
+				status: record.status
+			};
+		});
+
+		return c.json({
+			success: true,
+			records: spendRecords,
+			total: total
+		});
+	} catch (err: any) {
+		console.error("fetch spend history error:", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 查询特定广告的领取人详情
+ */
+export async function apiAdsAdClaimants(c: ExtCtx) {
+	try {
+		const adId = c.req.query("ad_id");
+		const aXId = c.req.query("a_x_id");
+		const limitStr = c.req.query("limit");
+		const offsetStr = c.req.query("offset");
+
+		if (!adId) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
+		if (!aXId) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+		const limit = Math.min(Math.max(parseInt(limitStr || "10", 10) || 10, 1), 100);
+		const offset = Math.max(parseInt(offsetStr || "0", 10) || 0, 0);
+
+		const [rows, total] = await Promise.all([
+			getAdClaimants(c.env.DB, adId, aXId, limit, offset),
+			getAdClaimantsCount(c.env.DB, adId, aXId)
+		]);
+
+		const claimants = rows.map((r: any) => ({
+			b_x_id: r.b_x_id,
+			username: r.username || r.b_x_id,
+			amount_atomic: String(r.unit_price_atomic || "0"),
+			created_at: r.created_at,
+			status: r.status
+		}));
+
+		return c.json({
+			success: true,
+			claimants,
+			total
+		});
+	} catch (err: any) {
+		console.error("fetch ad claimants error:", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 注册广告相关路由
+ */
+export function registerAdsRoutes(app: Hono<ExtendedEnv>) {
+	app.get(API_PATH_ADS_BALANCE, apiAdsBalance);
+	app.post(API_PATH_ADS_CREATE, apiAdsCreate);
+	app.post(API_PATH_ADS_UPDATE, apiAdsUpdate);
+	app.get(API_PATH_ADS_MY_ADS, apiAdsMyAds);
+	app.get(API_PATH_ADS_LIST, apiAdsList);
+	app.get(API_PATH_ADS_VERSION, apiAdsExecutorVersion);
+	app.post(API_PATH_ADS_CLAIM, apiAdsClaim);
+	app.get(API_PATH_ADS_MY_CLAIMS, apiAdsMyClaims);
+	app.get(API_PATH_ADS_MY_TASKS, apiAdsMyTasks);
+	app.get(API_PATH_ADS_EXECUTOR_DASHBOARD_INFO, apiAdsExecutorDashboardInfo);
+	app.post(API_PATH_ADS_EXECUTOR_WITHDRAW, apiAdsExecutorWithdraw);
+	app.post(API_PATH_ADS_PUBLISHER_RECHARGE, apiRechargeToAdEscrowAccount);
+	app.post(API_PATH_ADS_PUBLISHER_WITHDRAW, apiWithdrawFromAdsEscrowAccount);
+	app.get(API_PATH_ADS_PUBLISHER_LEDGER, apiAdsPublisherLedger);
+	app.get(API_PATH_ADS_PUBLISHER_DASHBOARD_INFO, apiAdsPublisherDashboardInfo);
+	app.get(API_PATH_ADS_PUBLISHER_SPEND_HISTORY, apiAdsPublisherSpendHistory);
+	app.get(API_PATH_ADS_PUBLISHER_AD_CLAIMS, apiAdsAdClaimants);
+	app.post(API_PATH_ADS_TOGGLE_STATUS, apiAdsToggleStatus);
+	app.post(API_PATH_ADS_TOP_UP_BUDGET, apiAdsTopUpBudget);
+}
+
+/**
+ * 切换广告状态（启用/暂停）
+ */
+export async function apiAdsToggleStatus(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		const adId = body?.ad_id;
+		const aXId = body?.a_x_id;
+		const action = body?.action; // "pause" or "resume"
+
+		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
+		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+		if (!requireStringField(action)) return jsonError(c, 400, "INVALID_REQUEST", "Missing action");
+
+		// 验证 action 参数
+		if (action !== "pause" && action !== "resume" && action !== "stop") {
+			return jsonError(c, 400, "INVALID_REQUEST", "Action must be 'pause', 'resume' or 'stop'");
+		}
+
+		// 获取广告信息
+		const ad = await getAdById(c.env.DB, adId);
+		if (!ad) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+		if (ad.a_x_id !== aXId) return jsonError(c, 403, "FORBIDDEN", "You do not own this ad");
+
+		// 根据 action 更新状态
+		let newStatus: AdCampaignStatus;
+		if (action === "pause") {
+			// 从 ACTIVE 切换到 PAUSED_MANUAL
+			if (ad.status !== "ACTIVE") {
+				return jsonError(c, 400, "INVALID_STATE", "Only active ads can be paused");
+			}
+			newStatus = "PAUSED_MANUAL";
+		} else if (action === "resume") {
+			// 从 PAUSED_MANUAL 切换到 ACTIVE
+			if (ad.status !== "PAUSED_MANUAL") {
+				return jsonError(c, 400, "INVALID_STATE", "Only manually paused ads can be resumed");
+			}
+			newStatus = "ACTIVE";
+		} else {
+			// STOP: 提前终止广告 (ACTIVE/PAUSED -> COMPLETED)
+			// 一旦 COMPLETED，cronRefundAds 将根据 pending claim 情况自动处理退款
+			if (ad.status !== "ACTIVE" && ad.status !== "PAUSED_MANUAL") {
+				return jsonError(c, 400, "INVALID_STATE", "Only active or paused ads can be stopped");
+			}
+			newStatus = "COMPLETED";
+		}
+
+		// 更新状态
+		const updated = await updateAdStatus(c.env.DB, adId, newStatus);
+		if (!updated) {
+			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status");
+		}
+
+		// 广场可见集合变化：bump feed version
+		await bumpAdsFeedVersion(c.env.DB);
+
+		return c.json({ ok: true, ad_id: adId, new_status: newStatus });
+	} catch (err: any) {
+		console.error("[apiAdsToggleStatus Error]", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}
+
+/**
+ * 为广告充值预算
+ */
+export async function apiAdsTopUpBudget(c: ExtCtx) {
+	try {
+		const body = await c.req.json().catch(() => ({}));
+		const adId = body?.ad_id;
+		const aXId = body?.a_x_id;
+		const amountAtomic = parsePositiveAtomic(body?.amount_atomic);
+
+		if (!requireStringField(adId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing ad_id");
+		if (!requireStringField(aXId)) return jsonError(c, 400, "INVALID_REQUEST", "Missing a_x_id");
+		if (!amountAtomic) return jsonError(c, 400, "INVALID_REQUEST", "Invalid amount_atomic");
+
+		// 获取广告信息
+		const ad = await getAdById(c.env.DB, adId);
+		if (!ad) return jsonError(c, 404, "NOT_FOUND", "Ad not found");
+		if (ad.a_x_id !== aXId) return jsonError(c, 403, "FORBIDDEN", "You do not own this ad");
+
+		// 只有非终止状态的广告才能充值 (ACTIVE, PAUSED_MANUAL, PAUSED_NO_BUDGET)
+		if (ad.status === "EXPIRED" || ad.status === "COMPLETED") {
+			return jsonError(c, 400, "INVALID_STATE", "Cannot top up ended ads. Please create a new campaign.");
+		}
+
+		// 计算追加配额：amountAtomic / unit_price_atomic (必须是整数倍或向下取整)
+		const unitPrice = BigInt(ad.unit_price_atomic);
+		const amount = BigInt(amountAtomic);
+		if (unitPrice === 0n) return jsonError(c, 500, "INTERNAL_ERROR", "Ad unit price is zero");
+
+		const additionalQuota = Number(amount / unitPrice);
+		if (additionalQuota <= 0) {
+			return jsonError(c, 400, "INVALID_AMOUNT", `Amount is too small for at least one task. Unit price: ${ad.unit_price_atomic}`);
+		}
+
+		// 预留预算（从 available 移动到 frozen）
+		const reserved = await reserveAdBudget(c.env.DB, aXId, amountAtomic);
+		if (!reserved) {
+			const accountInfo = await getAccountBalanceAtomic(c.env.DB, aXId);
+			return jsonError(
+				c,
+				400,
+				"INSUFFICIENT_BALANCE",
+				`Required ${amountAtomic}, available ${accountInfo.balanceAtomic}.`
+			);
+		}
+
+		// 增加广告配额
+		const quotaUpdated = await addAdQuota(c.env.DB, adId, additionalQuota);
+		if (!quotaUpdated) {
+			return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad quota");
+		}
+
+		// 如果原状态是 PAUSED_NO_BUDGET，更新状态为 ACTIVE
+		let finalStatus = ad.status;
+		if (ad.status === "PAUSED_NO_BUDGET") {
+			const updated = await updateAdStatus(c.env.DB, adId, "ACTIVE");
+			if (!updated) {
+				return jsonError(c, 500, "INTERNAL_ERROR", "Failed to update ad status after top-up");
+			}
+			finalStatus = "ACTIVE";
+		}
+
+		// 广场可见集合变化：bump feed version
+		await bumpAdsFeedVersion(c.env.DB);
+
+		return c.json({
+			ok: true,
+			ad_id: adId,
+			topped_up_atomic: amountAtomic,
+			additional_quota: additionalQuota,
+			new_status: finalStatus
+		});
+	} catch (err: any) {
+		console.error("[apiAdsTopUpBudget Error]", err);
+		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+	}
+}

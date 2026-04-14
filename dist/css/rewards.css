@@ -1,0 +1,304 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #fff;
+}
+
+.rewards-container {
+    max-width: 800px;
+    margin: 32px auto;
+    padding: 16px 32px;
+    border: 1px solid rgb(239, 243, 244);
+    border-radius: 16px;
+}
+
+.rewards-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgb(239, 243, 244);
+}
+
+.rewards-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+}
+
+.filter-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.filter-container label {
+    font-size: 14px;
+    color: #666;
+}
+
+.status-filter {
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.status-filter:focus {
+    outline: none;
+    border-color: #1d9bf0;
+}
+
+.rewards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.reward-item {
+    background: white;
+    padding: 24px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgb(239, 243, 244);
+}
+
+.reward-item:hover {
+    background: rgba(15, 20, 25, 0.03);
+}
+
+.reward-collapsed {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.reward-basic-info {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+    flex: 1;
+}
+
+.reward-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.reward-field-label {
+    font-size: 12px;
+    color: #666;
+    font-weight: 400;
+}
+
+.reward-field-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.reward-amount {
+    color: #f59e0b;
+}
+
+.reward-status {
+    width: fit-content;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.reward-status.status-0 {
+    background: rgba(255, 70, 70, 0.2);
+    color: #FF4646;
+}
+
+.reward-status.status-10 {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.reward-status.status-20 {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.reward-status.status-30 {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.reward-status.status-40 {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.reward-expanded {
+    display: none;
+    margin-top: 32px;
+    border-radius: 16px;
+    padding: 16px;
+    border: 1px solid #e5e7eb;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reward-expanded:hover {
+    background: rgba(15, 20, 25, 0.03);
+}
+
+.reward-item.expanded .reward-expanded {
+    display: flex;
+}
+
+.reward-detail-grid {
+    flex: 2;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.reward-actions {
+    flex: 1;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.btn-claim {
+    padding: 10px 24px;
+    background: #1d9bf0;
+    color: white;
+    border: none;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-claim:hover {
+    background: #428ad2;
+}
+
+.btn-claim:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    background: white;
+
+}
+
+.btn-page {
+    padding: 10px 20px;
+    background: #1d9bf0;
+    color: white;
+    border: none;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-page:hover:not(:disabled) {
+    background: #428ad2;
+}
+
+.btn-page:disabled {
+    background: transparent;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 14px;
+    color: #666;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 62px 0;
+    background: white;
+    border-bottom: 1px solid rgb(239, 243, 244);
+}
+
+.empty-state p {
+    font-size: 16px;
+    color: #999;
+    margin: 0;
+}
+
+/* Loading 样式 */
+/* Unused local styles removed in favor of common_utils.css */
+
+/* 通知条 */
+.notification {
+    position: fixed;
+    /* 防止被其它全屏样式影响 */
+    inset: auto;
+    right: auto;
+    bottom: auto;
+    top: 16px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    z-index: 10000;
+
+    /* 关键：根据内容自适应尺寸 */
+    display: inline-flex;
+    width: fit-content;
+    height: auto;
+    max-width: min(560px, calc(100vw - 32px));
+    box-sizing: border-box;
+    padding: 12px 16px 12px 22px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.2px;
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+    opacity: 1;
+    visibility: visible;
+    white-space: normal;
+    word-break: break-word;
+    transition:
+        transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 220ms ease,
+        visibility 0s linear 0s;
+}
+
+.notification.hidden {
+    display: none;
+}
+
+.notification.info {
+    background: rgba(69, 146, 239, 0.2);
+    color: #4592EF;
+}
+
+.notification.error {
+    background: rgba(255, 70, 70, 0.2);
+    color: #FF4646;
+}
+
+.notification.success {
+    background: rgba(3, 182, 155, 0.2);
+    color: #03B69B;
+}

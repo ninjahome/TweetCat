@@ -1,0 +1,170 @@
+import { isSignedIn } from "@coinbase/cdp-core";
+import { initCDP, x402TipPayload } from "../common/x402_obj";
+import { logX402 } from "../common/debug_flags";
+import { t, initI18n } from "../common/i18n";
+import { postToX402Srv } from "../wallet/cdp_wallet";
+import { openTxInExplorer } from "./common";
+
+// DOM 元素
+let statusDiv: HTMLElement;
+let loadingDiv: HTMLElement;
+let tweetInfoDiv: HTMLElement;
+let btnClose: HTMLElement;
+let btnBrowser: HTMLElement;
+let currentHashVal: string = ""
+
+// 翻译函数
+function translateStaticTexts() {
+    // 设置页面标题
+    document.title = t('page_title_payment');
+
+    // 设置页面标题
+    const pageHeader = document.getElementById('pageHeader');
+    if (pageHeader) {
+        pageHeader.textContent = t('page_header_payment');
+    }
+
+    // 设置推文标签
+    const tweetIdLabel = document.getElementById('tweetIdLabel');
+    if (tweetIdLabel) {
+        tweetIdLabel.textContent = t('tweet_id_label');
+    }
+
+    const authorIdLabel = document.getElementById('authorIdLabel');
+    if (authorIdLabel) {
+        authorIdLabel.textContent = t('author_id_label');
+    }
+
+    // 设置货币单位
+    const currencyUnit = document.getElementById('currencyUnit');
+    if (currencyUnit) {
+        currencyUnit.textContent = t('currency_unit');
+    }
+
+    // 设置关闭按钮
+    if (btnClose) {
+        btnClose.textContent = t('close_button');
+    }
+
+    // 设置初始状态文本
+    const defaultStatusText = statusDiv.getAttribute('data-default-text');
+    if (defaultStatusText) {
+        statusDiv.textContent = t('initializing_status');
+    }
+    btnBrowser.textContent = t("wallet_action_show_on_browser");
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+    // 初始化 i18n - 必须先调用这个来检测语言环境
+    initI18n();
+    // 获取 DOM 元素
+    statusDiv = document.getElementById('status')!;
+    loadingDiv = document.getElementById('loading')!;
+    tweetInfoDiv = document.getElementById('tweetInfo')!;
+    btnClose = document.getElementById('btnClose')!;
+    btnBrowser = document.getElementById('btn-visited-blockchain');
+
+    translateStaticTexts();
+
+    btnClose.onclick = () => window.close();
+    btnBrowser.onclick = async () => {
+        if (!currentHashVal) return;
+        await openTxInExplorer(currentHashVal)
+        window.close();
+    }
+    btnBrowser.style.display = 'none';
+
+    // 从 URL 参数获取 payload
+    const params = new URLSearchParams(window.location.search);
+    const payloadStr = params.get('payload');
+
+    if (!payloadStr) {
+        showError(t('missing_payload_error'));
+        return;
+    }
+    try {
+        const payload: x402TipPayload = JSON.parse(decodeURIComponent(payloadStr));
+        showTweetInfo(payload);
+        await processTipPayment(payload);
+    } catch (err) {
+        console.error('Payment initialization error:', err);
+        showError(err.message || t('initialization_error'));
+    }
+});
+
+function showTweetInfo(payload: x402TipPayload) {
+    const tweetIdElement = document.getElementById('tweetId');
+    const authorIdElement = document.getElementById('authorId');
+    const amountElement = document.getElementById('amount');
+
+    if (tweetIdElement) tweetIdElement.textContent = payload.tweetId;
+    if (authorIdElement) authorIdElement.textContent = payload.authorId;
+    if (amountElement) amountElement.textContent = payload.usdcVal.toFixed(2);
+
+    tweetInfoDiv.style.display = 'block';
+}
+
+async function processTipPayment(payload: x402TipPayload) {
+    try {
+        await initCDP();
+
+        updateStatus(t('checking_login_status'));
+        const signed = await isSignedIn();
+        if (!signed) {
+            showError(t('coinbase_login_error'));
+            return
+        }
+
+        updateStatus(t('verifying_payment_amount'));
+        if (!payload.usdcVal || payload.usdcVal <= 0 || payload.usdcVal > 1000) {
+            showError(t('invalid_payment_amount'));
+            return
+        }
+
+
+        updateStatus(t('requesting_payment'));
+        const result = await postToX402Srv("/tip", {
+            amount: payload.usdcVal,
+            tweetId: payload.tweetId,
+            xId: payload.authorId
+        })
+
+        const txHash = result.txHash || result.transactionHash;
+        logX402("-------x402>>>result,", result)
+        showSuccess(t('tip_success'), txHash);
+        currentHashVal = txHash
+        btnBrowser.style.display = 'block';
+        setTimeout(() => {
+            window.close();
+        }, 10_000);
+
+    } catch (error) {
+        console.error('❌ Payment error:', error);
+        showError(error.message || t('payment_process_error'));
+    }
+}
+
+function updateStatus(msg: string) {
+    statusDiv.textContent = msg;
+    statusDiv.className = 'status';
+}
+
+function showError(msg: string) {
+    loadingDiv.style.display = 'none';
+    statusDiv.textContent = `❌ ${msg}`;
+    statusDiv.className = 'status error';
+    btnClose.style.display = 'block';
+}
+
+function showSuccess(msg: string, txHash?: string) {
+    loadingDiv.style.display = 'none';
+
+    let html = `<div>${msg}</div>`;
+    if (txHash) {
+        html += `<div class="txhash">${t('txhash_label')}: ${txHash}</div>`;
+    }
+    html += `<div style="margin-top: 12px; font-size: 14px;">${t('window_auto_close')}</div>`;
+
+    statusDiv.innerHTML = html;
+    statusDiv.className = 'status success';
+}

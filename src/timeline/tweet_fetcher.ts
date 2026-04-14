@@ -1,15 +1,17 @@
-import {fetchTweets, getUserIdByUsername} from "./twitter_api";
+import {fetchTweets, getUserIdByUsername} from "../x_api/twitter_api";
 import {sendMsgToService, sleep} from "../common/utils";
 import {logFT, logIC} from "../common/debug_flags";
 import {KolCursor, saveOneKolCursorToSW} from "../object/kol_cursor";
 import {cacheTweetsToSW, WrapEntryObj} from "./db_raw_tweet";
 import {MsgType} from "../common/consts";
-import {EntryObj, parseTimelineFromGraphQL, TweetMediaEntity, TweetObj} from "./tweet_entry";
+import {EntryObj, parseTimelineFromGraphQL, TweetMediaEntity, TweetObj} from "../x_api/tweet_entry";
 import {queryKolById, updateKolIdToSw} from "../object/tweet_kol";
 import {resetNewestTweet, showNewestTweets} from "../content/tweetcat_web3_area";
 import {setLatestFetchAt} from "./tweet_pager";
 import {tweetFetchParam} from "../common/msg_obj";
 import {extractMp4UrlList} from "./render_video";
+import {cacheTweetInStatus} from "../content/content_x402";
+import {LRUCache} from "../common/lru_map";
 
 const MIN_FETCH_GAP = 5_000;
 
@@ -204,7 +206,7 @@ export async function startToCheckKolId(ids: any[]) {
     }
 }
 
-const tempCacheForTweetOfKolProfilePage = new Map<string, WrapEntryObj[]>();
+const tempCacheForTweetOfKolProfilePage = new LRUCache<string, WrapEntryObj[]>(1000);
 
 export async function processCapturedTweets(result: any, kolId: string) {
 
@@ -232,6 +234,7 @@ export async function processCapturedTweets(result: any, kolId: string) {
 export async function processCapturedTweetDetail(result: any) {
     const res = parseTimelineFromGraphQL(result, "tweetDetail");
     cacheVideoTweet(res.tweets);
+    await cacheTweetInStatus(res.tweets)
 }
 
 export async function processCapturedHomeLatest(result: any) {
