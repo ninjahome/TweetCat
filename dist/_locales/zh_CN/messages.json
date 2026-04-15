@@ -2086,7 +2086,10 @@
     "message": "您的余额充足，可以发布此广告。"
   },
   "msg_insufficient_balance_recharge": {
-    "message": "余额不足。请在发布前充值。"
+    "message": "广告金额不足，请先充值，"
+  },
+  "btn_recharge_now": {
+    "message": "立即充值"
   },
   "btn_transfer_to_ads": {
     "message": "划转至广告账户"

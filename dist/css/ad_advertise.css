@@ -1264,6 +1264,19 @@ body {
     color: #991b1b;
 }
 
+.balance-status .recharge-now-link {
+    color: #1d9bf0;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.balance-status .recharge-now-link:hover {
+    color: #0c7cd5;
+    text-decoration: underline;
+}
+
 /* ==================== Recharge Content ==================== */
 .recharge-content h3 {
     font-size: 16px;

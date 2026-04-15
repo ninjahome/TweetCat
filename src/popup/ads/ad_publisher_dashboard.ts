@@ -998,13 +998,24 @@ export function updateBudgetSummaryAndBalance() {
     if (balanceStatus) {
         balanceStatus.className = "balance-status";
 
-        if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(publisherState.dashboardInfo.balance_atomic) >= BigInt(requiredAtomic)) {
-            balanceStatus.classList.add("sufficient");
-            balanceStatus.textContent = t("msg_sufficient_balance");
-        } else if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(publisherState.dashboardInfo.balance_atomic) < BigInt(requiredAtomic)) {
+        if (requiredAtomic && BigInt(requiredAtomic) > 0n && BigInt(publisherState.dashboardInfo.balance_atomic) < BigInt(requiredAtomic)) {
+            // 只有在余额不足时才显示提示
+            balanceStatus.classList.remove("hidden");
             balanceStatus.classList.add("insufficient");
-            balanceStatus.textContent = t("msg_insufficient_balance_recharge");
+            const msgText = t("msg_insufficient_balance_recharge");
+            const linkText = t("btn_recharge_now");
+            balanceStatus.innerHTML = `${msgText}<a href="#" class="recharge-now-link" id="btn-recharge-now-link">${linkText}</a>`;
+            const rechargeLink = $Id("btn-recharge-now-link");
+            if (rechargeLink) {
+                rechargeLink.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const rechargeModal = $Id("recharge-modal");
+                    if (rechargeModal) rechargeModal.classList.add("active");
+                });
+            }
         } else {
+            // 余额充足或输入为空时隐藏提示框
+            balanceStatus.classList.add("hidden");
             balanceStatus.textContent = "";
         }
     }

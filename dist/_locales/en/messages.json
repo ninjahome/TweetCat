@@ -2083,7 +2083,10 @@
     "message": "Your balance is sufficient to publish this ad."
   },
   "msg_insufficient_balance_recharge": {
-    "message": "Insufficient balance. Please recharge before publishing."
+    "message": "Insufficient ad budget. Please top up first, "
+  },
+  "btn_recharge_now": {
+    "message": "Top Up Now"
   },
   "btn_transfer_to_ads": {
     "message": "Transfer to Ads"
