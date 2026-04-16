@@ -51,6 +51,9 @@
   "cancel": {
     "message": "取消"
   },
+  "reverify_btn": {
+    "message": "重新认证"
+  },
   "confirm": {
     "message": "确定"
   },

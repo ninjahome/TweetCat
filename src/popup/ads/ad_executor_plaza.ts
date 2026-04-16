@@ -193,7 +193,16 @@ export async function startTask(ad: EarnAd) {
         } else if (isFresh) {
             // 如果是最近 7 天内验证过的，直接根据结果通过或拦截
             if (!blueVStatus.isBlueVerified) {
-                showAlert(t("verification_failed"), t("blue_v_required"));
+                showAlert(
+                    t("verification_failed"), 
+                    t("blue_v_required"),
+                    {
+                        label: t("reverify_btn") || "Re-verify",
+                        onClick: () => {
+                            window.open(`https://x.com/i/user/${xId}?tc_verify=1`, "_blank");
+                        }
+                    }
+                );
                 executorState.taskRunState[ad.id] = "idle";
                 await saveTaskRunState();
                 renderEarnAds();

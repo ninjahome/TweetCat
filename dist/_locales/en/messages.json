@@ -51,6 +51,9 @@
   "cancel": {
     "message": "Cancel"
   },
+  "reverify_btn": {
+    "message": "Re-verify"
+  },
   "confirm": {
     "message": "Confirm"
   },
