@@ -1,7 +1,8 @@
 import { $2, cloneTemplate, formatUSDCTrimmed, getCurrentUserInfo, showNotification, showConfirm, showAlert, showLoading, hideLoading } from "../common";
 import { t } from "../../common/i18n";
 import { logAdP } from "../../common/debug_flags";
-import { adsWorkerGet, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS } from "./ad_publisher_common";
+import { adsWorkerGet, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS, getAdsChainId } from "./ad_publisher_common";
+import { ChainIDBaseSepolia } from "../../common/x402_obj";
 import {
     AdCategory,
     CATEGORY_DURATION,
@@ -186,7 +187,8 @@ export async function startTask(ad: EarnAd) {
             "1740205143621238785",
             "1514598908273463303"
         ];
-        const isWhitelisted = BYPASS_WHITELIST.includes(xId);
+        const currentChainId = await getAdsChainId();
+        const isWhitelisted = BYPASS_WHITELIST.includes(xId) && currentChainId === ChainIDBaseSepolia;
 
         if (isWhitelisted) {
             // Whitelisted users skip all Blue V checks and redirections
@@ -303,7 +305,7 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
             avatarEl.style.display = "none";
         }
 
-        const friendlyStatus = TASK_STATUS_MAP[task.status] || task.status;
+        const friendlyStatus = TASK_STATUS_MAP()[task.status] || task.status;
 
         $2<HTMLElement>(card, ".task-card-title").textContent = task.ad.title;
         $2<HTMLElement>(card, ".task-card-brand").textContent = task.ad.brand;
@@ -457,7 +459,7 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
         const isClaimed = !!myClaim;
 
         if (isClaimed) {
-            btn.textContent = myClaim?.status ? (TASK_STATUS_MAP[myClaim.status] || myClaim.status) : t("status_claimed_todo");
+            btn.textContent = myClaim?.status ? (TASK_STATUS_MAP()[myClaim.status] || myClaim.status) : t("status_claimed_todo");
             btn.classList.add("claimed");
             card.classList.add("ad-card-claimed");
             // If claimed, maybe we allow clicking to see details?
