@@ -208,6 +208,11 @@ a {
     visibility: hidden;
     scrollbar-color: rgb(185, 202, 211) rgb(247, 249, 249);
     overflow-anchor: none;
+
+    /* 新增: 极简卡片样式 */
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
 }
 
 .tweet-cardfloat:hover {
