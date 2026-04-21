@@ -24,12 +24,23 @@ browser.runtime.onConnect.addListener(async (port) => {
     port.onMessage.addListener(async (msg) => {
         try {
             await initCDP();
-            const signed = await isSignedIn();
+            let signed = await isSignedIn();
+
+            // CDP session may not be fully rehydrated right after offscreen recreation.
+            // Retry once after a brief pause before declaring "not signed in".
+            if (!signed) {
+                console.warn("[wallet_offscreen] isSignedIn() returned false, retrying in 800ms...");
+                await new Promise(r => setTimeout(r, 800));
+                await initCDP();
+                signed = await isSignedIn();
+            }
+
             if (signed) {
                 await msgProc(port, msg);
                 return;
             }
 
+            console.warn("[wallet_offscreen] isSignedIn() still false after retry");
             port.postMessage({
                 requestId: msg.requestId,
                 result: {success: false, data: t('coinbase_login_error')}

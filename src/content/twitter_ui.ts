@@ -387,6 +387,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                 // 1. 优先检查钱包登录状态 (走 Offscreen 以获得准确 CDP 状态)
                 const walletInfo = await sendMsgToOffScreenWithTimeout({}, MsgType.WalletInfoQuery, 8000);
                 if (!walletInfo?.success || !walletInfo?.data?.address) {
+                    console.warn(`[TwitterUI] WalletInfoQuery check failed. success=${walletInfo?.success}, data=`, walletInfo?.data, `error=`, walletInfo?.error);
                     setUi(ADS_FOLLOW_UI_MODE.Eligible);
                     const errMsg = walletInfo?.data === "TIMEOUT" ? "连接钱包超时，请刷新页面重试。" : "请先在插件中登录钱包账号，再执行关注领奖。";
                     showDialog(t('tips_title'), errMsg);
