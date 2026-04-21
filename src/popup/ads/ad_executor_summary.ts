@@ -164,7 +164,7 @@ export function renderActivityList(claims: EarnClaim[]) {
         const item = cloneTemplate("tpl-activity-item");
         $2<HTMLElement>(item, ".activity-title").textContent = claim.ad_title || claim.ad_id;
         const statusEl = $2<HTMLElement>(item, ".activity-status");
-        statusEl.textContent = TASK_STATUS_MAP[claim.status || ""] || claim.status;
+        statusEl.textContent = TASK_STATUS_MAP()[claim.status || ""] || claim.status;
         if (claim.status === "PENDING_CONFIRM" || claim.status === "CONFIRMED" || claim.status === "PENDING") {
             statusEl.classList.add("status-paying");
         } else if (claim.status === "REJECTED" || claim.status === "FAILED") {

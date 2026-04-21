@@ -101,11 +101,12 @@ export function $input(sel: string) {
     return document.querySelector(sel) as HTMLInputElement | null;
 }
 
-export function showAlert(title: string, message: string) {
+export function showAlert(title: string, message: string, secondaryAction?: { label: string, onClick: () => void }) {
     const alertBox = $Id('custom-alert');
     const alertTitle = $Id('alert-title');
     const alertMessage = $Id('alert-message');
     const alertOk = $Id('alert-ok');
+    const alertSecondary = $Id('alert-reverify');
 
     if (!alertBox || !alertTitle || !alertMessage || !alertOk) {
         console.error('Alert elements not found.');
@@ -116,6 +117,18 @@ export function showAlert(title: string, message: string) {
     alertTitle.textContent = title;
     alertMessage.textContent = message;
     alertOk.textContent = t('ok');
+
+    if (secondaryAction && alertSecondary) {
+        alertSecondary.textContent = secondaryAction.label;
+        alertSecondary.style.display = 'inline-block';
+        alertSecondary.onclick = () => {
+             alertBox.style.display = 'none';
+             secondaryAction.onClick();
+        };
+    } else if (alertSecondary) {
+        alertSecondary.style.display = 'none';
+        alertSecondary.onclick = null;
+    }
 
     // 显示弹窗
     alertBox.style.display = 'block';

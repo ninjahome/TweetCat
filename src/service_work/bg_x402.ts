@@ -2,6 +2,7 @@ import browser from "webextension-polyfill";
 import {
     x402_connection_name, x402TipPayload
 } from "../common/x402_obj";
+import {MsgType} from "../common/consts";
 import {logX402} from "../common/debug_flags";
 import {showPopupWindow} from "../popup/common";
 import {UserProfile} from "../object/user_info";
@@ -16,6 +17,12 @@ export async function restartOffScreen(): Promise<string> {
 export async function ensureOffscreenWallet() {
     const has = await browser.offscreen.hasDocument();
     if (!has) {
+        // Offscreen was GC'd or never created → invalidate stale port
+        if (walletPort) {
+            logX402("Offscreen missing but walletPort exists → clearing stale port");
+            try { walletPort.disconnect(); } catch (_) { /* already dead */ }
+            walletPort = null;
+        }
         const tab = await browser.offscreen.createDocument({
             url: browser.runtime.getURL('html/wallet_offscreen.html'),
             reasons: ['DOM_PARSER'], // 或 'WORKERS', 'IFRAME_SCRIPTING'
@@ -70,7 +77,7 @@ function getPort(): browser.runtime.Port {
     return walletPort;
 }
 
-export async function relayWalletMsg(request: any): Promise<any> {
+async function relayOnce(request: any): Promise<any> {
     await ensureOffscreenWallet();
 
     const port = getPort();
@@ -94,6 +101,28 @@ export async function relayWalletMsg(request: any): Promise<any> {
             resolve({success: false, error: 'Post message failed'});
         }
     });
+}
+
+export async function relayWalletMsg(request: any): Promise<any> {
+    const result = await relayOnce(request);
+
+    // If the first attempt failed (likely stale port or CDP session not ready),
+    // retry once after a brief pause to give the offscreen document time to initialize.
+    if (!result?.success && request.action === MsgType.WalletInfoQuery) {
+        const errHint = result?.error || result?.data || '';
+        logX402(`[relayWalletMsg] WalletInfoQuery failed (${errHint}), retrying once in 1.5s...`);
+
+        // Force port reconnection in case the old one was stale
+        if (walletPort) {
+            try { walletPort.disconnect(); } catch (_) { /* ok */ }
+            walletPort = null;
+        }
+
+        await new Promise(r => setTimeout(r, 1500));
+        return await relayOnce(request);
+    }
+
+    return result;
 }
 
 export async function tipActionForTweet(payload: x402TipPayload) {

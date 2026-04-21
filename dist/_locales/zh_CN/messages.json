@@ -51,6 +51,9 @@
   "cancel": {
     "message": "取消"
   },
+  "reverify_btn": {
+    "message": "重新认证"
+  },
   "confirm": {
     "message": "确定"
   },
@@ -1521,6 +1524,24 @@
   "ad_has_expired": {
     "message": "该广告活动已结束"
   },
+  "ad_not_found_msg": {
+    "message": "此广告不存在或已被删除"
+  },
+  "ad_quota_full_msg": {
+    "message": "此广告的奖励名额已满"
+  },
+  "already_claimed_msg": {
+    "message": "您已经领取过该广告的奖励"
+  },
+  "ad_evidence_required_msg": {
+    "message": "需要提供有效的完成凭证"
+  },
+  "claim_signature_error_msg": {
+    "message": "签名安全验证失败，请刷新后再试"
+  },
+  "self_claim_forbidden_msg": {
+    "message": "您不能领取自己发布的广告奖励"
+  },
   "missing_landing_page": {
     "message": "该广告缺少落地页链接。"
   },
@@ -2068,7 +2089,10 @@
     "message": "您的余额充足，可以发布此广告。"
   },
   "msg_insufficient_balance_recharge": {
-    "message": "余额不足。请在发布前充值。"
+    "message": "广告金额不足，请先充值，"
+  },
+  "btn_recharge_now": {
+    "message": "立即充值"
   },
   "btn_transfer_to_ads": {
     "message": "划转至广告账户"

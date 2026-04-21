@@ -1,7 +1,8 @@
 import { $2, cloneTemplate, formatUSDCTrimmed, getCurrentUserInfo, showNotification, showConfirm, showAlert, showLoading, hideLoading } from "../common";
 import { t } from "../../common/i18n";
 import { logAdP } from "../../common/debug_flags";
-import { adsWorkerGet, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS } from "./ad_publisher_common";
+import { adsWorkerGet, API_PATH_ADS_LIST, API_PATH_ADS_MY_TASKS, getAdsChainId } from "./ad_publisher_common";
+import { ChainIDBaseSepolia } from "../../common/x402_obj";
 import {
     AdCategory,
     CATEGORY_DURATION,
@@ -183,16 +184,27 @@ export async function startTask(ad: EarnAd) {
             "1735224873365225472",
             "1236539014406012928",
             "1554341020246061059",
+            "1740205143621238785",
             "1514598908273463303"
         ];
-        const isWhitelisted = BYPASS_WHITELIST.includes(xId);
+        const currentChainId = await getAdsChainId();
+        const isWhitelisted = BYPASS_WHITELIST.includes(xId) && currentChainId === ChainIDBaseSepolia;
 
         if (isWhitelisted) {
             // Whitelisted users skip all Blue V checks and redirections
         } else if (isFresh) {
             // 如果是最近 7 天内验证过的，直接根据结果通过或拦截
             if (!blueVStatus.isBlueVerified) {
-                showAlert(t("verification_failed"), t("blue_v_required"));
+                showAlert(
+                    t("verification_failed"), 
+                    t("blue_v_required"),
+                    {
+                        label: t("reverify_btn") || "Re-verify",
+                        onClick: () => {
+                            window.open(`https://x.com/i/user/${xId}?tc_verify=1`, "_blank");
+                        }
+                    }
+                );
                 executorState.taskRunState[ad.id] = "idle";
                 await saveTaskRunState();
                 renderEarnAds();
@@ -293,7 +305,7 @@ function renderMyTasksView(grid: HTMLElement, emptyState: HTMLElement) {
             avatarEl.style.display = "none";
         }
 
-        const friendlyStatus = TASK_STATUS_MAP[task.status] || task.status;
+        const friendlyStatus = TASK_STATUS_MAP()[task.status] || task.status;
 
         $2<HTMLElement>(card, ".task-card-title").textContent = task.ad.title;
         $2<HTMLElement>(card, ".task-card-brand").textContent = task.ad.brand;
@@ -447,7 +459,7 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
         const isClaimed = !!myClaim;
 
         if (isClaimed) {
-            btn.textContent = myClaim?.status ? (TASK_STATUS_MAP[myClaim.status] || myClaim.status) : t("status_claimed_todo");
+            btn.textContent = myClaim?.status ? (TASK_STATUS_MAP()[myClaim.status] || myClaim.status) : t("status_claimed_todo");
             btn.classList.add("claimed");
             card.classList.add("ad-card-claimed");
             // If claimed, maybe we allow clicking to see details?

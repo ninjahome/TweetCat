@@ -85,7 +85,7 @@ import {
 	refundPerformerBalance
 } from "./database_ad";
 import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
-import { getKolBindingByXId } from "./database_402";
+import { getKolBindingByXId, calculateWithdrawFee } from "./database_402";
 
 // ========= Types =========
 
@@ -1045,7 +1045,7 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 			await failWithdrawLedger(c.env.DB, ledgerId, errorMsg);
 			await refundEscrowBalance(c.env.DB, aXId, amountAtomicStr);
 
-			return jsonError(c, 500, "WITHDRAW_FAILED", errorMsg);
+			return jsonError(c, 400, "WITHDRAW_FAILED", errorMsg);
 		}
 	} catch (err: any) {
 		// ✅ 处理自定义的 EscrowRequestError
@@ -1060,7 +1060,12 @@ export async function apiWithdrawFromAdsEscrowAccount(c: ExtCtx) {
 		if (err instanceof EscrowRequestError) {
 			return jsonError(c, err.statusCode as ContentfulStatusCode, err.code, err.detail);
 		}
-		return jsonError(c, 500, "INTERNAL_ERROR", err?.message || "Internal Server Error");
+		return c.json({
+			success: false,
+			error: "INTERNAL_ERROR",
+			message: err?.message || "Internal Server Error",
+			stack: err?.stack
+		}, 400);
 	}
 }
 
@@ -1120,16 +1125,21 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 		// 插入提现流水记录
 		await insertPerformerWithdrawLedger(db, ledgerId, bXId, amountAtomicStr, toAddress, requestId);
 
+		// 计算提现手续费（FEE_FOR_WITHDRAW 在 Cloudflare Workers 中可能以字符串形式传入，需强制转为 number）
+		const feeRate = Math.round(Number(c.env.FEE_FOR_WITHDRAW) || 0);
+		const feeCalc = calculateWithdrawFee(amountAtomicStr, feeRate);
+		console.log(`[apiAdsExecutorWithdraw] Withdrawing: gross=${feeCalc.grossAmount}, fee=${feeCalc.feeAmount} (${feeRate}%), net=${feeCalc.netAmount}`);
+
 		// 4. 发起国库付款
 		let txHash = "";
 		let payer = "";
 		try {
-			console.log(`[apiAdsExecutorWithdraw] Initiating executor payout to ${toAddress}, amount=${amountAtomicStr}`);
+			console.log(`[apiAdsExecutorWithdraw] Initiating executor payout to ${toAddress}, amount=${feeCalc.netAmount}`);
 			const resourceUrl = `ads://executor-withdraw/${bXId}`;
 			const settleRes = await internalTreasurySettle(
 				c,
 				toAddress as `0x${string}`,
-				amountAtomicStr,
+				feeCalc.netAmount,
 				resourceUrl
 			);
 
@@ -1147,7 +1157,10 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 				success: true,
 				txHash,
 				to_address: toAddress,
-				amount_atomic: amountAtomicStr,
+				amount_atomic: feeCalc.grossAmount,
+				net_amount_atomic: feeCalc.netAmount,
+				fee_amount_atomic: feeCalc.feeAmount,
+				fee_rate: feeCalc.feeRate,
 				debug_msg: "Executor withdrawal processed successfully"
 			});
 		} catch (err: any) {
@@ -1156,12 +1169,17 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 			await failPerformerWithdrawLedger(db, ledgerId, err.message || "Treasury payout failed");
 			await refundPerformerBalance(db, bXId, amountAtomicStr);
 
-			return jsonError(c, 500, "TREASURY_PAYOUT_FAILED", err.message || "Failed to process withdrawal from treasury");
+			return jsonError(c, 400, "TREASURY_PAYOUT_FAILED", err.message || "Failed to process withdrawal from treasury");
 		}
 
 	} catch (err: any) {
 		console.error("[apiAdsExecutorWithdraw] 提现异常:", err);
-		return jsonError(c, 500, "INTERNAL_ERROR", "An unexpected error occurred during executor withdrawal");
+		return c.json({
+			success: false,
+			error: "INTERNAL_ERROR",
+			message: err?.message || "An unexpected error occurred during executor withdrawal",
+			stack: err?.stack
+		}, 400);
 	}
 }
 

@@ -310,6 +310,7 @@
                             <small class="form-hint" id="quota-hint">e.g. 500 followers ($10 budget)</small>
                         </div>
                     </div>
+                    <div class="balance-status" id="balance-status"></div>
 
                     <div class="form-group">
                         <label for="target-url">Target Twitter Profile URL</label>
@@ -345,7 +346,6 @@
                             <span>Your Balance:</span>
                             <span id="current-balance">0.00 USDC</span>
                         </div>
-                        <div class="balance-status" id="balance-status"></div>
                     </div>
 
                     <div class="eligibility-note">
@@ -711,7 +711,10 @@
         <div id="alert-content">
             <h3 id="alert-title">Alert</h3>
             <p id="alert-message"></p>
-            <button id="alert-ok">OK</button>
+            <div class="button-row">
+                <button id="alert-reverify" class="btn-cancel" style="display: none;">Re-verify</button>
+                <button id="alert-ok" class="btn-ok">OK</button>
+            </div>
         </div>
     </div>
 

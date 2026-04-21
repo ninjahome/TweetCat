@@ -127,7 +127,7 @@ async function processRewardClaim(
 ) {
 
 	try {
-		const feeRate = c.env.FEE_FOR_WITHDRAW || 0;
+		const feeRate = Math.round(Number(c.env.FEE_FOR_WITHDRAW) || 0);
 		const feeCalc = calculateWithdrawFee(grossAmount, feeRate);
 
 		console.log(`[Claim] Reward ${rewardId}: gross=${feeCalc.grossAmount}, fee=${feeCalc.feeAmount} (${feeRate}%), net=${feeCalc.netAmount}`);
