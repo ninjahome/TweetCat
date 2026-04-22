@@ -237,7 +237,7 @@ function prepareEscrowTransferParam(): any {
         if (amount > walletUsdc + 1e-9) throw new Error(t("err_amount_exceeds_wallet"));
     }
 
-    return { a_x_id: publisherState.walletInfoCache.xId, amount: amount.toFixed(2) };
+    return { a_x_id: publisherState.walletInfoCache.xId, amount: parseFloat(amount.toFixed(6)).toString() };
 }
 
 async function handleAdsEscrowTransfer(): Promise<void> {
@@ -335,7 +335,8 @@ export function initRechargeModalEvents() {
                 ? parseUsdcNumber(publisherState.walletInfoCache?.usdcVal ?? "0")
                 : atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic);
 
-        input.value = Math.max(0, max).toFixed(2);
+        const v = Math.max(0, max);
+        input.value = v % 1 === 0 ? v.toFixed(2) : String(v);
     });
 
     const btnSubmit = $Id("btn-transfer-submit") as HTMLButtonElement | null;
