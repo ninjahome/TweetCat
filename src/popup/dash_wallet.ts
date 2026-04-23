@@ -221,6 +221,21 @@ function setupWalletActionButtons(): void {
         browser.offscreen.closeDocument().catch((err: any) => {
             console.warn("close document failed:", err)
         });
+
+        try {
+            const extensionHtmlPrefix = browser.runtime.getURL("html/");
+            const tabs = await browser.tabs.query({});
+            const tabsToClose = tabs
+                .filter(t => t.url && t.url.startsWith(extensionHtmlPrefix) && t.id)
+                .map(t => t.id as number);
+                
+            if (tabsToClose.length > 0) {
+                await browser.tabs.remove(tabsToClose);
+            }
+        } catch (err) {
+            console.error("Failed to close managed tabs", err);
+        }
+
         doSignOut().then(() => {
             initWalletOrCreate();
         });

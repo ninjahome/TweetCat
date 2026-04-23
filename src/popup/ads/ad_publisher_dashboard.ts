@@ -207,7 +207,7 @@ export function updateDashboardUI() {
 
     // 使用新的dashboard API结果更新UI元素
     const availableEl = $Id("ad-account-balance-value");
-    if (availableEl) availableEl.textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.balance_atomic));
+    if (availableEl) availableEl.textContent = formatUSDCTrimmed(atomicToUsdcNumber(dashboardInfo.balance_atomic));
 
     const frozenEl = $Id("ad-account-frozen-value");
     if (frozenEl) frozenEl.textContent = formatUSDCTrimmed(atomicToUsdcNumber(dashboardInfo.frozen_atomic));
@@ -221,13 +221,13 @@ export function updateDashboardUI() {
     // 更新今日花费
     const todayCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-spend[data-range='today'] .card-value");
     if (todayCards.length > 0) {
-        todayCards[0].textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.today_spend_atomic));
+        todayCards[0].textContent = formatUSDCTrimmed(atomicToUsdcNumber(dashboardInfo.today_spend_atomic));
     }
 
     // 更新本周花费
     const weekCards = document.querySelectorAll<HTMLElement>("#view-advertise .dashboard-card-spend[data-range='week'] .card-value");
     if (weekCards.length > 0) {
-        weekCards[0].textContent = formatUSDC(atomicToUsdcNumber(dashboardInfo.week_spend_atomic));
+        weekCards[0].textContent = formatUSDCTrimmed(atomicToUsdcNumber(dashboardInfo.week_spend_atomic));
     }
 }
 
@@ -434,8 +434,8 @@ function syncAdRowData(tr: HTMLTableRowElement, ad: AdRecord) {
         claimedCell.textContent = "0";
     }
     $2<HTMLElement>(tr, ".td-settled").textContent = rowData.settled.toString();
-    $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDC(rowData.spent);
-    $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDC(rowData.remainingBudget);
+    $2<HTMLElement>(tr, ".td-spent").textContent = formatUSDCTrimmed(rowData.spent);
+    $2<HTMLElement>(tr, ".td-remaining").textContent = formatUSDCTrimmed(rowData.remainingBudget);
 
     // 添加截止日期显示
     const endDateEl = $2<HTMLElement>(tr, ".td-end-date");
@@ -692,7 +692,7 @@ function handleTopUpAdBudget(adId: string) {
     // DEPRECATED: 获取余额的方式已更改，现在应通过新的dashboard API获取
     const balanceEl = $Id("top-up-available-balance");
     if (balanceEl) {
-        balanceEl.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
+        balanceEl.textContent = formatUSDCTrimmed(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
     }
 
     // Bind Confirm Action
@@ -955,8 +955,8 @@ export function renderSpendTable() {
         $2<HTMLElement>(tr, ".td-time").textContent = formatTimeLocal(r.time);
         $2<HTMLElement>(tr, ".td-ad").textContent = r.adName;
         $2<HTMLElement>(tr, ".td-event").textContent = r.event;
-        $2<HTMLElement>(tr, ".td-amount").textContent = formatUSDC(r.amount);
-        $2<HTMLElement>(tr, ".td-fee").textContent = formatUSDC(r.fee);
+        $2<HTMLElement>(tr, ".td-amount").textContent = formatUSDCTrimmed(r.amount);
+        $2<HTMLElement>(tr, ".td-fee").textContent = formatUSDCTrimmed(r.fee);
         $2<HTMLElement>(tr, ".td-status").textContent = r.status;
 
         tbody.appendChild(tr);
@@ -992,7 +992,7 @@ export function updateBudgetSummaryAndBalance() {
     if (summaryTotal) summaryTotal.textContent = formatUSDCForPublish(total);
 
     const currentBalance = $Id("current-balance");
-    if (currentBalance) currentBalance.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
+    if (currentBalance) currentBalance.textContent = formatUSDCTrimmed(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
 
     const balanceStatus = $Id("balance-status");
     if (balanceStatus) {
@@ -1125,7 +1125,7 @@ function renderHistoryTable(tab: "earnings" | "spending" | "recharge", rows: His
         else if (isWithdraw) directionCell.classList.add("direction-withdraw");
 
         const amountCell = $2<HTMLElement>(tr, ".td-amount");
-        amountCell.textContent = formatUSDC(row.amount);
+        amountCell.textContent = formatUSDCTrimmed(row.amount);
         if (isDeposit) amountCell.classList.add("amount-deposit");
         else if (isWithdraw) amountCell.classList.add("amount-withdraw");
 

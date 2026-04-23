@@ -2,6 +2,7 @@ import {
     $Id,
     atomicToUsdcNumber,
     formatUSDC,
+    formatUSDCTrimmed,
     openTxInExplorer,
     showNotification
 } from "../common";
@@ -151,10 +152,10 @@ function syncTransferModalUI() {
     if (walletBal) walletBal.textContent = normalizeWalletUsdcDisplay(publisherState.walletInfoCache?.usdcVal ?? "0.00");
 
     const adsAvail = $Id("transfer-ads-available");
-    if (adsAvail) adsAvail.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
+    if (adsAvail) adsAvail.textContent = formatUSDCTrimmed(atomicToUsdcNumber(publisherState.dashboardInfo.balance_atomic));
 
     const adsFrozen = $Id("transfer-ads-frozen");
-    if (adsFrozen) adsFrozen.textContent = formatUSDC(atomicToUsdcNumber(publisherState.dashboardInfo.frozen_atomic ?? "0"));
+    if (adsFrozen) adsFrozen.textContent = formatUSDCTrimmed(atomicToUsdcNumber(publisherState.dashboardInfo.frozen_atomic ?? "0"));
 
     const amountInput = $Id("transfer-amount") as HTMLInputElement | null;
     if (amountInput) amountInput.value = "";
@@ -298,8 +299,8 @@ async function handleAdsEscrowTransfer(): Promise<void> {
             const match = msg.match(/Required (\d+), available (\d+)/);
             let detail = "";
             if (match) {
-                const req = formatUSDC(atomicToUsdcNumber(match[1]));
-                const avail = formatUSDC(atomicToUsdcNumber(match[2]));
+                const req = formatUSDCTrimmed(atomicToUsdcNumber(match[1]));
+                const avail = formatUSDCTrimmed(atomicToUsdcNumber(match[2]));
                 detail = `${t("required_label")} ${req}, ${t("available_label")} ${avail}.`;
             }
             msg = `${t("err_insufficient_balance")} ${detail}`.trim();

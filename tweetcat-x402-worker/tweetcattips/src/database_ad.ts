@@ -271,7 +271,7 @@ export async function reserveAdBudget(db: D1Database, aXId: string, amountAtomic
 			updated_at = datetime('now')
 		WHERE a_x_id = ?
 		  AND asset_symbol = 'USDC'
-		  AND CAST(available_atomic AS INTEGER) >= ?
+		  AND CAST(available_atomic AS INTEGER) >= CAST(? AS INTEGER)
 	`;
 	const updateResult = await db.prepare(updateSql)
 		.bind(amountAtomic, amountAtomic, aXId, amountAtomic)
@@ -1102,7 +1102,7 @@ export async function debitEscrowBalance(
 		SET available_atomic = CAST(available_atomic AS INTEGER) - ?,
 		    updated_at = datetime('now')
 		WHERE a_x_id = ? AND asset_symbol = 'USDC'
-		  AND CAST(available_atomic AS INTEGER) >= ?
+		  AND CAST(available_atomic AS INTEGER) >= CAST(? AS INTEGER)
 	`).bind(amountAtomic, aXId, amountAtomic).run();
 
 	return result.success && (result.meta.changes ?? 0) > 0;
@@ -1220,7 +1220,7 @@ export async function debitPerformerBalance(
 		SET available_atomic = CAST(available_atomic AS INTEGER) - ?,
 		    updated_at = datetime('now')
 		WHERE b_x_id = ? AND asset_symbol = 'USDC'
-		  AND CAST(available_atomic AS INTEGER) >= ?
+		  AND CAST(available_atomic AS INTEGER) >= CAST(? AS INTEGER)
 	`).bind(amountAtomic, bXId, amountAtomic).run();
 
 	return result.success && (result.meta.changes ?? 0) > 0;
@@ -1331,7 +1331,7 @@ export async function settleAdReward(
 		SET frozen_atomic = CAST(frozen_atomic AS INTEGER) - ?,
 		    updated_at = datetime('now')
 		WHERE a_x_id = ? AND asset_symbol = 'USDC'
-		  AND CAST(frozen_atomic AS INTEGER) >= ?
+		  AND CAST(frozen_atomic AS INTEGER) >= CAST(? AS INTEGER)
 	`;
 
 	// 2. 增加执行者可用余额 (如果账户不存在则创建)，保存在 ad_performer_accounts 表中
@@ -1555,7 +1555,7 @@ export async function refundAdBudget(
 		    frozen_atomic = CAST(frozen_atomic AS INTEGER) - ?,
 		    updated_at = datetime('now')
 		WHERE a_x_id = ? AND asset_symbol = 'USDC'
-		  AND CAST(frozen_atomic AS INTEGER) >= ?
+		  AND CAST(frozen_atomic AS INTEGER) >= CAST(? AS INTEGER)
 	`;
 
 	const updateAdStatusSql = `

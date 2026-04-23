@@ -11,7 +11,7 @@ import {
     refreshAdsData,
     fetchDashboardInfo
 } from "./ad_publisher_dashboard";
-import { showNotification, usdcToAtomic, atomicToUsdcNumber, formatUSDC, showLoading, hideLoading, $Id } from "../common";
+import { showNotification, usdcToAtomic, atomicToUsdcNumber, formatUSDC, formatUSDCTrimmed, showLoading, hideLoading, $Id } from "../common";
 import { t } from "../../common/i18n";
 
 
@@ -168,8 +168,8 @@ async function submitPublishForm() {
             const match = msg.match(/Required (\d+), available (\d+)/);
             let detail = "";
             if (match) {
-                const req = formatUSDC(atomicToUsdcNumber(match[1]));
-                const avail = formatUSDC(atomicToUsdcNumber(match[2]));
+                const req = formatUSDCTrimmed(atomicToUsdcNumber(match[1]));
+                const avail = formatUSDCTrimmed(atomicToUsdcNumber(match[2]));
                 detail = `${t("required_label")} ${req}, ${t("available_label")} ${avail}.`;
             }
             showNotification(`${t("err_insufficient_balance")} ${detail}`.trim(), "error");
