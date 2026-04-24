@@ -87,6 +87,20 @@ export interface NetConfig {
 export const app = new Hono<ExtendedEnv>();
 applyCors(app);
 
+app.onError((err, c) => {
+	console.error(`[Global Error] ${c.req.method} ${c.req.url}:`, {
+		message: err.message,
+		stack: err.stack,
+		cause: err.cause
+	});
+	return c.json({
+		success: false,
+		error: "INTERNAL_SERVER_ERROR",
+		message: err.message,
+		stack: err.stack
+	}, 500);
+});
+
 let _cdpInstance: CdpClient | null = null;
 
 export function getCdpClient(env: Env): CdpClient {

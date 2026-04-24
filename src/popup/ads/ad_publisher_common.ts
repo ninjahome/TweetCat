@@ -183,11 +183,16 @@ export async function adsWorkerFetch(path: string, body: any, userIdOverride?: s
  * 初始化钱包信息并更新 UI
  * @throws 如果用户未登录
  */
-export async function initWalletInfo(): Promise<void> {
-    if (publisherState.walletInfoCache?.hasCreated && publisherState.walletInfoCache?.xId) {
+export async function initWalletInfo(force: boolean = false): Promise<void> {
+    if (!force && publisherState.walletInfoCache?.hasCreated && publisherState.walletInfoCache?.xId) {
         updateHeaderInfo();
         updateTwitterAvatar();
         return;
+    }
+
+    if (force) {
+        walletInfoInitPromise = null;
+        publisherState.walletInfoCache = null;
     }
 
     if (!walletInfoInitPromise) {

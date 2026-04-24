@@ -2,7 +2,8 @@ import browser from "webextension-polyfill";
 import { localGet, localSet } from "./local_storage";
 import { __DBK_Bearer_Token, DEFAULT_BEARER } from "./consts";
 export async function openOrUpdateTab(uiUrl: string) {
-    const base = uiUrl.split('#')[0];
+    // Strip query and hash for matching existing tabs
+    const base = uiUrl.split('?')[0].split('#')[0];
     const tabs = await browser.tabs.query({ url: base + '*' });
     if (tabs.length > 0 && tabs[0].id) {
         await browser.tabs.update(tabs[0].id, { active: true, url: uiUrl });

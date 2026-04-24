@@ -503,7 +503,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                     console.log(`[TwitterUI] SUCCESS: Claim flow finished.`, resp.data);
 
                     const openPlaza = () => {
-                        const url = browser.runtime.getURL('html/ad_plaza.html');
+                        const url = browser.runtime.getURL('html/ad_plaza.html?tab=my-tasks');
                         sendMsgToService(url, MsgType.OpenOrFocusUrl);
                     };
 

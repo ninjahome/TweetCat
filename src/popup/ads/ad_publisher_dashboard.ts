@@ -1171,7 +1171,7 @@ export async function loadAndRenderTransferHistory(): Promise<void> {
     const ledgerRows = await fetchAdEscrowLedger(currentXId, 50, 0);
 
     const mappedRows: HistoryRow[] = ledgerRows.map((row: any) => {
-        const time = row.created_at ? new Date(row.created_at).toLocaleString() : new Date().toLocaleString();
+        const time = row.created_at ? formatTimeLocal(row.created_at) : formatTimeLocal(new Date().getTime());
 
         const op = row.op || row.direction || "UNKNOWN";
         const adNameOrMethod =

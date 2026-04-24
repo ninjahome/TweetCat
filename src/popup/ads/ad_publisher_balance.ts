@@ -4,7 +4,8 @@ import {
     formatUSDC,
     formatUSDCTrimmed,
     openTxInExplorer,
-    showNotification
+    showNotification,
+    formatTimeLocal
 } from "../common";
 import { t } from "../../common/i18n";
 import {
@@ -108,7 +109,7 @@ function setTransferDirection(dir: TransferDirection) {
 
                 // 设置详情信息
                 const prevDateEl = $Id("previous-withdraw-date");
-                if (prevDateEl) prevDateEl.textContent = lastWithdraw.toLocaleString();
+                if (prevDateEl) prevDateEl.textContent = formatTimeLocal(publisherState.dashboardInfo.last_withdraw_at);
 
                 // 计算下月 1 号
                 const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -194,13 +195,13 @@ function handleMonthlyWithdrawLimitIfNeeded(result: any) {
         limitDetails.classList.remove("hidden");
 
         if (result.withdrawnAt) {
-            const withdrawDate = new Date(result.withdrawnAt).toLocaleString();
+            const withdrawDate = formatTimeLocal(result.withdrawnAt);
             const prevDateEl = $Id("previous-withdraw-date");
             if (prevDateEl) prevDateEl.textContent = withdrawDate;
         }
 
         if (result.nextAvailableDate) {
-            const nextDate = new Date(result.nextAvailableDate).toLocaleDateString();
+            const nextDate = formatTimeLocal(result.nextAvailableDate).split(' ')[0];
             const nextDateEl = $Id("next-available-date");
             if (nextDateEl) nextDateEl.textContent = nextDate;
         }
@@ -218,7 +219,7 @@ function handleMonthlyWithdrawLimitIfNeeded(result: any) {
     }
 
     const nextDateText = result.nextAvailableDate
-        ? new Date(result.nextAvailableDate).toLocaleDateString()
+        ? formatTimeLocal(result.nextAvailableDate).split(' ')[0]
         : "next month";
     showNotification(t("msg_withdraw_limit_reached").replace("$1", nextDateText), "error");
 }
@@ -282,12 +283,19 @@ async function handleAdsEscrowTransfer(): Promise<void> {
         closeRechargeModal();
         showNotification(t("msg_transfer_success"), "success");
 
-        // Refresh all balances and history
-        await Promise.all([
-            initWalletInfo(),
-            fetchDashboardInfo(),
-            loadAndRenderTransferHistory().catch(() => { }) // non-critical if modal not open
-        ]);
+        // 3. Refresh all balances and history
+        // Wait a short moment for the chain state/indexer to sync if needed
+        await new Promise(r => setTimeout(r, 1000));
+
+        try {
+            // Must be sequential: initWalletInfo(true) clears the cache,
+            // fetchDashboardInfo() depends on the cache being populated.
+            await initWalletInfo(true);
+            await fetchDashboardInfo();
+            await loadAndRenderTransferHistory().catch(() => { });
+        } catch (refreshErr) {
+            console.warn("[Transfer] Background refresh failed:", refreshErr);
+        }
 
         await openTxInExplorer(txHash);
     } catch (e: any) {

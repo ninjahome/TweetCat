@@ -4,7 +4,8 @@ import {
     loadMyTasks,
     renderEarnAds,
     updateFilterToolsUI,
-    updateBlueVDisplay
+    updateBlueVDisplay,
+    switchToTab
 } from "./ad_executor_plaza";
 import {
     initSummaryActions,
@@ -181,6 +182,13 @@ async function initAdPlaza() {
     initPlazaFiltersEvents();
     initSummaryActions();
     updateFilterToolsUI();
+
+    // Check URL parameters for initial tab
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetTab = urlParams.get('tab');
+    if (targetTab === 'my-tasks') {
+        await switchToTab('my-tasks');
+    }
 
     document.querySelector<HTMLButtonElement>("#btn-open-advertise")?.addEventListener("click", () => {
         window.location.href = "ad_advertise.html";

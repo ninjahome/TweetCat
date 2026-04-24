@@ -438,10 +438,6 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
             } else {
                 // Not claimed yet, try to start task (which includes Blue V check)
                 await startTask(ad);
-                // Note: startTask will handle opening URL if claim succeeds?
-                // Currently startTask sends claim request. After claim success, we should open URL.
-                // But startTask logic (line 110) just updates UI. It doesn't open URL.
-                // We should modify startTask to open URL upon success, OR return success boolean.
             }
         };
 
@@ -450,11 +446,6 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
         const isExpired = ad.deadlineText.includes("Ended");
         btn.disabled = executorState.taskRunState[ad.id] === "running" || ad.completed >= ad.totalQuota || isExpired;
 
-        // Remove old logic for btn.disabled based on isClaimed, because we want users to be able to click "Claimed" to re-open link?
-        // But UI says: if isClaimed, button text is "Claimed" and disabled?
-        // Wait, line 273: btn.disabled = isClaimed || ...
-        // If button is disabled, user can't click it. But card is clickable.
-
         const myClaim = executorState.myClaims.find(c => c.ad_id === ad.id);
         const isClaimed = !!myClaim;
 
@@ -462,8 +453,6 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
             btn.textContent = myClaim?.status ? (TASK_STATUS_MAP()[myClaim.status] || myClaim.status) : t("status_claimed_todo");
             btn.classList.add("claimed");
             card.classList.add("ad-card-claimed");
-            // If claimed, maybe we allow clicking to see details?
-            // Current logic disabled button if claimed.
             btn.disabled = false; // Allow clicking to open link
         } else {
             btn.textContent = ad.completed >= ad.totalQuota
@@ -483,20 +472,16 @@ function renderExploreView(grid: HTMLElement, emptyState: HTMLElement) {
 }
 
 function filterAndSortAds(): EarnAd[] {
-    // const categories = getSelectedCategories(); // MVP Removed
     const rewardRanges = getSelectedRewardRanges();
     const sortBy = getSortOption();
     const qstr = getSearchQuery();
 
-    // For Explore tab: filter out already claimed ads
     let baseAds = executorState.earnAds.filter(ad => !ad.isClaimed);
 
     let result = baseAds.filter((ad) =>
-        // categories.includes(ad.category) && // MVP: Only follow ads exists
-        ad.category === "follow" && // Enforce follow only just in case
+        ad.category === "follow" && 
         rewardRanges.includes(ad.rewardRange) &&
         matchAdSearch(ad, qstr) &&
-        // 过滤掉已过期的广告
         !ad.deadlineText.includes("Ended")
     );
 
@@ -518,8 +503,6 @@ function filterAndSortAds(): EarnAd[] {
     }
     return result;
 }
-
-// function getSelectedCategories() removed
 
 function getSelectedRewardRanges(): Array<"0.1-0.5" | "0.5-1" | "1+"> {
     const checked = Array.from(
@@ -553,11 +536,7 @@ function isDefaultFilters(): boolean {
     const qstr = getSearchQuery();
     if (qstr) return false;
 
-    // MVP: Category ignore
-    // const catInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="category"]'));
     const rewardInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="reward"]'));
-
-    // const allCatChecked = catInputs.length > 0 && catInputs.every(i => i.checked);
     const allRewardChecked = rewardInputs.length > 0 && rewardInputs.every(i => i.checked);
 
     const sort = getSortOption();
@@ -581,7 +560,6 @@ function resetAllFilters(): void {
     const searchInput = document.querySelector<HTMLInputElement>("#ad-search");
     if (searchInput) searchInput.value = "";
 
-    // MVP Removed category input reset
     document.querySelectorAll<HTMLInputElement>('input[name="reward"]').forEach(i => i.checked = true);
 
     const sort = document.querySelector<HTMLSelectElement>("#sort-select");
@@ -597,9 +575,6 @@ export function initPlazaFiltersEvents() {
         renderEarnAds();
     };
 
-    document.querySelectorAll<HTMLInputElement>('input[name="category"]').forEach((cb) =>
-        cb.addEventListener("change", onAnyFilterChanged)
-    );
     document.querySelectorAll<HTMLInputElement>('input[name="reward"]').forEach((cb) =>
         cb.addEventListener("change", onAnyFilterChanged)
     );
@@ -610,48 +585,14 @@ export function initPlazaFiltersEvents() {
 
     // Tab Switcher
     const tabs = document.querySelectorAll<HTMLElement>(".plaza-tab");
-    const myTasksControls = document.getElementById("my-tasks-controls");
-    const paginationControls = document.getElementById("pagination-controls");
-    const exploreFilters = document.querySelector(".filters-sidebar"); // Assuming sidebar is for filters
-
-    const toggleControls = (tab: 'explore' | 'my-tasks') => {
-        if (myTasksControls) myTasksControls.style.display = tab === 'my-tasks' ? 'flex' : 'none';
-        if (paginationControls) paginationControls.style.display = tab === 'my-tasks' ? 'flex' : 'none';
-
-        // Disable explore filters when in my-tasks
-        if (exploreFilters) {
-            exploreFilters.querySelectorAll("input, select").forEach((el: any) => {
-                el.disabled = tab === 'my-tasks';
-            });
-            if (tab === 'my-tasks') exploreFilters.classList.add("disabled");
-            else exploreFilters.classList.remove("disabled");
-        }
-    };
 
     // Initial state
-    toggleControls(executorState.currentTab);
+    switchToTab(executorState.currentTab);
 
     tabs.forEach(tab => {
         tab.addEventListener("click", async () => {
             const nextTab = tab.dataset.tab as 'explore' | 'my-tasks';
-            if (executorState.currentTab === nextTab) return;
-
-            executorState.currentTab = nextTab;
-            tabs.forEach(t => t.classList.toggle("active", t === tab));
-            toggleControls(nextTab);
-
-            // Load My Tasks data from backend when switching to that tab
-            if (nextTab === 'my-tasks') {
-                showLoading(t("loading_tasks"));
-                try {
-                    await loadMyTasks(0);
-                    renderEarnAds();
-                } finally {
-                    hideLoading();
-                }
-            } else {
-                renderEarnAds();
-            }
+            await switchToTab(nextTab);
         });
     });
 
@@ -712,4 +653,53 @@ export function initPlazaFiltersEvents() {
     document.querySelector<HTMLButtonElement>("#btn-clear-filters")?.addEventListener("click", () => {
         resetAllFilters();
     });
+}
+
+export async function switchToTab(nextTab: 'explore' | 'my-tasks') {
+    const tabs = document.querySelectorAll<HTMLElement>(".plaza-tab");
+    const tabEl = Array.from(tabs).find(t => t.dataset.tab === nextTab);
+    if (!tabEl) return;
+
+    if (executorState.currentTab === nextTab && tabEl.classList.contains("active")) {
+        // Already on this tab, but we might need to load tasks if they are empty
+        if (nextTab === 'my-tasks' && executorState.myTasks.length === 0) {
+             // continue to load
+        } else {
+            return;
+        }
+    }
+
+    executorState.currentTab = nextTab;
+    tabs.forEach(t => t.classList.toggle("active", t === tabEl));
+
+    const myTasksControls = document.getElementById("my-tasks-controls");
+    const paginationControls = document.getElementById("pagination-controls");
+    const exploreFilters = document.querySelector(".filters-sidebar");
+
+    const toggleControls = (tab: 'explore' | 'my-tasks') => {
+        if (myTasksControls) myTasksControls.style.display = tab === 'my-tasks' ? 'flex' : 'none';
+        if (paginationControls) paginationControls.style.display = tab === 'my-tasks' ? 'flex' : 'none';
+
+        if (exploreFilters) {
+            exploreFilters.querySelectorAll("input, select").forEach((el: any) => {
+                el.disabled = tab === 'my-tasks';
+            });
+            if (tab === 'my-tasks') exploreFilters.classList.add("disabled");
+            else exploreFilters.classList.remove("disabled");
+        }
+    };
+
+    toggleControls(nextTab);
+
+    if (nextTab === 'my-tasks') {
+        showLoading(t("loading_tasks"));
+        try {
+            await loadMyTasks(0);
+            renderEarnAds();
+        } finally {
+            hideLoading();
+        }
+    } else {
+        renderEarnAds();
+    }
 }

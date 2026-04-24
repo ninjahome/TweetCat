@@ -689,11 +689,23 @@ body {
     gap: 8px;
     align-items: center;
     margin-top: 10px;
+    flex-wrap: nowrap;
 }
 
 .btn-max {
     padding: 10px 12px;
     border-radius: 10px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    height: 40px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.transfer-amount-row .form-input {
+    height: 40px;
 }
 
 .transfer-hint {
