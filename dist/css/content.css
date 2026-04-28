@@ -915,6 +915,17 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     font-weight: 400;
 }
 
+/* 强制菜单项横向排列，防止图标与文字换行 */
+.tweetCatMenuItem-contain {
+    flex-direction: row !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+}
+
+a.tweetCatMenuItem {
+    flex-direction: row !important;
+}
+
 /* --- Responsive fixes for TweetCat Menu Item --- */
 @media (max-width: 1279px) { /* 紧凑模式 */
     /* 1. 只是隐藏了文字显示,没有隐藏掉空占位符,导致图标偏移 */

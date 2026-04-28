@@ -1255,6 +1255,27 @@ export async function failPerformerWithdrawLedger(
 	return result.success ?? false;
 }
 
+/**
+ * 删除状态为 FAILED 的执行者提现流水记录
+ * 用于清理失败的幂等性记录，允许用户重试提现
+ * @param db - D1 数据库实例
+ * @param bXId - 执行者 X ID
+ * @param requestId - 请求 ID（幂等性密钥）
+ * @returns 是否成功删除
+ */
+export async function deleteFailedPerformerLedger(
+	db: D1Database,
+	bXId: string,
+	requestId: string
+): Promise<boolean> {
+	const result = await db.prepare(`
+		DELETE FROM ad_performer_ledger
+		WHERE b_x_id = ? AND request_id = ? AND status = 'FAILED'
+	`).bind(bXId, requestId).run();
+
+	return result.success && (result.meta.changes ?? 0) > 0;
+}
+
 export async function refundPerformerBalance(
 	db: D1Database,
 	bXId: string,

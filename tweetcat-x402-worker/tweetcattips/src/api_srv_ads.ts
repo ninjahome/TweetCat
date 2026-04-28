@@ -82,7 +82,8 @@ import {
 	debitPerformerBalance,
 	settlePerformerWithdrawLedger,
 	failPerformerWithdrawLedger,
-	refundPerformerBalance
+	refundPerformerBalance,
+	deleteFailedPerformerLedger
 } from "./database_ad";
 import { internalTreasurySettle, PaymentRequiredError, x402Workflow } from "./api_srv_x402";
 import { getKolBindingByXId, calculateWithdrawFee } from "./database_402";
@@ -1102,7 +1103,6 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 		const existingLedger = await getPerformerLedgerByRequestId(db, bXId, requestId);
 		if (existingLedger) {
 			if (existingLedger.status === 'SETTLED' || existingLedger.status === 'PENDING') {
-				// We don't want to show an error, but rather return a friendly status object like Publisher withdraw
 				return c.json({
 					success: false,
 					alreadyWithdrawn: true,
@@ -1112,18 +1112,30 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 					message: "You have already reached the weekly withdrawal limit. Please try again next week."
 				});
 			}
+			if (existingLedger.status === 'FAILED') {
+				// 之前的提现尝试失败了，删除旧记录后允许重试
+				console.log(`[apiAdsExecutorWithdraw] Cleaning up FAILED ledger for requestId=${requestId}`);
+				await deleteFailedPerformerLedger(db, bXId, requestId);
+			}
 		}
 
-		// 3. 开始提现处理（预扣款）
+		// 3. 开始提现处理
+		// ⚠️ 先插入流水记录，再扣余额。避免扣了钱但插入失败（UNIQUE 冲突）导致资金丢失
 		const ledgerId = crypto.randomUUID();
-		const deductSuccess = await debitPerformerBalance(db, bXId, amountAtomicStr);
 
+		try {
+			await insertPerformerWithdrawLedger(db, ledgerId, bXId, amountAtomicStr, toAddress, requestId);
+		} catch (insertErr: any) {
+			console.error(`[apiAdsExecutorWithdraw] Failed to insert ledger: requestId=${requestId}`, insertErr);
+			return jsonError(c, 400, "WITHDRAW_CONFLICT", "Withdrawal request conflict. Please refresh and try again.");
+		}
+
+		const deductSuccess = await debitPerformerBalance(db, bXId, amountAtomicStr);
 		if (!deductSuccess) {
+			// 余额不足：标记刚插入的流水为 FAILED
+			await failPerformerWithdrawLedger(db, ledgerId, "Insufficient available balance");
 			return jsonError(c, 400, "INSUFFICIENT_BALANCE", "Insufficient earned balance for withdrawal");
 		}
-
-		// 插入提现流水记录
-		await insertPerformerWithdrawLedger(db, ledgerId, bXId, amountAtomicStr, toAddress, requestId);
 
 		// 计算提现手续费（FEE_FOR_WITHDRAW 在 Cloudflare Workers 中可能以字符串形式传入，需强制转为 number）
 		const feeRate = Math.round(Number(c.env.FEE_FOR_WITHDRAW) || 0);

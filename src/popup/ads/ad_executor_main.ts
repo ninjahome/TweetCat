@@ -4,8 +4,7 @@ import {
     loadMyTasks,
     renderEarnAds,
     updateFilterToolsUI,
-    updateBlueVDisplay,
-    switchToTab
+    updateBlueVDisplay
 } from "./ad_executor_plaza";
 import {
     initSummaryActions,
@@ -170,11 +169,21 @@ async function initAdPlaza() {
     await initAdsNetworkContext();
 
     // 并行获取初始数据
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("tab") === "my-tasks") {
+        executorState.currentTab = "my-tasks";
+        document.querySelectorAll(".plaza-tabs .plaza-tab").forEach(tab => {
+            const isMyTasks = (tab as HTMLElement).dataset.tab === "my-tasks";
+            tab.classList.toggle("active", isMyTasks);
+        });
+    }
+
     await Promise.all([
         loadAds(),
         loadEarnSummary(),
         updateBlueVDisplay(),
-        loadTaskRunState()
+        loadTaskRunState(),
+        executorState.currentTab === "my-tasks" ? loadMyTasks(0) : Promise.resolve()
     ]);
 
     renderEarnAds();
@@ -182,13 +191,6 @@ async function initAdPlaza() {
     initPlazaFiltersEvents();
     initSummaryActions();
     updateFilterToolsUI();
-
-    // Check URL parameters for initial tab
-    const urlParams = new URLSearchParams(window.location.search);
-    const targetTab = urlParams.get('tab');
-    if (targetTab === 'my-tasks') {
-        await switchToTab('my-tasks');
-    }
 
     document.querySelector<HTMLButtonElement>("#btn-open-advertise")?.addEventListener("click", () => {
         window.location.href = "ad_advertise.html";
