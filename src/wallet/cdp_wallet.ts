@@ -671,7 +671,14 @@ export async function x402WorkerFetch(path: string, body: any, userIdOverride?: 
 
                     if (!didRefreshDeviceKey && shouldRefreshDeviceKey(path, response.status, detail)) {
                         logX402("[x402WorkerFetch] attempting device key resync for path=", path, " status=", response.status);
-                        const refreshed = await syncDeviceKeyWithWorker(chainID);
+                        let refreshed = await syncDeviceKeyWithWorker(chainID);
+                        // Fallback: if local sync failed (e.g. CDP auth unavailable in SW), try via offscreen
+                        if (!refreshed) {
+                            logX402("[x402WorkerFetch] local sync failed, trying via offscreen...");
+                            const { syncDeviceKeyViaOffscreen } = await import("../service_work/bg_x402");
+                            const validateUrl = X402_FACILITATORS[chainID].endpoint + API_PATH_VALIDATE_TOKEN;
+                            refreshed = await syncDeviceKeyViaOffscreen(validateUrl);
+                        }
                         if (refreshed) {
                             return await x402WorkerFetch(path, body, userIdOverride, chainID, true);
                         }

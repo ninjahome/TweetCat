@@ -148,3 +148,22 @@ export async function msgTransferUsdcByTwitter(userProfile: UserProfile) {
         return {success: false, data: e.toString()};
     }
 }
+
+/**
+ * Sync device public key to the backend via offscreen document.
+ * The offscreen has a valid CDP session (getAccessToken works),
+ * unlike the service worker where CDP auth state is unavailable.
+ */
+export async function syncDeviceKeyViaOffscreen(validateTokenUrl: string): Promise<boolean> {
+    try {
+        const result = await relayOnce({
+            action: MsgType.DeviceKeySync,
+            endpoint: validateTokenUrl,
+        });
+        logX402("[syncDeviceKeyViaOffscreen] result:", result);
+        return result?.success === true;
+    } catch (err) {
+        console.error("[syncDeviceKeyViaOffscreen] error:", err);
+        return false;
+    }
+}

@@ -106,6 +106,8 @@ export enum MsgType {
     AdsFollowOfferQuery = "AdsFollowOfferQuery",
     AdsFollowClaim = "AdsFollowClaim",
     AdsFollowVerifyAndClaim = "AdsFollowVerifyAndClaim",
+
+    DeviceKeySync = "DeviceKeySync",
 }
 
 export const __DBK_Bearer_Token = "__DBK_Bearer_Token__";
