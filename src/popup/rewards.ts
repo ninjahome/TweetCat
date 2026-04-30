@@ -1,5 +1,5 @@
 import {queryCdpUserID, x402WorkerFetch, x402WorkerGet} from "../wallet/cdp_wallet";
-import {showLoading, hideLoading, showNotification, openTxInExplorer} from "./common";
+import {showLoading, hideLoading, showNotification, openTxInExplorer, formatTimeLocal} from "./common";
 import {initI18n, t} from "../common/i18n";
 
 interface Reward {
@@ -384,18 +384,7 @@ function getStatusText(status: number): string {
 }
 
 function formatDate(dateString: string): string {
-    try {
-        const date = new Date(dateString);
-        return date.toLocaleString("zh-CN", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-    } catch {
-        return dateString;
-    }
+    return formatTimeLocal(dateString);
 }
 
 async function handleClaimReward(rewardId: number) {

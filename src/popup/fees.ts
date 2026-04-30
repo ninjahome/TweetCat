@@ -1,5 +1,5 @@
 import {queryCdpUserID, x402WorkerGet} from "../wallet/cdp_wallet";
-import {showLoading, hideLoading, showNotification, openTxInExplorer} from "./common";
+import {showLoading, hideLoading, showNotification, openTxInExplorer, formatTimeLocal} from "./common";
 import {initI18n, t} from "../common/i18n";
 
 interface PlatformFee {
@@ -450,33 +450,5 @@ function showFeeDetail(fee: PlatformFee) {
 }
 
 function formatDate(dateStr: string): string {
-    if (!dateStr) return "--";
-
-    let s = String(dateStr).trim();
-
-    // D1 / SQLite 常见： "YYYY-MM-DD HH:MM:SS"（无时区）
-    // 这种我们按 UTC 解释，然后再转成中国时区显示
-    const hasTimezone = /[zZ]|[+\-]\d{2}:\d{2}$/.test(s);
-    if (!hasTimezone) {
-        if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(s)) {
-            s = s.replace(" ", "T");
-            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) s += ":00";
-            s += "Z";
-        }
-    }
-
-    const d = new Date(s);
-    if (isNaN(d.getTime())) return dateStr;
-
-    const locale = document.documentElement.lang || navigator.language || "zh-CN";
-
-    return d.toLocaleString(locale, {
-        timeZone: "Asia/Shanghai",
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: locale.toLowerCase().startsWith("en"),
-    });
+    return formatTimeLocal(dateStr);
 }

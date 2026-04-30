@@ -100,7 +100,11 @@ function setTransferDirection(dir: TransferDirection) {
 
         // 完备性补充：如果切换到提现模式，主动检查本月是否已提现
         if (dir === "ads_to_wallet" && publisherState.dashboardInfo.last_withdraw_at) {
-            const lastWithdraw = new Date(publisherState.dashboardInfo.last_withdraw_at);
+            let dateStr = publisherState.dashboardInfo.last_withdraw_at.replace(' ', 'T');
+            if (dateStr.length > 0 && !dateStr.includes('Z') && !dateStr.includes('+')) {
+                dateStr += 'Z';
+            }
+            const lastWithdraw = new Date(dateStr);
             const now = new Date();
 
             // 检查是否在同一个月
@@ -114,7 +118,7 @@ function setTransferDirection(dir: TransferDirection) {
                 // 计算下月 1 号
                 const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
                 const nextDateEl = $Id("next-available-date");
-                if (nextDateEl) nextDateEl.textContent = nextMonth.toLocaleDateString();
+                if (nextDateEl) nextDateEl.textContent = formatTimeLocal(nextMonth.toISOString()).split(' ')[0];
 
                 // 禁用提交按钮（可选，但更完备）
                 const submitBtn = $Id("btn-transfer-submit") as HTMLButtonElement | null;

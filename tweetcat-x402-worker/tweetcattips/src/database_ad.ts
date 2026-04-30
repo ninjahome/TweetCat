@@ -1191,6 +1191,26 @@ export async function getPerformerLedgerByRequestId(
 	return await db.prepare(sql).bind(bXId, requestId).first<AdEscrowLedgerRow>();
 }
 
+/**
+ * 查询执行者最近一次非失败的提现记录
+ * 用于滚动 7 天窗口限制检查
+ * @param db - D1 数据库实例
+ * @param bXId - 执行者 X ID
+ * @returns 最近一次 SETTLED 或 PENDING 的提现记录，或 null
+ */
+export async function getLatestPerformerWithdraw(
+	db: D1Database,
+	bXId: string
+): Promise<AdEscrowLedgerRow | null> {
+	const sql = `
+		SELECT * FROM ad_performer_ledger
+		WHERE b_x_id = ? AND status IN ('SETTLED', 'PENDING')
+		ORDER BY created_at DESC
+		LIMIT 1
+	`;
+	return await db.prepare(sql).bind(bXId).first<AdEscrowLedgerRow>();
+}
+
 export async function insertPerformerWithdrawLedger(
 	db: D1Database,
 	ledgerId: string,

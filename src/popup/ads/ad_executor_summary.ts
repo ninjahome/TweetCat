@@ -1,4 +1,4 @@
-import { $2, atomicToUsdcNumber, cloneTemplate, formatUSDC, formatUSDCTrimmed, getCurrentUserInfo, showNotification } from "../common";
+import { $2, atomicToUsdcNumber, cloneTemplate, formatUSDC, formatUSDCTrimmed, formatTimeLocal, getCurrentUserInfo, showNotification } from "../common";
 import { t } from "../../common/i18n";
 import { X402_FACILITATORS } from "../../common/x402_obj";
 import {
@@ -56,20 +56,7 @@ export async function loadEarnSummary(): Promise<void> {
     }
 }
 
-function getWeeklyWindowInfo(date: Date): { key: string; nextStart: Date } | null {
-    const time = date.getTime();
-    if (!Number.isFinite(time)) return null;
-
-    const year = date.getUTCFullYear();
-    const startOfYearMs = Date.UTC(year, 0, 1);
-    const diffDays = Math.floor((time - startOfYearMs) / 86400000);
-    const weekNum = Math.floor(diffDays / 7) + 1;
-
-    return {
-        key: `${year}-W${weekNum}`,
-        nextStart: new Date(startOfYearMs + weekNum * 7 * 86400000)
-    };
-}
+const WITHDRAW_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 天
 
 function getWithdrawLimitState(now: Date = new Date()) {
     const lastWithdrawAt = executorState.lastWithdrawAt;
@@ -81,11 +68,14 @@ function getWithdrawLimitState(now: Date = new Date()) {
         };
     }
 
-    const lastWithdrawDate = new Date(lastWithdrawAt);
-    const nowWindow = getWeeklyWindowInfo(now);
-    const lastWindow = getWeeklyWindowInfo(lastWithdrawDate);
+    let dateStr = lastWithdrawAt.replace(' ', 'T');
+    if (dateStr.length > 0 && !dateStr.includes('Z') && !dateStr.includes('+')) {
+        dateStr += 'Z';
+    }
+    const lastWithdrawDate = new Date(dateStr);
+    const elapsed = now.getTime() - lastWithdrawDate.getTime();
 
-    if (!nowWindow || !lastWindow || nowWindow.key !== lastWindow.key) {
+    if (elapsed >= WITHDRAW_COOLDOWN_MS) {
         return {
             limited: false,
             lastWithdrawDate,
@@ -96,7 +86,7 @@ function getWithdrawLimitState(now: Date = new Date()) {
     return {
         limited: true,
         lastWithdrawDate,
-        nextAvailableDate: nowWindow.nextStart
+        nextAvailableDate: new Date(lastWithdrawDate.getTime() + WITHDRAW_COOLDOWN_MS)
     };
 }
 
@@ -117,11 +107,11 @@ function renderWithdrawLimitState() {
     }
 
     if (prevDateEl) {
-        prevDateEl.textContent = lastWithdrawDate ? lastWithdrawDate.toLocaleString() : "--";
+        prevDateEl.textContent = lastWithdrawDate ? formatTimeLocal(lastWithdrawDate.toISOString()) : "--";
     }
 
     if (nextDateEl) {
-        nextDateEl.textContent = nextAvailableDate ? nextAvailableDate.toLocaleString() : "--";
+        nextDateEl.textContent = nextAvailableDate ? formatTimeLocal(nextAvailableDate.toISOString()) : "--";
     }
 
     if (submitBtn) {

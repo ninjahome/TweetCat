@@ -78,6 +78,7 @@ import {
 	settleAdReward,
 	type ClaimEvidenceParams,
 	getPerformerLedgerByRequestId,
+	getLatestPerformerWithdraw,
 	insertPerformerWithdrawLedger,
 	debitPerformerBalance,
 	settlePerformerWithdrawLedger,
@@ -1089,35 +1090,31 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 			return jsonError(c, 400, "WALLET_NOT_BOUND", "Executor wallet address not found");
 		}
 
-		// 2. 幂等性控制 & 每周限制 (每周一次)
+		// 2. 滚动 7 天窗口限制（每 7 天允许提现一次）
 		const now = new Date();
-		const year = now.getUTCFullYear();
+		const COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000; // 7 天
 
-		// 简单的周数计算（从 1月1日开始每 7天算一周，足够用于幂等性控制）
-		const startOfYear = new Date(Date.UTC(year, 0, 1));
-		const diffDays = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000);
-		const weekNum = Math.floor(diffDays / 7) + 1;
+		const latestWithdraw = await getLatestPerformerWithdraw(db, bXId);
+		if (latestWithdraw) {
+			const lastTime = new Date(latestWithdraw.created_at).getTime();
+			const elapsed = now.getTime() - lastTime;
 
-		const requestId = `executor_withdraw_${bXId}_${year}_W${weekNum}`;
-
-		const existingLedger = await getPerformerLedgerByRequestId(db, bXId, requestId);
-		if (existingLedger) {
-			if (existingLedger.status === 'SETTLED' || existingLedger.status === 'PENDING') {
+			if (elapsed < COOLDOWN_MS) {
+				const nextAvailable = new Date(lastTime + COOLDOWN_MS);
 				return c.json({
 					success: false,
 					alreadyWithdrawn: true,
 					limitType: "Weekly",
-					txHash: existingLedger.tx_hash,
-					status: existingLedger.status,
-					message: "You have already reached the weekly withdrawal limit. Please try again next week."
+					txHash: latestWithdraw.tx_hash,
+					status: latestWithdraw.status,
+					nextAvailableDate: nextAvailable.toISOString(),
+					message: "You can only withdraw once every 7 days. Please try again later."
 				});
 			}
-			if (existingLedger.status === 'FAILED') {
-				// 之前的提现尝试失败了，删除旧记录后允许重试
-				console.log(`[apiAdsExecutorWithdraw] Cleaning up FAILED ledger for requestId=${requestId}`);
-				await deleteFailedPerformerLedger(db, bXId, requestId);
-			}
 		}
+
+		// 生成唯一的请求 ID（用于幂等性和 FAILED 清理）
+		const requestId = `executor_withdraw_${bXId}_${now.getTime()}`;
 
 		// 3. 开始提现处理
 		// ⚠️ 先插入流水记录，再扣余额。避免扣了钱但插入失败（UNIQUE 冲突）导致资金丢失

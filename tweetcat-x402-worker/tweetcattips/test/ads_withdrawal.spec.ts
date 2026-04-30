@@ -212,16 +212,12 @@ describe('Ads Integration Tests', () => {
     });
 
     it('B-11: Should intercept new withdrawal if there is a PENDING one', async () => {
-        // 1. Setup a PENDING withdrawal for this week
-        const now = new Date();
-        const year = now.getUTCFullYear();
-        const startOfYear = new Date(Date.UTC(year, 0, 1));
-        const diffDays = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000);
-        const weekNum = Math.floor(diffDays / 7) + 1;
-        const requestId = `executor_withdraw_${TEST_XID}_${year}_W${weekNum}`;
+        // 1. Setup a PENDING withdrawal from recently (within 7 days)
+        const recentDate = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000); // 2 days ago
+        const requestId = `executor_withdraw_${TEST_XID}_${recentDate.getTime()}`;
 
-        await env.DB.prepare('INSERT INTO ad_performer_ledger (ledger_id, b_x_id, status, request_id, amount_atomic) VALUES (?, ?, ?, ?, ?)')
-            .bind('existing_ledger_1', TEST_XID, 'PENDING', requestId, '1000000').run();
+        await env.DB.prepare('INSERT INTO ad_performer_ledger (ledger_id, b_x_id, status, request_id, amount_atomic, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+            .bind('existing_ledger_1', TEST_XID, 'PENDING', requestId, '1000000', recentDate.toISOString()).run();
 
         // 2. Try to withdraw again
         const req = new Request('http://localhost/ads/executor/withdraw', {
@@ -267,14 +263,15 @@ describe('Ads Integration Tests', () => {
         expect(ledger.error_reason).toBe('Blockchain Congestion');
     });
 
-    it('B-09: Should succeed if previous withdrawal was in a different week (Simulator)', async () => {
+    it('B-09: Should succeed if previous withdrawal was more than 7 days ago', async () => {
         // 1. Setup balance
         await env.DB.prepare('INSERT INTO ad_performer_accounts (b_x_id, available_atomic) VALUES (?, ?)')
             .bind(TEST_XID, '5000000').run();
 
-        // 2. Setup a SETTLED withdrawal for "W-1" (different week)
+        // 2. Setup a SETTLED withdrawal from 8 days ago (outside 7-day cooldown)
+        const oldDate = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000); // 8 days ago
         await env.DB.prepare('INSERT INTO ad_performer_ledger (ledger_id, b_x_id, status, request_id, amount_atomic, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-            .bind('prev_ledger', TEST_XID, 'SETTLED', `executor_withdraw_${TEST_XID}_2025_W1`, '1000000', '2025-01-01 10:00:00').run();
+            .bind('prev_ledger', TEST_XID, 'SETTLED', `executor_withdraw_${TEST_XID}_old`, '1000000', oldDate.toISOString()).run();
 
         // 3. Mock success
         (x402Srv.internalTreasurySettle as any).mockResolvedValue({
