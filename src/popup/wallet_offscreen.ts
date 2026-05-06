@@ -69,7 +69,14 @@ async function msgProc(port, msg) {
     switch (msg.action) {
         case MsgType.WalletInfoQuery:
             const data = await queryCdpWalletInfo()
-            port.postMessage({ requestId: msg.requestId, result: { success: true, data: data } });
+            // Guard: if queryCdpWalletInfo returned failedWallet (empty address),
+            // mark as failure so the relay layer can trigger a retry.
+            if (!data?.address) {
+                console.warn("[wallet_offscreen] queryCdpWalletInfo returned empty address despite isSignedIn=true");
+                port.postMessage({ requestId: msg.requestId, result: { success: false, data: "WALLET_QUERY_FAILED" } });
+            } else {
+                port.postMessage({ requestId: msg.requestId, result: { success: true, data: data } });
+            }
             return
 
         case MsgType.DeviceKeySync: {

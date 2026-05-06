@@ -15,7 +15,7 @@ import {
     parseUnits,
     toHex,
 } from 'viem'
-import { ChainIDBaseMain, ChainIDBaseSepolia, initCDP, isCdpAuthError, toCdpSessionError, walletInfo, X402_FACILITATORS } from "../common/x402_obj";
+import { ChainIDBaseMain, ChainIDBaseSepolia, initCDP, isCdpAuthError, resetCDPInitState, toCdpSessionError, walletInfo, X402_FACILITATORS } from "../common/x402_obj";
 import { getChainId } from "./wallet_setting";
 import {
     EndUserEvmAccount,
@@ -178,7 +178,19 @@ export async function queryCdpWalletInfo(chainId: number | null = null): Promise
         if (!chainId) chainId = await getChainId();
 
         await initCDP();
-        if (!await isSignedIn()) return failedWallet;
+        let signed = await isSignedIn();
+
+        // On slow networks, isSignedIn() can transiently return false.
+        // Retry once with a fresh CDP init before giving up.
+        if (!signed) {
+            console.warn("[queryCdpWalletInfo] isSignedIn returned false, retrying with fresh init in 1s...");
+            resetCDPInitState();
+            await new Promise(r => setTimeout(r, 1000));
+            await initCDP();
+            signed = await isSignedIn();
+        }
+
+        if (!signed) return failedWallet;
 
         const user = await getCurrentUser();
         const eoa = user.evmAccountObjects?.[0];

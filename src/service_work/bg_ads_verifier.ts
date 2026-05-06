@@ -55,15 +55,10 @@ export async function verifyFollowAndClaim(params: {
         }
         console.log(`[AdsVerifier] Step 2 result: Spotlight data received.`);
 
-        // 3. 检查关注状态
+        // 3. 记录关注状态（新流程下，领取先于关注，此处不再要求 following=true）
         console.log(`[AdsVerifier] Step 3: Extracting following status...`);
         const following = spotlightData?.data?.user_result_by_screen_name?.result?.relationship_perspectives?.following;
-        console.log(`[AdsVerifier] Step 3 result: following=${following}`);
-
-        if (following !== true) {
-            console.warn(`[AdsVerifier] Step 3 FAILED: Target is not followed by the user.`, spotlightData);
-            throw new Error(`关注验证失败：推特接口返回您尚未关注 @${screen_name}`);
-        }
+        console.log(`[AdsVerifier] Step 3 result: following=${following} (not required before claim)`);
 
         // 4. 身份确认与证据获取 (蓝V签名证据)
         if (!userId || !xId) {
