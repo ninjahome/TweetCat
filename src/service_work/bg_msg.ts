@@ -43,6 +43,9 @@ import { queryAdsFollowOffer } from "./bg_ads_follow";
 import { verifyFollowAndClaim } from "./bg_ads_verifier";
 import { handleUserByScreenNameCaptured } from "./bg_blue_v";
 import { pollAdsFeedIfNeeded } from "./bg_ads_feed";
+import { getCurrentUserBlueVStatus } from "../object/blue_v";
+import { getChainId } from "../wallet/wallet_setting";
+import { ChainIDBaseSepolia } from "../common/x402_obj";
 
 export async function checkIfXIsOpen(): Promise<boolean> {
     const tabs = await browser.tabs.query({
@@ -71,6 +74,7 @@ const X_PAGE_ALLOWED_ACTIONS = new Set([
     MsgType.ProfileFollowClaim, // 你如果允许从页面按钮触发 claim，可以放；否则移除
     MsgType.AdsFollowClaim,
     MsgType.AdsFollowVerifyAndClaim,
+    MsgType.AdsBlueVPreCheck,
 ]);
 
 function isInternalSource(sender: Runtime.MessageSender): boolean {
@@ -147,6 +151,49 @@ export async function bgMsgDispatch(request: any, _sender: Runtime.MessageSender
                 success: false,
                 data: "This claim method is no longer supported."
             };
+        }
+
+        case MsgType.AdsBlueVPreCheck: {
+            try {
+                const xId = String(request?.data?.xId || "");
+                if (!xId) return { success: false, data: "MISSING_XID" };
+
+                const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+                const now = Date.now();
+                const blueVStatus = await getCurrentUserBlueVStatus(xId);
+                const isFresh = blueVStatus && (now - blueVStatus.capturedAt < SEVEN_DAYS_MS);
+
+                // [TEST] Whitelist for bypassing Blue V check (must match backend & plaza)
+                const BYPASS_WHITELIST = [
+                    "1899045104146644992",
+                    "1735224873365225472",
+                    "1236539014406012928",
+                    "1554341020246061059",
+                    "1740205143621238785",
+                    "1514598908273463303"
+                ];
+                const currentChainId = await getChainId();
+                const isWhitelisted = BYPASS_WHITELIST.includes(xId) && currentChainId === ChainIDBaseSepolia;
+
+                if (isWhitelisted) {
+                    return { success: true, data: { pass: true, reason: "whitelisted" } };
+                }
+
+                if (isFresh) {
+                    if (blueVStatus.isBlueVerified) {
+                        return { success: true, data: { pass: true, reason: "verified" } };
+                    } else {
+                        return { success: true, data: { pass: false, reason: "NOT_BLUE_V", xId } };
+                    }
+                } else {
+                    // 状态缺失或超过 7 天
+                    const reason = (!blueVStatus || blueVStatus.userId !== xId) ? "NO_RECORD" : "EXPIRED";
+                    return { success: true, data: { pass: false, reason, xId } };
+                }
+            } catch (e: any) {
+                console.error(`[bgMsg] AdsBlueVPreCheck FAILED:`, e);
+                return { success: false, data: e.message || String(e) };
+            }
         }
 
         case MsgType.AdsFollowVerifyAndClaim: {

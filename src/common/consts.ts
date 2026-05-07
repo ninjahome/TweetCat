@@ -106,6 +106,7 @@ export enum MsgType {
     AdsFollowOfferQuery = "AdsFollowOfferQuery",
     AdsFollowClaim = "AdsFollowClaim",
     AdsFollowVerifyAndClaim = "AdsFollowVerifyAndClaim",
+    AdsBlueVPreCheck = "AdsBlueVPreCheck",
 
     DeviceKeySync = "DeviceKeySync",
 }

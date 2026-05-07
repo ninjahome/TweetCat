@@ -90,15 +90,6 @@ export function updateFollowingSnapshotFromInject(screenName: string, rawProfile
     __followingCache.set(key, { isFollowing, capturedAt: Date.now() });
 
     if (__lastProfileToolbar && __lastProfileUsername && __lastProfileUsername.toLowerCase() === key) {
-        // After follow/unfollow, Twitter may re-render the toolbar via React,
-        // detaching our old reference. If stale, re-trigger full toolbar discovery.
-        if (!__lastProfileToolbar.isConnected) {
-            console.log("[TwitterUI] Toolbar detached after follow state change, re-initializing...");
-            // Small delay to let Twitter finish its re-render
-            setTimeout(() => appendFilterOnKolProfilePage(__lastProfileUsername!), 500);
-            return;
-        }
-
         // If unfollowed, we definitely want to ensure the button is refreshed/shown
         if (isFollowing === false) {
             const existing = __lastProfileToolbar.querySelector(".follow-claim-on-profile");
@@ -360,9 +351,8 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
     };
 
     if (btn) {
-        // DOM fallback check — only when status is genuinely unknown (null),
-        // not when the API interceptor explicitly returned false (unfollowed)
-        if (isFollowing === null) {
+        // DOM fallback check
+        if (!isFollowing) {
             const domFollowing = checkIsFollowingFromDom(kolName);
             if (domFollowing) {
                 console.log("[TwitterUI] Fallback: detected following status from DOM");
@@ -396,37 +386,108 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
 
                 // 1. 检查钱包登录状态 (走 Offscreen 以获得准确 CDP 状态)
                 //    首次失败时自动重试一次，应对 Offscreen 被回收或 CDP 会话未恢复的偶发情况
-                let walletInfo = await sendMsgToOffScreenWithTimeout({}, MsgType.WalletInfoQuery, 15000);
+                let walletInfo = await sendMsgToOffScreenWithTimeout({}, MsgType.WalletInfoQuery, 8000);
                 if (!walletInfo?.success || !walletInfo?.data?.address) {
                     console.warn(`[TwitterUI] WalletInfoQuery attempt 1 failed. success=${walletInfo?.success}, data=`, walletInfo?.data, `error=`, walletInfo?.error, ` — retrying in 2s...`);
                     await new Promise(r => setTimeout(r, 2000));
-                    walletInfo = await sendMsgToOffScreenWithTimeout({}, MsgType.WalletInfoQuery, 15000);
+                    walletInfo = await sendMsgToOffScreenWithTimeout({}, MsgType.WalletInfoQuery, 8000);
                 }
                 if (!walletInfo?.success || !walletInfo?.data?.address) {
                     console.warn(`[TwitterUI] WalletInfoQuery attempt 2 also failed. success=${walletInfo?.success}, data=`, walletInfo?.data);
                     setUi(ADS_FOLLOW_UI_MODE.Eligible);
-                    let errMsg: string;
-                    if (walletInfo?.data === "TIMEOUT") {
-                        errMsg = "连接钱包超时，请刷新页面重试。";
-                    } else if (walletInfo?.data === "WALLET_QUERY_FAILED") {
-                        errMsg = "钱包状态查询异常，请刷新页面后重试。";
-                    } else {
-                        errMsg = "请先在插件中登录钱包账号，再执行关注领奖。";
-                    }
+                    const errMsg = walletInfo?.data === "TIMEOUT" ? "连接钱包超时，请刷新页面重试。" : "请先在插件中登录钱包账号，再执行关注领奖。";
                     showDialog(t('tips_title'), errMsg);
                     return;
                 }
 
                 console.log(`[TwitterUI] Wallet Identity: addr=${walletInfo.data.address}, xId=${walletInfo.data.xId}, userId=${walletInfo.data.userId}`);
 
-                if (title) title.textContent = "正在提交领取请求...";
+                // 2. 蓝V前置检查 (与广告广场 startTask 保持一致)
+                if (title) title.textContent = "正在检查认证状态...";
+                const blueVResp = await sendMsgToService(
+                    { xId: walletInfo.data?.xId },
+                    MsgType.AdsBlueVPreCheck,
+                );
+                console.log(`[TwitterUI] BlueV pre-check result:`, blueVResp);
 
+                if (blueVResp?.success && blueVResp.data && !blueVResp.data.pass) {
+                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
+                    const reason = blueVResp.data.reason;
+                    const checkXId = blueVResp.data.xId || walletInfo.data?.xId;
+
+                    if (reason === "NOT_BLUE_V") {
+                        // 已验证但非蓝V → 提示重新验证
+                        showDialog(
+                            t('tips_title'),
+                            t('blue_v_required') || "该任务要求推特蓝V认证。请先完成认证后再试。",
+                            () => {
+                                window.open(`https://x.com/i/user/${checkXId}?tc_verify=1`, "_blank");
+                            },
+                            t('reverify_btn') || "Re-verify"
+                        );
+                    } else {
+                        // NO_RECORD 或 EXPIRED → 提示跳转 Profile 更新
+                        const msg = reason === "NO_RECORD"
+                            ? (t('verification_required_msg') || "请先访问您的推特个人主页以更新蓝V认证状态。")
+                            : (t('status_expired_msg') || "您的蓝V认证状态已过期，请访问个人主页刷新。");
+                        showDialog(
+                            t('tips_title'),
+                            msg,
+                            () => {
+                                window.open(`https://x.com/i/user/${checkXId}?tc_verify=1`, "_blank");
+                            },
+                            t('confirm') || "Confirm"
+                        );
+                    }
+                    return;
+                }
+
+                const nativeBtn = findNativeFollowButton();
+                console.log("[TwitterUI] Native Follow button search result:", nativeBtn);
+                if (!nativeBtn) {
+                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
+                    showDialog(t('tips_title'), "未找到关注按钮，请确认是否已关注或页面加载完成。")
+                    return;
+                }
+
+                if (title) title.textContent = "正在同步关注状态...";
+
+                // Create a promise to wait for the interceptor to signal success
+                let timerId: any;
+                const followConfirmed = new Promise<boolean>((resolve) => {
+                    __pendingFollowResolver = (success: boolean) => {
+                        console.log("[TwitterUI] Received follow confirmation signal:", success);
+                        if (timerId) clearTimeout(timerId);
+                        resolve(success);
+                    };
+                    // Timeout safety: 15 seconds
+                    timerId = setTimeout(() => {
+                        console.warn("[TwitterUI] Follow confirmation TIMEOUT after 15s");
+                        resolve(false);
+                    }, 15000);
+                });
+
+                console.log("[TwitterUI] Triggering native follow button click...");
+                // Trigger native follow
+                nativeBtn.click();
+
+                const isSuccess = await followConfirmed;
+                console.log("[TwitterUI] Final follow result for orchestration:", isSuccess);
+
+                if (!isSuccess) {
+                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
+                    showDialog(t('tips_title'), "关注确认超时或失败，请重试。")
+                    return;
+                }
+
+                if (title) title.textContent = "关注成功，正在进行二次验证...";
+
+                // The profile toolbar can re-render while the final verification is in flight.
                 // Keep a stable global loading state so users don't see a blank gap before the result dialog.
-                showGlobalLoading("正在提交领取请求...", "请稍候");
+                showGlobalLoading("正在验证领奖状态...", "奖励校验中，请稍候");
 
-                // 2. 先提交领取请求到后端（不要求先关注）
                 try {
-                    console.log(`[TwitterUI] >>> Step 2: Sending AdsFollowVerifyAndClaim to SW`, {
+                    console.log(`[TwitterUI] >>> Step 3: Sending AdsFollowVerifyAndClaim to SW`, {
                         ad_id: offer.ad_id,
                         screen_name: kolName
                     });
@@ -443,7 +504,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                         MsgType.AdsFollowVerifyAndClaim,
                     );
 
-                    console.log(`[TwitterUI] <<< Step 3: Received claim response from SW`, resp);
+                    console.log(`[TwitterUI] <<< Step 4: Received response from SW`, resp);
                     hideGlobalLoading();
 
                     if (!resp?.success) {
@@ -485,42 +546,8 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                         return;
                     }
 
-                    console.log(`[TwitterUI] SUCCESS: Claim submitted successfully.`, resp.data);
+                    console.log(`[TwitterUI] SUCCESS: Claim flow finished.`, resp.data);
 
-                    // 3. 领取成功后，触发关注
-                    if (title) title.textContent = "领取成功，正在关注...";
-
-                    const nativeBtn = findNativeFollowButton();
-                    console.log("[TwitterUI] Native Follow button search result:", nativeBtn);
-
-                    if (nativeBtn) {
-                        let timerId: any;
-                        const followConfirmed = new Promise<boolean>((resolve) => {
-                            __pendingFollowResolver = (success: boolean) => {
-                                console.log("[TwitterUI] Received follow confirmation signal:", success);
-                                if (timerId) clearTimeout(timerId);
-                                resolve(success);
-                            };
-                            timerId = setTimeout(() => {
-                                console.warn("[TwitterUI] Follow confirmation TIMEOUT after 15s");
-                                resolve(false);
-                            }, 15000);
-                        });
-
-                        console.log("[TwitterUI] Triggering native follow button click after claim success...");
-                        nativeBtn.click();
-
-                        const followSuccess = await followConfirmed;
-                        console.log("[TwitterUI] Follow result after claim:", followSuccess);
-
-                        if (!followSuccess) {
-                            console.warn("[TwitterUI] Follow failed/timeout after claim, but claim was already successful");
-                        }
-                    } else {
-                        console.warn("[TwitterUI] Native follow button not found after claim success, skipping follow step");
-                    }
-
-                    // 4. 显示成功对话框（无论关注是否成功，领取已成功）
                     const openPlaza = () => {
                         const url = browser.runtime.getURL('html/ad_plaza.html?tab=my-tasks');
                         sendMsgToService(url, MsgType.OpenOrFocusUrl);
@@ -528,7 +555,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
 
                     if (resp.data?.already_claimed) {
                         console.log("[TwitterUI] Detected repeated claim, showing dialog.");
-                        showDialog(t('tips_title'), "检测到该奖励之前已成功领取。您可以前往广告广场查看状态。", openPlaza, "立即查看");
+                        showDialog(t('tips_title'), "您已成功重新关注！检测到该奖励之前已成功领取。您可以前往广告广场查看状态。", openPlaza, "立即查看");
                     } else {
                         showDialog(t('tips_title'), "申领成功！奖励后续将发放至您的钱包。您可以前往广告广场查看状态。", openPlaza, "立即查看");
                     }
@@ -555,8 +582,12 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                     return;
                 }
 
-                // After success, remove button
+                // Requirement: After success, no longer show "Claimed" status on page if they are now following
                 clone.remove();
+                /*
+                console.log("---------------- [DEBUG: AdsFollowClaim Material] ----------------");
+                ...
+                */
             };
         } else {
             // follow status unknown yet (waiting inject)
