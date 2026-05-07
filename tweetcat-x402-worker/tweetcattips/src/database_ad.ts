@@ -1453,9 +1453,14 @@ export async function rejectAdReward(db: D1Database, claimId: string, reason: st
 	`;
 
 	// 释放被占用的 quota_claimed（防止配额被无效 claim 永久消耗）
+	// 同时，如果广告被标记为了 COMPLETED，但因为释放又有了空余配额，并且预算未退回，将其恢复为 ACTIVE
 	const releaseQuotaSql = `
 		UPDATE ad_campaigns
 		SET quota_claimed = MAX(COALESCE(quota_claimed, 0) - 1, 0),
+		    status = CASE 
+		               WHEN status = 'COMPLETED' AND budget_settlement_status != 'SETTLED' THEN 'ACTIVE' 
+		               ELSE status 
+		             END,
 		    updated_at = datetime('now')
 		WHERE ad_id = ?
 	`;

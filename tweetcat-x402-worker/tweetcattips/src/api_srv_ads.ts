@@ -1096,7 +1096,7 @@ export async function apiAdsExecutorWithdraw(c: ExtCtx) {
 
 		const latestWithdraw = await getLatestPerformerWithdraw(db, bXId);
 		if (latestWithdraw) {
-			const lastTime = new Date(latestWithdraw.created_at).getTime();
+			const lastTime = new Date(latestWithdraw.created_at || 0).getTime();
 			const elapsed = now.getTime() - lastTime;
 
 			if (elapsed < COOLDOWN_MS) {
