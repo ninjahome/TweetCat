@@ -664,7 +664,8 @@ export async function x402WorkerFetch(path: string, body: any, userIdOverride?: 
     logX402("------>>> url:", url);
     try {
         console.log(`[x402Fetch] Request Headers:`, JSON.stringify(headers));
-        const MAX_RETRIES = 2;
+        const isSigned = signedOperationPaths.includes(path);
+        const MAX_RETRIES = isSigned ? 0 : 2;
         const TIMEOUT_MS = 12_000;
         let lastErr: any = null;
         for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -706,6 +707,10 @@ export async function x402WorkerFetch(path: string, body: any, userIdOverride?: 
                 if (attempt < MAX_RETRIES && (isAbort || isTypeError)) {
                     await sleep(500 * (attempt + 1));
                     continue;
+                }
+                if (isAbort || isTypeError) {
+                    const reason = isAbort ? "Request timed out" : "Network connection failed";
+                    throw new Error(`${reason}. The request might have been processed in the background. Please manually refresh the page to confirm before trying again.`);
                 }
                 throw err;
             }
