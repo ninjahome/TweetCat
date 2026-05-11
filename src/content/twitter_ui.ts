@@ -216,6 +216,10 @@ export async function appendScoreInfoToProfilePage(usrProfile: UserProfile, user
 }
 
 async function _appendFilterBtn(toolBar: HTMLElement, kolName: string) {
+    if (loggedInUserScreenName && kolName.toLowerCase() === loggedInUserScreenName.toLowerCase()) {
+        return;
+    }
+
     const contentTemplate = await parseContentHtml('html/content.html');
     const menuBtn = contentTemplate.content.getElementById("filter-btn-on-profile") as HTMLElement;
 
