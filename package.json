@@ -40,5 +40,5 @@
     "worker:db:migrate:dev": "npm --prefix tweetcat-x402-worker/tweetcattips run db:migrate:test",
     "worker:db:migrate:prod": "npm --prefix tweetcat-x402-worker/tweetcattips run db:migrate:main"
   },
-  "version": "3.8.5"
+  "version": "3.8.6"
 }
