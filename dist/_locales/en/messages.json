@@ -2165,5 +2165,14 @@
   },
   "btn_confirm_withdraw": {
     "message": "Confirm"
+  },
+  "request_timed_out": {
+    "message": "Request timed out"
+  },
+  "network_connection_failed": {
+    "message": "Network connection failed"
+  },
+  "processed_in_background_hint": {
+    "message": "The request might have been processed in the background. Please manually refresh the page to confirm before trying again."
   }
 }

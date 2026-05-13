@@ -2172,6 +2172,15 @@
   "modal_claimants_title": {
     "message": "领取人列表"
   },
+  "request_timed_out": {
+    "message": "请求超时"
+  },
+  "network_connection_failed": {
+    "message": "网络连接失败"
+  },
+  "processed_in_background_hint": {
+    "message": "请求可能已在后台处理。请在重试之前手动刷新页面进行确认。"
+  },
   "msg_no_claimants": {
     "message": "暂无领取人"
   }
