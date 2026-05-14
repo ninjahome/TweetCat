@@ -198,7 +198,19 @@ export function initWizardEvents() {
 
     // 实时计算预算摘要
     const rewardAmount = $Id("reward-amount") as HTMLInputElement | null;
-    if (rewardAmount) rewardAmount.addEventListener("input", updateBudgetSummaryAndBalance);
+    if (rewardAmount) {
+        rewardAmount.addEventListener("input", () => {
+            // Enforce max 6 decimal places
+            const val = rewardAmount.value;
+            if (val.includes('.')) {
+                const parts = val.split('.');
+                if (parts[1].length > 6) {
+                    rewardAmount.value = parts[0] + '.' + parts[1].substring(0, 6);
+                }
+            }
+            updateBudgetSummaryAndBalance();
+        });
+    }
 
     const taskLimit = $Id("task-limit") as HTMLInputElement | null;
     if (taskLimit) taskLimit.addEventListener("input", updateBudgetSummaryAndBalance);

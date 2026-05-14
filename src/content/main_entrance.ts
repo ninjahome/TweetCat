@@ -40,17 +40,26 @@ function setBgMode(mode: ThemeMode): void {
 function detectTwitterTheme(): ThemeMode {
     if (!document.body) {
         setTimeout(detectTwitterTheme, 200);
-        return "lightsout"; // 临时返回一个默认值
+        return "default"; // 临时返回一个默认值
     }
-    const bg = getComputedStyle(document.body).backgroundColor || "";
+    let bg = getComputedStyle(document.body).backgroundColor || "";
+    
+    if (bg === "rgba(0, 0, 0, 0)" || bg === "transparent") {
+        const root = document.getElementById("react-root");
+        if (root) {
+            bg = getComputedStyle(root).backgroundColor || "";
+        }
+    }
+
     // 亮色
-    if (bg.includes("255, 255, 255")) return "default";
+    if (bg.includes("rgb(255, 255, 255)") || bg.includes("rgba(255, 255, 255")) return "default";
     // 暗色（Twitter 经典深蓝）
-    if (bg.includes("21, 32, 43")) return "dim";
+    if (bg.includes("rgb(21, 32, 43)") || bg.includes("rgba(21, 32, 43")) return "dim";
     // 黑色（Lights out）
-    if (bg.includes("0, 0, 0")) return "lightsout";
-    // 兜底：按更深主题处理
-    return "lightsout";
+    if (bg.includes("rgb(0, 0, 0)") || bg.includes("rgba(0, 0, 0, 1)")) return "lightsout";
+    
+    // 兜底：按亮色主题处理
+    return "default";
 }
 
 export function syncTwitterTheme(): void {
