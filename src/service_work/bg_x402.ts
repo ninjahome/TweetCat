@@ -118,6 +118,10 @@ export async function relayWalletMsg(request: any): Promise<any> {
             walletPort = null;
         }
 
+        // Destroy the offscreen document so relayOnce creates a fresh one
+        // with a clean CDP instance (the old one's isSignedIn() may be stuck)
+        try { await browser.offscreen.closeDocument(); } catch (_) { /* may already be gone */ }
+
         await new Promise(r => setTimeout(r, 1500));
         return await relayOnce(request);
     }
