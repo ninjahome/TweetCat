@@ -2183,5 +2183,77 @@
   },
   "msg_no_claimants": {
     "message": "暂无领取人"
+  },
+  "follow_claim_btn_text": {
+    "message": "关注即领 $1 USDC"
+  },
+  "claim_loading": {
+    "message": "加载中..."
+  },
+  "claim_already_following": {
+    "message": "已关注"
+  },
+  "claim_processing": {
+    "message": "处理中..."
+  },
+  "claim_pending_verification": {
+    "message": "已领取，待验证"
+  },
+  "claim_already_claimed_status": {
+    "message": "已领取过，不可再次领取"
+  },
+  "claim_verifying_wallet": {
+    "message": "正在验证钱包状态..."
+  },
+  "claim_wallet_timeout": {
+    "message": "连接钱包超时，请刷新页面重试。"
+  },
+  "claim_wallet_not_logged_in": {
+    "message": "请先在插件中登录钱包账号，再执行关注领奖。"
+  },
+  "claim_checking_verification": {
+    "message": "正在检查认证状态..."
+  },
+  "claim_follow_btn_not_found": {
+    "message": "未找到关注按钮，请确认是否已关注或页面加载完成。"
+  },
+  "claim_syncing_follow": {
+    "message": "正在同步关注状态..."
+  },
+  "claim_follow_timeout": {
+    "message": "关注确认超时或失败，请重试。"
+  },
+  "claim_follow_success_verifying": {
+    "message": "关注成功，正在进行二次验证..."
+  },
+  "claim_verifying_reward": {
+    "message": "正在验证领奖状态..."
+  },
+  "claim_reward_checking": {
+    "message": "奖励校验中，请稍候"
+  },
+  "claim_already_claimed_refollow": {
+    "message": "您已成功重新关注！检测到该奖励之前已成功领取。您可以前往广告广场查看状态。"
+  },
+  "claim_success_msg": {
+    "message": "申领成功！奖励后续将发放至您的钱包。您可以前往广告广场查看状态。"
+  },
+  "claim_view_now": {
+    "message": "立即查看"
+  },
+  "claim_timeout_may_succeed": {
+    "message": "领取请求超时，但可能已经成功处理。请到广告广场查看任务状态。"
+  },
+  "invalid_user_id": {
+    "message": "无效的用户ID"
+  },
+  "claim_twitter_fetch_failed": {
+    "message": "无法从推特获取验证材料（频率限制或登录失效）"
+  },
+  "claim_identity_incomplete": {
+    "message": "身份信息不完整，请尝试重新登录钱包。"
+  },
+  "claim_not_following": {
+    "message": "关注验证失败：推特接口返回您尚未关注 @$1"
   }
 }

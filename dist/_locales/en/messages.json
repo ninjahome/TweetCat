@@ -2174,5 +2174,77 @@
   },
   "processed_in_background_hint": {
     "message": "The request might have been processed in the background. Please manually refresh the page to confirm before trying again."
+  },
+  "follow_claim_btn_text": {
+    "message": "Follow to Earn $1 USDC"
+  },
+  "claim_loading": {
+    "message": "Loading..."
+  },
+  "claim_already_following": {
+    "message": "Already Following"
+  },
+  "claim_processing": {
+    "message": "Processing..."
+  },
+  "claim_pending_verification": {
+    "message": "Claimed, Pending Verification"
+  },
+  "claim_already_claimed_status": {
+    "message": "Already Claimed"
+  },
+  "claim_verifying_wallet": {
+    "message": "Verifying wallet status..."
+  },
+  "claim_wallet_timeout": {
+    "message": "Wallet connection timed out. Please refresh the page and try again."
+  },
+  "claim_wallet_not_logged_in": {
+    "message": "Please sign in to your wallet in the extension before claiming rewards."
+  },
+  "claim_checking_verification": {
+    "message": "Checking verification status..."
+  },
+  "claim_follow_btn_not_found": {
+    "message": "Follow button not found. Please confirm you have not already followed or the page has fully loaded."
+  },
+  "claim_syncing_follow": {
+    "message": "Syncing follow status..."
+  },
+  "claim_follow_timeout": {
+    "message": "Follow confirmation timed out or failed. Please try again."
+  },
+  "claim_follow_success_verifying": {
+    "message": "Follow successful, verifying..."
+  },
+  "claim_verifying_reward": {
+    "message": "Verifying claim status..."
+  },
+  "claim_reward_checking": {
+    "message": "Checking reward, please wait"
+  },
+  "claim_already_claimed_refollow": {
+    "message": "You have successfully re-followed! This reward was previously claimed. You can check its status in Ad Plaza."
+  },
+  "claim_success_msg": {
+    "message": "Claim submitted! Rewards will be distributed to your wallet. You can check the status in Ad Plaza."
+  },
+  "claim_view_now": {
+    "message": "View Now"
+  },
+  "claim_timeout_may_succeed": {
+    "message": "The claim request timed out, but may have been processed. Please check your task status in Ad Plaza."
+  },
+  "invalid_user_id": {
+    "message": "Invalid user ID"
+  },
+  "claim_twitter_fetch_failed": {
+    "message": "Failed to fetch verification data from Twitter (Rate limit or Auth error)"
+  },
+  "claim_identity_incomplete": {
+    "message": "Identity info incomplete. Please try signing in to your wallet again."
+  },
+  "claim_not_following": {
+    "message": "Follow verification failed: Twitter shows you have not followed @$1"
   }
 }

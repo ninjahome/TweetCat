@@ -1,6 +1,7 @@
 import { fetchProfileSpotlights, setExternalCsrfToken } from "../x_api/twitter_api";
 import { x402WorkerFetch } from "../wallet/cdp_wallet";
 import { API_PATH_ADS_CLAIM, API_PATH_ADS_SUBMIT_PROOF } from "../common/api_paths";
+import { t } from "../common/i18n";
 import browser from "webextension-polyfill";
 import { setClaimState } from "./bg_ads_follow";
 import { pollAdsFeedIfNeeded } from "./bg_ads_feed";
@@ -51,7 +52,7 @@ export async function verifyFollowAndClaim(params: {
         const spotlightData = await fetchProfileSpotlights(screen_name);
         if (!spotlightData) {
             console.error(`[AdsVerifier] Step 2 FAILED: No data returned from fetchProfileSpotlights`);
-            throw new Error("无法从推特获取验证材料 (Rate limit or Auth error)");
+            throw new Error(t('claim_twitter_fetch_failed'));
         }
         console.log(`[AdsVerifier] Step 2 result: Spotlight data received.`);
 
@@ -62,13 +63,13 @@ export async function verifyFollowAndClaim(params: {
 
         if (following !== true) {
             console.warn(`[AdsVerifier] Step 3 FAILED: Target is not followed by the user.`, spotlightData);
-            throw new Error(`关注验证失败：推特接口返回您尚未关注 @${screen_name}`);
+            throw new Error(t('claim_not_following', [screen_name]));
         }
 
         // 4. 身份确认与证据获取 (蓝V签名证据)
         if (!userId || !xId) {
             console.error(`[AdsVerifier] Step 4 FAILED: Missing identity info. userId=${!!userId}, xId=${!!xId}`);
-            throw new Error("身份信息不完整，请尝试重新登录钱包。");
+            throw new Error(t('claim_identity_incomplete'));
         }
 
         console.log(`[AdsVerifier] Step 4: Identity validated. Querying BlueV proof for xId: ${xId}`);

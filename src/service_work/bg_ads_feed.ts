@@ -38,6 +38,10 @@ const ADS_FEED_LIST_PATH = "/ads/executor/list";
 const POLL_LOCK_KEY = "__ADS_FEED_POLL_LOCK__";
 let pollInFlight = false;
 
+const PROFILE_SUFFIX_SET = new Set([
+    "", "affiliates", "with_replies", "highlights", "media", "superfollows"
+]);
+
 function normalizeProfileUrl(raw: string): string | null {
     try {
         const u = new URL(raw);
@@ -48,11 +52,14 @@ function normalizeProfileUrl(raw: string): string | null {
         const path = u.pathname;
         const parts = path.split("/").filter(Boolean);
 
-        // Handle https://x.com/username
-        if (parts.length === 1) {
+        // Handle https://x.com/username or https://x.com/username/with_replies etc.
+        if (parts.length >= 1 && parts.length <= 2) {
             const username = parts[0].toLowerCase();
             if (!username) return null;
-            return `https://x.com/${username}`;
+            const suffix = parts[1] ?? "";
+            if (PROFILE_SUFFIX_SET.has(suffix)) {
+                return `https://x.com/${username}`;
+            }
         }
 
         // Handle https://x.com/i/user/123456789

@@ -52,10 +52,17 @@ function findNativeFollowButton(): HTMLElement | null {
 
 const __followingCache = new Map<string, FollowingSnapshot>();
 
+const PROFILE_SUB_PAGES = new Set([
+    "", "affiliates", "with_replies", "highlights", "media", "superfollows"
+]);
+
 function isProfileHomePath(username: string): boolean {
     try {
         const parts = new URL(window.location.href).pathname.split("/").filter(Boolean);
-        return parts.length === 1 && parts[0].toLowerCase() === username.toLowerCase();
+        if (parts.length < 1 || parts.length > 2) return false;
+        if (parts[0].toLowerCase() !== username.toLowerCase()) return false;
+        const suffix = parts[1] ?? "";
+        return PROFILE_SUB_PAGES.has(suffix);
     } catch {
         return false;
     }
@@ -173,7 +180,7 @@ export async function appendScoreInfoToProfilePage(usrProfile: UserProfile, user
             const btn = transferDiv.querySelector(".transfer-btn") as HTMLButtonElement;
             btn.onclick = async () => {
                 if (!usrProfile.userId) {
-                    showDialog(t('tips_title'), "无效的用户id")
+                    showDialog(t('tips_title'), t('invalid_user_id'))
                     return
                 }
                 await sendMsgToService(usrProfile, MsgType.TransferUSDCByTwitterId)
@@ -345,12 +352,12 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
         btn.classList.toggle("tc-processing", mode === ADS_FOLLOW_UI_MODE.Processing);
         const rewardText = formatRewardUsdc(Number(offer.reward_usdc || 0));
 
-        let text = `关注即领 ${rewardText} USDC`;
-        if (mode === ADS_FOLLOW_UI_MODE.Loading) text = "加载中...";
-        if (mode === ADS_FOLLOW_UI_MODE.AlreadyFollowing) text = "已关注";
-        if (mode === ADS_FOLLOW_UI_MODE.Processing) text = "处理中...";
-        if (mode === ADS_FOLLOW_UI_MODE.Claimed) text = "已领取，待验证";
-        if (mode === ADS_FOLLOW_UI_MODE.AlreadyClaimed) text = "已领取过,不可再次领取";
+        let text = t('follow_claim_btn_text', [rewardText]);
+        if (mode === ADS_FOLLOW_UI_MODE.Loading) text = t('claim_loading');
+        if (mode === ADS_FOLLOW_UI_MODE.AlreadyFollowing) text = t('claim_already_following');
+        if (mode === ADS_FOLLOW_UI_MODE.Processing) text = t('claim_processing');
+        if (mode === ADS_FOLLOW_UI_MODE.Claimed) text = t('claim_pending_verification');
+        if (mode === ADS_FOLLOW_UI_MODE.AlreadyClaimed) text = t('claim_already_claimed_status');
         if (title) title.textContent = text;
     };
 
@@ -386,7 +393,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                 e.stopPropagation();
 
                 setUi(ADS_FOLLOW_UI_MODE.Processing);
-                if (title) title.textContent = "正在验证钱包状态...";
+                if (title) title.textContent = t('claim_verifying_wallet');
 
                 // 1. 检查钱包登录状态 (走 Offscreen 以获得准确 CDP 状态)
                 //    首次失败时自动重试一次，应对 Offscreen 被回收或 CDP 会话未恢复的偶发情况
@@ -399,7 +406,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                 if (!walletInfo?.success || !walletInfo?.data?.address) {
                     console.warn(`[TwitterUI] WalletInfoQuery attempt 2 also failed. success=${walletInfo?.success}, data=`, walletInfo?.data);
                     setUi(ADS_FOLLOW_UI_MODE.Eligible);
-                    const errMsg = walletInfo?.data === "TIMEOUT" ? "连接钱包超时，请刷新页面重试。" : "请先在插件中登录钱包账号，再执行关注领奖。";
+                    const errMsg = walletInfo?.data === "TIMEOUT" ? t('claim_wallet_timeout') : t('claim_wallet_not_logged_in');
                     showDialog(t('tips_title'), errMsg);
                     return;
                 }
@@ -407,7 +414,7 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                 console.log(`[TwitterUI] Wallet Identity: addr=${walletInfo.data.address}, xId=${walletInfo.data.xId}, userId=${walletInfo.data.userId}`);
 
                 // 2. 蓝V前置检查 (与广告广场 startTask 保持一致)
-                if (title) title.textContent = "正在检查认证状态...";
+                if (title) title.textContent = t('claim_checking_verification');
                 const blueVResp = await sendMsgToService(
                     { xId: walletInfo.data?.xId },
                     MsgType.AdsBlueVPreCheck,
@@ -450,11 +457,11 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                 console.log("[TwitterUI] Native Follow button search result:", nativeBtn);
                 if (!nativeBtn) {
                     setUi(ADS_FOLLOW_UI_MODE.Eligible);
-                    showDialog(t('tips_title'), "未找到关注按钮，请确认是否已关注或页面加载完成。")
+                    showDialog(t('tips_title'), t('claim_follow_btn_not_found'))
                     return;
                 }
 
-                if (title) title.textContent = "正在同步关注状态...";
+                if (title) title.textContent = t('claim_syncing_follow');
 
                 // Create a promise to wait for the interceptor to signal success
                 let timerId: any;
@@ -480,15 +487,15 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
 
                 if (!isSuccess) {
                     setUi(ADS_FOLLOW_UI_MODE.Eligible);
-                    showDialog(t('tips_title'), "关注确认超时或失败，请重试。")
+                    showDialog(t('tips_title'), t('claim_follow_timeout'))
                     return;
                 }
 
-                if (title) title.textContent = "关注成功，正在进行二次验证...";
+                if (title) title.textContent = t('claim_follow_success_verifying');
 
                 // The profile toolbar can re-render while the final verification is in flight.
                 // Keep a stable global loading state so users don't see a blank gap before the result dialog.
-                showGlobalLoading("正在验证领奖状态...", "奖励校验中，请稍候");
+                showGlobalLoading(t('claim_verifying_reward'), t('claim_reward_checking'));
 
                 try {
                     console.log(`[TwitterUI] >>> Step 3: Sending AdsFollowVerifyAndClaim to SW`, {
@@ -512,8 +519,20 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                     hideGlobalLoading();
 
                     if (!resp?.success) {
-                        setUi(ADS_FOLLOW_UI_MODE.Eligible);
                         const errorMsg = typeof resp?.data === 'object' ? JSON.stringify(resp.data) : String(resp?.data || t('rewards_unknown_error'));
+
+                        // Timeout: the server likely processed the claim, show a gentler message
+                        if (errorMsg.includes("timed out") || errorMsg.includes("超时") || errorMsg.includes("TIMEOUT")) {
+                            setUi(ADS_FOLLOW_UI_MODE.Claimed);
+                            const openPlaza = () => {
+                                const url = browser.runtime.getURL('html/ad_plaza.html?tab=my-tasks');
+                                sendMsgToService(url, MsgType.OpenOrFocusUrl);
+                            };
+                            showDialog(t('tips_title'), t('claim_timeout_may_succeed'), openPlaza, t('claim_view_now'));
+                            return;
+                        }
+
+                        setUi(ADS_FOLLOW_UI_MODE.Eligible);
                         if (errorMsg.includes("BLUE_V_REQUIRED")) {
                             showDialog(
                                 t('tips_title'),
@@ -521,24 +540,24 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
                                 () => {
                                     window.open(`https://x.com/i/user/${walletInfo.data?.xId}?tc_verify=1`, "_blank");
                                 },
-                                t('confirm') || "Confirm"
+                                t('confirm')
                             );
                         } else {
                             let translatedErr = errorMsg;
                             if (errorMsg.includes("NOT_FOUND") || errorMsg.includes("Ad not found")) {
-                                translatedErr = t("ad_not_found_msg") || "该广告不存在或已被删除。 (Ad not found)";
+                                translatedErr = t("ad_not_found_msg");
                             } else if (errorMsg.includes("QUOTA_FULL")) {
-                                translatedErr = t("ad_quota_full_msg") || "该广告的奖励名额已满。 (Quota full)";
+                                translatedErr = t("ad_quota_full_msg");
                             } else if (errorMsg.includes("AD_EXPIRED")) {
-                                translatedErr = t("ad_has_expired") || "该广告活动已结束。 (Ad expired)";
+                                translatedErr = t("ad_has_expired");
                             } else if (errorMsg.includes("Already claimed")) {
-                                translatedErr = t("already_claimed_msg") || "您已经领取过该广告的奖励。 (Already claimed)";
+                                translatedErr = t("already_claimed_msg");
                             } else if (errorMsg.includes("EVIDENCE_REQUIRED")) {
-                                translatedErr = t("ad_evidence_required_msg") || "缺少必需的活动证明。 (Evidence required)";
+                                translatedErr = t("ad_evidence_required_msg");
                             } else if (errorMsg.includes("SIGNATURE_REQUIRED") || errorMsg.includes("SIGNATURE_MISMATCH") || errorMsg.includes("INVALID_CLAIM_SIGNATURE") || errorMsg.includes("EVIDENCE_TAMPERED")) {
-                                translatedErr = t("claim_signature_error_msg") || "签名验证失败，请重试。 (Signature error)";
+                                translatedErr = t("claim_signature_error_msg");
                             } else if (errorMsg.includes("SELF_CLAIM_FORBIDDEN")) {
-                                translatedErr = t("self_claim_forbidden_msg") || "您不能领取自己发布的广告。 (Cannot claim own ad)";
+                                translatedErr = t("self_claim_forbidden_msg");
                             }
 
                             if (translatedErr !== errorMsg) {
@@ -559,23 +578,35 @@ async function _appendAdsFollowOfferBtn(toolBar: HTMLElement, kolName: string, r
 
                     if (resp.data?.already_claimed) {
                         console.log("[TwitterUI] Detected repeated claim, showing dialog.");
-                        showDialog(t('tips_title'), "您已成功重新关注！检测到该奖励之前已成功领取。您可以前往广告广场查看状态。", openPlaza, "立即查看");
+                        showDialog(t('tips_title'), t('claim_already_claimed_refollow'), openPlaza, t('claim_view_now'));
                     } else {
-                        showDialog(t('tips_title'), "申领成功！奖励后续将发放至您的钱包。您可以前往广告广场查看状态。", openPlaza, "立即查看");
+                        showDialog(t('tips_title'), t('claim_success_msg'), openPlaza, t('claim_view_now'));
                     }
                 } catch (err) {
                     hideGlobalLoading();
-                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
                     const errorMsg = err instanceof Error ? err.message : String(err || t('rewards_unknown_error'));
+
+                    // Timeout: the server likely processed the claim, show a gentler message
+                    if (errorMsg.includes("timed out") || errorMsg.includes("超时") || errorMsg.includes("TIMEOUT")) {
+                        setUi(ADS_FOLLOW_UI_MODE.Claimed);
+                        const openPlaza = () => {
+                            const url = browser.runtime.getURL('html/ad_plaza.html?tab=my-tasks');
+                            sendMsgToService(url, MsgType.OpenOrFocusUrl);
+                        };
+                        showDialog(t('tips_title'), t('claim_timeout_may_succeed'), openPlaza, t('claim_view_now'));
+                        return;
+                    }
+
+                    setUi(ADS_FOLLOW_UI_MODE.Eligible);
                     let translatedErr = errorMsg;
                     if (errorMsg.includes("NOT_FOUND") || errorMsg.includes("Ad not found")) {
-                        translatedErr = t("ad_not_found_msg") || "该广告不存在或已被删除。 (Ad not found)";
+                        translatedErr = t("ad_not_found_msg");
                     } else if (errorMsg.includes("QUOTA_FULL")) {
-                        translatedErr = t("ad_quota_full_msg") || "该广告的奖励名额已满。 (Quota full)";
+                        translatedErr = t("ad_quota_full_msg");
                     } else if (errorMsg.includes("AD_EXPIRED")) {
-                        translatedErr = t("ad_has_expired") || "该广告活动已结束。 (Ad expired)";
+                        translatedErr = t("ad_has_expired");
                     } else if (errorMsg.includes("Already claimed")) {
-                        translatedErr = t("already_claimed_msg") || "您已经领取过该广告的奖励。 (Already claimed)";
+                        translatedErr = t("already_claimed_msg");
                     }
 
                     if (translatedErr !== errorMsg) {
