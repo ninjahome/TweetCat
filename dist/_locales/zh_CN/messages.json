@@ -1590,6 +1590,9 @@
   "withdraw_error": {
     "message": "提现错误"
   },
+  "withdraw_treasury_failed": {
+    "message": "提现暂时失败，请稍后重试"
+  },
   "failed_to_load_activity": {
     "message": "无法加载动态。"
   },

@@ -1587,6 +1587,9 @@
   "withdraw_error": {
     "message": "Withdraw error"
   },
+  "withdraw_treasury_failed": {
+    "message": "Withdrawal temporarily failed, please try again later."
+  },
   "failed_to_load_activity": {
     "message": "Failed to load activity."
   },
