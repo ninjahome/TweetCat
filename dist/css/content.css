@@ -1494,7 +1494,7 @@ html[data-bg="default"] {
     --text-primary: #0f1419;
     --text-secondary: #536471;
     --text-muted: #6b7280;
-    --border-subtle: #e1e8ed;
+    --border-subtle: rgb(239, 243, 244);
     --border-strong: rgba(15, 20, 25, 0.1);
     --accent: rgb(29, 155, 240);
     --accent-subtle: rgba(29, 155, 240, .1);
