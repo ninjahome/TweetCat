@@ -920,11 +920,15 @@ a.tweetCatMenuItem.tc-selected .tweettabname {
     flex-direction: row !important;
     display: flex !important;
     flex-wrap: nowrap !important;
-    gap: 20px !important;
+    gap: 0px !important;
+    padding: 12px !important;
 }
 
 a.tweetCatMenuItem {
+    display: flex !important;
     flex-direction: row !important;
+    padding: 4px 0 !important;
+    align-items: center !important;
 }
 
 /* --- Responsive fixes for TweetCat Menu Item --- */
